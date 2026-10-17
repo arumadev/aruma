@@ -38,6 +38,16 @@
   vertical-align: middle;
 }
 
+.td:first-child {
+  min-inline-size: 9rem;
+}
+
+/* Identifiers stay on one line; the table scrolls inside its region instead. */
+.td bdi[dir='ltr'] {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
 .row:last-child .td {
   border-block-end: 0;
 }

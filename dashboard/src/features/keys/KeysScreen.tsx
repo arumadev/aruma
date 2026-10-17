@@ -92,7 +92,9 @@ export function KeysScreen() {
         <Table caption={t('title')} columns={[t('name'), t('key'), t('usedBy'), t('restrictions'), t('state'), ...(editable ? [t('actions')] : [])]}>
           {list.map((key) => (
             <Row key={key.uid}>
-              <Cell>{key.displayName || t('unnamed')}</Cell>
+              <Cell>
+                <bdi>{key.displayName || t('unnamed')}</bdi>
+              </Cell>
               <Cell>
                 <span className={styles.key}>
                   <Ltr>{key.keyString}</Ltr>

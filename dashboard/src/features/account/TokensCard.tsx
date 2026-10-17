@@ -55,7 +55,9 @@ export function TokensCard() {
         <Table caption={t('title')} columns={[t('name'), t('prefix'), t('created'), t('lastUsed'), t('expires'), t('actions')]}>
           {list.map((token) => (
             <Row key={token.id}>
-              <Cell>{token.name}</Cell>
+              <Cell>
+                <bdi>{token.name}</bdi>
+              </Cell>
               <Cell nowrap>
                 <Ltr>{`${token.prefix}…`}</Ltr>
               </Cell>
@@ -139,7 +141,7 @@ function CreateTokenDialog({ onCreated, onClose }: { onCreated: (token: Token) =
         </Banner>
         <CodeBlock label={t('token')} code={plaintext} copyLabel={t('copy')} />
         <p>{t('usage')}</p>
-        <CodeBlock label={t('usageLabel')} code="Authorization: Bearer aruma_pat_…" copyLabel={t('copyUsage')} />
+        <CodeBlock label={t('usageLabel')} code={`Authorization: Bearer ${plaintext}`} copyLabel={t('copyUsage')} />
       </Dialog>
     );
   }

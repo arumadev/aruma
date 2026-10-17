@@ -64,7 +64,9 @@ export function FlutterCard({ projectId, apps }: { projectId: string; apps: App[
             onChange={(id) => setChoice((c) => ({ ...c, [p]: id }))}
             options={[
               { id: NONE, label: t('none') },
-              ...apps.filter((a) => a.platform === p).map((a) => ({ id: a.appId, label: a.displayName || a.appId, detail: a.appId })),
+              ...apps
+                .filter((a) => a.platform === p)
+                .map((a) => ({ id: a.appId, label: a.displayName || tPlatform(PLATFORMS[p].label), detail: a.appId })),
             ]}
           />
         ))}

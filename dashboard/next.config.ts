@@ -13,8 +13,12 @@ const config: NextConfig = {
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
   images: { unoptimized: true },
+  // Don't write AGENTS.md into the project on `next dev`.
+  agentRules: false,
   ...(isDev && {
     rewrites: async () => [{ source: '/console/v1/:path*', destination: `${devApi}/console/v1/:path*` }],
+    // API paths have no trailing slash; without this, dev redirects them before the rewrite.
+    skipTrailingSlashRedirect: true,
   }),
 };
 

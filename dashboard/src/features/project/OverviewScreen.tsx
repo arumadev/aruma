@@ -110,7 +110,7 @@ function AppRow({ projectId, app }: { projectId: string; app: App }) {
         </span>
         <span className={styles.appText}>
           <span className={styles.appName}>
-            {app.displayName || tPlatform(info.label)}
+            <bdi>{app.displayName || tPlatform(info.label)}</bdi>
             {app.state === 'DELETED' && <Badge tone="error">{t('deleted')}</Badge>}
           </span>
           <span className={styles.appMeta}>

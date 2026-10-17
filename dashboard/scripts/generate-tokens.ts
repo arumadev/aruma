@@ -3,9 +3,13 @@
 // default). Run `npm run tokens` after changing SEED; a unit test fails while the committed
 // file is out of date.
 import { writeFileSync } from 'node:fs';
-import { argbFromHex, hexFromArgb, Hct, SchemeTonalSpot, type DynamicScheme } from '@material/material-color-utilities';
+import { argbFromHex, customColor, hexFromArgb, Hct, SchemeTonalSpot, type DynamicScheme } from '@material/material-color-utilities';
 
 export const SEED = '#0E6E6C';
+
+// M3 custom colours for meanings the scheme has no role for. Warning is not blended toward
+// the seed, so it stays recognisably amber.
+const CUSTOM_COLORS = [{ name: 'warning', value: '#F2A900', blend: false }];
 
 export const OUTPUT = new URL('../src/styles/colors.css', import.meta.url);
 
@@ -51,7 +55,17 @@ const kebab = (s: string) => s.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 
 function declarations(isDark: boolean, indent: string): string {
   const scheme = new SchemeTonalSpot(Hct.fromInt(argbFromHex(SEED)), isDark, 0);
-  return ROLES.map((role) => `${indent}--md-sys-color-${kebab(role)}: ${hexFromArgb(scheme[role] as number)};`).join('\n');
+  const roles = ROLES.map((role) => `${indent}--md-sys-color-${kebab(role)}: ${hexFromArgb(scheme[role] as number)};`);
+  const custom = CUSTOM_COLORS.flatMap(({ name, value, blend }) => {
+    const group = customColor(argbFromHex(SEED), { name, value: argbFromHex(value), blend })[isDark ? 'dark' : 'light'];
+    return [
+      `${indent}--md-custom-color-${name}: ${hexFromArgb(group.color)};`,
+      `${indent}--md-custom-color-on-${name}: ${hexFromArgb(group.onColor)};`,
+      `${indent}--md-custom-color-${name}-container: ${hexFromArgb(group.colorContainer)};`,
+      `${indent}--md-custom-color-on-${name}-container: ${hexFromArgb(group.onColorContainer)};`,
+    ];
+  });
+  return [...roles, ...custom].join('\n');
 }
 
 export function renderColorTokens(): string {

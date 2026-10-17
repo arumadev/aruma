@@ -22,7 +22,11 @@ export function Card({
       {(title || actions) && (
         <header className={styles.header}>
           <div className={styles.heading}>
-            {title && <h2 className={styles.title}>{title}</h2>}
+            {title && (
+              <h2 className={styles.title}>
+                <bdi>{title}</bdi>
+              </h2>
+            )}
             {description && <p className={styles.description}>{description}</p>}
           </div>
           {actions && <div className={styles.actions}>{actions}</div>}

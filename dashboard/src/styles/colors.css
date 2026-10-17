@@ -36,6 +36,10 @@
   --md-sys-color-inverse-primary: #80d5d2;
   --md-sys-color-scrim: #000000;
   --md-sys-color-shadow: #000000;
+  --md-custom-color-warning: #7f5700;
+  --md-custom-color-on-warning: #ffffff;
+  --md-custom-color-warning-container: #ffdead;
+  --md-custom-color-on-warning-container: #281900;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -74,5 +78,9 @@
     --md-sys-color-inverse-primary: #006a68;
     --md-sys-color-scrim: #000000;
     --md-sys-color-shadow: #000000;
+    --md-custom-color-warning: #ffba3b;
+    --md-custom-color-on-warning: #432c00;
+    --md-custom-color-warning-container: #604100;
+    --md-custom-color-on-warning-container: #ffdead;
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, type ReactNode } from 'react';
+import { Suspense, useEffect, useEffectEvent, type ReactNode } from 'react';
 import { useTranslations } from 'use-intl';
 import { AppShell, ShellPlaceholder } from '@/components/shell/AppShell';
 import { Banner } from '@/components/ui/Banner';
@@ -17,9 +17,13 @@ export function ConsoleFrame({ children }: { children: ReactNode }) {
   const t = useTranslations('common');
   const errorText = useErrorText();
   const { account, ensure, error } = useSession();
-  useEffect(() => {
+  // Ask the server once on arrival if no session is known: a fresh load, or Back into the
+  // console after signing out. A session that ends while here is handled by whoever ended it
+  // (sign-out or the 401 handler), which is already navigating to sign-in.
+  const checkOnArrival = useEffectEvent(() => {
     if (!account) ensure();
-  }, [account, ensure]);
+  });
+  useEffect(() => checkOnArrival(), []);
 
   if (!account) {
     return (

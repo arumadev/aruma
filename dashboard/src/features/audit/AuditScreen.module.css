@@ -17,6 +17,7 @@
 .action > :last-child {
   color: var(--md-sys-color-on-surface-variant);
   font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .more {

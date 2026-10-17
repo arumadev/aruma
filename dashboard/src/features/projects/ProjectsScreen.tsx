@@ -122,7 +122,7 @@ function ProjectCard({ project }: { project: Project }) {
     <li>
       <Link href={routes.project(project.projectId)} className={styles.card}>
         <span className={styles.cardTop}>
-          <span className={styles.name}>{project.displayName}</span>
+          <bdi className={styles.name}>{project.displayName}</bdi>
           {project.state === 'DELETED' && <Badge tone="error">{t('deleted')}</Badge>}
         </span>
         <span className={styles.meta}>

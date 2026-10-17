@@ -57,7 +57,7 @@ export function Select({ label, hideLabel, options, value, onChange, description
         <ListBox items={options} className={styles.list}>
           {(option) => (
             <ListBoxItem id={option.id} textValue={option.label} className={styles.option}>
-              <span>{option.label}</span>
+              <bdi>{option.label}</bdi>
               {option.detail && (
                 <bdi dir="ltr" className={styles.detail}>
                   {option.detail}
