@@ -398,7 +398,7 @@ func planJSON(o options) PlanJSON {
 func collectMeta(o options, mode string) Meta {
 	m := Meta{
 		Time: time.Now().UTC(), Mode: mode, GoVersion: runtime.Version(), OS: runtime.GOOS, Arch: runtime.GOARCH,
-		NumCPU: runtime.NumCPU(), GOMAXPROCS: runtime.GOMAXPROCS(0), Args: os.Args[1:], Note: o.note,
+		NumCPU: runtime.NumCPU(), GOMAXPROCS: runtime.GOMAXPROCS(0), Args: redactArgs(os.Args[1:]), Note: o.note,
 	}
 	m.Commit = buildCommit
 	if bi, ok := debug.ReadBuildInfo(); ok && m.Commit == "" {
@@ -426,6 +426,24 @@ func collectMeta(o options, mode string) Meta {
 		}
 	}
 	return m
+}
+
+// redactArgs hides credential flag values so the JSON can be shared.
+func redactArgs(args []string) []string {
+	out := slices.Clone(args)
+	for i := 0; i < len(out); i++ {
+		name, _, hasValue := strings.Cut(strings.TrimLeft(out[i], "-"), "=")
+		if name != "token" && name != "password" {
+			continue
+		}
+		if hasValue {
+			out[i] = out[i][:strings.Index(out[i], "=")+1] + "[REDACTED]"
+		} else if i+1 < len(out) {
+			out[i+1] = "[REDACTED]"
+			i++
+		}
+	}
+	return out
 }
 
 func maxRSSMiB() float64 {

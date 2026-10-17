@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 )
@@ -84,5 +85,13 @@ func TestCancelStopsPromptly(t *testing.T) {
 	Drive(ctx, Plan{Concurrency: 2, Duration: 10 * time.Second}, slowServer)
 	if time.Since(t0) > time.Second {
 		t.Fatal("Drive ignored cancellation")
+	}
+}
+
+func TestRedactArgs(t *testing.T) {
+	got := redactArgs([]string{"-url", "http://x", "-token", "aruma_pat_secret", "--password=hunter22", "-c", "8"})
+	want := []string{"-url", "http://x", "-token", "[REDACTED]", "--password=[REDACTED]", "-c", "8"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("got %q", got)
 	}
 }
