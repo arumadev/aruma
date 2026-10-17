@@ -7,7 +7,7 @@ workflows:
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
-      xcode: 16.4
+      xcode: latest   # firebase-ios-sdk 13 (pulled by firebase_core 5) needs Swift tools 6.2
       flutter: stable
       node: 24
       vars:
