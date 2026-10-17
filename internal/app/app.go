@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/osama300/aurma-project/internal/admin/console"
+	"github.com/osama300/aurma-project/internal/admin/mgmt"
+	"github.com/osama300/aurma-project/internal/admin/oauth"
 	"github.com/osama300/aurma-project/internal/config"
 	"github.com/osama300/aurma-project/internal/platform/authn"
 	"github.com/osama300/aurma-project/internal/platform/crypto"
@@ -25,6 +28,7 @@ type App struct {
 	Service *core.Service
 	Server  *server.Server
 	Console *console.API
+	Mgmt    *mgmt.API
 	log     *slog.Logger
 }
 
@@ -66,11 +70,14 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		Logger:     logger,
 	}
 	consoleAPI := console.New(svc, auth, logger, console.Options{Version: version, SecureCookies: cfg.SecureCookies()})
+	mgmtAPI := mgmt.New(svc, auth, logger)
 
 	srv := server.New(cfg, logger, pool, metrics.New(version), server.Handlers{
 		Console: consoleAPI.Handler(),
+		Mgmt:    mgmtAPI.Handler(),
+		OAuth:   oauth.New(svc, logger).Handler(),
 	})
-	return &App{Config: cfg, Service: svc, Server: srv, Console: consoleAPI, log: logger}, nil
+	return &App{Config: cfg, Service: svc, Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
 }
 
 // AnnounceSetup prints the one-time setup code when the instance has no account yet.
@@ -106,9 +113,29 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 	if err := a.AnnounceSetup(ctx); err != nil {
 		return err
 	}
+	go a.housekeeping(ctx)
 	logger.Info("starting aruma", "version", version, "public_url", cfg.PublicBaseURL().String())
 	if err := a.Server.Run(ctx); err != nil {
 		return fmt.Errorf("serve: %w", err)
 	}
 	return nil
+}
+
+// housekeepingEvery is how often expired deletions and tokens are purged.
+const housekeepingEvery = time.Hour
+
+// housekeeping purges what has outlived its retention, at start and then hourly.
+func (a *App) housekeeping(ctx context.Context) {
+	t := time.NewTicker(housekeepingEvery)
+	defer t.Stop()
+	for {
+		if _, err := a.Service.PurgeExpired(ctx); err != nil && ctx.Err() == nil {
+			a.log.Error("housekeeping", "error", err)
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+		}
+	}
 }
