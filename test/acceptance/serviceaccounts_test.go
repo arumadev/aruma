@@ -1,6 +1,7 @@
 package acceptance
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"crypto/rand"
@@ -10,6 +11,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
@@ -277,4 +279,54 @@ func TestServiceAccountLimitsAndNames(t *testing.T) {
 		c.mustOK(c.do("POST", path, nil))
 	}
 	expect(t, c.do("POST", path, nil), 400, "FAILED_PRECONDITION")
+}
+
+// The firebase CLI posts its refresh request as multipart/form-data.
+func TestRefreshTokenGrantAcceptsMultipart(t *testing.T) {
+	e := newEnv(t, nil)
+	pat := e.owner().pat()
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	for k, v := range map[string]string{"grant_type": "refresh_token", "refresh_token": pat, "client_id": "x", "client_secret": "y", "scope": ""} {
+		mw.WriteField(k, v)
+	}
+	mw.Close()
+	resp, err := http.Post(e.URL+"/oauth2/v3/token", mw.FormDataContentType(), &body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	var out map[string]any
+	json.NewDecoder(resp.Body).Decode(&out)
+	if resp.StatusCode != 200 || out["access_token"] != pat {
+		t.Fatalf("multipart refresh: %d %v", resp.StatusCode, out)
+	}
+}
+
+// Review L-1, L-2: without the key, every account state looks the same; deleting a key revokes
+// the tokens it bought.
+func TestTokenEndpointRevealsNothingAndKeyDeletionRevokes(t *testing.T) {
+	e := newEnv(t, nil)
+	c := e.owner()
+	c.project("chat-app")
+	saID, raw := c.serviceAccountKey("chat-app", "backend")
+	k := parseKeyFile(t, raw)
+	forged := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"RS256"}`)) + "." +
+		base64.RawURLEncoding.EncodeToString(mustJSON(map[string]any{"iss": k.ClientEmail, "aud": k.TokenURI, "iat": time.Now().Unix(), "exp": time.Now().Unix() + 600})) + ".AAAA"
+	_, known := postAssertion(t, e, forged)
+	c.mustOK(c.do("POST", "/console/v1/projects/chat-app:delete", map[string]any{"confirmProjectId": "chat-app"}))
+	_, deleted := postAssertion(t, e, forged)
+	if known["error_description"] != deleted["error_description"] {
+		t.Fatalf("forged assertions reveal project state: %v vs %v", known, deleted)
+	}
+	c.mustOK(c.do("POST", "/console/v1/projects/chat-app:restore", nil))
+
+	token, _, err := exchange(t, raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sa := e.withBearer(token)
+	sa.mustOK(sa.do("GET", "/v1beta1/projects/chat-app", nil))
+	c.mustOK(c.do("DELETE", "/console/v1/projects/chat-app/serviceAccounts/"+saID+"/keys/"+k.PrivateKeyID, nil))
+	expect(t, sa.do("GET", "/v1beta1/projects/chat-app", nil), 401, "UNAUTHENTICATED")
 }

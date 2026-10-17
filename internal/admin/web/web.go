@@ -129,7 +129,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !h.built {
-		h.placeholder(w)
+		if path.Ext(r.URL.Path) == "" && r.URL.Path != "/metrics" {
+			h.placeholder(w)
+			return
+		}
+		http.NotFound(w, r)
 		return
 	}
 	p := strings.TrimPrefix(path.Clean("/"+r.URL.Path), "/")

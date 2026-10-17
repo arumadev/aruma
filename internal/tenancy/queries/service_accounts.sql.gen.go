@@ -31,8 +31,8 @@ func (q *Queries) CountServiceAccountKeys(ctx context.Context, arg CountServiceA
 }
 
 const createOAuthToken = `-- name: CreateOAuthToken :exec
-INSERT INTO control.oauth_access_tokens (token_hash, principal_id, project_number, scopes, expires_at)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO control.oauth_access_tokens (token_hash, principal_id, project_number, scopes, expires_at, key_id)
+VALUES ($1, $2, $3, $4, $5, $6)
 `
 
 type CreateOAuthTokenParams struct {
@@ -41,6 +41,7 @@ type CreateOAuthTokenParams struct {
 	ProjectNumber int64
 	Scopes        []string
 	ExpiresAt     time.Time
+	KeyID         *string
 }
 
 func (q *Queries) CreateOAuthToken(ctx context.Context, arg CreateOAuthTokenParams) error {
@@ -50,6 +51,7 @@ func (q *Queries) CreateOAuthToken(ctx context.Context, arg CreateOAuthTokenPara
 		arg.ProjectNumber,
 		arg.Scopes,
 		arg.ExpiresAt,
+		arg.KeyID,
 	)
 	return err
 }
@@ -180,7 +182,7 @@ func (q *Queries) DeleteServiceAccountKey(ctx context.Context, arg DeleteService
 }
 
 const getActiveOAuthToken = `-- name: GetActiveOAuthToken :one
-SELECT t.token_hash, t.principal_id, t.project_number, t.scopes, t.created_at, t.expires_at, s.email, s.disabled AS account_disabled, p.state AS project_state
+SELECT t.token_hash, t.principal_id, t.project_number, t.scopes, t.created_at, t.expires_at, t.key_id, s.email, s.disabled AS account_disabled, p.state AS project_state
 FROM control.oauth_access_tokens t
 JOIN control.service_accounts s ON s.id = t.principal_id
 JOIN control.projects p ON p.project_number = t.project_number
@@ -194,6 +196,7 @@ type GetActiveOAuthTokenRow struct {
 	Scopes          []string
 	CreatedAt       time.Time
 	ExpiresAt       time.Time
+	KeyID           *string
 	Email           string
 	AccountDisabled bool
 	ProjectState    string
@@ -210,6 +213,7 @@ func (q *Queries) GetActiveOAuthToken(ctx context.Context, tokenHash []byte) (Ge
 		&i.Scopes,
 		&i.CreatedAt,
 		&i.ExpiresAt,
+		&i.KeyID,
 		&i.Email,
 		&i.AccountDisabled,
 		&i.ProjectState,

@@ -10,6 +10,7 @@ package oauth
 import (
 	"errors"
 	"log/slog"
+	"mime"
 	"net/http"
 	"strconv"
 
@@ -62,9 +63,29 @@ func (a *API) limited(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// parseForm reads an urlencoded or multipart body: the firebase CLI sends multipart. Oversized
+// bodies get 413 like every other API (ADR-010 S-14).
+func parseForm(w http.ResponseWriter, r *http.Request) bool {
+	var err error
+	if mt, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type")); mt == "multipart/form-data" {
+		err = r.ParseMultipartForm(64 << 10)
+	} else {
+		err = r.ParseForm()
+	}
+	if err == nil {
+		return true
+	}
+	var tooLarge *http.MaxBytesError
+	if errors.As(err, &tooLarge) {
+		writeOAuth(w, http.StatusRequestEntityTooLarge, &core.OAuthError{Code: "invalid_request", Description: "The request body is too large."})
+		return false
+	}
+	writeOAuth(w, http.StatusBadRequest, &core.OAuthError{Code: "invalid_request", Description: "The request body must be a form."})
+	return false
+}
+
 func (a *API) jwtGrant(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		writeOAuth(w, http.StatusBadRequest, &core.OAuthError{Code: "invalid_request", Description: "The request body must be a form."})
+	if !parseForm(w, r) {
 		return
 	}
 	if gt := r.PostForm.Get("grant_type"); gt != jwtBearer {
@@ -76,8 +97,7 @@ func (a *API) jwtGrant(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) refreshGrant(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		writeOAuth(w, http.StatusBadRequest, &core.OAuthError{Code: "invalid_request", Description: "The request body must be a form."})
+	if !parseForm(w, r) {
 		return
 	}
 	if gt := r.PostForm.Get("grant_type"); gt != "refresh_token" {

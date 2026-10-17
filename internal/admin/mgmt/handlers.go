@@ -391,14 +391,23 @@ func (a *API) removeApp(platform string) http.HandlerFunc {
 			a.fail(w, r, err)
 			return
 		}
-		if x, err := a.appOf(r, platform); err != nil && !(in.AllowMissing && apierr.CodeOf(err) == apierr.NotFound) {
+		x, err := a.appOf(r, platform)
+		switch {
+		case err != nil && in.AllowMissing && apierr.CodeOf(err) == apierr.NotFound:
+			// Missing here includes an app of another platform: never touch it.
+			httpx.WriteJSON(w, http.StatusOK, operation{
+				Name: operationName(opRef{Kind: "empty"}), Done: true,
+				Response: map[string]string{"@type": "type.googleapis.com/google.protobuf.Empty"},
+			})
+			return
+		case err != nil:
 			a.fail(w, r, err)
 			return
-		} else if err == nil && x.State != "ACTIVE" && !in.Immediate {
+		case x.State != "ACTIVE" && !in.Immediate:
 			a.fail(w, r, apierr.New(apierr.FailedPrecondition, "The app is already deleted."))
 			return
 		}
-		x, err := a.svc.RemoveApp(r.Context(), principal(r), r.PathValue("project"), r.PathValue("app"), core.RemoveOptions{
+		x, err = a.svc.RemoveApp(r.Context(), principal(r), r.PathValue("project"), r.PathValue("app"), core.RemoveOptions{
 			Immediate: in.Immediate, AllowMissing: in.AllowMissing, ValidateOnly: in.ValidateOnly, ETag: in.ETag,
 		})
 		if err != nil {

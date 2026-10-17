@@ -72,7 +72,7 @@ func (s *Service) ExchangeAssertion(ctx context.Context, assertion, tokenURL str
 	}
 	if h.Alg != "RS256" {
 		// Never "none", never HMAC with a public key as the secret (ADR-010 S-3).
-		s.log.Warn("rejected assertion with unsupported alg", "alg", h.Alg)
+		s.log.Warn("rejected assertion with unsupported alg", "alg", clip(h.Alg, 16))
 		return nil, invalidGrant("Only RS256 assertions are accepted.")
 	}
 	if err := decodeSegment(parts[1], &c); err != nil {
@@ -92,24 +92,30 @@ func (s *Service) ExchangeAssertion(ctx context.Context, assertion, tokenURL str
 		return nil, invalidGrant("Invalid JWT: exp must be after iat and at most one hour later.")
 	}
 
-	sa, err := s.q.GetServiceAccountByEmail(ctx, c.Iss)
-	if err != nil {
-		if notFound(err) {
-			return nil, invalidGrant("Invalid JWT signature.")
-		}
-		return nil, internal(err)
-	}
-	if sa.Disabled || sa.ProjectState != "ACTIVE" {
-		return nil, invalidGrant("The service account is disabled or its project is deleted.")
-	}
+	// The signature is checked before anything about the account is revealed: without its key,
+	// an unknown, disabled or deleted account all look the same.
 	keys, err := s.q.ListActiveKeysByEmail(ctx, c.Iss)
 	if err != nil {
 		return nil, internal(err)
 	}
 	digest := sha256.Sum256([]byte(parts[0] + "." + parts[1]))
 	sig, err := base64.RawURLEncoding.DecodeString(parts[2])
-	if err != nil || !verifyWithAny(keys, h.Kid, digest[:], sig) {
-		return nil, invalidGrant("Invalid JWT signature.")
+	if err != nil {
+		return nil, errBadAssertion
+	}
+	keyID, ok := verifyWithAny(keys, h.Kid, digest[:], sig)
+	if !ok {
+		return nil, errBadAssertion
+	}
+	sa, err := s.q.GetServiceAccountByEmail(ctx, c.Iss)
+	if err != nil {
+		if notFound(err) {
+			return nil, errBadAssertion
+		}
+		return nil, internal(err)
+	}
+	if sa.Disabled || sa.ProjectState != "ACTIVE" {
+		return nil, invalidGrant("The service account is disabled or its project is deleted.")
 	}
 
 	token := acrypto.NewToken(authn.ServiceTokenPrefix)
@@ -119,7 +125,7 @@ func (s *Service) ExchangeAssertion(ctx context.Context, assertion, tokenURL str
 	}
 	err = s.q.CreateOAuthToken(ctx, queries.CreateOAuthTokenParams{
 		TokenHash: s.keys.HashToken(token), PrincipalID: sa.ID, ProjectNumber: sa.ProjectNumber,
-		Scopes: scopes, ExpiresAt: now.Add(ServiceTokenLifetime),
+		Scopes: scopes, ExpiresAt: now.Add(ServiceTokenLifetime), KeyID: &keyID,
 	})
 	if err != nil {
 		return nil, internal(err)
@@ -127,9 +133,11 @@ func (s *Service) ExchangeAssertion(ctx context.Context, assertion, tokenURL str
 	return &TokenResponse{AccessToken: token, ExpiresIn: int(ServiceTokenLifetime.Seconds()), TokenType: "Bearer"}, nil
 }
 
+var errBadAssertion = invalidGrant("Invalid JWT signature.")
+
 // verifyWithAny checks the signature with the key named by kid, or, when the client sent no
-// kid (Node's gtoken does not), with each active key in turn.
-func verifyWithAny(keys []queries.ControlServiceAccountKey, kid string, digest, sig []byte) bool {
+// kid (Node's gtoken does not), with each active key in turn. It returns the verifying key.
+func verifyWithAny(keys []queries.ControlServiceAccountKey, kid string, digest, sig []byte) (string, bool) {
 	for _, k := range keys {
 		if kid != "" && k.KeyID != kid {
 			continue
@@ -144,10 +152,10 @@ func verifyWithAny(keys []queries.ControlServiceAccountKey, kid string, digest, 
 		}
 		pub, ok := cert.PublicKey.(*rsa.PublicKey)
 		if ok && rsa.VerifyPKCS1v15(pub, crypto.SHA256, digest, sig) == nil {
-			return true
+			return k.KeyID, true
 		}
 	}
-	return false
+	return "", false
 }
 
 func decodeSegment(seg string, v any) error {
@@ -213,4 +221,12 @@ func (s *Service) ExchangeRefreshToken(ctx context.Context, refreshToken string)
 func (s *Service) PurgeExpiredTokens(ctx context.Context) (int64, error) {
 	n, err := s.q.DeleteExpiredOAuthTokens(ctx)
 	return n, internal(err)
+}
+
+// clip bounds client-supplied values before they are logged.
+func clip(s string, n int) string {
+	if len(s) > n {
+		return s[:n] + "…"
+	}
+	return s
 }

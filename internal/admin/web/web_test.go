@@ -114,6 +114,11 @@ func TestPlaceholderWithoutDashboard(t *testing.T) {
 	if rec.Code != 503 || !strings.Contains(rec.Body.String(), "make dashboard") {
 		t.Fatalf("%d %s", rec.Code, rec.Body)
 	}
+	for _, p := range []string{"/metrics", "/app.js"} {
+		if rec := get(t, h, p); rec.Code != 404 {
+			t.Errorf("%s without a dashboard: %d, want 404", p, rec.Code)
+		}
+	}
 }
 
 func TestEmbeddedFSLoads(t *testing.T) {

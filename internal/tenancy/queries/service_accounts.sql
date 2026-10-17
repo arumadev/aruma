@@ -54,8 +54,8 @@ WHERE s.email = @email AND NOT k.disabled
 ORDER BY k.created_at;
 
 -- name: CreateOAuthToken :exec
-INSERT INTO control.oauth_access_tokens (token_hash, principal_id, project_number, scopes, expires_at)
-VALUES (@token_hash, @principal_id, @project_number, @scopes, @expires_at);
+INSERT INTO control.oauth_access_tokens (token_hash, principal_id, project_number, scopes, expires_at, key_id)
+VALUES (@token_hash, @principal_id, @project_number, @scopes, @expires_at, @key_id);
 
 -- name: GetActiveOAuthToken :one
 -- scope: global — resolves a bearer token presented to the API; the hash is the only input.

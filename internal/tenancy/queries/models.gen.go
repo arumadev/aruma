@@ -94,6 +94,7 @@ type ControlOauthAccessToken struct {
 	Scopes        []string
 	CreatedAt     time.Time
 	ExpiresAt     time.Time
+	KeyID         *string
 }
 
 type ControlProject struct {

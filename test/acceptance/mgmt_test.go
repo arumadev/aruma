@@ -186,6 +186,19 @@ func TestManagementAPIAuthAndErrors(t *testing.T) {
 	}
 }
 
+// Review L-4: removing through the wrong collection with allowMissing leaves the app alone.
+func TestRemoveThroughWrongCollectionIsANoOp(t *testing.T) {
+	e := newEnv(t, nil)
+	owner := e.owner()
+	owner.project("chat-app")
+	android := owner.app("chat-app", "ANDROID", "com.ahmad.chat").str("appId")
+	cli := e.withBearer(owner.pat())
+	cli.mustOK(cli.do("POST", "/v1beta1/projects/chat-app/webApps/"+android+":remove", map[string]any{"allowMissing": true}))
+	if st := owner.mustOK(owner.do("GET", "/console/v1/projects/chat-app/apps/"+android, nil)).str("state"); st != "ACTIVE" {
+		t.Fatalf("android app removed through webApps: %s", st)
+	}
+}
+
 func TestOperationsRespectOwnership(t *testing.T) {
 	e := newEnv(t, nil)
 	owner := e.owner()
