@@ -36,3 +36,9 @@ aruma.yaml
 
 # Local agent worktrees
 /.claude/
+
+# Smoke test output
+/test/smoke/.generated/
+
+# Local build caches (kept off the system disk)
+/.cache/

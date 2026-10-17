@@ -1,0 +1,12 @@
+{
+  "name": "aruma-smoke-admin-node",
+  "private": true,
+  "type": "module",
+  "description": "Initialises firebase-admin with an Aruma service account key file.",
+  "scripts": {
+    "test": "node --test smoke.test.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^14"
+  }
+}
