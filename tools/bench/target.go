@@ -56,8 +56,9 @@ func (t *Target) Close() {
 // port from this process, wired exactly as `aruma serve` wires it: production argon2id cost,
 // the JSON request log (written to io.Discard, so formatting is paid but nothing is kept), and
 // loopback trusted as a proxy so the bench can spread credential requests over many client
-// addresses with X-Forwarded-For (see Scenario.SpreadClients).
-func StartInProcess(ctx context.Context, logOut io.Writer) (*Target, error) {
+// addresses with X-Forwarded-For (see Scenario.SpreadClients). poolMax, when positive, sizes
+// the server's database pool; pgx's default is max(4, NumCPU).
+func StartInProcess(ctx context.Context, logOut io.Writer, poolMax int) (*Target, error) {
 	dbName := "aruma_bench_" + randomHex(4)
 	admin, err := pgx.Connect(ctx, storetest.AdminURL())
 	if err != nil {
@@ -83,10 +84,18 @@ func StartInProcess(ctx context.Context, logOut io.Writer) (*Target, error) {
 
 	u, _ := url.Parse(storetest.AdminURL())
 	u.Path = "/" + dbName
-	dbURL := u.String()
-	if err := store.Migrate(ctx, dbURL); err != nil {
+	if err := store.Migrate(ctx, u.String()); err != nil {
 		return fail(err)
 	}
+	if poolMax > 0 {
+		// The knob an operator has: pgxpool reads pool_max_conns from ARUMA_DATABASE_URL. Only
+		// the pool gets it; store.Migrate (database/sql) would send it to Postgres as a
+		// runtime parameter, which Postgres rejects.
+		q := u.Query()
+		q.Set("pool_max_conns", fmt.Sprint(poolMax))
+		u.RawQuery = q.Encode()
+	}
+	dbURL := u.String()
 	pool, err := store.Open(ctx, dbURL)
 	if err != nil {
 		return fail(err)

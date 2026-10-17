@@ -60,6 +60,7 @@ type options struct {
 	cpuProfile                  string
 	serve                       bool
 	note                        string
+	poolMax                     int
 }
 
 func main() {
@@ -79,6 +80,7 @@ func main() {
 	flag.StringVar(&o.jsonOut, "json", "", "also write the results as JSON to this file")
 	flag.StringVar(&o.cpuProfile, "cpuprofile", "", "write a CPU profile of this process (server included when in-process)")
 	flag.BoolVar(&o.serve, "serve", false, "start an in-process server, print how to target it, and wait for Ctrl-C")
+	flag.IntVar(&o.poolMax, "db-pool-max", 0, "in-process: the server's database pool size (default: pgx's max(4, NumCPU))")
 	flag.StringVar(&o.note, "note", "", "free text stored in the JSON, e.g. the machine's state")
 	flag.Parse()
 	if *loginC > 0 {
@@ -143,7 +145,7 @@ func run(o options) error {
 		t = &Target{URL: strings.TrimSuffix(o.url, "/"), Token: o.token, Email: o.email, Password: o.password}
 	} else {
 		fmt.Fprintln(os.Stderr, "starting Aruma in-process on a throwaway database…")
-		if t, err = StartInProcess(ctx, io.Discard); err != nil {
+		if t, err = StartInProcess(ctx, io.Discard, o.poolMax); err != nil {
 			return err
 		}
 		defer t.Close()
@@ -396,7 +398,7 @@ func planJSON(o options) PlanJSON {
 func collectMeta(o options, mode string) Meta {
 	m := Meta{
 		Time: time.Now().UTC(), Mode: mode, GoVersion: runtime.Version(), OS: runtime.GOOS, Arch: runtime.GOARCH,
-		NumCPU: runtime.NumCPU(), GOMAXPROCS: runtime.GOMAXPROCS(0), Args: os.Args[1:], Note: o.note,
+		NumCPU: runtime.NumCPU(), GOMAXPROCS: runtime.GOMAXPROCS(0), Args: redactArgs(os.Args[1:]), Note: o.note,
 	}
 	m.Commit = buildCommit
 	if bi, ok := debug.ReadBuildInfo(); ok && m.Commit == "" {
@@ -424,6 +426,24 @@ func collectMeta(o options, mode string) Meta {
 		}
 	}
 	return m
+}
+
+// redactArgs hides credential flag values so the JSON can be shared.
+func redactArgs(args []string) []string {
+	out := slices.Clone(args)
+	for i := 0; i < len(out); i++ {
+		name, _, hasValue := strings.Cut(strings.TrimLeft(out[i], "-"), "=")
+		if name != "token" && name != "password" {
+			continue
+		}
+		if hasValue {
+			out[i] = out[i][:strings.Index(out[i], "=")+1] + "[REDACTED]"
+		} else if i+1 < len(out) {
+			out[i+1] = "[REDACTED]"
+			i++
+		}
+	}
+	return out
 }
 
 func maxRSSMiB() float64 {
