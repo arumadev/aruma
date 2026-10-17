@@ -40,6 +40,20 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 	return err
 }
 
+const deleteRefreshToken = `-- name: DeleteRefreshToken :exec
+DELETE FROM auth.refresh_tokens WHERE project_number = $1 AND token_hash = $2
+`
+
+type DeleteRefreshTokenParams struct {
+	ProjectNumber int64
+	TokenHash     []byte
+}
+
+func (q *Queries) DeleteRefreshToken(ctx context.Context, arg DeleteRefreshTokenParams) error {
+	_, err := q.db.Exec(ctx, deleteRefreshToken, arg.ProjectNumber, arg.TokenHash)
+	return err
+}
+
 const getRefreshToken = `-- name: GetRefreshToken :one
 SELECT token_hash, project_number, tenant_id, uid, sign_in_provider, custom_claims, auth_time, created_at, last_used_at FROM auth.refresh_tokens WHERE project_number = $1 AND token_hash = $2
 `
@@ -274,6 +288,23 @@ func (q *Queries) ListSigningKeys(ctx context.Context, arg ListSigningKeysParams
 		return nil, err
 	}
 	return items, nil
+}
+
+const purgeOrphanRefreshTokens = `-- name: PurgeOrphanRefreshTokens :execrows
+DELETE FROM auth.refresh_tokens r
+WHERE r.created_at < now() - interval '30 days'
+  AND NOT EXISTS (SELECT 1 FROM auth.users u
+                  WHERE u.project_number = r.project_number AND u.tenant_id = r.tenant_id
+                    AND u.uid = r.uid AND u.tokens_valid_after <= r.created_at)
+`
+
+// scope: global — housekeeping across projects: tokens of deleted users, or revoked long ago.
+func (q *Queries) PurgeOrphanRefreshTokens(ctx context.Context) (int64, error) {
+	result, err := q.db.Exec(ctx, purgeOrphanRefreshTokens)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const setSigningKeyState = `-- name: SetSigningKeyState :exec

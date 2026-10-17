@@ -75,14 +75,12 @@ UPDATE auth.users SET last_refresh_at = now()
 WHERE project_number = @project_number AND tenant_id = @tenant_id AND uid = @uid;
 
 -- name: RevokeUserTokens :one
--- Moves the revocation point to now (second precision, as Firebase) and drops refresh tokens.
-WITH revoked AS (
-    DELETE FROM auth.refresh_tokens r
-    WHERE r.project_number = @project_number AND r.tenant_id = @tenant_id AND r.uid = @uid
-)
-UPDATE auth.users u SET tokens_valid_after = date_trunc('second', now())
-WHERE u.project_number = @project_number AND u.tenant_id = @tenant_id AND u.uid = @uid
-RETURNING u.tokens_valid_after;
+-- Moves the revocation point to the transaction time. Refresh tokens created before it answer
+-- TOKEN_EXPIRED; a session started later in the same transaction survives. ID tokens are
+-- compared at second precision, as Firebase's validSince is.
+UPDATE auth.users SET tokens_valid_after = now()
+WHERE project_number = @project_number AND tenant_id = @tenant_id AND uid = @uid
+RETURNING tokens_valid_after;
 
 -- name: DeleteUser :execrows
 DELETE FROM auth.users WHERE project_number = @project_number AND tenant_id = @tenant_id AND uid = @uid;

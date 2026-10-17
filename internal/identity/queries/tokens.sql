@@ -5,6 +5,17 @@ VALUES (@token_hash, @project_number, @tenant_id, @uid, @sign_in_provider, sqlc.
 -- name: GetRefreshToken :one
 SELECT * FROM auth.refresh_tokens WHERE project_number = @project_number AND token_hash = @token_hash;
 
+-- name: DeleteRefreshToken :exec
+DELETE FROM auth.refresh_tokens WHERE project_number = @project_number AND token_hash = @token_hash;
+
+-- name: PurgeOrphanRefreshTokens :execrows
+-- scope: global — housekeeping across projects: tokens of deleted users, or revoked long ago.
+DELETE FROM auth.refresh_tokens r
+WHERE r.created_at < now() - interval '30 days'
+  AND NOT EXISTS (SELECT 1 FROM auth.users u
+                  WHERE u.project_number = r.project_number AND u.tenant_id = r.tenant_id
+                    AND u.uid = r.uid AND u.tokens_valid_after <= r.created_at);
+
 -- name: TouchRefreshToken :exec
 UPDATE auth.refresh_tokens SET last_used_at = now() WHERE project_number = @project_number AND token_hash = @token_hash;
 

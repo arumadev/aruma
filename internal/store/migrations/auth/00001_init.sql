@@ -77,6 +77,9 @@ CREATE TABLE auth.user_providers (
     FOREIGN KEY (project_number, tenant_id, uid) REFERENCES auth.users ON DELETE CASCADE
 );
 
+-- Rows outlive their user on purpose: a refresh after deletion or revocation must answer
+-- USER_NOT_FOUND or TOKEN_EXPIRED, which make the client SDKs sign out, rather than
+-- INVALID_REFRESH_TOKEN, which leaves them stuck. Housekeeping removes them later.
 CREATE TABLE auth.refresh_tokens (
     token_hash       bytea PRIMARY KEY,   -- HMAC; the token itself is never stored
     project_number   bigint NOT NULL,
@@ -86,8 +89,7 @@ CREATE TABLE auth.refresh_tokens (
     custom_claims    jsonb,               -- claims carried by a custom-token sign-in
     auth_time        timestamptz NOT NULL,
     created_at       timestamptz NOT NULL DEFAULT now(),
-    last_used_at     timestamptz,
-    FOREIGN KEY (project_number, tenant_id, uid) REFERENCES auth.users ON DELETE CASCADE
+    last_used_at     timestamptz
 );
 CREATE INDEX refresh_tokens_user_idx ON auth.refresh_tokens (project_number, tenant_id, uid);
 
