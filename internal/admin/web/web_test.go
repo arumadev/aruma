@@ -126,3 +126,22 @@ func TestEmbeddedFSLoads(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestStyleHashesFromManifest(t *testing.T) {
+	fsys := export()
+	good := "'sha256-38RhXrc7EdReTKsOm23ZPOCUgniTUUcjky8QOOrQx6o='"
+	fsys["csp.json"] = &fstest.MapFile{Data: []byte(`{"styleSrcElem":["` + good + `"]}`)}
+	h, err := New(fsys)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if csp := get(t, h, "/").Header().Get("Content-Security-Policy"); !strings.Contains(csp, "style-src 'self' "+good+";") {
+		t.Fatalf("style hash missing: %s", csp)
+	}
+	for _, bad := range []string{`'unsafe-inline'`, `* data:`, `'sha256-x'; script-src *`} {
+		fsys["csp.json"] = &fstest.MapFile{Data: []byte(`{"styleSrcElem":["` + strings.ReplaceAll(bad, `"`, `\"`) + `"]}`)}
+		if _, err := New(fsys); err == nil {
+			t.Errorf("accepted %s", bad)
+		}
+	}
+}

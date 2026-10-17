@@ -12,6 +12,9 @@ import (
 	"embed"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"io/fs"
 	"mime"
 	"net/http"
@@ -53,8 +56,12 @@ type Handler struct {
 // New indexes fsys. It reads every file once, so the handler never touches the filesystem
 // afterwards.
 func New(fsys fs.FS) (*Handler, error) {
+	styles, err := styleHashes(fsys)
+	if err != nil {
+		return nil, err
+	}
 	h := &Handler{files: map[string]*file{}}
-	err := fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
+	err = fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || strings.HasPrefix(path.Base(p), ".") {
 			return err
 		}
@@ -70,7 +77,7 @@ func New(fsys fs.FS) (*Handler, error) {
 			immutable:   strings.HasPrefix(p, "_next/static/"),
 		}
 		if strings.HasSuffix(p, ".html") {
-			f.csp = policy(body)
+			f.csp = policy(body, styles)
 		}
 		h.files[p] = f
 		return nil
@@ -98,8 +105,36 @@ func contentType(p string) string {
 
 var inlineScript = regexp.MustCompile(`(?s)<script(\s[^>]*)?>(.*?)</script>`)
 
-// policy builds the page's CSP: same-origin everything, plus the hash of each inline script.
-func policy(html []byte) string {
+var cspHash = regexp.MustCompile(`^'sha256-[A-Za-z0-9+/]{43}='$`)
+
+// styleHashes reads csp.json from the export: the hashes of the fixed <style> elements the
+// dashboard's component library inserts at runtime. Anything but a well-formed hash is refused,
+// so the file cannot widen the policy.
+func styleHashes(fsys fs.FS) ([]string, error) {
+	b, err := fs.ReadFile(fsys, "csp.json")
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var manifest struct {
+		StyleSrcElem []string `json:"styleSrcElem"`
+	}
+	if err := json.Unmarshal(b, &manifest); err != nil {
+		return nil, fmt.Errorf("csp.json: %w", err)
+	}
+	for _, h := range manifest.StyleSrcElem {
+		if !cspHash.MatchString(h) {
+			return nil, fmt.Errorf("csp.json: %q is not a sha256 source", h)
+		}
+	}
+	return manifest.StyleSrcElem, nil
+}
+
+// policy builds the page's CSP: same-origin everything, plus the hash of each inline script and
+// of each known runtime stylesheet.
+func policy(html []byte, styles []string) string {
 	var hashes []string
 	seen := map[string]bool{}
 	for _, m := range inlineScript.FindAllSubmatch(html, -1) {
@@ -118,7 +153,11 @@ func policy(html []byte) string {
 	if len(hashes) > 0 {
 		scripts += " " + strings.Join(hashes, " ")
 	}
-	return "default-src 'self'; script-src " + scripts + "; style-src 'self'; img-src 'self' data:; " +
+	style := "'self'"
+	if len(styles) > 0 {
+		style += " " + strings.Join(styles, " ")
+	}
+	return "default-src 'self'; script-src " + scripts + "; style-src " + style + "; img-src 'self' data:; " +
 		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 }
 
