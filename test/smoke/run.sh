@@ -91,8 +91,11 @@ run_flutter_ios() {
       flutter create --platforms=ios --org com.aruma --project-name smoke . >/dev/null
       # Drop the template files flutter create adds next to ours.
       rm -rf test/widget_test.dart README.md .idea smoke.iml analysis_options.yaml
-      # firebase_core needs iOS 15.
-      sed -i '' "s/^# platform :ios, '[0-9.]*'/platform :ios, '15.0'/" ios/Podfile
+      # firebase_core needs iOS 15. Newer Flutter releases use Swift Package Manager and write
+      # no Podfile; the project setting covers both.
+      if [[ -f ios/Podfile ]]; then
+        sed -i '' "s/^# platform :ios, '[0-9.]*'/platform :ios, '15.0'/" ios/Podfile
+      fi
       sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 15.0;/' ios/Runner.xcodeproj/project.pbxproj
     fi
     flutter test integration_test -d "$sim"
