@@ -25,7 +25,17 @@ type Handlers struct {
 	Console http.Handler // /console/v1/
 	Mgmt    http.Handler // /v1beta1/
 	OAuth   http.Handler // /oauth2/
+	Auth    http.Handler // AuthPrefixes: the Identity Toolkit, Secure Token and discovery paths (ADR-014)
 	Static  http.Handler // everything else: the dashboard
+}
+
+// AuthPrefixes are the paths routed to Handlers.Auth.
+var AuthPrefixes = []string{
+	"/identitytoolkit.googleapis.com/",
+	"/securetoken.googleapis.com/",
+	"/www.googleapis.com/identitytoolkit/",
+	"/issuers/",
+	"/session-issuers/",
 }
 
 // Server owns the public and metrics listeners.
@@ -48,6 +58,9 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("/console/v1/", s.metrics.Instrument("console", apiOnly(s.handlers.Console)))
 	mux.Handle("/v1beta1/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
 	mux.Handle("/oauth2/", s.metrics.Instrument("oauth", apiOnly(s.handlers.OAuth)))
+	for _, prefix := range AuthPrefixes {
+		mux.Handle(prefix, s.metrics.Instrument("auth", apiOnly(s.handlers.Auth)))
+	}
 	mux.Handle("GET /healthz", s.metrics.Instrument("health", http.HandlerFunc(s.healthz)))
 	mux.Handle("GET /readyz", s.metrics.Instrument("health", http.HandlerFunc(s.readyz)))
 	static := s.handlers.Static
@@ -58,9 +71,9 @@ func (s *Server) Handler() http.Handler {
 	return httpx.Common(s.securityHeaders(mux), s.log, s.cfg.TrustedProxyPrefixes())
 }
 
-// securityHeaders applies the headers every response carries (ADR-010 S-8, S-9). No CORS
-// header is ever sent. API responses get a CSP that forbids everything; the dashboard
-// handler replaces it with its own per-page policy.
+// securityHeaders applies the headers every response carries (ADR-010 S-8, S-9). Only the
+// Auth client and discovery routes add CORS headers (ADR-014). API responses get a CSP that
+// forbids everything; the dashboard handler replaces it with its own per-page policy.
 func (s *Server) securityHeaders(next http.Handler) http.Handler {
 	hsts := s.cfg.PublicBaseURL().Scheme == "https"
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

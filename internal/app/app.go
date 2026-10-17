@@ -15,6 +15,8 @@ import (
 	"github.com/osama300/aurma-project/internal/admin/oauth"
 	"github.com/osama300/aurma-project/internal/admin/web"
 	"github.com/osama300/aurma-project/internal/config"
+	authapi "github.com/osama300/aurma-project/internal/identity/api"
+	identity "github.com/osama300/aurma-project/internal/identity/core"
 	"github.com/osama300/aurma-project/internal/platform/authn"
 	"github.com/osama300/aurma-project/internal/platform/crypto"
 	"github.com/osama300/aurma-project/internal/platform/metrics"
@@ -27,6 +29,7 @@ import (
 type App struct {
 	Config  *config.Config
 	Service *core.Service
+	Auth    *identity.Service
 	Server  *server.Server
 	Console *console.API
 	Mgmt    *mgmt.API
@@ -56,7 +59,8 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	if err != nil {
 		return nil, err
 	}
-	svc := core.New(pool, keys, crypto.NewHasher(st.argon2, argon2Concurrency), core.Options{
+	hasher := crypto.NewHasher(st.argon2, argon2Concurrency)
+	svc := core.New(pool, keys, hasher, core.Options{
 		SignupOpen:      cfg.SignupOpen,
 		IdleTimeout:     cfg.Session.IdleTimeout,
 		AbsoluteTimeout: cfg.Session.AbsoluteTimeout,
@@ -72,6 +76,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	}
 	consoleAPI := console.New(svc, auth, logger, console.Options{Version: version, SecureCookies: cfg.SecureCookies()})
 	mgmtAPI := mgmt.New(svc, auth, logger)
+	authSvc := identity.New(pool, svc, keys, hasher, strings.TrimSuffix(cfg.PublicBaseURL().String(), "/"), logger)
 	dashboard, err := web.New(web.Embedded())
 	if err != nil {
 		return nil, fmt.Errorf("dashboard: %w", err)
@@ -81,9 +86,10 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		Console: consoleAPI.Handler(),
 		Mgmt:    mgmtAPI.Handler(),
 		OAuth:   oauth.New(svc, logger).Handler(),
+		Auth:    authapi.New(authSvc, logger).Handler(),
 		Static:  dashboard,
 	})
-	return &App{Config: cfg, Service: svc, Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
+	return &App{Config: cfg, Service: svc, Auth: authSvc, Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
 }
 
 // AnnounceSetup prints the one-time setup code when the instance has no account yet.
@@ -137,6 +143,9 @@ func (a *App) housekeeping(ctx context.Context) {
 	for {
 		if _, err := a.Service.PurgeExpired(ctx); err != nil && ctx.Err() == nil {
 			a.log.Error("housekeeping", "error", err)
+		}
+		if err := a.Auth.Housekeep(ctx); err != nil && ctx.Err() == nil {
+			a.log.Error("auth housekeeping", "error", err)
 		}
 		select {
 		case <-ctx.Done():
