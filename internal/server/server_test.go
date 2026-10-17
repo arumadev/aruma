@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -109,5 +110,26 @@ func TestReadiness(t *testing.T) {
 	}
 	if resp := get(t, newServer(t, nil, Handlers{}), "GET", "/healthz", nil); resp.StatusCode != 200 {
 		t.Fatalf("healthz: %d", resp.StatusCode)
+	}
+}
+
+// Review H-1: client-chosen methods must not create metric series.
+func TestMetricsMethodLabelIsBounded(t *testing.T) {
+	m := metrics.New("test")
+	s := New(testConfig(t, "https://aruma.test"), slog.New(slog.NewTextHandler(io.Discard, nil)), nil, m, Handlers{})
+	h := s.Handler()
+	for i := 0; i < 100; i++ {
+		r := httptest.NewRequest("GET", "/v1beta1/x", nil)
+		r.Method = strings.Repeat("X", 1000) + string(rune('A'+i%26)) + strconv.Itoa(i)
+		h.ServeHTTP(httptest.NewRecorder(), r)
+	}
+	families, err := m.Registry.Gather()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range families {
+		if f.GetName() == "aruma_http_requests_total" && len(f.GetMetric()) > 8 {
+			t.Fatalf("%d request series from random methods", len(f.GetMetric()))
+		}
 	}
 }

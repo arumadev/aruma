@@ -57,9 +57,20 @@ func (m *Metrics) Instrument(area string, next http.Handler) http.Handler {
 		start := time.Now()
 		rec := &httpx.StatusRecorder{ResponseWriter: w, Status: http.StatusOK}
 		next.ServeHTTP(rec, r)
-		m.requests.WithLabelValues(area, r.Method, strconv.Itoa(rec.Status)).Inc()
+		m.requests.WithLabelValues(area, Method(r.Method), strconv.Itoa(rec.Status)).Inc()
 		m.duration.WithLabelValues(area).Observe(time.Since(start).Seconds())
 	})
+}
+
+// Method maps an HTTP method to a fixed label set. Clients choose the method, so using it raw
+// would let anyone create unbounded series.
+func Method(m string) string {
+	switch m {
+	case http.MethodGet, http.MethodHead, http.MethodPost, http.MethodPut,
+		http.MethodPatch, http.MethodDelete, http.MethodOptions:
+		return m
+	}
+	return "OTHER"
 }
 
 // Handler serves the registry in the Prometheus text format.

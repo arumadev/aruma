@@ -57,7 +57,7 @@ func Common(next http.Handler, logger *slog.Logger, trusted []netip.Prefix) http
 			}
 			logger.Info("request",
 				"request_id", id,
-				"method", r.Method,
+				"method", truncate(r.Method, 16),
 				"path", r.URL.Path,
 				"status", rec.Status,
 				"duration_ms", time.Since(start).Milliseconds(),
@@ -90,3 +90,11 @@ func (s *StatusRecorder) Write(b []byte) (int, error) {
 
 // Unwrap lets http.ResponseController reach the underlying writer.
 func (s *StatusRecorder) Unwrap() http.ResponseWriter { return s.ResponseWriter }
+
+// truncate bounds client-controlled values before they reach the log.
+func truncate(s string, n int) string {
+	if len(s) > n {
+		return s[:n] + "…"
+	}
+	return s
+}
