@@ -1,8 +1,10 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { useTranslations } from 'use-intl';
 import { Select } from '@/components/ui/Select';
+import { onProjectChanged } from '@/features/project/projectEvents';
 import * as api from '@/lib/api/console';
 import { useResource } from '@/lib/hooks/useResource';
 import { routes } from '@/lib/routes';
@@ -19,6 +21,8 @@ export function ProjectSwitcher({ projectId }: { projectId: string }) {
   const pathname = normalizePath(usePathname());
   // Deleted projects are listed too, so the current one keeps its name while it awaits restore.
   const projects = useResource((signal) => api.listProjects({ pageSize: 1000, showDeleted: true }, signal), []);
+  const { reload } = projects;
+  useEffect(() => onProjectChanged(reload), [reload]);
 
   const options = (projects.data?.projects ?? [])
     .filter((p) => p.state === 'ACTIVE' || p.projectId === projectId)

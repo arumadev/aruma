@@ -14,6 +14,7 @@ import { useResource } from '@/lib/hooks/useResource';
 import { routes } from '@/lib/routes';
 import { ProjectContext, type ProjectContextValue } from './ProjectContext';
 import styles from './ProjectFrame.module.css';
+import { notifyProjectChanged } from './projectEvents';
 
 /** Loads the project named by `?id=` once for all of its pages. */
 export function ProjectFrame({ children }: { children: ReactNode }) {
@@ -22,7 +23,19 @@ export function ProjectFrame({ children }: { children: ReactNode }) {
   const projectId = useSearchParams().get('id') ?? '';
   const resource = useResource((signal) => api.getProject(projectId, signal), [projectId], projectId !== '');
   const { data: project, setData } = resource;
-  const value = useMemo<ProjectContextValue | null>(() => (project ? { project, setProject: setData } : null), [project, setData]);
+  const value = useMemo<ProjectContextValue | null>(
+    () =>
+      project
+        ? {
+            project,
+            setProject: (updated) => {
+              setData(updated);
+              notifyProjectChanged();
+            },
+          }
+        : null,
+    [project, setData],
+  );
 
   if (!projectId) {
     return (

@@ -205,6 +205,14 @@ test.describe('service accounts', () => {
 });
 
 test.describe('project settings', () => {
+  test('renames the project everywhere it is shown', async ({ page, api, l }) => {
+    await open(page, '/project/settings/?id=chat-app', l('إعدادات المشروع', 'Project settings'));
+    await page.getByLabel(l('اسم المشروع', 'Project name')).fill('Chat Platform');
+    await page.getByRole('button', { name: l('حفظ', 'Save') }).click();
+    await expect(page.getByRole('banner').getByRole('button', { name: /Chat Platform/ })).toBeVisible();
+    expect(api.calls.find((c) => c.method === 'PATCH')).toMatchObject({ body: { displayName: 'Chat Platform', etag: '1_chat-app' } });
+  });
+
   test('deletes only after the id is typed, then restores', async ({ page, l }) => {
     await open(page, '/project/settings/?id=chat-app', l('إعدادات المشروع', 'Project settings'));
     await page.getByRole('button', { name: l('حذف المشروع', 'Delete project') }).click();
