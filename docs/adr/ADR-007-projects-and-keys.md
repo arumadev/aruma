@@ -1,6 +1,6 @@
 # ADR-007: المشاريع والمفاتيح والمعرّفات
 
-- الحالة: معتمد مبدئيًا. يُجمَّد بعد نجاح اختبارات الدخان (T21).
+- الحالة: **مجمّد** منذ 2026-10-18 بعد نجاح اختبارات الدخان (T21)، عدا `databaseURL` الذي يبقى مبدئيًا حتى المرحلة 3.
 - التاريخ: 2026-10-18
 - المرحلة: 1
 - المراجع: [docs/research/client-config-formats.md](../research/client-config-formats.md)، [docs/research/management-api.md](../research/management-api.md)
@@ -50,6 +50,28 @@
 - حذف المشروع أو التطبيق مؤجّل 30 يومًا (`state = DELETED`، و`expire_time`)، ويمكن الاسترجاع خلالها.
 - `project_id` يبقى محجوزًا بعد الحذف النهائي.
 - `package_name` و`bundle_id` ثابتان بعد الإنشاء، ويفرض ذلك trigger في القاعدة.
+
+## نتائج الدخان (T21)
+
+شغّل `test/smoke/run.sh` المكتبات الرسمية على ملفات ولّدها خادم حقيقي، مع حجب كل اتصال شبكة:
+
+| الهدف | المكتبة | ما ثبت |
+|---|---|---|
+| Web | firebase 11 و12 و13 | `initializeApp` و`getInstallations` يقبلان الإعداد |
+| Android | google-services 4.5.0، وfirebase-installations 20 | الإضافة تولّد الموارد، و`FirebaseApp` يتهيّأ، وفحوص Installations الداخلية تقبل `app_id` والمفتاح |
+| iOS | FirebaseCore وFirebaseInstallations 12.19 | `configure` يقبل `GOOGLE_APP_ID`، وInstallations يقبل المفتاح، ومفتاح من 38 حرفًا يُرفض كضابط سلبي |
+| Flutter | firebase_core 5 | `firebase_options.dart` يُترجَم، ويمر عبر SDK iOS الأصلي في اختبار تكامل |
+| Admin Node | firebase-admin 14 | `cert()` و`initializeApp` يقبلان ملف المفتاح |
+| Admin Go | firebase-admin-go 4 | `NewApp` وعميل Auth يقبلان ملف المفتاح |
+
+### ملاحظة لقرار `databaseURL` في المرحلة 3
+
+- عميل قاعدة البيانات في Admin SDK للغة Go يعامل أي `databaseURL` غير https كعنوان محاكٍ بصيغة `host:port`، فيرفض `http://host/?ns=…`. ويستعمل عنوان https كما هو أساسًا تُلحق به المسارات، فوجود `?ns=` فيه سيكسر بناء المسارات.
+- يوثّق ذلك `test/smoke/admin-go` (`TestDatabaseURLForms`).
+- المرشّحان للمرحلة 3:
+  - نطاق فرعي لكل قاعدة: `https://<ns>.<domain>`، وتفهمه كل المكتبات.
+  - مسار ثابت على المدخل الواحد، بشرط أن تقرأه مكتبات العميل.
+- لا تمس هذه الملاحظة المرحلة 1، لأن الخادم المحلي وحده يعمل على http، ولا مكتبة تستعمل `databaseURL` قبل المرحلة 3.
 
 ## البدائل المرفوضة
 
