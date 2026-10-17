@@ -59,11 +59,38 @@ func saveCredentials(env func(string) string, c credentials) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := os.MkdirAll(filepath.Dir(p), 0o700); err != nil {
+	dir := filepath.Dir(p)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", err
+	}
+	if err := os.Chmod(dir, 0o700); err != nil { // MkdirAll leaves an existing directory as is
 		return "", err
 	}
 	b, _ := json.MarshalIndent(c, "", "  ")
-	return p, os.WriteFile(p, append(b, '\n'), 0o600)
+	return p, writePrivate(p, append(b, '\n'))
+}
+
+// writePrivate writes a secret file readable by its owner only. It writes a fresh temporary
+// file and renames it into place, so neither an existing file's mode nor a symlink planted at
+// path is inherited.
+func writePrivate(path string, data []byte) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".arumactl-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmp.Name())
+	if err := tmp.Chmod(0o600); err != nil {
+		tmp.Close()
+		return err
+	}
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmp.Name(), path)
 }
 
 // client calls the console API with a CLI token.

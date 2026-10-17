@@ -151,3 +151,25 @@ func TestDeveloperFlow(t *testing.T) {
 		t.Fatal("still logged in after logout")
 	}
 }
+
+// Review L-6: secret files are private even when they already existed with wider modes, and
+// a symlink at the path is replaced rather than followed.
+func TestWritePrivate(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "elsewhere")
+	os.WriteFile(target, []byte("keep"), 0o644)
+	p := filepath.Join(dir, "key.json")
+	if err := os.Symlink(target, p); err != nil {
+		t.Fatal(err)
+	}
+	if err := writePrivate(p, []byte("secret")); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(target); string(b) != "keep" {
+		t.Fatal("followed the symlink")
+	}
+	fi, err := os.Lstat(p)
+	if err != nil || fi.Mode()&os.ModeSymlink != 0 || fi.Mode().Perm() != 0o600 {
+		t.Fatalf("mode %v, %v", fi.Mode(), err)
+	}
+}

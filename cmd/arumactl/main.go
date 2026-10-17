@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/netip"
 	"net/url"
 	"os"
 	"strings"
@@ -153,6 +154,9 @@ func (c *cli) login(args []string) error {
 	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
 		return fmt.Errorf("invalid server URL %q", server)
 	}
+	if u.Scheme == "http" && !isLoopback(u.Hostname()) {
+		fmt.Fprintln(c.stderr, "warning: this server uses plain http; the token will cross the network unencrypted")
+	}
 	token, err := c.readSecret("CLI token: ")
 	if err != nil {
 		return err
@@ -216,4 +220,12 @@ func (c *cli) print(v any, rows [][]string, header ...string) error {
 		fmt.Fprintln(w, strings.Join(r, "\t"))
 	}
 	return w.Flush()
+}
+
+func isLoopback(host string) bool {
+	if host == "localhost" {
+		return true
+	}
+	ip, err := netip.ParseAddr(host)
+	return err == nil && ip.IsLoopback()
 }

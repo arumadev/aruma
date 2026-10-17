@@ -186,14 +186,18 @@ func (c *cli) appsSDKConfig(api *client, args []string) error {
 		_, err := c.stdout.Write(r.body)
 		return err
 	}
-	return c.save(out, r, 0o644)
+	return c.save(out, r, false)
 }
 
-func (c *cli) save(out string, r *response, mode os.FileMode) error {
+func (c *cli) save(out string, r *response, private bool) error {
 	if fi, err := os.Stat(out); err == nil && fi.IsDir() && r.filename != "" {
 		out = strings.TrimSuffix(out, "/") + "/" + r.filename
 	}
-	if err := os.WriteFile(out, r.body, mode); err != nil {
+	write := func(p string, b []byte) error { return os.WriteFile(p, b, 0o644) }
+	if private {
+		write = writePrivate
+	}
+	if err := write(out, r.body); err != nil {
 		return err
 	}
 	fmt.Fprintf(c.stdout, "saved %s\n", out)
@@ -353,7 +357,7 @@ func (c *cli) saKeysCreate(api *client, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := c.save(out, r, 0o600); err != nil {
+	if err := c.save(out, r, true); err != nil {
 		return err
 	}
 	fmt.Fprintln(c.stderr, "Keep this file safe: Aruma does not store the private key and cannot show it again.")
