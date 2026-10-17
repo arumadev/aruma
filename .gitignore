@@ -43,3 +43,7 @@ aruma.yaml
 # Local build caches (kept off the system disk)
 /.cache/
 /test/smoke/android/app/google-services.json
+/test/smoke/ios/Tests/ArumaSmokeTests/Fixtures/*
+!/test/smoke/ios/Tests/ArumaSmokeTests/Fixtures/.gitkeep
+/test/smoke/ios/.build/
+/test/smoke/ios/.swiftpm/
