@@ -36,6 +36,10 @@ lint: ## gofmt, go vet and the dependency rules
 	$(GO) vet ./...
 	$(GO) test -count=1 ./internal/archtest/
 
+.PHONY: smoke
+smoke: ## Run the SDK smoke tests (all targets this machine supports, or SMOKE="web ios ...")
+	test/smoke/run.sh $(SMOKE)
+
 .PHONY: sqlc
 sqlc: ## Regenerate query code from SQL
 	$(SQLC) generate
