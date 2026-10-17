@@ -7,8 +7,18 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same branch supersedes the running checks.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ARUMA_TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+  ARUMA_TEST_REQUIRE_DB: "1"
+
 jobs:
   go:
+    name: Go (lint, unit, acceptance, isolation)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -19,8 +29,6 @@ jobs:
         options: >-
           --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      ARUMA_TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
-      ARUMA_TEST_REQUIRE_DB: "1"
       ARUMA_PG_BIN: /usr/lib/postgresql/18/bin
     steps:
       - uses: actions/checkout@v7
@@ -32,11 +40,44 @@ jobs:
           sudo apt-get install -y -q postgresql-common
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y -q postgresql-client-18
-      - name: Lint
+      - name: Lint (gofmt, vet, dependency rules)
         run: make lint
-      - name: Generated code is current
+      - name: Generated query code is current
         run: make sqlc-check
       - name: Test
         run: make test
       - name: Build
         run: make build
+
+  smoke:
+    name: SDK smoke (web, Admin Node, Admin Go, Android)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            test/smoke/admin-go/go.sum
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: test/smoke/*/package-lock.json
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+          cache-dependency-path: test/smoke/android/**/*.gradle.kts
+      - name: Smoke tests
+        run: test/smoke/run.sh web admin-node admin-go android
