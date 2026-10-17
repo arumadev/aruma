@@ -1,0 +1,86 @@
+.apps {
+  display: flex;
+  flex-direction: column;
+  margin-inline: calc(-1 * var(--space-3));
+}
+
+.app {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  min-block-size: 64px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--md-sys-shape-corner-small);
+  color: var(--md-sys-color-on-surface);
+  text-decoration: none;
+  outline: none;
+}
+
+.app[data-hovered] {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-hover), transparent);
+}
+
+.app[data-focus-visible] {
+  outline: var(--focus-ring);
+  outline-offset: -3px;
+}
+
+.app > svg {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.appIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: 50%;
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.appText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.appName {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  font: var(--md-sys-typescale-title-medium);
+}
+
+.appMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-small);
+}
+
+.services {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: var(--space-3);
+}
+
+.service {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-small);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.serviceName {
+  flex: 1;
+  font: var(--md-sys-typescale-label-large);
+}

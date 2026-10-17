@@ -1,0 +1,35 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100dvb;
+  background: var(--md-sys-color-surface-container-low);
+}
+
+.top {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-2) var(--space-3);
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-6);
+  align-items: center;
+  padding: var(--space-4);
+}
+
+.card {
+  inline-size: min(100%, 440px);
+  padding: var(--space-8) var(--space-6);
+  border-radius: var(--md-sys-shape-corner-extra-large);
+  background: var(--md-sys-color-surface-container-lowest);
+  box-shadow: var(--md-sys-elevation-1);
+}
+
+@media (width < 600px) {
+  .card {
+    padding: var(--space-6) var(--space-4);
+  }
+}

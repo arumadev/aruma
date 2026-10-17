@@ -1,0 +1,27 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.filter {
+  flex: 0 1 320px;
+}
+
+.action {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.action > :last-child {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.75rem;
+}
+
+.more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}

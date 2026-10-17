@@ -1,0 +1,41 @@
+.empty {
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-medium);
+}
+
+.add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.field {
+  flex: 1 1 320px;
+}
+
+.button {
+  margin-block-start: calc(var(--space-5) + 4px);
+}
+
+.help {
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-medium);
+}
+
+.help summary {
+  inline-size: fit-content;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  color: var(--md-sys-color-primary);
+  cursor: pointer;
+}
+
+.command {
+  overflow: auto;
+  margin-block-start: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--md-sys-shape-corner-small);
+  background: var(--md-sys-color-surface-container-low);
+  color: var(--md-sys-color-on-surface);
+  text-align: start;
+}

@@ -1,0 +1,74 @@
+.stepper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+}
+
+.stepItem {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-label-large);
+}
+
+.stepNumber {
+  display: grid;
+  place-items: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: 50%;
+  font: var(--md-sys-typescale-label-medium);
+}
+
+.stepItem[data-done] .stepNumber {
+  border-color: var(--md-sys-color-secondary-container);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.stepItem[aria-current='step'] {
+  color: var(--md-sys-color-on-surface);
+}
+
+.stepItem[aria-current='step'] .stepNumber {
+  border-color: var(--md-sys-color-primary);
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.stepTitle {
+  color: var(--md-sys-color-on-surface);
+  font: var(--md-sys-typescale-title-large);
+  outline: none;
+}
+
+.summary {
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-medium);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: space-between;
+  padding-block-start: var(--space-2);
+}
+
+@media (width < 600px) {
+  .stepLabel {
+    display: none;
+  }
+
+  .stepItem[aria-current='step'] .stepLabel {
+    display: inline;
+  }
+}

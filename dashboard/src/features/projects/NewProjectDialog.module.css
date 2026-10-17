@@ -1,0 +1,20 @@
+.permanent {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-small);
+}
+
+.status {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-label-medium);
+  white-space: nowrap;
+}
+
+.available {
+  color: var(--md-sys-color-primary);
+}

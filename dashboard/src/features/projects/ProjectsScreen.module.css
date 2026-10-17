@@ -1,0 +1,83 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-6);
+  align-items: flex-end;
+}
+
+.search {
+  flex: 1 1 280px;
+  max-inline-size: 480px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: var(--space-4);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  block-size: 100%;
+  padding: var(--space-5);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-on-surface);
+  text-decoration: none;
+  outline: none;
+  transition:
+    background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard),
+    box-shadow var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+}
+
+.card[data-hovered] {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-hover), var(--md-sys-color-surface-container-lowest));
+  box-shadow: var(--md-sys-elevation-1);
+}
+
+.card[data-focus-visible] {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.cardTop {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-block-end: var(--space-2);
+}
+
+.name {
+  font: var(--md-sys-typescale-title-medium);
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-small);
+}
+
+.metaLabel {
+  flex: none;
+  min-inline-size: 4.5em;
+}
+
+.more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}
