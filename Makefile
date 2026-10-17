@@ -6,6 +6,8 @@ VERSION      ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo
 LDFLAGS      := -s -w -X main.version=$(VERSION)
 SQLC_VERSION := v1.31.1
 SQLC         := $(GO) run github.com/sqlc-dev/sqlc/cmd/sqlc@$(SQLC_VERSION)
+# PostgreSQL client tools: from ARUMA_PG_BIN when set (e.g. DBngin's bin directory), else PATH.
+PSQL          = $(if $(ARUMA_PG_BIN),$(ARUMA_PG_BIN)/psql,psql)
 
 # Local development defaults. Override in the environment or a .env file.
 -include .env
@@ -16,6 +18,20 @@ export ARUMA_TEST_DATABASE_URL ?= postgres://postgres@127.0.0.1:5432/postgres?ss
 .PHONY: help
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-16s %s\n", $$1, $$2}'
+
+.PHONY: dashboard
+dashboard: ## Build the dashboard and stage it for embedding
+	cd dashboard && npm ci --no-audit --no-fund && npm run build
+	find internal/admin/web/dist -mindepth 1 ! -name .gitkeep -delete
+	cp -R dashboard/out/. internal/admin/web/dist/
+
+.PHONY: dev
+dev: db-create ## Run the server locally on http://localhost:8080 (creates .env on first run)
+	@test -f .env || { printf 'ARUMA_DATABASE_URL=%s\nARUMA_PUBLIC_URL=%s\nARUMA_MASTER_KEY=%s\n' \
+		'$(ARUMA_DATABASE_URL)' '$(ARUMA_PUBLIC_URL)' "$$(openssl rand -base64 32)" > .env; chmod 600 .env; echo "created .env"; }
+	@test -f internal/admin/web/dist/index.html || echo "note: the dashboard is not built; run 'make dashboard' first"
+	$(GO) build -o bin/aruma ./cmd/aruma
+	set -a && . ./.env && set +a && bin/aruma migrate up && exec bin/aruma serve
 
 .PHONY: build
 build: ## Build the binaries into bin/
@@ -50,8 +66,8 @@ sqlc-check: ## Fail if generated query code is stale
 
 .PHONY: db-create
 db-create: ## Create the local development database "aruma"
-	psql "$(ARUMA_TEST_DATABASE_URL)" -tc "SELECT 1 FROM pg_database WHERE datname = 'aruma'" | grep -q 1 \
-		|| psql "$(ARUMA_TEST_DATABASE_URL)" -c 'CREATE DATABASE aruma'
+	$(PSQL) "$(ARUMA_TEST_DATABASE_URL)" -tc "SELECT 1 FROM pg_database WHERE datname = 'aruma'" | grep -q 1 \
+		|| $(PSQL) "$(ARUMA_TEST_DATABASE_URL)" -c 'CREATE DATABASE aruma'
 
 .PHONY: migrate
 migrate: ## Apply migrations to the local database

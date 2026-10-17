@@ -47,3 +47,5 @@ aruma.yaml
 !/test/smoke/ios/Tests/ArumaSmokeTests/Fixtures/.gitkeep
 /test/smoke/ios/.build/
 /test/smoke/ios/.swiftpm/
+/internal/admin/web/dist/*
+!/internal/admin/web/dist/.gitkeep

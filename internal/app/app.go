@@ -13,6 +13,7 @@ import (
 	"github.com/osama300/aurma-project/internal/admin/console"
 	"github.com/osama300/aurma-project/internal/admin/mgmt"
 	"github.com/osama300/aurma-project/internal/admin/oauth"
+	"github.com/osama300/aurma-project/internal/admin/web"
 	"github.com/osama300/aurma-project/internal/config"
 	"github.com/osama300/aurma-project/internal/platform/authn"
 	"github.com/osama300/aurma-project/internal/platform/crypto"
@@ -71,11 +72,16 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	}
 	consoleAPI := console.New(svc, auth, logger, console.Options{Version: version, SecureCookies: cfg.SecureCookies()})
 	mgmtAPI := mgmt.New(svc, auth, logger)
+	dashboard, err := web.New(web.Embedded())
+	if err != nil {
+		return nil, fmt.Errorf("dashboard: %w", err)
+	}
 
 	srv := server.New(cfg, logger, pool, metrics.New(version), server.Handlers{
 		Console: consoleAPI.Handler(),
 		Mgmt:    mgmtAPI.Handler(),
 		OAuth:   oauth.New(svc, logger).Handler(),
+		Static:  dashboard,
 	})
 	return &App{Config: cfg, Service: svc, Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
 }
