@@ -1,0 +1,18 @@
+# Aruma configuration. Every key can be overridden by an ARUMA_* environment variable
+# (e.g. ARUMA_DATABASE_URL). Unknown keys are rejected, so typos fail loudly.
+
+# Required.
+database_url: postgres://aruma:secret@127.0.0.1:5432/aruma?sslmode=disable
+public_url: https://aruma.example.com
+master_key: "<32 random bytes, base64: openssl rand -base64 32>"
+
+# Optional (defaults shown).
+listen: ":8080"
+metrics_listen: "127.0.0.1:9464"   # "" disables the private metrics listener
+log_level: info                    # debug, info, warn, error
+signup_open: false                 # let anyone create an account from the console
+# project_domain: aruma.example.com  # defaults to the host of public_url
+# trusted_proxies: ["10.0.0.0/8"]    # whose X-Forwarded-For is believed
+session:
+  idle_timeout: 30m
+  absolute_timeout: 8h
