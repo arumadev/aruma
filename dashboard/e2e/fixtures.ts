@@ -19,6 +19,8 @@ interface Fixtures {
   checkA11y: () => Promise<void>;
   /** Picks the message for the project's language. */
   l: <T>(ar: T, en: T) => T;
+  /** Content-Security-Policy violations seen during the test; it fails unless empty. */
+  cspViolations: string[];
 }
 
 export const test = base.extend<Options & Fixtures>({
@@ -51,6 +53,24 @@ export const test = base.extend<Options & Fixtures>({
       expect(serious.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
     });
   },
+
+  cspViolations: [
+    async ({ page }, use) => {
+      // The test server sends the production policy; any inline script or style it blocks fails the test.
+      const violations: string[] = [];
+      await page.exposeFunction('__reportCspViolation', (v: string) => violations.push(v));
+      await page.addInitScript(() => {
+        document.addEventListener('securitypolicyviolation', (e) => {
+          void (window as unknown as { __reportCspViolation: (v: string) => void }).__reportCspViolation(
+            `${e.violatedDirective} ${e.blockedURI} ${e.sample}`,
+          );
+        });
+      });
+      await use(violations);
+      expect(violations, 'Content-Security-Policy violations').toEqual([]);
+    },
+    { auto: true },
+  ],
 
   l: async ({ appLocale }, use) => {
     await use(<T,>(ar: T, en: T) => (appLocale === 'ar' ? ar : en));

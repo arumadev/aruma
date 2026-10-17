@@ -1,8 +1,11 @@
-// Serves the static export in out/ the way the Go server will: directory paths answer with
-// their index.html, everything else is a file. With ARUMA_API_URL set, /console/v1/ is proxied
-// to a running `aruma serve`, for the live end-to-end tests.
+// Serves the static export in out/ the way the Go server does (internal/admin/web): directory
+// paths answer with their index.html, everything else is a file, and every page carries the
+// same Content-Security-Policy, with the hash of each inline script and the style hashes from
+// csp.json. With ARUMA_API_URL set, /console/v1/ is proxied to a running `aruma serve`, for the
+// live end-to-end tests.
+import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { createServer, request as httpRequest } from 'node:http';
 import { extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +25,35 @@ const TYPES = {
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
 };
+
+const styleHashes = JSON.parse(await readFile(join(ROOT, 'csp.json'), 'utf8')).styleSrcElem;
+
+/** The page's policy, built like the Go server's: no inline script or style without a hash. */
+function policy(html) {
+  const scripts = new Set();
+  for (const [, attrs = '', body] of html.matchAll(/<script(\s[^>]*)?>([\s\S]*?)<\/script>/g)) {
+    if (attrs.includes('src=') || !body.trim()) continue;
+    scripts.add(`'sha256-${createHash('sha256').update(body).digest('base64')}'`);
+  }
+  return [
+    "default-src 'self'",
+    `script-src 'self' ${[...scripts].join(' ')}`,
+    `style-src 'self' ${styleHashes.join(' ')}`,
+    "img-src 'self' data:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join('; ');
+}
+
+async function sendHtml(res, file, status) {
+  const html = await readFile(file, 'utf8');
+  res.writeHead(status, { 'Content-Type': TYPES['.html'], 'Cache-Control': 'no-store', 'Content-Security-Policy': policy(html) });
+  res.end(html);
+}
 
 async function resolveFile(pathname) {
   const decoded = decodeURIComponent(pathname);
@@ -60,11 +92,8 @@ createServer(async (req, res) => {
   }
   const file = await resolveFile(url.pathname);
   if (file?.redirect) return res.writeHead(308, { Location: file.redirect + url.search }).end();
-  if (!file) {
-    const notFound = join(ROOT, '404.html');
-    res.writeHead(404, { 'Content-Type': TYPES['.html'] });
-    return createReadStream(notFound).on('error', () => res.end()).pipe(res);
-  }
+  if (!file) return sendHtml(res, join(ROOT, '404.html'), 404);
+  if (file.endsWith('.html')) return sendHtml(res, file, 200);
   res.writeHead(200, { 'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store' });
   createReadStream(file).pipe(res);
 }).listen(PORT, '127.0.0.1', () => {
