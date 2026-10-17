@@ -1,6 +1,7 @@
 package console
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -39,6 +40,9 @@ type credentialsJSON struct {
 	Locale      string `json:"locale"`
 }
 
+// maxEmailLen is the longest address RFC 5321 allows.
+const maxEmailLen = 254
+
 func normalize(email string) string { return strings.ToLower(strings.TrimSpace(email)) }
 
 // status is public: the dashboard reads it before anyone signs in.
@@ -64,7 +68,7 @@ var limits = map[string]any{
 }
 
 func (a *API) setup(w http.ResponseWriter, r *http.Request) {
-	if !a.limited(w, r, "") {
+	if !a.limited(w, r) {
 		return
 	}
 	var in credentialsJSON
@@ -81,7 +85,7 @@ func (a *API) setup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) signup(w http.ResponseWriter, r *http.Request) {
-	if !a.limited(w, r, "") {
+	if !a.limited(w, r) {
 		return
 	}
 	var in credentialsJSON
@@ -103,19 +107,27 @@ func (a *API) login(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	if !a.limited(w, r, in.Email) {
+	if !a.limited(w, r) {
+		return
+	}
+	// No real address is longer; refusing early keeps attacker-sized strings out of memory.
+	if len(in.Email) > maxEmailLen {
+		a.fail(w, r, apierr.Invalid("email", "Enter a valid email address."))
+		return
+	}
+	at := a.attempt(w, "login:"+normalize(in.Email))
+	if at == nil {
 		return
 	}
 	res, err := a.svc.Login(r.Context(), in.Email, in.Password, client(r))
+	at.Done(err == nil)
 	if err != nil {
 		if apierr.CodeOf(err) == apierr.Unauthenticated {
-			a.backoff.Fail(normalize(in.Email))
 			a.log.Info("login failed", "client_ip", httpx.ClientAddr(r.Context()).String())
 		}
 		a.fail(w, r, err)
 		return
 	}
-	a.backoff.Success(normalize(in.Email))
 	a.signedIn(w, res)
 }
 
@@ -179,7 +191,14 @@ func (a *API) changePassword(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	if err := a.svc.ChangePassword(r.Context(), authn.FromContext(r.Context()), in.CurrentPassword, in.NewPassword); err != nil {
+	p := authn.FromContext(r.Context())
+	at := a.attempt(w, "account:"+p.AccountID.String())
+	if at == nil {
+		return
+	}
+	err := a.svc.ChangePassword(r.Context(), p, in.CurrentPassword, in.NewPassword)
+	at.Done(!isCurrentPasswordError(err))
+	if err != nil {
 		a.fail(w, r, err)
 		return
 	}
@@ -251,14 +270,32 @@ func (a *API) listTokens(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) createToken(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Name       string `json:"name"`
-		ExpireDays int    `json:"expireDays"`
+		Name            string `json:"name"`
+		ExpireDays      int    `json:"expireDays"`
+		CurrentPassword string `json:"currentPassword"`
 	}
 	if err := httpx.DecodeJSON(r, &in, true); err != nil {
 		a.fail(w, r, err)
 		return
 	}
-	t, err := a.svc.CreateAccessToken(r.Context(), authn.FromContext(r.Context()), in.Name, time.Duration(in.ExpireDays)*24*time.Hour)
+	if in.ExpireDays < 0 || in.ExpireDays > 366 {
+		a.fail(w, r, apierr.Invalid("expireDays", "Token lifetime must be between 1 and 366 days, or 0 for no expiry."))
+		return
+	}
+	// A CLI token outlives the session, so minting one needs the password, not just a session
+	// that may have been stolen.
+	p := authn.FromContext(r.Context())
+	at := a.attempt(w, "account:"+p.AccountID.String())
+	if at == nil {
+		return
+	}
+	err := a.svc.CheckPassword(r.Context(), p, in.CurrentPassword)
+	at.Done(err == nil)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	t, err := a.svc.CreateAccessToken(r.Context(), p, in.Name, time.Duration(in.ExpireDays)*24*time.Hour)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -285,4 +322,19 @@ func pathUUID(r *http.Request, name string) (uuid.UUID, error) {
 		return uuid.Nil, apierr.New(apierr.NotFound, "Requested entity was not found.")
 	}
 	return id, nil
+}
+
+// isCurrentPasswordError reports whether err rejects the current password, as opposed to the
+// new one: only the former counts as a failed attempt.
+func isCurrentPasswordError(err error) bool {
+	if err == nil {
+		return false
+	}
+	for _, d := range apierr.From(err).Details {
+		b, _ := json.Marshal(d)
+		if strings.Contains(string(b), `"field":"currentPassword"`) {
+			return true
+		}
+	}
+	return false
 }

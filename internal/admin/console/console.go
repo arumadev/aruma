@@ -121,20 +121,25 @@ func (a *API) fail(w http.ResponseWriter, r *http.Request, err error) {
 	httpx.WriteError(w, r, a.log, err)
 }
 
-// limited applies the credential-endpoint limits. It reports false after writing a 429.
-func (a *API) limited(w http.ResponseWriter, r *http.Request, email string) bool {
-	ip := httpx.ClientAddr(r.Context()).String()
-	if ok, wait := a.ipLimit.Allow(ip); !ok {
+// limited applies the per-address bucket of the credential endpoints. It reports false after
+// writing a 429.
+func (a *API) limited(w http.ResponseWriter, r *http.Request) bool {
+	if ok, wait := a.ipLimit.Allow(ratelimit.AddrKey(httpx.ClientAddr(r.Context()))); !ok {
 		a.tooMany(w, wait)
 		return false
 	}
-	if email != "" {
-		if wait := a.backoff.Wait(normalize(email)); wait > 0 {
-			a.tooMany(w, wait)
-			return false
-		}
-	}
 	return true
+}
+
+// attempt reserves a password attempt for key (an email or an account). The reservation is
+// taken before the slow check runs, so concurrent attempts cannot slip past the backoff
+// (ADR-010 S-6). It returns nil after writing a 429.
+func (a *API) attempt(w http.ResponseWriter, key string) *ratelimit.Attempt {
+	at, wait := a.backoff.Begin(key)
+	if at == nil {
+		a.tooMany(w, wait)
+	}
+	return at
 }
 
 func (a *API) tooMany(w http.ResponseWriter, wait time.Duration) {

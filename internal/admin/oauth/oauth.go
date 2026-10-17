@@ -53,7 +53,7 @@ func (a *API) Handler() http.Handler {
 
 func (a *API) limited(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if ok, wait := a.limiter.Allow(httpx.ClientAddr(r.Context()).String()); !ok {
+		if ok, wait := a.limiter.Allow(ratelimit.AddrKey(httpx.ClientAddr(r.Context()))); !ok {
 			w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
 			writeOAuth(w, http.StatusTooManyRequests, &core.OAuthError{Code: "slow_down", Description: "Too many requests."})
 			return

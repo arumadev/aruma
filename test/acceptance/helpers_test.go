@@ -27,7 +27,7 @@ func (c *Client) app(project, platform, namespace string) *Response {
 // pat creates a personal CLI token for the client's account.
 func (c *Client) pat() string {
 	c.env.t.Helper()
-	return c.mustOK(c.do("POST", "/console/v1/me/tokens", map[string]any{"name": "cli"})).str("token")
+	return c.mustOK(c.do("POST", "/console/v1/me/tokens", map[string]any{"name": "cli", "currentPassword": testPassword})).str("token")
 }
 
 // serviceAccountKey creates a service account and returns its key file.

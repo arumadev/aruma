@@ -18,15 +18,15 @@ func TestNoSecretsInDatabaseOrLogs(t *testing.T) {
 	owner.project("chat-app")
 	owner.app("chat-app", "WEB", "")
 	owner.app("chat-app", "ANDROID", "com.ahmad.chat")
-	owner.mustOK(owner.do("POST", "/console/v1/me:changePassword", map[string]any{"currentPassword": testPassword, "newPassword": "a second strong password"}))
 	pat := owner.pat()
+	cli := e.withBearer(pat)
+	cli.mustOK(cli.do("GET", "/v1beta1/projects", nil))
+	owner.mustOK(owner.do("POST", "/console/v1/me:changePassword", map[string]any{"currentPassword": testPassword, "newPassword": "a second strong password"}))
 	_, keyFile := owner.serviceAccountKey("chat-app", "backend")
 	saToken, _, err := exchange(t, keyFile)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cli := e.withBearer(pat)
-	cli.mustOK(cli.do("GET", "/v1beta1/projects", nil))
 	e.withBearer(saToken).mustOK(e.withBearer(saToken).do("GET", "/v1beta1/projects", nil))
 	// A failed login carries a password too.
 	e.client().do("POST", "/console/v1/auth:login", map[string]any{"email": "owner@example.com", "password": "typo-in-the-password"})

@@ -39,11 +39,11 @@ The private JSON API behind the dashboard. It is not a public contract: it chang
 |---|---|---|---|
 | GET | `/me` | any | → `{account, csrfToken?}`. `csrfToken` is present for sessions |
 | PATCH | `/me` | session only | `{displayName?, locale?}` → `{account}` |
-| POST | `/me:changePassword` | session only | `{currentPassword, newPassword}` → 204. Signs out every other session |
+| POST | `/me:changePassword` | session only | `{currentPassword, newPassword}` → 204. Signs out every other session and revokes every CLI token. Wrong current passwords are throttled (429) |
 | GET | `/me/sessions` | session only | → `{sessions: [{id, current, ip, userAgent, createTime, lastSeenTime, expireTime}]}` |
 | DELETE | `/me/sessions/{id}` | session only | → 204 |
 | GET | `/me/tokens` | session only | → `{tokens: [Token]}` |
-| POST | `/me/tokens` | session only | `{name, expireDays?}` (0 = no expiry, max 366) → `Token`. Only here does `token` hold the plaintext |
+| POST | `/me/tokens` | session only | `{name, currentPassword, expireDays?}` (0 = no expiry, max 366) → `Token`. Needs the current password, since a token outlives the session; throttled like change-password. Only here does `token` hold the plaintext |
 | DELETE | `/me/tokens/{id}` | session only | → 204. The token stops working at once |
 
 `Token` = `{id, name, prefix, createTime, lastUsedTime?, expireTime?, token?}`.

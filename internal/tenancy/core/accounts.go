@@ -266,8 +266,8 @@ func (s *Service) UpdateProfile(ctx context.Context, p *authn.Principal, display
 	return toAccount(acc), nil
 }
 
-// ChangePassword replaces the caller's password after checking the current one, and signs out
-// every other session (AC-6).
+// ChangePassword replaces the caller's password after checking the current one, signs out
+// every other session (AC-6) and revokes every CLI token.
 func (s *Service) ChangePassword(ctx context.Context, p *authn.Principal, current, next string) error {
 	acc, err := s.q.GetAccount(ctx, p.AccountID)
 	if err != nil {
@@ -291,12 +291,33 @@ func (s *Service) ChangePassword(ctx context.Context, p *authn.Principal, curren
 		if err := q.SetAccountPassword(ctx, queries.SetAccountPasswordParams{ID: acc.ID, PasswordHash: hash}); err != nil {
 			return err
 		}
-		return q.RevokeOtherSessions(ctx, queries.RevokeOtherSessionsParams{AccountID: acc.ID, KeepID: p.SessionID})
+		if err := q.RevokeOtherSessions(ctx, queries.RevokeOtherSessionsParams{AccountID: acc.ID, KeepID: p.SessionID}); err != nil {
+			return err
+		}
+		// A token minted from a stolen session must not survive the owner's recovery.
+		return q.RevokeAllAccessTokens(ctx, acc.ID)
 	}))
 }
 
-// ResetPassword sets a new password for the operator command and signs the account out
-// everywhere.
+// CheckPassword verifies the caller's current password, for operations that need a fresh
+// proof of identity beyond the session.
+func (s *Service) CheckPassword(ctx context.Context, p *authn.Principal, password string) error {
+	acc, err := s.q.GetAccount(ctx, p.AccountID)
+	if err != nil {
+		return internal(err)
+	}
+	ok, _, err := s.hasher.Verify(ctx, password, acc.PasswordHash)
+	if err != nil {
+		return internal(err)
+	}
+	if !ok {
+		return apierr.Invalid("currentPassword", "The current password is incorrect.")
+	}
+	return nil
+}
+
+// ResetPassword sets a new password for the operator command, signs the account out
+// everywhere and revokes its CLI tokens.
 func (s *Service) ResetPassword(ctx context.Context, email, password string) error {
 	acc, err := s.q.GetAccountByEmail(ctx, email)
 	if err != nil {
@@ -316,7 +337,10 @@ func (s *Service) ResetPassword(ctx context.Context, email, password string) err
 		if err := q.SetAccountPassword(ctx, queries.SetAccountPasswordParams{ID: acc.ID, PasswordHash: hash}); err != nil {
 			return err
 		}
-		return q.RevokeAllSessions(ctx, acc.ID)
+		if err := q.RevokeAllSessions(ctx, acc.ID); err != nil {
+			return err
+		}
+		return q.RevokeAllAccessTokens(ctx, acc.ID)
 	}))
 }
 

@@ -75,7 +75,7 @@ func accounts(ctx context.Context, cfg *config.Config, args []string, stdin io.R
 		if err := svc.ResetPassword(ctx, *email, pw); err != nil {
 			return err
 		}
-		fmt.Fprintf(stdout, "password reset for %s; all its sessions were signed out\n", *email)
+		fmt.Fprintf(stdout, "password reset for %s; its sessions were signed out and its CLI tokens revoked\n", *email)
 	default:
 		return fmt.Errorf("unknown accounts command %q", args[0])
 	}

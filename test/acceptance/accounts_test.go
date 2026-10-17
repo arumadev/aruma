@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/base64"
 	"net/http"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -129,7 +131,10 @@ func TestChangePasswordRevokesOtherSessions(t *testing.T) {
 func TestAccessTokens(t *testing.T) {
 	e := newEnv(t, nil)
 	c := e.owner()
-	created := c.mustOK(c.do("POST", "/console/v1/me/tokens", map[string]any{"name": "laptop", "expireDays": 30}))
+	expect(t, c.do("POST", "/console/v1/me/tokens", map[string]any{"name": "laptop"}), 400, "INVALID_ARGUMENT")
+	expect(t, c.do("POST", "/console/v1/me/tokens", map[string]any{"name": "laptop", "currentPassword": "wrong-password"}), 400, "INVALID_ARGUMENT")
+	expect(t, c.do("POST", "/console/v1/me/tokens", map[string]any{"name": "laptop", "currentPassword": testPassword, "expireDays": 9999999999}), 400, "INVALID_ARGUMENT")
+	created := c.mustOK(c.do("POST", "/console/v1/me/tokens", map[string]any{"name": "laptop", "expireDays": 30, "currentPassword": testPassword}))
 	token := created.str("token")
 	if !strings.HasPrefix(token, "aruma_pat_") || !strings.HasPrefix(token, created.str("prefix")) {
 		t.Fatalf("created token: %s", created.Body)
@@ -144,7 +149,7 @@ func TestAccessTokens(t *testing.T) {
 		t.Fatalf("me via token: %s", r.Body)
 	}
 	// Account security operations need the session, not a CLI token.
-	expect(t, cli.do("POST", "/console/v1/me/tokens", map[string]any{"name": "escalate"}), 401, "UNAUTHENTICATED")
+	expect(t, cli.do("POST", "/console/v1/me/tokens", map[string]any{"name": "escalate", "currentPassword": testPassword}), 401, "UNAUTHENTICATED")
 	expect(t, cli.do("POST", "/console/v1/me:changePassword", map[string]any{"currentPassword": testPassword, "newPassword": "x-x-x-x-x-x"}), 401, "")
 
 	c.mustOK(c.do("DELETE", "/console/v1/me/tokens/"+created.str("id"), nil))
@@ -267,4 +272,70 @@ func TestSessionExpiryAndLogout(t *testing.T) {
 	replay := e.client()
 	replay.cookies = saved
 	expect(t, replay.do("GET", "/console/v1/me", nil), 401, "UNAUTHENTICATED")
+}
+
+// Review M-1: CLI tokens die with a password change or an operator reset, so a token minted
+// from a stolen session does not survive the owner's recovery.
+func TestPasswordChangeAndResetRevokeCLITokens(t *testing.T) {
+	e := newEnv(t, nil)
+	c := e.owner()
+	cli := e.withBearer(c.pat())
+	cli.mustOK(cli.do("GET", "/console/v1/me", nil))
+	c.mustOK(c.do("POST", "/console/v1/me:changePassword", map[string]any{"currentPassword": testPassword, "newPassword": "brand new password"}))
+	expect(t, cli.do("GET", "/console/v1/me", nil), 401, "UNAUTHENTICATED")
+
+	c2 := e.client()
+	c2.login("owner@example.com", "brand new password")
+	tok := c2.mustOK(c2.do("POST", "/console/v1/me/tokens", map[string]any{"name": "cli", "currentPassword": "brand new password"})).str("token")
+	if err := e.App.Service.ResetPassword(context.Background(), "owner@example.com", "operator chosen password"); err != nil {
+		t.Fatal(err)
+	}
+	expect(t, e.withBearer(tok).do("GET", "/console/v1/me", nil), 401, "UNAUTHENTICATED")
+}
+
+// Review M-2: a concurrent burst against one email runs no more password checks than the
+// backoff threshold.
+func TestConcurrentLoginBurstIsBounded(t *testing.T) {
+	e := newEnv(t, nil)
+	e.owner()
+	codes := make(chan int, 10)
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			codes <- e.client().do("POST", "/console/v1/auth:login", map[string]any{"email": "owner@example.com", "password": "wrong-guess"}).Status
+		}()
+	}
+	wg.Wait()
+	close(codes)
+	checked := 0
+	for c := range codes {
+		if c == 401 {
+			checked++
+		}
+	}
+	if checked > 5 {
+		t.Fatalf("%d concurrent password checks, want at most 5", checked)
+	}
+}
+
+// Review H-2: an attacker-sized email is refused before it reaches any limiter or query.
+func TestHugeEmailRefused(t *testing.T) {
+	e := newEnv(t, nil)
+	r := e.client().do("POST", "/console/v1/auth:login", map[string]any{"email": strings.Repeat("a", 300000) + "@x.io", "password": "x"})
+	expect(t, r, 400, "INVALID_ARGUMENT")
+}
+
+// Review L-3: guessing the current password through change-password is throttled per account.
+func TestChangePasswordGuessesThrottled(t *testing.T) {
+	e := newEnv(t, nil)
+	c := e.owner()
+	last := 0
+	for i := 0; i < 6; i++ {
+		last = c.do("POST", "/console/v1/me:changePassword", map[string]any{"currentPassword": "guess-" + strconv.Itoa(i), "newPassword": "whatever password"}).Status
+	}
+	if last != 429 {
+		t.Fatalf("sixth wrong current password: %d, want 429", last)
+	}
 }
