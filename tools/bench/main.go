@@ -60,6 +60,7 @@ type options struct {
 	cpuProfile                  string
 	serve                       bool
 	note                        string
+	poolMax                     int
 }
 
 func main() {
@@ -79,6 +80,7 @@ func main() {
 	flag.StringVar(&o.jsonOut, "json", "", "also write the results as JSON to this file")
 	flag.StringVar(&o.cpuProfile, "cpuprofile", "", "write a CPU profile of this process (server included when in-process)")
 	flag.BoolVar(&o.serve, "serve", false, "start an in-process server, print how to target it, and wait for Ctrl-C")
+	flag.IntVar(&o.poolMax, "db-pool-max", 0, "in-process: the server's database pool size (default: pgx's max(4, NumCPU))")
 	flag.StringVar(&o.note, "note", "", "free text stored in the JSON, e.g. the machine's state")
 	flag.Parse()
 	if *loginC > 0 {
@@ -143,7 +145,7 @@ func run(o options) error {
 		t = &Target{URL: strings.TrimSuffix(o.url, "/"), Token: o.token, Email: o.email, Password: o.password}
 	} else {
 		fmt.Fprintln(os.Stderr, "starting Aruma in-process on a throwaway database…")
-		if t, err = StartInProcess(ctx, io.Discard); err != nil {
+		if t, err = StartInProcess(ctx, io.Discard, o.poolMax); err != nil {
 			return err
 		}
 		defer t.Close()
