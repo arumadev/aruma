@@ -81,3 +81,39 @@ jobs:
           cache-dependency-path: test/smoke/android/**/*.gradle.kts
       - name: Smoke tests
         run: test/smoke/run.sh web admin-node admin-go android
+
+  dashboard:
+    name: Dashboard (lint, unit, build, e2e in both directions)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - run: npm ci
+      - name: Lint (ESLint, Stylelint with logical properties, tsc)
+        run: npm run lint
+      - name: Unit tests (incl. WCAG contrast and catalog parity)
+        run: npm test
+      - name: Static export
+        run: npm run build
+      - run: npx playwright install --with-deps chromium
+      # Linux baselines are generated on first run and uploaded for review; existing ones are
+      # compared strictly.
+      - name: End-to-end, visual and accessibility tests (ar-rtl, en-ltr)
+        run: npm run test:e2e -- --update-snapshots=missing
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: playwright-snapshots-linux
+          path: dashboard/e2e/__screenshots__
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: dashboard/playwright-report
