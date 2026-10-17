@@ -1,0 +1,161 @@
+.button {
+  --container: transparent;
+  --content: var(--md-sys-color-primary);
+
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: center;
+  min-block-size: 40px;
+  padding-block: 0;
+  padding-inline: var(--space-6);
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--container);
+  color: var(--content);
+  font: var(--md-sys-typescale-label-large);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard),
+    box-shadow var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+}
+
+.button:has(svg, .spinner) {
+  padding-inline: var(--space-4) var(--space-6);
+}
+
+.button[data-hovered] {
+  background: color-mix(in srgb, var(--content) var(--md-sys-state-hover), var(--container));
+}
+
+.button[data-pressed] {
+  background: color-mix(in srgb, var(--content) var(--md-sys-state-pressed), var(--container));
+}
+
+.button[data-focus-visible] {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.button[data-disabled] {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-disabled-container), transparent);
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-disabled-content), transparent);
+  box-shadow: none;
+  cursor: default;
+}
+
+.button[data-pending] {
+  cursor: progress;
+}
+
+.filled {
+  --container: var(--md-sys-color-primary);
+  --content: var(--md-sys-color-on-primary);
+}
+
+.filled[data-hovered] {
+  box-shadow: var(--md-sys-elevation-1);
+}
+
+.tonal {
+  --container: var(--md-sys-color-secondary-container);
+  --content: var(--md-sys-color-on-secondary-container);
+}
+
+.outlined {
+  border: 1px solid var(--md-sys-color-outline);
+}
+
+.outlined[data-disabled] {
+  border-color: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-disabled-container), transparent);
+  background: transparent;
+}
+
+.text {
+  padding-inline: var(--space-3);
+}
+
+.text:has(svg, .spinner) {
+  padding-inline: var(--space-3) var(--space-4);
+}
+
+.text[data-disabled] {
+  background: transparent;
+}
+
+.danger {
+  --container: var(--md-sys-color-error);
+  --content: var(--md-sys-color-on-error);
+}
+
+.spinner {
+  inline-size: 18px;
+  block-size: 18px;
+  border: 2px solid currentcolor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.iconButton {
+  --container: transparent;
+  --content: var(--md-sys-color-on-surface-variant);
+
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--container);
+  color: var(--content);
+  cursor: pointer;
+}
+
+.iconButton[data-hovered] {
+  background: color-mix(in srgb, var(--content) var(--md-sys-state-hover), var(--container));
+}
+
+.iconButton[data-pressed] {
+  background: color-mix(in srgb, var(--content) var(--md-sys-state-pressed), var(--container));
+}
+
+.iconButton[data-focus-visible] {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.iconButton[data-disabled] {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-disabled-content), transparent);
+  cursor: default;
+}
+
+.standard {
+  --container: transparent;
+}
+
+.tonal.iconButton {
+  --container: var(--md-sys-color-secondary-container);
+  --content: var(--md-sys-color-on-secondary-container);
+}
+
+.tooltip {
+  max-inline-size: 240px;
+  padding-block: var(--space-1);
+  padding-inline: var(--space-2);
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  background: var(--md-sys-color-inverse-surface);
+  color: var(--md-sys-color-inverse-on-surface);
+  font: var(--md-sys-typescale-body-small);
+}

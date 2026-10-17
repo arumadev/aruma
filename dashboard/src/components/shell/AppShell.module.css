@@ -1,0 +1,121 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100dvb;
+}
+
+.skip {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-start: var(--space-2);
+  z-index: 50;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  font: var(--md-sys-typescale-label-large);
+  transform: translateY(-200%);
+}
+
+.skip:focus-visible {
+  transform: none;
+}
+
+.placeholderBar {
+  block-size: var(--top-app-bar-height);
+  background: var(--md-sys-color-surface-container);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+}
+
+.rail {
+  position: sticky;
+  inset-block-start: var(--top-app-bar-height);
+  flex: none;
+  align-self: flex-start;
+  inline-size: var(--nav-rail-width);
+  block-size: calc(100dvb - var(--top-app-bar-height));
+  overflow: auto;
+  background: var(--md-sys-color-surface-container);
+}
+
+.column {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.main {
+  flex: 1;
+  inline-size: 100%;
+  max-inline-size: var(--content-max-width);
+  margin-inline: auto;
+  padding: var(--space-6);
+  outline: none;
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
+}
+
+.drawer {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: min(85vi, 320px);
+  border-start-end-radius: var(--md-sys-shape-corner-large);
+  border-end-end-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container-low);
+  box-shadow: var(--md-sys-elevation-1);
+}
+
+.drawer[data-entering] {
+  animation: slide var(--md-sys-motion-duration-medium) var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+.drawerDialog {
+  block-size: 100%;
+  overflow: auto;
+  outline: none;
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  block-size: var(--top-app-bar-height);
+  padding-inline: var(--space-4) var(--space-2);
+}
+
+@keyframes slide {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slide-rtl {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+.drawer[data-entering]:dir(rtl) {
+  animation-name: slide-rtl;
+}
+
+@media (width < 600px) {
+  .rail {
+    display: none;
+  }
+
+  .main {
+    padding: var(--space-4);
+  }
+}

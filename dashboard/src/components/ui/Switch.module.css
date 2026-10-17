@@ -1,0 +1,54 @@
+.switch {
+  display: inline-flex;
+  gap: var(--space-3);
+  align-items: center;
+  color: var(--md-sys-color-on-surface);
+  font: var(--md-sys-typescale-body-medium);
+  cursor: pointer;
+}
+
+.track {
+  display: flex;
+  flex: none;
+  align-items: center;
+  inline-size: 52px;
+  block-size: 32px;
+  padding-inline: 6px;
+  border: 2px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-surface-container-highest);
+  transition: background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+}
+
+.handle {
+  inline-size: 16px;
+  block-size: 16px;
+  border-radius: 50%;
+  background: var(--md-sys-color-outline);
+  transition:
+    margin var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard),
+    inline-size var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+}
+
+.switch[data-selected] .track {
+  border-color: var(--md-sys-color-primary);
+  background: var(--md-sys-color-primary);
+}
+
+.switch[data-selected] .handle {
+  inline-size: 24px;
+  block-size: 24px;
+  margin-inline-start: auto;
+  margin-inline-end: -4px;
+  background: var(--md-sys-color-on-primary);
+}
+
+.switch[data-focus-visible] .track {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.switch[data-disabled] {
+  cursor: default;
+  opacity: 0.38;
+}

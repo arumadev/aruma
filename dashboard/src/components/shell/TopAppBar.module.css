@@ -1,0 +1,41 @@
+.bar {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 10;
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  block-size: var(--top-app-bar-height);
+  padding-inline: var(--space-2) var(--space-3);
+  background: var(--md-sys-color-surface-container);
+}
+
+.menuButton {
+  display: none;
+}
+
+.switcher {
+  flex: 0 1 280px;
+  min-inline-size: 0;
+}
+
+.end {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  margin-inline-start: auto;
+}
+
+@media (width < 600px) {
+  .bar {
+    padding-inline: var(--space-1);
+  }
+
+  .menuButton {
+    display: inline-grid;
+  }
+
+  .bar:has(.switcher) .end span[lang] {
+    display: none;
+  }
+}

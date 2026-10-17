@@ -1,0 +1,115 @@
+.select {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.label {
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-medium);
+}
+
+.hiddenLabel {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.trigger {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+  min-block-size: 48px;
+  padding-block: 0;
+  padding-inline: var(--space-4) var(--space-3);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font: var(--md-sys-typescale-body-large);
+  text-align: start;
+  cursor: pointer;
+}
+
+.trigger[data-focus-visible] {
+  border-color: var(--md-sys-color-primary);
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.trigger[data-disabled] {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-disabled-content), transparent);
+  cursor: default;
+}
+
+.value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.value[data-placeholder] {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.description {
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-small);
+}
+
+.popover {
+  min-inline-size: var(--trigger-width);
+  max-block-size: 320px;
+  overflow: auto;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  background: var(--md-sys-color-surface-container);
+  box-shadow: var(--md-sys-elevation-2);
+}
+
+.list {
+  padding-block: var(--space-2);
+  outline: none;
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-block-size: 48px;
+  padding-block: var(--space-1);
+  padding-inline: var(--space-4);
+  color: var(--md-sys-color-on-surface);
+  font: var(--md-sys-typescale-body-large);
+  cursor: pointer;
+  outline: none;
+}
+
+.option[data-focused],
+.option[data-hovered] {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-hover), transparent);
+}
+
+.option[data-focus-visible] {
+  outline: var(--focus-ring);
+  outline-offset: -3px;
+}
+
+.option[data-selected] {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.detail {
+  color: inherit;
+  font: var(--md-sys-typescale-code);
+}
+
+/* The selected option is shown by name only. */
+.value .detail {
+  display: none;
+}

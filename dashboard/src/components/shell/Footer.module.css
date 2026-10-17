@@ -1,0 +1,7 @@
+.footer {
+  padding-block: var(--space-6);
+  padding-inline: var(--space-4);
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-small);
+  text-align: center;
+}

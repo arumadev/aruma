@@ -1,0 +1,8 @@
+.icon {
+  flex: none;
+  fill: currentcolor;
+}
+
+.mirrored:dir(rtl) {
+  transform: scaleX(-1);
+}

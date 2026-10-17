@@ -1,0 +1,49 @@
+.popover {
+  min-inline-size: 200px;
+  max-inline-size: 320px;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  background: var(--md-sys-color-surface-container);
+  box-shadow: var(--md-sys-elevation-2);
+}
+
+.menu {
+  padding-block: var(--space-2);
+  outline: none;
+}
+
+.item {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  min-block-size: 48px;
+  padding-inline: var(--space-3) var(--space-4);
+  color: var(--md-sys-color-on-surface);
+  font: var(--md-sys-typescale-label-large);
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.item svg {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.item[data-focused],
+.item[data-hovered] {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-hover), transparent);
+}
+
+.item[data-focus-visible] {
+  outline: var(--focus-ring);
+  outline-offset: -3px;
+}
+
+.item[data-disabled] {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-disabled-content), transparent);
+  cursor: default;
+}
+
+.danger,
+.danger svg {
+  color: var(--md-sys-color-error);
+}
