@@ -1,0 +1,77 @@
+/* Material 3 system tokens other than colour (colours live in the generated colors.css). */
+
+:root {
+  --font-sans: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Type scale: weight size/line-height. */
+  --md-sys-typescale-display-small: 400 2.25rem/2.75rem var(--font-sans);
+  --md-sys-typescale-headline-medium: 400 1.75rem/2.25rem var(--font-sans);
+  --md-sys-typescale-headline-small: 400 1.5rem/2rem var(--font-sans);
+  --md-sys-typescale-title-large: 500 1.375rem/1.875rem var(--font-sans);
+  --md-sys-typescale-title-medium: 500 1rem/1.5rem var(--font-sans);
+  --md-sys-typescale-title-small: 500 0.875rem/1.25rem var(--font-sans);
+  --md-sys-typescale-body-large: 400 1rem/1.5rem var(--font-sans);
+  --md-sys-typescale-body-medium: 400 0.875rem/1.375rem var(--font-sans);
+  --md-sys-typescale-body-small: 400 0.75rem/1.125rem var(--font-sans);
+  --md-sys-typescale-label-large: 500 0.875rem/1.25rem var(--font-sans);
+  --md-sys-typescale-label-medium: 500 0.75rem/1rem var(--font-sans);
+  --md-sys-typescale-label-small: 500 0.6875rem/1rem var(--font-sans);
+  --md-sys-typescale-code: 400 0.8125rem/1.25rem var(--font-mono);
+
+  /* Shape. */
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-extra-large: 28px;
+  --md-sys-shape-corner-full: 9999px;
+
+  /* Elevation. */
+  --md-sys-elevation-1:
+    0 1px 2px color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent),
+    0 1px 3px 1px color-mix(in srgb, var(--md-sys-color-shadow) 15%, transparent);
+  --md-sys-elevation-2:
+    0 1px 2px color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent),
+    0 2px 6px 2px color-mix(in srgb, var(--md-sys-color-shadow) 15%, transparent);
+  --md-sys-elevation-3:
+    0 4px 8px 3px color-mix(in srgb, var(--md-sys-color-shadow) 15%, transparent),
+    0 1px 3px color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent);
+
+  /* State layers. */
+  --md-sys-state-hover: 8%;
+  --md-sys-state-focus: 10%;
+  --md-sys-state-pressed: 10%;
+  --md-sys-state-disabled-content: 38%;
+  --md-sys-state-disabled-container: 12%;
+
+  /* Motion. */
+  --md-sys-motion-duration-short: 150ms;
+  --md-sys-motion-duration-medium: 250ms;
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+
+  /* Spacing (4 dp grid). */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Layout. */
+  --top-app-bar-height: 64px;
+  --nav-rail-width: 88px;
+  --content-max-width: 1120px;
+  --focus-ring: 3px solid var(--md-sys-color-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --md-sys-motion-duration-short: 0ms;
+    --md-sys-motion-duration-medium: 0ms;
+  }
+}
