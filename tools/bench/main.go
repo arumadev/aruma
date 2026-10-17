@@ -45,6 +45,10 @@ import (
 	"time"
 )
 
+// buildCommit can be set with -ldflags "-X main.buildCommit=<hash>" when building from a tree
+// without VCS information (such as a git archive); it takes precedence in the report.
+var buildCommit string
+
 type options struct {
 	url, token, email, password string
 	scenarios                   string
@@ -394,11 +398,19 @@ func collectMeta(o options, mode string) Meta {
 		Time: time.Now().UTC(), Mode: mode, GoVersion: runtime.Version(), OS: runtime.GOOS, Arch: runtime.GOARCH,
 		NumCPU: runtime.NumCPU(), GOMAXPROCS: runtime.GOMAXPROCS(0), Args: os.Args[1:], Note: o.note,
 	}
-	if bi, ok := debug.ReadBuildInfo(); ok {
+	m.Commit = buildCommit
+	if bi, ok := debug.ReadBuildInfo(); ok && m.Commit == "" {
+		dirty := false
 		for _, s := range bi.Settings {
-			if s.Key == "vcs.revision" {
+			switch {
+			case s.Key == "vcs.revision":
 				m.Commit = s.Value
+			case s.Key == "vcs.modified" && s.Value == "true":
+				dirty = true
 			}
+		}
+		if m.Commit != "" && dirty {
+			m.Commit += "+dirty"
 		}
 	}
 	if m.Commit == "" {
