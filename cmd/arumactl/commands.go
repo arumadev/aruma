@@ -53,7 +53,9 @@ func one(pos []string, what string) (string, error) {
 	return pos[0], nil
 }
 
-func projectFlag(fs *flag.FlagSet, p *string) { fs.StringVar(p, "project", "", "project id (required)") }
+func projectFlag(fs *flag.FlagSet, p *string) {
+	fs.StringVar(p, "project", "", "project id (required)")
+}
 
 func requireProject(p string) error {
 	if p == "" {

@@ -33,3 +33,6 @@ aruma.yaml
 .idea/
 .vscode/
 *.swp
+
+# Local agent worktrees
+/.claude/
