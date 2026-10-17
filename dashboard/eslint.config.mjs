@@ -29,4 +29,9 @@ export default defineConfig([
     files: ['**/*.test.{ts,tsx}', 'e2e/**', 'scripts/**', '*.config.*'],
     rules: { 'react/jsx-no-literals': 'off' },
   },
+  {
+    // Playwright fixtures receive a `use` callback, which is not React's use() hook.
+    files: ['e2e/**'],
+    rules: { 'react-hooks/rules-of-hooks': 'off' },
+  },
 ]);
