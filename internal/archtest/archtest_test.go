@@ -23,13 +23,15 @@ var allowed = map[string][]string{
 	"internal/events":    {"internal/store", "internal/platform"},
 	"internal/configgen": {"internal/platform"},
 	"internal/tenancy":   {"internal/store", "internal/events", "internal/platform", "internal/config"},
-	"internal/admin":     {"internal/tenancy", "internal/configgen", "internal/events", "internal/store", "internal/platform", "internal/config"},
-	"internal/server":    {"internal/admin", "internal/tenancy", "internal/platform", "internal/config", "internal/store"},
-	"internal/app":       {"internal/"},
-	"cmd":                {"internal/", "pkg/"},
-	"test":               {"internal/", "pkg/"},
-	"tools":              {"internal/", "pkg/"},
-	"pkg":                {},
+	// Data services resolve keys and service accounts through the control plane, never the reverse.
+	"internal/identity": {"internal/tenancy", "internal/store", "internal/events", "internal/platform", "internal/config"},
+	"internal/admin":    {"internal/identity", "internal/tenancy", "internal/configgen", "internal/events", "internal/store", "internal/platform", "internal/config"},
+	"internal/server":   {"internal/admin", "internal/identity", "internal/tenancy", "internal/platform", "internal/config", "internal/store"},
+	"internal/app":      {"internal/"},
+	"cmd":               {"internal/", "pkg/"},
+	"test":              {"internal/", "pkg/"},
+	"tools":             {"internal/", "pkg/"},
+	"pkg":               {},
 }
 
 func TestDependencyRules(t *testing.T) {
@@ -105,6 +107,8 @@ func TestRulesThemselves(t *testing.T) {
 		{"internal/tenancy/core", "internal/admin/console", false},
 		{"internal/platform/authn", "internal/tenancy/core", false},
 		{"internal/configgen", "internal/tenancy", false},
+		{"internal/identity/core", "internal/tenancy/core", true},
+		{"internal/tenancy/core", "internal/identity/core", false},
 		{"internal/store", "internal/store/migrations", true},
 		{"cmd/aruma", "internal/app", true},
 		{"internal/unknown", "internal/platform/log", false},
