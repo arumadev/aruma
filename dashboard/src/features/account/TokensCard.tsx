@@ -106,6 +106,7 @@ function CreateTokenDialog({ onCreated, onClose }: { onCreated: (token: Token) =
   const errorText = useErrorText();
   const [name, setName] = useState('');
   const [lifetime, setLifetime] = useState<string>('90');
+  const [password, setPassword] = useState('');
   const [attempted, setAttempted] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -113,11 +114,11 @@ function CreateTokenDialog({ onCreated, onClose }: { onCreated: (token: Token) =
 
   async function create() {
     setAttempted(true);
-    if (!name.trim()) return;
+    if (!name.trim() || !password) return;
     setPending(true);
     setError(null);
     try {
-      const token = await api.createToken({ name: name.trim(), expireDays: Number(lifetime) });
+      const token = await api.createToken({ name: name.trim(), expireDays: Number(lifetime), currentPassword: password });
       onCreated(token);
       setPlaintext(token.token ?? '');
     } catch (err) {
@@ -147,6 +148,7 @@ function CreateTokenDialog({ onCreated, onClose }: { onCreated: (token: Token) =
   }
 
   const fieldError = attempted && !name.trim() ? t('nameRequired') : errorText.field(error, 'name');
+  const passwordError = attempted && !password ? t('passwordRequired') : errorText.field(error, 'currentPassword');
   return (
     <Dialog
       isOpen
@@ -165,13 +167,26 @@ function CreateTokenDialog({ onCreated, onClose }: { onCreated: (token: Token) =
         </>
       }
     >
-      {Boolean(error) && !fieldError && <Banner tone="error">{errorText.message(error)}</Banner>}
+      {Boolean(error) && !fieldError && !passwordError && <Banner tone="error">{errorText.message(error)}</Banner>}
       <TextField label={t('name')} value={name} onChange={setName} maxLength={100} isRequired autoFocus description={t('nameHint')} errorMessage={fieldError} />
       <Select
         label={t('lifetime')}
         value={lifetime}
         onChange={setLifetime}
         options={LIFETIMES.map((days) => ({ id: days, label: days === '0' ? t('noExpiry') : t('days', { days: Number(days) }) }))}
+      />
+      <TextField
+        label={t('currentPassword')}
+        type="password"
+        autoComplete="current-password"
+        value={password}
+        onChange={(value) => {
+          setPassword(value);
+          setError(null);
+        }}
+        isRequired
+        description={t('passwordHint')}
+        errorMessage={passwordError}
       />
     </Dialog>
   );

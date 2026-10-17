@@ -17,7 +17,8 @@ export function ProjectSwitcher({ projectId }: { projectId: string }) {
   const t = useTranslations('shell');
   const router = useRouter();
   const pathname = normalizePath(usePathname());
-  const projects = useResource((signal) => api.listProjects({ pageSize: 1000 }, signal), []);
+  // Deleted projects are listed too, so the current one keeps its name while it awaits restore.
+  const projects = useResource((signal) => api.listProjects({ pageSize: 1000, showDeleted: true }, signal), []);
 
   const options = (projects.data?.projects ?? [])
     .filter((p) => p.state === 'ACTIVE' || p.projectId === projectId)

@@ -60,7 +60,9 @@ export const changePassword = (body: { currentPassword: string; newPassword: str
 export const listSessions = (signal?: AbortSignal) => request<{ sessions: Session[] }>('/me/sessions', { signal });
 export const revokeSession = (id: string) => requestEmpty(`/me/sessions/${seg(id)}`, { method: 'DELETE' });
 export const listTokens = (signal?: AbortSignal) => request<{ tokens: Token[] }>('/me/tokens', { signal });
-export const createToken = (body: { name: string; expireDays: number }) => request<Token>('/me/tokens', { method: 'POST', body });
+/** Creating a token re-checks the account password. */
+export const createToken = (body: { name: string; expireDays: number; currentPassword: string }) =>
+  request<Token>('/me/tokens', { method: 'POST', body });
 export const revokeToken = (id: string) => requestEmpty(`/me/tokens/${seg(id)}`, { method: 'DELETE' });
 
 // Projects
