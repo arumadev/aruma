@@ -42,3 +42,4 @@ aruma.yaml
 
 # Local build caches (kept off the system disk)
 /.cache/
+/test/smoke/android/app/google-services.json
