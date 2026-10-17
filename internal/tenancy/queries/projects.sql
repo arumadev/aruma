@@ -12,6 +12,10 @@ WHERE owner_account_id = @owner_account_id
 -- name: GetProject :one
 SELECT * FROM control.projects WHERE project_number = @project_number;
 
+-- name: GetProjectByID :one
+-- scope: global — the public token discovery endpoints name a project by id.
+SELECT * FROM control.projects WHERE project_id = @project_id;
+
 -- name: ProjectIDTaken :one
 -- scope: global — availability check; deleted ids stay taken forever.
 SELECT EXISTS (SELECT 1 FROM control.projects WHERE project_id = @project_id);

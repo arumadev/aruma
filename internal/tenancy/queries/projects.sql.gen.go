@@ -141,6 +141,30 @@ func (q *Queries) GetProject(ctx context.Context, projectNumber int64) (ControlP
 	return i, err
 }
 
+const getProjectByID = `-- name: GetProjectByID :one
+SELECT project_number, project_id, display_name, owner_account_id, state, etag, auth_domain, created_at, updated_at, delete_time, expire_time FROM control.projects WHERE project_id = $1
+`
+
+// scope: global — the public token discovery endpoints name a project by id.
+func (q *Queries) GetProjectByID(ctx context.Context, projectID string) (ControlProject, error) {
+	row := q.db.QueryRow(ctx, getProjectByID, projectID)
+	var i ControlProject
+	err := row.Scan(
+		&i.ProjectNumber,
+		&i.ProjectID,
+		&i.DisplayName,
+		&i.OwnerAccountID,
+		&i.State,
+		&i.Etag,
+		&i.AuthDomain,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeleteTime,
+		&i.ExpireTime,
+	)
+	return i, err
+}
+
 const insertAudit = `-- name: InsertAudit :exec
 INSERT INTO control.audit_log (actor_type, actor_id, project_number, action, target, result, ip, details)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)

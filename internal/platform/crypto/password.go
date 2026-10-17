@@ -51,9 +51,19 @@ func NewHasher(p Argon2Params, concurrency int) *Hasher {
 	return h
 }
 
-// Hash returns the PHC string for password.
+// Hash returns the PHC string for a console password.
 func (h *Hasher) Hash(ctx context.Context, password string) (string, error) {
-	if len(password) < MinPasswordLen || len(password) > MaxPasswordLen {
+	if len(password) < MinPasswordLen {
+		return "", ErrPasswordLength
+	}
+	return h.HashPolicy(ctx, password)
+}
+
+// HashPolicy hashes a password whose minimum length the caller's own policy has already
+// checked, as Auth's per-project policy does. The upper bound still applies, since Verify
+// never accepts longer input.
+func (h *Hasher) HashPolicy(ctx context.Context, password string) (string, error) {
+	if password == "" || len(password) > MaxPasswordLen {
 		return "", ErrPasswordLength
 	}
 	if err := h.acquire(ctx); err != nil {
