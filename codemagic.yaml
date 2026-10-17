@@ -1,0 +1,33 @@
+# macOS smoke tests that need Xcode and an iOS simulator: FirebaseCore/Installations on iOS and
+# Flutter's native initialisation. Scheduled nightly in Codemagic (Scheduled builds), and
+# runnable by hand from the Codemagic UI.
+workflows:
+  ios-smoke:
+    name: iOS smoke (nightly)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      xcode: 16.4
+      flutter: stable
+      node: 24
+      vars:
+        ARUMA_TEST_DATABASE_URL: postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable
+    scripts:
+      - name: Go
+        script: |
+          brew install go
+          go version
+      - name: PostgreSQL 18
+        script: |
+          brew install postgresql@18
+          PG=$(brew --prefix postgresql@18)/bin
+          echo "ARUMA_PG_BIN=$PG" >> $CM_ENV
+          $PG/initdb -D "$CM_BUILD_DIR/.pgdata" -U postgres --auth=trust >/dev/null
+          $PG/pg_ctl -D "$CM_BUILD_DIR/.pgdata" -l "$CM_BUILD_DIR/pg.log" -o "-p 5432" -w start
+      - name: Boot a simulator
+        script: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=[x for rt,ds in json.load(sys.stdin)["devices"].items() if "iOS" in rt for x in ds if x["name"].startswith("iPhone")]; print(d[0]["udid"])')
+          xcrun simctl boot "$UDID" || true
+          echo "ARUMA_IOS_SIMULATOR=$UDID" >> $CM_ENV
+      - name: Smoke tests
+        script: test/smoke/run.sh ios flutter-ios
