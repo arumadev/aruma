@@ -1,0 +1,12 @@
+{
+  "name": "aruma-experiment-admin-node",
+  "private": true,
+  "type": "module",
+  "description": "T22: firebase-admin with an Aruma service account key file.",
+  "dependencies": {
+    "firebase-admin": "^14.5.0"
+  },
+  "scripts": {
+    "test": "node --test credential.test.mjs"
+  }
+}
