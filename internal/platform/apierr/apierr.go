@@ -69,6 +69,8 @@ type Error struct {
 	Message string
 	Details []any
 	cause   error
+	// status overrides the HTTP status derived from Code, for transport-level errors.
+	status int
 }
 
 func (e *Error) Error() string {
@@ -132,6 +134,19 @@ func BadRequest(violations ...FieldViolation) any {
 	}{"type.googleapis.com/google.rpc.BadRequest", violations}
 }
 
+// PayloadTooLarge is returned when a request body exceeds the limit (HTTP 413).
+func PayloadTooLarge() *Error {
+	return &Error{Code: InvalidArgument, Message: "Request payload is too large.", status: http.StatusRequestEntityTooLarge}
+}
+
+// HTTPStatus returns the HTTP status the error is sent with.
+func (e *Error) HTTPStatus() int {
+	if e.status != 0 {
+		return e.status
+	}
+	return e.Code.HTTPStatus()
+}
+
 // Invalid is shorthand for an INVALID_ARGUMENT error about one field.
 func Invalid(field, description string) *Error {
 	return New(InvalidArgument, "%s", description).WithDetails(BadRequest(FieldViolation{field, description}))
@@ -150,7 +165,7 @@ type status struct {
 
 // Body returns the google.rpc.Status envelope for e.
 func (e *Error) Body() any {
-	return statusBody{status{Code: e.Code.HTTPStatus(), Message: e.Message, Status: e.Code.String(), Details: e.Details}}
+	return statusBody{status{Code: e.HTTPStatus(), Message: e.Message, Status: e.Code.String(), Details: e.Details}}
 }
 
 // Write renders err as a google.rpc.Status JSON response.
@@ -158,6 +173,6 @@ func Write(w http.ResponseWriter, err error) {
 	e := From(err)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(e.Code.HTTPStatus())
+	w.WriteHeader(e.HTTPStatus())
 	_ = json.NewEncoder(w).Encode(e.Body())
 }
