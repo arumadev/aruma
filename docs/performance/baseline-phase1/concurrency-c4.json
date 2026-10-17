@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "time": "2026-10-17T23:49:07.679299Z",
+    "mode": "in-process",
+    "commit": "0a0f8c7fc49c35a740766c92109d6798f6a4d7f5",
+    "goVersion": "go1.27.2",
+    "os": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M1",
+    "numCpu": 8,
+    "gomaxprocs": 8,
+    "maxRssMiB": 58.265625,
+    "args": [
+      "-scenarios",
+      "mgmt-web-config,console-list-apps",
+      "-c",
+      "4",
+      "-duration",
+      "5s",
+      "-warmup",
+      "1s",
+      "-pause",
+      "500ms",
+      "-json",
+      "docs/performance/baseline-phase1/concurrency-c4.json",
+      "-note",
+      "concurrency sweep c=4"
+    ],
+    "note": "concurrency sweep c=4"
+  },
+  "plan": {
+    "driver": "closed-loop",
+    "concurrency": 4,
+    "warmupSeconds": 1,
+    "durationSeconds": 5,
+    "projects": 10
+  },
+  "results": [
+    {
+      "scenario": "mgmt-web-config",
+      "what": "GET /v1beta1/projects/-/webApps/{app}/config: token, ownership from the app id, config file",
+      "concurrency": 4,
+      "requests": 30307,
+      "ok": 30307,
+      "failed": 0,
+      "statuses": {
+        "200": 30307
+      },
+      "elapsedSeconds": 5,
+      "okPerSecond": 6061.4,
+      "latencyMs": {
+        "min": 0.373917,
+        "mean": 0.659662,
+        "p50": 0.614399,
+        "p90": 0.901119,
+        "p99": 1.196031,
+        "p99_9": 1.556479,
+        "max": 2.503334
+      },
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 181833,
+        "acquiresPerRequest": 5.999703038901904,
+        "acquiresThatWaited": 0,
+        "waitedPercent": 0,
+        "meanWaitMsPerWaitingAcquire": 0,
+        "meanAcquireMs": 0.00010874824151831625
+      }
+    },
+    {
+      "scenario": "console-list-apps",
+      "what": "GET /console/v1/projects/{p}/apps with a session cookie: session lookup, ownership, app list",
+      "concurrency": 4,
+      "requests": 46880,
+      "ok": 46880,
+      "failed": 0,
+      "statuses": {
+        "200": 46880
+      },
+      "elapsedSeconds": 5,
+      "okPerSecond": 9376,
+      "latencyMs": {
+        "min": 0.207458,
+        "mean": 0.426384,
+        "p50": 0.385023,
+        "p90": 0.622591,
+        "p99": 0.884735,
+        "p99_9": 1.294335,
+        "max": 3.49075
+      },
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 140637,
+        "acquiresPerRequest": 2.9999360068259384,
+        "acquiresThatWaited": 0,
+        "waitedPercent": 0,
+        "meanWaitMsPerWaitingAcquire": 0,
+        "meanAcquireMs": 0.00013122327694703383
+      }
+    }
+  ]
+}

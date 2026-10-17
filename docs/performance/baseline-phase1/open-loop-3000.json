@@ -1,0 +1,202 @@
+{
+  "meta": {
+    "time": "2026-10-17T23:50:34.821923Z",
+    "mode": "in-process",
+    "commit": "0a0f8c7fc49c35a740766c92109d6798f6a4d7f5",
+    "goVersion": "go1.27.2",
+    "os": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M1",
+    "numCpu": 8,
+    "gomaxprocs": 8,
+    "maxRssMiB": 74.390625,
+    "args": [
+      "-rate",
+      "3000",
+      "-c",
+      "64",
+      "-scenarios",
+      "healthz,mgmt-list-projects,mgmt-web-config,console-list-apps,oauth-token",
+      "-json",
+      "docs/performance/baseline-phase1/open-loop-3000.json",
+      "-note",
+      "open loop 3000/s, up to 64 in flight"
+    ],
+    "note": "open loop 3000/s, up to 64 in flight"
+  },
+  "plan": {
+    "driver": "open-loop",
+    "concurrency": 64,
+    "ratePerSecond": 3000,
+    "warmupSeconds": 2,
+    "durationSeconds": 10,
+    "projects": 10
+  },
+  "results": [
+    {
+      "scenario": "healthz",
+      "what": "GET /healthz: the HTTP stack, middleware and request log, no database",
+      "concurrency": 64,
+      "requests": 30000,
+      "ok": 30000,
+      "failed": 0,
+      "statuses": {
+        "200": 30000
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 3000,
+      "latencyMs": {
+        "min": 0.095718,
+        "mean": 0.163726,
+        "p50": 0.161791,
+        "p90": 0.186367,
+        "p99": 0.258047,
+        "p99_9": 0.573439,
+        "max": 1.45269
+      },
+      "scheduled": 30000,
+      "maxScheduleLagMs": 1.063411,
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 0,
+        "acquiresPerRequest": 0,
+        "acquiresThatWaited": 0,
+        "waitedPercent": 0,
+        "meanWaitMsPerWaitingAcquire": 0,
+        "meanAcquireMs": 0
+      }
+    },
+    {
+      "scenario": "mgmt-list-projects",
+      "what": "GET /v1beta1/projects: CLI token HMAC lookup, then the owner's project list",
+      "concurrency": 64,
+      "requests": 30000,
+      "ok": 30000,
+      "failed": 0,
+      "statuses": {
+        "200": 30000
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 3000,
+      "latencyMs": {
+        "min": 0.169926,
+        "mean": 0.236694,
+        "p50": 0.229375,
+        "p90": 0.253951,
+        "p99": 0.471039,
+        "p99_9": 1.146879,
+        "max": 4.560056
+      },
+      "scheduled": 30000,
+      "maxScheduleLagMs": 1.714056,
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 60001,
+        "acquiresPerRequest": 2.0000333333333336,
+        "acquiresThatWaited": 15,
+        "waitedPercent": 0.024999583340277663,
+        "meanWaitMsPerWaitingAcquire": 0.1899972,
+        "meanAcquireMs": 0.00011921889635172747
+      }
+    },
+    {
+      "scenario": "mgmt-web-config",
+      "what": "GET /v1beta1/projects/-/webApps/{app}/config: token, ownership from the app id, config file",
+      "concurrency": 64,
+      "requests": 30000,
+      "ok": 30000,
+      "failed": 0,
+      "statuses": {
+        "200": 30000
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 3000,
+      "latencyMs": {
+        "min": 0.254822,
+        "mean": 0.427299,
+        "p50": 0.344063,
+        "p90": 0.401407,
+        "p99": 1.032191,
+        "p99_9": 20.185087,
+        "max": 24.564231
+      },
+      "scheduled": 30000,
+      "maxScheduleLagMs": 17.876231,
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 180000,
+        "acquiresPerRequest": 6,
+        "acquiresThatWaited": 940,
+        "waitedPercent": 0.5222222222222223,
+        "meanWaitMsPerWaitingAcquire": 0.833723120212766,
+        "meanAcquireMs": 0.004407413722222222
+      }
+    },
+    {
+      "scenario": "console-list-apps",
+      "what": "GET /console/v1/projects/{p}/apps with a session cookie: session lookup, ownership, app list",
+      "concurrency": 64,
+      "requests": 30000,
+      "ok": 30000,
+      "failed": 0,
+      "statuses": {
+        "200": 30000
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 3000,
+      "latencyMs": {
+        "min": 0.182913,
+        "mean": 0.574628,
+        "p50": 0.260095,
+        "p90": 0.647167,
+        "p99": 8.912895,
+        "p99_9": 33.292287,
+        "max": 36.989335
+      },
+      "scheduled": 30000,
+      "maxScheduleLagMs": 15.557126,
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 90356,
+        "acquiresPerRequest": 3.0118666666666667,
+        "acquiresThatWaited": 2241,
+        "waitedPercent": 2.4801894727522247,
+        "meanWaitMsPerWaitingAcquire": 2.3528101807228916,
+        "meanAcquireMs": 0.058432383538447916
+      }
+    },
+    {
+      "scenario": "oauth-token",
+      "what": "POST /oauth2/v1/token: RS256 JWT bearer grant, key lookup, signature check, token insert",
+      "concurrency": 64,
+      "requests": 30000,
+      "ok": 30000,
+      "failed": 0,
+      "statuses": {
+        "200": 30000
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 3000,
+      "latencyMs": {
+        "min": 0.279513,
+        "mean": 0.606521,
+        "p50": 0.352255,
+        "p90": 0.942079,
+        "p99": 3.997695,
+        "p99_9": 26.738687,
+        "max": 32.427206
+      },
+      "scheduled": 30000,
+      "maxScheduleLagMs": 10.278686,
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 90000,
+        "acquiresPerRequest": 3,
+        "acquiresThatWaited": 972,
+        "waitedPercent": 1.08,
+        "meanWaitMsPerWaitingAcquire": 2.7978825380658434,
+        "meanAcquireMs": 0.030284600977777777
+      }
+    }
+  ]
+}
