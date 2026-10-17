@@ -77,6 +77,9 @@ CREATE TABLE control.api_keys (
     display_name   text NOT NULL DEFAULT '',
     restrictions   jsonb NOT NULL DEFAULT '{}',
     state          text NOT NULL DEFAULT 'ACTIVE' CHECK (state IN ('ACTIVE', 'DISABLED', 'DELETED')),
+    -- The platform whose config files carry this key (ADR-007: one key per platform per
+    -- project). NULL for keys created by hand or replaced by a rotation.
+    platform       text CHECK (platform IN ('WEB', 'IOS', 'ANDROID')),
     rotated_from   uuid REFERENCES control.api_keys (uid) ON DELETE SET NULL,
     etag           text NOT NULL,
     created_at     timestamptz NOT NULL DEFAULT now(),
@@ -84,6 +87,8 @@ CREATE TABLE control.api_keys (
     CONSTRAINT api_keys_key_string_key UNIQUE (key_string)
 );
 CREATE INDEX api_keys_project_number_idx ON control.api_keys (project_number);
+CREATE UNIQUE INDEX api_keys_project_platform_key ON control.api_keys (project_number, platform)
+    WHERE platform IS NOT NULL;
 
 CREATE TABLE control.apps (
     app_id         text PRIMARY KEY
@@ -156,11 +161,13 @@ CREATE TABLE control.service_accounts (
 );
 CREATE INDEX service_accounts_project_number_idx ON control.service_accounts (project_number);
 
--- Public keys only. The private key is handed to the developer once and never stored.
+-- Public material only: a self-signed X.509 certificate carrying the public key, served at the
+-- key file's client_x509_cert_url. The private key is handed to the developer once and never
+-- stored.
 CREATE TABLE control.service_account_keys (
     key_id             text PRIMARY KEY CHECK (key_id ~ '^[0-9a-f]{40}$'),
     service_account_id uuid NOT NULL REFERENCES control.service_accounts (id) ON DELETE CASCADE,
-    public_key_pem     text NOT NULL,
+    certificate_pem    text NOT NULL,
     algorithm          text NOT NULL DEFAULT 'RS256' CHECK (algorithm = 'RS256'),
     valid_after        timestamptz NOT NULL DEFAULT now(),
     valid_before       timestamptz,

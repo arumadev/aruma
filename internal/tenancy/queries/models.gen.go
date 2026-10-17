@@ -43,6 +43,7 @@ type ControlApiKey struct {
 	DisplayName   string
 	Restrictions  json.RawMessage
 	State         string
+	Platform      *string
 	RotatedFrom   *uuid.UUID
 	Etag          string
 	CreatedAt     time.Time
@@ -123,7 +124,7 @@ type ControlServiceAccount struct {
 type ControlServiceAccountKey struct {
 	KeyID            string
 	ServiceAccountID uuid.UUID
-	PublicKeyPem     string
+	CertificatePem   string
 	Algorithm        string
 	ValidAfter       time.Time
 	ValidBefore      *time.Time

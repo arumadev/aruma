@@ -176,8 +176,7 @@ func (s *Service) RevokeAccessToken(ctx context.Context, p *authn.Principal, id 
 	return nil
 }
 
-// VerifyServiceToken implements authn.Verifier for service account access tokens. None exist
-// until service accounts can mint them.
+// VerifyServiceToken implements authn.Verifier for service account access tokens.
 func (s *Service) VerifyServiceToken(ctx context.Context, token string) (*authn.Principal, error) {
-	return nil, errInvalidCredential
+	return s.verifyServiceToken(ctx, token)
 }
