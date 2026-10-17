@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruma.dev/schema/google-services.json",
+  "title": "Android google-services.json (fields the Gradle plugin reads)",
+  "type": "object",
+  "required": ["project_info", "client", "configuration_version"],
+  "properties": {
+    "project_info": {
+      "type": "object",
+      "required": ["project_number", "project_id"],
+      "properties": {
+        "project_number": { "type": "string", "pattern": "^[1-9][0-9]{11}$" },
+        "project_id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{4,28}[a-z0-9]$" },
+        "storage_bucket": { "type": "string" },
+        "firebase_url": { "type": "string", "pattern": "^https?://" }
+      }
+    },
+    "client": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["client_info", "api_key"],
+        "properties": {
+          "client_info": {
+            "type": "object",
+            "required": ["mobilesdk_app_id", "android_client_info"],
+            "properties": {
+              "mobilesdk_app_id": { "type": "string", "pattern": "^1:[1-9][0-9]{11}:android:[0-9a-f]{16}$" },
+              "android_client_info": {
+                "type": "object",
+                "required": ["package_name"],
+                "properties": { "package_name": { "type": "string", "minLength": 1 } }
+              }
+            }
+          },
+          "api_key": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["current_key"],
+              "properties": { "current_key": { "type": "string", "pattern": "^A[A-Za-z0-9_-]{38}$" } }
+            }
+          },
+          "oauth_client": { "type": "array" },
+          "services": { "type": "object" }
+        }
+      }
+    },
+    "configuration_version": { "const": "1" }
+  }
+}

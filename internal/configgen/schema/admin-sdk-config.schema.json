@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruma.dev/schema/admin-sdk-config.json",
+  "title": "adminSdkConfig",
+  "type": "object",
+  "required": ["projectId", "databaseURL", "storageBucket"],
+  "additionalProperties": false,
+  "properties": {
+    "projectId": { "type": "string", "pattern": "^[a-z][a-z0-9-]{4,28}[a-z0-9]$" },
+    "databaseURL": { "type": "string", "pattern": "^https?://" },
+    "storageBucket": { "type": "string", "minLength": 1 }
+  }
+}

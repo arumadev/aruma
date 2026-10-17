@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruma.dev/schema/web-config.json",
+  "title": "Web app config (firebaseConfig / WebAppConfig)",
+  "type": "object",
+  "required": ["projectId", "appId", "apiKey", "authDomain", "messagingSenderId", "storageBucket", "databaseURL"],
+  "additionalProperties": false,
+  "properties": {
+    "projectId": { "type": "string", "pattern": "^[a-z][a-z0-9-]{4,28}[a-z0-9]$" },
+    "appId": { "type": "string", "pattern": "^1:[1-9][0-9]{11}:web:[0-9a-f]{16}$" },
+    "apiKey": { "type": "string", "pattern": "^A[A-Za-z0-9_-]{38}$", "not": { "pattern": "^AIza" } },
+    "authDomain": { "type": "string", "minLength": 1 },
+    "messagingSenderId": { "type": "string", "pattern": "^[1-9][0-9]{11}$" },
+    "projectNumber": { "type": "string", "pattern": "^[1-9][0-9]{11}$" },
+    "storageBucket": { "type": "string", "minLength": 1 },
+    "databaseURL": { "type": "string", "pattern": "^https?://" }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "482915736204",
+    "firebase_url": "https://aruma.example.com/?ns=chat-app-default-rtdb",
+    "project_id": "chat-app",
+    "storage_bucket": "chat-app.aruma.example.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:482915736204:android:0a1b2c3d4e5f6071",
+        "android_client_info": {
+          "package_name": "com.ahmad.chat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AruP2mX2kLp9Vt4nRb8sWc1yZd6fHg3jKe5aN0o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:482915736204:android:8a1b2c3d4e5f6072",
+        "android_client_info": {
+          "package_name": "com.ahmad.chat.admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AruP2mX2kLp9Vt4nRb8sWc1yZd6fHg3jKe5aN0o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
