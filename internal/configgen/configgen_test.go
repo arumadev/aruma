@@ -168,7 +168,7 @@ func TestServiceAccountKeyFile(t *testing.T) {
 		PublicURL: "https://aruma.example.com/",
 	})
 	validate(t, "service-account-key.schema.json", doc)
-	golden(t, "service-account-key.json", doc)
+	golden(t, "service-account.json", doc)
 	var m map[string]string
 	if err := json.Unmarshal(doc, &m); err != nil {
 		t.Fatal(err)
