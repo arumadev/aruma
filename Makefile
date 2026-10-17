@@ -20,6 +20,7 @@ help: ## Show this help
 .PHONY: build
 build: ## Build the binaries into bin/
 	$(GO) build -trimpath -ldflags '$(LDFLAGS)' -o bin/aruma ./cmd/aruma
+	$(GO) build -trimpath -ldflags '$(LDFLAGS)' -o bin/arumactl ./cmd/arumactl
 
 .PHONY: test
 test: ## Run all Go tests (needs local Postgres)

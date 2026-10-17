@@ -55,6 +55,8 @@ type ClientInfo struct {
 	UserAgent string
 }
 
+var errNoSuchAccount = apierr.New(apierr.NotFound, "No account with this email exists.")
+
 var errBadCredentials = apierr.New(apierr.Unauthenticated, "The email or password is incorrect.")
 
 // SetupRequired reports whether the instance has no account yet.
@@ -299,7 +301,7 @@ func (s *Service) ResetPassword(ctx context.Context, email, password string) err
 	acc, err := s.q.GetAccountByEmail(ctx, email)
 	if err != nil {
 		if notFound(err) {
-			return errNotFound()
+			return errNoSuchAccount // operator commands only; revealing existence is fine here
 		}
 		return internal(err)
 	}
@@ -324,7 +326,7 @@ func (s *Service) SetDisabled(ctx context.Context, email string, disabled bool) 
 	acc, err := s.q.GetAccountByEmail(ctx, email)
 	if err != nil {
 		if notFound(err) {
-			return errNotFound()
+			return errNoSuchAccount // operator commands only; revealing existence is fine here
 		}
 		return internal(err)
 	}

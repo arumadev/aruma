@@ -13,6 +13,7 @@ import (
 
 	"github.com/osama300/aurma-project/internal/app"
 	"github.com/osama300/aurma-project/internal/config"
+	"github.com/osama300/aurma-project/internal/platform/apierr"
 	"github.com/osama300/aurma-project/internal/platform/log"
 	"github.com/osama300/aurma-project/internal/store"
 )
@@ -23,26 +24,35 @@ var version = "dev"
 const usage = `usage: aruma [--config file] <command>
 
 commands:
-  serve            run the server
-  migrate up       apply pending database migrations
-  migrate status   show the migration version of each schema
-  config check     validate the configuration and exit
-  version          print the version
+  serve                           run the server
+  migrate up|status               apply or show database migrations
+  accounts create --email E       create a project owner account (password from the terminal or stdin)
+  accounts disable|enable --email E
+  accounts reset-password --email E
+  backup --out FILE               dump the database with pg_dump
+  restore --in FILE --yes         replace the database with a backup (stop the server first)
+  config check                    validate the configuration and exit
+  version                         print the version
 
 The configuration is an optional YAML file (--config or ARUMA_CONFIG), overridden by
-ARUMA_* environment variables. See aruma.example.yaml.
+ARUMA_* environment variables. See aruma.example.yaml. backup and restore use pg_dump and
+pg_restore from PATH, or from ARUMA_PG_BIN.
 `
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if err := run(ctx, os.Args[1:], os.Stdout, os.Stderr); err != nil {
+	if err := run(ctx, os.Args[1:], os.Stdin, os.Stdout, os.Stderr); err != nil {
+		var apiErr *apierr.Error
+		if errors.As(err, &apiErr) {
+			err = errors.New(apiErr.Message) // the operator needs the explanation, not the code
+		}
 		fmt.Fprintln(os.Stderr, "aruma:", err)
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("aruma", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { fmt.Fprint(stderr, usage) }
@@ -69,6 +79,16 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 		return app.Serve(ctx, cfg, log.New(stdout, cfg.LogLevel), version)
 	case "migrate":
 		return migrate(ctx, args[1:], stdout)
+	case "accounts":
+		cfg, err := load()
+		if err != nil {
+			return err
+		}
+		return accounts(ctx, cfg, args[1:], stdin, stdout, stderr)
+	case "backup":
+		return backup(ctx, args[1:], stdout, stderr)
+	case "restore":
+		return restore(ctx, args[1:], stdout, stderr)
 	case "config":
 		if len(args) != 2 || args[1] != "check" {
 			return errors.New("usage: aruma config check")
