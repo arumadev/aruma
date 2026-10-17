@@ -135,7 +135,6 @@ type ControlSession struct {
 	ID                uuid.UUID
 	AccountID         uuid.UUID
 	TokenHash         []byte
-	CsrfHash          []byte
 	Ip                *netip.Addr
 	UserAgent         *string
 	CreatedAt         time.Time

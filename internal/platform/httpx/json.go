@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime"
 	"net/http"
 
@@ -66,4 +67,14 @@ func describe(err error) string {
 	default:
 		return err.Error()
 	}
+}
+
+// WriteError renders err as google.rpc.Status. Internal causes are logged with the request id
+// and never sent to the caller.
+func WriteError(w http.ResponseWriter, r *http.Request, logger *slog.Logger, err error) {
+	e := apierr.From(err)
+	if e.Code == apierr.Internal || e.Code == apierr.Unknown || e.Code == apierr.DataLoss {
+		logger.Error("internal error", "request_id", RequestID(r.Context()), "path", r.URL.Path, "error", err)
+	}
+	apierr.Write(w, e)
 }

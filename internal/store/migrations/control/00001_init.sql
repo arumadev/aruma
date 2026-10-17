@@ -16,12 +16,12 @@ CREATE TABLE control.accounts (
     CONSTRAINT accounts_email_lower_key UNIQUE (email_lower)
 );
 
--- Console sessions. Only HMACs of the session and CSRF tokens are stored.
+-- Console sessions. Only the HMAC of the session token is stored; the CSRF token is derived
+-- from the session token, so it needs no column.
 CREATE TABLE control.sessions (
     id                  uuid PRIMARY KEY DEFAULT uuidv7(),
     account_id          uuid NOT NULL REFERENCES control.accounts (id) ON DELETE CASCADE,
     token_hash          bytea NOT NULL,
-    csrf_hash           bytea NOT NULL,
     ip                  inet,
     user_agent          text,
     created_at          timestamptz NOT NULL DEFAULT now(),

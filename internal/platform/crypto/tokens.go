@@ -43,3 +43,16 @@ func (k *Keys) HashToken(token string) []byte {
 
 // EqualHash compares two token hashes in constant time.
 func EqualHash(a, b []byte) bool { return hmac.Equal(a, b) }
+
+// CSRFToken derives the CSRF token bound to a session token. Nothing is stored: the server
+// recomputes it from the session cookie, and another session's token never matches.
+func (k *Keys) CSRFToken(sessionToken string) string {
+	m := hmac.New(sha256.New, k.csrfMAC)
+	m.Write([]byte(sessionToken))
+	return base64.RawURLEncoding.EncodeToString(m.Sum(nil))
+}
+
+// CheckCSRF reports, in constant time, whether token is the CSRF token of sessionToken.
+func (k *Keys) CheckCSRF(sessionToken, token string) bool {
+	return hmac.Equal([]byte(k.CSRFToken(sessionToken)), []byte(token))
+}

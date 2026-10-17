@@ -7,6 +7,10 @@ package queries
 
 import (
 	"context"
+	"net/netip"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 const countAccounts = `-- name: CountAccounts :one
@@ -18,4 +22,455 @@ func (q *Queries) CountAccounts(ctx context.Context) (int64, error) {
 	var count int64
 	err := row.Scan(&count)
 	return count, err
+}
+
+const createAccessToken = `-- name: CreateAccessToken :one
+INSERT INTO control.access_tokens (account_id, name, prefix, token_hash, expires_at)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, account_id, name, prefix, token_hash, created_at, last_used_at, expires_at, revoked_at
+`
+
+type CreateAccessTokenParams struct {
+	AccountID uuid.UUID
+	Name      string
+	Prefix    string
+	TokenHash []byte
+	ExpiresAt *time.Time
+}
+
+func (q *Queries) CreateAccessToken(ctx context.Context, arg CreateAccessTokenParams) (ControlAccessToken, error) {
+	row := q.db.QueryRow(ctx, createAccessToken,
+		arg.AccountID,
+		arg.Name,
+		arg.Prefix,
+		arg.TokenHash,
+		arg.ExpiresAt,
+	)
+	var i ControlAccessToken
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.Name,
+		&i.Prefix,
+		&i.TokenHash,
+		&i.CreatedAt,
+		&i.LastUsedAt,
+		&i.ExpiresAt,
+		&i.RevokedAt,
+	)
+	return i, err
+}
+
+const createAccount = `-- name: CreateAccount :one
+INSERT INTO control.accounts (email, password_hash, display_name, locale)
+VALUES ($1, $2, $3, $4)
+RETURNING id, email, email_lower, password_hash, display_name, locale, disabled, created_at, updated_at
+`
+
+type CreateAccountParams struct {
+	Email        string
+	PasswordHash string
+	DisplayName  string
+	Locale       string
+}
+
+func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (ControlAccount, error) {
+	row := q.db.QueryRow(ctx, createAccount,
+		arg.Email,
+		arg.PasswordHash,
+		arg.DisplayName,
+		arg.Locale,
+	)
+	var i ControlAccount
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.EmailLower,
+		&i.PasswordHash,
+		&i.DisplayName,
+		&i.Locale,
+		&i.Disabled,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createSession = `-- name: CreateSession :one
+INSERT INTO control.sessions (account_id, token_hash, ip, user_agent, idle_expires_at, absolute_expires_at)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, account_id, token_hash, ip, user_agent, created_at, last_seen_at, idle_expires_at, absolute_expires_at, revoked_at
+`
+
+type CreateSessionParams struct {
+	AccountID         uuid.UUID
+	TokenHash         []byte
+	Ip                *netip.Addr
+	UserAgent         *string
+	IdleExpiresAt     time.Time
+	AbsoluteExpiresAt time.Time
+}
+
+func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (ControlSession, error) {
+	row := q.db.QueryRow(ctx, createSession,
+		arg.AccountID,
+		arg.TokenHash,
+		arg.Ip,
+		arg.UserAgent,
+		arg.IdleExpiresAt,
+		arg.AbsoluteExpiresAt,
+	)
+	var i ControlSession
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.TokenHash,
+		&i.Ip,
+		&i.UserAgent,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.IdleExpiresAt,
+		&i.AbsoluteExpiresAt,
+		&i.RevokedAt,
+	)
+	return i, err
+}
+
+const getAccount = `-- name: GetAccount :one
+SELECT id, email, email_lower, password_hash, display_name, locale, disabled, created_at, updated_at FROM control.accounts WHERE id = $1
+`
+
+func (q *Queries) GetAccount(ctx context.Context, id uuid.UUID) (ControlAccount, error) {
+	row := q.db.QueryRow(ctx, getAccount, id)
+	var i ControlAccount
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.EmailLower,
+		&i.PasswordHash,
+		&i.DisplayName,
+		&i.Locale,
+		&i.Disabled,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getAccountByEmail = `-- name: GetAccountByEmail :one
+SELECT id, email, email_lower, password_hash, display_name, locale, disabled, created_at, updated_at FROM control.accounts WHERE email_lower = lower($1::text)
+`
+
+func (q *Queries) GetAccountByEmail(ctx context.Context, email string) (ControlAccount, error) {
+	row := q.db.QueryRow(ctx, getAccountByEmail, email)
+	var i ControlAccount
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.EmailLower,
+		&i.PasswordHash,
+		&i.DisplayName,
+		&i.Locale,
+		&i.Disabled,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getActiveAccessToken = `-- name: GetActiveAccessToken :one
+SELECT t.id, t.account_id, t.name, t.prefix, t.token_hash, t.created_at, t.last_used_at, t.expires_at, t.revoked_at, a.disabled AS account_disabled
+FROM control.access_tokens t
+JOIN control.accounts a ON a.id = t.account_id
+WHERE t.token_hash = $1
+  AND t.revoked_at IS NULL
+  AND (t.expires_at IS NULL OR t.expires_at > now())
+`
+
+type GetActiveAccessTokenRow struct {
+	ControlAccessToken ControlAccessToken
+	AccountDisabled    bool
+}
+
+func (q *Queries) GetActiveAccessToken(ctx context.Context, tokenHash []byte) (GetActiveAccessTokenRow, error) {
+	row := q.db.QueryRow(ctx, getActiveAccessToken, tokenHash)
+	var i GetActiveAccessTokenRow
+	err := row.Scan(
+		&i.ControlAccessToken.ID,
+		&i.ControlAccessToken.AccountID,
+		&i.ControlAccessToken.Name,
+		&i.ControlAccessToken.Prefix,
+		&i.ControlAccessToken.TokenHash,
+		&i.ControlAccessToken.CreatedAt,
+		&i.ControlAccessToken.LastUsedAt,
+		&i.ControlAccessToken.ExpiresAt,
+		&i.ControlAccessToken.RevokedAt,
+		&i.AccountDisabled,
+	)
+	return i, err
+}
+
+const getActiveSession = `-- name: GetActiveSession :one
+SELECT s.id, s.account_id, s.token_hash, s.ip, s.user_agent, s.created_at, s.last_seen_at, s.idle_expires_at, s.absolute_expires_at, s.revoked_at, a.disabled AS account_disabled
+FROM control.sessions s
+JOIN control.accounts a ON a.id = s.account_id
+WHERE s.token_hash = $1
+  AND s.revoked_at IS NULL
+  AND s.idle_expires_at > now()
+  AND s.absolute_expires_at > now()
+`
+
+type GetActiveSessionRow struct {
+	ControlSession  ControlSession
+	AccountDisabled bool
+}
+
+// A session is valid while unrevoked, within both lifetimes, and its account is enabled.
+func (q *Queries) GetActiveSession(ctx context.Context, tokenHash []byte) (GetActiveSessionRow, error) {
+	row := q.db.QueryRow(ctx, getActiveSession, tokenHash)
+	var i GetActiveSessionRow
+	err := row.Scan(
+		&i.ControlSession.ID,
+		&i.ControlSession.AccountID,
+		&i.ControlSession.TokenHash,
+		&i.ControlSession.Ip,
+		&i.ControlSession.UserAgent,
+		&i.ControlSession.CreatedAt,
+		&i.ControlSession.LastSeenAt,
+		&i.ControlSession.IdleExpiresAt,
+		&i.ControlSession.AbsoluteExpiresAt,
+		&i.ControlSession.RevokedAt,
+		&i.AccountDisabled,
+	)
+	return i, err
+}
+
+const listAccessTokens = `-- name: ListAccessTokens :many
+SELECT id, account_id, name, prefix, token_hash, created_at, last_used_at, expires_at, revoked_at FROM control.access_tokens
+WHERE account_id = $1 AND revoked_at IS NULL
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListAccessTokens(ctx context.Context, accountID uuid.UUID) ([]ControlAccessToken, error) {
+	rows, err := q.db.Query(ctx, listAccessTokens, accountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ControlAccessToken{}
+	for rows.Next() {
+		var i ControlAccessToken
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountID,
+			&i.Name,
+			&i.Prefix,
+			&i.TokenHash,
+			&i.CreatedAt,
+			&i.LastUsedAt,
+			&i.ExpiresAt,
+			&i.RevokedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSessions = `-- name: ListSessions :many
+SELECT id, account_id, token_hash, ip, user_agent, created_at, last_seen_at, idle_expires_at, absolute_expires_at, revoked_at FROM control.sessions
+WHERE account_id = $1 AND revoked_at IS NULL
+  AND idle_expires_at > now() AND absolute_expires_at > now()
+ORDER BY last_seen_at DESC
+`
+
+func (q *Queries) ListSessions(ctx context.Context, accountID uuid.UUID) ([]ControlSession, error) {
+	rows, err := q.db.Query(ctx, listSessions, accountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ControlSession{}
+	for rows.Next() {
+		var i ControlSession
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountID,
+			&i.TokenHash,
+			&i.Ip,
+			&i.UserAgent,
+			&i.CreatedAt,
+			&i.LastSeenAt,
+			&i.IdleExpiresAt,
+			&i.AbsoluteExpiresAt,
+			&i.RevokedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const revokeAccessToken = `-- name: RevokeAccessToken :execrows
+UPDATE control.access_tokens SET revoked_at = now()
+WHERE id = $1 AND account_id = $2 AND revoked_at IS NULL
+`
+
+type RevokeAccessTokenParams struct {
+	ID        uuid.UUID
+	AccountID uuid.UUID
+}
+
+func (q *Queries) RevokeAccessToken(ctx context.Context, arg RevokeAccessTokenParams) (int64, error) {
+	result, err := q.db.Exec(ctx, revokeAccessToken, arg.ID, arg.AccountID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const revokeAllAccessTokens = `-- name: RevokeAllAccessTokens :exec
+UPDATE control.access_tokens SET revoked_at = now()
+WHERE account_id = $1 AND revoked_at IS NULL
+`
+
+func (q *Queries) RevokeAllAccessTokens(ctx context.Context, accountID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, revokeAllAccessTokens, accountID)
+	return err
+}
+
+const revokeAllSessions = `-- name: RevokeAllSessions :exec
+UPDATE control.sessions SET revoked_at = now()
+WHERE account_id = $1 AND revoked_at IS NULL
+`
+
+func (q *Queries) RevokeAllSessions(ctx context.Context, accountID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, revokeAllSessions, accountID)
+	return err
+}
+
+const revokeOtherSessions = `-- name: RevokeOtherSessions :exec
+UPDATE control.sessions SET revoked_at = now()
+WHERE account_id = $1 AND revoked_at IS NULL AND id <> $2
+`
+
+type RevokeOtherSessionsParams struct {
+	AccountID uuid.UUID
+	KeepID    uuid.UUID
+}
+
+func (q *Queries) RevokeOtherSessions(ctx context.Context, arg RevokeOtherSessionsParams) error {
+	_, err := q.db.Exec(ctx, revokeOtherSessions, arg.AccountID, arg.KeepID)
+	return err
+}
+
+const revokeSession = `-- name: RevokeSession :execrows
+UPDATE control.sessions SET revoked_at = now()
+WHERE id = $1 AND account_id = $2 AND revoked_at IS NULL
+`
+
+type RevokeSessionParams struct {
+	ID        uuid.UUID
+	AccountID uuid.UUID
+}
+
+func (q *Queries) RevokeSession(ctx context.Context, arg RevokeSessionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, revokeSession, arg.ID, arg.AccountID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const setAccountDisabled = `-- name: SetAccountDisabled :exec
+UPDATE control.accounts SET disabled = $1, updated_at = now() WHERE id = $2
+`
+
+type SetAccountDisabledParams struct {
+	Disabled bool
+	ID       uuid.UUID
+}
+
+func (q *Queries) SetAccountDisabled(ctx context.Context, arg SetAccountDisabledParams) error {
+	_, err := q.db.Exec(ctx, setAccountDisabled, arg.Disabled, arg.ID)
+	return err
+}
+
+const setAccountPassword = `-- name: SetAccountPassword :exec
+UPDATE control.accounts SET password_hash = $1, updated_at = now() WHERE id = $2
+`
+
+type SetAccountPasswordParams struct {
+	PasswordHash string
+	ID           uuid.UUID
+}
+
+func (q *Queries) SetAccountPassword(ctx context.Context, arg SetAccountPasswordParams) error {
+	_, err := q.db.Exec(ctx, setAccountPassword, arg.PasswordHash, arg.ID)
+	return err
+}
+
+const touchAccessToken = `-- name: TouchAccessToken :exec
+UPDATE control.access_tokens SET last_used_at = now() WHERE id = $1
+`
+
+func (q *Queries) TouchAccessToken(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, touchAccessToken, id)
+	return err
+}
+
+const touchSession = `-- name: TouchSession :exec
+UPDATE control.sessions
+SET last_seen_at = now(), idle_expires_at = least($1, absolute_expires_at)
+WHERE id = $2
+`
+
+type TouchSessionParams struct {
+	IdleExpiresAt time.Time
+	ID            uuid.UUID
+}
+
+func (q *Queries) TouchSession(ctx context.Context, arg TouchSessionParams) error {
+	_, err := q.db.Exec(ctx, touchSession, arg.IdleExpiresAt, arg.ID)
+	return err
+}
+
+const updateAccountProfile = `-- name: UpdateAccountProfile :one
+UPDATE control.accounts
+SET display_name = coalesce($1, display_name),
+    locale = coalesce($2, locale),
+    updated_at = now()
+WHERE id = $3
+RETURNING id, email, email_lower, password_hash, display_name, locale, disabled, created_at, updated_at
+`
+
+type UpdateAccountProfileParams struct {
+	DisplayName *string
+	Locale      *string
+	ID          uuid.UUID
+}
+
+func (q *Queries) UpdateAccountProfile(ctx context.Context, arg UpdateAccountProfileParams) (ControlAccount, error) {
+	row := q.db.QueryRow(ctx, updateAccountProfile, arg.DisplayName, arg.Locale, arg.ID)
+	var i ControlAccount
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.EmailLower,
+		&i.PasswordHash,
+		&i.DisplayName,
+		&i.Locale,
+		&i.Disabled,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

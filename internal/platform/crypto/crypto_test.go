@@ -3,6 +3,7 @@ package crypto
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"strings"
 	"sync"
 	"testing"
@@ -171,3 +172,19 @@ func TestNewKeysRejectsShortMaster(t *testing.T) {
 		t.Fatal("accepted a 16-byte master key")
 	}
 }
+
+func TestCSRFTokenIsBoundToSession(t *testing.T) {
+	k := testKeys(t)
+	a, b := NewToken(""), NewToken("")
+	if !k.CheckCSRF(a, k.CSRFToken(a)) {
+		t.Fatal("own CSRF token rejected")
+	}
+	if k.CheckCSRF(b, k.CSRFToken(a)) || k.CheckCSRF(a, "") {
+		t.Fatal("foreign or empty CSRF token accepted")
+	}
+	if k.CSRFToken(a) == base64Of(k.HashToken(a)) {
+		t.Fatal("CSRF key must differ from the token HMAC key")
+	}
+}
+
+func base64Of(b []byte) string { return base64.RawURLEncoding.EncodeToString(b) }

@@ -186,3 +186,18 @@ func splitPath(escaped string) ([]string, bool) {
 	}
 	return out, true
 }
+
+// RouteInfo describes a registered route.
+type RouteInfo struct {
+	Method  string
+	Pattern string
+}
+
+// Routes lists the registered routes in registration order.
+func (r *Router) Routes() []RouteInfo {
+	out := make([]RouteInfo, len(r.routes))
+	for i, rt := range r.routes {
+		out[i] = RouteInfo{Method: rt.method, Pattern: rt.pattern}
+	}
+	return out
+}
