@@ -167,7 +167,7 @@ func (q *Queries) GetPassword(ctx context.Context, arg GetPasswordParams) (AuthU
 }
 
 const getProjectConfig = `-- name: GetProjectConfig :one
-SELECT project_number, password_enabled, anonymous_enabled, client_signup_enabled, enumeration_protection, authorized_domains, password_min_length, password_require_lower, password_require_upper, password_require_digit, password_require_symbol, password_enforcement, app_name, mail_sender_name, mail_sender_address, mail_reply_to, smtp_host, smtp_port, smtp_username, smtp_password_enc, smtp_tls, updated_at FROM auth.project_config WHERE project_number = $1
+SELECT project_number, password_enabled, anonymous_enabled, client_signup_enabled, enumeration_protection, authorized_domains, password_min_length, password_require_lower, password_require_upper, password_require_digit, password_require_symbol, password_enforcement, app_name, mail_sender_name, mail_sender_address, mail_reply_to, smtp_host, smtp_port, smtp_username, smtp_password_enc, smtp_tls, updated_at, mail_dev_mailbox FROM auth.project_config WHERE project_number = $1
 `
 
 func (q *Queries) GetProjectConfig(ctx context.Context, projectNumber int64) (AuthProjectConfig, error) {
@@ -196,6 +196,7 @@ func (q *Queries) GetProjectConfig(ctx context.Context, projectNumber int64) (Au
 		&i.SmtpPasswordEnc,
 		&i.SmtpTls,
 		&i.UpdatedAt,
+		&i.MailDevMailbox,
 	)
 	return i, err
 }
@@ -693,7 +694,7 @@ UPDATE auth.project_config SET
     app_name = $12,
     updated_at = now()
 WHERE project_number = $13
-RETURNING project_number, password_enabled, anonymous_enabled, client_signup_enabled, enumeration_protection, authorized_domains, password_min_length, password_require_lower, password_require_upper, password_require_digit, password_require_symbol, password_enforcement, app_name, mail_sender_name, mail_sender_address, mail_reply_to, smtp_host, smtp_port, smtp_username, smtp_password_enc, smtp_tls, updated_at
+RETURNING project_number, password_enabled, anonymous_enabled, client_signup_enabled, enumeration_protection, authorized_domains, password_min_length, password_require_lower, password_require_upper, password_require_digit, password_require_symbol, password_enforcement, app_name, mail_sender_name, mail_sender_address, mail_reply_to, smtp_host, smtp_port, smtp_username, smtp_password_enc, smtp_tls, updated_at, mail_dev_mailbox
 `
 
 type UpdateProjectConfigParams struct {
@@ -752,6 +753,7 @@ func (q *Queries) UpdateProjectConfig(ctx context.Context, arg UpdateProjectConf
 		&i.SmtpPasswordEnc,
 		&i.SmtpTls,
 		&i.UpdatedAt,
+		&i.MailDevMailbox,
 	)
 	return i, err
 }

@@ -29,13 +29,15 @@ type AuthEmailOutbox struct {
 	ProjectNumber int64
 	Kind          string
 	Recipient     string
-	Subject       string
-	Body          string
 	CreatedAt     time.Time
 	Attempts      int32
 	NextAttemptAt time.Time
 	SentAt        *time.Time
 	LastError     *string
+	Locale        string
+	MessageEnc    []byte
+	DevMailbox    bool
+	FailedAt      *time.Time
 }
 
 type AuthEmailTemplate struct {
@@ -109,6 +111,7 @@ type AuthProjectConfig struct {
 	SmtpPasswordEnc       []byte
 	SmtpTls               string
 	UpdatedAt             time.Time
+	MailDevMailbox        *bool
 }
 
 type AuthRefreshToken struct {
