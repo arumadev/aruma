@@ -14,19 +14,17 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useSnackbar } from '@/components/ui/Snackbar';
 import { TextField } from '@/components/ui/TextField';
 import { useProject } from '@/features/project/ProjectContext';
-import { ApiError } from '@/lib/api/client';
 import * as api from '@/lib/api/console';
 import type { AuthConfig, EmailTemplate, EmailTemplateType, Locale, SmtpSecurity, SmtpSettings, SmtpUpdate } from '@/lib/api/types';
 import { useErrorText } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 import { useResource, type Resource } from '@/lib/hooks/useResource';
 import { LOCALES } from '@/lib/i18n/locales';
+import { isMissingRoute } from './missingRoute';
 import { bodyText, fillVariables, TEMPLATE_VARIABLES } from './templatePreview';
 import styles from './TemplatesScreen.module.css';
 
 export const TEMPLATE_TYPES: EmailTemplateType[] = ['VERIFY_EMAIL', 'PASSWORD_RESET', 'VERIFY_AND_CHANGE_EMAIL', 'RECOVER_EMAIL'];
-
-const isMissing = (error: unknown) => error instanceof ApiError && error.code === 404;
 
 /** The emails Auth sends, per type and language, and the SMTP server that sends them. */
 export function TemplatesScreen() {
@@ -54,7 +52,7 @@ function TemplateEditor({ appName }: { appName: string }) {
   const [language, setLanguage] = useState<Locale>('ar');
 
   let content;
-  if (isMissing(templates.error)) {
+  if (isMissingRoute(templates.error)) {
     content = <Banner tone="info">{t('unavailable')}</Banner>;
   } else if (templates.error) {
     content = (
@@ -85,22 +83,24 @@ function TemplateEditor({ appName }: { appName: string }) {
 
   return (
     <Card title={t('title')} description={t('description')}>
-      <div className={styles.pickers}>
-        <Select
-          className={styles.picker}
-          label={t('type')}
-          value={type}
-          onChange={(v) => setType(v as EmailTemplateType)}
-          options={TEMPLATE_TYPES.map((x) => ({ id: x, label: t(`types.${x}`) }))}
-        />
-        <Select
-          className={styles.picker}
-          label={t('language')}
-          value={language}
-          onChange={(v) => setLanguage(v as Locale)}
-          options={LOCALES.map((l) => ({ id: l, label: tLocale(l) }))}
-        />
-      </div>
+      {templates.data && (
+        <div className={styles.pickers}>
+          <Select
+            className={styles.picker}
+            label={t('type')}
+            value={type}
+            onChange={(v) => setType(v as EmailTemplateType)}
+            options={TEMPLATE_TYPES.map((x) => ({ id: x, label: t(`types.${x}`) }))}
+          />
+          <Select
+            className={styles.picker}
+            label={t('language')}
+            value={language}
+            onChange={(v) => setLanguage(v as Locale)}
+            options={LOCALES.map((l) => ({ id: l, label: tLocale(l) }))}
+          />
+        </div>
+      )}
       {content}
     </Card>
   );
@@ -291,7 +291,7 @@ function SmtpCard() {
   const smtp = useResource((signal) => api.getSmtp(project.projectId, signal), [project.projectId]);
 
   let content;
-  if (isMissing(smtp.error)) content = <Banner tone="info">{t('unavailable')}</Banner>;
+  if (isMissingRoute(smtp.error)) content = <Banner tone="info">{t('unavailable')}</Banner>;
   else if (smtp.error) {
     content = (
       <Banner tone="error" action={<Button variant="text" onPress={smtp.reload}>{tCommon('retry')}</Button>}>
@@ -466,7 +466,7 @@ function TestDialog({ onClose }: { onClose: () => void }) {
       }
     >
       <p>{t('testBody')}</p>
-      {Boolean(error) && <Banner tone="error">{isMissing(error) ? t('unavailable') : errorText.message(error)}</Banner>}
+      {Boolean(error) && <Banner tone="error">{isMissingRoute(error) ? t('unavailable') : errorText.message(error)}</Banner>}
       <TextField label={t('testTo')} type="email" ltr autoFocus value={to} onChange={setTo} />
     </Dialog>
   );

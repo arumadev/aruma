@@ -710,7 +710,7 @@
       "blockSignupHint": "Only this console and the Admin SDK can create users. Existing users still sign in."
     },
     "federated": {
-      "title": "Google and Apple",
+      "title": "Sign in with Google and Apple",
       "unavailable": "Google and Apple sign-in aren't available on this server yet.",
       "saved": "Provider saved.",
       "google": "Google",

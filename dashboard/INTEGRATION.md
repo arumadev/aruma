@@ -113,7 +113,8 @@ npm run dev          # http://localhost:3000, /console/v1 proxied to ARUMA_DEV_A
 The Auth section (`/project/auth/…`: Users, Sign-in methods, Templates, Mailbox, Settings) uses
 the routes in `docs/api/console.md` and, from the email and provider work, the routes below.
 Their shapes were not fixed when the screens were built, so this is what the dashboard expects
-(`src/lib/api/types.ts`). Each of them may answer 404 until it exists: the screens then show a
+(`src/lib/api/types.ts`). Each of them may be missing until it exists, answering 404 (or 501 for
+`users/{uid}:sendPasswordReset`, whose path reaches the user route): the screens then show a
 "not available on this server yet" note instead of an error, and hide the Mailbox tab.
 
 Every path starts with `/console/v1/projects/{project}/auth`.

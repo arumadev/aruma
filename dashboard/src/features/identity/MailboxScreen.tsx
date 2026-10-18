@@ -13,11 +13,11 @@ import { useSnackbar } from '@/components/ui/Snackbar';
 import { Cell, Row, Table } from '@/components/ui/Table';
 import { Time } from '@/components/ui/Time';
 import { useProject } from '@/features/project/ProjectContext';
-import { ApiError } from '@/lib/api/client';
 import * as api from '@/lib/api/console';
 import { useErrorText } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 import { useAuthSection } from './AuthSection';
+import { isMissingRoute } from './missingRoute';
 import styles from './MailboxScreen.module.css';
 
 /** Dev mode only: the emails Auth would have sent, with their action links. */
@@ -32,7 +32,7 @@ export function MailboxScreen() {
   const [clearing, setClearing] = useState(false);
   useDocumentTitle(t('title'));
 
-  const off = (mailbox.error instanceof ApiError && mailbox.error.code === 404) || mailbox.data?.enabled === false;
+  const off = isMissingRoute(mailbox.error) || mailbox.data?.enabled === false;
   if (off) {
     return (
       <EmptyState icon="inbox" title={t('offTitle')}>

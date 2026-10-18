@@ -710,7 +710,7 @@
       "blockSignupHint": "لا يُنشئ المستخدمين إلا لوحة التحكم هذه وAdmin SDK. ويظل المستخدمون الحاليون قادرين على تسجيل الدخول."
     },
     "federated": {
-      "title": "Google وApple",
+      "title": "الدخول عبر Google وApple",
       "unavailable": "تسجيل الدخول عبر Google وApple غير متاح على هذا الخادم بعد.",
       "saved": "حُفظ المزوّد.",
       "google": "Google",

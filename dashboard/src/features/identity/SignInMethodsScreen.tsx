@@ -14,13 +14,13 @@ import { useSnackbar } from '@/components/ui/Snackbar';
 import { Switch } from '@/components/ui/Switch';
 import { TextField } from '@/components/ui/TextField';
 import { useProject } from '@/features/project/ProjectContext';
-import { ApiError } from '@/lib/api/client';
 import * as api from '@/lib/api/console';
 import type { AuthConfig, AuthConfigUpdate, FederatedProvider, FederatedProviderUpdate, PasswordEnforcement } from '@/lib/api/types';
 import { useErrorText } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 import { useResource } from '@/lib/hooks/useResource';
 import { isValidDomain, normalizeDomain } from './domains';
+import { isMissingRoute } from './missingRoute';
 import { SettingSwitch } from './SettingSwitch';
 import styles from './SignInMethodsScreen.module.css';
 
@@ -105,7 +105,7 @@ function Methods({ config, onSaved }: { config: AuthConfig; onSaved: (config: Au
   );
 }
 
-/** Google and Apple. Until the provider routes exist on the server, they answer 404. */
+/** Google and Apple. The provider routes may not exist on the server yet. */
 function FederatedProviders({ editable }: { editable: boolean }) {
   const t = useTranslations('auth.federated');
   const tCommon = useTranslations('common');
@@ -113,7 +113,7 @@ function FederatedProviders({ editable }: { editable: boolean }) {
   const { project } = useProject();
   const providers = useResource((signal) => api.listFederatedProviders(project.projectId, signal), [project.projectId]);
 
-  if (providers.error instanceof ApiError && providers.error.code === 404) {
+  if (isMissingRoute(providers.error)) {
     return (
       <Card title={t('title')}>
         <Banner tone="info">{t('unavailable')}</Banner>

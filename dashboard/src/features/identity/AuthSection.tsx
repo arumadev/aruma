@@ -24,7 +24,7 @@ const TAB_BY_PATH: Record<string, Tab> = {
 };
 
 interface AuthSectionValue {
-  /** The dev mailbox; a 404 or `enabled: false` means the server sends real email. */
+  /** The dev mailbox; a missing route or `enabled: false` means the server sends real email. */
   mailbox: Resource<Mailbox>;
 }
 

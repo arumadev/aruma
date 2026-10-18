@@ -16,14 +16,14 @@ import { Cell, Row, Table } from '@/components/ui/Table';
 import { TextField } from '@/components/ui/TextField';
 import { Time } from '@/components/ui/Time';
 import { useProject } from '@/features/project/ProjectContext';
-import { ApiError } from '@/lib/api/client';
 import * as api from '@/lib/api/console';
 import type { AuthUser } from '@/lib/api/types';
-import { authCode, useErrorText } from '@/lib/errors';
+import { useErrorText } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 import { useResource } from '@/lib/hooks/useResource';
 import { routes } from '@/lib/routes';
 import { checkClaims, CLAIMS_MAX_BYTES, formatClaims } from './claims';
+import { isMissingRoute } from './missingRoute';
 import { ProviderNames } from './ProviderNames';
 import { providerLabel, providerLabels } from './providers';
 import styles from './UserScreen.module.css';
@@ -95,8 +95,7 @@ function UserDetails({ user, onChange }: { user: AuthUser; onChange: (user: Auth
     }
   }
 
-  // Until the email work is merged, the reset route itself answers 404.
-  const resetUnavailable = error instanceof ApiError && error.code === 404 && authCode(error) !== 'USER_NOT_FOUND';
+  const resetUnavailable = isMissingRoute(error);
   const labels = providerLabels(user).map((l) => tProvider(l));
 
   return (

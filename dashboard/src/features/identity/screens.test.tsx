@@ -106,8 +106,12 @@ describe('UserScreen', () => {
     await waitFor(() => expect(body(fetchMock, 'PATCH', `${BASE}/users/u-amal`)).toEqual({ customClaims: '{"tier":"gold"}' }));
   });
 
-  it('says so inline when the server cannot send password resets yet', async () => {
-    routes({ [`POST ${BASE}/users/u-amal:sendPasswordReset`]: notFound });
+  // Without the route, the server answers 404, or 501 when the path reaches the user route.
+  it.each([
+    ['404', notFound],
+    ['501', () => json(501, { error: { code: 501, status: 'UNIMPLEMENTED', message: 'Method not allowed.' } })],
+  ])('says so inline when the server cannot send password resets yet (%s)', async (_, reply) => {
+    routes({ [`POST ${BASE}/users/u-amal:sendPasswordReset`]: reply });
     renderInProject(<UserScreen />, { search: 'id=chat-app&uid=u-amal' });
     await userEvent.click(await screen.findByRole('button', { name: 'إرسال إعادة تعيين كلمة المرور' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('لا يستطيع هذا الخادم إرسال رسائل إعادة تعيين كلمة المرور بعد.');
