@@ -52,6 +52,15 @@ func (p *authProject) signUp(email, password string) *Response {
 	return ok(p.env.t, p.call(itk+"accounts:signUp", map[string]any{"email": email, "password": password, "returnSecureToken": true}))
 }
 
+// ageSessions moves every existing session two seconds into the past. Revocation works at
+// second precision, as Firebase's validSince does, so a test that revokes right after signing
+// in ages its sessions first.
+func (p *authProject) ageSessions() {
+	p.env.t.Helper()
+	p.sql(`UPDATE auth.refresh_tokens SET created_at = created_at - interval '2 seconds'`)
+	p.sql(`UPDATE auth.users SET created_at = created_at - interval '2 seconds', tokens_valid_after = tokens_valid_after - interval '2 seconds'`)
+}
+
 // sql runs a statement against the server's database.
 func (p *authProject) sql(stmt string, args ...any) {
 	p.env.t.Helper()

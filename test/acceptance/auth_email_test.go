@@ -27,12 +27,6 @@ func (p *authProject) callWith(path string, body any, headers map[string]string)
 	return c.do("POST", path+"?key="+p.key, body)
 }
 
-// signUp creates an email/password user and returns the signUp response.
-func (p *authProject) signUp(email, password string) *Response {
-	p.env.t.Helper()
-	return ok(p.env.t, p.call(itk+"accounts:signUp", map[string]any{"email": email, "password": password, "returnSecureToken": true}))
-}
-
 // mailbox returns the project's dev mailbox, newest first.
 func (p *authProject) mailbox() []map[string]any {
 	p.env.t.Helper()
@@ -187,6 +181,7 @@ func TestAuthPasswordReset(t *testing.T) {
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")
+	p.ageSessions()
 
 	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "Sara@example.com"}))
 	m := p.lastMail("sara@example.com")
@@ -236,6 +231,7 @@ func TestAuthPasswordReset(t *testing.T) {
 	}
 	form.Set("newPassword", "page-secret-1")
 	form.Set("confirmPassword", "page-secret-1")
+	p.ageSessions()
 	if r := e.page("POST", "/__/auth/action", form, nil); r.Status != 200 || !strings.Contains(string(r.Body), "Your password has changed") {
 		t.Fatalf("reset: %d %s", r.Status, r.Body)
 	}
@@ -411,6 +407,7 @@ func TestAuthChangeAndRecoverEmail(t *testing.T) {
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")
+	p.ageSessions()
 	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "VERIFY_AND_CHANGE_EMAIL", "idToken": up.str("idToken"), "newEmail": "sara.new@example.com"}))
 	m := p.lastMail("sara.new@example.com")
 	if m["type"] != "VERIFY_AND_CHANGE_EMAIL" || !strings.Contains(m["text"].(string), "sara@example.com") || !strings.Contains(m["text"].(string), "sara.new@example.com") {
@@ -437,6 +434,7 @@ func TestAuthChangeAndRecoverEmail(t *testing.T) {
 	if !strings.Contains(string(pg.Body), "sara@example.com") {
 		t.Fatalf("recovery page: %s", pg.Body)
 	}
+	p.ageSessions()
 	if r := e.page("POST", "/__/auth/action", formOf(t, pg), nil); r.Status != 200 {
 		t.Fatalf("recover: %d %s", r.Status, r.Body)
 	}
@@ -489,6 +487,7 @@ func TestAuthEmailSMTPDelivery(t *testing.T) {
 	expect(t, p.owner.do("PATCH", smtp, map[string]any{"senderAddress": "x\r\nBcc: a@b.c"}), 400, "INVALID_ARGUMENT")
 
 	up := p.signUp("sara@example.com", "secret1")
+	p.ageSessions()
 	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "sara@example.com"}))
 	box := p.owner.mustOK(p.owner.do("GET", "/console/v1/projects/chat-app/auth/mailbox", nil))
 	if box.JSON["enabled"] != false || len(box.list("messages")) != 0 {
