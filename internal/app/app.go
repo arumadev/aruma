@@ -87,7 +87,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		Console: consoleAPI.Handler(),
 		Mgmt:    mgmtAPI.Handler(),
 		OAuth:   oauth.New(svc, logger).Handler(),
-		Auth:    authapi.New(authSvc, logger).Handler(),
+		Auth:    authapi.New(authSvc, auth, logger).Handler(),
 		Static:  dashboard,
 	})
 	return &App{Config: cfg, Service: svc, Auth: authSvc, Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
