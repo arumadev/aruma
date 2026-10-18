@@ -4,6 +4,7 @@
 //	/identitytoolkit.googleapis.com/v1/accounts:*         client calls (web, Android)
 //	/www.googleapis.com/identitytoolkit/v3/relyingparty/* the same calls, as iOS names them
 //	/securetoken.googleapis.com/v1/token                  refresh
+//	/identitytoolkit.googleapis.com/v1/projects/{p}/...   the Admin API (admin.go)
 //	/issuers/{project}/..., /session-issuers/{project}/... discovery and JWKS (ADR-004)
 //
 // Client calls are identified by an API key and answer any origin (CORS *, no credentials).
@@ -24,24 +25,26 @@ import (
 
 	"github.com/osama300/aurma-project/internal/identity/core"
 	"github.com/osama300/aurma-project/internal/platform/apierr"
+	"github.com/osama300/aurma-project/internal/platform/authn"
 	"github.com/osama300/aurma-project/internal/platform/httpx"
 	"github.com/osama300/aurma-project/internal/platform/ratelimit"
 )
 
 // API is the Auth HTTP layer.
 type API struct {
-	svc *core.Service
-	log *slog.Logger
+	svc  *core.Service
+	auth *authn.Authenticator // Admin API callers
+	log  *slog.Logger
 
 	ipLimit     *ratelimit.Limiter // every client call, per address
 	signupLimit *ratelimit.Limiter // account creation, per address
 	backoff     *ratelimit.Backoff // password guesses, per project and email
 }
 
-// New returns the Auth API.
-func New(svc *core.Service, logger *slog.Logger) *API {
+// New returns the Auth API. auth authenticates the Admin API's callers.
+func New(svc *core.Service, auth *authn.Authenticator, logger *slog.Logger) *API {
 	return &API{
-		svc: svc, log: logger,
+		svc: svc, auth: auth, log: logger,
 		ipLimit:     ratelimit.NewLimiter(300, 100),
 		signupLimit: ratelimit.NewLimiter(2, 100), // ≈ Firebase's 100 accounts per hour per address
 		backoff:     ratelimit.NewBackoff(10, 15*time.Minute, 30*time.Second, 15*time.Minute),
