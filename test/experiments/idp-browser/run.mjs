@@ -25,7 +25,10 @@ const server = http.createServer((req, res) => {
 await new Promise((r) => server.listen(0, APP_HOST, r));
 const appURL = `http://${APP_HOST}:${server.address().port}/`;
 
-const browser = await chromium.launch(PARTITIONED ? { args: ['--disable-features=Translate'] } : {});
+// The full Chromium build in its new headless mode, which runs Chrome's own code. Playwright's
+// default headless shell stalls a cross-site iframe created just before a popup opens: the
+// SDK's relay iframe then never runs until the next popup (docs/research/phase2-idp.md).
+const browser = await chromium.launch({ channel: 'chromium', ...(PARTITIONED ? { args: ['--disable-features=Translate'] } : {}) });
 const context = await browser.newContext();
 const external = new Set();
 const cspViolations = [];

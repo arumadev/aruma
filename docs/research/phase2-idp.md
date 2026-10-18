@@ -147,7 +147,7 @@ This is ADR-013's declared exception for popup and redirect only:
   - CSP hashes, iframe `frame-ancestors`, `init.json`, the console provider endpoints, and no raw secrets in the database.
 - `internal/identity/core/idp_keys_test.go`: JWKS caching (rotation, refetch limit, weak keys, provider down) and claim shapes.
 
-**Run by hand in a real browser**: `test/experiments/idp-browser`, driven by `go test -tags browser -run TestAuthIdPBrowser -v ./test/acceptance/` after `npm ci` there. It needs network access to `apis.google.com`. It loads the official `firebase@13.0.0` in headless Chromium (Playwright 1.64) against Aruma and the fake providers, which consent at once, and runs:
+**Run by hand in a real browser**: `test/experiments/idp-browser`, driven by `go test -tags browser -run TestAuthIdPBrowser -v ./test/acceptance/` after `npm ci` there. It needs network access to `apis.google.com`. It loads the official `firebase@13.0.0` in the full Chromium build in its new headless mode (Playwright 1.64, `channel: 'chromium'`; not the default headless shell, see "Flaky first popup" below) against Aruma and the fake providers, which consent at once, and runs:
 
 - Google popup, Apple popup (`form_post`) and Google redirect;
 - anonymous then `linkWithPopup`;
@@ -185,6 +185,27 @@ It reports every non-local request and every CSP violation. The results of the r
   - The fake provider answers in milliseconds, so the handler page could finish before the SDK's iframe existed. The handler now retries the relay for up to 10 s.
   - A popup result could reach the iframe before gapi had connected. The emulator's iframe stores such an event and sends it as its first message, which takes the place of the "no event" answer that the SDK's startup redirect check waits for. The sign-in then never proceeds. Aruma's iframe always sends the stored redirect result or "no event" first, and holds early popup results in memory until after it.
 - **Partitioned storage across sites.** The redirect relay cannot work: the top-level handler and the iframe on the app's site get different `sessionStorage` partitions. The fix is the one Firebase documents for the same problem: put Aruma (the `connectAuthEmulator` URL, or the custom `authDomain`) on the app's site, for example `auth.example.com` for `app.example.com`, or use popups.
+
+### Flaky first popup in the headless shell (2026-10-18)
+
+**Symptom.** On cross-site runs, the first Google popup of a run sometimes never settled. Agent D saw it in 3 of 4 runs, then in 5 of 5. Every later popup in the same run passed. The SDK answered the AuthEvent with `ERROR`.
+
+**Cause.** The test browser, not Aruma or the SDK. Logging inside the SDK's event manager and Aruma's iframe showed the failing runs always had the same order:
+
+1. The SDK's gapi ping resolved and the popup consumer registered.
+2. Only then was Aruma's relay iframe navigated (in passing runs it was navigated first).
+3. The iframe's document then ran no script at all, not even its first line, until the *next* `signInWithPopup` called `window.open` about 30 s later.
+
+By then the first popup operation had been cancelled (`auth/cancelled-popup-request`) or had timed out (`auth/popup-closed-by-user`), so its consumer was gone and the late event got `ERROR`.
+
+**What ruled things out:**
+- Turning site isolation off did not help.
+- Neither did opening another tab or closing the popup.
+- Same-site runs, where the iframe shares the app's process, never failed.
+
+**Fix.** Running the same code in the full Chromium binary (new headless, Chrome's own code path) removed the failure. The control run, with the default `chrome-headless-shell` and identical code, failed 3 of 4. After switching `run.mjs` to `channel: 'chromium'`: cross-site 10/10, cross-site-partitioned 5/5, same-site 3/3. Production Firebase always runs this flow with a cross-site iframe on `*.firebaseapp.com`, which supports reading the failure as a headless-shell artefact rather than a browser behaviour apps meet.
+
+**For developers.** If your own Playwright tests drive `signInWithPopup` against Aruma, launch with `channel: 'chromium'` (or real Chrome), not the default headless shell.
 
 ## Open
 
