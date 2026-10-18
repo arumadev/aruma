@@ -31,6 +31,7 @@ type Service struct {
 	publicURL string
 	log       *slog.Logger
 	now       func() time.Time
+	idp       *idpRuntime
 }
 
 // New returns the Auth service.
@@ -38,6 +39,7 @@ func New(pool *pgxpool.Pool, control *tcore.Service, keys *crypto.Keys, hasher *
 	return &Service{
 		pool: pool, q: queries.New(pool), control: control, tokens: tokens.NewManager(pool, keys),
 		keys: keys, hasher: hasher, publicURL: strings.TrimSuffix(publicURL, "/"), log: logger, now: time.Now,
+		idp: newIdPRuntime(),
 	}
 }
 
@@ -140,5 +142,9 @@ func (s *Service) Housekeep(ctx context.Context) error {
 	if n > 0 {
 		s.log.Info("auth housekeeping", "refresh_tokens_purged", n)
 	}
+	if err != nil {
+		return err
+	}
+	_, err = s.q.PurgeIdPSessions(ctx)
 	return err
 }

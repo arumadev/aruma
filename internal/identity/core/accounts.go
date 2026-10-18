@@ -179,6 +179,7 @@ func (s *Service) Delete(ctx context.Context, p Project, idToken string) error {
 // deleteUser removes a user and records auth.user.deleted in the same transaction. Its refresh
 // tokens stay behind so that they answer USER_NOT_FOUND, which signs the clients out.
 func (s *Service) deleteUser(ctx context.Context, p Project, u User) error {
+	appleToken := s.appleRefreshToken(ctx, s.q, p, u.UID)
 	err := s.tx(ctx, func(q *queries.Queries, tx pgx.Tx) error {
 		n, err := q.DeleteUser(ctx, queries.DeleteUserParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: u.UID})
 		if err != nil {
@@ -191,6 +192,7 @@ func (s *Service) deleteUser(ctx context.Context, p Project, u User) error {
 	})
 	if err == nil {
 		s.audit(ctx, s.q, p, u.UID, "account.delete", "ok", nil)
+		s.revokeAppleOnDelete(ctx, p, u.UID, appleToken)
 	}
 	return err
 }
