@@ -196,7 +196,6 @@ function LimitsCard({ limits }: { limits: AuthLimits }) {
           </Detail>
         ))}
       </DetailList>
-      {codes.length === 0 && <p className={styles.muted}>{t('codesPending')}</p>}
     </Card>
   );
 }

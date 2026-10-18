@@ -5,6 +5,7 @@ import type {
   EmailTemplateType,
   FederatedProvider,
   Locale,
+  MailboxMessage,
   Mailbox,
   SigningKey,
   SmtpSettings,
@@ -20,13 +21,12 @@ export interface AuthStore {
   users: AuthUser[];
   config: AuthConfig;
   keys: SigningKey[];
-  /** null answers 404, as a server without the provider routes does. */
-  providers: FederatedProvider[] | null;
-  templates: EmailTemplate[] | null;
-  smtp: SmtpSettings | null;
+  redirectUri: string;
+  providers: FederatedProvider[];
+  templates: EmailTemplate[];
+  smtp: SmtpSettings;
+  /** null answers 404, as an instance that never keeps email does. */
   mailbox: Mailbox | null;
-  /** False answers 404, as a server without the email routes does. */
-  resetAvailable: boolean;
   calls: { method: string; path: string; body: unknown }[];
 }
 
@@ -144,6 +144,7 @@ export function seedAuth(): AuthStore {
         passwordFailures: 10,
         passwordFailureWindowSeconds: 900,
         passwordBackoffMaxSeconds: 900,
+        emailCodeLifetimeSeconds: { VERIFY_EMAIL: 259200, PASSWORD_RESET: 3600, VERIFY_AND_CHANGE_EMAIL: 259200, RECOVER_EMAIL: 259200 },
       },
     },
     keys: [
@@ -153,15 +154,10 @@ export function seedAuth(): AuthStore {
       { kid: 'e5a7c9b1d3f0e2a4c6b8d0f1e3a5c7b9d2f4a6e8', purpose: 'session_cookie', state: 'active', createTime: T('02T10:00:00'), activateTime: T('02T10:00:00') },
       { kid: 'f0b2d4e6a8c1f3b5d7e9a0c2f4b6d8e1a3c5f7b9', purpose: 'session_cookie', state: 'next', createTime: T('02T10:00:00') },
     ],
+    redirectUri: 'https://console.example.com/__/auth/handler',
     providers: [
-      {
-        providerId: 'google.com',
-        enabled: true,
-        redirectUri: 'https://console.example.com/__/auth/handler',
-        clientId: '123456789012-abc123def456.apps.googleusercontent.com',
-        clientSecretSet: true,
-      },
-      { providerId: 'apple.com', enabled: false, redirectUri: 'https://console.example.com/__/auth/handler', privateKeySet: false },
+      { providerId: 'google.com', enabled: true, clientId: '123456789012-abc123def456.apps.googleusercontent.com', clientSecretSet: true },
+      { providerId: 'apple.com', enabled: false, servicesId: '', teamId: '', keyId: '', privateKeySet: false },
     ],
     templates,
     smtp: {
@@ -169,10 +165,11 @@ export function seedAuth(): AuthStore {
       port: 587,
       username: 'auth@chat.example.com',
       passwordSet: true,
-      security: 'starttls',
+      tls: 'starttls',
       senderName: 'دردشة',
       senderAddress: 'no-reply@chat.example.com',
       replyTo: '',
+      devMailbox: true,
     },
     mailbox: {
       enabled: true,
@@ -181,7 +178,10 @@ export function seedAuth(): AuthStore {
           id: 'm2',
           to: 'huda@example.com',
           type: 'VERIFY_EMAIL',
+          language: 'ar',
           subject: 'وثّق بريدك الإلكتروني في دردشة',
+          text: 'مرحبًا،\n\nاضغط الرابط التالي لتوثيق بريدك الإلكتروني.',
+          html: '<p>مرحبًا،</p>',
           link: 'https://console.example.com/__/auth/action?mode=verifyEmail&oobCode=Xk3PqL9vRt2&apiKey=AruyV75Naa-SgWP5xR9myyNzpUGZxYVC3lAgz0X&lang=ar',
           createTime: T('18T08:55:00'),
         },
@@ -189,13 +189,15 @@ export function seedAuth(): AuthStore {
           id: 'm1',
           to: 'omar@example.com',
           type: 'PASSWORD_RESET',
+          language: 'en',
           subject: 'Reset your password for دردشة',
+          text: 'Hello,\n\nFollow this link to reset your password.',
+          html: '<p>Hello,</p>',
           link: 'https://console.example.com/__/auth/action?mode=resetPassword&oobCode=Bn7WqA4zYd1&apiKey=AruyV75Naa-SgWP5xR9myyNzpUGZxYVC3lAgz0X&lang=en',
           createTime: T('17T21:00:00'),
         },
       ],
     },
-    resetAvailable: true,
     calls: [],
   };
 }
@@ -246,32 +248,39 @@ export class MockAuth {
       return ok({ keys: s.keys });
     }
     if (kind === 'providers') {
-      if (!s.providers) return notFound();
-      if (method === 'GET') return ok({ providers: s.providers });
+      if (method === 'GET') return ok({ redirectUri: s.redirectUri, providers: s.providers });
       const p = s.providers.find((x) => x.providerId === idWithVerb);
       if (!p) return notFound();
       const { clientSecret, privateKey, ...rest } = body;
-      Object.assign(p, rest, clientSecret ? { clientSecretSet: true } : {}, privateKey ? { privateKeySet: true } : {});
+      const next = { ...p, ...rest };
+      if (clientSecret !== undefined) next.clientSecretSet = clientSecret !== '';
+      if (privateKey !== undefined) next.privateKeySet = privateKey !== '';
+      const complete = p.providerId === 'google.com' ? next.clientId && next.clientSecretSet : next.servicesId && next.teamId && next.keyId && next.privateKeySet;
+      if (next.enabled && !complete) return authFail('INVALID_CONFIG : missing credentials');
+      Object.assign(p, next);
       return ok(p);
     }
     if (kind === 'templates') {
-      if (!s.templates) return notFound();
       if (!idWithVerb) return ok({ templates: s.templates });
       const i = s.templates.findIndex((x) => x.type === idWithVerb && x.language === language);
       if (i < 0) return notFound();
-      if (method === 'PUT') s.templates[i] = { ...s.templates[i]!, subject: String(body.subject), body: String(body.body), customized: true };
-      if (method === 'DELETE') {
-        s.templates[i] = defaultTemplate(idWithVerb as EmailTemplateType, language as Locale);
-        return empty();
+      if (method === 'PUT') {
+        if (!String(body.body).includes('%LINK%')) return authFail('INVALID_TEMPLATE : the body must contain %LINK%');
+        s.templates[i] = { ...s.templates[i]!, subject: String(body.subject), body: String(body.body), customized: true };
       }
+      if (method === 'DELETE') s.templates[i] = defaultTemplate(idWithVerb as EmailTemplateType, language as Locale);
       return ok(s.templates[i]);
     }
-    if (kind === 'smtp' || kind === 'smtp:test') {
-      if (!s.smtp) return notFound();
-      if (kind === 'smtp:test') return empty();
+    if (kind === 'smtp:test') {
+      if (s.smtp.devMailbox) this.deliver(s, { to: String(body.to), type: 'TEST', language: 'ar', subject: 'رسالة تجريبية من أروما', link: '' });
+      return ok({ devMailbox: s.smtp.devMailbox });
+    }
+    if (kind === 'smtp') {
       if (method === 'PATCH') {
         const { password, ...rest } = body;
-        Object.assign(s.smtp, rest, password ? { passwordSet: true } : {});
+        if (rest.devMailbox === true && !s.mailbox) return authFail('DEV_MAILBOX_DISABLED : not allowed on this instance');
+        Object.assign(s.smtp, rest, password !== undefined ? { passwordSet: password !== '' } : {});
+        if (s.mailbox) s.mailbox.enabled = s.smtp.devMailbox;
       }
       return ok(s.smtp);
     }
@@ -284,6 +293,12 @@ export class MockAuth {
       return ok(s.mailbox);
     }
     return notFound();
+  }
+
+  /** Keeps a message in the dev mailbox, newest first. */
+  private deliver(s: AuthStore, m: Pick<MailboxMessage, 'to' | 'type' | 'language' | 'subject' | 'link'>): void {
+    this.counter += 1;
+    s.mailbox?.messages.unshift({ ...m, id: `m${this.counter + 10}`, text: m.subject, html: `<p>${m.subject}</p>`, createTime: NOW });
   }
 
   private users(s: AuthStore, method: string, idWithVerb: string | undefined, q: URLSearchParams, body: Record<string, unknown>): Reply {
@@ -318,7 +333,11 @@ export class MockAuth {
     const u = s.users.find((x) => x.uid === uid);
     if (!u) return authFail('USER_NOT_FOUND', 'NOT_FOUND', 404);
     if (verb === 'revokeSessions') return ok(Object.assign(u, { tokensValidAfterTime: NOW }));
-    if (verb === 'sendPasswordReset') return s.resetAvailable ? empty() : notFound();
+    if (verb === 'sendPasswordReset') {
+      const link = `https://console.example.com/__/auth/action?mode=resetPassword&oobCode=Rz8LmQ2${this.counter}&lang=${String(body.language ?? 'ar')}`;
+      if (s.smtp.devMailbox) this.deliver(s, { to: u.email ?? '', type: 'PASSWORD_RESET', language: (body.language as Locale) ?? 'ar', subject: 'Reset', link });
+      return ok({ link });
+    }
     if (method === 'DELETE') {
       s.users = s.users.filter((x) => x !== u);
       return empty();

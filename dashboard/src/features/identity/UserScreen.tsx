@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/Badge';
 import { Banner } from '@/components/ui/Banner';
 import { Button, LinkButton } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Ltr } from '@/components/ui/Code';
+import { CopyButton, Ltr } from '@/components/ui/Code';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Detail, DetailList } from '@/components/ui/DetailList';
+import { Select } from '@/components/ui/Select';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useSnackbar } from '@/components/ui/Snackbar';
 import { Cell, Row, Table } from '@/components/ui/Table';
@@ -17,18 +18,19 @@ import { TextField } from '@/components/ui/TextField';
 import { Time } from '@/components/ui/Time';
 import { useProject } from '@/features/project/ProjectContext';
 import * as api from '@/lib/api/console';
-import type { AuthUser } from '@/lib/api/types';
+import type { AuthUser, Locale } from '@/lib/api/types';
 import { useErrorText } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 import { useResource } from '@/lib/hooks/useResource';
+import { useLocale } from '@/lib/i18n/LocaleProvider';
+import { LOCALES } from '@/lib/i18n/locales';
 import { routes } from '@/lib/routes';
 import { checkClaims, CLAIMS_MAX_BYTES, formatClaims } from './claims';
-import { isMissingRoute } from './missingRoute';
 import { ProviderNames } from './ProviderNames';
 import { providerLabel, providerLabels } from './providers';
 import styles from './UserScreen.module.css';
 
-type Action = 'disable' | 'revoke' | 'delete';
+type Action = 'disable' | 'revoke' | 'delete' | 'reset';
 
 /** One user: identifiers, sign-in methods and metadata, account actions and custom claims. */
 export function UserScreen() {
@@ -74,28 +76,23 @@ function UserDetails({ user, onChange }: { user: AuthUser; onChange: (user: Auth
   const id = project.projectId;
   const editable = project.state === 'ACTIVE';
   const [action, setAction] = useState<Action | null>(null);
-  const [busy, setBusy] = useState<'enable' | 'reset' | null>(null);
+  const [enabling, setEnabling] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const [resetLink, setResetLink] = useState<string | null>(null);
 
-  async function run(kind: 'enable' | 'reset') {
-    setBusy(kind);
+  async function enable() {
+    setEnabling(true);
     setError(null);
     try {
-      if (kind === 'enable') {
-        onChange(await api.updateAuthUser(id, user.uid, { disabled: false }));
-        notify(t('enabled'));
-      } else {
-        await api.sendPasswordReset(id, user.uid);
-        notify(t('resetSent', { email: user.email ?? '' }));
-      }
+      onChange(await api.updateAuthUser(id, user.uid, { disabled: false }));
+      notify(t('enabled'));
     } catch (err) {
       setError(err);
     } finally {
-      setBusy(null);
+      setEnabling(false);
     }
   }
 
-  const resetUnavailable = isMissingRoute(error);
   const labels = providerLabels(user).map((l) => tProvider(l));
 
   return (
@@ -107,7 +104,7 @@ function UserDetails({ user, onChange }: { user: AuthUser; onChange: (user: Auth
           editable && (
             <>
               {user.email && (
-                <Button variant="outlined" icon="send" isPending={busy === 'reset'} onPress={() => void run('reset')}>
+                <Button variant="outlined" icon="send" onPress={() => setAction('reset')}>
                   {t('sendReset')}
                 </Button>
               )}
@@ -115,7 +112,7 @@ function UserDetails({ user, onChange }: { user: AuthUser; onChange: (user: Auth
                 {t('revoke')}
               </Button>
               {user.disabled ? (
-                <Button variant="outlined" icon="checkCircle" isPending={busy === 'enable'} onPress={() => void run('enable')}>
+                <Button variant="outlined" icon="checkCircle" isPending={enabling} onPress={() => void enable()}>
                   {t('enable')}
                 </Button>
               ) : (
@@ -134,7 +131,14 @@ function UserDetails({ user, onChange }: { user: AuthUser; onChange: (user: Auth
           {user.disabled ? <Badge tone="error">{t('disabled')}</Badge> : <Badge tone="primary">{t('active')}</Badge>}
           {user.email && (user.emailVerified ? <Badge>{t('verified')}</Badge> : <Badge tone="warning">{t('unverified')}</Badge>)}
         </div>
-        {Boolean(error) && <Banner tone="error">{resetUnavailable ? t('resetUnavailable') : errorText.message(error)}</Banner>}
+        {Boolean(error) && <Banner tone="error">{errorText.message(error)}</Banner>}
+        {resetLink && (
+          <Banner tone="info" title={t('resetLinkTitle')} action={<CopyButton value={resetLink} label={t('copyResetLink')} />}>
+            <p className={styles.link}>
+              <Ltr>{resetLink}</Ltr>
+            </p>
+          </Banner>
+        )}
         <DetailList>
           <Detail label={t('uid')} value={user.uid} copyLabel={t('copyUid')} />
           {user.email && <Detail label={t('email')} value={user.email} copyLabel={t('copyEmail')} />}
@@ -170,6 +174,16 @@ function UserDetails({ user, onChange }: { user: AuthUser; onChange: (user: Auth
         )}
       </Card>
       <ClaimsCard key={user.customClaims ?? ''} user={user} editable={editable} onSaved={onChange} />
+      {action === 'reset' && (
+        <ResetDialog
+          user={user}
+          onClose={() => setAction(null)}
+          onSent={(link) => {
+            setResetLink(link);
+            notify(t('resetSent', { email: user.email ?? '' }));
+          }}
+        />
+      )}
       {action === 'disable' && (
         <ConfirmDialog
           title={t('disableTitle')}
@@ -216,6 +230,31 @@ function UserDetails({ user, onChange }: { user: AuthUser; onChange: (user: Auth
         </ConfirmDialog>
       )}
     </>
+  );
+}
+
+/** Asks which language the reset email is written in; the user's own is unknown to the console. */
+function ResetDialog({ user, onClose, onSent }: { user: AuthUser; onClose: () => void; onSent: (link: string) => void }) {
+  const t = useTranslations('auth.user');
+  const tLocale = useTranslations('locale');
+  const { locale } = useLocale();
+  const { project } = useProject();
+  const [language, setLanguage] = useState<Locale>(locale);
+  return (
+    <ConfirmDialog
+      title={t('resetTitle')}
+      confirmLabel={t('sendReset')}
+      onClose={onClose}
+      onConfirm={async () => onSent((await api.sendPasswordReset(project.projectId, user.uid, language)).link)}
+    >
+      <p>{t('resetBody', { email: user.email ?? '' })}</p>
+      <Select
+        label={t('resetLanguage')}
+        value={language}
+        onChange={(v) => setLanguage(v as Locale)}
+        options={LOCALES.map((l) => ({ id: l, label: tLocale(l) }))}
+      />
+    </ConfirmDialog>
   );
 }
 

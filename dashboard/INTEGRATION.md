@@ -111,38 +111,25 @@ npm run dev          # http://localhost:3000, /console/v1 proxied to ARUMA_DEV_A
 ## Authentication screens (Phase 2)
 
 The Auth section (`/project/auth/…`: Users, Sign-in methods, Templates, Mailbox, Settings) uses
-the routes in `docs/api/console.md` and, from the email and provider work, the routes below.
-Their shapes were not fixed when the screens were built, so this is what the dashboard expects
-(`src/lib/api/types.ts`). Each of them may be missing until it exists, answering 404 (or 501 for
-`users/{uid}:sendPasswordReset`, whose path reaches the user route): the screens then show a
-"not available on this server yet" note instead of an error, and hide the Mailbox tab.
+the routes in `docs/api/console.md`: users, settings and signing keys; "Auth email" (templates,
+SMTP, the dev mailbox, password reset); and "Auth: Google and Apple sign-in". The shapes are in
+`src/lib/api/types.ts`. Notes on how the screens use them:
 
-Every path starts with `/console/v1/projects/{project}/auth`.
+- Secrets are write-only. The Google client secret, the Apple private key and the SMTP password
+  are sent only when typed; the screens show "saved" from `…Set` and never a value. Removing the
+  SMTP password sends `password: ""` after a confirmation.
+- `PATCH /smtp` sends `devMailbox` only when the switch changed, since sending it pins the
+  project's choice. The switch appears only where the mailbox route answers.
+- The mailbox answers 404 where the instance never keeps email: the Mailbox tab is then hidden.
+  With `enabled: false` the tab stays while earlier messages remain, under a "now over SMTP" note.
+- The Google and Apple forms check the server's rules first (credentials required to enable,
+  10-character Team and Key IDs, a PEM private key); anything else comes back as
+  `INVALID_CONFIG` and is shown as a general message.
+- The reset button asks for the email language and shows the returned link with a copy button.
+- The template preview never inserts template markup: the HTML body is reduced to text in an
+  inert `DOMParser` document, so the strict CSP needs no change. Mailbox links open only when
+  they are `http(s)` URLs.
 
-| Method | Path | Body → Response |
-|---|---|---|
-| POST | `/users/{uid}:sendPasswordReset` | → 2xx (body ignored) |
-| GET | `/providers` | → `{providers: [Provider]}` |
-| PATCH | `/providers/{providerId}` | Google `{enabled?, clientId?, clientSecret?}`, Apple `{enabled?, servicesId?, teamId?, keyId?, privateKey?}` → `Provider`. A secret is sent only when the user typed a new one |
-| GET | `/templates` | → `{templates: [{type, language: "ar"\|"en", subject, body, customized}]}`, every type in both languages |
-| PUT | `/templates/{type}/{language}` | `{subject, body}` → the template |
-| DELETE | `/templates/{type}/{language}` | → 2xx; the list is fetched again |
-| GET | `/smtp` | → `{host, port, username, passwordSet, security: "starttls"\|"tls"\|"none", senderName, senderAddress, replyTo}` |
-| PATCH | `/smtp` | the fields above (not `passwordSet`), plus `password` only when replaced → the settings |
-| POST | `/smtp:test` | `{to}` → 2xx |
-| GET | `/mailbox` | → `{enabled, messages: [{id, to, type?, subject, link?, createTime}]}`; `enabled: false` or 404 hides the tab |
-| DELETE | `/mailbox` | → 2xx |
-
-`Provider` = `{providerId: "google.com"|"apple.com", enabled, redirectUri, clientId?, clientSecretSet?, servicesId?, teamId?, keyId?, privateKeySet?}`.
-Secrets are write-only: the dashboard shows "saved" when `…Set` is true and never displays a value.
-
-`GET /config` may carry `limits.emailCodeLifetimeSeconds: {VERIFY_EMAIL: …, PASSWORD_RESET: …, …}`;
-the Settings page lists those lifetimes when present.
-
-The template preview never inserts template markup: an HTML body is reduced to text in an inert
-`DOMParser` document, so the strict CSP needs no change. Mailbox links open only when they are
-`http(s)` URLs.
-
-Adding the Authentication destination changed the navigation rail and the overview, so the
-`-linux` baselines of those screens were removed; CI regenerates them (`--update-snapshots=missing`)
-and uploads them as the `playwright-snapshots-linux` artifact, to be committed from there.
+When a change alters screenshots, remove the affected `-linux` baselines with the new `-darwin`
+ones: CI regenerates them (`--update-snapshots=missing`) and uploads them as the
+`playwright-snapshots-linux` artifact, to be committed from there.

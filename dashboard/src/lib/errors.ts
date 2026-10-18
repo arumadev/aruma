@@ -27,6 +27,7 @@ type KnownField = (typeof FIELDS)[number];
 // Auth codes the console API keeps at the start of the message ("WEAK_PASSWORD : …").
 export const AUTH_CODES = [
   'CLAIMS_TOO_LARGE',
+  'DEV_MAILBOX_DISABLED',
   'DUPLICATE_LOCAL_ID',
   'EMAIL_EXISTS',
   'FORBIDDEN_CLAIM',
@@ -36,8 +37,11 @@ export const AUTH_CODES = [
   'INVALID_EMAIL',
   'INVALID_LOCAL_ID',
   'INVALID_PHOTO_URL',
+  'INVALID_SMTP_CONFIG',
+  'INVALID_TEMPLATE',
   'MISSING_EMAIL',
   'PASSWORD_DOES_NOT_MEET_REQUIREMENTS',
+  'SMTP_ERROR',
   'USER_NOT_FOUND',
   'WEAK_PASSWORD',
 ] as const;

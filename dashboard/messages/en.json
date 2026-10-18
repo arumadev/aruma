@@ -30,6 +30,7 @@
     "unknown": "Something went wrong. Try again.",
     "auth": {
       "CLAIMS_TOO_LARGE": "Custom claims can be at most 1000 bytes of JSON.",
+      "DEV_MAILBOX_DISABLED": "This server doesn't keep email in a dev mailbox.",
       "DUPLICATE_LOCAL_ID": "A user with this UID already exists.",
       "EMAIL_EXISTS": "A user with this email already exists.",
       "FORBIDDEN_CLAIM": "One of the claim names is reserved for the ID token.",
@@ -39,8 +40,11 @@
       "INVALID_EMAIL": "Enter a valid email address.",
       "INVALID_LOCAL_ID": "A UID has 1 to 128 characters.",
       "INVALID_PHOTO_URL": "The photo URL isn't valid.",
+      "INVALID_SMTP_CONFIG": "Check the SMTP settings: one of the values isn't allowed.",
+      "INVALID_TEMPLATE": "Check the template: the message needs %LINK% and the subject at most 200 characters.",
       "MISSING_EMAIL": "A password needs an email address.",
       "PASSWORD_DOES_NOT_MEET_REQUIREMENTS": "The password doesn't meet this project's password policy.",
+      "SMTP_ERROR": "The mail server refused the message. Check the host, port, security and sign-in details.",
       "USER_NOT_FOUND": "This user no longer exists.",
       "WEAK_PASSWORD": "The password is shorter than this project's policy allows."
     },
@@ -642,8 +646,7 @@
       "back": "All users",
       "anonymous": "Anonymous user",
       "sendReset": "Send password reset",
-      "resetSent": "A password reset email is on its way to {email}.",
-      "resetUnavailable": "This server can't send password reset emails yet.",
+      "resetSent": "Password reset email sent to {email}.",
       "revoke": "Sign out everywhere",
       "enable": "Enable",
       "enabled": "User enabled. They can sign in again.",
@@ -679,7 +682,12 @@
       "revoked": "The user was signed out everywhere.",
       "deleteTitle": "Delete this user?",
       "deleteBody": "The account and its sign-in methods are deleted for good. Their sessions end at once.",
-      "deleted": "User deleted."
+      "deleted": "User deleted.",
+      "resetTitle": "Send a password reset email?",
+      "resetBody": "A link to choose a new password goes to {email}. It works once, for an hour.",
+      "resetLanguage": "Email language",
+      "resetLinkTitle": "Password reset link",
+      "copyResetLink": "Copy link"
     },
     "claims": {
       "title": "Custom claims",
@@ -710,8 +718,6 @@
       "blockSignupHint": "Only this console and the Admin SDK can create users. Existing users still sign in."
     },
     "federated": {
-      "title": "Sign in with Google and Apple",
-      "unavailable": "Google and Apple sign-in aren't available on this server yet.",
       "saved": "Provider saved.",
       "google": "Google",
       "googleHint": "Sign in with a Google account. Create an OAuth client of type Web application in Google Cloud.",
@@ -729,7 +735,13 @@
       "secretSaved": "Saved. It is never shown again; enter a new value only to replace it.",
       "secretMissing": "Not saved yet.",
       "redirectUri": "Redirect URI",
-      "copyRedirectUri": "Copy redirect URI"
+      "copyRedirectUri": "Copy redirect URI",
+      "redirectTitle": "Redirect URI",
+      "redirectHint": "Register this address as the authorized redirect URI of your Google OAuth client and as the Return URL of your Apple Services ID.",
+      "required": "Required to enable this provider.",
+      "appleId": "10 uppercase letters or digits, as Apple shows it.",
+      "privateKeyFormat": "Paste the whole .p8 file, from -----BEGIN PRIVATE KEY----- to the end.",
+      "servicesIdHint": "The identifier of your Services ID, such as com.example.web."
     },
     "domains": {
       "title": "Authorized domains",
@@ -762,7 +774,6 @@
     "templates": {
       "title": "Email templates",
       "description": "What Auth emails say, in each language. The user's language decides which one is sent.",
-      "unavailable": "Email templates aren't available on this server yet.",
       "missing": "This template isn't available.",
       "type": "Template",
       "language": "Language",
@@ -775,14 +786,17 @@
       "customized": "Customized",
       "default": "Default",
       "subject": "Subject",
-      "body": "Message",
+      "body": "Message (HTML)",
       "variables": "Variables:",
       "saved": "Template saved.",
       "reset": "Reset to default",
       "resetTitle": "Reset this template?",
       "resetBody": "Your changes to this email in this language are discarded and the default text is used again.",
       "resetDone": "Template reset to the default.",
-      "preview": "Preview"
+      "preview": "Preview",
+      "subjectRequired": "Enter a subject.",
+      "subjectTooLong": "Use at most {max} characters.",
+      "needsLink": "The message must contain %LINK%, where the action link goes."
     },
     "appName": {
       "title": "App name",
@@ -793,7 +807,6 @@
     "smtp": {
       "title": "SMTP server",
       "description": "The mail server Auth sends email through.",
-      "unavailable": "Sending email isn't available on this server yet.",
       "saved": "SMTP settings saved.",
       "host": "Host",
       "port": "Port",
@@ -816,12 +829,20 @@
       "testBody": "Aruma sends a short message through the saved settings.",
       "testTo": "Recipient",
       "testSend": "Send",
-      "testSent": "Test email sent to {email}."
+      "testSent": "Test email sent to {email}.",
+      "devMailbox": "Keep email in the dev mailbox",
+      "devMailboxHint": "For development: nothing is sent; messages appear on the Mailbox tab.",
+      "devMailboxOn": "Email goes to the dev mailbox, not to this server.",
+      "removePassword": "Remove password",
+      "removePasswordTitle": "Remove the SMTP password?",
+      "removePasswordBody": "Aruma will sign in to the mail server without a password, or not at all.",
+      "passwordRemoved": "SMTP password removed.",
+      "testInMailbox": "Test email placed in the dev mailbox."
     },
     "mailbox": {
       "title": "Mailbox",
       "offTitle": "The mailbox is off",
-      "offBody": "This server sends Auth email through SMTP. The mailbox keeps email only in development mode.",
+      "offBody": "This server sends Auth email through SMTP. The dev mailbox exists only on development setups.",
       "devTitle": "Development mode",
       "devBody": "Email is kept here instead of being sent. Open a link to complete the action as the user would.",
       "refresh": "Refresh",
@@ -836,7 +857,10 @@
       "subject": "Subject",
       "link": "Action link",
       "open": "Open",
-      "copyLink": "Copy link"
+      "copyLink": "Copy link",
+      "smtpTitle": "Email now goes over SMTP",
+      "smtpBody": "New messages are sent through the SMTP server. The ones below were kept earlier.",
+      "test": "Test message"
     },
     "settings": {
       "title": "Auth settings",
@@ -877,8 +901,7 @@
       "perMinute": "{count} a minute per address, bursts of up to {burst}",
       "passwordFailures": "Wrong passwords",
       "failures": "After {count, plural, one {# wrong password} other {# wrong passwords}} within {window}, each attempt waits longer, up to {max}.",
-      "codeLifetime": "{type} link lifetime",
-      "codesPending": "Email link lifetimes appear here once this server sends Auth email."
+      "codeLifetime": "{type} link lifetime"
     }
   }
 }

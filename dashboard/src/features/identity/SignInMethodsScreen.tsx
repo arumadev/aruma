@@ -20,7 +20,6 @@ import { useErrorText } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 import { useResource } from '@/lib/hooks/useResource';
 import { isValidDomain, normalizeDomain } from './domains';
-import { isMissingRoute } from './missingRoute';
 import { SettingSwitch } from './SettingSwitch';
 import styles from './SignInMethodsScreen.module.css';
 
@@ -105,7 +104,7 @@ function Methods({ config, onSaved }: { config: AuthConfig; onSaved: (config: Au
   );
 }
 
-/** Google and Apple. The provider routes may not exist on the server yet. */
+/** Google and Apple, with the redirect URI to register with both. */
 function FederatedProviders({ editable }: { editable: boolean }) {
   const t = useTranslations('auth.federated');
   const tCommon = useTranslations('common');
@@ -113,13 +112,6 @@ function FederatedProviders({ editable }: { editable: boolean }) {
   const { project } = useProject();
   const providers = useResource((signal) => api.listFederatedProviders(project.projectId, signal), [project.projectId]);
 
-  if (isMissingRoute(providers.error)) {
-    return (
-      <Card title={t('title')}>
-        <Banner tone="info">{t('unavailable')}</Banner>
-      </Card>
-    );
-  }
   if (providers.error) {
     return (
       <Banner tone="error" action={<Button variant="text" onPress={providers.reload}>{tCommon('retry')}</Button>}>
@@ -129,15 +121,28 @@ function FederatedProviders({ editable }: { editable: boolean }) {
   }
   if (!providers.data) return <Skeleton lines={2} />;
   const replace = (saved: FederatedProvider) =>
-    providers.setData((current) => ({ providers: (current?.providers ?? []).map((p) => (p.providerId === saved.providerId ? saved : p)) }));
+    providers.setData((current) => ({
+      redirectUri: current?.redirectUri ?? '',
+      providers: (current?.providers ?? []).map((p) => (p.providerId === saved.providerId ? saved : p)),
+    }));
   return (
     <>
+      <Card title={t('redirectTitle')} description={t('redirectHint')}>
+        <DetailList>
+          <Detail label={t('redirectUri')} value={providers.data.redirectUri} copyLabel={t('copyRedirectUri')} />
+        </DetailList>
+      </Card>
       {providers.data.providers.map((p) => (
         <FederatedCard key={`${p.providerId}:${JSON.stringify(p)}`} provider={p} editable={editable} onSaved={replace} />
       ))}
     </>
   );
 }
+
+// Apple's Team ID and Key ID are 10 upper-case letters or digits.
+const APPLE_ID = /^[A-Z0-9]{10}$/;
+
+type FederatedField = 'clientId' | 'servicesId' | 'teamId' | 'keyId';
 
 function FederatedCard({ provider, editable, onSaved }: { provider: FederatedProvider; editable: boolean; onSaved: (p: FederatedProvider) => void }) {
   const t = useTranslations('auth.federated');
@@ -147,7 +152,7 @@ function FederatedCard({ provider, editable, onSaved }: { provider: FederatedPro
   const { project } = useProject();
   const google = provider.providerId === 'google.com';
   const [enabled, setEnabled] = useState(provider.enabled);
-  const [fields, setFields] = useState({
+  const [fields, setFields] = useState<Record<FederatedField, string>>({
     clientId: provider.clientId ?? '',
     servicesId: provider.servicesId ?? '',
     teamId: provider.teamId ?? '',
@@ -155,11 +160,26 @@ function FederatedCard({ provider, editable, onSaved }: { provider: FederatedPro
   });
   // Secrets start empty: the server never sends them back. Empty means "keep the saved one".
   const [secret, setSecret] = useState('');
+  const [attempted, setAttempted] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const secretSaved = google ? provider.clientSecretSet : provider.privateKeySet;
+
+  // The server's rules (INVALID_CONFIG), checked first so each field can say what is wrong.
+  const problems: Partial<Record<FederatedField | 'secret', string>> = {};
+  const required: FederatedField[] = google ? ['clientId'] : ['servicesId', 'teamId', 'keyId'];
+  for (const name of required) if (enabled && !fields[name].trim()) problems[name] = t('required');
+  if (!google) {
+    for (const name of ['teamId', 'keyId'] as const) if (fields[name].trim() && !APPLE_ID.test(fields[name].trim())) problems[name] = t('appleId');
+    if (secret && !secret.includes('BEGIN PRIVATE KEY')) problems.secret = t('privateKeyFormat');
+  }
+  if (enabled && !secret && !secretSaved) problems.secret = t('required');
+  const valid = Object.keys(problems).length === 0;
 
   async function save(event: FormEvent) {
     event.preventDefault();
+    setAttempted(true);
+    if (!valid) return;
     setPending(true);
     setError(null);
     const body: FederatedProviderUpdate = google
@@ -168,6 +188,7 @@ function FederatedCard({ provider, editable, onSaved }: { provider: FederatedPro
     try {
       onSaved(await api.updateFederatedProvider(project.projectId, provider.providerId, body));
       setSecret('');
+      setAttempted(false);
       notify(t('saved'));
     } catch (err) {
       setError(err);
@@ -176,9 +197,17 @@ function FederatedCard({ provider, editable, onSaved }: { provider: FederatedPro
     }
   }
 
-  const secretSaved = google ? provider.clientSecretSet : provider.privateKeySet;
-  const field = (name: keyof typeof fields, label: string) => (
-    <TextField label={label} ltr value={fields[name]} onChange={(v) => setFields((f) => ({ ...f, [name]: v }))} isReadOnly={!editable} />
+  const shown = (name: FederatedField | 'secret') => (attempted ? problems[name] : undefined);
+  const field = (name: FederatedField, label: string, description?: string) => (
+    <TextField
+      label={label}
+      ltr
+      value={fields[name]}
+      onChange={(v) => setFields((f) => ({ ...f, [name]: v }))}
+      isReadOnly={!editable}
+      description={description}
+      errorMessage={shown(name)}
+    />
   );
   return (
     <Card
@@ -195,7 +224,7 @@ function FederatedCard({ provider, editable, onSaved }: { provider: FederatedPro
           field('clientId', t('clientId'))
         ) : (
           <>
-            {field('servicesId', t('servicesId'))}
+            {field('servicesId', t('servicesId'), t('servicesIdHint'))}
             {field('teamId', t('teamId'))}
             {field('keyId', t('keyId'))}
           </>
@@ -213,10 +242,8 @@ function FederatedCard({ provider, editable, onSaved }: { provider: FederatedPro
           onChange={setSecret}
           isReadOnly={!editable}
           description={secretSaved ? t('secretSaved') : t('secretMissing')}
+          errorMessage={shown('secret')}
         />
-        <DetailList>
-          <Detail label={t('redirectUri')} value={provider.redirectUri} copyLabel={t('copyRedirectUri')} />
-        </DetailList>
         {editable && (
           <div>
             <Button type="submit" isPending={pending}>

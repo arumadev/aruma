@@ -24,7 +24,7 @@ const TAB_BY_PATH: Record<string, Tab> = {
 };
 
 interface AuthSectionValue {
-  /** The dev mailbox; a missing route or `enabled: false` means the server sends real email. */
+  /** The dev mailbox: 404 where the instance never keeps email, `enabled: false` while the project uses SMTP. */
   mailbox: Resource<Mailbox>;
 }
 
@@ -38,7 +38,7 @@ export function useAuthSection(): AuthSectionValue {
 
 /**
  * The project's Authentication pages: one heading and a tab per page. The Mailbox tab exists
- * only while the server keeps email in its dev mailbox.
+ * only where the server keeps email in its dev mailbox.
  */
 export function AuthSection({ children }: { children: ReactNode }) {
   const t = useTranslations('auth.section');
@@ -46,7 +46,8 @@ export function AuthSection({ children }: { children: ReactNode }) {
   const id = project.projectId;
   const selected = TAB_BY_PATH[normalizePath(usePathname())] ?? 'users';
   const mailbox = useResource((signal) => api.getMailbox(id, signal), [id]);
-  const showMailbox = mailbox.data?.enabled === true || selected === 'mailbox';
+  // Shown while the project uses the mailbox, or while it still holds earlier messages.
+  const showMailbox = Boolean(mailbox.data?.enabled || mailbox.data?.messages.length) || selected === 'mailbox';
 
   const items = [
     { id: 'users', label: t('users'), href: routes.authUsers(id) },
