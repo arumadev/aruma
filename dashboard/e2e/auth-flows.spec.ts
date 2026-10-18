@@ -70,13 +70,17 @@ test.describe('users', () => {
     await expect(page.getByRole('link', { name: 'amal@example.com' })).toHaveCount(0);
   });
 
-  test('sends a password reset, or says the server cannot yet', async ({ page, api, l }) => {
+  test('sends a password reset in the chosen language, shows the link and keeps the email', async ({ page, api, l }) => {
     await open(page, `/project/auth/user/?id=chat-app&uid=${AMAL}`, l('المصادقة', 'Authentication'));
     await page.getByRole('button', { name: l('إرسال إعادة تعيين كلمة المرور', 'Send password reset') }).click();
-    await expect(page.getByRole('status').getByText('amal@example.com', { exact: false })).toBeVisible();
-    api.auth.store('chat-app').resetAvailable = false;
-    await page.getByRole('button', { name: l('إرسال إعادة تعيين كلمة المرور', 'Send password reset') }).click();
-    await expect(page.getByRole('main').getByRole('alert')).toHaveText(l('لا يستطيع هذا الخادم إرسال رسائل إعادة تعيين كلمة المرور بعد.', "This server can't send password reset emails yet."));
+    const dialog = page.getByRole('alertdialog');
+    await dialog.getByRole('button', { name: l('لغة الرسالة', 'Email language') }).click();
+    await page.getByRole('option', { name: 'English' }).click();
+    await dialog.getByRole('button', { name: l('إرسال إعادة تعيين كلمة المرور', 'Send password reset') }).click();
+    await expect(page.getByText(/mode=resetPassword.*lang=en/)).toBeVisible();
+    const store = api.auth.store('chat-app');
+    expect(store.calls.findLast((c) => c.path.endsWith(':sendPasswordReset'))?.body).toEqual({ language: 'en' });
+    expect(store.mailbox?.messages[0]).toMatchObject({ to: 'amal@example.com', type: 'PASSWORD_RESET', language: 'en' });
   });
 });
 
@@ -111,12 +115,23 @@ test.describe('sign-in methods', () => {
     await expect(page.getByText('GOCSPX-new-secret')).toHaveCount(0);
   });
 
-  test('copies the redirect URI and explains missing provider routes', async ({ page, api, l }) => {
+  test('shows one redirect URI and checks Apple credentials before saving', async ({ page, api, l }) => {
     await open(page, '/project/auth/providers/?id=chat-app', l('المصادقة', 'Authentication'));
-    await expect(page.getByText('https://console.example.com/__/auth/handler').first()).toBeVisible();
-    api.auth.store('chat-app').providers = null;
-    await page.reload();
-    await expect(page.getByText(l('تسجيل الدخول عبر Google وApple غير متاح على هذا الخادم بعد.', "Google and Apple sign-in aren't available on this server yet."))).toBeVisible();
+    await expect(page.getByText('https://console.example.com/__/auth/handler')).toHaveCount(1);
+    const apple = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Apple' }) });
+    await apple.getByText(l('مفعّل', 'Enabled'), { exact: true }).click();
+    await apple.getByLabel(l('معرّف الفريق', 'Team ID')).fill('abc');
+    await apple.getByRole('button', { name: l('حفظ', 'Save') }).click();
+    await expect(apple.getByText(l('10 أحرف لاتينية كبيرة أو أرقام، كما تعرضه Apple.', '10 uppercase letters or digits, as Apple shows it.'))).toBeVisible();
+    expect(api.auth.store('chat-app').calls.some((c) => c.path === 'providers/apple.com')).toBe(false);
+
+    await apple.getByLabel('Services ID').fill('com.example.chat.web');
+    await apple.getByLabel(l('معرّف الفريق', 'Team ID')).fill('ABCDE12345');
+    await apple.getByLabel(l('معرّف المفتاح', 'Key ID')).fill('KEY1234567');
+    await apple.getByLabel(l('المفتاح الخاص (.p8)', 'Private key (.p8)')).fill('-----BEGIN PRIVATE KEY-----\nMIGT\n-----END PRIVATE KEY-----');
+    await apple.getByRole('button', { name: l('حفظ', 'Save') }).click();
+    await expect(apple.getByText(l('مفعّل', 'On'), { exact: true }).first()).toBeVisible();
+    expect(api.auth.store('chat-app').providers[1]).toMatchObject({ enabled: true, teamId: 'ABCDE12345', privateKeySet: true });
   });
 });
 
@@ -128,6 +143,10 @@ test.describe('templates and mailbox', () => {
     await page.getByRole('button', { name: l('اللغة', 'Language') }).click();
     await page.getByRole('option', { name: 'English' }).click();
     const subject = page.getByLabel(l('الموضوع', 'Subject'));
+    const body = page.getByLabel(l('نص الرسالة (HTML)', 'Message (HTML)'));
+    await body.fill('<p>No link here</p>');
+    await expect(page.getByText(l('يجب أن يحتوي نص الرسالة على %LINK%', 'The message must contain %LINK%'), { exact: false })).toBeVisible();
+    await body.fill('<p>Reset: <a href="%LINK%">%LINK%</a></p>');
     await expect(subject).toHaveAttribute('dir', 'ltr');
     await subject.fill('Reset your %APP_NAME% password');
     const preview = page.getByRole('region', { name: l('معاينة', 'Preview') });
@@ -137,10 +156,10 @@ test.describe('templates and mailbox', () => {
     await page.getByRole('button', { name: l('استعادة الافتراضي', 'Reset to default') }).click();
     await page.getByRole('alertdialog').getByRole('button', { name: l('استعادة الافتراضي', 'Reset to default') }).click();
     await expect(subject).toHaveValue('Reset your password for %APP_NAME%');
-    expect(api.auth.store('chat-app').templates?.find((t) => t.type === 'PASSWORD_RESET' && t.language === 'en')?.customized).toBe(false);
+    expect(api.auth.store('chat-app').templates.find((t) => t.type === 'PASSWORD_RESET' && t.language === 'en')?.customized).toBe(false);
   });
 
-  test('saves SMTP settings, keeps the password write-only and sends a test', async ({ page, api, l }) => {
+  test('saves SMTP settings, keeps the password write-only and sends a test to the mailbox', async ({ page, api, l }) => {
     await open(page, '/project/auth/templates/?id=chat-app', l('المصادقة', 'Authentication'));
     const password = page.getByRole('textbox', { name: l('كلمة المرور', 'Password'), exact: true });
     await expect(password).toHaveValue('');
@@ -150,6 +169,28 @@ test.describe('templates and mailbox', () => {
     const patch = api.auth.store('chat-app').calls.findLast((c) => c.path === 'smtp');
     expect(patch?.body).toMatchObject({ port: 465 });
     expect(patch?.body).not.toHaveProperty('password');
+
+    await page.getByRole('button', { name: l('إرسال رسالة تجريبية', 'Send test email') }).click();
+    await page.getByRole('dialog').getByLabel(l('المستلم', 'Recipient')).fill('layla@example.com');
+    await page.getByRole('dialog').getByRole('button', { name: l('إرسال', 'Send') }).click();
+    await expect(page.getByRole('status').getByText(l('وُضعت الرسالة التجريبية في صندوق بريد التطوير.', 'Test email placed in the dev mailbox.'))).toBeVisible();
+    await page.getByRole('tab', { name: l('صندوق البريد', 'Mailbox') }).click();
+    await expect(page.getByRole('table').getByText(l('رسالة تجريبية', 'Test message'), { exact: true })).toBeVisible();
+  });
+
+  test('sends over SMTP once the dev mailbox is off, and removes the password', async ({ page, api, l }) => {
+    const store = api.auth.store('chat-app');
+    await open(page, '/project/auth/templates/?id=chat-app', l('المصادقة', 'Authentication'));
+    await page.getByText(l('الاحتفاظ بالرسائل في صندوق بريد التطوير', 'Keep email in the dev mailbox'), { exact: true }).click();
+    await page.getByRole('button', { name: l('حفظ', 'Save') }).last().click();
+    await expect(page.getByRole('status').getByText(l('حُفظت إعدادات SMTP.', 'SMTP settings saved.'))).toBeVisible();
+    expect(store.calls.findLast((c) => c.path === 'smtp')?.body).toMatchObject({ devMailbox: false });
+
+    await page.getByRole('button', { name: l('إزالة كلمة المرور', 'Remove password') }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: l('إزالة كلمة المرور', 'Remove password') }).click();
+    await expect(page.getByRole('status').getByText(l('أُزيلت كلمة مرور SMTP.', 'SMTP password removed.'))).toBeVisible();
+    expect(store.calls.findLast((c) => c.path === 'smtp')?.body).toEqual({ password: '' });
+    expect(store.smtp.passwordSet).toBe(false);
 
     await page.getByRole('button', { name: l('إرسال رسالة تجريبية', 'Send test email') }).click();
     await page.getByRole('dialog').getByLabel(l('المستلم', 'Recipient')).fill('layla@example.com');

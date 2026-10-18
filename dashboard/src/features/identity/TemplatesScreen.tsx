@@ -15,14 +15,18 @@ import { useSnackbar } from '@/components/ui/Snackbar';
 import { TextField } from '@/components/ui/TextField';
 import { useProject } from '@/features/project/ProjectContext';
 import * as api from '@/lib/api/console';
-import type { AuthConfig, EmailTemplate, EmailTemplateType, Locale, SmtpSecurity, SmtpSettings, SmtpUpdate } from '@/lib/api/types';
+import type { AuthConfig, EmailTemplate, EmailTemplateType, Locale, SmtpSettings, SmtpTls, SmtpUpdate } from '@/lib/api/types';
 import { useErrorText } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 import { useResource, type Resource } from '@/lib/hooks/useResource';
 import { LOCALES } from '@/lib/i18n/locales';
-import { isMissingRoute } from './missingRoute';
+import { useAuthSection } from './AuthSection';
+import { SettingSwitch } from './SettingSwitch';
 import { bodyText, fillVariables, TEMPLATE_VARIABLES } from './templatePreview';
 import styles from './TemplatesScreen.module.css';
+
+// A subject longer than this is refused (INVALID_TEMPLATE).
+const SUBJECT_MAX = 200;
 
 export const TEMPLATE_TYPES: EmailTemplateType[] = ['VERIFY_EMAIL', 'PASSWORD_RESET', 'VERIFY_AND_CHANGE_EMAIL', 'RECOVER_EMAIL'];
 
@@ -52,9 +56,7 @@ function TemplateEditor({ appName }: { appName: string }) {
   const [language, setLanguage] = useState<Locale>('ar');
 
   let content;
-  if (isMissingRoute(templates.error)) {
-    content = <Banner tone="info">{t('unavailable')}</Banner>;
-  } else if (templates.error) {
+  if (templates.error) {
     content = (
       <Banner tone="error" action={<Button variant="text" onPress={templates.reload}>{tCommon('retry')}</Button>}>
         {errorText.message(templates.error)}
@@ -74,7 +76,6 @@ function TemplateEditor({ appName }: { appName: string }) {
             templates: (current?.templates ?? []).map((x) => (x.type === saved.type && x.language === saved.language ? saved : x)),
           }))
         }
-        onReset={templates.reload}
       />
     ) : (
       <Banner tone="error">{t('missing')}</Banner>
@@ -110,12 +111,10 @@ function TemplateForm({
   template,
   appName,
   onSaved,
-  onReset,
 }: {
   template: EmailTemplate;
   appName: string;
   onSaved: (t: EmailTemplate) => void;
-  onReset: () => void;
 }) {
   const t = useTranslations('auth.templates');
   const tCommon = useTranslations('common');
@@ -130,9 +129,13 @@ function TemplateForm({
   const [resetting, setResetting] = useState(false);
   const changed = subject !== template.subject || body !== template.body;
   const dir = template.language === 'ar' ? 'rtl' : 'ltr';
+  // The server's rules (INVALID_TEMPLATE), checked as you type.
+  const subjectProblem = !subject.trim() ? t('subjectRequired') : subject.length > SUBJECT_MAX ? t('subjectTooLong', { max: SUBJECT_MAX }) : undefined;
+  const bodyProblem = !body.includes('%LINK%') ? t('needsLink') : undefined;
 
   async function save(event: FormEvent) {
     event.preventDefault();
+    if (subjectProblem || bodyProblem) return;
     setPending(true);
     setError(null);
     try {
@@ -152,16 +155,26 @@ function TemplateForm({
           {template.customized ? <Badge tone="primary">{t('customized')}</Badge> : <Badge>{t('default')}</Badge>}
         </div>
         {Boolean(error) && <Banner tone="error">{errorText.message(error)}</Banner>}
-        <TextField label={t('subject')} textDir={dir} lang={template.language} value={subject} onChange={setSubject} isReadOnly={!editable} />
+        <TextField
+          label={t('subject')}
+          textDir={dir}
+          lang={template.language}
+          value={subject}
+          onChange={setSubject}
+          isReadOnly={!editable}
+          errorMessage={subjectProblem}
+        />
         <TextField
           label={t('body')}
           multiline
           rows={12}
-          textDir={dir}
+          ltr
+          spellCheck="false"
           lang={template.language}
           value={body}
           onChange={setBody}
           isReadOnly={!editable}
+          errorMessage={bodyProblem}
           description={
             <span className={styles.variables}>
               {t('variables')}
@@ -173,7 +186,7 @@ function TemplateForm({
         />
         {editable && (
           <div className={styles.actions}>
-            <Button type="submit" isPending={pending} isDisabled={!changed || !subject.trim() || !body.trim()}>
+            <Button type="submit" isPending={pending} isDisabled={!changed || Boolean(subjectProblem || bodyProblem)}>
               {tCommon('save')}
             </Button>
             {template.customized && (
@@ -191,8 +204,7 @@ function TemplateForm({
           confirmLabel={t('reset')}
           onClose={() => setResetting(false)}
           onConfirm={async () => {
-            await api.resetEmailTemplate(project.projectId, template.type, template.language);
-            onReset();
+            onSaved(await api.resetEmailTemplate(project.projectId, template.type, template.language));
             notify(t('resetDone'));
           }}
         >
@@ -207,7 +219,9 @@ function TemplateForm({
 function Preview({ language, appName, subject, body }: { language: Locale; appName: string; subject: string; body: string }) {
   const t = useTranslations('auth.templates');
   const { project } = useProject();
-  const link = `https://${project.authDomain}/__/auth/action?mode=verifyEmail&oobCode=…&lang=${language}`;
+  // Links open on the project's auth domain, or on this server while the project uses the shared one.
+  const origin = typeof window !== 'undefined' && window.location.hostname === project.authDomain ? window.location.origin : `https://${project.authDomain}`;
+  const link = `${origin}/__/auth/action?mode=verifyEmail&oobCode=…&lang=${language}`;
   const values = {
     '%APP_NAME%': appName,
     '%DISPLAY_NAME%': language === 'ar' ? 'سارة' : 'Sarah',
@@ -291,8 +305,7 @@ function SmtpCard() {
   const smtp = useResource((signal) => api.getSmtp(project.projectId, signal), [project.projectId]);
 
   let content;
-  if (isMissingRoute(smtp.error)) content = <Banner tone="info">{t('unavailable')}</Banner>;
-  else if (smtp.error) {
+  if (smtp.error) {
     content = (
       <Banner tone="error" action={<Button variant="text" onPress={smtp.reload}>{tCommon('retry')}</Button>}>
         {errorText.message(smtp.error)}
@@ -314,48 +327,63 @@ function SmtpForm({ settings, onSaved }: { settings: SmtpSettings; onSaved: (s: 
   const errorText = useErrorText();
   const notify = useSnackbar();
   const { project } = useProject();
+  const { mailbox } = useAuthSection();
   const editable = project.state === 'ACTIVE';
+  // The dev mailbox is a choice only where the instance allows it (its route answers).
+  const mailboxAllowed = Boolean(mailbox.data);
+  const [devMailbox, setDevMailbox] = useState(settings.devMailbox);
   const [draft, setDraft] = useState({
     host: settings.host,
     port: String(settings.port),
-    security: settings.security,
+    tls: settings.tls,
     username: settings.username,
     senderName: settings.senderName,
     senderAddress: settings.senderAddress,
     replyTo: settings.replyTo,
   });
-  // Write-only: empty keeps the saved password.
+  // Write-only: empty keeps the saved password; removing it sends an empty one.
   const [password, setPassword] = useState('');
+  const [removing, setRemoving] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [testing, setTesting] = useState(false);
   const port = Number(draft.port);
   const portInvalid = !Number.isInteger(port) || port < 1 || port > 65535;
 
-  async function save(event: FormEvent) {
-    event.preventDefault();
-    if (portInvalid) return;
+  async function patch(body: SmtpUpdate, done: string) {
     setPending(true);
     setError(null);
-    const body: SmtpUpdate = {
-      host: draft.host.trim(),
-      port,
-      security: draft.security,
-      username: draft.username.trim(),
-      senderName: draft.senderName.trim(),
-      senderAddress: draft.senderAddress.trim(),
-      replyTo: draft.replyTo.trim(),
-      ...(password && { password }),
-    };
     try {
       onSaved(await api.updateSmtp(project.projectId, body));
       setPassword('');
-      notify(t('saved'));
+      // Saving can switch between SMTP and the dev mailbox, which the Mailbox tab follows.
+      mailbox.reload();
+      notify(done);
     } catch (err) {
       setError(err);
     } finally {
       setPending(false);
     }
+  }
+
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    if (portInvalid) return;
+    // devMailbox is sent only when changed: sending it pins the project's choice.
+    await patch(
+      {
+        host: draft.host.trim(),
+        port,
+        tls: draft.tls,
+      username: draft.username.trim(),
+      senderName: draft.senderName.trim(),
+      senderAddress: draft.senderAddress.trim(),
+        replyTo: draft.replyTo.trim(),
+        ...(password && { password }),
+        ...(devMailbox !== settings.devMailbox && { devMailbox }),
+      },
+      t('saved'),
+    );
   }
 
   const text = (name: keyof typeof draft, label: string, extra: { ltr?: boolean; type?: string; description?: string } = {}) => (
@@ -375,6 +403,10 @@ function SmtpForm({ settings, onSaved }: { settings: SmtpSettings; onSaved: (s: 
     <>
       <form className={styles.form} onSubmit={save} noValidate>
         {Boolean(error) && <Banner tone="error">{errorText.message(error)}</Banner>}
+        {settings.devMailbox && <Banner tone="info">{t('devMailboxOn')}</Banner>}
+        {mailboxAllowed && (
+          <SettingSwitch label={t('devMailbox')} description={t('devMailboxHint')} isSelected={devMailbox} onChange={setDevMailbox} isDisabled={!editable} />
+        )}
         <div className={styles.grid}>
           {text('host', t('host'))}
           <TextField
@@ -388,8 +420,8 @@ function SmtpForm({ settings, onSaved }: { settings: SmtpSettings; onSaved: (s: 
           />
           <Select
             label={t('security')}
-            value={draft.security}
-            onChange={(v) => setDraft((d) => ({ ...d, security: v as SmtpSecurity }))}
+            value={draft.tls}
+            onChange={(v) => setDraft((d) => ({ ...d, tls: v as SmtpTls }))}
             options={(['starttls', 'tls', 'none'] as const).map((s) => ({ id: s, label: t(`securityOptions.${s}`) }))}
             isDisabled={!editable}
           />
@@ -415,10 +447,26 @@ function SmtpForm({ settings, onSaved }: { settings: SmtpSettings; onSaved: (s: 
             <Button variant="outlined" icon="send" onPress={() => setTesting(true)}>
               {t('test')}
             </Button>
+            {settings.passwordSet && (
+              <Button variant="text" icon="delete" onPress={() => setRemoving(true)}>
+                {t('removePassword')}
+              </Button>
+            )}
           </div>
         )}
       </form>
       {testing && <TestDialog onClose={() => setTesting(false)} />}
+      {removing && (
+        <ConfirmDialog
+          title={t('removePasswordTitle')}
+          confirmLabel={t('removePassword')}
+          danger
+          onClose={() => setRemoving(false)}
+          onConfirm={() => patch({ password: '' }, t('passwordRemoved'))}
+        >
+          <p>{t('removePasswordBody')}</p>
+        </ConfirmDialog>
+      )}
     </>
   );
 }
@@ -429,6 +477,7 @@ function TestDialog({ onClose }: { onClose: () => void }) {
   const errorText = useErrorText();
   const notify = useSnackbar();
   const { project } = useProject();
+  const { mailbox } = useAuthSection();
   const [to, setTo] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -438,8 +487,9 @@ function TestDialog({ onClose }: { onClose: () => void }) {
     setPending(true);
     setError(null);
     try {
-      await api.testSmtp(project.projectId, to.trim());
-      notify(t('testSent', { email: to.trim() }));
+      const { devMailbox } = await api.testSmtp(project.projectId, to.trim());
+      if (devMailbox) mailbox.reload();
+      notify(devMailbox ? t('testInMailbox') : t('testSent', { email: to.trim() }));
       onClose();
     } catch (err) {
       setError(err);
@@ -466,7 +516,7 @@ function TestDialog({ onClose }: { onClose: () => void }) {
       }
     >
       <p>{t('testBody')}</p>
-      {Boolean(error) && <Banner tone="error">{isMissingRoute(error) ? t('unavailable') : errorText.message(error)}</Banner>}
+      {Boolean(error) && <Banner tone="error">{errorText.message(error)}</Banner>}
       <TextField label={t('testTo')} type="email" ltr autoFocus value={to} onChange={setTo} />
     </Dialog>
   );

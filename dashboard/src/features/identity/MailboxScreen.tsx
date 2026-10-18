@@ -14,10 +14,10 @@ import { Cell, Row, Table } from '@/components/ui/Table';
 import { Time } from '@/components/ui/Time';
 import { useProject } from '@/features/project/ProjectContext';
 import * as api from '@/lib/api/console';
+import { ApiError } from '@/lib/api/client';
 import { useErrorText } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 import { useAuthSection } from './AuthSection';
-import { isMissingRoute } from './missingRoute';
 import styles from './MailboxScreen.module.css';
 
 /** Dev mode only: the emails Auth would have sent, with their action links. */
@@ -32,8 +32,8 @@ export function MailboxScreen() {
   const [clearing, setClearing] = useState(false);
   useDocumentTitle(t('title'));
 
-  const off = isMissingRoute(mailbox.error) || mailbox.data?.enabled === false;
-  if (off) {
+  // 404: this instance never keeps email (it is not a development setup).
+  if (mailbox.error instanceof ApiError && mailbox.error.code === 404) {
     return (
       <EmptyState icon="inbox" title={t('offTitle')}>
         {t('offBody')}
@@ -52,9 +52,15 @@ export function MailboxScreen() {
 
   return (
     <>
-      <Banner tone="info" title={t('devTitle')}>
-        {t('devBody')}
-      </Banner>
+      {mailbox.data.enabled ? (
+        <Banner tone="info" title={t('devTitle')}>
+          {t('devBody')}
+        </Banner>
+      ) : (
+        <Banner tone="warning" title={t('smtpTitle')}>
+          {t('smtpBody')}
+        </Banner>
+      )}
       <div className={styles.toolbar}>
         <Button variant="outlined" icon="rotate" isPending={mailbox.loading} onPress={mailbox.reload}>
           {t('refresh')}
@@ -82,7 +88,7 @@ export function MailboxScreen() {
               <Cell>
                 <span className={styles.subject}>
                   <bdi>{m.subject}</bdi>
-                  {m.type && <span className={styles.type}>{tTypes(m.type)}</span>}
+                  <span className={styles.type}>{m.type === 'TEST' ? t('test') : tTypes(m.type)}</span>
                 </span>
               </Cell>
               <Cell>

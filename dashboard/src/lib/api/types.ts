@@ -177,9 +177,7 @@ export interface FlutterSelection {
   ios?: string;
 }
 
-// Auth: a project's users and sign-in settings (docs/api/console.md). The provider, email
-// template, SMTP and mailbox routes come from the provider and email work; their shapes are
-// noted in dashboard/INTEGRATION.md.
+// Auth: a project's users, sign-in settings, providers and email (docs/api/console.md).
 
 export interface AuthProviderInfo {
   providerId: string;
@@ -232,8 +230,8 @@ export interface AuthLimits {
   passwordFailures: number;
   passwordFailureWindowSeconds: number;
   passwordBackoffMaxSeconds: number;
-  /** How long each kind of email code stays valid, once the server reports it. */
-  emailCodeLifetimeSeconds?: Partial<Record<EmailTemplateType, number>>;
+  /** How long the link of each kind of email stays valid. */
+  emailCodeLifetimeSeconds: Partial<Record<EmailTemplateType, number>>;
 }
 
 export type PasswordEnforcement = 'OFF' | 'ENFORCE';
@@ -272,8 +270,6 @@ export interface SigningKey {
 export interface FederatedProvider {
   providerId: 'google.com' | 'apple.com';
   enabled: boolean;
-  /** Where the provider sends users back; registered with Google or Apple. */
-  redirectUri: string;
   clientId?: string;
   clientSecretSet?: boolean;
   servicesId?: string;
@@ -282,6 +278,14 @@ export interface FederatedProvider {
   privateKeySet?: boolean;
 }
 
+export interface FederatedProviders {
+  /** Where Google and Apple send users back; registered with each of them. */
+  redirectUri: string;
+  /** Google, then Apple. */
+  providers: FederatedProvider[];
+}
+
+/** An empty secret clears it. */
 export interface FederatedProviderUpdate {
   enabled?: boolean;
   clientId?: string;
@@ -298,33 +302,41 @@ export interface EmailTemplate {
   type: EmailTemplateType;
   language: Locale;
   subject: string;
+  /** HTML with %VARIABLES%. */
   body: string;
   /** False while the built-in default is in use. */
   customized: boolean;
 }
 
-export type SmtpSecurity = 'starttls' | 'tls' | 'none';
+export type SmtpTls = 'starttls' | 'tls' | 'none';
 
 export interface SmtpSettings {
   host: string;
   port: number;
   username: string;
   passwordSet: boolean;
-  security: SmtpSecurity;
+  tls: SmtpTls;
   senderName: string;
   senderAddress: string;
   replyTo: string;
+  /** Email stays in the dev mailbox instead of going out over SMTP. */
+  devMailbox: boolean;
 }
 
+/** `password: ""` removes the saved password. */
 export type SmtpUpdate = Partial<Omit<SmtpSettings, 'passwordSet'>> & { password?: string };
 
 export interface MailboxMessage {
   id: string;
   to: string;
-  type?: EmailTemplateType;
+  /** A template type, or TEST for a test message. */
+  type: EmailTemplateType | 'TEST';
+  language: Locale;
   subject: string;
-  /** The action link the email carries. */
-  link?: string;
+  text: string;
+  html: string;
+  /** The action link the email carries; empty for a test message. */
+  link: string;
   createTime: string;
 }
 

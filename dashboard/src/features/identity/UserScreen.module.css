@@ -26,3 +26,7 @@
 .over {
   color: var(--md-sys-color-error);
 }
+
+.link {
+  overflow-wrap: anywhere;
+}

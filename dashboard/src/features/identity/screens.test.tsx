@@ -106,15 +106,17 @@ describe('UserScreen', () => {
     await waitFor(() => expect(body(fetchMock, 'PATCH', `${BASE}/users/u-amal`)).toEqual({ customClaims: '{"tier":"gold"}' }));
   });
 
-  // Without the route, the server answers 404, or 501 when the path reaches the user route.
-  it.each([
-    ['404', notFound],
-    ['501', () => json(501, { error: { code: 501, status: 'UNIMPLEMENTED', message: 'Method not allowed.' } })],
-  ])('says so inline when the server cannot send password resets yet (%s)', async (_, reply) => {
-    routes({ [`POST ${BASE}/users/u-amal:sendPasswordReset`]: reply });
+  it('sends a password reset in the chosen language and shows the link', async () => {
+    const link = 'https://console.example.com/__/auth/action?mode=resetPassword&oobCode=abc&lang=en';
+    const fetchMock = routes({ [`POST ${BASE}/users/u-amal:sendPasswordReset`]: () => json(200, { link }) });
     renderInProject(<UserScreen />, { search: 'id=chat-app&uid=u-amal' });
     await userEvent.click(await screen.findByRole('button', { name: 'إرسال إعادة تعيين كلمة المرور' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('لا يستطيع هذا الخادم إرسال رسائل إعادة تعيين كلمة المرور بعد.');
+    const dialog = screen.getByRole('alertdialog');
+    await userEvent.click(within(dialog).getByRole('button', { name: /لغة الرسالة/ }));
+    await userEvent.click(screen.getByRole('option', { name: 'English' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'إرسال إعادة تعيين كلمة المرور' }));
+    expect(await screen.findByText(link)).toBeInTheDocument();
+    expect(body(fetchMock, 'POST', `${BASE}/users/u-amal:sendPasswordReset`)).toEqual({ language: 'en' });
   });
 
   it('asks before disabling', async () => {
@@ -128,18 +130,14 @@ describe('UserScreen', () => {
 });
 
 describe('SignInMethodsScreen', () => {
-  const google: FederatedProvider = {
-    providerId: 'google.com',
-    enabled: true,
-    redirectUri: 'https://console.example.com/__/auth/handler',
-    clientId: 'client.apps.googleusercontent.com',
-    clientSecretSet: true,
-  };
+  const google: FederatedProvider = { providerId: 'google.com', enabled: true, clientId: 'client.apps.googleusercontent.com', clientSecretSet: true };
+  const apple: FederatedProvider = { providerId: 'apple.com', enabled: false, servicesId: '', teamId: '', keyId: '', privateKeySet: false };
+  const providers = () => json(200, { redirectUri: 'https://console.example.com/__/auth/handler', providers: [google, apple] });
 
   it('never shows a saved secret and sends one only when replaced', async () => {
     const fetchMock = stubApi({
       [`GET ${BASE}/config`]: () => json(200, config),
-      [`GET ${BASE}/providers`]: () => json(200, { providers: [google] }),
+      [`GET ${BASE}/providers`]: providers,
       [`PATCH ${BASE}/providers/google.com`]: () => json(200, google),
     });
     renderInProject(<SignInMethodsScreen />);
@@ -148,7 +146,7 @@ describe('SignInMethodsScreen', () => {
     expect(screen.getByText('محفوظ، ولن يُعرض مجددًا. أدخل قيمة جديدة فقط إن أردت استبداله.')).toBeInTheDocument();
     expect(screen.getByText('https://console.example.com/__/auth/handler')).toBeInTheDocument();
 
-    const card = secret.closest('section')!;
+    const card = secret.closest('section') as HTMLElement;
     await userEvent.click(within(card).getByRole('button', { name: 'حفظ' }));
     await waitFor(() => expect(body(fetchMock, 'PATCH', `${BASE}/providers/google.com`)).toEqual({ enabled: true, clientId: google.clientId }));
     await userEvent.type(secret, 'new-secret');
@@ -158,21 +156,33 @@ describe('SignInMethodsScreen', () => {
     );
   });
 
-  it('explains when the provider routes are missing, and saves switches at once', async () => {
+  it('checks Apple credentials before enabling it', async () => {
+    const fetchMock = stubApi({ [`GET ${BASE}/config`]: () => json(200, config), [`GET ${BASE}/providers`]: providers });
+    renderInProject(<SignInMethodsScreen />);
+    const teamId = await screen.findByLabelText('معرّف الفريق');
+    const card = teamId.closest('section') as HTMLElement;
+    await userEvent.click(within(card).getByText('مفعّل', { selector: 'label *, label' }));
+    await userEvent.type(teamId, 'abc');
+    await userEvent.click(within(card).getByRole('button', { name: 'حفظ' }));
+    expect(within(card).getAllByText('مطلوب لتفعيل هذا المزوّد.')).toHaveLength(3);
+    expect(within(card).getByText('10 أحرف لاتينية كبيرة أو أرقام، كما تعرضه Apple.')).toBeInTheDocument();
+    expect(body(fetchMock, 'PATCH', `${BASE}/providers/apple.com`)).toBeUndefined();
+  });
+
+  it('saves switches at once', async () => {
     const fetchMock = stubApi({
       [`GET ${BASE}/config`]: () => json(200, config),
-      [`GET ${BASE}/providers`]: notFound,
+      [`GET ${BASE}/providers`]: providers,
       [`PATCH ${BASE}/config`]: () => json(200, { ...config, clientSignupEnabled: false }),
     });
     renderInProject(<SignInMethodsScreen />);
-    expect(await screen.findByText('تسجيل الدخول عبر Google وApple غير متاح على هذا الخادم بعد.')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('switch', { name: 'منع إنشاء الحسابات من التطبيقات' }));
+    await userEvent.click(await screen.findByRole('switch', { name: 'منع إنشاء الحسابات من التطبيقات' }));
     await waitFor(() => expect(body(fetchMock, 'PATCH', `${BASE}/config`)).toEqual({ clientSignupEnabled: false }));
     expect(await screen.findByRole('switch', { name: 'منع إنشاء الحسابات من التطبيقات' })).toBeChecked();
   });
 
   it('refuses a domain with a scheme before calling the server', async () => {
-    const fetchMock = stubApi({ [`GET ${BASE}/config`]: () => json(200, config), [`GET ${BASE}/providers`]: notFound });
+    const fetchMock = stubApi({ [`GET ${BASE}/config`]: () => json(200, config), [`GET ${BASE}/providers`]: providers });
     renderInProject(<SignInMethodsScreen />);
     await userEvent.type(await screen.findByLabelText('إضافة نطاق'), 'https://app.example.com');
     await userEvent.click(screen.getByRole('button', { name: 'إضافة' }));
@@ -184,7 +194,7 @@ describe('SignInMethodsScreen', () => {
 describe('AuthSection', () => {
   it.each([
     ['a 404', notFound],
-    ['enabled: false', () => json(200, { enabled: false, messages: [] })],
+    ['SMTP with no earlier messages', () => json(200, { enabled: false, messages: [] })],
   ])('hides the Mailbox tab for %s', async (_, mailbox) => {
     const fetchMock = stubApi({ [`GET ${BASE}/mailbox`]: mailbox });
     renderInProject(<AuthSection>content</AuthSection>);
