@@ -60,16 +60,31 @@ type AuthIdpConfig struct {
 }
 
 type AuthIdpSession struct {
-	SessionHash   []byte
-	ProjectNumber int64
-	TenantID      string
-	ProviderID    string
-	Nonce         string
-	RedirectUrl   string
-	EventID       *string
-	CreatedAt     time.Time
-	ExpiresAt     time.Time
-	UsedAt        *time.Time
+	SessionHash     []byte
+	ProjectNumber   int64
+	TenantID        string
+	ProviderID      string
+	Nonce           string
+	RedirectUrl     string
+	EventID         *string
+	CreatedAt       time.Time
+	ExpiresAt       time.Time
+	UsedAt          *time.Time
+	StateHash       []byte
+	CallbackUrl     string
+	CodeVerifierEnc []byte
+	AuthType        string
+	AppName         string
+	ApiKey          string
+}
+
+type AuthIdpToken struct {
+	ProjectNumber   int64
+	TenantID        string
+	Uid             string
+	ProviderID      string
+	RefreshTokenEnc []byte
+	UpdatedAt       time.Time
 }
 
 type AuthOobCode struct {
