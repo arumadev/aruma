@@ -53,6 +53,7 @@ make dev         # ينشئ .env بمفتاح عشوائي عند أول تشغ�
 | `ARUMA_PROJECT_DOMAIN` | | مضيف `public_url` | أساس `authDomain` وأسماء الحاويات وبريد حسابات الخدمة |
 | `ARUMA_TRUSTED_PROXIES` | | | عناوين CIDR التي تُصدَّق منها `X-Forwarded-For` |
 | `ARUMA_SESSION_IDLE_TIMEOUT` / `ARUMA_SESSION_ABSOLUTE_TIMEOUT` | | `30m` / `8h` | عمر جلسة اللوحة |
+| `ARUMA_MAIL_DEV_MAILBOX` | | `true` إن كان `public_url` على loopback، وإلا `false` | صندوق بريد التطوير: رسائل Auth للمشاريع التي بلا SMTP تُحفظ في اللوحة بدل إرسالها. خادم SMTP يُضبط لكل مشروع من اللوحة |
 
 ## أوامر المشغّل: `aruma`
 

@@ -16,3 +16,7 @@ signup_open: false                 # let anyone create an account from the conso
 session:
   idle_timeout: 30m
   absolute_timeout: 8h
+mail:
+  # dev_mailbox: true              # keep Auth emails of projects without SMTP in the console's dev
+                                   # mailbox instead of sending them; defaults to on only when
+                                   # public_url is a loopback address (SMTP is set per project)
