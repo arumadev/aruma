@@ -1,0 +1,40 @@
+{
+  "name": "@aruma/web",
+  "version": "0.1.0",
+  "description": "Send the official Firebase web Auth SDK, in production mode, to an Aruma server: one line in vite.config, no change in the app.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./auto": {
+      "types": "./auto.d.ts",
+      "default": "./src/auto.js"
+    },
+    "./vite": {
+      "types": "./vite.d.ts",
+      "default": "./src/vite.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "./index.d.ts",
+  "sideEffects": [
+    "./src/auto.js"
+  ],
+  "files": [
+    "src/",
+    "index.d.ts",
+    "auto.d.ts",
+    "vite.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}
