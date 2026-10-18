@@ -123,3 +123,23 @@ Every path below starts with `/projects/{project}`.
 | GET | `/serviceAccounts/{sa}/keys` | → `{keys: [{keyId, keyAlgorithm, validAfterTime, validBeforeTime?, disabled, createTime}]}` |
 | POST | `/serviceAccounts/{sa}/keys` | → the key file as a download. **Shown once; Aruma does not keep the private key.** At most 10 keys |
 | DELETE | `/serviceAccounts/{sa}/keys/{keyId}` | → 204 |
+
+## Auth: Google and Apple sign-in
+
+Every path below starts with `/projects/{project}`. Session or CLI token. Secrets are write-only: responses only say whether one is set.
+
+| Method | Path | Body → Response |
+|---|---|---|
+| GET | `/auth/providers` | → `{redirectUri, providers: [GoogleProvider, AppleProvider]}`, always both, Google first |
+| PATCH | `/auth/providers/google.com` | any of `{enabled, clientId, clientSecret}` → `GoogleProvider` |
+| PATCH | `/auth/providers/apple.com` | any of `{enabled, servicesId, teamId, keyId, privateKey}` → `AppleProvider` |
+
+- `GoogleProvider` = `{providerId: "google.com", enabled, clientId, clientSecretSet}`.
+- `AppleProvider` = `{providerId: "apple.com", enabled, servicesId, teamId, keyId, privateKeySet}`.
+- `redirectUri` is the URL to register as the OAuth redirect URI at Google and as the Return URL at Apple: `https://<authDomain>/__/auth/handler` when the project has its own `authDomain`, otherwise `<public_url>/__/auth/handler`. Show it with a copy button.
+- Validation errors are `INVALID_ARGUMENT` with the Identity Toolkit code in the message (`INVALID_CONFIG : …`):
+  - Google can be enabled only with a `clientId` and a `clientSecret`; Apple only with all four fields.
+  - `teamId` and `keyId` are 10 characters, `A-Z0-9`. `privateKey` is the `.p8` file Apple issues (PEM, PKCS#8, P-256).
+  - Fields of the other provider are refused (`clientId` on Apple, `servicesId` on Google, `clientSecret` on Apple).
+  - An empty `clientSecret` or `privateKey` clears it (and the provider must then be disabled).
+- An unknown provider id is `NOT_FOUND`.
