@@ -56,24 +56,22 @@
 | 11 | رمز بريد مستخدَم | `11 used email code` | `INVALID_OOB_CODE`، والصفحة لا تعرض نموذجًا، وكل نوع رمز لا يصلح لغيره | ناجح |
 | 12 | رمز بريد منتهٍ | `12 expired email code` | `EXPIRED_OOB_CODE`، والصفحة لا تعرض نموذجًا، وكلمة المرور لا تتغير | ناجح |
 | 13 | continueUrl إلى نطاق غير مصرّح | `13 continueUrl to an unauthorised domain` | `UNAUTHORIZED_DOMAIN` أو `INVALID_CONTINUE_URI` دون إرسال بريد. وصفحة الإجراء، ولو عُدّل الرابط يدويًا، لا تقود إلا إلى العنوان المحفوظ مع الرمز | ناجح |
-| 14 | إعادة استخدام state | `14 replayed state` | رفض الاستخدام الثاني | معلّق: دخول Google وApple |
-| 15 | تبديل state بين جلستين، أو تعديله | `15 swapped state` | رفض | معلّق: دخول Google وApple |
-| 16 | nonce خاطئ أو ناقص | `16 wrong nonce` | `MISSING_OR_INVALID_NONCE` | معلّق: دخول Google وApple |
+| 14 | إعادة استخدام state | `14 replayed state` | `INVALID_IDP_RESPONSE` للاستخدام الثاني، عبر النافذة المنبثقة وعبر createAuthUri. وصفحة المعالج لا تعرف الـ state بعد استخدامه | ناجح |
+| 15 | تبديل state بين جلستين، أو تعديله، أو sessionId ناقص | `15 swapped state` | `INVALID_IDP_RESPONSE`. والمحاولة تحرق الجلسة التي سمّتها، فلا يُعاد التخمين | ناجح |
+| 16 | nonce خاطئ أو ناقص أو مُجزّأ بدل الخام | `16 wrong nonce` | `MISSING_OR_INVALID_NONCE`، في تدفق الرمز (code) وفي رموز Apple وGoogle المباشرة | ناجح |
 | 17 | حقول الإدارة من العميل | `17 admin-only fields from a client` | تُهمل ولا تُطبَّق أبدًا. update وlookup وdelete تعمل على صاحب الرمز فقط، و`returnOobLink` يُرفض بـ 403 `INSUFFICIENT_PERMISSION`. الحقول: `localId` لمستخدم آخر، `customAttributes`، `disabled`، `emailVerified`، `validSince`، `passwordHash` وغيرها | ناجح |
 | 18 | `Bearer owner` على نقاط الإدارة | `18 Bearer owner on admin endpoints` | 401 أو 403 على كل مسار في Admin API، دون CORS ولا بيانات. و401 في Management API والكونسول | ناجح |
 | 19 | مفتاح API، أو رمز دخول مستخدم، على نقاط الإدارة | `19 API key on admin endpoints` | 401 أو 403. وكضابط: رمز حساب الخدمة يقرأ المستخدم | ناجح |
-| 20 | تفريغ القاعدة والسجل: صفر سر خام | `20 database and log dump hold no raw secret` | لا يظهر أي سر نصًا ولا hex. الأسرار: كلمات المرور، رموز التجديد والدخول، custom token، المفاتيح الخاصة، المفتاح الرئيسي، رمز CLI، رموز البريد، كلمة مرور SMTP | ناجح |
+| 20 | تفريغ القاعدة والسجل: صفر سر خام | `20 database and log dump hold no raw secret` | لا يظهر أي سر نصًا ولا hex. الأسرار: كلمات المرور، رموز التجديد والدخول، custom token، المفاتيح الخاصة، المفتاح الرئيسي، رمز CLI، رموز البريد، كلمة مرور SMTP، سر عميل Google، ورموز Apple (التجديد والوصول والدخول) | ناجح |
 | 21 | حدود المعدل على الدخول | `21 rate limit on sign-in` | التأخير بعد محاولات خاطئة يشمل كلمة المرور الصحيحة. وحد لإنشاء الحسابات، وحد للطلبات لكل عنوان | ناجح |
 | 22 | حدود المعدل على إرسال البريد | `22 rate limit on email sending` | بعد 5 رسائل للمستلم نفسه: `RESET_PASSWORD_EXCEED_LIMIT`. وبعد كثرة الرسائل من العنوان نفسه: `TOO_MANY_ATTEMPTS_TRY_LATER` | ناجح |
 
 ## الحصيلة
 
-- **19 ناجحًا، و3 معلّقة** على دخول Google وApple، وهي 14 و15 و16.
+- **22 من 22 ناجحة.**
+- السيناريوهات 14 إلى 16 تعمل على مزوّدَي Google وApple المزيّفَين في [auth_idp_test.go](../../test/acceptance/auth_idp_test.go). يصل إليهما الخادم عبر خيار الاختبار `app.WithIdPEndpoints` وحده. و`idpDriver` غلاف رقيق فوق `idpEnv` هناك.
 - في السيناريوهات 1 إلى 8 تعمل فحوص المكتبتين في `tamper-libs`.
-
-## عند دمج Google وApple
-
-نفّذ `idpDriver` بمزوّد تجريبي، وعيّن `idp`، ثم احذف `t.Skip(pendingIdP)`.
+- **ما لا يُختبر محليًا:** Google وApple الحقيقيان. يحتاجان بيانات اعتماد حقيقية، وApple يحتاج نطاق https عامًا. الخطوات اليدوية في [phase2-idp.md](../research/phase2-idp.md) §7.
 
 ## نتائج وجدها الاختبار
 
@@ -84,6 +82,7 @@
   - كانت رموز التجديد تُقارن بالميكروثانية.
   - هذا يُخرج مستخدم الويب بعد `reauthenticateWithCredential` ثم `updatePassword` في الثانية نفسها.
   - أُصلح في `96e76e0`، والقرار مسجّل في ADR-004.
+  - ثم وجدت المراجعة الأمنية أن ذلك الإصلاح يُبقي جلسة ثانية الإبطال (H-3 في review-phase2.md). صارت نقطة الإبطال الثانية التالية، وتؤرَّخ الجلسة الجديدة عندها.
 - **هامش الانتهاء في مكتبة Go:**
   - تقبل رمزًا انتهى قبل أقل من 300 ثانية، كما يفعل firebase-admin-go الرسمي. وهذا مطابقة مقصودة، لا خلل.
   - الخادم لا يسمح بأي هامش.

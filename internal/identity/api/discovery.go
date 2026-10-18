@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/osama300/aurma-project/internal/identity/core"
 	"github.com/osama300/aurma-project/internal/identity/tokens"
@@ -29,7 +28,7 @@ func (a *API) discoveryRoutes(r *httpx.Router) {
 				return
 			}
 			iss := d.issuer(p)
-			writeCached(w, 3600, map[string]any{
+			writeCached(w, "public, max-age=3600", map[string]any{
 				"issuer": iss, "jwks_uri": iss + "/.well-known/jwks.json",
 				"response_types_supported": []string{"id_token"}, "subject_types_supported": []string{"public"},
 				"id_token_signing_alg_values_supported": []string{"RS256"},
@@ -46,14 +45,16 @@ func (a *API) discoveryRoutes(r *httpx.Router) {
 				a.writeError(w, r, err)
 				return
 			}
-			writeCached(w, 300, map[string]any{"keys": keys})
+			// A minute at most, and in no shared cache: after an emergency rotation, verifiers
+			// that honour the header drop the destroyed key within 60 s (ADR-004).
+			writeCached(w, "max-age=60", map[string]any{"keys": keys})
 		}))
 	}
 }
 
-// writeCached writes a public, cacheable JSON response.
-func writeCached(w http.ResponseWriter, maxAge int, v any) {
+// writeCached writes a cacheable JSON response with the given Cache-Control.
+func writeCached(w http.ResponseWriter, cacheControl string, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Cache-Control", "public, max-age="+strconv.Itoa(maxAge))
+	w.Header().Set("Cache-Control", cacheControl)
 	_ = json.NewEncoder(w).Encode(v)
 }

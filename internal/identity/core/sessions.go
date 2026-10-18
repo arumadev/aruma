@@ -43,9 +43,13 @@ type IDClaims struct {
 
 // mint signs an ID token for the user. Developer claims (from the user record and, for custom
 // tokens, from the token) sit at the top level as in Firebase; they never override the standard
-// claims, which validClaims already forbids.
+// claims, which validClaims already forbids. It is never issued before its sign-in: a session
+// started by a revocation is dated at the revocation point, up to a second ahead.
 func (s *Service) mint(ctx context.Context, p Project, u User, provider string, tokenClaims json.RawMessage, authTime time.Time) (string, error) {
 	now := s.now()
+	if authTime.After(now) {
+		now = authTime
+	}
 	claims := map[string]any{}
 	for _, raw := range []json.RawMessage{u.CustomClaims, tokenClaims} {
 		if len(raw) == 0 {
@@ -97,11 +101,10 @@ func (s *Service) mint(ctx context.Context, p Project, u User, provider string, 
 
 // startSession mints an ID token and a new refresh token for a sign-in.
 func (s *Service) startSession(ctx context.Context, q *queries.Queries, p Project, u User, provider string, tokenClaims json.RawMessage, isNew bool) (*Session, error) {
-	now := s.now()
 	refresh := crypto.RandomString(crypto.TokenBytes)
-	err := q.CreateRefreshToken(ctx, queries.CreateRefreshTokenParams{
+	authTime, err := q.CreateRefreshToken(ctx, queries.CreateRefreshTokenParams{
 		TokenHash: s.keys.HashToken("auth-refresh:" + refresh), ProjectNumber: p.Number, TenantID: p.Tenant,
-		Uid: u.UID, SignInProvider: provider, CustomClaims: tokenClaims, AuthTime: now,
+		Uid: u.UID, SignInProvider: provider, CustomClaims: tokenClaims,
 	})
 	if err != nil {
 		return nil, err
@@ -109,7 +112,7 @@ func (s *Service) startSession(ctx context.Context, q *queries.Queries, p Projec
 	if err := q.TouchLogin(ctx, queries.TouchLoginParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: u.UID}); err != nil {
 		return nil, err
 	}
-	idToken, err := s.mint(ctx, p, u, provider, tokenClaims, now)
+	idToken, err := s.mint(ctx, p, u, provider, tokenClaims, authTime)
 	if err != nil {
 		return nil, err
 	}
@@ -146,9 +149,10 @@ func (s *Service) Refresh(ctx context.Context, p Project, refresh string) (*Sess
 	case raw.Disabled:
 		return nil, ErrUserDisabled
 	case row.CreatedAt.Unix() < raw.TokensValidAfter.Unix():
-		// Second precision, as for ID tokens and Firebase's validSince. A finer check breaks the
-		// web SDK: after reauthenticate and updatePassword in the same second, the new ID token
-		// is byte for byte the one it holds, so it keeps the refresh token of the sign-in.
+		// Second precision, as for ID tokens and Firebase's validSince. The revocation point is
+		// a whole second after the revocation, so this ends every earlier session, while the
+		// session a password change returns is dated at that point and differs from the one the
+		// web SDK holds, which makes the SDK take it.
 		_ = s.q.DeleteRefreshToken(ctx, queries.DeleteRefreshTokenParams{ProjectNumber: p.Number, TokenHash: hash})
 		return nil, ErrTokenExpired
 	}

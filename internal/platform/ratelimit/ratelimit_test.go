@@ -182,3 +182,51 @@ func TestAddrKey(t *testing.T) {
 		}
 	}
 }
+
+// Review M-2 (Phase 2): a table full of active keys makes room for a new key instead of
+// refusing it, so flooding it cannot block password sign-in for everyone.
+func TestBackoffFullTableAdmitsNewKeys(t *testing.T) {
+	c := newClock()
+	b := NewBackoff(5, 15*time.Minute, 30*time.Second, 15*time.Minute)
+	b.now = c.now
+	for i := range maxKeys {
+		a, _ := b.Begin("flood" + strconv.Itoa(i))
+		a.Done(false)
+		c.advance(time.Microsecond)
+	}
+	if b.Len() != maxKeys {
+		t.Fatalf("table holds %d keys, want %d", b.Len(), maxKeys)
+	}
+	a, wait := b.Begin("victim@example.com")
+	if a == nil {
+		t.Fatalf("new key refused for %v on a full table", wait)
+	}
+	a.Done(true)
+	if b.Len() > maxKeys {
+		t.Fatalf("table grew past its cap: %d", b.Len())
+	}
+	// The oldest flood key made room.
+	if _, ok := b.entries["flood0"]; ok {
+		t.Fatal("the oldest entry was not evicted")
+	}
+}
+
+// Review M-2 (Phase 2): a full limiter evicts its least recently used bucket for a newcomer.
+func TestLimiterFullTableAdmitsNewKeys(t *testing.T) {
+	c := newClock()
+	l := NewLimiter(1, 1) // slow refill, so every flood bucket stays active
+	l.now = c.now
+	for i := range maxKeys {
+		l.Allow("flood" + strconv.Itoa(i))
+		c.advance(time.Microsecond)
+	}
+	if ok, _ := l.Allow("newcomer"); !ok {
+		t.Fatal("newcomer refused on a full table")
+	}
+	if l.Len() > maxKeys {
+		t.Fatalf("table grew past its cap: %d", l.Len())
+	}
+	if _, ok := l.buckets["flood0"]; ok {
+		t.Fatal("the least recently used bucket was not evicted")
+	}
+}
