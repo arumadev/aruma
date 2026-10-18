@@ -37,3 +37,28 @@ func TestAuthLinkPasswordCannotReplaceCredentials(t *testing.T) {
 	u := ok(t, p.call(itk+"accounts:lookup", map[string]any{"idToken": old}))
 	assertEqual(t, "email kept", u.JSON["users"].([]any)[0].(map[string]any)["email"], "victim@example.com")
 }
+
+// H-2: a change-email code is the authority of the session that asked for it, so it ends with
+// that session. Otherwise whoever squatted an address keeps a way back in after takeover
+// protection drops their password, and a stolen session survives the password change that was
+// meant to end it.
+func TestAuthChangeEmailCodeEndsWithItsSession(t *testing.T) {
+	x := newIdPEnv(t)
+	squatter := ok(t, x.call(itk+"accounts:signUp", map[string]any{"email": "victim@gmail.com", "password": "squatter1", "returnSecureToken": true}))
+	ok(t, x.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "VERIFY_AND_CHANGE_EMAIL", "idToken": squatter.str("idToken"), "newEmail": "attacker@evil.test"}))
+	_, q := linkCode(t, x.lastMail("attacker@evil.test")["link"].(string))
+
+	// The owner signs in with Google; takeover protection ends the squatter's sessions.
+	res := ok(t, x.signIn(x.flow("google.com", "signInViaPopup", googleClaims("g-victim", "victim@gmail.com", true)), ""))
+	assertEqual(t, "same account", res.str("localId"), squatter.str("localId"))
+	authErr(t, x.call(itk+"accounts:update", map[string]any{"oobCode": q.Get("oobCode")}), "INVALID_OOB_CODE")
+	user := ok(t, x.call(itk+"accounts:lookup", map[string]any{"idToken": res.str("idToken")})).list("users")[0]
+	assertEqual(t, "email kept", user["email"], "victim@gmail.com")
+
+	// A stolen session asks for a change; the owner changes the password, which revokes it.
+	owner := ok(t, x.call(itk+"accounts:signUp", map[string]any{"email": "owner@example.com", "password": "secret12", "returnSecureToken": true}))
+	ok(t, x.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "VERIFY_AND_CHANGE_EMAIL", "idToken": owner.str("idToken"), "newEmail": "thief@evil.test"}))
+	_, q = linkCode(t, x.lastMail("thief@evil.test")["link"].(string))
+	ok(t, x.call(itk+"accounts:update", map[string]any{"idToken": owner.str("idToken"), "password": "secret34"}))
+	authErr(t, x.call(itk+"accounts:update", map[string]any{"oobCode": q.Get("oobCode")}), "INVALID_OOB_CODE")
+}

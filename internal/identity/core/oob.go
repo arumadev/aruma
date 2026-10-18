@@ -359,6 +359,12 @@ func (s *Service) codeUser(ctx context.Context, q *queries.Queries, p Project, r
 		return raw, ErrUserDisabled
 	case row.RequestType != MailRecoverEmail && !strings.EqualFold(str(raw.Email), row.Email):
 		return raw, ErrInvalidOobCode
+	case row.RequestType == MailChangeEmail && row.CreatedAt.Before(raw.TokensValidAfter):
+		// A change of address is the authority of the session that asked for it, sent to an
+		// address that session chose, so it ends with that session: after a password change,
+		// a revocation, or takeover protection dropping a squatter's credentials. The other
+		// codes go to the account's own address and stay valid.
+		return raw, ErrInvalidOobCode
 	}
 	return raw, nil
 }
