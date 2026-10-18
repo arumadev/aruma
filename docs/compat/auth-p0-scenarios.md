@@ -10,10 +10,14 @@
   - تطبيق Vite على حزمة `firebase` الرسمية، بإصداراتها الثلاثة 11 و12 و13.
   - لا يأخذ إلا إعداد الويب من Management API، والسطر الواحد (ADR-013).
   - حارس شبكة يُفشل أي اختبار يخرج منه طلب من الجهاز.
+  - كل إصدار رئيسي يعمل على خادم جديد خاص به.
 - **acceptance:** [test/acceptance](../../test/acceptance)، عبر HTTP على خادم حقيقي.
   - جداول الأخطاء: `TestAuthErrorTables`.
   - تطابق v3: `TestAuthV3Parity`.
   - العبث: `TestAuthTamper`.
+  - البريد: `auth_email_test.go`.
+  - Admin API: `auth_admin_test.go`.
+- **مكتبتا التحقق:** الاختبارات الحية في [sdk/go/adminauth](../../sdk/go/adminauth/live_test.go) و[sdk/node/admin-auth](../../sdk/node/admin-auth/test/live.test.js)، بجانب firebase-admin الرسمي. والهدف `tamper-libs` يعرض عليهما الرموز المزوَّرة.
 
 الحالة: **ناجح** يعمل في CI. **معلّق** ينتظر فرعًا آخر عند الدمج.
 
@@ -36,8 +40,8 @@
 | W-13 | الإخراج عند الإبطال (`auth/user-token-expired`) | e2e `revocation signs the user out …`؛ `TestAuthTamper/08` | ناجح |
 | W-14 | رموز الأخطاء `auth/*` في التطبيق (AC-A3) | e2e `error codes reach the app …`؛ `TestAuthErrorTables` | ناجح |
 | W-15 | `fetchSignInMethodsForEmail` مع الحماية وبدونها (AC-A4) | `TestAuthErrorTables` (createAuthUri) | ناجح |
-| W-16 | تأكيد البريد: `sendEmailVerification` ثم `applyActionCode` (AC-A6) | جدول sendOobCode؛ `TestAuthTamper/11` | معلّق: إجراءات البريد |
-| W-17 | إعادة تعيين كلمة المرور: `sendPasswordResetEmail` ثم `confirmPasswordReset` (AC-A7) | جدولا sendOobCode وresetPassword؛ `TestAuthTamper/11`، `/12` | معلّق: إجراءات البريد |
+| W-16 | تأكيد البريد: `sendEmailVerification` ثم `checkActionCode` و`applyActionCode`، وتغيير البريد بـ `verifyBeforeUpdateEmail` (AC-A6) | e2e `email verification through the dev mailbox`، `email change after verifying the new address`؛ `TestAuthEmailVerificationThroughDevMailbox`، `TestAuthChangeAndRecoverEmail`؛ جدول sendOobCode؛ `TestAuthTamper/11`، `/13` | ناجح |
+| W-17 | إعادة تعيين كلمة المرور: `sendPasswordResetEmail` ثم `verifyPasswordResetCode` و`confirmPasswordReset` (AC-A7) | e2e `password reset through the dev mailbox`؛ `TestAuthPasswordReset`؛ جدولا sendOobCode وresetPassword؛ `TestAuthTamper/11`، `/12`، `/22` | ناجح |
 | W-18 | Google بالنافذة والتحويل والربط وإعادة المصادقة (AC-A8) | `TestAuthTamper/14`، `/15` | معلّق: Google وApple |
 | W-19 | Apple مع nonce (AC-A9) | `TestAuthTamper/16` | معلّق: Google وApple |
 
@@ -45,19 +49,18 @@
 
 | # | السيناريو | الاختبار | الحالة |
 |---|---|---|---|
-| A-01 | `verifyIdToken` بمكتبة Aruma في Node وGo يقبل الرمز الصحيح ويرفض المزوَّر (AC-A10) | خطّافا `nodeLibVerify` و`goLibVerify` في `TestAuthTamper/01`–`/08` | معلّق: مكتبتا التحقق |
-| A-02 | إبطال ثم تجديد ثم `checkRevoked`: `TOKEN_EXPIRED` ثم `id-token-revoked` (AC-A11) | `TestAuthTamper/08` (الخادم ناجح) | معلّق: مكتبتا التحقق |
-| A-03 | createUser وgetUser وgetUserByEmail وupdateUser وdeleteUser بأشكال UserRecord وأخطائها (AC-A14) | — | معلّق: Admin API |
-| A-04 | listUsers بترتيب ثابت وnextPageToken | — | معلّق: Admin API |
-| A-05 | custom claims تظهر بعد التجديد، ورفض المحجوز وما فوق 1000 (AC-A13) | `TestAuthErrorTables` (ادعاءات custom token)؛ `TestAuthCustomToken` | معلّق جزئيًا: Admin API |
-| A-06 | revokeRefreshTokens | `TestAuthTamper/08` (طريق كلمة المرور) | معلّق: Admin API |
-| A-07 | تعطيل المستخدم وإعادة تفعيله: الدخول والتجديد مرفوضان (AC-A12) | `TestAuthDisabledUser`؛ `TestAuthErrorTables` | ناجح على الخادم، وطريق Admin معلّق |
-| A-08 | جلسة الكوكي: إنشاء وتحقق وإبطال و`INVALID_DURATION` (AC-A20) | — | معلّق: Admin API |
+| A-01 | `verifyIdToken` بمكتبة Aruma في Node وGo يقبل الرمز الصحيح ويرفض المزوَّر (AC-A10) | `TestLiveVerifyIDToken`؛ Node `verifyIdToken accepts a valid token …`؛ `tamper-libs` (`TestAuthTamper/00`–`/08`) | ناجح |
+| A-02 | إبطال ثم تجديد ثم `checkRevoked`: `TOKEN_EXPIRED` ثم `id-token-revoked` (AC-A11) | `TestAuthAdminRevokeAndDisable`؛ `TestLiveRevoke`؛ Node `revoke, then refresh fails …`؛ `TestAuthTamper/08` | ناجح |
+| A-03 | createUser وgetUser وgetUserByEmail وupdateUser وdeleteUser بأشكال UserRecord وأخطائها (AC-A14) | `TestAuthAdminUserManagement`؛ `TestLiveUserManagement`؛ Node `user management returns official UserRecords …` | ناجح |
+| A-04 | listUsers بترتيب ثابت وnextPageToken | `TestAuthAdminUserManagement` (batchGet)؛ `TestLiveUserManagement` (`Users`)؛ Node `listUsers` | ناجح |
+| A-05 | custom claims تظهر بعد التجديد، ورفض المحجوز وما فوق 1000 (AC-A13) | `TestAuthAdminCustomClaims`؛ `TestLiveCustomClaims`؛ Node `custom claims reach the token …`؛ `TestAuthErrorTables` | ناجح |
+| A-06 | revokeRefreshTokens | `TestAuthAdminRevokeAndDisable`؛ `TestLiveRevoke`؛ Node `revoke, then refresh fails …` | ناجح |
+| A-07 | تعطيل المستخدم وإعادة تفعيله: الدخول والتجديد مرفوضان (AC-A12) | `TestAuthAdminRevokeAndDisable`؛ `TestLiveDisable`؛ Node `a disabled user is refused …`؛ `TestAuthDisabledUser` | ناجح |
+| A-08 | جلسة الكوكي: إنشاء وتحقق وإبطال و`INVALID_DURATION` (AC-A20) | `TestAuthAdminSessionCookie`؛ `TestLiveSessionCookie`؛ Node `session cookies: …` | ناجح |
 
 ## الحصيلة
 
-- **مغطّاة الآن:** 15 من 27. وهي W-01 إلى W-15.
-- **معلّقة على فروع أخرى:** 12.
-  - البريد: W-16 وW-17.
-  - Google وApple: W-18 وW-19.
-  - Admin ومكتبتا التحقق: A-01 إلى A-08. وA-07 ناجح على الخادم.
+- **مغطّاة الآن:** 25 من 27.
+  - الويب: W-01 إلى W-17.
+  - Admin: A-01 إلى A-08.
+- **معلّقة:** 2 على دخول Google وApple، وهما W-18 وW-19.
