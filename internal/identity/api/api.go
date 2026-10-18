@@ -35,6 +35,7 @@ type API struct {
 
 	ipLimit     *ratelimit.Limiter // every client call, per address
 	signupLimit *ratelimit.Limiter // account creation, per address
+	mailLimit   *ratelimit.Limiter // email sending (sendOobCode), per address
 	backoff     *ratelimit.Backoff // password guesses, per project and email
 }
 
@@ -44,6 +45,7 @@ func New(svc *core.Service, logger *slog.Logger) *API {
 		svc: svc, log: logger,
 		ipLimit:     ratelimit.NewLimiter(300, 100),
 		signupLimit: ratelimit.NewLimiter(2, 100), // ≈ Firebase's 100 accounts per hour per address
+		mailLimit:   ratelimit.NewHourlyLimiter(60, 20),
 		backoff:     ratelimit.NewBackoff(10, 15*time.Minute, 30*time.Second, 15*time.Minute),
 	}
 }

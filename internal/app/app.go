@@ -75,6 +75,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		Logger:     logger,
 	}
 	authSvc := identity.New(pool, svc, keys, hasher, strings.TrimSuffix(cfg.PublicBaseURL().String(), "/"), logger)
+	authSvc.ConfigureMail(identity.MailOptions{DevMailbox: cfg.DevMailbox()})
 	consoleAPI := console.New(svc, auth, logger, console.Options{Version: version, SecureCookies: cfg.SecureCookies(), Auth: authSvc})
 	mgmtAPI := mgmt.New(svc, auth, logger)
 	dashboard, err := web.New(web.Embedded())
@@ -126,6 +127,7 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 		return err
 	}
 	go a.housekeeping(ctx)
+	go a.Auth.RunMailer(ctx)
 	logger.Info("starting aruma", "version", version, "public_url", cfg.PublicBaseURL().String())
 	if err := a.Server.Run(ctx); err != nil {
 		return fmt.Errorf("serve: %w", err)
