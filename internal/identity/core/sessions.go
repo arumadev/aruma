@@ -145,7 +145,10 @@ func (s *Service) Refresh(ctx context.Context, p Project, refresh string) (*Sess
 		return nil, ErrUserNotFound
 	case raw.Disabled:
 		return nil, ErrUserDisabled
-	case row.CreatedAt.Before(raw.TokensValidAfter):
+	case row.CreatedAt.Unix() < raw.TokensValidAfter.Unix():
+		// Second precision, as for ID tokens and Firebase's validSince. A finer check breaks the
+		// web SDK: after reauthenticate and updatePassword in the same second, the new ID token
+		// is byte for byte the one it holds, so it keeps the refresh token of the sign-in.
 		_ = s.q.DeleteRefreshToken(ctx, queries.DeleteRefreshTokenParams{ProjectNumber: p.Number, TokenHash: hash})
 		return nil, ErrTokenExpired
 	}
