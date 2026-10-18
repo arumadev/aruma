@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -119,9 +120,27 @@ func (s *Service) attachPassword(ctx context.Context, q *queries.Queries, p Proj
 // upgradeAnonymous turns the signed-in anonymous user into an email/password user, keeping
 // its uid (AC-A2).
 func (s *Service) upgradeAnonymous(ctx context.Context, p Project, idToken, email, password, displayName string) (*Session, error) {
-	u, _, err := s.VerifyIDToken(ctx, p, idToken)
+	u, claims, err := s.VerifyIDToken(ctx, p, idToken)
 	if err != nil {
 		return nil, err
+	}
+	// Linking adds a credential; it never replaces one. A new password or a new address for an
+	// account that has one is accounts:update's change, with its recent sign-in check, its
+	// enumeration rule and its revocation, so a stolen ID token cannot take the account here.
+	if u.HasPassword {
+		return nil, ErrProviderLinked
+	}
+	if u.Email != "" && !strings.EqualFold(u.Email, email) {
+		cfg, err := s.Config(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+		if cfg.EnumerationProtection {
+			return nil, failf(ErrOperationNotAllowed.Code, "Please verify the new email before changing email.")
+		}
+		if err := s.requireRecent(claims); err != nil {
+			return nil, err
+		}
 	}
 	hash, err := s.hasher.HashPolicy(ctx, password)
 	if err != nil {
