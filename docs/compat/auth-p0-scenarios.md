@@ -42,8 +42,8 @@
 | W-15 | `fetchSignInMethodsForEmail` مع الحماية وبدونها (AC-A4) | `TestAuthErrorTables` (createAuthUri) | ناجح |
 | W-16 | تأكيد البريد: `sendEmailVerification` ثم `checkActionCode` و`applyActionCode`، وتغيير البريد بـ `verifyBeforeUpdateEmail` (AC-A6) | e2e `email verification through the dev mailbox`، `email change after verifying the new address`؛ `TestAuthEmailVerificationThroughDevMailbox`، `TestAuthChangeAndRecoverEmail`؛ جدول sendOobCode؛ `TestAuthTamper/11`، `/13` | ناجح |
 | W-17 | إعادة تعيين كلمة المرور: `sendPasswordResetEmail` ثم `verifyPasswordResetCode` و`confirmPasswordReset` (AC-A7) | e2e `password reset through the dev mailbox`؛ `TestAuthPasswordReset`؛ جدولا sendOobCode وresetPassword؛ `TestAuthTamper/11`، `/12`، `/22` | ناجح |
-| W-18 | Google بالنافذة والتحويل والربط وإعادة المصادقة (AC-A8) | `TestAuthTamper/14`، `/15` | معلّق: Google وApple |
-| W-19 | Apple مع nonce (AC-A9) | `TestAuthTamper/16` | معلّق: Google وApple |
+| W-18 | Google بالنافذة والتحويل والرمز المباشر، والربط وإعادة المصادقة (AC-A8) | `TestAuthIdPGooglePopup`، `TestAuthIdPGoogleRedirect`، `TestAuthIdPDirectIDToken`، `TestAuthIdPLinkingAndTakeover`، `TestAuthIdPAccountExistsAndReauth`، `TestAuthIdPAnonymousUpgrade`؛ `TestAuthV3Parity` (verifyAssertion)؛ `TestAuthTamper/14`، `/15` | ناجح على HTTP بمزوّد مزيّف |
+| W-19 | Apple مع nonce بـ form_post والرمز المباشر، وإبطال رمز Apple عند الحذف (AC-A9) | `TestAuthIdPAppleFormPostAndRevoke`، `TestAuthIdPDirectIDToken`؛ `TestAuthTamper/16` | ناجح على HTTP بمزوّد مزيّف |
 
 ## Admin
 
@@ -58,9 +58,23 @@
 | A-07 | تعطيل المستخدم وإعادة تفعيله: الدخول والتجديد مرفوضان (AC-A12) | `TestAuthAdminRevokeAndDisable`؛ `TestLiveDisable`؛ Node `a disabled user is refused …`؛ `TestAuthDisabledUser` | ناجح |
 | A-08 | جلسة الكوكي: إنشاء وتحقق وإبطال و`INVALID_DURATION` (AC-A20) | `TestAuthAdminSessionCookie`؛ `TestLiveSessionCookie`؛ Node `session cookies: …` | ناجح |
 
+## فحص المتصفح الاختياري لـ Google وApple
+
+- **الأمر:** `go test -tags browser -run TestAuthIdPBrowser -v ./test/acceptance/`، بعد `npm ci` في `test/experiments/idp-browser`.
+- **ما يفعله:** يشغّل firebase@13 الرسمي في Chromium على المزوّدَين المزيّفَين.
+- **لماذا هو خارج CI:** يحتاج الشبكة إلى `apis.google.com`، وهو استثناء ADR-013 المعلن للنافذة والتحويل.
+- **تشغيل 2026-10-18 على هذا الجهاز:**
+  - `same-site` نجح في المرات الثلاث.
+  - `cross-site` و`cross-site-partitioned` تعثّرا متقطعًا (فشل 3 من 4، و2 من 3). العطل في الخطوة الأولى دائمًا: أول نافذة Google لا تُرجع نتيجة. أما Apple والتحويل والربط وإعادة المصادقة فتنجح في كل مرة.
+  - سجل الإطار يُظهر أن المكتبة تجيب حدث النافذة الأول بـ `status: ERROR`، أي لم يجد مستهلكًا، فيضيع الحدث.
+  - هذا في ترحيل الصفحة والإطار (`internal/identity/api/idp_pages.go`)، لا في REST. وهو مسجّل للمراجعة.
+
 ## الحصيلة
 
-- **مغطّاة الآن:** 25 من 27.
-  - الويب: W-01 إلى W-17.
+- **مغطّاة:** 27 من 27.
+  - الويب: W-01 إلى W-19.
   - Admin: A-01 إلى A-08.
-- **معلّقة:** 2 على دخول Google وApple، وهما W-18 وW-19.
+- **حدود W-18 وW-19:**
+  - تُختبر على HTTP بمزوّدَين مزيّفَين.
+  - Google وApple الحقيقيان يحتاجان بيانات اعتماد، وApple يحتاج نطاق https عامًا. الخطوات اليدوية في [phase2-idp.md](../research/phase2-idp.md) §7.
+  - فحص المتصفح أعلاه اختياري، وفيه تعثّر متقطع عبر المواقع.
