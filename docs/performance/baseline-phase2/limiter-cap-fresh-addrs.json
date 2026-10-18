@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "time": "2026-10-18T03:07:40.010677Z",
+    "mode": "in-process",
+    "commit": "e012c2b50c4f1db81d8cce91b8d69f82f91633c2",
+    "goVersion": "go1.27.2",
+    "os": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M1",
+    "numCpu": 8,
+    "gomaxprocs": 8,
+    "maxRssMiB": 191.65625,
+    "args": [
+      "-json",
+      "/private/tmp/claude-501/-Volumes-Work-aurma-project/cf70fe5f-851b-4979-ab61-c49571c2af27/scratchpad/p2f/limiter-cap-fresh-addrs.json",
+      "-scenarios",
+      "auth-lookup",
+      "-client-addrs",
+      "0",
+      "-duration",
+      "20s",
+      "-note",
+      "fresh client address per request: shows the limiter's 100,000-key cap"
+    ],
+    "note": "fresh client address per request: shows the limiter's 100,000-key cap"
+  },
+  "plan": {
+    "driver": "closed-loop",
+    "concurrency": 8,
+    "warmupSeconds": 2,
+    "durationSeconds": 20,
+    "projects": 10
+  },
+  "results": [
+    {
+      "scenario": "auth-lookup",
+      "what": "POST accounts:lookup: ID token verified on the server (key lookup, RS256 check), user, providers and password rows",
+      "concurrency": 8,
+      "requests": 102717,
+      "ok": 99063,
+      "failed": 3654,
+      "statuses": {
+        "200": 99063,
+        "400": 3654
+      },
+      "elapsedSeconds": 20,
+      "okPerSecond": 4953.15,
+      "latencyMs": {
+        "min": 0.453542,
+        "mean": 1.104986,
+        "p50": 0.966655,
+        "p90": 1.409023,
+        "p99": 3.276799,
+        "p99_9": 15.859711,
+        "max": 55.589334
+      },
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 594372,
+        "acquiresPerRequest": 5.786500773971202,
+        "acquiresThatWaited": 0,
+        "waitedPercent": 0,
+        "meanWaitMsPerWaitingAcquire": 0,
+        "meanAcquireMs": 0.0003456674826539608
+      }
+    }
+  ]
+}

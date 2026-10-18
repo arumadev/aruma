@@ -1,0 +1,187 @@
+{
+  "meta": {
+    "time": "2026-10-18T03:21:53.304105Z",
+    "mode": "in-process",
+    "commit": "e012c2b50c4f1db81d8cce91b8d69f82f91633c2",
+    "goVersion": "go1.27.2",
+    "os": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M1",
+    "numCpu": 8,
+    "gomaxprocs": 8,
+    "maxRssMiB": 216.09375,
+    "args": [
+      "-json",
+      "/private/tmp/claude-501/-Volumes-Work-aurma-project/cf70fe5f-851b-4979-ab61-c49571c2af27/scratchpad/p2f/closed-loop-b-run1.json",
+      "-scenarios",
+      "auth-signup,auth-signin-password,auth-refresh,auth-lookup,auth-signin-custom-token",
+      "-note",
+      "closed-loop set B, run 1 of 3"
+    ],
+    "note": "closed-loop set B, run 1 of 3"
+  },
+  "plan": {
+    "driver": "closed-loop",
+    "concurrency": 8,
+    "warmupSeconds": 2,
+    "durationSeconds": 10,
+    "projects": 10
+  },
+  "results": [
+    {
+      "scenario": "auth-signup",
+      "what": "POST accounts:signUp (email/password): argon2id hash, user + provider + password + refresh token + event insert, ID token signed",
+      "concurrency": 4,
+      "requests": 738,
+      "ok": 738,
+      "failed": 0,
+      "statuses": {
+        "200": 738
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 73.8,
+      "latencyMs": {
+        "min": 32.928333,
+        "mean": 54.254744,
+        "p50": 41.418751,
+        "p90": 91.226111,
+        "p99": 199.229439,
+        "p99_9": 256.233334,
+        "max": 256.233334
+      },
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 3690,
+        "acquiresPerRequest": 5,
+        "acquiresThatWaited": 0,
+        "waitedPercent": 0,
+        "meanWaitMsPerWaitingAcquire": 0,
+        "meanAcquireMs": 0.00032197425474254747
+      }
+    },
+    {
+      "scenario": "auth-signin-password",
+      "what": "POST accounts:signInWithPassword: argon2id verify, refresh token insert, audit row, ID token signed",
+      "concurrency": 4,
+      "requests": 843,
+      "ok": 843,
+      "failed": 0,
+      "statuses": {
+        "200": 843
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 84.3,
+      "latencyMs": {
+        "min": 36.288167,
+        "mean": 47.464193,
+        "p50": 45.088767,
+        "p90": 60.817407,
+        "p99": 75.497471,
+        "p99_9": 95.035375,
+        "max": 95.035375
+      },
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 5901,
+        "acquiresPerRequest": 7,
+        "acquiresThatWaited": 0,
+        "waitedPercent": 0,
+        "meanWaitMsPerWaitingAcquire": 0,
+        "meanAcquireMs": 0.0004078486697169971
+      }
+    },
+    {
+      "scenario": "auth-refresh",
+      "what": "POST securetoken /v1/token (refresh_token grant, form as the web SDK sends it): token and user lookup, ID token signed, two touches",
+      "concurrency": 8,
+      "requests": 18327,
+      "ok": 18327,
+      "failed": 0,
+      "statuses": {
+        "200": 18327
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 1832.7,
+      "latencyMs": {
+        "min": 1.8475,
+        "mean": 4.363537,
+        "p50": 4.063231,
+        "p90": 6.094847,
+        "p99": 12.713983,
+        "p99_9": 28.835839,
+        "max": 42.786584
+      },
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 146619,
+        "acquiresPerRequest": 8.000163692912096,
+        "acquiresThatWaited": 0,
+        "waitedPercent": 0,
+        "meanWaitMsPerWaitingAcquire": 0,
+        "meanAcquireMs": 0.00023534603973564134
+      }
+    },
+    {
+      "scenario": "auth-lookup",
+      "what": "POST accounts:lookup: ID token verified on the server (key lookup, RS256 check), user, providers and password rows",
+      "concurrency": 8,
+      "requests": 67642,
+      "ok": 67642,
+      "failed": 0,
+      "statuses": {
+        "200": 67642
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 6764.2,
+      "latencyMs": {
+        "min": 0.460125,
+        "mean": 1.182278,
+        "p50": 1.064959,
+        "p90": 1.638399,
+        "p99": 3.244031,
+        "p99_9": 7.143423,
+        "max": 51.459833
+      },
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 405850,
+        "acquiresPerRequest": 5.999970432571479,
+        "acquiresThatWaited": 0,
+        "waitedPercent": 0,
+        "meanWaitMsPerWaitingAcquire": 0,
+        "meanAcquireMs": 0.00037311742022914875
+      }
+    },
+    {
+      "scenario": "auth-signin-custom-token",
+      "what": "POST accounts:signInWithCustomToken: service account key lookup, RS256 check, user + refresh token rows, ID token signed",
+      "concurrency": 8,
+      "requests": 14426,
+      "ok": 14426,
+      "failed": 0,
+      "statuses": {
+        "200": 14426
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 1442.6,
+      "latencyMs": {
+        "min": 2.079792,
+        "mean": 5.544551,
+        "p50": 4.849663,
+        "p90": 7.733247,
+        "p99": 20.709375,
+        "p99_9": 58.195967,
+        "max": 93.712375
+      },
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 72137,
+        "acquiresPerRequest": 5.000485234992375,
+        "acquiresThatWaited": 0,
+        "waitedPercent": 0,
+        "meanWaitMsPerWaitingAcquire": 0,
+        "meanAcquireMs": 0.0002708886701692613
+      }
+    }
+  ]
+}

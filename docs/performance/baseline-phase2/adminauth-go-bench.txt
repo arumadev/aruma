@@ -1,0 +1,46 @@
+wrote config files to /Volumes/Work/aurma-project/.cache/tmp/aruma-adminauth-1773008
+goos: darwin
+goarch: arm64
+pkg: github.com/osama300/aurma-project/sdk/go/adminauth
+cpu: Apple M1
+BenchmarkVerifyIDToken                    	   64027	     52583 ns/op	         0 http-requests/op	    5953 B/op	      72 allocs/op
+BenchmarkVerifyIDToken                    	   71754	     48525 ns/op	         0 http-requests/op	    5953 B/op	      72 allocs/op
+BenchmarkVerifyIDToken                    	   74012	     48576 ns/op	         0 http-requests/op	    5953 B/op	      72 allocs/op
+BenchmarkVerifyIDToken-4                  	  214479	     17270 ns/op	         0 http-requests/op	    5961 B/op	      72 allocs/op
+BenchmarkVerifyIDToken-4                  	  208737	     16450 ns/op	         0 http-requests/op	    5961 B/op	      72 allocs/op
+BenchmarkVerifyIDToken-4                  	  240760	     16960 ns/op	         0 http-requests/op	    5961 B/op	      72 allocs/op
+BenchmarkVerifyIDToken-8                  	  267360	     15652 ns/op	         0 http-requests/op	    5967 B/op	      72 allocs/op
+BenchmarkVerifyIDToken-8                  	  188228	     17288 ns/op	         0 http-requests/op	    5966 B/op	      72 allocs/op
+BenchmarkVerifyIDToken-8                  	  274261	     14402 ns/op	         0 http-requests/op	    5967 B/op	      72 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/default-transport           	    9062	    371252 ns/op	         1.000 http-requests/op	   13177 B/op	     167 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/default-transport           	   10137	    337394 ns/op	         1.000 http-requests/op	   13177 B/op	     167 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/default-transport           	   10000	    340903 ns/op	         1.000 http-requests/op	   13177 B/op	     167 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/default-transport-4         	   20895	    188412 ns/op	         1.000 http-requests/op	   13687 B/op	     171 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/default-transport-4         	   16948	    214540 ns/op	         1.000 http-requests/op	   13789 B/op	     172 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/default-transport-4         	   19126	    177614 ns/op	         1.000 http-requests/op	   13714 B/op	     171 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/default-transport-8         	   25024	    130354 ns/op	         1.000 http-requests/op	   15900 B/op	     179 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/default-transport-8         	--- FAIL: BenchmarkVerifyIDTokenAndCheckRevoked/default-transport-8
+    bench_test.go:96: cannot reach Aruma Auth: Post "http://127.0.0.1:49799/identitytoolkit.googleapis.com/v1/projects/smoke-app/accounts:lookup": dial tcp 127.0.0.1:49799: connect: can't assign requested address
+    bench_test.go:96: cannot reach Aruma Auth: Post "http://127.0.0.1:49799/identitytoolkit.googleapis.com/v1/projects/smoke-app/accounts:lookup": dial tcp 127.0.0.1:49799: connect: can't assign requested address
+    bench_test.go:96: cannot reach Aruma Auth: Post "http://127.0.0.1:49799/identitytoolkit.googleapis.com/v1/projects/smoke-app/accounts:lookup": dial tcp 127.0.0.1:49799: connect: can't assign requested address
+    bench_test.go:96: cannot reach Aruma Auth: Post "http://127.0.0.1:49799/identitytoolkit.googleapis.com/v1/projects/smoke-app/accounts:lookup": dial tcp 127.0.0.1:49799: connect: can't assign requested address
+    bench_test.go:96: cannot reach Aruma Auth: Post "http://127.0.0.1:49799/identitytoolkit.googleapis.com/v1/projects/smoke-app/accounts:lookup": dial tcp 127.0.0.1:49799: connect: can't assign requested address
+    bench_test.go:96: cannot reach Aruma Auth: Post "http://127.0.0.1:49799/identitytoolkit.googleapis.com/v1/projects/smoke-app/accounts:lookup": dial tcp 127.0.0.1:49799: connect: can't assign requested address
+BenchmarkVerifyIDTokenAndCheckRevoked/default-transport-8         	--- FAIL: BenchmarkVerifyIDTokenAndCheckRevoked/default-transport-8
+    bench_test.go:96: cannot reach Aruma Auth: Post "http://127.0.0.1:49799/identitytoolkit.googleapis.com/v1/projects/smoke-app/accounts:lookup": dial tcp 127.0.0.1:49799: connect: can't assign requested address
+    bench_test.go:96: cannot reach Aruma Auth: Post "http://127.0.0.1:49799/identitytoolkit.googleapis.com/v1/projects/smoke-app/accounts:lookup": dial tcp 127.0.0.1:49799: connect: can't assign requested address
+    bench_test.go:96: cannot reach Aruma Auth: Post "http://127.0.0.1:49799/identitytoolkit.googleapis.com/v1/projects/smoke-app/accounts:lookup": dial tcp 127.0.0.1:49799: connect: can't assign requested address
+    bench_test.go:96: cannot reach Aruma Auth: Post "http://127.0.0.1:49799/identitytoolkit.googleapis.com/v1/projects/smoke-app/accounts:lookup": dial tcp 127.0.0.1:49799: connect: can't assign requested address
+    bench_test.go:96: cannot reach Aruma Auth: Post "http://127.0.0.1:49799/identitytoolkit.googleapis.com/v1/projects/smoke-app/accounts:lookup": dial tcp 127.0.0.1:49799: connect: can't assign requested address
+    bench_test.go:96: cannot reach Aruma Auth: Post "http://127.0.0.1:49799/identitytoolkit.googleapis.com/v1/projects/smoke-app/accounts:lookup": dial tcp 127.0.0.1:49799: connect: can't assign requested address
+BenchmarkVerifyIDTokenAndCheckRevoked/pooled-transport            	   10000	    368302 ns/op	         1.000 http-requests/op	   13185 B/op	     168 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/pooled-transport            	    9253	    359285 ns/op	         1.000 http-requests/op	   13185 B/op	     168 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/pooled-transport            	   10000	    363404 ns/op	         1.000 http-requests/op	   13185 B/op	     168 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/pooled-transport-4          	   20666	    166601 ns/op	         1.000 http-requests/op	   13238 B/op	     169 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/pooled-transport-4          	   20456	    176949 ns/op	         1.000 http-requests/op	   13236 B/op	     169 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/pooled-transport-4          	   21878	    168931 ns/op	         1.000 http-requests/op	   13238 B/op	     169 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/pooled-transport-8          	   30280	    127925 ns/op	         1.000 http-requests/op	   13399 B/op	     169 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/pooled-transport-8          	   29803	    123081 ns/op	         1.000 http-requests/op	   13392 B/op	     169 allocs/op
+BenchmarkVerifyIDTokenAndCheckRevoked/pooled-transport-8          	   29422	    128839 ns/op	         1.000 http-requests/op	   13388 B/op	     169 allocs/op
+PASS
+ok  	github.com/osama300/aurma-project/sdk/go/adminauth	135.878s
