@@ -26,6 +26,8 @@ type errFixture struct {
 	oldToken string    // an ID token of taken@ whose sign-in is an hour old
 
 	keyFile, otherKey []byte // service account keys of this project and of another one
+
+	resetCode, verifyCode string // open PASSWORD_RESET and VERIFY_EMAIL codes of taken@
 }
 
 func newErrFixture(t *testing.T, e *Env) *errFixture {
@@ -53,6 +55,13 @@ func newErrFixture(t *testing.T, e *Env) *errFixture {
 	// A custom-token user, disabled.
 	ok(t, p.call(itk+"accounts:signInWithCustomToken", map[string]any{"token": customToken(t, f.keyFile, "ct-off", nil, nil)}))
 	p.sql(`UPDATE auth.users SET disabled = true WHERE uid = 'ct-off'`)
+	// Open email codes of taken@, from the dev mailbox.
+	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "taken@example.com"}))
+	_, q := linkCode(t, p.lastMail("taken@example.com")["link"].(string))
+	f.resetCode = q.Get("oobCode")
+	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "VERIFY_EMAIL", "idToken": f.taken.str("idToken")}))
+	_, q = linkCode(t, p.lastMail("taken@example.com")["link"].(string))
+	f.verifyCode = q.Get("oobCode")
 	return f
 }
 
@@ -64,6 +73,7 @@ type errRow struct {
 	body    func(f *errFixture) any
 	with    func(*queries.AuthProjectConfig) // settings for this row only
 	on, off string
+	status  int // the error's HTTP status, when not 400
 	check   func(t *testing.T, r *Response, protection bool)
 }
 
@@ -83,9 +93,14 @@ func (row errRow) run(t *testing.T, f *errFixture, protection bool) {
 	if !protection {
 		want = row.off
 	}
-	if want == "" {
+	switch {
+	case row.status != 0:
+		if r.Status != row.status || errCode(r) != want {
+			t.Fatalf("want %d %s, got %d: %s", row.status, want, r.Status, r.Body)
+		}
+	case want == "":
 		ok(t, r)
-	} else {
+	default:
 		authErr(t, r, want)
 	}
 	if row.check != nil {
@@ -234,21 +249,56 @@ var errTables = map[string][]errRow{
 	},
 }
 
-// Email action tables, written against research §3.7 and §3.8 for agent A's implementation.
-var pendingErrTables = map[string][]errRow{
+func noPassword(c *queries.AuthProjectConfig) { c.PasswordEnabled = false }
+
+// The email action tables follow the order in docs/research/phase2-email-actions.md. Each env
+// stays within the per-address sendOobCode bucket (20 at once).
+var emailErrTables = map[string][]errRow{
 	"accounts:sendOobCode": {
-		{name: "missing request type", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"email": "bad"}), on: "MISSING_REQ_TYPE", off: "MISSING_REQ_TYPE"},
-		{name: "missing email beats a bad continueUrl", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "PASSWORD_RESET", "continueUrl": "https://evil.example/"}), on: "MISSING_EMAIL", off: "MISSING_EMAIL"},
-		{name: "invalid email", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "PASSWORD_RESET", "email": "bad"}), on: "INVALID_EMAIL", off: "INVALID_EMAIL"},
-		{name: "unknown email: silent under protection", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "PASSWORD_RESET", "email": "nobody@example.com"}), on: "", off: "EMAIL_NOT_FOUND"},
-		{name: "unauthorised continueUrl", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "PASSWORD_RESET", "email": "taken@example.com", "continueUrl": "https://evil.example/next"}), on: "UNAUTHORIZED_DOMAIN", off: "UNAUTHORIZED_DOMAIN"},
-		{name: "malformed continueUrl", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "PASSWORD_RESET", "email": "taken@example.com", "continueUrl": "not a url"}), on: "INVALID_CONTINUE_URI", off: "INVALID_CONTINUE_URI"},
-		{name: "verify email needs an idToken", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "VERIFY_EMAIL"}), on: "INVALID_ID_TOKEN", off: "INVALID_ID_TOKEN"},
-		{name: "email-link sign-in is deferred", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "EMAIL_SIGNIN", "email": "taken@example.com"}), on: "OPERATION_NOT_ALLOWED", off: "OPERATION_NOT_ALLOWED"},
+		{name: "tenant beats everything", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"tenantId": "t1", "returnOobLink": true}), on: "INVALID_TENANT_ID", off: "INVALID_TENANT_ID"},
+		{name: "returnOobLink from a client is refused before any check", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"returnOobLink": true}), status: 403, on: "INSUFFICIENT_PERMISSION", off: "INSUFFICIENT_PERMISSION"},
+		{name: "missing request type beats bad fields", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"email": "bad", "continueUrl": "not a url"}), on: "MISSING_REQ_TYPE", off: "MISSING_REQ_TYPE"},
+		{name: "email-link sign-in is deferred, before the continueUrl", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "EMAIL_SIGNIN", "continueUrl": "not a url"}), on: "OPERATION_NOT_ALLOWED", off: "OPERATION_NOT_ALLOWED"},
+		{name: "unknown request type", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "BOGUS", "email": "bad"}), on: "INVALID_REQ_TYPE", off: "INVALID_REQ_TYPE"},
+		{name: "malformed continueUrl beats a missing email", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "PASSWORD_RESET", "continueUrl": "not a url"}), on: "INVALID_CONTINUE_URI", off: "INVALID_CONTINUE_URI"},
+		{name: "unauthorised continueUrl beats a missing email", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "PASSWORD_RESET", "continueUrl": "https://evil.example/next"}), on: "UNAUTHORIZED_DOMAIN", off: "UNAUTHORIZED_DOMAIN"},
+		{name: "reset: missing email", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "PASSWORD_RESET"}), on: "MISSING_EMAIL", off: "MISSING_EMAIL"},
+		{name: "reset: invalid email beats the disabled method", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "PASSWORD_RESET", "email": "bad"}), with: noPassword, on: "INVALID_EMAIL", off: "INVALID_EMAIL"},
+		{name: "reset: disabled method", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "PASSWORD_RESET", "email": "nobody@example.com"}), with: noPassword, on: "OPERATION_NOT_ALLOWED", off: "OPERATION_NOT_ALLOWED"},
+		{name: "reset: unknown email, silent under protection", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "PASSWORD_RESET", "email": "nobody@example.com"}), on: "", off: "EMAIL_NOT_FOUND"},
+		{name: "reset: disabled account, silent under protection", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "PASSWORD_RESET", "email": "off@example.com"}), on: "", off: "USER_DISABLED"},
+		{name: "verify: the idToken is required, the email is ignored", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "VERIFY_EMAIL", "email": "taken@example.com"}), on: "INVALID_ID_TOKEN", off: "INVALID_ID_TOKEN"},
+		{name: "change: missing new email beats a bad token", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "VERIFY_AND_CHANGE_EMAIL", "idToken": "garbage"}), on: "MISSING_NEW_EMAIL", off: "MISSING_NEW_EMAIL"},
+		{name: "change: missing token beats an invalid new email", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "VERIFY_AND_CHANGE_EMAIL", "newEmail": "bad"}), on: "INVALID_ID_TOKEN", off: "INVALID_ID_TOKEN"},
+		{name: "change: invalid new email beats a bad token", path: itk + "accounts:sendOobCode", body: obj(map[string]any{"requestType": "VERIFY_AND_CHANGE_EMAIL", "newEmail": "bad", "idToken": "garbage"}), on: "INVALID_EMAIL", off: "INVALID_EMAIL"},
+		{name: "change: old sign-in", path: itk + "accounts:sendOobCode", body: func(f *errFixture) any {
+			return map[string]any{"requestType": "VERIFY_AND_CHANGE_EMAIL", "newEmail": "fresh@example.com", "idToken": f.oldToken}
+		}, on: "CREDENTIAL_TOO_OLD_LOGIN_AGAIN", off: "CREDENTIAL_TOO_OLD_LOGIN_AGAIN"},
+		{name: "change: taken new address, silent under protection", path: itk + "accounts:sendOobCode", body: func(f *errFixture) any {
+			return map[string]any{"requestType": "VERIFY_AND_CHANGE_EMAIL", "newEmail": "off@example.com", "idToken": f.taken.str("idToken")}
+		}, on: "", off: "EMAIL_EXISTS"},
 	},
 	"accounts:resetPassword": {
-		{name: "missing code", path: itk + "accounts:resetPassword", body: obj(map[string]any{"newPassword": "1"}), on: "MISSING_OOB_CODE", off: "MISSING_OOB_CODE"},
+		{name: "tenant beats a missing code", path: itk + "accounts:resetPassword", body: obj(map[string]any{"tenantId": "t1"}), on: "INVALID_TENANT_ID", off: "INVALID_TENANT_ID"},
+		{name: "missing code beats a weak password", path: itk + "accounts:resetPassword", body: obj(map[string]any{"newPassword": "1"}), on: "MISSING_OOB_CODE", off: "MISSING_OOB_CODE"},
 		{name: "unknown code beats a weak password", path: itk + "accounts:resetPassword", body: obj(map[string]any{"oobCode": "nope", "newPassword": "1"}), on: "INVALID_OOB_CODE", off: "INVALID_OOB_CODE"},
+		{name: "unknown code beats the disabled method", path: itk + "accounts:resetPassword", body: obj(map[string]any{"oobCode": "nope", "newPassword": "secret2"}), with: noPassword, on: "INVALID_OOB_CODE", off: "INVALID_OOB_CODE"},
+		{name: "disabled method beats a weak password", path: itk + "accounts:resetPassword", body: func(f *errFixture) any {
+			return map[string]any{"oobCode": f.resetCode, "newPassword": "1"}
+		}, with: noPassword, on: "OPERATION_NOT_ALLOWED", off: "OPERATION_NOT_ALLOWED"},
+		{name: "a verification code cannot reset a password", path: itk + "accounts:resetPassword", body: func(f *errFixture) any {
+			return map[string]any{"oobCode": f.verifyCode, "newPassword": "secret2"}
+		}, on: "INVALID_OOB_CODE", off: "INVALID_OOB_CODE"},
+		{name: "weak password leaves the code usable", path: itk + "accounts:resetPassword", body: func(f *errFixture) any {
+			return map[string]any{"oobCode": f.resetCode, "newPassword": "1"}
+		}, on: "WEAK_PASSWORD", off: "WEAK_PASSWORD"},
+		{name: "inspecting works with the method disabled", path: itk + "accounts:resetPassword", body: func(f *errFixture) any {
+			return map[string]any{"oobCode": f.resetCode}
+		}, with: noPassword, check: func(t *testing.T, r *Response, _ bool) {
+			if r.str("requestType") != "PASSWORD_RESET" || r.str("email") != "taken@example.com" {
+				t.Fatalf("checkActionCode: %s", r.Body)
+			}
+		}},
 	},
 }
 
@@ -284,9 +334,8 @@ func TestAuthErrorTables(t *testing.T) {
 					}
 				})
 			}
-			for endpoint, rows := range pendingErrTables {
+			for endpoint, rows := range emailErrTables {
 				t.Run(endpoint, func(t *testing.T) {
-					t.Skip("pending email actions (sendOobCode, resetPassword), enabled at merge")
 					for _, row := range rows {
 						t.Run(row.name, func(t *testing.T) { row.run(t, f, protection) })
 					}

@@ -11,6 +11,7 @@ import (
 	"encoding/pem"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -27,7 +28,6 @@ import (
 // feature's name; the lead removes the skip at merge.
 
 const (
-	pendingEmail   = "pending email actions and the dev mailbox (sendOobCode, resetPassword, oob codes), enabled at merge"
 	pendingIdP     = "pending Google and Apple sign-in (createAuthUri with providerId, signInWithIdp), enabled at merge"
 	pendingAdmin   = "pending the Admin Auth API routes (/v1/projects/{p}/accounts*), enabled at merge"
 	pendingNodeLib = "pending @aruma/admin-auth verifyIdToken (Node library), enabled at merge"
@@ -42,11 +42,17 @@ type libVerifier func(t *testing.T, p *authProject, token string, checkRevoked b
 var (
 	nodeLibVerify libVerifier
 	goLibVerify   libVerifier
-	// mailboxCode returns the oobCode of the latest email the dev mailbox holds for an address.
-	mailboxCode func(t *testing.T, p *authProject, email string) string
 	// idp drives a Google-like test provider for the state and nonce scenarios.
 	idp idpDriver
 )
+
+// mailboxCode returns the oobCode of the newest dev mailbox message to an address, as the user
+// reads it from the link.
+func mailboxCode(t *testing.T, p *authProject, email string) string {
+	t.Helper()
+	_, q := linkCode(t, p.lastMail(email)["link"].(string))
+	return q.Get("oobCode")
+}
 
 // idpDriver stands in for the identity provider's side of a redirect sign-in.
 type idpDriver interface {
@@ -318,11 +324,15 @@ func TestAuthTamper(t *testing.T) {
 	})
 
 	t.Run("11 used email code", func(t *testing.T) {
-		t.Skip(pendingEmail)
 		p.signUp("reset@example.com", "secret1")
 		ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "reset@example.com"}))
+		path, _ := linkCode(t, p.lastMail("reset@example.com")["link"].(string))
 		code := mailboxCode(t, p, "reset@example.com")
 		ok(t, p.call(itk+"accounts:resetPassword", map[string]any{"oobCode": code, "newPassword": "secret2"}))
+		// The link no longer offers a form.
+		if r := e.page("GET", path, nil, nil); r.Status != 400 || strings.Contains(string(r.Body), "<form") {
+			t.Fatalf("used link page: %d %s", r.Status, r.Body)
+		}
 		authErr(t, p.call(itk+"accounts:resetPassword", map[string]any{"oobCode": code, "newPassword": "secret3"}), "INVALID_OOB_CODE")
 		authErr(t, p.call(itk+"accounts:resetPassword", map[string]any{"oobCode": code}), "INVALID_OOB_CODE")
 		ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "reset@example.com", "password": "secret2"}))
@@ -338,18 +348,20 @@ func TestAuthTamper(t *testing.T) {
 	})
 
 	t.Run("12 expired email code", func(t *testing.T) {
-		t.Skip(pendingEmail)
 		p.signUp("late@example.com", "secret1")
 		ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "late@example.com"}))
+		path, _ := linkCode(t, p.lastMail("late@example.com")["link"].(string))
 		code := mailboxCode(t, p, "late@example.com")
 		p.sql(`UPDATE auth.oob_codes SET expires_at = now() - interval '1 second' WHERE email = 'late@example.com'`)
+		if r := e.page("GET", path, nil, nil); r.Status != 400 || strings.Contains(string(r.Body), "<form") {
+			t.Fatalf("expired link page: %d %s", r.Status, r.Body)
+		}
 		authErr(t, p.call(itk+"accounts:resetPassword", map[string]any{"oobCode": code}), "EXPIRED_OOB_CODE")
 		authErr(t, p.call(itk+"accounts:resetPassword", map[string]any{"oobCode": code, "newPassword": "secret2"}), "EXPIRED_OOB_CODE")
 		authErr(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "late@example.com", "password": "secret2"}), "INVALID_LOGIN_CREDENTIALS")
 	})
 
 	t.Run("13 continueUrl to an unauthorised domain", func(t *testing.T) {
-		t.Skip(pendingEmail)
 		p.signUp("cont@example.com", "secret1")
 		for _, u := range []string{"https://evil.example/next", "https://localhost.evil.example/", "https://evil.example/?x=localhost", "javascript:alert(1)"} {
 			r := p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "cont@example.com", "continueUrl": u})
@@ -357,13 +369,25 @@ func TestAuthTamper(t *testing.T) {
 				t.Fatalf("continueUrl %q: %d %s", u, r.Status, r.Body)
 			}
 		}
+		for _, m := range p.mailbox() {
+			if m["to"] == "cont@example.com" {
+				t.Fatalf("a refused request sent mail: %v", m)
+			}
+		}
 		ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "cont@example.com", "continueUrl": "http://localhost/done"}))
 		code := mailboxCode(t, p, "cont@example.com")
 		// The action page never offers a way to an unauthorised address, even when the link
-		// is edited by hand (AC-A19).
-		page := e.client().do("GET", "/__/auth/action?mode=resetPassword&oobCode="+url.QueryEscape(code)+"&apiKey="+p.key+"&continueUrl="+url.QueryEscape("https://evil.example/x")+"&lang=ar", nil)
-		if strings.Contains(string(page.Body), "evil.example") {
+		// is edited by hand (AC-A19): only the continueUrl stored with the code counts.
+		pg := e.page("GET", "/__/auth/action?mode=resetPassword&oobCode="+url.QueryEscape(code)+"&apiKey="+p.key+"&continueUrl="+url.QueryEscape("https://evil.example/x")+"&lang=ar", nil, nil)
+		if strings.Contains(string(pg.Body), "evil.example") {
 			t.Fatal("the action page links to an unauthorised continueUrl")
+		}
+		form := formOf(t, pg)
+		form.Set("newPassword", "secret2")
+		form.Set("confirmPassword", "secret2")
+		done := e.page("POST", "/__/auth/action", form, nil)
+		if done.Status != 200 || strings.Contains(string(done.Body), "evil.example") || !strings.Contains(string(done.Body), `href="http://localhost/done"`) {
+			t.Fatalf("continue after reset: %d %s", done.Status, done.Body)
 		}
 	})
 
@@ -496,10 +520,9 @@ func TestAuthTamper(t *testing.T) {
 			}
 		})
 		t.Run("sendOobCode never returns the link to a client", func(t *testing.T) {
-			t.Skip(pendingEmail)
-			r := ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "b17@example.com", "returnOobLink": true}))
-			if r.str("oobLink") != "" || r.str("oobCode") != "" {
-				t.Fatalf("a client got the action link: %s", r.Body)
+			r := p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "b17@example.com", "returnOobLink": true})
+			if r.Status != 403 || errCode(r) != "INSUFFICIENT_PERMISSION" || strings.Contains(string(r.Body), "oob") {
+				t.Fatalf("returnOobLink from a client: %d %s", r.Status, r.Body)
 			}
 		})
 	})
@@ -594,19 +617,32 @@ func TestAuthTamper(t *testing.T) {
 		testSignInRateLimits(t)
 	})
 
+	// Last: it empties this address's sendOobCode bucket.
 	t.Run("22 rate limit on email sending", func(t *testing.T) {
-		t.Skip(pendingEmail)
 		p.signUp("flood@example.com", "secret1")
+		for range 5 {
+			ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "flood@example.com"}))
+		}
+		// Per recipient, whatever the case of the address.
+		authErr(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "FLOOD@example.com"}), "RESET_PASSWORD_EXCEED_LIMIT")
+		n := 0
+		for _, m := range p.mailbox() {
+			if m["to"] == "flood@example.com" {
+				n++
+			}
+		}
+		if n != 5 {
+			t.Fatalf("%d messages to one address, want 5", n)
+		}
+		// Per client address, across recipients.
 		var last *Response
-		for range 30 {
-			last = p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "flood@example.com"})
+		for i := range 25 {
+			last = p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "spray" + strconv.Itoa(i) + "@example.com"})
 			if last.Status != 200 {
 				break
 			}
 		}
-		if c := errCode(last); c != "TOO_MANY_ATTEMPTS_TRY_LATER" && c != "RESET_PASSWORD_EXCEED_LIMIT" {
-			t.Fatalf("30 reset emails to one address were all accepted: %d %s", last.Status, last.Body)
-		}
+		authErr(t, last, "TOO_MANY_ATTEMPTS_TRY_LATER")
 	})
 }
 
@@ -625,6 +661,10 @@ func testNoRawAuthSecrets(t *testing.T) {
 	changed := ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": in.str("idToken"), "password": "Dump-Pass-2!", "returnSecureToken": true}))
 	anon := ok(t, p.call(itk+"accounts:signUp", map[string]any{"returnSecureToken": true}))
 	linked := ok(t, p.call(itk+"accounts:signUp", map[string]any{"idToken": anon.str("idToken"), "email": "linked@example.com", "password": "Link-Pass-1!"}))
+	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "VERIFY_EMAIL", "idToken": changed.str("idToken")}))
+	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "dump@example.com"}))
+	const smtpPassword = "Smtp-Secret-Pass-1"
+	p.owner.mustOK(p.owner.do("PATCH", "/console/v1/projects/chat-app/auth/smtp", map[string]any{"password": smtpPassword, "devMailbox": true}))
 	_, keyFile := p.owner.serviceAccountKey("chat-app", "backend")
 	ct := customToken(t, keyFile, "dump-custom", map[string]any{"role": "x"}, nil)
 	custom := ok(t, p.call(itk+"accounts:signInWithCustomToken", map[string]any{"token": ct}))
@@ -650,6 +690,16 @@ func testNoRawAuthSecrets(t *testing.T) {
 		"ID token (refresh)":    ref.str("id_token"),
 		"ID token (custom)":     custom.str("idToken"),
 		"ID token (after link)": linked.str("idToken"),
+		"SMTP password":         smtpPassword,
+	}
+	mails := p.mailbox()
+	if len(mails) != 2 {
+		t.Fatalf("%d messages in the dev mailbox, want the verification and the reset", len(mails))
+	}
+	for _, m := range mails {
+		path, q := linkCode(t, m["link"].(string))
+		secrets["oob code ("+m["type"].(string)+")"] = q.Get("oobCode")
+		e.page("GET", path, nil, nil) // the code travels in the action page's query string
 	}
 	signingKeys(t, e, secrets)
 	for name, s := range secrets {
@@ -676,22 +726,6 @@ func testNoRawAuthSecrets(t *testing.T) {
 	if strings.Contains(dump, "PRIVATE KEY") || strings.Contains(logs, "PRIVATE KEY") || strings.Contains(logs, "$argon2") {
 		t.Error("a private key or password hash was logged")
 	}
-
-	t.Run("email codes and SMTP password", func(t *testing.T) {
-		t.Skip(pendingEmail)
-		ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "dump@example.com"}))
-		code := mailboxCode(t, p, "dump@example.com")
-		const smtpPassword = "Smtp-Secret-Pass-1"
-		p.owner.mustOK(p.owner.do("PATCH", "/console/v1/projects/chat-app/auth/smtp", map[string]any{
-			"host": "smtp.example.com", "port": 587, "username": "mailer", "password": smtpPassword,
-		}))
-		dump, logs := dumpDatabase(t, e), e.Logs.String()
-		for name, s := range map[string]string{"oob code": code, "SMTP password": smtpPassword} {
-			if strings.Contains(dump, s) || strings.Contains(logs, s) {
-				t.Errorf("%s found in the database or the log", name)
-			}
-		}
-	})
 }
 
 // signingKeys adds the private half of every signing key, as PKCS#8 base64, to secrets.

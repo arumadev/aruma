@@ -28,6 +28,12 @@ type parityState struct {
 
 func (s *parityState) idToken() string { return s.session.str("idToken") }
 
+// mailCode is the oobCode of the newest dev mailbox message to the script's user.
+func (s *parityState) mailCode() string {
+	_, q := linkCode(s.p.env.t, s.p.lastMail("ios@example.com")["link"].(string))
+	return q.Get("oobCode")
+}
+
 var parityScript = []parityStep{
 	{name: "sign up", v1: "accounts:signUp", v3: "signupNewUser", body: func(*parityState) any {
 		return map[string]any{"email": "ios@example.com", "password": "secret1", "displayName": "Ios", "returnSecureToken": true}
@@ -65,6 +71,33 @@ var parityScript = []parityStep{
 	{name: "fetch sign-in methods, bad email", v1: "accounts:createAuthUri", v3: "createAuthUri", body: func(*parityState) any {
 		return map[string]any{"identifier": "bad", "continueUri": "http://localhost"}
 	}},
+	{name: "send verification", v1: "accounts:sendOobCode", v3: "getOobConfirmationCode", body: func(s *parityState) any {
+		return map[string]any{"requestType": "VERIFY_EMAIL", "idToken": s.idToken()}
+	}},
+	{name: "apply verification", v1: "accounts:update", v3: "setAccountInfo", body: func(s *parityState) any {
+		return map[string]any{"oobCode": s.mailCode()}
+	}},
+	{name: "send password reset", v1: "accounts:sendOobCode", v3: "getOobConfirmationCode", body: func(*parityState) any {
+		return map[string]any{"requestType": "PASSWORD_RESET", "email": "ios@example.com"}
+	}},
+	{name: "send password reset, unknown address", v1: "accounts:sendOobCode", v3: "getOobConfirmationCode", body: func(*parityState) any {
+		return map[string]any{"requestType": "PASSWORD_RESET", "email": "nobody@example.com"}
+	}},
+	{name: "send, missing request type", v1: "accounts:sendOobCode", v3: "getOobConfirmationCode", body: func(*parityState) any {
+		return map[string]any{"email": "ios@example.com"}
+	}},
+	{name: "inspect the reset code", v1: "accounts:resetPassword", v3: "resetPassword", body: func(s *parityState) any {
+		return map[string]any{"oobCode": s.mailCode()}
+	}},
+	{name: "reset, weak password", v1: "accounts:resetPassword", v3: "resetPassword", body: func(s *parityState) any {
+		return map[string]any{"oobCode": s.mailCode(), "newPassword": "1"}
+	}},
+	{name: "reset password", v1: "accounts:resetPassword", v3: "resetPassword", body: func(s *parityState) any {
+		return map[string]any{"oobCode": s.mailCode(), "newPassword": "secret3"}
+	}},
+	{name: "reset again with the used code", v1: "accounts:resetPassword", v3: "resetPassword", body: func(s *parityState) any {
+		return map[string]any{"oobCode": s.mailCode(), "newPassword": "secret4"}
+	}},
 	{name: "custom token", v1: "accounts:signInWithCustomToken", v3: "verifyCustomToken", body: func(s *parityState) any {
 		return map[string]any{"token": customToken(s.p.env.t, s.keyFile, "custom-1", map[string]any{"tier": "gold"}, nil), "returnSecureToken": true}
 	}},
@@ -84,16 +117,6 @@ var parityScript = []parityStep{
 	}},
 	{name: "phone sign-in", v1: "accounts:sendVerificationCode", v3: "sendVerificationCode", body: func(*parityState) any {
 		return map[string]any{"phoneNumber": "+15555550100"}
-	}},
-}
-
-// Email actions get their v3 aliases with agent A's implementation.
-var pendingParityScript = []parityStep{
-	{name: "send password reset", v1: "accounts:sendOobCode", v3: "getOobConfirmationCode", body: func(*parityState) any {
-		return map[string]any{"requestType": "PASSWORD_RESET", "email": "ios@example.com"}
-	}},
-	{name: "inspect a reset code", v1: "accounts:resetPassword", v3: "resetPassword", body: func(*parityState) any {
-		return map[string]any{"oobCode": "nope"}
 	}},
 }
 
@@ -165,9 +188,4 @@ func runParity(t *testing.T, script []parityStep) {
 
 func TestAuthV3Parity(t *testing.T) {
 	runParity(t, parityScript)
-}
-
-func TestAuthV3ParityEmailActions(t *testing.T) {
-	t.Skip("pending email actions (getOobConfirmationCode, resetPassword aliases), enabled at merge")
-	runParity(t, pendingParityScript)
 }
