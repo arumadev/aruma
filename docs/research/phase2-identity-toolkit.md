@@ -352,6 +352,7 @@ Claim limits:
   - The emulator checks only that the URL is absolute [E-ops sendOob].
 - **Inspect vs consume.** `resetPassword {oobCode}` inspects a code; adding `newPassword` consumes it (§3.8). Verification codes are applied with `accounts:update {oobCode}` (§3.5). Codes are single-use (`INVALID_OOB_CODE` "already been used") [D-rest].
 - **Expiry durations: not found in official docs.** Community figures such as "1 h for reset, 3 days for verify" are unverified. This needs a production measurement.
+- Aruma's choices for lifetimes, the action page and delivery: [phase2-email-actions.md](phase2-email-actions.md).
 
 ## 7. Email templates
 
