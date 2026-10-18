@@ -2,11 +2,16 @@ package acceptance
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/url"
 	"reflect"
 	"testing"
+
+	"github.com/osama300/aurma-project/internal/app"
 )
 
 // AC-A18: every P0 endpoint answers its v3 relyingparty alias (iOS) exactly as its v1 name.
+// Google sign-in uses the fake provider of auth_idp_test.go.
 // The same script runs in two projects, one through v1 and one through v3, and each response
 // is compared field by field once the values that differ by nature (tokens, ids, timestamps,
 // the project number) are masked. Errors are compared the same way, envelope included.
@@ -23,7 +28,14 @@ type parityStep struct {
 type parityState struct {
 	p       *authProject
 	keyFile []byte
+	google  *fakeIdP
 	session *Response // the latest session of the user
+}
+
+// googleSignIn is signInWithCredential with a Google ID token for aud.
+func (s *parityState) googleSignIn(aud string) any {
+	post := url.Values{"id_token": {s.google.idToken(aud, googleClaims("g-parity", "parity@gmail.com", true))}, "providerId": {"google.com"}}
+	return map[string]any{"requestUri": "http://localhost", "postBody": post.Encode(), "returnSecureToken": true, "returnIdpCredential": true}
 }
 
 func (s *parityState) idToken() string { return s.session.str("idToken") }
@@ -98,6 +110,15 @@ var parityScript = []parityStep{
 	{name: "reset again with the used code", v1: "accounts:resetPassword", v3: "resetPassword", body: func(s *parityState) any {
 		return map[string]any{"oobCode": s.mailCode(), "newPassword": "secret4"}
 	}},
+	{name: "Google ID token", v1: "accounts:signInWithIdp", v3: "verifyAssertion", body: func(s *parityState) any {
+		return s.googleSignIn(googleClient)
+	}},
+	{name: "Google ID token for another client", v1: "accounts:signInWithIdp", v3: "verifyAssertion", body: func(s *parityState) any {
+		return s.googleSignIn("other-client.apps.googleusercontent.com")
+	}},
+	{name: "start a Google sign-in", v1: "accounts:createAuthUri", v3: "createAuthUri", body: func(*parityState) any {
+		return map[string]any{"providerId": "google.com", "continueUri": "http://localhost/cb"}
+	}},
 	{name: "custom token", v1: "accounts:signInWithCustomToken", v3: "verifyCustomToken", body: func(s *parityState) any {
 		return map[string]any{"token": customToken(s.p.env.t, s.keyFile, "custom-1", map[string]any{"tier": "gold"}, nil), "returnSecureToken": true}
 	}},
@@ -124,6 +145,7 @@ var parityScript = []parityStep{
 var maskedFields = map[string]bool{
 	"idToken": true, "refreshToken": true, "localId": true, "sessionId": true, "projectId": true,
 	"createdAt": true, "lastLoginAt": true, "lastRefreshAt": true, "passwordUpdatedAt": true, "validSince": true,
+	"authUri": true, "oauthIdToken": true, // carry a fresh state, nonce or iat
 }
 
 // mask replaces masked values with a marker of their JSON type, recursively.
@@ -157,10 +179,16 @@ func (step parityStep) call(s *parityState, path string) *Response {
 }
 
 func runParity(t *testing.T, script []parityStep) {
-	e := newEnv(t, nil)
+	google := newFakeIdP(t, "https://accounts.google.com")
+	google.clientSecret = googleSecret
+	unused := newFakeIdP(t, "https://appleid.apple.com")
+	e := newEnv(t, nil, app.WithIdPEndpoints(google.endpoints("https://accounts.google.com"), unused.endpoints("https://appleid.apple.com"), http.DefaultClient))
 	v1p := e.authProject("ios-v1")
 	v3p := v1p.secondProject("ios-v3")
-	states := map[string]*parityState{"v1": {p: v1p}, "v3": {p: v3p}}
+	for _, p := range []*authProject{v1p, v3p} {
+		p.owner.mustOK(p.owner.do("PATCH", "/console/v1/projects/"+p.id+"/auth/providers/google.com", map[string]any{"clientId": googleClient, "clientSecret": googleSecret, "enabled": true}))
+	}
+	states := map[string]*parityState{"v1": {p: v1p, google: google}, "v3": {p: v3p, google: google}}
 	_, states["v1"].keyFile = v1p.owner.serviceAccountKey("ios-v1", "backend")
 	_, states["v3"].keyFile = v1p.owner.serviceAccountKey("ios-v3", "backend")
 
