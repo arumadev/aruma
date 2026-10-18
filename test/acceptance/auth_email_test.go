@@ -676,3 +676,17 @@ func dumpSchema(t *testing.T, e *Env, schema string) string {
 	}
 	return b.String()
 }
+
+// The Android SDK sends requestType as the enum's number (1 = PASSWORD_RESET), which
+// protobuf's JSON mapping allows alongside the name.
+func TestAuthOobRequestTypeAsNumber(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.authProject("chat-app")
+	p.signUp("sara@example.com", "secret1")
+	r := ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": 1, "email": "sara@example.com"}))
+	assertEqual(t, "email", r.str("email"), "sara@example.com")
+	if m := p.lastMail("sara@example.com"); m["type"] != "PASSWORD_RESET" {
+		t.Fatalf("mail: %v", m)
+	}
+	authErr(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": 99, "email": "sara@example.com"}), "INVALID_JSON")
+}

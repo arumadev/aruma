@@ -194,6 +194,35 @@ func (o *optString) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, &o.Value)
 }
 
+// oobReqType is an action code request type, as its name ("PASSWORD_RESET") or, as protobuf's
+// JSON mapping also allows, its enum number: the Android SDK sends 1 for a password reset.
+type oobReqType string
+
+// oobReqTypes are the names of the Identity Toolkit OobReqType enum, by number.
+var oobReqTypes = []string{
+	"OOB_REQ_TYPE_UNSPECIFIED", "PASSWORD_RESET", "OLD_EMAIL_AGREEMENT", "NEW_EMAIL_ACCEPT",
+	"VERIFY_EMAIL", "RECOVER_EMAIL", "EMAIL_SIGNIN", "VERIFY_AND_CHANGE_EMAIL", "REVERT_SECOND_FACTOR_ADDITION",
+}
+
+func (t *oobReqType) UnmarshalJSON(b []byte) error {
+	var n int
+	if json.Unmarshal(b, &n) == nil {
+		if n < 0 || n >= len(oobReqTypes) {
+			return invalidJSON
+		}
+		if n > 0 {
+			*t = oobReqType(oobReqTypes[n])
+		}
+		return nil
+	}
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	*t = oobReqType(s)
+	return nil
+}
+
 func writeJSON(w http.ResponseWriter, v any) { httpx.WriteJSON(w, http.StatusOK, v) }
 
 type errorItem struct {

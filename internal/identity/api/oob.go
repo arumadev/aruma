@@ -30,13 +30,13 @@ var errInsufficientPermission = &core.Error{Code: "INSUFFICIENT_PERMISSION", Sta
 
 func (a *API) sendOobCode(w http.ResponseWriter, r *http.Request, p core.Project) {
 	var req struct {
-		RequestType   string `json:"requestType"`
-		Email         string `json:"email"`
-		NewEmail      string `json:"newEmail"`
-		IDToken       string `json:"idToken"`
-		ContinueURL   string `json:"continueUrl"`
-		ReturnOobLink bool   `json:"returnOobLink"`
-		TenantID      string `json:"tenantId"`
+		RequestType   oobReqType `json:"requestType"`
+		Email         string     `json:"email"`
+		NewEmail      string     `json:"newEmail"`
+		IDToken       string     `json:"idToken"`
+		ContinueURL   string     `json:"continueUrl"`
+		ReturnOobLink bool       `json:"returnOobLink"`
+		TenantID      string     `json:"tenantId"`
 	}
 	if err := decode(w, r, &req); err != nil {
 		a.writeError(w, r, err)
@@ -56,7 +56,7 @@ func (a *API) sendOobCode(w http.ResponseWriter, r *http.Request, p core.Project
 		return
 	}
 	email, err := a.svc.SendOobCode(r.Context(), p, core.OobRequest{
-		RequestType: req.RequestType, Email: req.Email, NewEmail: req.NewEmail, IDToken: req.IDToken,
+		RequestType: string(req.RequestType), Email: req.Email, NewEmail: req.NewEmail, IDToken: req.IDToken,
 		ContinueURL: req.ContinueURL, Locale: r.Header.Get("X-Firebase-Locale"), APIKey: apiKey(r),
 	})
 	if err != nil {

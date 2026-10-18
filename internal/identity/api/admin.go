@@ -357,11 +357,11 @@ func (a *API) adminBatchDelete(w http.ResponseWriter, r *http.Request, p core.Pr
 // and nothing is emailed.
 func (a *API) adminSendOobCode(w http.ResponseWriter, r *http.Request, p core.Project) {
 	var req struct {
-		RequestType string `json:"requestType"`
-		Email       string `json:"email"`
-		NewEmail    string `json:"newEmail"`
-		ContinueURL string `json:"continueUrl"`
-		TenantID    string `json:"tenantId"`
+		RequestType oobReqType `json:"requestType"`
+		Email       string     `json:"email"`
+		NewEmail    string     `json:"newEmail"`
+		ContinueURL string     `json:"continueUrl"`
+		TenantID    string     `json:"tenantId"`
 	}
 	if err := decode(w, r, &req); err != nil {
 		a.writeError(w, r, err)
