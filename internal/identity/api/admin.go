@@ -305,32 +305,34 @@ func (a *API) adminBatchDelete(w http.ResponseWriter, r *http.Request, p core.Pr
 		return
 	}
 	failed := map[int]error{}
-	deletable := req.LocalIDs
 	if !req.Force {
 		existing, err := a.svc.GetUsers(r.Context(), p, req.LocalIDs, nil)
 		if err != nil {
 			a.writeError(w, r, err)
 			return
 		}
-		deletable = make([]string, len(req.LocalIDs))
 		for i, uid := range req.LocalIDs {
-			deletable[i] = uid
 			for _, u := range existing {
 				if u.UID == uid && !u.Disabled {
-					failed[i], deletable[i] = errNotDisabled, ""
+					failed[i] = errNotDisabled
 				}
 			}
 		}
 	}
-	res, err := a.svc.DeleteUsers(r.Context(), p, deletable)
+	var uids []string
+	var index []int // position in the request of each uid passed on
+	for i, uid := range req.LocalIDs {
+		if failed[i] == nil {
+			uids, index = append(uids, uid), append(index, i)
+		}
+	}
+	res, err := a.svc.DeleteUsers(r.Context(), p, uids)
 	if err != nil {
 		a.writeError(w, r, err)
 		return
 	}
-	for i, e := range res {
-		if _, refused := failed[i]; !refused {
-			failed[i] = e
-		}
+	for j, e := range res {
+		failed[index[j]] = e
 	}
 	type itemError struct {
 		Index   int    `json:"index"`
