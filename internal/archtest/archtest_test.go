@@ -32,6 +32,9 @@ var allowed = map[string][]string{
 	"test":              {"internal/", "pkg/"},
 	"tools":             {"internal/", "pkg/"},
 	"pkg":               {},
+	// The published Go library stands alone: it may import itself (its helper commands), never
+	// the server.
+	"sdk/go/adminauth": {},
 }
 
 func TestDependencyRules(t *testing.T) {
