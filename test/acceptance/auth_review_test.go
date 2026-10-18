@@ -105,3 +105,20 @@ func TestAuthRevocationEndsSessionsOfTheSameSecond(t *testing.T) {
 		return
 	}
 }
+
+// A second revocation in the same second also ends a session started after the first one:
+// such a session is dated at the first revocation's point, so the second moves past it.
+func TestAuthSecondRevocationInTheSameSecond(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.authProject("chat-app")
+	ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "owner@example.com", "password": "secret1"}))
+	// As if a revocation had just happened in this second: its point is the next second.
+	p.sql(`UPDATE auth.users SET tokens_valid_after = date_trunc('second', now()) + interval '1 second'`)
+	signIn := func() *Response {
+		return ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "owner@example.com", "password": "secret1", "returnSecureToken": true}))
+	}
+	thief, owner := signIn(), signIn()
+	upd := ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": owner.str("idToken"), "password": "secret2", "returnSecureToken": true}))
+	authErr(t, p.refresh(thief.str("refreshToken")), "TOKEN_EXPIRED")
+	ok(t, p.refresh(upd.str("refreshToken")))
+}

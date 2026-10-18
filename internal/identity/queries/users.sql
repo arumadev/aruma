@@ -91,8 +91,13 @@ WHERE project_number = @project_number AND tenant_id = @tenant_id AND uid = @uid
 -- name: RevokeUserTokens :one
 -- Moves the revocation point to the next whole second after the transaction time. Tokens are
 -- compared with it at second precision, as Firebase's validSince is, so every session started
--- before the revocation ends, also one started earlier in the same second (ADR-004 §4).
-UPDATE auth.users SET tokens_valid_after = date_trunc('second', now()) + interval '1 second'
+-- before the revocation ends, also one started earlier in the same second (ADR-004 §4). A
+-- session started after an earlier revocation in the same second is dated at that revocation's
+-- point, so a second revocation moves one second past it; the point never runs more than a
+-- minute ahead of the clock, inside every verifier's allowance for iat.
+UPDATE auth.users SET tokens_valid_after = LEAST(
+    GREATEST(date_trunc('second', now()) + interval '1 second', tokens_valid_after + interval '1 second'),
+    date_trunc('second', now()) + interval '60 seconds')
 WHERE project_number = @project_number AND tenant_id = @tenant_id AND uid = @uid
 RETURNING tokens_valid_after;
 
