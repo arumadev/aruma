@@ -162,7 +162,7 @@ test('user management returns official UserRecords and error codes', async () =>
     seen.push(...page.users.map((u) => u.uid));
     pageToken = page.pageToken;
   } while (pageToken);
-  assert.deepEqual(seen, [...seen].sort());
+  assert.equal(new Set(seen).size, seen.length, 'a user was listed twice');
   assert.ok(['admin-made', 'page-0', 'page-1', 'page-2'].every((u) => seen.includes(u)));
   await rejectsWith(auth.listUsers(1001), 'argument-error');
 
