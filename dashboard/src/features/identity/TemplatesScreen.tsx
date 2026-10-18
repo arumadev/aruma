@@ -168,7 +168,8 @@ function TemplateForm({
           label={t('body')}
           multiline
           rows={12}
-          textDir={dir}
+          ltr
+          spellCheck="false"
           lang={template.language}
           value={body}
           onChange={setBody}
@@ -218,7 +219,9 @@ function TemplateForm({
 function Preview({ language, appName, subject, body }: { language: Locale; appName: string; subject: string; body: string }) {
   const t = useTranslations('auth.templates');
   const { project } = useProject();
-  const link = `https://${project.authDomain}/__/auth/action?mode=verifyEmail&oobCode=…&lang=${language}`;
+  // Links open on the project's auth domain, or on this server while the project uses the shared one.
+  const origin = typeof window !== 'undefined' && window.location.hostname === project.authDomain ? window.location.origin : `https://${project.authDomain}`;
+  const link = `${origin}/__/auth/action?mode=verifyEmail&oobCode=…&lang=${language}`;
   const values = {
     '%APP_NAME%': appName,
     '%DISPLAY_NAME%': language === 'ar' ? 'سارة' : 'Sarah',
