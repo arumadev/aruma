@@ -60,8 +60,13 @@ func TestAuthChangeEmailCodeEndsWithItsSession(t *testing.T) {
 	owner := ok(t, x.call(itk+"accounts:signUp", map[string]any{"email": "owner@example.com", "password": "secret12", "returnSecureToken": true}))
 	ok(t, x.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "VERIFY_AND_CHANGE_EMAIL", "idToken": owner.str("idToken"), "newEmail": "thief@evil.test"}))
 	_, q = linkCode(t, x.lastMail("thief@evil.test")["link"].(string))
-	ok(t, x.call(itk+"accounts:update", map[string]any{"idToken": owner.str("idToken"), "password": "secret34"}))
+	changed := ok(t, x.call(itk+"accounts:update", map[string]any{"idToken": owner.str("idToken"), "password": "secret34", "returnSecureToken": true}))
 	authErr(t, x.call(itk+"accounts:update", map[string]any{"oobCode": q.Get("oobCode")}), "INVALID_OOB_CODE")
+	// A change the owner asks for right after, with the session the password change returned,
+	// works, even within the second of the revocation.
+	ok(t, x.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "VERIFY_AND_CHANGE_EMAIL", "idToken": changed.str("idToken"), "newEmail": "new@example.com"}))
+	_, q = linkCode(t, x.lastMail("new@example.com")["link"].(string))
+	ok(t, x.call(itk+"accounts:update", map[string]any{"oobCode": q.Get("oobCode")}))
 }
 
 // H-3: a revocation ends every session started before it, also those started earlier in the
