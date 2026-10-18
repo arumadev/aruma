@@ -36,6 +36,7 @@ var AuthPrefixes = []string{
 	"/www.googleapis.com/identitytoolkit/",
 	"/issuers/",
 	"/session-issuers/",
+	"/__/", // authDomain pages: the action page, the sign-in handler and its iframe
 }
 
 // Server owns the public and metrics listeners.

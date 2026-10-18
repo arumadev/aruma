@@ -116,3 +116,32 @@ func TestPlainHTTPHostIsNotSecure(t *testing.T) {
 		t.Error("plain http on a LAN host cannot use Secure cookies")
 	}
 }
+
+func TestDevMailboxDefaultsToLoopback(t *testing.T) {
+	for _, c := range []struct {
+		url, setting string
+		want         bool
+	}{
+		{"http://127.0.0.1:8080", "", true},
+		{"http://localhost:8080", "", true},
+		{"https://aruma.example.com", "", false},
+		{"https://aruma.example.com", "true", true},
+		{"http://localhost:8080", "false", false},
+	} {
+		m := required()
+		m["ARUMA_PUBLIC_URL"] = c.url
+		m["ARUMA_MAIL_DEV_MAILBOX"] = c.setting
+		cfg, err := Load("", env(m))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := cfg.DevMailbox(); got != c.want {
+			t.Errorf("%s with %q: DevMailbox() = %v, want %v", c.url, c.setting, got, c.want)
+		}
+	}
+	m := required()
+	m["ARUMA_MAIL_DEV_MAILBOX"] = "maybe"
+	if _, err := Load("", env(m)); err == nil {
+		t.Error("a non-boolean ARUMA_MAIL_DEV_MAILBOX should be rejected")
+	}
+}

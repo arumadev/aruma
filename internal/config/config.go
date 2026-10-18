@@ -44,6 +44,7 @@ type Config struct {
 	TrustedProxies []string `yaml:"trusted_proxies"`
 
 	Session Session `yaml:"session"`
+	Mail    Mail    `yaml:"mail"`
 
 	masterKey      []byte
 	publicURL      *url.URL
@@ -54,6 +55,13 @@ type Config struct {
 type Session struct {
 	IdleTimeout     time.Duration `yaml:"idle_timeout"`
 	AbsoluteTimeout time.Duration `yaml:"absolute_timeout"`
+}
+
+// Mail holds the instance's email settings. SMTP itself is set per project in the console.
+type Mail struct {
+	// DevMailbox allows the dev mailbox: projects without an SMTP host keep their Auth emails in
+	// the console instead of sending them. Defaults to on when public_url is a loopback address.
+	DevMailbox *bool `yaml:"dev_mailbox"`
 }
 
 // Defaults returns a configuration with every optional field set.
@@ -141,6 +149,11 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	}
 	duration("ARUMA_SESSION_IDLE_TIMEOUT", &c.Session.IdleTimeout)
 	duration("ARUMA_SESSION_ABSOLUTE_TIMEOUT", &c.Session.AbsoluteTimeout)
+	if v := getenv("ARUMA_MAIL_DEV_MAILBOX"); v != "" {
+		var b bool
+		boolean("ARUMA_MAIL_DEV_MAILBOX", &b)
+		c.Mail.DevMailbox = &b
+	}
 	return errors.Join(errs...)
 }
 
@@ -246,6 +259,18 @@ func (c *Config) SecureCookies() bool {
 	if c.publicURL.Scheme == "https" {
 		return true
 	}
+	return c.loopback()
+}
+
+// DevMailbox reports whether the dev mailbox is allowed: as configured, else on loopback only.
+func (c *Config) DevMailbox() bool {
+	if c.Mail.DevMailbox != nil {
+		return *c.Mail.DevMailbox
+	}
+	return c.loopback()
+}
+
+func (c *Config) loopback() bool {
 	host := c.publicURL.Hostname()
 	if host == "localhost" {
 		return true
