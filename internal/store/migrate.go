@@ -8,7 +8,8 @@ import (
 	"io/fs"
 
 	"github.com/jackc/pgx/v5"
-	_ "github.com/jackc/pgx/v5/stdlib" // registers the "pgx" database/sql driver
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 	"github.com/pressly/goose/v3/database"
 
@@ -31,10 +32,13 @@ var ErrSchemaOutdated = errors.New("database schema is outdated: run `aruma migr
 // Migrate applies every pending migration, schema by schema. Only the operator command calls
 // it; the server never runs DDL (ADR-009).
 func Migrate(ctx context.Context, databaseURL string) error {
-	db, err := sql.Open("pgx", databaseURL)
+	// Parse as the server does, so pool settings such as pool_max_conns are understood rather
+	// than sent to Postgres as runtime parameters.
+	cfg, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
 		return err
 	}
+	db := stdlib.OpenDB(*cfg.ConnConfig)
 	defer db.Close()
 	if err := db.PingContext(ctx); err != nil {
 		return fmt.Errorf("connect: %w", err)
