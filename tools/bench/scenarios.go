@@ -18,23 +18,35 @@ type Scenario struct {
 	What string // what the request exercises, for the report
 	// Concurrency overrides the -c flag when positive (login is bound by argon2id).
 	Concurrency int
-	// SpreadClients sends every request from a fresh X-Forwarded-For address. The credential
-	// endpoints rate-limit per client address (login 10/min, token 120/min); spreading lets
-	// the bench measure the work behind the limit instead of a stream of 429s. It only has
-	// effect when the server trusts the bench's address as a proxy, which in-process mode
-	// configures.
+	// Argon2 marks a scenario bound by the server's argon2id gate; -login-c sets its workers.
+	Argon2 bool
+	// SpreadClients sends every request from another X-Forwarded-For address (see
+	// spreadAddr). The credential endpoints rate-limit per client address (login 10/min,
+	// token 120/min, Auth client calls 300/min); spreading lets the bench measure the work
+	// behind the limit instead of a stream of 429s. It only has effect when the server trusts
+	// the bench's address as a proxy, which in-process mode configures.
 	SpreadClients bool
 	NeedSession   bool
 	NeedSA        bool
+	NeedAuth      bool
 	// New builds the request function once the fixture exists.
 	New func(t *Target, f *Fixture) func(ctx context.Context, worker int) (*http.Request, error)
 }
 
-var counter atomic.Uint64
+var counter, addrCounter atomic.Uint64
 
-// spreadAddr returns a distinct private address per call: 10.0.0.1, 10.0.0.2, …
+// clientAddrs is how many addresses spreadAddr cycles through; 0 means a new one per call.
+var clientAddrs uint64 = 1 << 16
+
+// spreadAddr returns the next private address of the pool: 10.0.0.1, 10.0.0.2, … The pool is
+// bounded because each limiter tracks at most 100,000 addresses and refuses newcomers when
+// full: a new address per request fills that within seconds at Auth's request rates. 65,536
+// addresses stay under the cap, and each one is reused too rarely to reach its own limit.
 func spreadAddr() string {
-	n := counter.Add(1)
+	n := addrCounter.Add(1)
+	if clientAddrs > 0 {
+		n = (n-1)%clientAddrs + 1
+	}
 	return fmt.Sprintf("10.%d.%d.%d", n>>16&0xff, n>>8&0xff, n&0xff)
 }
 
@@ -47,8 +59,11 @@ func get(ctx context.Context, u string) (*http.Request, error) {
 	return http.NewRequestWithContext(ctx, "GET", u, nil)
 }
 
-// Scenarios are the Phase 1 platform scenarios, in the order they run.
-var Scenarios = []Scenario{
+// Scenarios are every scenario, in the order they run.
+var Scenarios = append(platformScenarios, authScenarios...)
+
+// platformScenarios are the Phase 1 platform scenarios.
+var platformScenarios = []Scenario{
 	{
 		Name: "healthz",
 		What: "GET /healthz: the HTTP stack, middleware and request log, no database",
@@ -121,6 +136,7 @@ var Scenarios = []Scenario{
 		Name:          "console-login",
 		What:          "POST /console/v1/auth:login: argon2id verify (m=19 MiB, t=2, at most 4 at once), session insert",
 		Concurrency:   4,
+		Argon2:        true,
 		SpreadClients: true,
 		New: func(t *Target, _ *Fixture) func(context.Context, int) (*http.Request, error) {
 			body, _ := json.Marshal(map[string]string{"email": t.Email, "password": t.Password})
