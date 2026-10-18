@@ -29,3 +29,30 @@ export function Tabs({ label, items, selected, onSelect }: { label: string; item
     </AriaTabs>
   );
 }
+
+export interface LinkTabItem {
+  id: string;
+  label: string;
+  href: string;
+}
+
+/**
+ * Primary tabs that are links to pages of one section. The current page's tab is selected and
+ * its content goes in the one panel; arrow keys move focus and Enter follows the link.
+ */
+export function LinkTabs({ label, items, selected, children }: { label: string; items: LinkTabItem[]; selected: string; children: ReactNode }) {
+  return (
+    <AriaTabs className={styles.tabs} selectedKey={selected} keyboardActivation="manual">
+      <TabList aria-label={label} className={styles.list}>
+        {items.map((item) => (
+          <Tab key={item.id} id={item.id} href={item.href} className={styles.tab}>
+            {item.label}
+          </Tab>
+        ))}
+      </TabList>
+      <TabPanel id={selected} className={styles.panel}>
+        {children}
+      </TabPanel>
+    </AriaTabs>
+  );
+}

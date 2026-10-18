@@ -176,3 +176,159 @@ export interface FlutterSelection {
   android?: string;
   ios?: string;
 }
+
+// Auth: a project's users and sign-in settings (docs/api/console.md). The provider, email
+// template, SMTP and mailbox routes come from the provider and email work; their shapes are
+// noted in dashboard/INTEGRATION.md.
+
+export interface AuthProviderInfo {
+  providerId: string;
+  email?: string;
+}
+
+export interface AuthUser {
+  uid: string;
+  email?: string;
+  emailVerified: boolean;
+  displayName?: string;
+  photoUrl?: string;
+  disabled: boolean;
+  providers: AuthProviderInfo[];
+  /** The custom claims object as JSON text. */
+  customClaims?: string;
+  hasPassword: boolean;
+  createTime: string;
+  lastSignInTime?: string;
+  lastRefreshTime?: string;
+  tokensValidAfterTime: string;
+}
+
+export interface NewAuthUser {
+  uid?: string;
+  email?: string;
+  password?: string;
+  displayName?: string;
+}
+
+export interface AuthUserUpdate {
+  email?: string;
+  password?: string;
+  displayName?: string;
+  photoUrl?: string;
+  emailVerified?: boolean;
+  disabled?: boolean;
+  customClaims?: string;
+}
+
+/** Values no setting changes, shown for reference (seconds unless named otherwise). */
+export interface AuthLimits {
+  idTokenLifetimeSeconds: number;
+  sessionCookieMaxSeconds: number;
+  signingKeyRotationDays: number;
+  requestsPerMinute: number;
+  requestBurst: number;
+  signUpsPerMinute: number;
+  signUpBurst: number;
+  passwordFailures: number;
+  passwordFailureWindowSeconds: number;
+  passwordBackoffMaxSeconds: number;
+  /** How long each kind of email code stays valid, once the server reports it. */
+  emailCodeLifetimeSeconds?: Partial<Record<EmailTemplateType, number>>;
+}
+
+export type PasswordEnforcement = 'OFF' | 'ENFORCE';
+
+export interface AuthConfig {
+  passwordEnabled: boolean;
+  anonymousEnabled: boolean;
+  clientSignupEnabled: boolean;
+  enumerationProtection: boolean;
+  authorizedDomains: string[];
+  passwordMinLength: number;
+  passwordRequireLowercase: boolean;
+  passwordRequireUppercase: boolean;
+  passwordRequireNumeric: boolean;
+  passwordRequireSymbol: boolean;
+  passwordEnforcement: PasswordEnforcement;
+  appName: string;
+  updateTime: string;
+  limits: AuthLimits;
+}
+
+export type AuthConfigUpdate = Partial<Omit<AuthConfig, 'updateTime' | 'limits'>>;
+
+export type SigningKeyPurpose = 'id_token' | 'session_cookie';
+
+export interface SigningKey {
+  kid: string;
+  purpose: SigningKeyPurpose;
+  state: 'next' | 'active' | 'retired';
+  createTime: string;
+  activateTime?: string;
+  retireTime?: string;
+}
+
+/** A federated provider. Secrets are write-only: the server says only whether one is saved. */
+export interface FederatedProvider {
+  providerId: 'google.com' | 'apple.com';
+  enabled: boolean;
+  /** Where the provider sends users back; registered with Google or Apple. */
+  redirectUri: string;
+  clientId?: string;
+  clientSecretSet?: boolean;
+  servicesId?: string;
+  teamId?: string;
+  keyId?: string;
+  privateKeySet?: boolean;
+}
+
+export interface FederatedProviderUpdate {
+  enabled?: boolean;
+  clientId?: string;
+  clientSecret?: string;
+  servicesId?: string;
+  teamId?: string;
+  keyId?: string;
+  privateKey?: string;
+}
+
+export type EmailTemplateType = 'VERIFY_EMAIL' | 'PASSWORD_RESET' | 'VERIFY_AND_CHANGE_EMAIL' | 'RECOVER_EMAIL';
+
+export interface EmailTemplate {
+  type: EmailTemplateType;
+  language: Locale;
+  subject: string;
+  body: string;
+  /** False while the built-in default is in use. */
+  customized: boolean;
+}
+
+export type SmtpSecurity = 'starttls' | 'tls' | 'none';
+
+export interface SmtpSettings {
+  host: string;
+  port: number;
+  username: string;
+  passwordSet: boolean;
+  security: SmtpSecurity;
+  senderName: string;
+  senderAddress: string;
+  replyTo: string;
+}
+
+export type SmtpUpdate = Partial<Omit<SmtpSettings, 'passwordSet'>> & { password?: string };
+
+export interface MailboxMessage {
+  id: string;
+  to: string;
+  type?: EmailTemplateType;
+  subject: string;
+  /** The action link the email carries. */
+  link?: string;
+  createTime: string;
+}
+
+export interface Mailbox {
+  enabled: boolean;
+  messages: MailboxMessage[];
+}

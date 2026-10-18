@@ -18,4 +18,10 @@ export const routes = {
   serviceAccounts: (id: string) => withQuery('/project/service-accounts/', { id }),
   settings: (id: string) => withQuery('/project/settings/', { id }),
   audit: (id: string) => withQuery('/project/audit/', { id }),
+  authUsers: (id: string) => withQuery('/project/auth/', { id }),
+  authUser: (id: string, uid: string) => withQuery('/project/auth/user/', { id, uid }),
+  authProviders: (id: string) => withQuery('/project/auth/providers/', { id }),
+  authTemplates: (id: string) => withQuery('/project/auth/templates/', { id }),
+  authMailbox: (id: string) => withQuery('/project/auth/mailbox/', { id }),
+  authSettings: (id: string) => withQuery('/project/auth/settings/', { id }),
 } as const;

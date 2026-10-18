@@ -5,11 +5,21 @@ import type {
   ApiKey,
   App,
   AuditEntry,
+  AuthConfig,
+  AuthConfigUpdate,
+  AuthUser,
+  AuthUserUpdate,
+  EmailTemplate,
+  EmailTemplateType,
+  FederatedProvider,
+  FederatedProviderUpdate,
   FlutterSelection,
   Locale,
   Login,
+  Mailbox,
   Me,
   NewApp,
+  NewAuthUser,
   Page,
   Project,
   ProjectIdCheck,
@@ -18,6 +28,10 @@ import type {
   ServiceAccountKey,
   Session,
   ShaCertificate,
+  SigningKey,
+  SigningKeyPurpose,
+  SmtpSettings,
+  SmtpUpdate,
   Status,
   Token,
 } from './types';
@@ -125,3 +139,42 @@ export const listServiceAccountKeys = (p: string, s: string, signal?: AbortSigna
 export const generateServiceAccountKey = (p: string, s: string) => downloadFile(`${sa(p, s)}/keys`, { method: 'POST' });
 export const deleteServiceAccountKey = (p: string, s: string, keyId: string) =>
   requestEmpty(`${sa(p, s)}/keys/${seg(keyId)}`, { method: 'DELETE' });
+
+// Auth
+const auth = (p: string) => `${project(p)}/auth`;
+const authUser = (p: string, uid: string) => `${auth(p)}/users/${seg(uid)}`;
+
+export interface AuthUserQuery {
+  pageSize?: number;
+  pageToken?: string;
+  query?: string;
+}
+
+export const listAuthUsers = (p: string, query: AuthUserQuery, signal?: AbortSignal) =>
+  request<{ users: AuthUser[]; nextPageToken: string; totalSize: number }>(`${auth(p)}/users`, { query: { ...query }, signal });
+export const createAuthUser = (p: string, body: NewAuthUser) => request<AuthUser>(`${auth(p)}/users`, { method: 'POST', body });
+export const getAuthUser = (p: string, uid: string, signal?: AbortSignal) => request<AuthUser>(authUser(p, uid), { signal });
+export const updateAuthUser = (p: string, uid: string, body: AuthUserUpdate) =>
+  request<AuthUser>(authUser(p, uid), { method: 'PATCH', body });
+export const deleteAuthUser = (p: string, uid: string) => requestEmpty(authUser(p, uid), { method: 'DELETE' });
+export const revokeAuthUserSessions = (p: string, uid: string) => request<AuthUser>(`${authUser(p, uid)}:revokeSessions`, { method: 'POST' });
+export const sendPasswordReset = (p: string, uid: string) => requestEmpty(`${authUser(p, uid)}:sendPasswordReset`, { method: 'POST' });
+export const getAuthConfig = (p: string, signal?: AbortSignal) => request<AuthConfig>(`${auth(p)}/config`, { signal });
+export const updateAuthConfig = (p: string, body: AuthConfigUpdate) => request<AuthConfig>(`${auth(p)}/config`, { method: 'PATCH', body });
+export const listSigningKeys = (p: string, signal?: AbortSignal) => request<{ keys: SigningKey[] }>(`${auth(p)}/signingKeys`, { signal });
+export const rotateSigningKey = (p: string, purpose: SigningKeyPurpose, emergency: boolean) =>
+  request<{ keys: SigningKey[] }>(`${auth(p)}/signingKeys:rotate`, { method: 'POST', body: { purpose, emergency } });
+export const listFederatedProviders = (p: string, signal?: AbortSignal) =>
+  request<{ providers: FederatedProvider[] }>(`${auth(p)}/providers`, { signal });
+export const updateFederatedProvider = (p: string, providerId: string, body: FederatedProviderUpdate) =>
+  request<FederatedProvider>(`${auth(p)}/providers/${seg(providerId)}`, { method: 'PATCH', body });
+export const listEmailTemplates = (p: string, signal?: AbortSignal) => request<{ templates: EmailTemplate[] }>(`${auth(p)}/templates`, { signal });
+export const saveEmailTemplate = (p: string, type: EmailTemplateType, language: Locale, body: { subject: string; body: string }) =>
+  request<EmailTemplate>(`${auth(p)}/templates/${type}/${language}`, { method: 'PUT', body });
+export const resetEmailTemplate = (p: string, type: EmailTemplateType, language: Locale) =>
+  requestEmpty(`${auth(p)}/templates/${type}/${language}`, { method: 'DELETE' });
+export const getSmtp = (p: string, signal?: AbortSignal) => request<SmtpSettings>(`${auth(p)}/smtp`, { signal });
+export const updateSmtp = (p: string, body: SmtpUpdate) => request<SmtpSettings>(`${auth(p)}/smtp`, { method: 'PATCH', body });
+export const testSmtp = (p: string, to: string) => requestEmpty(`${auth(p)}/smtp:test`, { method: 'POST', body: { to } });
+export const getMailbox = (p: string, signal?: AbortSignal) => request<Mailbox>(`${auth(p)}/mailbox`, { signal });
+export const clearMailbox = (p: string) => requestEmpty(`${auth(p)}/mailbox`, { method: 'DELETE' });

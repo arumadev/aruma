@@ -18,6 +18,8 @@ export interface TextFieldProps extends Omit<AriaTextFieldProps, 'children' | 'c
   errorMessage?: string;
   /** Identifiers, emails and keys are typed left to right whatever the page direction. */
   ltr?: boolean;
+  /** Prose in a language other than the page's, such as an email template, keeps its own direction. */
+  textDir?: 'ltr' | 'rtl';
   multiline?: boolean;
   rows?: number;
   placeholder?: string;
@@ -32,6 +34,7 @@ export function TextField({
   description,
   errorMessage,
   ltr,
+  textDir,
   multiline,
   rows = 4,
   placeholder,
@@ -39,10 +42,12 @@ export function TextField({
   className,
   ...props
 }: TextFieldProps) {
+  const dir = ltr ? 'ltr' : textDir;
+  const inputClass = textDir && !ltr ? `${styles.input} ${styles.prose}` : styles.input;
   const input = multiline ? (
-    <TextArea className={styles.input} rows={rows} placeholder={placeholder} dir={ltr ? 'ltr' : undefined} />
+    <TextArea className={inputClass} rows={rows} placeholder={placeholder} dir={dir} />
   ) : (
-    <Input className={styles.input} placeholder={placeholder} dir={ltr ? 'ltr' : undefined} />
+    <Input className={inputClass} placeholder={placeholder} dir={dir} />
   );
   return (
     <AriaTextField
