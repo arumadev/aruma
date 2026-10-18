@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"strings"
 	"time"
 
@@ -41,10 +42,19 @@ type Option func(*settings)
 
 type settings struct {
 	argon2 crypto.Argon2Params
+	idp    func(*identity.Service)
 }
 
 // WithArgon2 overrides the password hashing cost. Tests use cheap parameters.
 func WithArgon2(p crypto.Argon2Params) Option { return func(s *settings) { s.argon2 = p } }
+
+// WithIdPEndpoints points Google and Apple sign-in at stand-in providers. Tests only: no
+// configuration setting reaches the provider endpoints.
+func WithIdPEndpoints(google, apple identity.IdPEndpoints, client *http.Client) Option {
+	return func(s *settings) {
+		s.idp = func(a *identity.Service) { a.SetIdPEndpoints(google, apple, client) }
+	}
+}
 
 // argon2Concurrency caps simultaneous password hashes (≈19 MiB each).
 const argon2Concurrency = 4
@@ -76,6 +86,9 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	}
 	authSvc := identity.New(pool, svc, keys, hasher, strings.TrimSuffix(cfg.PublicBaseURL().String(), "/"), logger)
 	authSvc.ConfigureMail(identity.MailOptions{DevMailbox: cfg.DevMailbox()})
+	if st.idp != nil {
+		st.idp(authSvc)
+	}
 	consoleAPI := console.New(svc, auth, logger, console.Options{Version: version, SecureCookies: cfg.SecureCookies(), Auth: authSvc})
 	mgmtAPI := mgmt.New(svc, auth, logger)
 	dashboard, err := web.New(web.Embedded())

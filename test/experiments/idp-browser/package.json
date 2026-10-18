@@ -1,0 +1,11 @@
+{
+  "name": "aruma-experiment-idp-browser",
+  "private": true,
+  "type": "module",
+  "description": "T15/T20: Google and Apple popup and redirect sign-in with the official web SDK in Chromium, against Aruma and fake providers. Driven by TestAuthIdPBrowser (go test -tags browser).",
+  "dependencies": {
+    "esbuild": "0.28.2",
+    "firebase": "13.0.0",
+    "playwright-core": "1.64.0"
+  }
+}

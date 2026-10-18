@@ -62,8 +62,8 @@ func (s *syncBuffer) String() string {
 	return s.b.String()
 }
 
-// newEnv starts a server. env overrides ARUMA_* settings.
-func newEnv(t *testing.T, env map[string]string) *Env {
+// newEnv starts a server. env overrides ARUMA_* settings; opts adjust the wiring.
+func newEnv(t *testing.T, env map[string]string, opts ...app.Option) *Env {
 	t.Helper()
 	dbURL := storetest.NewDB(t)
 	ctx := context.Background()
@@ -91,7 +91,7 @@ func newEnv(t *testing.T, env map[string]string) *Env {
 		t.Fatal(err)
 	}
 	logs := &syncBuffer{}
-	a, err := app.New(cfg, log.New(logs, "debug"), "test", pool, app.WithArgon2(fastArgon2))
+	a, err := app.New(cfg, log.New(logs, "debug"), "test", pool, append([]app.Option{app.WithArgon2(fastArgon2)}, opts...)...)
 	if err != nil {
 		t.Fatal(err)
 	}

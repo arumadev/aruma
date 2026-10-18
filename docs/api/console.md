@@ -144,3 +144,23 @@ Every path below starts with `/projects/{project}/auth`. Errors from Auth keep t
 - `SMTP` = `{host, port, username, passwordSet, tls: "starttls"|"tls"|"none", senderAddress, senderName, replyTo, devMailbox}`. `devMailbox` is the effective mode: the project's choice if pinned, otherwise on exactly when the instance allows the dev mailbox and `host` is empty. An empty `senderAddress` sends from `noreply@<authDomain>`; an empty `senderName` uses the app name. The password is stored envelope-encrypted and never returned.
 - `Message` = `{id, to, type, language, subject, text, html, link, createTime}`. `type` is a template type, or `TEST` for `smtp:test`.
 - The dev mailbox is allowed by the instance setting `mail.dev_mailbox` (`ARUMA_MAIL_DEV_MAILBOX`), which defaults to on only when `public_url` is a loopback address. When it is not allowed, the mailbox routes answer `NOT_FOUND`. When it is allowed but the project sends over SMTP, `enabled` is `false` and earlier messages stay readable.
+
+## Auth: Google and Apple sign-in
+
+Every path below starts with `/projects/{project}`. Session or CLI token. Secrets are write-only: responses only say whether one is set.
+
+| Method | Path | Body → Response |
+|---|---|---|
+| GET | `/auth/providers` | → `{redirectUri, providers: [GoogleProvider, AppleProvider]}`, always both, Google first |
+| PATCH | `/auth/providers/google.com` | any of `{enabled, clientId, clientSecret}` → `GoogleProvider` |
+| PATCH | `/auth/providers/apple.com` | any of `{enabled, servicesId, teamId, keyId, privateKey}` → `AppleProvider` |
+
+- `GoogleProvider` = `{providerId: "google.com", enabled, clientId, clientSecretSet}`.
+- `AppleProvider` = `{providerId: "apple.com", enabled, servicesId, teamId, keyId, privateKeySet}`.
+- `redirectUri` is the URL to register as the OAuth redirect URI at Google and as the Return URL at Apple: `https://<authDomain>/__/auth/handler` when the project has its own `authDomain`, otherwise `<public_url>/__/auth/handler`. Show it with a copy button.
+- Validation errors are `INVALID_ARGUMENT` with the Identity Toolkit code in the message (`INVALID_CONFIG : …`):
+  - Google can be enabled only with a `clientId` and a `clientSecret`; Apple only with all four fields.
+  - `teamId` and `keyId` are 10 characters, `A-Z0-9`. `privateKey` is the `.p8` file Apple issues (PEM, PKCS#8, P-256).
+  - Fields of the other provider are refused (`clientId` on Apple, `servicesId` on Google, `clientSecret` on Apple).
+  - An empty `clientSecret` or `privateKey` clears it (and the provider must then be disabled).
+- An unknown provider id is `NOT_FOUND`.
