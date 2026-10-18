@@ -41,5 +41,6 @@ curl -fsS -H "Authorization: Bearer $ARUMA_CLI_TOKEN" \
 log "web Auth e2e: firebase 11, 12, 13 against $ARUMA_URL"
 cd "$here"
 npm ci --no-audit --no-fund --silent
-npx playwright install chromium >/dev/null
+# On CI the browser needs its system libraries too.
+npx playwright install ${CI:+--with-deps} chromium >/dev/null
 ARUMA_URL=$ARUMA_URL ARUMA_E2E_DIR=$gen npx playwright test "$@"
