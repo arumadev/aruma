@@ -123,3 +123,24 @@ Every path below starts with `/projects/{project}`.
 | GET | `/serviceAccounts/{sa}/keys` | → `{keys: [{keyId, keyAlgorithm, validAfterTime, validBeforeTime?, disabled, createTime}]}` |
 | POST | `/serviceAccounts/{sa}/keys` | → the key file as a download. **Shown once; Aruma does not keep the private key.** At most 10 keys |
 | DELETE | `/serviceAccounts/{sa}/keys/{keyId}` | → 204 |
+
+## Auth email: templates, SMTP and the dev mailbox
+
+Every path below starts with `/projects/{project}/auth`. Errors from Auth keep the Identity Toolkit code at the start of the message (`INVALID_TEMPLATE : …`, `INVALID_SMTP_CONFIG : …`, `SMTP_ERROR : …`, `DEV_MAILBOX_DISABLED : …`) with status `INVALID_ARGUMENT`.
+
+| Method | Path | Body → Response |
+|---|---|---|
+| GET | `/templates` | → `{templates: [Template]}`: the 4 types × 2 languages, in the order `VERIFY_EMAIL`, `PASSWORD_RESET`, `VERIFY_AND_CHANGE_EMAIL`, `RECOVER_EMAIL`, each `ar` then `en` |
+| PUT | `/templates/{type}/{language}` | `{subject, body}` → `Template` with `customized: true`. The body must contain `%LINK%`; subject ≤ 200 characters, body ≤ 64 KiB |
+| DELETE | `/templates/{type}/{language}` | → the built-in `Template` (`customized: false`) |
+| GET | `/smtp` | → `SMTP` |
+| PATCH | `/smtp` | any `SMTP` field, plus write-only `password` → `SMTP`. `password: ""` removes it; `passwordSet` is ignored. `devMailbox` pins the project's choice; `true` needs an instance that allows the dev mailbox |
+| POST | `/smtp:test` | `{to}` → `{devMailbox}`. Sends a short bilingual message now, over SMTP (the server's error comes back as `SMTP_ERROR`) or to the dev mailbox |
+| GET | `/mailbox` | → `{enabled, messages: [Message]}`, newest first, at most 100. `NOT_FOUND` when the instance does not allow the dev mailbox |
+| DELETE | `/mailbox` | → 204. Empties the dev mailbox |
+| POST | `/users/{uid}:sendPasswordReset` | `{language?: "ar"\|"en"}` → `{link}`. The link is also emailed (or kept in the dev mailbox) |
+
+- `Template` = `{type, language, subject, body, customized}`. `body` is HTML. The variables `%LINK%`, `%APP_NAME%`, `%EMAIL%`, `%NEW_EMAIL%` and `%DISPLAY_NAME%` are replaced when a message is written: HTML-escaped in the body, plain in the subject (line breaks removed). The plain-text part of the email is derived from the body.
+- `SMTP` = `{host, port, username, passwordSet, tls: "starttls"|"tls"|"none", senderAddress, senderName, replyTo, devMailbox}`. `devMailbox` is the effective mode: the project's choice if pinned, otherwise on exactly when the instance allows the dev mailbox and `host` is empty. An empty `senderAddress` sends from `noreply@<authDomain>`; an empty `senderName` uses the app name. The password is stored envelope-encrypted and never returned.
+- `Message` = `{id, to, type, language, subject, text, html, link, createTime}`. `type` is a template type, or `TEST` for `smtp:test`.
+- The dev mailbox is allowed by the instance setting `mail.dev_mailbox` (`ARUMA_MAIL_DEV_MAILBOX`), which defaults to on only when `public_url` is a loopback address. When it is not allowed, the mailbox routes answer `NOT_FOUND`. When it is allowed but the project sends over SMTP, `enabled` is `false` and earlier messages stay readable.
