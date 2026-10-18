@@ -9,7 +9,7 @@ Results for task T25: the baseline of sign-up, sign-in, refresh and ID token ver
 - **Password sign-in and sign-up** serve about **90–95/s**, p50 about 40 ms, bound by argon2id, as designed and as Phase 1's console login.
 - **The Go library** (`sdk/go/adminauth`) verifies an ID token locally in **49 µs on one core, 15–17 µs per token across 8 goroutines** (about 60,000/s), with no request to the server once the keys are cached.
 - No request failed: 0 errors in the 307,083 requests of the three published runs.
-- Four findings, one of them a denial of service: each rate limiter tracks at most 100,000 client addresses and refuses every new address once full (finding 1).
+- Four findings, one of them a denial of service: each rate limiter tracked at most 100,000 client addresses and refused every new address once full (finding 1). Findings 1 and 2 were fixed after this baseline (990770b, and the Go library's default transport); the numbers above predate the fixes and do not depend on them.
 
 ## Hardware and software
 
@@ -184,7 +184,7 @@ The signal-based profiler on macOS evidently charges compute time to threads tha
 
 ## Findings
 
-1. **A rate limiter that is full refuses every new client.** This is a denial of service.
+1. **A rate limiter that is full refuses every new client.** This is a denial of service. **Fixed after this baseline** (990770b, review M-2): a full limiter or backoff now evicts its least recently used entry.
    - **Mechanism.** `ratelimit.Limiter` and `ratelimit.Backoff` keep at most 100,000 keys ([`internal/platform/ratelimit/ratelimit.go`](../../internal/platform/ratelimit/ratelimit.go), `maxKeys`). When full and nothing can be swept, `Allow` refuses every key it does not know yet: "refuse newcomers rather than grow without bound". A key is swept only when its bucket has been idle long enough to refill completely, which is burst ÷ rate. That is 20 s for the Auth per-address limit, **50 minutes for the sign-up limit**, 20 minutes for the email limit, and 30 s for the console token limit.
    - **Measured.** `auth-lookup` with a new address per request (`-client-addrs 0`) served 99,063 requests. After that, every request answered `400 TOO_MANY_ATTEMPTS_TRY_LATER` (3,654 in the last seconds of the window; `limiter-cap-fresh-addrs.json`). Addresses already in the table keep working; only new ones are refused (from the code).
    - **Exposure.**
@@ -201,7 +201,7 @@ The signal-based profiler on macOS evidently charges compute time to threads tha
 2. **The Go library's default HTTP client exhausts loopback ports under concurrent revocation checks.**
    - **Mechanism.** `adminauth.NewClient` without `WithHTTPClient` uses `&http.Client{Timeout: 30 * time.Second}` ([`sdk/go/adminauth/client.go`](../../sdk/go/adminauth/client.go)), and so `http.DefaultTransport`, which keeps only **2 idle connections per host**. Every `VerifyIDTokenAndCheckRevoked` (and every Admin call) is a request to Aruma. With more than 2 in flight, the extra connections are opened and closed each time, and each closed one sits in TIME_WAIT.
    - **Measured.** With 8 goroutines, `BenchmarkVerifyIDTokenAndCheckRevoked/default-transport-8` failed twice out of three with `dial tcp 127.0.0.1:…: connect: can't assign requested address`: the machine had run out of ephemeral ports. A transport with `MaxIdleConnsPerHost: 64` ran the same load cleanly, at 123–129 µs per verification. Below that concurrency the two did not differ measurably.
-   - **Fix.** The library should default to its own transport with a larger idle pool, for example a clone of `http.DefaultTransport` with `MaxIdleConnsPerHost` near 100. Until then, servers that check revocation on every request should pass `WithHTTPClient`.
+   - **Fix (done after this baseline).** The library's default client now clones `http.DefaultTransport` with `MaxIdleConnsPerHost: 64`.
    - **Severity: medium for servers that check revocation on every request.** Low otherwise: local verification makes no requests.
 3. **Small per-request costs on the Auth paths**, each worth a query or a commit:
    - **API key resolution takes two queries where one would do.** `ProjectForKey` ([`internal/tenancy/core/dataplane.go:25`](../../internal/tenancy/core/dataplane.go)) runs `LookupAPIKey`, which already joins `control.projects` for the state, then `GetProject` only to read the project id. Every Auth client call pays it: 2 of lookup's 6 queries, and 14% of the process CPU in `auth-lookup`. Selecting `p.project_id` in `LookupAPIKey` would save one round trip on every client call.

@@ -229,10 +229,15 @@ func (c *Client) CustomTokenWithClaims(ctx context.Context, uid string, claims m
 
 // defaultHTTPClient follows no redirect: one could fetch the key set from another origin, or
 // carry the access token there, past the checks on the configured URL. The Node library
-// refuses redirects the same way.
+// refuses redirects the same way. It keeps enough idle connections for concurrent revocation
+// checks: with net/http's default of two per host, a busy server opened a connection per call
+// and ran out of local ports.
 func defaultHTTPClient() *http.Client {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.MaxIdleConnsPerHost = 64
 	return &http.Client{
 		Timeout:       30 * time.Second,
+		Transport:     t,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
 }
