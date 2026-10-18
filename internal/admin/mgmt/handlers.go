@@ -357,11 +357,10 @@ func (a *API) patchApp(platform string) http.HandlerFunc {
 // native files travel base64-encoded.
 func (a *API) getConfig(platform string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if _, err := a.appOf(r, platform); err != nil {
-			a.fail(w, r, err)
-			return
-		}
 		c, err := a.svc.AppConfig(r.Context(), principal(r), r.PathValue("project"), r.PathValue("app"))
+		if err == nil && c.App.App.Platform != platform {
+			err = apierr.New(apierr.NotFound, "Requested entity was not found.")
+		}
 		if err != nil {
 			a.fail(w, r, err)
 			return
