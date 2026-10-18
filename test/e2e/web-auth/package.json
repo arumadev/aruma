@@ -1,0 +1,19 @@
+{
+  "name": "aruma-e2e-web-auth",
+  "private": true,
+  "type": "module",
+  "description": "A minimal Vite app on the official firebase package, driven by Playwright against a real Aruma server (AC-A1, X-4, X-6).",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "firebase-11": "npm:firebase@^11",
+    "firebase-12": "npm:firebase@^12",
+    "firebase-13": "npm:firebase@^13"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "firebase-admin": "^14",
+    "vite": "^8"
+  }
+}

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Aruma web Auth e2e</title>
+  </head>
+  <body>
+    <p id="status">loading</p>
+    <script type="module">
+      // ?v=11|12|13 picks the major version of the firebase package; the app is the same.
+      const v = new URLSearchParams(location.search).get('v') ?? '13';
+      import(`./src/v${v}.js`);
+    </script>
+  </body>
+</html>
