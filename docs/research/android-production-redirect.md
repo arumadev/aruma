@@ -1,6 +1,6 @@
 # Android في وضع الإنتاج: أين تخرج طلبات Auth، وكيف تُحوَّل
 
-- **الحالة:** اكتشاف مكتمل (المراحل 0 إلى 3)، 2026-10-18، فرع `p2-l-android`. لم تُبنَ المكتبة بعد.
+- **الحالة:** اكتشاف مكتمل (المراحل 0 إلى 3)، 2026-10-18. **المكتبة مبنية:** `sdk/android/aruma-redirect` (راجع "كيف تستخدمها" أدناه).
 - **السؤال:** مكتبة Firebase الرسمية لـ Android **في وضعها العادي** (دون `useEmulator`): من أي عملية تخرج طلبات Auth، وبأي واجهة، وإلى أي عناوين؟ وأي طبقة تصلح لتحويلها إلى Aruma؟
 - **الجواب:**
   - الطلبات تخرج من **عملية التطبيق نفسها**، لا من Play services.
@@ -138,6 +138,26 @@ java.lang.Thread.run
   - و`connect` إلى `2001:4860:4860::8888:53` (DNS).
 - **لم تُجرَّب** تدفقات قد تمر بـ Play services: الهاتف (Play Integrity/SafetyNet وreCAPTCHA)، ودخول Google (Credential Manager)، وApp Check، و`getRecaptchaConfig`.
 
+## كيف تستخدمها
+
+`sdk/android/aruma-redirect`: مكتبة Java بلا اعتماديات، minSdk 24، 28 اختبار وحدة على JVM (`./gradlew :aruma-redirect:testDebugUnitTest`).
+تفاصيلها في `sdk/android/aruma-redirect/README.md`. الخطوات الدنيا لمطوّر حقيقي:
+
+1. `./gradlew :aruma-redirect:publishToMavenLocal` من `sdk/android/aruma-redirect` (مؤقتًا حتى يُنشر الـ AAR).
+2. في التطبيق: `mavenLocal()` في المستودعات، و`implementation("dev.aruma:aruma-redirect:0.1.0")`.
+   في Flutter: الاعتمادية في `android/app/build.gradle(.kts)`، والمستودع في `android/build.gradle(.kts)`.
+3. في `AndroidManifest.xml` داخل `<application>`: `<meta-data android:name="ArumaURL" android:value="https://aruma.example.com"/>`.
+4. `google-services.json` من Aruma، ولا `useAuthEmulator`. لا كود.
+
+- **التثبيت:** `ContentProvider` (`initOrder` 1000) يقرأ `ArumaURL` قبل `Application.onCreate`. وبديله في الكود `ArumaRedirect.install(url)`.
+- **المعالج الافتراضي:** عند التثبيت يُنشأ `URL` https قبل تسجيل الـ factory فيحمل معالج المنصة، ثم يُبنى كل اتصال غير Auth (وكل اتصال محوَّل) بـ `new URL(thatUrl, spec).openConnection()`، فيعود معالج المنصة نفسه.
+  واجهات Java عامة فقط: لا انعكاس، ولا أصناف `com.android.okhttp`. والـ factory يعيد `null` لغير https فيبقى http على الافتراضي.
+- **http:** مقبول دون إعداد لـ `localhost` و`127.0.0.0/8` و`::1` و`10.0.2.2` و`10.0.3.2`، وغيرها بـ meta-data `ArumaAllowInsecureURL=true` (للتطوير). ويلزم `networkSecurityConfig` للـ cleartext في debug.
+- **الفشل مغلق:** `ArumaURL` غير صالح، أو factory موجود مسبقًا: `ArumaRedirectException` عند الإقلاع. وطلب Auth غير قابل للتحويل الآمن (منفذ غير 443، بيانات اعتماد، `..`) يُرفض بـ `IOException`.
+- **التحقق (تشغيل واحد، 2026-10-18):** تطبيق التوافق، هدف `aruma-prod` لـ Android (مكتبة حقيقية + `ArumaURL`، بلا `useAuthEmulator`)، على AVD `aruma-a34` (API 33)، 73 طلب Auth كلها وصلت إلى Aruma، **12/12 ناجحة**.
+  الفرق الوحيد عن Firebase iOS: `providerId` هو `null` (لا `password`)، كما في وضع المحاكي. وتفاصيلها في `aruma-conformance/results/ARUMA-REPORT.md`.
+  https لم يُجرَّب (يحتاج خادمًا بعنوان https وCA في مخزن المحاكي).
+
 ## المرحلة 3: التوصية
 
 ### الآلية: مكتبة `aruma-redirect` لـ Android
@@ -183,9 +203,9 @@ java.lang.Thread.run
 
 ### الخطوات التالية
 
-1. إصلاح `requestType` الرقمي في Aruma (وكل حقول enum)، ثم إعادة تشغيل `tools/run_android.sh aruma` حتى 12/12.
+1. ~~إصلاح `requestType` الرقمي في Aruma~~: تم على main، وصار 12/12.
 2. تشغيل واحد على Firebase الحقيقي لـ Android، لحسم فرق `providerId`.
-3. بناء `sdk/android/aruma-redirect` (ContentProvider + factory + الفشل المغلق + اختبارات)، ثم هدف `aruma-prod` لـ Android في تطبيق التوافق، على http وhttps.
+3. ~~بناء `sdk/android/aruma-redirect` وهدف `aruma-prod` لـ Android~~: تم على http (12/12). **بقي https** (CA في مخزن المحاكي).
 4. تحديث ADR-013: Android يُدعم في الإنتاج بالمكتبة، والمحاكي للتطوير.
 
 ## إعادة الإنتاج
