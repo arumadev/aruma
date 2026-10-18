@@ -44,6 +44,19 @@ func (a *API) clientRoutes(r *httpx.Router) {
 	handle(r, http.MethodGet, v2+"/passwordPolicy", a.client(a.passwordPolicy))
 	handle(r, http.MethodGet, v2+"/recaptchaConfig", a.client(a.recaptchaConfig))
 	handle(r, http.MethodPost, "/securetoken.googleapis.com/v1/token", a.client(a.token))
+	// Phone, multi-factor and email-link sign-in come in v1.x. Until then they answer as a
+	// project with the provider disabled does, so the SDKs fail cleanly (AC-A17).
+	notAllowed := a.client(func(w http.ResponseWriter, r *http.Request, _ core.Project) {
+		a.writeError(w, r, core.ErrOperationNotAllowed)
+	})
+	for _, path := range []string{
+		v1 + "/accounts:signInWithPhoneNumber", v1 + "/accounts:sendVerificationCode", v1 + "/accounts:signInWithEmailLink",
+		v2 + "/accounts/mfaEnrollment:start", v2 + "/accounts/mfaEnrollment:finalize", v2 + "/accounts/mfaEnrollment:withdraw",
+		v2 + "/accounts/mfaSignIn:start", v2 + "/accounts/mfaSignIn:finalize",
+		v3 + "/verifyPhoneNumber", v3 + "/sendVerificationCode", v3 + "/emailLinkSignin",
+	} {
+		handle(r, http.MethodPost, path, notAllowed)
+	}
 	a.oobRoutes(r)
 	a.idpRoutes(r)
 }

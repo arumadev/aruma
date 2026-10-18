@@ -467,3 +467,15 @@ func TestAuthPasswordBackoff(t *testing.T) {
 	}
 	authErr(t, last, "TOO_MANY_ATTEMPTS_TRY_LATER")
 }
+
+// AC-A17: phone, MFA and email-link calls fail as a disabled provider does.
+func TestAuthDeferredMethods(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.authProject("chat-app")
+	for _, path := range []string{
+		itk + "accounts:sendVerificationCode", itk + "accounts:signInWithPhoneNumber", itk + "accounts:signInWithEmailLink",
+		"/identitytoolkit.googleapis.com/v2/accounts/mfaSignIn:start", rp + "verifyPhoneNumber",
+	} {
+		authErr(t, p.call(path, map[string]any{}), "OPERATION_NOT_ALLOWED")
+	}
+}
