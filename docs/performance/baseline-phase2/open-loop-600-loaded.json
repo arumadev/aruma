@@ -1,0 +1,136 @@
+{
+  "meta": {
+    "time": "2026-10-18T03:13:08.232133Z",
+    "mode": "in-process",
+    "commit": "e012c2b50c4f1db81d8cce91b8d69f82f91633c2",
+    "goVersion": "go1.27.2",
+    "os": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M1",
+    "numCpu": 8,
+    "gomaxprocs": 8,
+    "maxRssMiB": 183.21875,
+    "args": [
+      "-json",
+      "/private/tmp/claude-501/-Volumes-Work-aurma-project/cf70fe5f-851b-4979-ab61-c49571c2af27/scratchpad/p2f/open-loop-600.json",
+      "-rate",
+      "600",
+      "-c",
+      "64",
+      "-scenarios",
+      "auth-refresh,auth-lookup,auth-signin-custom-token",
+      "-note",
+      "open loop, 600/s, up to 64 in flight"
+    ],
+    "note": "open loop, 600/s, up to 64 in flight"
+  },
+  "plan": {
+    "driver": "open-loop",
+    "concurrency": 64,
+    "ratePerSecond": 600,
+    "warmupSeconds": 2,
+    "durationSeconds": 10,
+    "projects": 10
+  },
+  "results": [
+    {
+      "scenario": "auth-refresh",
+      "what": "POST securetoken /v1/token (refresh_token grant, form as the web SDK sends it): token and user lookup, ID token signed, two touches",
+      "concurrency": 64,
+      "requests": 6000,
+      "ok": 6000,
+      "failed": 0,
+      "statuses": {
+        "200": 6000
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 600,
+      "latencyMs": {
+        "min": 1.721731,
+        "mean": 2.787575,
+        "p50": 2.490367,
+        "p90": 3.768319,
+        "p99": 7.143423,
+        "p99_9": 12.320767,
+        "max": 17.349261
+      },
+      "scheduled": 6000,
+      "maxScheduleLagMs": 2.458403,
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 48000,
+        "acquiresPerRequest": 8,
+        "acquiresThatWaited": 0,
+        "waitedPercent": 0,
+        "meanWaitMsPerWaitingAcquire": 0,
+        "meanAcquireMs": 0.000077332125
+      }
+    },
+    {
+      "scenario": "auth-lookup",
+      "what": "POST accounts:lookup: ID token verified on the server (key lookup, RS256 check), user, providers and password rows",
+      "concurrency": 64,
+      "requests": 6000,
+      "ok": 6000,
+      "failed": 0,
+      "statuses": {
+        "200": 6000
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 600,
+      "latencyMs": {
+        "min": 0.359465,
+        "mean": 1.00191,
+        "p50": 0.884735,
+        "p90": 1.392639,
+        "p99": 3.178495,
+        "p99_9": 13.369343,
+        "max": 18.015005
+      },
+      "scheduled": 6000,
+      "maxScheduleLagMs": 3.80305,
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 36000,
+        "acquiresPerRequest": 6,
+        "acquiresThatWaited": 15,
+        "waitedPercent": 0.041666666666666664,
+        "meanWaitMsPerWaitingAcquire": 0.2266166,
+        "meanAcquireMs": 0.00019641397222222223
+      }
+    },
+    {
+      "scenario": "auth-signin-custom-token",
+      "what": "POST accounts:signInWithCustomToken: service account key lookup, RS256 check, user + refresh token rows, ID token signed",
+      "concurrency": 64,
+      "requests": 6000,
+      "ok": 6000,
+      "failed": 0,
+      "statuses": {
+        "200": 6000
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 600,
+      "latencyMs": {
+        "min": 2.230574,
+        "mean": 145.333411,
+        "p50": 17.563647,
+        "p90": 494.927871,
+        "p99": 570.425343,
+        "p99_9": 612.368383,
+        "max": 827.924456
+      },
+      "scheduled": 6000,
+      "maxScheduleLagMs": 472.96309,
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 29999,
+        "acquiresPerRequest": 4.999833333333333,
+        "acquiresThatWaited": 15271,
+        "waitedPercent": 50.90503016767226,
+        "meanWaitMsPerWaitingAcquire": 14.535524334752145,
+        "meanAcquireMs": 7.399467436781226
+      }
+    }
+  ]
+}

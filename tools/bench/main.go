@@ -1,8 +1,8 @@
 // Command bench measures Aruma's latency and throughput.
 //
 // By default it creates a throwaway database, starts Aruma in this process on a loopback port
-// (wired as `aruma serve` wires it, with production argon2id cost), seeds projects and apps
-// through the public APIs, then drives each scenario in turn and drops the database.
+// (wired as `aruma serve` wires it, with production argon2id cost), seeds projects, apps and
+// Auth users through the public APIs, then drives each scenario in turn and drops the database.
 //
 //	go run ./tools/bench                                   # all scenarios, 10 s each
 //	go run ./tools/bench -scenarios healthz,mgmt-web-config -c 16 -duration 20s
@@ -61,6 +61,7 @@ type options struct {
 	serve                       bool
 	note                        string
 	poolMax                     int
+	authUsers                   int
 }
 
 func main() {
@@ -70,8 +71,8 @@ func main() {
 	flag.StringVar(&o.email, "email", "", "with -url: console account email, for the session and login scenarios")
 	flag.StringVar(&o.password, "password", "", "with -url: console account password")
 	flag.StringVar(&o.scenarios, "scenarios", "all", "comma-separated scenarios to run, or all: "+strings.Join(names(), ","))
-	flag.IntVar(&o.concurrency, "c", 8, "concurrent workers per scenario (console-login uses 4 unless -login-c is set)")
-	loginC := flag.Int("login-c", 0, "concurrent workers for console-login (default 4, the server's argon2id gate)")
+	flag.IntVar(&o.concurrency, "c", 8, "concurrent workers per scenario (the argon2id-bound ones use 4 unless -login-c is set)")
+	loginC := flag.Int("login-c", 0, "concurrent workers for console-login, auth-signup and auth-signin-password (default 4, the server's argon2id gate)")
 	flag.DurationVar(&o.duration, "duration", 10*time.Second, "measured time per scenario (at most 60s)")
 	flag.DurationVar(&o.warmup, "warmup", 2*time.Second, "unrecorded warm-up before each scenario's measured window")
 	flag.DurationVar(&o.pause, "pause", time.Second, "idle time between scenarios")
@@ -81,11 +82,13 @@ func main() {
 	flag.StringVar(&o.cpuProfile, "cpuprofile", "", "write a CPU profile of this process (server included when in-process)")
 	flag.BoolVar(&o.serve, "serve", false, "start an in-process server, print how to target it, and wait for Ctrl-C")
 	flag.IntVar(&o.poolMax, "db-pool-max", 0, "in-process: the server's database pool size (default: pgx's max(4, NumCPU))")
+	flag.IntVar(&o.authUsers, "auth-users", 256, "email/password users to seed for the auth-* scenarios")
+	flag.Uint64Var(&clientAddrs, "client-addrs", clientAddrs, "client addresses the rate-limited scenarios cycle through (0: a new one per request)")
 	flag.StringVar(&o.note, "note", "", "free text stored in the JSON, e.g. the machine's state")
 	flag.Parse()
 	if *loginC > 0 {
 		for i := range Scenarios {
-			if Scenarios[i].Name == "console-login" {
+			if Scenarios[i].Argon2 {
 				Scenarios[i].Concurrency = *loginC
 			}
 		}
@@ -108,8 +111,8 @@ func run(o options) error {
 	if o.duration <= 0 || o.duration > time.Minute {
 		return errors.New("-duration must be between 0 and 60s")
 	}
-	if o.concurrency < 1 || o.projects < 1 {
-		return errors.New("-c and -projects must be at least 1")
+	if o.concurrency < 1 || o.projects < 1 || o.authUsers < 1 {
+		return errors.New("-c, -projects and -auth-users must be at least 1")
 	}
 	selected, err := selectScenarios(o.scenarios)
 	if err != nil {
@@ -158,10 +161,11 @@ func run(o options) error {
 		return nil
 	}
 
-	needSession, needSA := false, false
+	need := Needs{AuthUsers: o.authUsers}
 	for _, s := range selected {
-		needSession = needSession || s.NeedSession
-		needSA = needSA || s.NeedSA
+		need.Session = need.Session || s.NeedSession
+		need.SA = need.SA || s.NeedSA
+		need.Auth = need.Auth || s.NeedAuth
 	}
 	if t.Email == "" || t.Password == "" {
 		var kept []Scenario
@@ -172,10 +176,13 @@ func run(o options) error {
 			}
 			kept = append(kept, s)
 		}
-		selected, needSession = kept, false
+		selected, need.Session = kept, false
 	}
 	fmt.Fprintf(os.Stderr, "seeding %d projects (3 apps each)…\n", o.projects)
-	fx, err := Seed(ctx, hc, t, o.projects, needSession, needSA)
+	if need.Auth {
+		fmt.Fprintf(os.Stderr, "seeding %d Auth users…\n", o.authUsers)
+	}
+	fx, err := Seed(ctx, hc, t, o.projects, need)
 	if err != nil {
 		return err
 	}

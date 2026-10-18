@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "time": "2026-10-18T03:04:07.892632Z",
+    "mode": "in-process",
+    "commit": "e012c2b50c4f1db81d8cce91b8d69f82f91633c2",
+    "goVersion": "go1.27.2",
+    "os": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M1",
+    "numCpu": 8,
+    "gomaxprocs": 8,
+    "maxRssMiB": 196.53125,
+    "args": [
+      "-scenarios",
+      "auth-refresh",
+      "-cpuprofile",
+      "/private/tmp/claude-501/-Volumes-Work-aurma-project/cf70fe5f-851b-4979-ab61-c49571c2af27/scratchpad/p2f/prof-auth-refresh.pprof",
+      "-json",
+      "/private/tmp/claude-501/-Volumes-Work-aurma-project/cf70fe5f-851b-4979-ab61-c49571c2af27/scratchpad/p2f/prof-auth-refresh.json"
+    ]
+  },
+  "plan": {
+    "driver": "closed-loop",
+    "concurrency": 8,
+    "warmupSeconds": 2,
+    "durationSeconds": 10,
+    "projects": 10
+  },
+  "results": [
+    {
+      "scenario": "auth-refresh",
+      "what": "POST securetoken /v1/token (refresh_token grant, form as the web SDK sends it): token and user lookup, ID token signed, two touches",
+      "concurrency": 8,
+      "requests": 19249,
+      "ok": 19249,
+      "failed": 0,
+      "statuses": {
+        "200": 19249
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 1924.9,
+      "latencyMs": {
+        "min": 1.908083,
+        "mean": 4.155543,
+        "p50": 3.932159,
+        "p90": 5.636095,
+        "p99": 10.616831,
+        "p99_9": 28.573695,
+        "max": 63.30525
+      },
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 153991,
+        "acquiresPerRequest": 7.999948049249312,
+        "acquiresThatWaited": 0,
+        "waitedPercent": 0,
+        "meanWaitMsPerWaitingAcquire": 0,
+        "meanAcquireMs": 0.00021463099142157656
+      }
+    }
+  ]
+}

@@ -154,15 +154,27 @@ type Fixture struct {
 	Cookie     string   // "name=value" of a console session
 	Assertions []string // signed service account JWTs, valid for an hour
 	TokenURL   string   // where to POST them
+	Auth       *AuthFixture
+}
+
+// Needs says which optional parts of the fixture the selected scenarios use.
+type Needs struct {
+	Session bool // a console session cookie
+	SA      bool // a service account key in the first project
+	Auth    bool // Auth users in the first project (AuthFixture)
+	// AuthUsers is how many email/password users to create when Auth is set.
+	AuthUsers int
 }
 
 // Seed creates n projects, each with a web, an Android and an iOS app, a service account key in
-// the first, and signs in once for a console session. Everything goes through the HTTP APIs
-// with the CLI token, as a developer would, so it works against any server.
-func Seed(ctx context.Context, hc *http.Client, t *Target, n int, needSession, needSA bool) (*Fixture, error) {
+// the first, Auth users in the first, and signs in once for a console session. Everything goes
+// through the HTTP APIs with the CLI token, as a developer would, so it works against any
+// server.
+func Seed(ctx context.Context, hc *http.Client, t *Target, n int, need Needs) (*Fixture, error) {
 	c := &apiClient{hc: hc, base: t.URL + "/console/v1", token: t.Token}
 	f := &Fixture{}
 	run := randomHex(3)
+	var firstKeyID string // the API key of the first project's web app
 	for i := range n {
 		id := fmt.Sprintf("bench-%s-%03d", run, i)
 		if err := c.json(ctx, "POST", "/projects", map[string]string{"projectId": id, "displayName": "Bench " + id}, nil); err != nil {
@@ -171,7 +183,8 @@ func Seed(ctx context.Context, hc *http.Client, t *Target, n int, needSession, n
 		f.Projects = append(f.Projects, id)
 		ns := fmt.Sprintf("com.bench.p%s%03d", run, i)
 		var web struct {
-			AppID string `json:"appId"`
+			AppID    string `json:"appId"`
+			APIKeyID string `json:"apiKeyId"`
 		}
 		apps := []struct {
 			body map[string]string
@@ -187,9 +200,13 @@ func Seed(ctx context.Context, hc *http.Client, t *Target, n int, needSession, n
 			}
 		}
 		f.WebApps = append(f.WebApps, web.AppID)
+		if i == 0 {
+			firstKeyID = web.APIKeyID
+		}
 	}
 
-	if needSA && n > 0 {
+	var keyFile *serviceAccountKey
+	if need.SA && n > 0 {
 		var sa struct {
 			ID string `json:"id"`
 		}
@@ -200,13 +217,23 @@ func Seed(ctx context.Context, hc *http.Client, t *Target, n int, needSession, n
 		if err != nil {
 			return nil, fmt.Errorf("create service account key: %w", err)
 		}
-		if f.Assertions, f.TokenURL, err = signAssertions(raw, 32); err != nil {
+		if keyFile, err = parseKeyFile(raw); err != nil {
+			return nil, err
+		}
+		if f.Assertions, err = signAssertions(keyFile, 32); err != nil {
 			return nil, err
 		}
 		f.TokenURL = t.URL + "/oauth2/v1/token"
 	}
 
-	if needSession {
+	if need.Auth && n > 0 {
+		var err error
+		if f.Auth, err = seedAuth(ctx, hc, c, t.URL, f.Projects[0], firstKeyID, run, need.AuthUsers, keyFile); err != nil {
+			return nil, err
+		}
+	}
+
+	if need.Session {
 		cookie, err := login(ctx, hc, t, "")
 		if err != nil {
 			return nil, fmt.Errorf("console login: %w", err)
@@ -246,11 +273,15 @@ func login(ctx context.Context, hc *http.Client, t *Target, forwardedFor string)
 	return "", errors.New("no session cookie in the login response")
 }
 
-// signAssertions signs n RS256 JWT bearer assertions (RFC 7523) with a downloaded key file, the
-// way Google's client libraries do. They are signed up front so the bench's own RSA signing
-// does not compete with the server for CPU; the server does not reject replays, so reusing
-// them is valid.
-func signAssertions(keyFile []byte, n int) ([]string, string, error) {
+// serviceAccountKey is a downloaded service account key file, parsed.
+type serviceAccountKey struct {
+	ID       string // private_key_id, the JWT kid
+	Email    string // client_email
+	TokenURI string // token_uri
+	Key      *rsa.PrivateKey
+}
+
+func parseKeyFile(keyFile []byte) (*serviceAccountKey, error) {
 	var kf struct {
 		PrivateKeyID string `json:"private_key_id"`
 		PrivateKey   string `json:"private_key"`
@@ -258,39 +289,59 @@ func signAssertions(keyFile []byte, n int) ([]string, string, error) {
 		TokenURI     string `json:"token_uri"`
 	}
 	if err := json.Unmarshal(keyFile, &kf); err != nil {
-		return nil, "", fmt.Errorf("key file: %w", err)
+		return nil, fmt.Errorf("key file: %w", err)
 	}
 	block, _ := pem.Decode([]byte(kf.PrivateKey))
 	if block == nil {
-		return nil, "", errors.New("key file: no PEM private key")
+		return nil, errors.New("key file: no PEM private key")
 	}
 	k, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
-		return nil, "", fmt.Errorf("key file: %w", err)
+		return nil, fmt.Errorf("key file: %w", err)
 	}
 	key, ok := k.(*rsa.PrivateKey)
 	if !ok {
-		return nil, "", errors.New("key file: not an RSA key")
+		return nil, errors.New("key file: not an RSA key")
 	}
+	return &serviceAccountKey{ID: kf.PrivateKeyID, Email: kf.ClientEmail, TokenURI: kf.TokenURI, Key: key}, nil
+}
+
+// sign returns claims as an RS256 JWT signed with the key, the way Google's libraries sign.
+func (k *serviceAccountKey) sign(claims map[string]any) (string, error) {
 	enc := base64.RawURLEncoding
-	hdr, _ := json.Marshal(map[string]string{"alg": "RS256", "typ": "JWT", "kid": kf.PrivateKeyID})
+	hdr, _ := json.Marshal(map[string]string{"alg": "RS256", "typ": "JWT", "kid": k.ID})
+	body, err := json.Marshal(claims)
+	if err != nil {
+		return "", err
+	}
+	signing := enc.EncodeToString(hdr) + "." + enc.EncodeToString(body)
+	digest := sha256.Sum256([]byte(signing))
+	sig, err := rsa.SignPKCS1v15(rand.Reader, k.Key, crypto.SHA256, digest[:])
+	if err != nil {
+		return "", err
+	}
+	return signing + "." + enc.EncodeToString(sig), nil
+}
+
+// signAssertions signs n RS256 JWT bearer assertions (RFC 7523) with a downloaded key file, the
+// way Google's client libraries do. They are signed up front so the bench's own RSA signing
+// does not compete with the server for CPU; the server does not reject replays, so reusing
+// them is valid.
+func signAssertions(k *serviceAccountKey, n int) ([]string, error) {
 	out := make([]string, n)
 	now := time.Now().Unix()
 	for i := range out {
-		claims, _ := json.Marshal(map[string]any{
-			"iss": kf.ClientEmail, "sub": kf.ClientEmail, "aud": kf.TokenURI,
+		var err error
+		out[i], err = k.sign(map[string]any{
+			"iss": k.Email, "sub": k.Email, "aud": k.TokenURI,
 			"scope": "https://www.googleapis.com/auth/cloud-platform",
 			"iat":   now, "exp": now + 3600, "jti": randomHex(8),
 		})
-		signing := enc.EncodeToString(hdr) + "." + enc.EncodeToString(claims)
-		digest := sha256.Sum256([]byte(signing))
-		sig, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, digest[:])
 		if err != nil {
-			return nil, "", err
+			return nil, err
 		}
-		out[i] = signing + "." + enc.EncodeToString(sig)
 	}
-	return out, kf.TokenURI, nil
+	return out, nil
 }
 
 type apiClient struct {

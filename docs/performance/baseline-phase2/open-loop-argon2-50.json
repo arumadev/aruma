@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "time": "2026-10-18T03:21:03.23048Z",
+    "mode": "in-process",
+    "commit": "e012c2b50c4f1db81d8cce91b8d69f82f91633c2",
+    "goVersion": "go1.27.2",
+    "os": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M1",
+    "numCpu": 8,
+    "gomaxprocs": 8,
+    "maxRssMiB": 196.78125,
+    "args": [
+      "-json",
+      "/private/tmp/claude-501/-Volumes-Work-aurma-project/cf70fe5f-851b-4979-ab61-c49571c2af27/scratchpad/p2f/open-loop-argon2-50-q.json",
+      "-rate",
+      "50",
+      "-login-c",
+      "16",
+      "-scenarios",
+      "auth-signup,auth-signin-password",
+      "-note",
+      "open loop, 50/s, up to 16 in flight"
+    ],
+    "note": "open loop, 50/s, up to 16 in flight"
+  },
+  "plan": {
+    "driver": "open-loop",
+    "concurrency": 8,
+    "ratePerSecond": 50,
+    "warmupSeconds": 2,
+    "durationSeconds": 10,
+    "projects": 10
+  },
+  "results": [
+    {
+      "scenario": "auth-signup",
+      "what": "POST accounts:signUp (email/password): argon2id hash, user + provider + password + refresh token + event insert, ID token signed",
+      "concurrency": 16,
+      "requests": 500,
+      "ok": 500,
+      "failed": 0,
+      "statuses": {
+        "200": 500
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 50,
+      "latencyMs": {
+        "min": 27.928917,
+        "mean": 29.457626,
+        "p50": 29.360127,
+        "p90": 30.932991,
+        "p99": 32.505855,
+        "p99_9": 35.524167,
+        "max": 35.524167
+      },
+      "scheduled": 500,
+      "maxScheduleLagMs": 2.065834,
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 2500,
+        "acquiresPerRequest": 5,
+        "acquiresThatWaited": 0,
+        "waitedPercent": 0,
+        "meanWaitMsPerWaitingAcquire": 0,
+        "meanAcquireMs": 0.0002419652
+      }
+    },
+    {
+      "scenario": "auth-signin-password",
+      "what": "POST accounts:signInWithPassword: argon2id verify, refresh token insert, audit row, ID token signed",
+      "concurrency": 16,
+      "requests": 500,
+      "ok": 500,
+      "failed": 0,
+      "statuses": {
+        "200": 500
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 50,
+      "latencyMs": {
+        "min": 27.5685,
+        "mean": 29.651913,
+        "p50": 29.097983,
+        "p90": 31.719423,
+        "p99": 36.700159,
+        "p99_9": 47.647083,
+        "max": 47.647083
+      },
+      "scheduled": 500,
+      "maxScheduleLagMs": 2.616375,
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 3500,
+        "acquiresPerRequest": 7,
+        "acquiresThatWaited": 0,
+        "waitedPercent": 0,
+        "meanWaitMsPerWaitingAcquire": 0,
+        "meanAcquireMs": 0.00020311657142857144
+      }
+    }
+  ]
+}

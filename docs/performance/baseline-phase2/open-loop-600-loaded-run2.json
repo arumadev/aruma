@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "time": "2026-10-18T03:14:53.404658Z",
+    "mode": "in-process",
+    "commit": "e012c2b50c4f1db81d8cce91b8d69f82f91633c2",
+    "goVersion": "go1.27.2",
+    "os": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M1",
+    "numCpu": 8,
+    "gomaxprocs": 8,
+    "maxRssMiB": 213.0625,
+    "args": [
+      "-json",
+      "/private/tmp/claude-501/-Volumes-Work-aurma-project/cf70fe5f-851b-4979-ab61-c49571c2af27/scratchpad/p2f/open-loop-600-custom-run2.json",
+      "-rate",
+      "600",
+      "-c",
+      "64",
+      "-scenarios",
+      "auth-signin-custom-token,auth-refresh",
+      "-note",
+      "open loop, 600/s, rerun"
+    ],
+    "note": "open loop, 600/s, rerun"
+  },
+  "plan": {
+    "driver": "open-loop",
+    "concurrency": 64,
+    "ratePerSecond": 600,
+    "warmupSeconds": 2,
+    "durationSeconds": 10,
+    "projects": 10
+  },
+  "results": [
+    {
+      "scenario": "auth-signin-custom-token",
+      "what": "POST accounts:signInWithCustomToken: service account key lookup, RS256 check, user + refresh token rows, ID token signed",
+      "concurrency": 64,
+      "requests": 6000,
+      "ok": 6000,
+      "failed": 0,
+      "statuses": {
+        "200": 6000
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 600,
+      "latencyMs": {
+        "min": 1.919443,
+        "mean": 7.957295,
+        "p50": 5.701631,
+        "p90": 10.616831,
+        "p99": 73.400319,
+        "p99_9": 97.517567,
+        "max": 105.793881
+      },
+      "scheduled": 6000,
+      "maxScheduleLagMs": 14.28087,
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 29888,
+        "acquiresPerRequest": 4.981333333333334,
+        "acquiresThatWaited": 1349,
+        "waitedPercent": 4.513517130620985,
+        "meanWaitMsPerWaitingAcquire": 6.09749852779837,
+        "meanAcquireMs": 0.275438687366167
+      }
+    },
+    {
+      "scenario": "auth-refresh",
+      "what": "POST securetoken /v1/token (refresh_token grant, form as the web SDK sends it): token and user lookup, ID token signed, two touches",
+      "concurrency": 64,
+      "requests": 6000,
+      "ok": 6000,
+      "failed": 0,
+      "statuses": {
+        "200": 6000
+      },
+      "elapsedSeconds": 10,
+      "okPerSecond": 600,
+      "latencyMs": {
+        "min": 2.06191,
+        "mean": 84.909592,
+        "p50": 5.963775,
+        "p90": 360.710143,
+        "p99": 520.093695,
+        "p99_9": 553.648127,
+        "max": 571.536928
+      },
+      "scheduled": 6000,
+      "maxScheduleLagMs": 447.109979,
+      "dbPool": {
+        "maxConns": 8,
+        "acquires": 47985,
+        "acquiresPerRequest": 7.9975,
+        "acquiresThatWaited": 14038,
+        "waitedPercent": 29.254975513181204,
+        "meanWaitMsPerWaitingAcquire": 9.477386798048155,
+        "meanAcquireMs": 2.772734551693237
+      }
+    }
+  ]
+}
