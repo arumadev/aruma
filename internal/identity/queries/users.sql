@@ -55,6 +55,20 @@ LIMIT @page_size;
 -- name: CountUsers :one
 SELECT count(*) FROM auth.users WHERE project_number = @project_number AND tenant_id = @tenant_id;
 
+-- name: SearchUsers :many
+-- The console's user search: an email prefix (lower case) or an exact uid, keyset-paginated by uid.
+SELECT * FROM auth.users
+WHERE project_number = @project_number AND tenant_id = @tenant_id
+  AND (starts_with(email_lower, @email_prefix::text) OR uid = @uid::text)
+  AND uid > @after::text
+ORDER BY uid
+LIMIT @page_size;
+
+-- name: CountSearchUsers :one
+SELECT count(*) FROM auth.users
+WHERE project_number = @project_number AND tenant_id = @tenant_id
+  AND (starts_with(email_lower, @email_prefix::text) OR uid = @uid::text);
+
 -- name: UpdateUser :one
 UPDATE auth.users SET
     email = @email,

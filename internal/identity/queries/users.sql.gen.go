@@ -10,6 +10,31 @@ import (
 	"time"
 )
 
+const countSearchUsers = `-- name: CountSearchUsers :one
+SELECT count(*) FROM auth.users
+WHERE project_number = $1 AND tenant_id = $2
+  AND (starts_with(email_lower, $3::text) OR uid = $4::text)
+`
+
+type CountSearchUsersParams struct {
+	ProjectNumber int64
+	TenantID      string
+	EmailPrefix   string
+	Uid           string
+}
+
+func (q *Queries) CountSearchUsers(ctx context.Context, arg CountSearchUsersParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countSearchUsers,
+		arg.ProjectNumber,
+		arg.TenantID,
+		arg.EmailPrefix,
+		arg.Uid,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countUsers = `-- name: CountUsers :one
 SELECT count(*) FROM auth.users WHERE project_number = $1 AND tenant_id = $2
 `
@@ -620,6 +645,67 @@ func (q *Queries) RevokeUserTokens(ctx context.Context, arg RevokeUserTokensPara
 	var tokens_valid_after time.Time
 	err := row.Scan(&tokens_valid_after)
 	return tokens_valid_after, err
+}
+
+const searchUsers = `-- name: SearchUsers :many
+SELECT project_number, tenant_id, uid, email, email_lower, email_verified, display_name, photo_url, disabled, custom_claims, tokens_valid_after, created_at, last_login_at, last_refresh_at FROM auth.users
+WHERE project_number = $1 AND tenant_id = $2
+  AND (starts_with(email_lower, $3::text) OR uid = $4::text)
+  AND uid > $5::text
+ORDER BY uid
+LIMIT $6
+`
+
+type SearchUsersParams struct {
+	ProjectNumber int64
+	TenantID      string
+	EmailPrefix   string
+	Uid           string
+	After         string
+	PageSize      int32
+}
+
+// The console's user search: an email prefix (lower case) or an exact uid, keyset-paginated by uid.
+func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]AuthUser, error) {
+	rows, err := q.db.Query(ctx, searchUsers,
+		arg.ProjectNumber,
+		arg.TenantID,
+		arg.EmailPrefix,
+		arg.Uid,
+		arg.After,
+		arg.PageSize,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AuthUser{}
+	for rows.Next() {
+		var i AuthUser
+		if err := rows.Scan(
+			&i.ProjectNumber,
+			&i.TenantID,
+			&i.Uid,
+			&i.Email,
+			&i.EmailLower,
+			&i.EmailVerified,
+			&i.DisplayName,
+			&i.PhotoUrl,
+			&i.Disabled,
+			&i.CustomClaims,
+			&i.TokensValidAfter,
+			&i.CreatedAt,
+			&i.LastLoginAt,
+			&i.LastRefreshAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const setPassword = `-- name: SetPassword :exec
