@@ -123,3 +123,24 @@ Every path below starts with `/projects/{project}`.
 | GET | `/serviceAccounts/{sa}/keys` | → `{keys: [{keyId, keyAlgorithm, validAfterTime, validBeforeTime?, disabled, createTime}]}` |
 | POST | `/serviceAccounts/{sa}/keys` | → the key file as a download. **Shown once; Aruma does not keep the private key.** At most 10 keys |
 | DELETE | `/serviceAccounts/{sa}/keys/{keyId}` | → 204 |
+
+## Auth: users, sign-in settings and signing keys
+
+Every path below starts with `/projects/{project}/auth`. They act on Aruma Auth for a project the caller owns. Auth errors keep the Identity Toolkit code at the start of the message (`WEAK_PASSWORD : Password should be at least 6 characters`, `CLAIMS_TOO_LARGE`, `FORBIDDEN_CLAIM : sub`), inside the usual `google.rpc.Status`: `USER_NOT_FOUND` is `NOT_FOUND`, `EMAIL_EXISTS` and `DUPLICATE_LOCAL_ID` are `ALREADY_EXISTS`, and the rest are `INVALID_ARGUMENT`.
+
+| Method | Path | Body → Response |
+|---|---|---|
+| GET | `/users?pageSize=&pageToken=&query=` | → `{users: [User], nextPageToken, totalSize}`. Ordered by uid. `query` matches an email prefix (case-insensitive) or an exact uid; `totalSize` counts the matches |
+| POST | `/users` | `{uid?, email?, password?, displayName?, emailVerified?, disabled?}` → `User`. A uid is generated when omitted; the password follows the project's policy |
+| GET | `/users/{uid}` | → `User` |
+| PATCH | `/users/{uid}` | `{email?, password?, displayName?, photoUrl?, emailVerified?, disabled?, customClaims?}` → `User`. `customClaims` is a JSON object as a string, at most 1000 characters, without reserved names; `""` clears them. A new email or password revokes the user's sessions |
+| DELETE | `/users/{uid}` | → 204 |
+| POST | `/users/{uid}:revokeSessions` | → `User`. Refresh tokens and the ID tokens issued so far stop working (`tokensValidAfterTime` moves to now) |
+| GET | `/config` | → `AuthConfig` |
+| PATCH | `/config` | the `AuthConfig` fields to change (not `limits` or `updateTime`) → `AuthConfig`. `passwordMinLength` is 6 to 30, `passwordEnforcement` `OFF` or `ENFORCE`; `authorizedDomains` are bare host names or IP addresses (no scheme, port, path or wildcard, at most 100), stored in lower case without duplicates |
+| GET | `/signingKeys` | → `{keys: [{kid, purpose: "id_token"\|"session_cookie", state: "next"\|"active"\|"retired", createTime, activateTime?, retireTime?}]}`. Public data only; empty until the project issues its first token |
+| POST | `/signingKeys:rotate` | `{purpose, emergency?}` → `{keys}`. Normal: next becomes active and active retired, so issued tokens verify until they expire. Emergency: the active key is destroyed, and every token it signed fails at once |
+
+`User` = `{uid, email?, emailVerified, displayName?, photoUrl?, disabled, providers: [{providerId, email?}], customClaims?, hasPassword, createTime, lastSignInTime?, lastRefreshTime?, tokensValidAfterTime}`. The password hash is never returned. An anonymous user has no providers and no email.
+
+`AuthConfig` = `{passwordEnabled, anonymousEnabled, clientSignupEnabled, enumerationProtection, authorizedDomains, passwordMinLength, passwordRequireLowercase, passwordRequireUppercase, passwordRequireNumeric, passwordRequireSymbol, passwordEnforcement, appName, updateTime, limits}`. `limits` is read-only: the values no setting changes, `{idTokenLifetimeSeconds, sessionCookieMaxSeconds, signingKeyRotationDays, requestsPerMinute, requestBurst, signUpsPerMinute, signUpBurst, passwordFailures, passwordFailureWindowSeconds, passwordBackoffMaxSeconds}` (client calls and sign-ups are counted per address, password failures per project and email).
