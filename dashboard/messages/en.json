@@ -887,7 +887,7 @@
       "rotated": "{purpose}: rotated.",
       "emergencyTitle": "Emergency rotation of the {purpose}?",
       "emergencyWarning": "Use this only if a key may have leaked.",
-      "emergencyBody": "The active key is destroyed at once: every token it signed stops working, and users must refresh or sign in again.",
+      "emergencyBody": "The active key is destroyed. Aruma refuses the tokens it signed at once; servers that verify tokens themselves stop accepting them within a minute, when their cached key list expires. Users must refresh or sign in again.",
       "emergencyDone": "{purpose}: the active key was destroyed.",
       "confirmLabel": "Project ID",
       "confirmHint": "Type <id></id> to confirm.",

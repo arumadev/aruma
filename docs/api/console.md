@@ -180,7 +180,7 @@ Every path below starts with `/projects/{project}/auth`. They act on Aruma Auth 
 | GET | `/config` | → `AuthConfig` |
 | PATCH | `/config` | the `AuthConfig` fields to change (not `limits` or `updateTime`) → `AuthConfig`. `passwordMinLength` is 6 to 30, `passwordEnforcement` `OFF` or `ENFORCE`; `authorizedDomains` are bare host names or IP addresses (no scheme, port, path or wildcard, at most 100), stored in lower case without duplicates |
 | GET | `/signingKeys` | → `{keys: [{kid, purpose: "id_token"\|"session_cookie", state: "next"\|"active"\|"retired", createTime, activateTime?, retireTime?}]}`. Public data only; empty until the project issues its first token |
-| POST | `/signingKeys:rotate` | `{purpose, emergency?}` → `{keys}`. Normal: next becomes active and active retired, so issued tokens verify until they expire. Emergency: the active key is destroyed, and every token it signed fails at once |
+| POST | `/signingKeys:rotate` | `{purpose, emergency?}` → `{keys}`. Normal: next becomes active and active retired, so issued tokens verify until they expire. Emergency: the active key is destroyed; Aruma refuses every token it signed at once, and verifiers that cache the JWKS (`max-age=60`) within a minute |
 
 `User` = `{uid, email?, emailVerified, displayName?, photoUrl?, disabled, providers: [{providerId, email?}], customClaims?, hasPassword, createTime, lastSignInTime?, lastRefreshTime?, tokensValidAfterTime}`. The password hash is never returned. An anonymous user has no providers and no email.
 
