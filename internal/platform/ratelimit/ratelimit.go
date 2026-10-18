@@ -83,8 +83,16 @@ func (l *Limiter) Allow(key string) (bool, time.Duration) {
 		if len(l.buckets) >= maxKeys {
 			l.sweep(now)
 			if len(l.buckets) >= maxKeys {
-				// Full of active keys: refuse newcomers rather than grow without bound.
-				return false, time.Second
+				// Full of active keys: the least recently used bucket makes room. Refusing
+				// newcomers instead would let a flood of addresses lock everyone else out.
+				var oldest string
+				var at time.Time
+				for k, x := range l.buckets {
+					if oldest == "" || x.last.Before(at) {
+						oldest, at = k, x.last
+					}
+				}
+				delete(l.buckets, oldest)
 			}
 		}
 		b = &bucket{tokens: l.burst, last: now}
@@ -198,7 +206,9 @@ func (a *Attempt) Done(success bool) {
 }
 
 // entry returns the live entry for key, starting a new window when the old one has lapsed.
-// It returns nil when the map is full of active entries.
+// When the map is full of active entries, the least recently failed one without an attempt in
+// flight makes room: refusing every new key instead would let a few thousand addresses block
+// password sign-in for everyone. It returns nil only when every entry has an attempt in flight.
 func (b *Backoff) entry(key string, now time.Time) *failures {
 	e, ok := b.entries[key]
 	if ok && (e.inflight > 0 || now.Sub(e.last) <= b.Window || now.Before(e.locked)) {
@@ -206,7 +216,7 @@ func (b *Backoff) entry(key string, now time.Time) *failures {
 	}
 	if !ok && len(b.entries) >= maxKeys {
 		b.sweep(now)
-		if len(b.entries) >= maxKeys {
+		if len(b.entries) >= maxKeys && !b.evictOldest() {
 			return nil
 		}
 	}
@@ -225,6 +235,23 @@ func (b *Backoff) fail(e *failures, now time.Time) {
 		}
 		e.locked = now.Add(d)
 	}
+}
+
+// evictOldest drops the entry whose last failure is oldest among those with no attempt in
+// flight. It reports whether it found one.
+func (b *Backoff) evictOldest() bool {
+	var oldest string
+	var at time.Time
+	for k, e := range b.entries {
+		if e.inflight == 0 && (oldest == "" || e.last.Before(at)) {
+			oldest, at = k, e.last
+		}
+	}
+	if oldest == "" {
+		return false
+	}
+	delete(b.entries, oldest)
+	return true
 }
 
 func (b *Backoff) sweep(now time.Time) {
