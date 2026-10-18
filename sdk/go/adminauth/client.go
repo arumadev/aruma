@@ -117,7 +117,7 @@ func NewClient(ctx context.Context, app *firebase.App, opts ...Option) (*Client,
 	}
 	hc := s.httpClient
 	if hc == nil {
-		hc = &http.Client{Timeout: 30 * time.Second}
+		hc = defaultHTTPClient()
 	}
 	ts, err := newTokenSource(base, key, hc)
 	if err != nil {
@@ -225,4 +225,14 @@ func (c *Client) CustomTokenWithClaims(ctx context.Context, uid string, claims m
 		return "", err
 	}
 	return official.CustomTokenWithClaims(ctx, uid, claims)
+}
+
+// defaultHTTPClient follows no redirect: one could fetch the key set from another origin, or
+// carry the access token there, past the checks on the configured URL. The Node library
+// refuses redirects the same way.
+func defaultHTTPClient() *http.Client {
+	return &http.Client{
+		Timeout:       30 * time.Second,
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+	}
 }

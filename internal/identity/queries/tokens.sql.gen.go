@@ -12,32 +12,39 @@ import (
 	"time"
 )
 
-const createRefreshToken = `-- name: CreateRefreshToken :exec
-INSERT INTO auth.refresh_tokens (token_hash, project_number, tenant_id, uid, sign_in_provider, custom_claims, auth_time)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+const createRefreshToken = `-- name: CreateRefreshToken :one
+INSERT INTO auth.refresh_tokens (token_hash, project_number, tenant_id, uid, sign_in_provider, custom_claims, auth_time, created_at)
+SELECT $1, u.project_number, u.tenant_id, u.uid, $2, $3,
+       GREATEST(now(), u.tokens_valid_after), GREATEST(now(), u.tokens_valid_after)
+FROM auth.users u
+WHERE u.project_number = $4 AND u.tenant_id = $5 AND u.uid = $6
+RETURNING auth_time
 `
 
 type CreateRefreshTokenParams struct {
 	TokenHash      []byte
+	SignInProvider string
+	CustomClaims   []byte
 	ProjectNumber  int64
 	TenantID       string
 	Uid            string
-	SignInProvider string
-	CustomClaims   []byte
-	AuthTime       time.Time
 }
 
-func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error {
-	_, err := q.db.Exec(ctx, createRefreshToken,
+// Starts a session no earlier than the user's revocation point, which RevokeUserTokens puts at
+// the next whole second: a session the revoking transaction itself starts (the new session of a
+// password change) is dated there and stays valid. Returns the session's auth_time.
+func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (time.Time, error) {
+	row := q.db.QueryRow(ctx, createRefreshToken,
 		arg.TokenHash,
+		arg.SignInProvider,
+		arg.CustomClaims,
 		arg.ProjectNumber,
 		arg.TenantID,
 		arg.Uid,
-		arg.SignInProvider,
-		arg.CustomClaims,
-		arg.AuthTime,
 	)
-	return err
+	var auth_time time.Time
+	err := row.Scan(&auth_time)
+	return auth_time, err
 }
 
 const deleteRefreshToken = `-- name: DeleteRefreshToken :exec

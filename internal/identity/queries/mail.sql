@@ -1,6 +1,10 @@
 -- name: CreateOobCode :exec
-INSERT INTO auth.oob_codes (code_hash, project_number, tenant_id, uid, request_type, email, new_email, continue_url, expires_at)
-VALUES (@code_hash, @project_number, @tenant_id, @uid, @request_type, @email, sqlc.narg(new_email), sqlc.narg(continue_url), @expires_at);
+-- A code is dated no earlier than its user's revocation point, as a session is, so a code asked
+-- for right after a password change is not taken for one from before it.
+INSERT INTO auth.oob_codes (code_hash, project_number, tenant_id, uid, request_type, email, new_email, continue_url, expires_at, created_at)
+VALUES (@code_hash, @project_number, @tenant_id, @uid, @request_type, @email, sqlc.narg(new_email), sqlc.narg(continue_url), @expires_at,
+        GREATEST(now(), (SELECT u.tokens_valid_after FROM auth.users u
+                         WHERE u.project_number = @project_number AND u.tenant_id = @tenant_id AND u.uid = @uid)));
 
 -- name: GetOobCode :one
 SELECT * FROM auth.oob_codes WHERE project_number = @project_number AND code_hash = @code_hash;

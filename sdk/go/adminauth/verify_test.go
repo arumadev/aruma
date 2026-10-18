@@ -30,6 +30,7 @@ type issuer struct {
 	idKey, ckKey *rsa.PrivateKey
 	discIssuer   string // overrides the discovery document's issuer
 	jwksURI      string // overrides its jwks_uri
+	jwksRedirect string // answers the key set with a redirect here
 }
 
 func newIssuer(t *testing.T) *issuer {
@@ -58,6 +59,10 @@ func newIssuer(t *testing.T) *issuer {
 			}
 			_ = json.NewEncoder(w).Encode(doc)
 		case "jwks.json":
+			if is.jwksRedirect != "" {
+				http.Redirect(w, r, is.jwksRedirect, http.StatusFound)
+				return
+			}
 			k := &is.idKey.PublicKey
 			if prefix == "session-issuers" {
 				k = &is.ckKey.PublicKey
@@ -192,17 +197,27 @@ func TestSessionCookieVerifier(t *testing.T) {
 }
 
 func TestVerifierTrustsOnlyItsServer(t *testing.T) {
+	if _, err := firebaseErrorType(); err != nil { // as NewClient does, so the codes are official
+		t.Fatal(err)
+	}
 	is := newIssuer(t)
 	tok := is.token("/issuers/", is.idKey, nil, nil)
-	for name, set := range map[string]func(){
-		"wrong issuer":   func() { is.discIssuer = "https://evil.example/issuers/demo-app" },
-		"keys elsewhere": func() { is.jwksURI = "https://evil.example/jwks.json" },
+	// Another server publishing kid key-1 with its own key, and a token signed by that key.
+	evil := newIssuer(t)
+	forged := is.token("/issuers/", evil.ckKey, nil, nil)
+	for name, c := range map[string]struct {
+		set func()
+		tok string
+	}{
+		"wrong issuer":       {func() { is.discIssuer = "https://evil.example/issuers/demo-app" }, tok},
+		"keys elsewhere":     {func() { is.jwksURI = "https://evil.example/jwks.json" }, tok},
+		"keys by a redirect": {func() { is.jwksRedirect = evil.srv.URL + "/session-issuers/demo-app/.well-known/jwks.json" }, forged},
 	} {
 		t.Run(name, func(t *testing.T) {
-			set()
-			defer func() { is.discIssuer, is.jwksURI = "", "" }()
-			v := newVerifier(is.srv.URL, "demo-app", idTokenKind, http.DefaultClient)
-			if _, err := v.verify(context.Background(), tok); !auth.IsCertificateFetchFailed(err) {
+			c.set()
+			defer func() { is.discIssuer, is.jwksURI, is.jwksRedirect = "", "", "" }()
+			v := newVerifier(is.srv.URL, "demo-app", idTokenKind, defaultHTTPClient())
+			if _, err := v.verify(context.Background(), c.tok); !auth.IsCertificateFetchFailed(err) {
 				t.Fatalf("want CERTIFICATE_FETCH_FAILED, got %v", err)
 			}
 		})

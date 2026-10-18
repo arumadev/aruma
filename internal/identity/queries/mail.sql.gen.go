@@ -75,8 +75,10 @@ func (q *Queries) ClearMailbox(ctx context.Context, projectNumber int64) (int64,
 }
 
 const createOobCode = `-- name: CreateOobCode :exec
-INSERT INTO auth.oob_codes (code_hash, project_number, tenant_id, uid, request_type, email, new_email, continue_url, expires_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO auth.oob_codes (code_hash, project_number, tenant_id, uid, request_type, email, new_email, continue_url, expires_at, created_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
+        GREATEST(now(), (SELECT u.tokens_valid_after FROM auth.users u
+                         WHERE u.project_number = $2 AND u.tenant_id = $3 AND u.uid = $4)))
 `
 
 type CreateOobCodeParams struct {
@@ -91,6 +93,8 @@ type CreateOobCodeParams struct {
 	ExpiresAt     time.Time
 }
 
+// A code is dated no earlier than its user's revocation point, as a session is, so a code asked
+// for right after a password change is not taken for one from before it.
 func (q *Queries) CreateOobCode(ctx context.Context, arg CreateOobCodeParams) error {
 	_, err := q.db.Exec(ctx, createOobCode,
 		arg.CodeHash,

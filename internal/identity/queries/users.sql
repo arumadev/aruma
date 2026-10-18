@@ -89,10 +89,10 @@ UPDATE auth.users SET last_refresh_at = now()
 WHERE project_number = @project_number AND tenant_id = @tenant_id AND uid = @uid;
 
 -- name: RevokeUserTokens :one
--- Moves the revocation point to the transaction time. Refresh tokens and ID tokens issued in an
--- earlier second answer TOKEN_EXPIRED; both are compared at second precision, as Firebase's
--- validSince is, so a session started in the same transaction survives.
-UPDATE auth.users SET tokens_valid_after = now()
+-- Moves the revocation point to the next whole second after the transaction time. Tokens are
+-- compared with it at second precision, as Firebase's validSince is, so every session started
+-- before the revocation ends, also one started earlier in the same second (ADR-004 §4).
+UPDATE auth.users SET tokens_valid_after = date_trunc('second', now()) + interval '1 second'
 WHERE project_number = @project_number AND tenant_id = @tenant_id AND uid = @uid
 RETURNING tokens_valid_after;
 

@@ -136,7 +136,7 @@ func (s *Service) Update(ctx context.Context, p Project, in UpdateInput) (*Updat
 			}
 		}
 		if sensitive {
-			if _, err := q.RevokeUserTokens(ctx, queries.RevokeUserTokensParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: u.UID}); err != nil {
+			if raw.TokensValidAfter, err = q.RevokeUserTokens(ctx, queries.RevokeUserTokensParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: u.UID}); err != nil {
 				return err
 			}
 		}

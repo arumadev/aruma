@@ -627,7 +627,7 @@ func (q *Queries) PasswordUsersExist(ctx context.Context, arg PasswordUsersExist
 }
 
 const revokeUserTokens = `-- name: RevokeUserTokens :one
-UPDATE auth.users SET tokens_valid_after = now()
+UPDATE auth.users SET tokens_valid_after = date_trunc('second', now()) + interval '1 second'
 WHERE project_number = $1 AND tenant_id = $2 AND uid = $3
 RETURNING tokens_valid_after
 `
@@ -638,9 +638,9 @@ type RevokeUserTokensParams struct {
 	Uid           string
 }
 
-// Moves the revocation point to the transaction time. Refresh tokens and ID tokens issued in an
-// earlier second answer TOKEN_EXPIRED; both are compared at second precision, as Firebase's
-// validSince is, so a session started in the same transaction survives.
+// Moves the revocation point to the next whole second after the transaction time. Tokens are
+// compared with it at second precision, as Firebase's validSince is, so every session started
+// before the revocation ends, also one started earlier in the same second (ADR-004 §4).
 func (q *Queries) RevokeUserTokens(ctx context.Context, arg RevokeUserTokensParams) (time.Time, error) {
 	row := q.db.QueryRow(ctx, revokeUserTokens, arg.ProjectNumber, arg.TenantID, arg.Uid)
 	var tokens_valid_after time.Time
