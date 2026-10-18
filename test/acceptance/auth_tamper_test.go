@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	identity "github.com/osama300/aurma-project/internal/identity/core"
 	"github.com/osama300/aurma-project/internal/identity/tokens"
 	"github.com/osama300/aurma-project/internal/platform/crypto"
 )
@@ -28,7 +29,6 @@ import (
 // feature's name; the lead removes the skip at merge.
 
 const (
-	pendingIdP     = "pending Google and Apple sign-in (createAuthUri with providerId, signInWithIdp), enabled at merge"
 	pendingNodeLib = "the Node library verifies only with ARUMA_VERIFY_NODE set: run test/smoke/run.sh tamper-libs"
 	pendingGoLib   = "the Go library verifies only with ARUMA_VERIFY_GO set: run test/smoke/run.sh tamper-libs"
 )
@@ -37,13 +37,10 @@ const (
 // checkRevoked asks for the revocation check (verifyIdToken(token, true)).
 type libVerifier func(t *testing.T, p *authProject, token string, checkRevoked bool) error
 
-// The library verifiers (auth_verifiers_test.go), and a hook wired when Google and Apple
-// sign-in land on this branch.
+// The library verifiers, set by auth_verifiers_test.go when the helper processes are given.
 var (
 	nodeLibVerify libVerifier
 	goLibVerify   libVerifier
-	// idp drives a Google-like test provider for the state and nonce scenarios.
-	idp idpDriver
 )
 
 // mailboxCode returns the oobCode of the newest dev mailbox message to an address, as the user
@@ -54,13 +51,42 @@ func mailboxCode(t *testing.T, p *authProject, email string) string {
 	return q.Get("oobCode")
 }
 
-// idpDriver stands in for the identity provider's side of a redirect sign-in.
-type idpDriver interface {
-	// Consent follows the authUri Aruma returned, as the user's browser and the provider would,
-	// and returns the callback URL (with state and code) the browser lands on.
-	Consent(t *testing.T, authURI string) (callback string)
-	// IDToken returns a provider ID token for the project carrying nonce.
-	IDToken(t *testing.T, p *authProject, nonce string) string
+// idpDriver plays the user's browser and the provider for the state and nonce scenarios, on
+// the fake Google and Apple of auth_idp_test.go: the web SDK's popup path through Aruma's
+// handler pages, and the REST path through createAuthUri.
+type idpDriver struct{ *idpEnv }
+
+// popup runs a Google popup sign-in up to the AuthEvent the SDK sends to signInWithIdp.
+func (d idpDriver) popup(sub string) authEvent {
+	return d.flow(identity.GoogleProvider, "signInViaPopup", googleClaims(sub, sub+"@gmail.com", true))
+}
+
+// rest starts a Google sign-in with createAuthUri, consents at the provider and returns the
+// callback URL the provider redirects to, with the sessionId the caller kept.
+func (d idpDriver) rest(sub string) (callback, sessionID string) {
+	t := d.env.t
+	t.Helper()
+	r := ok(t, d.call(itk+"accounts:createAuthUri", map[string]any{"providerId": identity.GoogleProvider, "continueUri": "http://localhost/cb"}))
+	code, state := d.google.authorize(r.str("authUri"), googleClaims(sub, sub+"@gmail.com", true))
+	return "http://localhost/cb?" + url.Values{"state": {state}, "code": {code}}.Encode(), r.str("sessionId")
+}
+
+// redeem is signInWithIdp with a callback and a sessionId.
+func (d idpDriver) redeem(callback, sessionID string) *Response {
+	return d.signIn(authEvent{requestURI: callback, sessionID: sessionID}, "")
+}
+
+// withState returns the callback URL with its state replaced.
+func withState(t *testing.T, callback, state string) string {
+	t.Helper()
+	u, err := url.Parse(callback)
+	if err != nil {
+		t.Fatal(err)
+	}
+	q := u.Query()
+	q.Set("state", state)
+	u.RawQuery = q.Encode()
+	return u.String()
 }
 
 type namedVerifier struct {
@@ -419,56 +445,67 @@ func TestAuthTamper(t *testing.T) {
 		}
 	})
 
-	startIdP := func(t *testing.T) (authURI, sessionID string) {
-		r := ok(t, p.call(itk+"accounts:createAuthUri", map[string]any{"providerId": "google.com", "continueUri": "http://localhost/cb"}))
-		return r.str("authUri"), r.str("sessionId")
-	}
-	signInWithIdp := func(callback, sessionID string) *Response {
-		return p.call(itk+"accounts:signInWithIdp", map[string]any{"requestUri": callback, "sessionId": sessionID, "returnSecureToken": true, "returnIdpCredential": true})
-	}
-	refused := func(t *testing.T, r *Response) {
-		t.Helper()
-		if r.Status != 400 || r.str("idToken") != "" {
-			t.Fatalf("want a refusal, got %d: %s", r.Status, r.Body)
-		}
-	}
-
 	t.Run("14 replayed state", func(t *testing.T) {
-		t.Skip(pendingIdP)
-		authURI, sessionID := startIdP(t)
-		callback := idp.Consent(t, authURI)
-		ok(t, signInWithIdp(callback, sessionID))
-		refused(t, signInWithIdp(callback, sessionID))
+		d := idpDriver{newIdPEnv(t)}
+		t.Run("popup", func(t *testing.T) {
+			ev := d.popup("g-14a")
+			ok(t, d.signIn(ev, ""))
+			authErr(t, d.signIn(ev, ""), "INVALID_IDP_RESPONSE")
+			// The handler page no longer recognises the state either.
+			resp, err := http.Get(ev.requestURI)
+			if pg := readPage(t, resp, err); pg.status != 400 || pg.data["mode"] != "error" {
+				t.Fatalf("replayed callback page: %d %v", pg.status, pg.data)
+			}
+		})
+		t.Run("createAuthUri", func(t *testing.T) {
+			callback, sessionID := d.rest("g-14b")
+			ok(t, d.redeem(callback, sessionID))
+			authErr(t, d.redeem(callback, sessionID), "INVALID_IDP_RESPONSE")
+		})
 	})
 
 	t.Run("15 swapped state", func(t *testing.T) {
-		t.Skip(pendingIdP)
-		uri1, _ := startIdP(t)
-		_, session2 := startIdP(t)
-		refused(t, signInWithIdp(idp.Consent(t, uri1), session2))
-		// A callback whose state was edited is refused too.
-		uri3, session3 := startIdP(t)
-		cb, err := url.Parse(idp.Consent(t, uri3))
-		if err != nil {
-			t.Fatal(err)
-		}
-		q := cb.Query()
-		q.Set("state", q.Get("state")+"x")
-		cb.RawQuery = q.Encode()
-		refused(t, signInWithIdp(cb.String(), session3))
+		d := idpDriver{newIdPEnv(t)}
+		t.Run("popup: one flow's callback with another's sessionId", func(t *testing.T) {
+			a, b := d.popup("g-15a"), d.popup("g-15b")
+			authErr(t, d.redeem(a.requestURI, b.sessionID), "INVALID_IDP_RESPONSE")
+			// The attempt burns the session it named: a guess cannot be retried.
+			authErr(t, d.signIn(a, ""), "INVALID_IDP_RESPONSE")
+			ok(t, d.signIn(b, ""))
+		})
+		t.Run("popup: another flow's state in the callback", func(t *testing.T) {
+			a, b := d.popup("g-15c"), d.popup("g-15d")
+			authErr(t, d.redeem(withState(t, a.requestURI, b.finish.data["state"]), a.sessionID), "INVALID_IDP_RESPONSE")
+		})
+		t.Run("createAuthUri: swapped and edited", func(t *testing.T) {
+			cb1, _ := d.rest("g-15e")
+			_, session2 := d.rest("g-15f")
+			authErr(t, d.redeem(cb1, session2), "INVALID_IDP_RESPONSE")
+			cb3, session3 := d.rest("g-15g")
+			u, _ := url.Parse(cb3)
+			authErr(t, d.redeem(withState(t, cb3, u.Query().Get("state")+"x"), session3), "INVALID_IDP_RESPONSE")
+			authErr(t, d.redeem(cb3, ""), "INVALID_IDP_RESPONSE")
+		})
 	})
 
 	t.Run("16 wrong nonce", func(t *testing.T) {
-		t.Skip(pendingIdP)
-		tok := idp.IDToken(t, p, "nonce-A")
-		r := p.call(itk+"accounts:signInWithIdp", map[string]any{
-			"postBody": "id_token=" + tok + "&providerId=google.com&nonce=nonce-B", "requestUri": "http://localhost", "returnSecureToken": true,
+		d := idpDriver{newIdPEnv(t)}
+		t.Run("code flow: the provider's token carries another nonce", func(t *testing.T) {
+			ev := d.flow(identity.GoogleProvider, "signInViaPopup", map[string]any{"sub": "g-16", "nonce": sha256Hex("not-ours")})
+			authErr(t, d.signIn(ev, ""), "MISSING_OR_INVALID_NONCE")
 		})
-		authErr(t, r, "MISSING_OR_INVALID_NONCE")
-		r = p.call(itk+"accounts:signInWithIdp", map[string]any{
-			"postBody": "id_token=" + tok + "&providerId=google.com", "requestUri": "http://localhost", "returnSecureToken": true,
+		t.Run("direct Apple token", func(t *testing.T) {
+			tok := d.apple.idToken(appleServices, map[string]any{"sub": "apple-16", "email": "a16@example.com", "email_verified": true, "nonce": sha256Hex("nonce-A")})
+			authErr(t, d.direct(identity.AppleProvider, tok, "nonce-B", ""), "MISSING_OR_INVALID_NONCE")
+			authErr(t, d.direct(identity.AppleProvider, tok, "", ""), "MISSING_OR_INVALID_NONCE")
+			// The hashed nonce itself is not the raw nonce.
+			authErr(t, d.direct(identity.AppleProvider, tok, sha256Hex("nonce-A"), ""), "MISSING_OR_INVALID_NONCE")
+			ok(t, d.direct(identity.AppleProvider, tok, "nonce-A", ""))
 		})
-		refused(t, r)
+		t.Run("direct Google token without a nonce, request with one", func(t *testing.T) {
+			tok := d.google.idToken(googleClient, googleClaims("g-16b", "g16b@gmail.com", true))
+			authErr(t, d.direct(identity.GoogleProvider, tok, "nonce-A", ""), "MISSING_OR_INVALID_NONCE")
+		})
 	})
 
 	t.Run("17 admin-only fields from a client", func(t *testing.T) {
@@ -674,8 +711,8 @@ func TestAuthTamper(t *testing.T) {
 // testNoRawAuthSecrets runs every Auth flow on this branch, then dumps every table of every
 // Aruma schema and the server log, and looks for each raw secret, as text and as hex.
 func testNoRawAuthSecrets(t *testing.T) {
-	e := newEnv(t, nil)
-	p := e.authProject("chat-app")
+	x := newIdPEnv(t) // Google and Apple enabled against the fake providers
+	e, p := x.env, x.authProject
 	p.enableAnonymous()
 	pat := p.owner.pat()
 
@@ -694,6 +731,13 @@ func testNoRawAuthSecrets(t *testing.T) {
 	ct := customToken(t, keyFile, "dump-custom", map[string]any{"role": "x"}, nil)
 	custom := ok(t, p.call(itk+"accounts:signInWithCustomToken", map[string]any{"token": ct}))
 	block, _ := pem.Decode([]byte(parseKeyFile(t, keyFile).PrivateKey))
+	// Apple: the code exchange returns a refresh token Aruma keeps for revocation.
+	ev := x.flow(identity.AppleProvider, "signInViaPopup", map[string]any{"sub": "apple-dump", "email": "apple-dump@example.com", "email_verified": true})
+	apple := ok(t, x.signIn(ev, ""))
+	post, _ := url.ParseQuery(ev.postBody)
+	if post.Get("code") == "" {
+		t.Fatalf("no code in the Apple callback: %q", ev.postBody)
+	}
 
 	secrets := map[string]string{
 		"sign-up password":      "Dump-Pass-1!",
@@ -716,6 +760,12 @@ func testNoRawAuthSecrets(t *testing.T) {
 		"ID token (custom)":     custom.str("idToken"),
 		"ID token (after link)": linked.str("idToken"),
 		"SMTP password":         smtpPassword,
+		"Google client secret":  googleSecret,
+		"Apple refresh token":   "refresh-" + post.Get("code"),
+		"Apple access token":    apple.str("oauthAccessToken"),
+		"Apple ID token":        apple.str("oauthIdToken"),
+		"ID token (Apple)":      apple.str("idToken"),
+		"refresh token (Apple)": apple.str("refreshToken"),
 	}
 	mails := p.mailbox()
 	if len(mails) != 2 {
