@@ -36,6 +36,8 @@ var AuthPrefixes = []string{
 	"/www.googleapis.com/identitytoolkit/",
 	"/issuers/",
 	"/session-issuers/",
+	"/__/",       // authDomain pages: /__/auth/*, /__/firebase/init.json
+	"/emulator/", // only /emulator/auth/{handler,iframe} exist; every other path is 404
 }
 
 // Server owns the public and metrics listeners.

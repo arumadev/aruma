@@ -279,11 +279,7 @@ func (a *API) deleteAccount(w http.ResponseWriter, r *http.Request, p core.Proje
 }
 
 func (a *API) createAuthURI(w http.ResponseWriter, r *http.Request, p core.Project) {
-	var req struct {
-		Identifier string `json:"identifier"`
-		ProviderID string `json:"providerId"`
-		TenantID   string `json:"tenantId"`
-	}
+	var req createAuthURIRequest
 	if err := decode(w, r, &req); err != nil {
 		a.writeError(w, r, err)
 		return
@@ -293,7 +289,7 @@ func (a *API) createAuthURI(w http.ResponseWriter, r *http.Request, p core.Proje
 		return
 	}
 	if req.ProviderID != "" {
-		a.idpAuthURI(w, r, p)
+		a.idpAuthURI(w, r, p, req)
 		return
 	}
 	methods, registered, err := a.svc.SignInMethods(r.Context(), p, req.Identifier)
