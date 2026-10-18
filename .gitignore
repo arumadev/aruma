@@ -49,3 +49,4 @@ aruma.yaml
 /test/smoke/ios/.swiftpm/
 /internal/admin/web/dist/*
 !/internal/admin/web/dist/.gitkeep
+/test/experiments/**/node_modules/
