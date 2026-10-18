@@ -107,3 +107,41 @@ npm run dev          # http://localhost:3000, /console/v1 proxied to ARUMA_DEV_A
 `skipTrailingSlashRedirect` exist only under `next dev`; the export has neither.
 `npm run tokens` regenerates `src/styles/colors.css` after a change to the brand seed in
 `scripts/generate-tokens.ts`.
+
+## Authentication screens (Phase 2)
+
+The Auth section (`/project/auth/…`: Users, Sign-in methods, Templates, Mailbox, Settings) uses
+the routes in `docs/api/console.md` and, from the email and provider work, the routes below.
+Their shapes were not fixed when the screens were built, so this is what the dashboard expects
+(`src/lib/api/types.ts`). Each of them may answer 404 until it exists: the screens then show a
+"not available on this server yet" note instead of an error, and hide the Mailbox tab.
+
+Every path starts with `/console/v1/projects/{project}/auth`.
+
+| Method | Path | Body → Response |
+|---|---|---|
+| POST | `/users/{uid}:sendPasswordReset` | → 2xx (body ignored) |
+| GET | `/providers` | → `{providers: [Provider]}` |
+| PATCH | `/providers/{providerId}` | Google `{enabled?, clientId?, clientSecret?}`, Apple `{enabled?, servicesId?, teamId?, keyId?, privateKey?}` → `Provider`. A secret is sent only when the user typed a new one |
+| GET | `/templates` | → `{templates: [{type, language: "ar"\|"en", subject, body, customized}]}`, every type in both languages |
+| PUT | `/templates/{type}/{language}` | `{subject, body}` → the template |
+| DELETE | `/templates/{type}/{language}` | → 2xx; the list is fetched again |
+| GET | `/smtp` | → `{host, port, username, passwordSet, security: "starttls"\|"tls"\|"none", senderName, senderAddress, replyTo}` |
+| PATCH | `/smtp` | the fields above (not `passwordSet`), plus `password` only when replaced → the settings |
+| POST | `/smtp:test` | `{to}` → 2xx |
+| GET | `/mailbox` | → `{enabled, messages: [{id, to, type?, subject, link?, createTime}]}`; `enabled: false` or 404 hides the tab |
+| DELETE | `/mailbox` | → 2xx |
+
+`Provider` = `{providerId: "google.com"|"apple.com", enabled, redirectUri, clientId?, clientSecretSet?, servicesId?, teamId?, keyId?, privateKeySet?}`.
+Secrets are write-only: the dashboard shows "saved" when `…Set` is true and never displays a value.
+
+`GET /config` may carry `limits.emailCodeLifetimeSeconds: {VERIFY_EMAIL: …, PASSWORD_RESET: …, …}`;
+the Settings page lists those lifetimes when present.
+
+The template preview never inserts template markup: an HTML body is reduced to text in an inert
+`DOMParser` document, so the strict CSP needs no change. Mailbox links open only when they are
+`http(s)` URLs.
+
+Adding the Authentication destination changed the navigation rail and the overview, so the
+`-linux` baselines of those screens were removed; CI regenerates them (`--update-snapshots=missing`)
+and uploads them as the `playwright-snapshots-linux` artifact, to be committed from there.

@@ -1,0 +1,41 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.subject {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.type {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.75rem;
+}
+
+.link {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  white-space: nowrap;
+}
+
+.open {
+  color: var(--md-sys-color-primary);
+  font-weight: 500;
+  text-decoration: none;
+  outline: none;
+  cursor: pointer;
+}
+
+.open[data-hovered] {
+  text-decoration: underline;
+}
+
+.open[data-focus-visible] {
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
