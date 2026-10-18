@@ -72,7 +72,7 @@ func TestNoSecretsInDatabaseOrLogs(t *testing.T) {
 func dumpDatabase(t *testing.T, e *Env) string {
 	t.Helper()
 	ctx := context.Background()
-	rows, err := e.Pool.Query(ctx, `SELECT schemaname || '.' || tablename FROM pg_tables WHERE schemaname IN ('control', 'events', 'public')`)
+	rows, err := e.Pool.Query(ctx, `SELECT schemaname || '.' || tablename FROM pg_tables WHERE schemaname IN ('auth', 'control', 'events', 'public')`)
 	if err != nil {
 		t.Fatal(err)
 	}
