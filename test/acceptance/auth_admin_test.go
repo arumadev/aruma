@@ -313,8 +313,9 @@ func TestAuthAdminRevokeAndDisable(t *testing.T) {
 
 	ok(t, p.admin(p.sa, "accounts:update", map[string]any{"localId": uid, "disableUser": true}))
 	assertEqual(t, "disabled", p.lookup(uid)["disabled"], true)
-	// Under enumeration protection a disabled account looks like a wrong password.
-	authErr(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "r@example.com", "password": "secret1"}), "INVALID_LOGIN_CREDENTIALS")
+	// The right password on a disabled account says so; a wrong one still says nothing.
+	authErr(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "r@example.com", "password": "secret1"}), "USER_DISABLED")
+	authErr(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "r@example.com", "password": "wrong!!"}), "INVALID_LOGIN_CREDENTIALS")
 	authErr(t, p.refresh(in.str("refreshToken")), "USER_DISABLED")
 	ok(t, p.admin(p.sa, "accounts:update", map[string]any{"localId": uid, "disableUser": false}))
 	ok(t, p.refresh(in.str("refreshToken")))
@@ -389,4 +390,21 @@ func TestAuthAdminSessionCookie(t *testing.T) {
 		t.Fatalf("revoked cookie: %v", err)
 	}
 	authErr(t, p.admin(p.sa, ":createSessionCookie", map[string]any{"idToken": idToken, "validDuration": 3600}), "TOKEN_EXPIRED")
+}
+
+// generatePasswordResetLink and friends return a working link and email nothing.
+func TestAuthAdminEmailActionLinks(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.adminProject("chat-app")
+	p.signUp("sara@example.com", "secret1")
+	before := len(p.mailbox())
+	r := ok(t, p.admin(p.sa, "accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "sara@example.com", "returnOobLink": true}))
+	_, q := linkCode(t, r.str("oobLink"))
+	if len(p.mailbox()) != before {
+		t.Fatal("an admin link must not be emailed")
+	}
+	ok(t, p.call(itk+"accounts:resetPassword", map[string]any{"oobCode": q.Get("oobCode"), "newPassword": "new-secret-1"}))
+	ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "sara@example.com", "password": "new-secret-1"}))
+	authErr(t, p.admin(p.sa, "accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "nobody@example.com", "returnOobLink": true}), "EMAIL_NOT_FOUND")
+	authErr(t, p.admin(p.sa, "accounts:sendOobCode", map[string]any{"requestType": "EMAIL_SIGNIN", "email": "sara@example.com", "returnOobLink": true}), "OPERATION_NOT_ALLOWED")
 }

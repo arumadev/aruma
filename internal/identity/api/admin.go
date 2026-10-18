@@ -352,12 +352,45 @@ func (a *API) adminBatchDelete(w http.ResponseWriter, r *http.Request, p core.Pr
 	writeJSON(w, out)
 }
 
-// adminSendOobCode is generatePasswordResetLink and friends (returnOobLink).
-//
-// TODO(phase2 merge): delegate to the email action link generators once they land; until then
-// the call fails cleanly instead of issuing codes outside that implementation.
-func (a *API) adminSendOobCode(w http.ResponseWriter, r *http.Request, _ core.Project) {
-	a.writeError(w, r, core.ErrOperationNotAllowed)
+// adminSendOobCode is generatePasswordResetLink, generateEmailVerificationLink and
+// generateVerifyAndChangeEmailLink: the Admin SDKs always ask for the link back (returnOobLink),
+// and nothing is emailed.
+func (a *API) adminSendOobCode(w http.ResponseWriter, r *http.Request, p core.Project) {
+	var req struct {
+		RequestType string `json:"requestType"`
+		Email       string `json:"email"`
+		NewEmail    string `json:"newEmail"`
+		ContinueURL string `json:"continueUrl"`
+		TenantID    string `json:"tenantId"`
+	}
+	if err := decode(w, r, &req); err != nil {
+		a.writeError(w, r, err)
+		return
+	}
+	if err := tenantID(req.TenantID); err != nil {
+		a.writeError(w, r, err)
+		return
+	}
+	settings := core.ActionCodeSettings{ContinueURL: req.ContinueURL, Language: r.Header.Get("X-Firebase-Locale")}
+	var link string
+	var err error
+	switch req.RequestType {
+	case "PASSWORD_RESET":
+		link, err = a.svc.GeneratePasswordResetLink(r.Context(), p, req.Email, settings)
+	case "VERIFY_EMAIL":
+		link, err = a.svc.GenerateEmailVerificationLink(r.Context(), p, req.Email, settings)
+	case "VERIFY_AND_CHANGE_EMAIL":
+		link, err = a.svc.GenerateVerifyAndChangeEmailLink(r.Context(), p, req.Email, req.NewEmail, settings)
+	case "":
+		err = &core.Error{Code: "MISSING_REQ_TYPE", Status: http.StatusBadRequest}
+	default:
+		err = core.ErrOperationNotAllowed // EMAIL_SIGNIN comes with email-link sign-in, in v1.x
+	}
+	if err != nil {
+		a.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, map[string]any{"kind": "identitytoolkit#GetOobConfirmationCodeResponse", "email": req.Email, "oobLink": link})
 }
 
 func (a *API) adminSessionCookie(w http.ResponseWriter, r *http.Request, p core.Project) {
