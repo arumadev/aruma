@@ -74,9 +74,9 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		CookieName: console.CookieName(cfg.SecureCookies()),
 		Logger:     logger,
 	}
-	consoleAPI := console.New(svc, auth, logger, console.Options{Version: version, SecureCookies: cfg.SecureCookies()})
-	mgmtAPI := mgmt.New(svc, auth, logger)
 	authSvc := identity.New(pool, svc, keys, hasher, strings.TrimSuffix(cfg.PublicBaseURL().String(), "/"), logger)
+	consoleAPI := console.New(svc, auth, logger, console.Options{Version: version, SecureCookies: cfg.SecureCookies(), Auth: authSvc})
+	mgmtAPI := mgmt.New(svc, auth, logger)
 	dashboard, err := web.New(web.Embedded())
 	if err != nil {
 		return nil, fmt.Errorf("dashboard: %w", err)

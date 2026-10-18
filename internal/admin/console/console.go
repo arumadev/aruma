@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	identity "github.com/osama300/aurma-project/internal/identity/core"
 	"github.com/osama300/aurma-project/internal/platform/apierr"
 	"github.com/osama300/aurma-project/internal/platform/authn"
 	"github.com/osama300/aurma-project/internal/platform/httpx"
@@ -22,6 +23,7 @@ import (
 type Options struct {
 	Version       string
 	SecureCookies bool
+	Auth          *identity.Service // Aruma Auth, for the project Auth screens
 }
 
 // API is the console API.
