@@ -214,20 +214,25 @@ type authConfigJSON struct {
 
 // authLimitsJSON are the limits no setting changes (seconds unless named otherwise).
 type authLimitsJSON struct {
-	IDTokenLifetime        int64 `json:"idTokenLifetimeSeconds"`
-	SessionCookieMax       int64 `json:"sessionCookieMaxSeconds"`
-	SigningKeyRotationDays int64 `json:"signingKeyRotationDays"`
-	RequestsPerMinute      int   `json:"requestsPerMinute"`
-	RequestBurst           int   `json:"requestBurst"`
-	SignUpsPerMinute       int   `json:"signUpsPerMinute"`
-	SignUpBurst            int   `json:"signUpBurst"`
-	PasswordFailures       int   `json:"passwordFailures"`
-	PasswordFailureWindow  int64 `json:"passwordFailureWindowSeconds"`
-	PasswordBackoffMax     int64 `json:"passwordBackoffMaxSeconds"`
+	IDTokenLifetime        int64            `json:"idTokenLifetimeSeconds"`
+	SessionCookieMax       int64            `json:"sessionCookieMaxSeconds"`
+	SigningKeyRotationDays int64            `json:"signingKeyRotationDays"`
+	RequestsPerMinute      int              `json:"requestsPerMinute"`
+	RequestBurst           int              `json:"requestBurst"`
+	SignUpsPerMinute       int              `json:"signUpsPerMinute"`
+	SignUpBurst            int              `json:"signUpBurst"`
+	PasswordFailures       int              `json:"passwordFailures"`
+	PasswordFailureWindow  int64            `json:"passwordFailureWindowSeconds"`
+	PasswordBackoffMax     int64            `json:"passwordBackoffMaxSeconds"`
+	EmailCodeLifetimes     map[string]int64 `json:"emailCodeLifetimeSeconds"` // by template type
 }
 
 func toAuthConfigJSON(c queries.AuthProjectConfig) authConfigJSON {
 	l := identityapi.ClientLimits
+	codeLifetimes := map[string]int64{}
+	for kind, d := range identity.EmailCodeLifetimes() {
+		codeLifetimes[kind] = int64(d.Seconds())
+	}
 	return authConfigJSON{
 		PasswordEnabled: c.PasswordEnabled, AnonymousEnabled: c.AnonymousEnabled, ClientSignupEnabled: c.ClientSignupEnabled,
 		EnumerationProtection: c.EnumerationProtection, AuthorizedDomains: c.AuthorizedDomains,
@@ -240,6 +245,7 @@ func toAuthConfigJSON(c queries.AuthProjectConfig) authConfigJSON {
 			SigningKeyRotationDays: int64(tokens.RotateEvery.Hours() / 24),
 			RequestsPerMinute:      l.RequestsPerMinute, RequestBurst: l.RequestBurst, SignUpsPerMinute: l.SignUpsPerMinute, SignUpBurst: l.SignUpBurst,
 			PasswordFailures: l.PasswordFailures, PasswordFailureWindow: int64(l.FailureWindow.Seconds()), PasswordBackoffMax: int64(l.BackoffMax.Seconds()),
+			EmailCodeLifetimes: codeLifetimes,
 		},
 	}
 }

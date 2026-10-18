@@ -166,6 +166,11 @@ func TestConsoleAuthConfig(t *testing.T) {
 	if limits["idTokenLifetimeSeconds"] != float64(3600) || limits["signingKeyRotationDays"] != float64(30) || limits["passwordFailures"] != float64(10) {
 		t.Fatalf("limits: %s", cfg.Body)
 	}
+	codes, _ := limits["emailCodeLifetimeSeconds"].(map[string]any)
+	if codes["PASSWORD_RESET"] != float64(3600) || codes["VERIFY_EMAIL"] != float64(259200) ||
+		codes["VERIFY_AND_CHANGE_EMAIL"] != float64(259200) || codes["RECOVER_EMAIL"] != float64(259200) {
+		t.Fatalf("email code lifetimes: %s", cfg.Body)
+	}
 
 	authErr(t, p.call(itk+"accounts:signUp", map[string]any{}), "OPERATION_NOT_ALLOWED")
 	upd := p.owner.mustOK(p.owner.do("PATCH", base+"/config", map[string]any{

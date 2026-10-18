@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
+	"maps"
 	"net"
 	"net/url"
 	"strings"
@@ -34,6 +35,9 @@ var oobLifetimes = map[string]time.Duration{
 	MailChangeEmail:   72 * time.Hour,
 	MailRecoverEmail:  72 * time.Hour,
 }
+
+// EmailCodeLifetimes returns how long the code of each email kind stays valid, for display.
+func EmailCodeLifetimes() map[string]time.Duration { return maps.Clone(oobLifetimes) }
 
 // oobModes maps a request type to the link's mode (research §6).
 var oobModes = map[string]string{
