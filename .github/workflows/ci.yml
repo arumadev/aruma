@@ -82,6 +82,37 @@ jobs:
       - name: Smoke tests
         run: test/smoke/run.sh web admin-node admin-go android
 
+  web-auth:
+    name: Web Auth e2e (firebase 11, 12, 13)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: test/e2e/web-auth/package-lock.json
+      - name: Official SDK against a real server, no request to Google
+        run: test/e2e/web-auth/run.sh
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: web-auth-report
+          path: |
+            test/e2e/web-auth/playwright-report
+            test/e2e/web-auth/.generated/server.log
+
   dashboard:
     name: Dashboard (lint, unit, build, e2e in both directions)
     runs-on: ubuntu-latest

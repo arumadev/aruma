@@ -265,6 +265,8 @@ JS fetches it only on `initializeRecaptchaConfig()`, or after an `auth/missing-r
 
 **Refresh timing.** JS refreshes when the token is within 30 s of expiry [J-tm].
 
+**Revocation precision (Aruma decision, found by the web e2e suite).** `validSince` is in seconds, and Aruma compares refresh tokens at that precision too, not only ID tokens. A finer check breaks the web SDK: after `reauthenticateWithCredential` then `updatePassword` in the same second, the ID token the update returns is byte for byte the one the SDK holds (same claims, same `iat`, deterministic RS256), so `_updateTokensIfNecessary` keeps the refresh token of the sign-in [J-user], and the next refresh signed the user out with `TOKEN_EXPIRED`. The cost is that a session started in the same second as a revocation survives it, as with Firebase's `validSince`.
+
 ---
 
 ## 4. v3 relyingparty (iOS)

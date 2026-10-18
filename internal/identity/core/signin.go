@@ -162,10 +162,11 @@ func (s *Service) upgradeAnonymous(ctx context.Context, p Project, idToken, emai
 
 // SignInWithPassword checks an email and password.
 //
-// Under enumeration protection (the default) every failure is INVALID_LOGIN_CREDENTIALS. A
-// disabled account is reported only after its password has been checked: the Firebase emulator
-// says USER_DISABLED first, which tells anyone the account exists and is disabled; Aruma takes
-// the defensive reading until production is compared (research §3.2).
+// Under enumeration protection (the default) every failed credential check is
+// INVALID_LOGIN_CREDENTIALS. A disabled account is reported only after its password has been
+// checked: the Firebase emulator says USER_DISABLED first, which tells anyone the account exists
+// and is disabled; Aruma takes the defensive reading until production is compared (research
+// §3.2).
 func (s *Service) SignInWithPassword(ctx context.Context, p Project, email, password string) (*Session, error) {
 	cfg, err := s.Config(ctx, p)
 	if err != nil {
@@ -212,10 +213,10 @@ func (s *Service) SignInWithPassword(ctx context.Context, p Project, email, pass
 		s.audit(ctx, s.q, p, raw.Uid, "signin.password", "denied", nil)
 		return nil, wrong
 	}
+	// Only someone who knows the password learns that the account is disabled, so protection
+	// does not hide it: the documented protection replaces EMAIL_NOT_FOUND and INVALID_PASSWORD
+	// only, and the web SDK needs USER_DISABLED to show auth/user-disabled.
 	if raw.Disabled {
-		if cfg.EnumerationProtection {
-			return nil, ErrInvalidLogin
-		}
 		return nil, ErrUserDisabled
 	}
 	if rehash {

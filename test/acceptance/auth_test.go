@@ -172,7 +172,13 @@ func TestAuthEmailPasswordLifecycle(t *testing.T) {
 	authErr(t, p.call(sts, map[string]any{"refreshToken": "x"}), "MISSING_GRANT_TYPE")
 	authErr(t, p.call(sts, map[string]any{"grantType": "password"}), "INVALID_GRANT_TYPE")
 
-	// A password change revokes the other sessions and returns a fresh one.
+	// A password change revokes the other sessions and returns a fresh one. Revocation has
+	// second precision, like Firebase's validSince, so age the sessions to an earlier second.
+	for _, table := range []string{"auth.users", "auth.refresh_tokens"} {
+		if _, err := e.Pool.Exec(context.Background(), `UPDATE `+table+` SET created_at = created_at - interval '2 seconds'`); err != nil {
+			t.Fatal(err)
+		}
+	}
 	upd := ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": in.str("idToken"), "password": "secret2", "returnSecureToken": true}))
 	if upd.str("idToken") == "" || upd.str("refreshToken") == "" {
 		t.Fatalf("update must return a new session: %s", upd.Body)
@@ -240,6 +246,8 @@ func TestAuthDisabledUser(t *testing.T) {
 	authErr(t, p.call(itk+"accounts:lookup", map[string]any{"idToken": up.str("idToken")}), "USER_DISABLED")
 	// Under enumeration protection a wrong password says nothing about the account's state.
 	authErr(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "d@example.com", "password": "wrong!!"}), "INVALID_LOGIN_CREDENTIALS")
+	// The right password learns it, so the web SDK can say auth/user-disabled.
+	authErr(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "d@example.com", "password": "secret1"}), "USER_DISABLED")
 }
 
 func TestAuthKeysAndProjects(t *testing.T) {
@@ -477,5 +485,25 @@ func TestAuthDeferredMethods(t *testing.T) {
 		"/identitytoolkit.googleapis.com/v2/accounts/mfaSignIn:start", rp + "verifyPhoneNumber",
 	} {
 		authErr(t, p.call(path, map[string]any{}), "OPERATION_NOT_ALLOWED")
+	}
+}
+
+// The web SDK's reauthenticate then updatePassword, within one second: the ID token the update
+// returns is byte for byte the one the SDK holds, so the SDK keeps the refresh token of the
+// sign-in, which must go on working.
+func TestAuthPasswordChangeRightAfterSignIn(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.authProject("chat-app")
+	ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "quick@example.com", "password": "secret1"}))
+	for {
+		in := ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "quick@example.com", "password": "secret1", "returnSecureToken": true}))
+		upd := ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": in.str("idToken"), "password": "secret2", "returnSecureToken": true}))
+		if upd.str("idToken") != in.str("idToken") {
+			// The second ticked over between the two calls; the SDK would take the new tokens.
+			ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": upd.str("idToken"), "password": "secret1"}))
+			continue
+		}
+		ok(t, p.refresh(in.str("refreshToken")))
+		return
 	}
 }

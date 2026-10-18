@@ -5,8 +5,9 @@
 //
 //	go run ./test/smoke/genconfig -out test/smoke/.generated
 //
-// With -serve the server keeps running (for the firebase CLI experiments) and its URL and a
-// CLI token are printed as shell exports; Ctrl-C stops it and drops the database.
+// With -serve the server keeps running (for the firebase CLI experiments and the web Auth
+// end-to-end tests) and its URL and a CLI token are printed as shell exports; Ctrl-C stops it
+// and drops the database. -anonymous turns on anonymous sign-in for the project.
 package main
 
 import (
@@ -73,13 +74,14 @@ type AppIDs struct {
 func main() {
 	out := flag.String("out", "test/smoke/.generated", "directory to write the files to")
 	serve := flag.Bool("serve", false, "keep the server running after generating")
+	anonymous := flag.Bool("anonymous", false, "enable anonymous sign-in for the project")
 	flag.Parse()
-	if err := run(*out, *serve); err != nil {
+	if err := run(*out, *serve, *anonymous); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(out string, serve bool) error {
+func run(out string, serve, anonymous bool) error {
 	ctx := context.Background()
 	dbName := "aruma_smoke_" + randomHex(4)
 	admin, err := pgx.Connect(ctx, storetest.AdminURL())
@@ -145,6 +147,14 @@ func run(out string, serve bool) error {
 		return err
 	}
 	exp := Expected{ServerURL: base, ProjectID: projectID, ProjectNumber: proj.ProjectNumber, StorageBucket: proj.StorageBucket, AuthDomain: proj.AuthDomain}
+	if anonymous {
+		// New projects start without anonymous sign-in, as in Firebase. The console's Sign-in
+		// methods screen will switch it; until then the setting is written directly.
+		if _, err := pool.Exec(ctx, `INSERT INTO auth.project_config (project_number, anonymous_enabled) VALUES ($1, true)
+			ON CONFLICT (project_number) DO UPDATE SET anonymous_enabled = true`, proj.ProjectNumber); err != nil {
+			return err
+		}
+	}
 
 	type appJSON struct {
 		AppID    string `json:"appId"`

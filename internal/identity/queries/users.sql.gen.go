@@ -612,9 +612,9 @@ type RevokeUserTokensParams struct {
 	Uid           string
 }
 
-// Moves the revocation point to the transaction time. Refresh tokens created before it answer
-// TOKEN_EXPIRED; a session started later in the same transaction survives. ID tokens are
-// compared at second precision, as Firebase's validSince is.
+// Moves the revocation point to the transaction time. Refresh tokens and ID tokens issued in an
+// earlier second answer TOKEN_EXPIRED; both are compared at second precision, as Firebase's
+// validSince is, so a session started in the same transaction survives.
 func (q *Queries) RevokeUserTokens(ctx context.Context, arg RevokeUserTokensParams) (time.Time, error) {
 	row := q.db.QueryRow(ctx, revokeUserTokens, arg.ProjectNumber, arg.TenantID, arg.Uid)
 	var tokens_valid_after time.Time
