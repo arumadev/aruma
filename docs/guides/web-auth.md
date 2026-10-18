@@ -1,8 +1,68 @@
 # ربط تطبيق ويب بمصادقة Aruma
 
-يستخدم تطبيقك مكتبة `firebase` الرسمية كما هي. يكفي ملف الإعداد من Aruma، وسطر واحد بعد `getAuth()` (ADR-013).
+يستخدم تطبيقك مكتبة `firebase` الرسمية كما هي، بملف الإعداد من Aruma. وللاتصال طريقتان:
 
-## الخطوات
+| الطريقة | ما تضيفه | متى |
+|---|---|---|
+| **وضع الإنتاج (الموصى به)** | الحزمة `@aruma/web` وسطر في `vite.config`. **لا شيء في كود التطبيق** | دائمًا، وخصوصًا في الإنتاج |
+| وضع المحاكي | سطر `connectAuthEmulator` بعد `getAuth()` (ADR-013) | التطوير، أو مشروع لا يمكن تعديل أداة بنائه |
+
+## وضع الإنتاج (الموصى به)
+
+تبقى المكتبة في وضعها العادي، كما مع Firebase تمامًا، وتحوّل `@aruma/web` طلبات Auth وحدها إلى خادمك.
+
+1. **ثبّت الحزمة:** `npm install --save-dev @aruma/web` (من `sdk/web/aruma-web` في هذا المستودع حتى تُنشر).
+2. **أضف السطر في `vite.config`:**
+
+```js
+import { defineConfig } from 'vite';
+import aruma from '@aruma/web/vite';
+
+export default defineConfig({
+  plugins: [aruma({ url: 'https://aruma.example.com' })], // public_url لخادمك
+});
+```
+
+3. **التطبيق لا يتغيّر:** `initializeApp(firebaseConfig)` بملف Aruma، ثم `getAuth(app)`، دون `connectAuthEmulator`.
+
+**كيف يعمل:**
+- Aruma يخدم مسارات Google نفسها تحت نطاقه (ADR-014)، فالتحويل تبديل للنطاق وحده:
+  - `https://identitytoolkit.googleapis.com/<path>` ← `<url>/identitytoolkit.googleapis.com/<path>`.
+  - `https://securetoken.googleapis.com/<path>` ← `<url>/securetoken.googleapis.com/<path>`.
+- المكتبة ترسل كل طلبات Auth بـ `fetch`، وتبحث عنه عند كل طلب.
+- فالإضافة تحقن قبل سكربتات التطبيق تثبيتًا يلفّ `fetch` مرة واحدة، ولا يغيّر إلا هذين النطاقين. وكل طلب آخر يمر كما هو.
+
+**لماذا هو الموصى به:**
+- `connectAuthEmulator` يضع المكتبة في وضع المحاكي، فتُسقط فحوصها هي:
+  - التحقق من التطبيق: `appVerificationDisabledForTesting`.
+  - وفحص أصل الصفحة لدخول Google وApple بالنافذة أو التحويل.
+  - Aruma يفرض ذلك كله في الخادم (ADR-014)، لكن وضع الإنتاج يبقيها في العميل أيضًا.
+- وفي وضع الإنتاج تذهب صفحات `authDomain` إلى `https://<authDomain>/__/auth/handler` و`/__/auth/iframe`، ويطلب `getProjectConfig`. وAruma يخدمها كلها.
+
+**الأمان في الحزمة:**
+- https وحده، إلا لـ `localhost` و`127.0.0.0/8` و`::1`، أو مع `allowInsecure` للتطوير.
+- **تفشل مغلقة:** عنوان مرفوض يوقف البناء. وفي وقت التشغيل تفشل طلبات Auth، ولا تذهب إلى Google بكلمة مرور المستخدم.
+- دون عنوان لا تفعل شيئًا.
+- والسجل (مطفأ افتراضيًا) لا يحوي الاستعلام ولا الترويسات ولا الرموز ولا الأجسام.
+
+**أدوات بناء أخرى (webpack وغيرها):** اجعل هذا أول استيراد في مدخل التطبيق:
+
+```js
+import { install } from '@aruma/web';
+install({ url: 'https://aruma.example.com' });
+```
+
+**وضع البناء (`mode: 'build'`، Vite 8 فأحدث):**
+- لا كود وقت التشغيل: تستبدل الإضافة عنواني Google النصيين داخل `@firebase/auth` أثناء البناء.
+- ويفشل البناء إن لم تجدهما، كأن يغيّرهما إصدار جديد من Firebase.
+
+**مُختبَر:** `ARUMA_E2E_MODE=production test/e2e/web-auth/run.sh`، و`production-build` لوضع البناء.
+كل التدفقات تنجح على firebase 11 و12 و13 بصفر طلب إلى Google، ومعها اختبار يثبّت الحزمة بعد استيراد المكتبة.
+التفاصيل والمخاطر في `docs/research/web-production-redirect.md` وفي `sdk/web/aruma-web/README.md`.
+
+## وضع المحاكي (للتطوير)
+
+### الخطوات
 
 1. **أنشئ تطبيق ويب** في المشروع من اللوحة، وانسخ ملف الإعداد (`firebaseConfig`).
 2. **فعّل طرق الدخول** التي تريدها من شاشة «المصادقة ← طرق الدخول». البريد وكلمة المرور مفعّل افتراضيًا، والدخول المجهول معطّل كما في Firebase.
@@ -20,9 +80,9 @@ connectAuthEmulator(auth, "https://aruma.example.com", { disableWarnings: true }
 
 ضع عنوان خادم Aruma العام (`public_url`) مكان `https://aruma.example.com`. وبعدها تعمل دوال المكتبة كما هي: `createUserWithEmailAndPassword` و`signInWithEmailAndPassword` و`signInAnonymously` و`linkWithCredential` و`signInWithCustomToken` و`updateProfile` و`updatePassword` و`deleteUser` و`onAuthStateChanged`، والتجديد التلقائي للرمز.
 
-## لماذا `connectAuthEmulator`؟
+### لماذا `connectAuthEmulator`؟
 
-مكتبة Auth للويب تثبّت عنواني Google في كودها، ولا يغيّرهما أي حقل في ملف الإعداد. والطريق الموثّق الوحيد لتوجيهها إلى خادم آخر هو هذه الدالة. Aruma يخدم مسارات المصادقة بالشكل الذي تطلبه في هذا الوضع (ADR-014)، ويتحقق من كل شيء في الخادم، فلا يضعف الأمان بشيء:
+مكتبة Auth للويب تثبّت عنواني Google في كودها، ولا يغيّرهما أي حقل في ملف الإعداد. والطريق الموثّق الوحيد لتوجيهها إلى خادم آخر دون أداة البناء هو هذه الدالة. Aruma يخدم مسارات المصادقة بالشكل الذي تطلبه في هذا الوضع (ADR-014)، ويتحقق من كل شيء في الخادم، فلا يضعف الأمان بشيء:
 
 - **الرموز:** يوقّعها Aruma بمفاتيح RS256 خاصة بكل مشروع، ولا يقبل `alg:none` ولا `Bearer owner` أبدًا.
 - **reCAPTCHA:** يُعلن مطفأً، وتحمي حدود المعدل في الخادم من الإغراق.
@@ -47,7 +107,11 @@ connectAuthEmulator(auth, "https://aruma.example.com", { disableWarnings: true }
 
 # Connecting a web app to Aruma Auth
 
-Your app keeps the official `firebase` package. It needs Aruma's config file and one line after `getAuth()` (ADR-013):
+Your app keeps the official `firebase` package and Aruma's config file.
+
+**Production mode (recommended):** no change in the app's code. Add `@aruma/web` and one line in `vite.config`: `plugins: [aruma({ url: 'https://aruma.example.com' })]` (`import aruma from '@aruma/web/vite'`). The SDK stays in its normal production mode, with its own origin and app checks, and the plugin rewrites only `identitytoolkit.googleapis.com` and `securetoken.googleapis.com` onto `<url>/<host>/<path>`. It is https-only except for loopback, fails closed (a refused URL stops the build, and Auth requests fail instead of reaching Google), and logs no query, header, token or body. Other bundlers: call `install({ url })` from `@aruma/web` first in the entry. `mode: 'build'` (Vite 8+) rewrites the host literals at build time instead. See `sdk/web/aruma-web/README.md`.
+
+**Emulator mode (development):** one line after `getAuth()` (ADR-013):
 
 ```js
 const auth = getAuth(app);
