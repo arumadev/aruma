@@ -279,13 +279,95 @@ Sources: [N-req] L583–870, L1142–1700; [G-um] L843–859, L1370–1553.
 
 ## Open questions
 
-1. **Paths.** Should Aruma serve `/identitytoolkit.googleapis.com/v1/projects/…`, which is emulator-compatible and convenient, but tempts people to point `FIREBASE_AUTH_EMULATOR_HOST` at production? Or a neutral `/v1/projects/…`?
+1. **Paths.** (Decided, see below.) Should Aruma serve `/identitytoolkit.googleapis.com/v1/projects/…`, which is emulator-compatible and convenient, but tempts people to point `FIREBASE_AUTH_EMULATOR_HOST` at production? Or a neutral `/v1/projects/…`?
 2. **Custom-token claims.** Should `claims.firebase` and `claims.sub` in custom tokens be rejected or stripped? How the real Firebase backend handles them is unverified.
 3. **Key URLs.** Should Aruma also publish an x509 PEM map (the `robot/v1/metadata/x509` format) for third-party verifiers? The libraries need only JWKS.
-4. **Skew.** Is a 0 s `exp` tolerance acceptable for Node users, or should the library deliberately loosen it? Doing so departs from official behaviour.
-5. **firebase-admin 13.x.** Support it (`AuthClientErrorCode`, constructor not declared) through casts, or require 14.x?
-6. **Go reflection factory.** It relies on the field names `ErrorCode/String/Ext` and the Ext key `"authErrorCode"`. Is a CI version matrix enough, or should we upstream a public error constructor request?
+4. **Skew.** (Decided.) Is a 0 s `exp` tolerance acceptable for Node users, or should the library deliberately loosen it? Doing so departs from official behaviour.
+5. **firebase-admin 13.x.** (Decided: 14 only.) Support it (`AuthClientErrorCode`, constructor not declared) through casts, or require 14.x?
+6. **Go reflection factory.** (Decided: reflection, self-tested.) It relies on the field names `ErrorCode/String/Ext` and the Ext key `"authErrorCode"`. Is a CI version matrix enough, or should we upstream a public error constructor request?
 7. **Key rotation.** Should signing keys be per project or shared, and how often should they rotate? `Cache-Control` max-age must stay below the rotation overlap.
+
+## Decisions taken (T17, T18)
+
+Recorded 2026-10-18 with the Admin API, session cookies and the two libraries. Code:
+`internal/identity/api/admin.go`, `internal/identity/core/cookies.go`, `sdk/node/admin-auth`,
+`sdk/go/adminauth`. Tests: `test/acceptance/auth_admin_test.go` and each library's suite
+(`test/smoke/run.sh admin-auth-node admin-auth-go`).
+
+### Admin API
+
+- **Paths (open question 1).** Served under `/identitytoolkit.googleapis.com/v1/projects/{p}/…` as
+  ADR-014 lists them. The risk of pointing `FIREBASE_AUTH_EMULATOR_HOST` at Aruma is closed on both
+  ends: the server refuses `Bearer owner`, and the libraries refuse to start with the variable set.
+- **No unprefixed forms.** Every user call of both SDKs goes through `/v1/projects/{p}`
+  ([N-req] `ApiSettings` with `FIREBASE_AUTH_BASE_URL_FORMAT`; [G-um] `makeUserMgtURL`).
+  `accounts:query` serves only Go's `QueryUsers`, which is not P0, so it is not served.
+- **Credentials.** A service account token of the project (`aruma_sat_`) or the owner's CLI token
+  (`aruma_pat_`), checked by `authn` before any handler. Anything else is 401 `UNAUTHENTICATED`
+  (`google.rpc.Status`): no header, `Bearer owner`, ID tokens, refresh tokens, unsigned JWTs, API
+  keys (header or `?key=`), console cookies. A project the caller may not act on (another
+  project's service account, another owner, unknown or deleted project) is one uniform 403
+  `PERMISSION_DENIED`. `{project}` is the id or the number. No CORS.
+- **`validSince`.** Any value revokes at the server's clock. Moving it back would bring revoked
+  sessions to life, and the SDKs only ever send "now".
+- **`accounts:batchDelete`.** Without `force`, enabled accounts fail with `NOT_DISABLED`, which
+  Node maps to `user-not-disabled` ([N-base] `deleteUsers`). The SDKs always send `force: true`.
+- **`accounts:batchGet`.** Default page 20 (the Identity Toolkit REST default), 1 to 1000, else
+  `INVALID_PAGE_SELECTION`. Order is by uid in the database collation; the page token is opaque.
+- **`accounts:lookup`.** No match leaves `users` out; the SDKs turn that into `user-not-found`.
+  Phone numbers and federated ids match nobody until those providers exist.
+- **Deferred.** Phone numbers, MFA and provider linking answer `OPERATION_NOT_ALLOWED`.
+  `accounts:sendOobCode` (the `generate*Link` calls) answers `OPERATION_NOT_ALLOWED` until the
+  email action links land (a TODO marks the place).
+
+### Session cookies
+
+- **Claims.** Those of the ID token, with `iss = <public_url>/session-issuers/<project>`, `iat` now
+  and `exp = iat + validDuration`, signed with the project's session cookie keys (ADR-004).
+- **Duration.** `validDuration` 300 to 1 209 600 seconds, as a number or a string, else
+  `INVALID_DURATION`. A missing value is `INVALID_DURATION` too (defensive: no silent default).
+- **ID token.** It must pass the same check as `accounts:lookup`: genuine, current, of the
+  project, its user live and enabled, not revoked (else `TOKEN_EXPIRED`). How recent the sign-in
+  must be is left to the developer, as Firebase documents: "To only allow session cookie setting
+  on recent sign-in, auth_time in ID token can be checked" ([D-cookies]).
+- **Revocation.** The server's `VerifySessionCookie` compares `auth_time` with `validSince`.
+
+### Libraries
+
+- **Configuration.** Server: option, then `ARUMA_URL`, then the key file's `token_uri` minus
+  `/oauth2/v1/token`; `https` except on loopback; Google hosts refused. Key, Node: option, then the
+  `cert()` credential's source (`serviceAccountPathOrObject`, a non-public field of
+  firebase-admin's `ServiceAccountCredential`, with `clientEmail`/`privateKey` as fallback), then
+  `GOOGLE_APPLICATION_CREDENTIALS`. Key, Go: `firebase.App` exposes no credentials, so
+  `WithCredentialsFile`/`WithCredentialsJSON`, then `GOOGLE_APPLICATION_CREDENTIALS`; the app is
+  kept for `CustomToken`.
+- **Emulator guard.** Refuse to start with `FIREBASE_AUTH_EMULATOR_HOST` set. Opt-in
+  (`allowEmulatorHost` / `AllowEmulatorHost()`) is ignored in production: `NODE_ENV=production`
+  in Node; `GO_ENV` or `NODE_ENV` equal to `production` in Go.
+- **Verification.** RS256 with `kid` only; exact `aud` and `iss`; `sub` 1 to 128 characters;
+  `iat`, `exp` and `auth_time` required as numbers. Keys come only from the issuer's discovery
+  document, whose `issuer` must match and whose `jwks_uri` must be on the same origin; JWKS cached
+  by `max-age`, refetched on an unknown `kid` at most every 30 s. Expiry is reported only for an
+  otherwise genuine token.
+- **Skew (open question 4).** `exp`: 0 s in Node, 300 s in Go, as each official SDK. `iat` and
+  `auth_time` in the future: 300 s in both, so a few seconds of clock drift never rejects a fresh
+  token.
+- **checkRevoked.** `auth_time` in Node, `iat` in Go, as each official SDK. Both agree because
+  refresh tokens issued before `validSince` answer `TOKEN_EXPIRED`. `validSince` has one-second
+  resolution: a token from the same second as the revocation still passes, as in Firebase; the
+  tests wait for the next second before revoking.
+- **firebase-admin 13 (open question 5).** Not supported: `firebase-admin@^14` is a peer
+  dependency, and a self-test at the first `getAuth()` checks the two constructors used.
+- **Go errors (open question 6).** The reflection factory, with the type captured from an
+  offline `VerifyIDToken(ctx, "")` of a throwaway app; `errors_test.go` proves `auth.Is*` and
+  `errorutils.Is*` recognise the results, and that wrapping breaks them. Server codes map as
+  `serverError` in [G-um]; client-side argument errors are plain errors, as in the Go SDK.
+  `CreateUser`/`UpdateUser` take the official `UserToCreate`/`UserToUpdate` and read their
+  unexported `params` map by reflection (read only). `NewClient` self-tests both. CI pins
+  firebase-admin-go v4.22.0; a version matrix stays open.
+- **Node errors.** `new FirebaseAuthError({code, message})` with `AuthErrorCode` values; server
+  codes map as `AUTH_SERVER_TO_CLIENT_CODE` in [N-err] for the codes Aruma answers. Verification
+  failures other than expiry are `argument-error`, as in Node.
 
 ## Experiments
 
@@ -314,3 +396,4 @@ Scratch code lived under `.cache/tmp/research-admin` and is not committed. It ra
 - [G-um]: https://github.com/firebase/firebase-admin-go/blob/66a72c371b4dbc592317ab7e7f99ce00d76c62ae/auth/user_mgt.go
 - [G-exp]: https://github.com/firebase/firebase-admin-go/blob/66a72c371b4dbc592317ab7e7f99ce00d76c62ae/auth/export_users.go
 - [G-ierr]: https://github.com/firebase/firebase-admin-go/blob/66a72c371b4dbc592317ab7e7f99ce00d76c62ae/internal/errors.go
+- [D-cookies]: https://firebase.google.com/docs/auth/admin/manage-cookies
