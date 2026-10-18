@@ -2,9 +2,9 @@ import { generateKeyPairSync } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { initializeApp, cert, deleteApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { test, expect, call, value, rest, arumaURL, expected, serviceAccountPath } from './fixtures.mjs';
+import { test, expect, call, value, rest, mailboxCode, arumaURL, expected, serviceAccountPath } from './fixtures.mjs';
 
-// AC-A1, AC-A2, AC-A5 and the web half of AC-A3 with the official firebase package: every flow
+// AC-A1, AC-A2, AC-A5, AC-A6, AC-A7 and the web half of AC-A3 with the official firebase package: every flow
 // through the SDK's public API, with zero requests to Google (the network fixture).
 
 const email = (major, name) => `${name}-${major}@example.com`;
@@ -129,4 +129,57 @@ test('error codes reach the app as the expected auth/* codes', async ({ app, fir
   await rogue.close();
   expect(await call(app, (auth, sdk, a) => sdk.signInWithCustomToken(auth, a.forged), { forged })).toEqual({ code: 'auth/invalid-custom-token' });
   expect(await value(app, (auth) => auth.currentUser)).toBeNull();
+});
+
+test('email verification through the dev mailbox (AC-A6)', async ({ app, firebaseMajor }) => {
+  const addr = email(firebaseMajor, 'verify');
+  await value(app, (auth, sdk, a) => sdk.createUserWithEmailAndPassword(auth, a.addr, 'secret1'), { addr });
+  await value(app, (auth, sdk) => sdk.sendEmailVerification(auth.currentUser, { url: 'http://localhost/done' }));
+  const code = await mailboxCode(addr);
+
+  const info = await value(app, (auth, sdk, a) => sdk.checkActionCode(auth, a.code).then((i) => ({ operation: i.operation, email: i.data.email })), { code });
+  expect(info).toEqual({ operation: 'VERIFY_EMAIL', email: addr });
+  const verified = await value(app, async (auth, sdk, a) => {
+    await sdk.applyActionCode(auth, a.code);
+    await auth.currentUser.reload();
+    await auth.currentUser.getIdToken(true);
+    return { user: auth.currentUser.emailVerified, claim: (await auth.currentUser.getIdTokenResult()).claims.email_verified };
+  }, { code });
+  expect(verified).toEqual({ user: true, claim: true });
+  // A code works once.
+  expect(await call(app, (auth, sdk, a) => sdk.applyActionCode(auth, a.code), { code })).toEqual({ code: 'auth/invalid-action-code' });
+});
+
+test('password reset through the dev mailbox (AC-A7)', async ({ app, firebaseMajor }) => {
+  const addr = email(firebaseMajor, 'reset');
+  await value(app, (auth, sdk, a) => sdk.createUserWithEmailAndPassword(auth, a.addr, 'secret1'), { addr });
+  await value(app, (auth, sdk) => sdk.signOut(auth));
+  await value(app, (auth, sdk, a) => sdk.sendPasswordResetEmail(auth, a.addr), { addr });
+  // Under enumeration protection an unknown address succeeds the same way.
+  await value(app, (auth, sdk) => sdk.sendPasswordResetEmail(auth, 'nobody@example.com'));
+  const code = await mailboxCode(addr);
+
+  expect(await value(app, (auth, sdk, a) => sdk.verifyPasswordResetCode(auth, a.code), { code })).toBe(addr);
+  expect(await call(app, (auth, sdk, a) => sdk.confirmPasswordReset(auth, a.code, '123'), { code })).toEqual({ code: 'auth/weak-password' });
+  await value(app, (auth, sdk, a) => sdk.confirmPasswordReset(auth, a.code, 'secret2'), { code });
+  expect(await call(app, (auth, sdk, a) => sdk.confirmPasswordReset(auth, a.code, 'secret3'), { code })).toEqual({ code: 'auth/invalid-action-code' });
+
+  expect(await call(app, (auth, sdk, a) => sdk.signInWithEmailAndPassword(auth, a.addr, 'secret1'), { addr })).toEqual({ code: 'auth/invalid-credential' });
+  const user = await value(app, (auth, sdk, a) => sdk.signInWithEmailAndPassword(auth, a.addr, 'secret2').then((c) => ({ email: c.user.email, verified: c.user.emailVerified })), { addr });
+  expect(user).toEqual({ email: addr, verified: true });
+});
+
+test('email change after verifying the new address (verifyBeforeUpdateEmail)', async ({ app, firebaseMajor }) => {
+  const addr = email(firebaseMajor, 'move');
+  const next = email(firebaseMajor, 'moved');
+  await value(app, (auth, sdk, a) => sdk.createUserWithEmailAndPassword(auth, a.addr, 'secret1'), { addr });
+  await value(app, (auth, sdk, a) => sdk.verifyBeforeUpdateEmail(auth.currentUser, a.next), { next });
+  const code = await mailboxCode(next);
+  const info = await value(app, (auth, sdk, a) => sdk.checkActionCode(auth, a.code).then((i) => ({ operation: i.operation, email: i.data.email, previous: i.data.previousEmail })), { code });
+  // The SDK reports the new address as email and the current one as previousEmail.
+  expect(info).toEqual({ operation: 'VERIFY_AND_CHANGE_EMAIL', email: next, previous: addr });
+  await value(app, (auth, sdk, a) => sdk.applyActionCode(auth, a.code), { code });
+  await value(app, (auth, sdk) => sdk.signOut(auth));
+  const moved = await value(app, (auth, sdk, a) => sdk.signInWithEmailAndPassword(auth, a.next, 'secret1').then((c) => ({ email: c.user.email, verified: c.user.emailVerified })), { next });
+  expect(moved).toEqual({ email: next, verified: true });
 });

@@ -73,3 +73,15 @@ export async function rest(path, body) {
   if (!res.ok) throw new Error(`${path}: ${res.status} ${JSON.stringify(json)}`);
   return json;
 }
+
+// mailboxCode reads the oobCode of the newest dev mailbox message to an address, as the user
+// would follow the link (the console API, with the CLI token run.sh exports).
+export async function mailboxCode(to) {
+  const res = await fetch(`${arumaURL}/console/v1/projects/${expected.projectId}/auth/mailbox`, {
+    headers: { authorization: `Bearer ${process.env.ARUMA_CLI_TOKEN}` },
+  });
+  const { messages } = await res.json();
+  const message = messages.find((m) => m.to === to);
+  if (!message) throw new Error(`no message to ${to} in the dev mailbox`);
+  return new URL(message.link).searchParams.get('oobCode');
+}

@@ -16,31 +16,47 @@ cd "$root"
 
 log() { printf '\n==> %s\n' "$*"; }
 
-log "starting a fresh Aruma server"
-rm -rf "$gen"
-mkdir -p "$gen"
-go build -o "$gen/genconfig" ./test/smoke/genconfig
-"$gen/genconfig" -out "$gen" -serve -anonymous >"$gen/server.env" 2>"$gen/server.log" &
-server=$!
-# SIGTERM makes genconfig stop the server and drop its database.
-trap 'kill "$server" 2>/dev/null; wait "$server" 2>/dev/null || true' EXIT
-for _ in $(seq 1 240); do
-  grep -q ARUMA_CLI_TOKEN "$gen/server.env" 2>/dev/null && break
-  kill -0 "$server" 2>/dev/null || { cat "$gen/server.log" >&2; exit 1; }
-  sleep 0.25
-done
-# shellcheck disable=SC1091
-. "$gen/server.env"
+server=
+stop() {
+  # SIGTERM makes genconfig stop the server and drop its database.
+  if [[ -n "$server" ]]; then
+    kill "$server" 2>/dev/null
+    wait "$server" 2>/dev/null || true
+  fi
+  server=
+}
+trap stop EXIT
 
-log "fetching the web config from the Management API"
-app_id=$(node -p "require('$gen/expected.json').web.appId")
-curl -fsS -H "Authorization: Bearer $ARUMA_CLI_TOKEN" \
-  "$ARUMA_URL/v1beta1/projects/$(node -p "require('$gen/expected.json').projectId")/webApps/$app_id/config" \
-  >"$gen/firebase-config.json"
+# start runs a fresh Aruma server and writes the web config the Management API serves.
+start() {
+  rm -rf "$gen"
+  mkdir -p "$gen"
+  go build -o "$gen/genconfig" ./test/smoke/genconfig
+  "$gen/genconfig" -out "$gen" -serve -anonymous >"$gen/server.env" 2>"$gen/server.log" &
+  server=$!
+  for _ in $(seq 1 240); do
+    grep -q ARUMA_CLI_TOKEN "$gen/server.env" 2>/dev/null && break
+    kill -0 "$server" 2>/dev/null || { cat "$gen/server.log" >&2; exit 1; }
+    sleep 0.25
+  done
+  # shellcheck disable=SC1091
+  . "$gen/server.env"
+  local project app_id
+  project=$(node -p "require('$gen/expected.json').projectId")
+  app_id=$(node -p "require('$gen/expected.json').web.appId")
+  curl -fsS -H "Authorization: Bearer $ARUMA_CLI_TOKEN" \
+    "$ARUMA_URL/v1beta1/projects/$project/webApps/$app_id/config" >"$gen/firebase-config.json"
+}
 
-log "web Auth e2e: firebase 11, 12, 13 against $ARUMA_URL"
-cd "$here"
-npm ci --no-audit --no-fund --silent
+(cd "$here" && npm ci --no-audit --no-fund --silent)
 # On CI the browser needs its system libraries too.
-npx playwright install ${CI:+--with-deps} chromium >/dev/null
-ARUMA_URL=$ARUMA_URL ARUMA_E2E_DIR=$gen npx playwright test "$@"
+(cd "$here" && npx playwright install ${CI:+--with-deps} chromium >/dev/null)
+
+# One server per firebase major version: every request comes from 127.0.0.1, and Aruma's
+# per-address limits are sized for one app, not three in a row.
+for major in 11 12 13; do
+  log "web Auth e2e: firebase $major against a fresh Aruma server"
+  start
+  (cd "$here" && ARUMA_URL=$ARUMA_URL ARUMA_E2E_DIR=$gen npx playwright test --project "firebase-$major" "$@")
+  stop
+done
