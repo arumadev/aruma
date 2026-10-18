@@ -2,11 +2,11 @@
 # Runs the Phase 1 smoke tests (AC-22..26): official SDKs load the configuration files a real
 # Aruma server generates, with all network access blocked.
 #
-#   test/smoke/run.sh [web|admin-node|admin-go|admin-auth-node|admin-auth-go|android|ios|flutter|flutter-ios ...]
+#   test/smoke/run.sh [web|admin-node|admin-go|admin-auth-node|admin-auth-go|tamper-libs|android|ios|flutter|flutter-ios ...]
 #
 # admin-auth-node and admin-auth-go run the Aruma verification libraries' suites (sdk/), which
 # start their own live server and use the official firebase-admin beside them (AC-A5, AC-A10..14,
-# AC-A20).
+# AC-A20). tamper-libs puts the tamper suite's forged ID tokens to both libraries too (T24).
 #
 # Without arguments it runs every target this machine can run. It needs the local Postgres
 # (ARUMA_TEST_DATABASE_URL), Node, Go and, per target, a JDK 17+ and the Android SDK, Xcode with an
@@ -49,6 +49,14 @@ run_admin_auth_node() {
 run_admin_auth_go() {
   log "admin-auth-go: adminauth with firebase-admin-go"
   (cd "$root/sdk/go/adminauth" && go test -count=1 ./...)
+}
+
+run_tamper_libs() {
+  log "tamper-libs: forged ID tokens against @aruma/admin-auth and adminauth"
+  (cd "$root/sdk/node/admin-auth" && npm ci --no-audit --no-fund --silent)
+  (cd "$root/sdk/go/adminauth" && go build -o "$gen/tamperverify" ./internal/tamperverify)
+  ARUMA_VERIFY_GO="$gen/tamperverify" ARUMA_VERIFY_NODE="node $root/sdk/node/admin-auth/test/tamper-verify.js" \
+    go test -count=1 -run 'TestAuthTamper' ./test/acceptance/
 }
 
 run_android() {
@@ -118,7 +126,7 @@ run_flutter_ios() {
 
 targets=("$@")
 if [[ ${#targets[@]} -eq 0 ]]; then
-  targets=(web admin-node admin-go admin-auth-node admin-auth-go)
+  targets=(web admin-node admin-go admin-auth-node admin-auth-go tamper-libs)
   command -v java >/dev/null && [[ -d "${ANDROID_HOME:-$HOME/Library/Android/sdk}" ]] && targets+=(android)
   command -v xcodebuild >/dev/null && targets+=(ios)
   command -v flutter >/dev/null && targets+=(flutter)

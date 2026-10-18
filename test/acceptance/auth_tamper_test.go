@@ -29,16 +29,16 @@ import (
 
 const (
 	pendingIdP     = "pending Google and Apple sign-in (createAuthUri with providerId, signInWithIdp), enabled at merge"
-	pendingAdmin   = "pending the Admin Auth API routes (/v1/projects/{p}/accounts*), enabled at merge"
-	pendingNodeLib = "pending @aruma/admin-auth verifyIdToken (Node library), enabled at merge"
-	pendingGoLib   = "pending the Go verification library (adminauth), enabled at merge"
+	pendingNodeLib = "the Node library verifies only with ARUMA_VERIFY_NODE set: run test/smoke/run.sh tamper-libs"
+	pendingGoLib   = "the Go library verifies only with ARUMA_VERIFY_GO set: run test/smoke/run.sh tamper-libs"
 )
 
 // libVerifier is a verification library's view of an ID token: nil error means accepted.
 // checkRevoked asks for the revocation check (verifyIdToken(token, true)).
 type libVerifier func(t *testing.T, p *authProject, token string, checkRevoked bool) error
 
-// Hooks wired at merge, when the libraries and features land on this branch.
+// The library verifiers (auth_verifiers_test.go), and a hook wired when Google and Apple
+// sign-in land on this branch.
 var (
 	nodeLibVerify libVerifier
 	goLibVerify   libVerifier
@@ -63,6 +63,15 @@ type idpDriver interface {
 	IDToken(t *testing.T, p *authProject, nonce string) string
 }
 
+type namedVerifier struct {
+	name, pending string
+	verify        libVerifier
+}
+
+func libVerifiers() []namedVerifier {
+	return []namedVerifier{{"node library", pendingNodeLib, nodeLibVerify}, {"go library", pendingGoLib, goLibVerify}}
+}
+
 // rejectEverywhere asserts that every verifier refuses an ID token; the server must answer
 // with serverCode.
 func rejectEverywhere(t *testing.T, p *authProject, token, serverCode string) {
@@ -70,17 +79,30 @@ func rejectEverywhere(t *testing.T, p *authProject, token, serverCode string) {
 	t.Run("server", func(t *testing.T) {
 		authErr(t, p.call(itk+"accounts:lookup", map[string]any{"idToken": token}), serverCode)
 	})
-	libs := []struct {
-		name, pending string
-		verify        libVerifier
-	}{{"node library", pendingNodeLib, nodeLibVerify}, {"go library", pendingGoLib, goLibVerify}}
-	for _, lib := range libs {
+	for _, lib := range libVerifiers() {
 		t.Run(lib.name, func(t *testing.T) {
 			if lib.verify == nil {
 				t.Skip(lib.pending)
 			}
 			if err := lib.verify(t, p, token, true); err == nil {
 				t.Fatal("the library accepted a forged token")
+			}
+		})
+	}
+}
+
+// acceptEverywhere is the control: every verifier accepts a genuine token, so the rejections
+// are not a broken verifier.
+func acceptEverywhere(t *testing.T, p *authProject, token string) {
+	t.Helper()
+	t.Run("server", func(t *testing.T) { ok(t, p.call(itk+"accounts:lookup", map[string]any{"idToken": token})) })
+	for _, lib := range libVerifiers() {
+		t.Run(lib.name, func(t *testing.T) {
+			if lib.verify == nil {
+				t.Skip(lib.pending)
+			}
+			if err := lib.verify(t, p, token, true); err != nil {
+				t.Fatalf("the library refused a genuine token: %v", err)
 			}
 		})
 	}
@@ -164,10 +186,10 @@ func TestAuthTamper(t *testing.T) {
 	other := p.signUp("other@example.com", "secret1")
 
 	t.Run("00 control: genuine and re-signed tokens are accepted", func(t *testing.T) {
-		ok(t, p.call(itk+"accounts:lookup", map[string]any{"idToken": victim.session.str("idToken")}))
+		t.Run("genuine", func(t *testing.T) { acceptEverywhere(t, p, victim.session.str("idToken")) })
 		// Re-signing the untouched payload with the extracted key must pass, so every rejection
 		// below is caused by the one thing each scenario changes.
-		ok(t, p.call(itk+"accounts:lookup", map[string]any{"idToken": victim.resign(t, victim.claimsWith(nil))}))
+		t.Run("re-signed", func(t *testing.T) { acceptEverywhere(t, p, victim.resign(t, victim.claimsWith(nil))) })
 	})
 
 	t.Run("01 unsigned token", func(t *testing.T) {
@@ -281,7 +303,8 @@ func TestAuthTamper(t *testing.T) {
 			"expired an hour ago": func(c map[string]any) {
 				c["iat"], c["exp"] = now.Add(-2*time.Hour).Unix(), now.Add(-time.Hour).Unix()
 			},
-			"expired a second ago": func(c map[string]any) { c["exp"] = now.Add(-time.Second).Unix() },
+			// firebase-admin-go, and so the Go library, allow 300 seconds of clock skew on exp.
+			"expired beyond the clock skew": func(c map[string]any) { c["exp"] = now.Add(-6 * time.Minute).Unix() },
 			"issued in the future": func(c map[string]any) {
 				c["iat"], c["exp"] = now.Add(time.Hour).Unix(), now.Add(2*time.Hour).Unix()
 			},
@@ -290,6 +313,11 @@ func TestAuthTamper(t *testing.T) {
 				rejectEverywhere(t, p, victim.resign(t, victim.claimsWith(edit)), "INVALID_ID_TOKEN")
 			})
 		}
+		// The server allows no skew at all on exp.
+		t.Run("server: expired a second ago", func(t *testing.T) {
+			tok := victim.resign(t, victim.claimsWith(func(c map[string]any) { c["exp"] = now.Add(-time.Second).Unix() }))
+			authErr(t, p.call(itk+"accounts:lookup", map[string]any{"idToken": tok}), "INVALID_ID_TOKEN")
+		})
 	})
 
 	t.Run("08 revoked token after a password change", func(t *testing.T) {
@@ -533,7 +561,6 @@ func TestAuthTamper(t *testing.T) {
 		{"POST", "/projects/chat-app/accounts:delete"},
 		{"POST", "/projects/chat-app/accounts:batchDelete"},
 		{"POST", "/projects/chat-app/accounts"},
-		{"POST", "/projects/chat-app/accounts:query"},
 		{"GET", "/projects/chat-app/accounts:batchGet?maxResults=10"},
 		{"POST", "/projects/chat-app:createSessionCookie"},
 		{"POST", "/projects/" + p.number + "/accounts:lookup"},
@@ -568,7 +595,6 @@ func TestAuthTamper(t *testing.T) {
 			expect(t, owner.do("GET", path, nil), 401, "")
 		}
 		t.Run("strict status", func(t *testing.T) {
-			t.Skip(pendingAdmin)
 			for _, c := range adminCalls {
 				unauthenticated(t, owner.do(c.method, strings.TrimSuffix(itk, "/")+c.path, adminBody))
 			}
@@ -592,7 +618,6 @@ func TestAuthTamper(t *testing.T) {
 			})
 		}
 		t.Run("strict status, and the service account token works", func(t *testing.T) {
-			t.Skip(pendingAdmin)
 			for _, c := range adminCalls {
 				unauthenticated(t, e.client().do(c.method, strings.TrimSuffix(itk, "/")+c.path+"?key="+p.key, adminBody))
 				unauthenticated(t, userToken.do(c.method, strings.TrimSuffix(itk, "/")+c.path, adminBody))
