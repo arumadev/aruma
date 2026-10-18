@@ -488,22 +488,19 @@ func TestAuthDeferredMethods(t *testing.T) {
 	}
 }
 
-// The web SDK's reauthenticate then updatePassword, within one second: the ID token the update
-// returns is byte for byte the one the SDK holds, so the SDK keeps the refresh token of the
-// sign-in, which must go on working.
+// The web SDK's reauthenticate then updatePassword, within one second: the SDK keeps the
+// refresh token it holds when the ID token the update returns is byte for byte its own. The
+// returned session is dated at the revocation point, so its ID token always differs, the SDK
+// takes the new refresh token, and the one of the sign-in ends with the old password.
 func TestAuthPasswordChangeRightAfterSignIn(t *testing.T) {
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "quick@example.com", "password": "secret1"}))
-	for {
-		in := ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "quick@example.com", "password": "secret1", "returnSecureToken": true}))
-		upd := ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": in.str("idToken"), "password": "secret2", "returnSecureToken": true}))
-		if upd.str("idToken") != in.str("idToken") {
-			// The second ticked over between the two calls; the SDK would take the new tokens.
-			ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": upd.str("idToken"), "password": "secret1"}))
-			continue
-		}
-		ok(t, p.refresh(in.str("refreshToken")))
-		return
+	in := ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "quick@example.com", "password": "secret1", "returnSecureToken": true}))
+	upd := ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": in.str("idToken"), "password": "secret2", "returnSecureToken": true}))
+	if upd.str("idToken") == in.str("idToken") {
+		t.Fatal("the update returned the ID token the SDK already holds")
 	}
+	ok(t, p.refresh(upd.str("refreshToken")))
+	authErr(t, p.refresh(in.str("refreshToken")), "TOKEN_EXPIRED")
 }

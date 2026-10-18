@@ -3,6 +3,7 @@ package acceptance
 import (
 	"context"
 	"testing"
+	"time"
 )
 
 // Regression tests for the Phase 2 security review (docs/security/review-phase2.md).
@@ -61,4 +62,41 @@ func TestAuthChangeEmailCodeEndsWithItsSession(t *testing.T) {
 	_, q = linkCode(t, x.lastMail("thief@evil.test")["link"].(string))
 	ok(t, x.call(itk+"accounts:update", map[string]any{"idToken": owner.str("idToken"), "password": "secret34"}))
 	authErr(t, x.call(itk+"accounts:update", map[string]any{"oobCode": q.Get("oobCode")}), "INVALID_OOB_CODE")
+}
+
+// H-3: a revocation ends every session started before it, also those started earlier in the
+// same second. Otherwise whoever knows the password and signs in in a loop keeps a session
+// through the password change meant to lock them out (or through takeover protection), while
+// the session the change itself returns must go on working, as the web SDK takes it.
+func TestAuthRevocationEndsSessionsOfTheSameSecond(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.authProject("chat-app")
+	ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "owner@example.com", "password": "secret1"}))
+	signIn := func(pw string) *Response {
+		return ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "owner@example.com", "password": pw, "returnSecureToken": true}))
+	}
+	pw, next := "secret1", "secret2"
+	for round := 0; ; round++ {
+		if round == 20 {
+			t.Fatal("no round fell within one second")
+		}
+		start := time.Now().Unix()
+		thief := signIn(pw)
+		owner := signIn(pw)
+		upd := ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": owner.str("idToken"), "password": next, "returnSecureToken": true}))
+		pw, next = next, pw
+		if time.Now().Unix() != start {
+			continue // the second ticked over; only a round within one second shows the case
+		}
+		authErr(t, p.refresh(thief.str("refreshToken")), "TOKEN_EXPIRED")
+		authErr(t, p.call(itk+"accounts:lookup", map[string]any{"idToken": thief.str("idToken")}), "TOKEN_EXPIRED")
+		// The web SDK keeps its refresh token when the returned ID token is the one it holds,
+		// so the change must return a different one, and that session must work.
+		if upd.str("idToken") == owner.str("idToken") {
+			t.Fatal("the password change returned the ID token of the revoked session")
+		}
+		ok(t, p.call(itk+"accounts:lookup", map[string]any{"idToken": upd.str("idToken")}))
+		ok(t, p.refresh(upd.str("refreshToken")))
+		return
+	}
 }

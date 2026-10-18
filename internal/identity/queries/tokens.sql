@@ -1,6 +1,13 @@
--- name: CreateRefreshToken :exec
-INSERT INTO auth.refresh_tokens (token_hash, project_number, tenant_id, uid, sign_in_provider, custom_claims, auth_time)
-VALUES (@token_hash, @project_number, @tenant_id, @uid, @sign_in_provider, sqlc.narg(custom_claims), @auth_time);
+-- name: CreateRefreshToken :one
+-- Starts a session no earlier than the user's revocation point, which RevokeUserTokens puts at
+-- the next whole second: a session the revoking transaction itself starts (the new session of a
+-- password change) is dated there and stays valid. Returns the session's auth_time.
+INSERT INTO auth.refresh_tokens (token_hash, project_number, tenant_id, uid, sign_in_provider, custom_claims, auth_time, created_at)
+SELECT @token_hash, u.project_number, u.tenant_id, u.uid, @sign_in_provider, sqlc.narg(custom_claims),
+       GREATEST(now(), u.tokens_valid_after), GREATEST(now(), u.tokens_valid_after)
+FROM auth.users u
+WHERE u.project_number = @project_number AND u.tenant_id = @tenant_id AND u.uid = @uid
+RETURNING auth_time;
 
 -- name: GetRefreshToken :one
 SELECT * FROM auth.refresh_tokens WHERE project_number = @project_number AND token_hash = @token_hash;
