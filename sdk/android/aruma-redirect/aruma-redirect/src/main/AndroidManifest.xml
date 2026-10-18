@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright 2026 The Aruma Authors
+  SPDX-License-Identifier: Apache-2.0
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- initOrder 1000 > FirebaseInitProvider (100): installed before Firebase can send a request. -->
+        <provider
+            android:name="dev.aruma.redirect.ArumaRedirectProvider"
+            android:authorities="${applicationId}.arumaredirect"
+            android:exported="false"
+            android:initOrder="1000" />
+    </application>
+</manifest>
