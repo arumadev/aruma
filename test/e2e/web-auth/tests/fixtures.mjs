@@ -14,6 +14,8 @@ const local = new Set(['127.0.0.1', 'localhost']);
 
 export const test = base.extend({
   firebaseMajor: ['13', { option: true }],
+  // emulator, production or production-build (ARUMA_E2E_MODE, see vite.config.mjs).
+  mode: ['emulator', { option: true }],
 
   // The network guard: requests to this machine (the Vite app and Aruma) go through; anything
   // else is aborted and recorded, and the test fails if there was any (AC-A1).
@@ -34,9 +36,30 @@ export const test = base.extend({
   }, { auto: true }],
 
   // The app, loaded with the firebase major version of the project.
-  app: async ({ page, firebaseMajor }, use) => {
+  // In production modes the SDK must really be in production mode: no emulator configuration, and
+  // the requests reach Aruma only through @aruma/web.
+  app: async ({ page, firebaseMajor, mode }, use) => {
     await page.goto(`/?v=${firebaseMajor}`);
     await expect(page.locator('#status')).toHaveText(new RegExp(`^ready ${firebaseMajor}\\.`));
+    const sdk = await page.evaluate(() => ({
+      emulator: window.e2e.auth.emulatorConfig,
+      apiScheme: window.e2e.auth.config.apiScheme,
+      apiHost: window.e2e.auth.config.apiHost,
+      tokenApiHost: window.e2e.auth.config.tokenApiHost,
+    }));
+    const aruma = new URL(arumaURL);
+    if (mode === 'emulator') {
+      expect(sdk.emulator).not.toBeNull();
+    } else if (mode === 'production') {
+      expect(sdk).toEqual({ emulator: null, apiScheme: 'https', apiHost: 'identitytoolkit.googleapis.com', tokenApiHost: 'securetoken.googleapis.com' });
+    } else {
+      expect(sdk).toEqual({
+        emulator: null,
+        apiScheme: aruma.protocol.slice(0, -1),
+        apiHost: `${aruma.host}/identitytoolkit.googleapis.com`,
+        tokenApiHost: `${aruma.host}/securetoken.googleapis.com`,
+      });
+    }
     await use(page);
   },
 });

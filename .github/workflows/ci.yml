@@ -86,7 +86,7 @@ jobs:
         run: test/smoke/run.sh web admin-node admin-go admin-auth-node admin-auth-go tamper-libs android
 
   web-auth:
-    name: Web Auth e2e (firebase 11, 12, 13)
+    name: Web Auth e2e (firebase 11, 12, 13; emulator and production modes)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -106,8 +106,15 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: test/e2e/web-auth/package-lock.json
+      - name: "@aruma/web unit tests"
+        working-directory: sdk/web/aruma-web
+        run: npm test
       - name: Official SDK against a real server, no request to Google
         run: test/e2e/web-auth/run.sh
+      - name: The same in production mode (no connectAuthEmulator), through @aruma/web
+        run: |
+          ARUMA_E2E_MODE=production test/e2e/web-auth/run.sh
+          ARUMA_E2E_MODE=production-build test/e2e/web-auth/run.sh
       - uses: actions/upload-artifact@v7
         if: failure()
         with:

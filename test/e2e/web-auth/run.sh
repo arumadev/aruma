@@ -6,8 +6,18 @@
 #
 #   test/e2e/web-auth/run.sh [playwright test arguments]
 #
+# ARUMA_E2E_MODE picks how the app reaches Aruma (vite.config.mjs):
+#   emulator (default)  connectAuthEmulator, the one line of ADR-013.
+#   production          no connectAuthEmulator: the SDK stays in production mode and @aruma/web's
+#                       Vite plugin redirects its Auth requests (sdk/web/aruma-web).
+#   production-build    the same plugin in mode 'build': the host literals are rewritten in the build.
+#
 # It needs the local Postgres (ARUMA_TEST_DATABASE_URL), Go and Node.
 set -euo pipefail
+
+mode=${ARUMA_E2E_MODE:-emulator}
+case "$mode" in emulator|production|production-build) ;; *) echo "unknown ARUMA_E2E_MODE $mode" >&2; exit 2 ;; esac
+export ARUMA_E2E_MODE=$mode
 
 here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/../../.." && pwd)
@@ -55,7 +65,7 @@ start() {
 # One server per firebase major version: every request comes from 127.0.0.1, and Aruma's
 # per-address limits are sized for one app, not three in a row.
 for major in 11 12 13; do
-  log "web Auth e2e: firebase $major against a fresh Aruma server"
+  log "web Auth e2e ($mode mode): firebase $major against a fresh Aruma server"
   start
   (cd "$here" && ARUMA_URL=$ARUMA_URL ARUMA_E2E_DIR=$gen npx playwright test --project "firebase-$major" "$@")
   stop

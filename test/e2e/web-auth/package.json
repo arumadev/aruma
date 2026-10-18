@@ -12,6 +12,7 @@
     "firebase-13": "npm:firebase@^13"
   },
   "devDependencies": {
+    "@aruma/web": "file:../../../sdk/web/aruma-web",
     "@playwright/test": "1.64.1",
     "firebase-admin": "^14",
     "vite": "^8"

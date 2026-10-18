@@ -8,6 +8,12 @@ if (!process.env.ARUMA_URL) {
 }
 
 const PORT = 4180;
+// ARUMA_E2E_MODE: emulator (default), production or production-build (see vite.config.mjs). The
+// build-time mode is served from a production build, as a developer ships it.
+const mode = process.env.ARUMA_E2E_MODE ?? 'emulator';
+const command = mode === 'production-build'
+  ? `npx vite build --logLevel warn && npx vite preview --port ${PORT}`
+  : `npx vite --port ${PORT}`;
 
 export default defineConfig({
   testDir: './tests',
@@ -20,11 +26,11 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: 'retain-on-failure',
   },
-  projects: ['11', '12', '13'].map((major) => ({ name: `firebase-${major}`, use: { firebaseMajor: major } })),
+  projects: ['11', '12', '13'].map((major) => ({ name: `firebase-${major}`, use: { firebaseMajor: major, mode } })),
   webServer: {
-    command: `npx vite --port ${PORT}`,
+    command,
     url: `http://127.0.0.1:${PORT}/`,
     reuseExistingServer: false,
-    env: { VITE_ARUMA_URL: process.env.ARUMA_URL },
+    env: { VITE_ARUMA_URL: process.env.ARUMA_URL, ARUMA_E2E_MODE: mode },
   },
 });

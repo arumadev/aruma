@@ -183,3 +183,21 @@ test('email change after verifying the new address (verifyBeforeUpdateEmail)', a
   const moved = await value(app, (auth, sdk, a) => sdk.signInWithEmailAndPassword(auth, a.next, 'secret1').then((c) => ({ email: c.user.email, verified: c.user.emailVerified })), { next });
   expect(moved).toEqual({ email: next, verified: true });
 });
+
+// Production mode with the fetch redirect: the SDK looks fetch up on every request, so installing
+// @aruma/web after firebase/auth was imported and used works the same as installing it first.
+test('production mode: installed after firebase/auth, the next request still reaches Aruma', async ({ app, mode, network }) => {
+  test.skip(mode !== 'production', 'only the fetch redirect is installed at run time');
+  const result = await value(app, async () => {
+    // The same global state any copy of @aruma/web uses.
+    const aruma = await import('/@id/@aruma/web');
+    const before = aruma.status();
+    aruma.uninstall();
+    const off = aruma.status();
+    aruma.install(before); // { url }: now after the SDK was imported and initialised
+    const c = await window.e2e.sdk.signInAnonymously(window.e2e.auth);
+    return { before, off, after: aruma.status(), anonymous: c.user.isAnonymous };
+  });
+  expect(result).toEqual({ before: { url: arumaURL }, off: null, after: { url: arumaURL }, anonymous: true });
+  expect(network.aruma).toContain('/identitytoolkit.googleapis.com/v1/accounts:signUp');
+});
