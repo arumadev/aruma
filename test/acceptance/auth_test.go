@@ -240,6 +240,8 @@ func TestAuthDisabledUser(t *testing.T) {
 	authErr(t, p.call(itk+"accounts:lookup", map[string]any{"idToken": up.str("idToken")}), "USER_DISABLED")
 	// Under enumeration protection a wrong password says nothing about the account's state.
 	authErr(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "d@example.com", "password": "wrong!!"}), "INVALID_LOGIN_CREDENTIALS")
+	// The right password learns it, so the web SDK can say auth/user-disabled.
+	authErr(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "d@example.com", "password": "secret1"}), "USER_DISABLED")
 }
 
 func TestAuthKeysAndProjects(t *testing.T) {
