@@ -99,11 +99,11 @@ func (a *API) signUp(w http.ResponseWriter, r *http.Request, p core.Project) {
 		a.writeError(w, r, err)
 		return
 	}
-	if req.IDToken == "" {
-		if ok, _ := a.signupLimit.Allow(ratelimit.AddrKey(httpx.ClientAddr(r.Context()))); !ok {
-			a.writeError(w, r, core.ErrTooManyAttempts)
-			return
-		}
+	// Links count too: signUp answers EMAIL_EXISTS before it looks at the idToken, so an
+	// unlimited link would be an unthrottled way to test which addresses are taken.
+	if ok, _ := a.signupLimit.Allow(ratelimit.AddrKey(httpx.ClientAddr(r.Context()))); !ok {
+		a.writeError(w, r, core.ErrTooManyAttempts)
+		return
 	}
 	s, err := a.svc.SignUp(r.Context(), p, core.SignUpInput{Email: req.Email, Password: req.Password, DisplayName: req.DisplayName, IDToken: req.IDToken})
 	if err != nil {
