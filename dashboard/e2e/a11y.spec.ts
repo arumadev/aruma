@@ -12,6 +12,12 @@ const PAGES: [string, string, [string, string]][] = [
   ['service accounts', '/project/service-accounts/?id=chat-app', ['حسابات الخدمة', 'Service accounts']],
   ['settings', '/project/settings/?id=chat-app', ['إعدادات المشروع', 'Project settings']],
   ['audit', '/project/audit/?id=chat-app', ['سجل التدقيق', 'Audit log']],
+  ['auth users', '/project/auth/?id=chat-app', ['المصادقة', 'Authentication']],
+  ['auth user', '/project/auth/user/?id=chat-app&uid=0bQ3pX7aKd2LmN8rT4vW6yZ1cE5g', ['المصادقة', 'Authentication']],
+  ['auth sign-in methods', '/project/auth/providers/?id=chat-app', ['المصادقة', 'Authentication']],
+  ['auth templates', '/project/auth/templates/?id=chat-app', ['المصادقة', 'Authentication']],
+  ['auth mailbox', '/project/auth/mailbox/?id=chat-app', ['المصادقة', 'Authentication']],
+  ['auth settings', '/project/auth/settings/?id=chat-app', ['المصادقة', 'Authentication']],
   ['account', '/account/', ['الحساب', 'Account']],
   ['limits', '/limits/', ['حدود الإصدار 1', 'v1 limits']],
 ];

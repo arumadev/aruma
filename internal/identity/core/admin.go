@@ -375,6 +375,9 @@ func (s *Service) UpdateConfig(ctx context.Context, p Project, fn func(*queries.
 	if c.PasswordEnforcement != "OFF" && c.PasswordEnforcement != "ENFORCE" {
 		return c, failf("INVALID_CONFIG", "password enforcement must be OFF or ENFORCE")
 	}
+	if err := checkConfig(&c); err != nil {
+		return c, err
+	}
 	out, err := s.q.UpdateProjectConfig(ctx, queries.UpdateProjectConfigParams{
 		ProjectNumber: p.Number, PasswordEnabled: c.PasswordEnabled, AnonymousEnabled: c.AnonymousEnabled,
 		ClientSignupEnabled: c.ClientSignupEnabled, EnumerationProtection: c.EnumerationProtection,

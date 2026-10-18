@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 	"unicode"
 
 	"github.com/osama300/aurma-project/internal/identity/core"
@@ -46,10 +45,10 @@ type API struct {
 func New(svc *core.Service, auth *authn.Authenticator, logger *slog.Logger) *API {
 	return &API{
 		svc: svc, auth: auth, log: logger,
-		ipLimit:     ratelimit.NewLimiter(300, 100),
-		signupLimit: ratelimit.NewLimiter(2, 100), // ≈ Firebase's 100 accounts per hour per address
+		ipLimit:     ratelimit.NewLimiter(ClientLimits.RequestsPerMinute, ClientLimits.RequestBurst),
+		signupLimit: ratelimit.NewLimiter(ClientLimits.SignUpsPerMinute, ClientLimits.SignUpBurst),
 		mailLimit:   ratelimit.NewHourlyLimiter(60, 20),
-		backoff:     ratelimit.NewBackoff(10, 15*time.Minute, 30*time.Second, 15*time.Minute),
+		backoff:     ratelimit.NewBackoff(ClientLimits.PasswordFailures, ClientLimits.FailureWindow, ClientLimits.BackoffBase, ClientLimits.BackoffMax),
 	}
 }
 

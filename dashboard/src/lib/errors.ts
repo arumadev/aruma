@@ -23,6 +23,32 @@ const FIELDS = [
   'shaHash',
 ] as const;
 type KnownField = (typeof FIELDS)[number];
+
+// Auth codes the console API keeps at the start of the message ("WEAK_PASSWORD : …").
+export const AUTH_CODES = [
+  'CLAIMS_TOO_LARGE',
+  'DUPLICATE_LOCAL_ID',
+  'EMAIL_EXISTS',
+  'FORBIDDEN_CLAIM',
+  'INVALID_CLAIMS',
+  'INVALID_CONFIG',
+  'INVALID_DISPLAY_NAME',
+  'INVALID_EMAIL',
+  'INVALID_LOCAL_ID',
+  'INVALID_PHOTO_URL',
+  'MISSING_EMAIL',
+  'PASSWORD_DOES_NOT_MEET_REQUIREMENTS',
+  'USER_NOT_FOUND',
+  'WEAK_PASSWORD',
+] as const;
+type AuthCode = (typeof AUTH_CODES)[number];
+
+/** The Auth code of a console API error, if it carries one. */
+export function authCode(error: unknown): AuthCode | undefined {
+  if (!(error instanceof ApiError)) return undefined;
+  const code = error.message.split(' : ')[0];
+  return (AUTH_CODES as readonly string[]).includes(code ?? '') ? (code as AuthCode) : undefined;
+}
 const isKnown = (field: string): field is KnownField => (FIELDS as readonly string[]).includes(field);
 
 export interface ErrorText {
@@ -56,6 +82,8 @@ export function useErrorText(): ErrorText {
   const message = useCallback(
     (error: unknown): string => {
       if (!(error instanceof ApiError)) return t('unknown');
+      const code = authCode(error);
+      if (code) return t(`auth.${code}`);
       switch (error.status) {
         case 'UNAVAILABLE':
           return error.code === 0 ? t('network') : t('unavailable');

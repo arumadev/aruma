@@ -85,13 +85,23 @@ export function OverviewScreen() {
       {list.some((a) => a.state === 'ACTIVE') && <FlutterCard projectId={project.projectId} apps={list.filter((a) => a.state === 'ACTIVE')} />}
       <Card title={t('services')} description={t('servicesHint')}>
         <ul className={styles.services}>
-          {SERVICES.map((service) => (
-            <li key={service.id} className={styles.service}>
-              <Icon name={service.icon} />
-              <span className={styles.serviceName}>{t(`service.${service.id}`)}</span>
-              <Badge>{t('comingSoon')}</Badge>
-            </li>
-          ))}
+          {SERVICES.map((service) =>
+            service.id === 'auth' ? (
+              <li key={service.id}>
+                <Link href={routes.authUsers(project.projectId)} className={`${styles.service} ${styles.available}`}>
+                  <Icon name={service.icon} />
+                  <span className={styles.serviceName}>{t(`service.${service.id}`)}</span>
+                  <Icon name="chevronForward" />
+                </Link>
+              </li>
+            ) : (
+              <li key={service.id} className={styles.service}>
+                <Icon name={service.icon} />
+                <span className={styles.serviceName}>{t(`service.${service.id}`)}</span>
+                <Badge>{t('comingSoon')}</Badge>
+              </li>
+            ),
+          )}
         </ul>
       </Card>
     </>

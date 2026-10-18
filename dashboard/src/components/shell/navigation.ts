@@ -6,10 +6,20 @@ export interface NavItem {
   href: string;
   icon: IconName;
   /** Key in the "nav" message namespace. */
-  label: 'projects' | 'overview' | 'keys' | 'serviceAccounts' | 'audit' | 'settings' | 'account' | 'limits';
+  label: 'projects' | 'overview' | 'auth' | 'keys' | 'serviceAccounts' | 'audit' | 'settings' | 'account' | 'limits';
   /** Pathnames that highlight this item. */
   paths: string[];
 }
+
+// The Auth section's pages, whose tabs share one destination.
+const AUTH_PATHS = [
+  '/project/auth/',
+  '/project/auth/user/',
+  '/project/auth/providers/',
+  '/project/auth/templates/',
+  '/project/auth/mailbox/',
+  '/project/auth/settings/',
+];
 
 /** Destinations: the project's pages inside a project, the account-wide ones elsewhere. */
 export function navItems(projectId: string | null): NavItem[] {
@@ -29,6 +39,13 @@ export function navItems(projectId: string | null): NavItem[] {
       icon: 'home',
       label: 'overview',
       paths: ['/project/', '/project/app/', '/project/apps/new/'],
+    },
+    {
+      id: 'auth',
+      href: routes.authUsers(projectId),
+      icon: 'shield',
+      label: 'auth',
+      paths: AUTH_PATHS,
     },
     { id: 'keys', href: routes.keys(projectId), icon: 'key', label: 'keys', paths: ['/project/keys/'] },
     {

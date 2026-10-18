@@ -80,6 +80,22 @@
   color: var(--md-sys-color-on-surface-variant);
 }
 
+.available {
+  border-style: solid;
+  color: var(--md-sys-color-on-surface);
+  text-decoration: none;
+  outline: none;
+}
+
+.available[data-hovered] {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-hover), transparent);
+}
+
+.available[data-focus-visible] {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
 .serviceName {
   flex: 1;
   font: var(--md-sys-typescale-label-large);

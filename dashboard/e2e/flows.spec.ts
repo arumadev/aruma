@@ -92,7 +92,9 @@ test.describe('projects', () => {
     const appId = page.getByRole('link', { name: /Chat Android/ }).getByText('1:123456789012:android:6b7fd59bb891c192');
     await expect(appId).toHaveAttribute('dir', 'ltr');
     await expect(page.locator('html')).toHaveAttribute('dir', l('rtl', 'ltr'));
-    await expect(page.getByText(l('قريبًا', 'Coming soon'))).toHaveCount(5);
+    // Authentication is available; the four other services are still to come.
+    await expect(page.getByText(l('قريبًا', 'Coming soon'))).toHaveCount(4);
+    await expect(page.getByRole('link', { name: l('المصادقة', 'Authentication') }).last()).toHaveAttribute('href', '/project/auth/?id=chat-app');
   });
 });
 
