@@ -81,10 +81,10 @@ type Mount struct {
 ### تجميد الـ migrations: `released.lock`
 
 - الملف `internal/store/migrations/released.lock` فيه سطر لكل migration صدر: `<schema>/<file> sha256:<hex>`، والبصمة على بايتات الملف كما هي في المستودع.
-- الاختبار `TestReleasedMigrations` يفشل في ثلاث حالات:
+- الاختبار `TestReleasedMigrations` يفشل في حالتين:
   - ملف مسجّل تغيّر محتواه، أو حُذف.
   - ملف migration موجود وليس في القفل.
-  - ورسالته تقول ما يفعله المطوّر: تغيير المخطط ملف جديد برقم جديد، ولا يُعدَّل ملف صدر.
+- ورسالته تقول ما يفعله المطوّر: تغيير المخطط ملف جديد برقم جديد، ولا يُعدَّل ملف صدر.
 - **إضافة ملف جديد:**
   ```
   go test ./internal/store/migrations -run TestReleasedMigrations -update
@@ -98,10 +98,11 @@ type Mount struct {
 - **سلوك goose v3.29.0** (قُرئ في الكود وجُرّب على قاعدة حقيقية): `Provider.Up` يسأل `HasPending` أولًا، وهذا يحسب ما يُطبَّق بـ `gooseutil.UpVersions` (`internal/gooseutil/resolve.go`). الدالة لا تنظر إلا إلى إصدارات الملفات الناقصة من القاعدة، وتتجاهل إصدارات القاعدة التي لا ملف لها. فعلى قاعدة فيها `auth` 4 والملفات حتى 3: `HasPending = false`، و`Up` يُرجع `nil, nil`.
 - **القرار:** `SchemaStatus.Ahead()` (`Current > Latest`) والخطأ `ErrSchemaNewer`، ورسالته:
   `database schema is newer than this binary (auth at 4 of 3): run the matching or a newer aruma, or restore a backup`
-- يُرفض في ثلاثة مواضع:
-  - **`CheckCurrent`** (إقلاع الخادم): يفحص «أحدث» قبل «متأخر».
+- يُرفض في المواضع التي تبدأ عملًا على القاعدة:
+  - **`CheckCurrent`**: يفحص «أحدث» قبل «متأخر». يستدعيه إقلاع الخادم، وأوامر المشغّل (`aruma accounts ...`).
   - **`Migrate`**: يقرأ الحالة على اتصال خاص به، ويرفض قبل تشغيل goose لأي قسم.
   - **`aruma migrate status`**: يطبع `newer than this binary` بدل `up to date`.
+- **استثناء: `/readyz` يبقى جاهزًا على مخطط أحدث.** في النشر يُشغَّل `aruma migrate up` قبل بدء الإصدار الجديد (ADR-009)، والنسخ القديمة تخدم حتى تُستبدل. لو صار `/readyz` يعيد 503، لخرجت كل النسخ القديمة من موازن الحمل دفعة واحدة. فالرفض عند الإقلاع وحده، و`/readyz` يعيد 503 للمخطط المتأخر فقط كما كان.
 - العودة إلى ثنائي أقدم تكون بنسخة احتياطية، كما في ADR-009 (للأمام فقط في الإنتاج).
 
 ### إضافة خدمة جديدة

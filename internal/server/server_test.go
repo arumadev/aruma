@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -107,6 +108,17 @@ func TestReadiness(t *testing.T) {
 	}
 	if resp := get(t, newServer(t, storetest.NewPool(t), Handlers{}), "GET", "/readyz", nil); resp.StatusCode != 200 {
 		t.Fatalf("readyz on migrated database: %d", resp.StatusCode)
+	}
+	// During a deploy the new version migrates first; the old instances stay ready.
+	ahead := storetest.NewPool(t)
+	if _, err := ahead.Exec(ctx, "INSERT INTO public.goose_auth (version_id, is_applied) SELECT max(version_id) + 1, true FROM public.goose_auth"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.CheckCurrent(ctx, ahead); !errors.Is(err, store.ErrSchemaNewer) {
+		t.Fatalf("CheckCurrent on a newer schema = %v, want ErrSchemaNewer", err)
+	}
+	if resp := get(t, newServer(t, ahead, Handlers{}), "GET", "/readyz", nil); resp.StatusCode != 200 {
+		t.Fatalf("readyz on a schema newer than the binary: %d", resp.StatusCode)
 	}
 	if resp := get(t, newServer(t, nil, Handlers{}), "GET", "/healthz", nil); resp.StatusCode != 200 {
 		t.Fatalf("healthz: %d", resp.StatusCode)
