@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { LoginScreen } from '@/features/auth/LoginScreen';
+import { LoginScreen } from '@/features/session/LoginScreen';
 
 export default function LoginPage() {
   return (

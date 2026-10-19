@@ -1,4 +1,4 @@
-import { SignupScreen } from '@/features/auth/SignupScreen';
+import { SignupScreen } from '@/features/session/SignupScreen';
 
 export default function SignupPage() {
   return <SignupScreen />;
