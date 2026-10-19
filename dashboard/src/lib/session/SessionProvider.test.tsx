@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LocaleSwitch } from '@/components/shell/LocaleSwitch';
-import { LoginScreen } from '@/features/auth/LoginScreen';
+import { LoginScreen } from '@/features/session/LoginScreen';
 import { json, renderApp, stubApi } from '@/test/render';
 
 const account = (locale: 'ar' | 'en') => ({ id: 'a1', email: 'owner@example.com', displayName: '', locale, createTime: '2026-10-18T00:00:00Z' });

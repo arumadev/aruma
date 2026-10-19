@@ -1,0 +1,4 @@
+# Released migrations are frozen by their sha256 (internal/store/migrations/released.lock), so
+# their bytes must not depend on the checkout: always LF, on every platform.
+internal/store/migrations/**/*.sql text eol=lf
+internal/store/migrations/released.lock text eol=lf

@@ -44,11 +44,11 @@ sql:
       - internal/store/migrations/control
       - internal/store/migrations/events
       - internal/store/migrations/auth
-    queries: internal/identity/queries
+    queries: internal/services/auth/queries
     gen:
       go:
         package: queries
-        out: internal/identity/queries
+        out: internal/services/auth/queries
         sql_package: pgx/v5
         emit_empty_slices: true
         emit_pointers_for_null_types: true

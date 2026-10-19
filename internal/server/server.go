@@ -114,7 +114,10 @@ func (s *Server) readyz(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "unavailable", "reason": "database"})
 		return
 	}
-	if err := store.CheckCurrent(ctx, s.pool); err != nil {
+	// A schema newer than the binary keeps a running server ready: `aruma migrate up` runs
+	// before the new version starts (ADR-009), and the old instances serve until replaced.
+	// Startup refuses such a schema instead (ADR-015).
+	if err := store.CheckCurrent(ctx, s.pool); err != nil && !errors.Is(err, store.ErrSchemaNewer) {
 		httpx.WriteJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "unavailable", "reason": "schema"})
 		return
 	}

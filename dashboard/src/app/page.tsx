@@ -1,4 +1,4 @@
-import { StartScreen } from '@/features/auth/StartScreen';
+import { StartScreen } from '@/features/session/StartScreen';
 
 export default function HomePage() {
   return <StartScreen />;

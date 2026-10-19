@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/identity/queries"
+	"github.com/osama300/aurma-project/internal/services/auth/queries"
 )
 
 // AC-A3 and AC-A4: for each P0 endpoint, the first error Aruma reports for combined invalid

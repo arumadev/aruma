@@ -40,7 +40,7 @@
 - **فرق 1 خطأ في Aruma:** `getOobConfirmationCode` يرسل `"requestType": 1`، أي رقم enum بصيغة proto3 JSON، لا `"PASSWORD_RESET"`.
   - حقل Aruma نصّي، فيرد `INVALID_JSON`.
   - الشكل كما رآه وكيل يسجّل الأسماء والأنواع فقط: `requestType:number=1 email:string androidInstallApp:boolean canHandleCodeInApp:boolean clientType:string`.
-  - **الإصلاح:** قبول الرقم والاسم معًا في كل حقول enum في `internal/identity/api` (proto3 JSON يقبل الاثنين).
+  - **الإصلاح:** قبول الرقم والاسم معًا في كل حقول enum في `internal/services/auth/api` (proto3 JSON يقبل الاثنين).
 - **فرق 2 غير محسوم:** `additionalUserInfo.providerId` بعد الدخول بالبريد هو `null` على Android، و`password` على iOS والويب.
   - قد يكون فرق منصة أو حقلًا ناقصًا في رد `verifyPassword`. يحسمه تشغيل واحد على Firebase الحقيقي لـ Android.
 - **حتى في وضع المحاكي** يستخدم SDK Android مسارات v3: `http://10.0.2.2:8094/www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser`.

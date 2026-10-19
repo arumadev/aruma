@@ -145,7 +145,7 @@ This is ADR-013's declared exception for popup and redirect only:
   - `revokeToken`, and revocation on delete;
   - tampering: replayed state, swapped state and sessionId, missing sessionId, wrong nonce, token for another client (direct and by code), foreign issuer, unknown key, expired token, a Google token on Aruma's endpoints, `requestUri` on another host, unauthorized `redirectUrl` and `continueUri`, `/emulator/*` 404s, disabled provider;
   - CSP hashes, iframe `frame-ancestors`, `init.json`, the console provider endpoints, and no raw secrets in the database.
-- `internal/identity/core/idp_keys_test.go`: JWKS caching (rotation, refetch limit, weak keys, provider down) and claim shapes.
+- `internal/services/auth/core/idp_keys_test.go`: JWKS caching (rotation, refetch limit, weak keys, provider down) and claim shapes.
 
 **Run by hand in a real browser**: `test/experiments/idp-browser`, driven by `go test -tags browser -run TestAuthIdPBrowser -v ./test/acceptance/` after `npm ci` there. It needs network access to `apis.google.com`. It loads the official `firebase@13.0.0` in the full Chromium build in its new headless mode (Playwright 1.64, `channel: 'chromium'`; not the default headless shell, see "Flaky first popup" below) against Aruma and the fake providers, which consent at once, and runs:
 

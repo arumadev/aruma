@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/osama300/aurma-project/internal/app"
-	identity "github.com/osama300/aurma-project/internal/identity/core"
+	identity "github.com/osama300/aurma-project/internal/services/auth/core"
 )
 
 // Sign-in with Google and Apple (AC-A8, AC-A9 as far as they run without the real providers)

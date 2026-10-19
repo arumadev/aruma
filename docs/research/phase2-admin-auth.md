@@ -290,7 +290,7 @@ Sources: [N-req] L583–870, L1142–1700; [G-um] L843–859, L1370–1553.
 ## Decisions taken (T17, T18)
 
 Recorded 2026-10-18 with the Admin API, session cookies and the two libraries. Code:
-`internal/identity/api/admin.go`, `internal/identity/core/cookies.go`, `sdk/node/admin-auth`,
+`internal/services/auth/api/admin.go`, `internal/services/auth/core/cookies.go`, `sdk/node/admin-auth`,
 `sdk/go/adminauth`. Tests: `test/acceptance/auth_admin_test.go` and each library's suite
 (`test/smoke/run.sh admin-auth-node admin-auth-go`).
 

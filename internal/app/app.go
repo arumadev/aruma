@@ -16,12 +16,14 @@ import (
 	"github.com/osama300/aurma-project/internal/admin/oauth"
 	"github.com/osama300/aurma-project/internal/admin/web"
 	"github.com/osama300/aurma-project/internal/config"
-	authapi "github.com/osama300/aurma-project/internal/identity/api"
-	identity "github.com/osama300/aurma-project/internal/identity/core"
 	"github.com/osama300/aurma-project/internal/platform/authn"
+	"github.com/osama300/aurma-project/internal/platform/consolemount"
 	"github.com/osama300/aurma-project/internal/platform/crypto"
 	"github.com/osama300/aurma-project/internal/platform/metrics"
 	"github.com/osama300/aurma-project/internal/server"
+	authapi "github.com/osama300/aurma-project/internal/services/auth/api"
+	authconsole "github.com/osama300/aurma-project/internal/services/auth/console"
+	identity "github.com/osama300/aurma-project/internal/services/auth/core"
 	"github.com/osama300/aurma-project/internal/store"
 	"github.com/osama300/aurma-project/internal/tenancy/core"
 )
@@ -89,7 +91,10 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	if st.idp != nil {
 		st.idp(authSvc)
 	}
-	consoleAPI := console.New(svc, auth, logger, console.Options{Version: version, SecureCookies: cfg.SecureCookies(), Auth: authSvc})
+	consoleAPI := console.New(svc, auth, logger, console.Options{
+		Version: version, SecureCookies: cfg.SecureCookies(),
+		Mounts: []func(*consolemount.Mount){authconsole.Routes(authSvc)},
+	})
 	mgmtAPI := mgmt.New(svc, auth, logger)
 	dashboard, err := web.New(web.Embedded())
 	if err != nil {
@@ -118,8 +123,8 @@ func (a *App) AnnounceSetup(ctx context.Context) error {
 	return nil
 }
 
-// Serve runs the server until ctx is cancelled. It refuses to start on an outdated schema,
-// and never migrates it itself (ADR-009).
+// Serve runs the server until ctx is cancelled. It refuses to start on an outdated schema or
+// one newer than the binary, and never migrates it itself (ADR-009).
 func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version string) error {
 	pool, err := store.Open(ctx, cfg.DatabaseURL.Reveal())
 	if err != nil {
