@@ -17,10 +17,12 @@ import (
 	"github.com/osama300/aurma-project/internal/admin/web"
 	"github.com/osama300/aurma-project/internal/config"
 	"github.com/osama300/aurma-project/internal/platform/authn"
+	"github.com/osama300/aurma-project/internal/platform/consolemount"
 	"github.com/osama300/aurma-project/internal/platform/crypto"
 	"github.com/osama300/aurma-project/internal/platform/metrics"
 	"github.com/osama300/aurma-project/internal/server"
 	authapi "github.com/osama300/aurma-project/internal/services/auth/api"
+	authconsole "github.com/osama300/aurma-project/internal/services/auth/console"
 	identity "github.com/osama300/aurma-project/internal/services/auth/core"
 	"github.com/osama300/aurma-project/internal/store"
 	"github.com/osama300/aurma-project/internal/tenancy/core"
@@ -89,7 +91,10 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	if st.idp != nil {
 		st.idp(authSvc)
 	}
-	consoleAPI := console.New(svc, auth, logger, console.Options{Version: version, SecureCookies: cfg.SecureCookies(), Auth: authSvc})
+	consoleAPI := console.New(svc, auth, logger, console.Options{
+		Version: version, SecureCookies: cfg.SecureCookies(),
+		Mounts: []func(*consolemount.Mount){authconsole.Routes(authSvc)},
+	})
 	mgmtAPI := mgmt.New(svc, auth, logger)
 	dashboard, err := web.New(web.Embedded())
 	if err != nil {

@@ -16,7 +16,6 @@ import (
 	"github.com/osama300/aurma-project/internal/platform/consolemount"
 	"github.com/osama300/aurma-project/internal/platform/httpx"
 	"github.com/osama300/aurma-project/internal/platform/ratelimit"
-	identity "github.com/osama300/aurma-project/internal/services/auth/core"
 	"github.com/osama300/aurma-project/internal/tenancy/core"
 )
 
@@ -24,7 +23,6 @@ import (
 type Options struct {
 	Version       string
 	SecureCookies bool
-	Auth          *identity.Service // Aruma Auth, for the project Auth screens
 	// Mounts add the services' routes, after the console's own and in this order.
 	Mounts []func(*consolemount.Mount)
 }

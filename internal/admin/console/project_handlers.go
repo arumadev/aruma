@@ -27,9 +27,6 @@ func (a *API) projectRoutes(with func(authn.Policy, string, string, http.Handler
 	a.appRoutes(with)
 	a.keyRoutes(with)
 	a.serviceAccountRoutes(with)
-	a.authRoutes(with)
-	a.authEmailRoutes(with)
-	a.authProviderRoutes(with)
 }
 
 type projectJSON struct {

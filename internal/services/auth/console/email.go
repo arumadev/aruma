@@ -6,23 +6,22 @@ import (
 	"time"
 
 	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/authn"
 	"github.com/osama300/aurma-project/internal/platform/httpx"
-	identity "github.com/osama300/aurma-project/internal/services/auth/core"
+	"github.com/osama300/aurma-project/internal/services/auth/core"
 )
 
 // authEmailRoutes registers the email templates, SMTP and dev mailbox routes.
-func (a *API) authEmailRoutes(with func(authn.Policy, string, string, http.HandlerFunc)) {
+func (h *handlers) authEmailRoutes() {
 	const base = "/console/v1/projects/{project}/auth"
-	with(anyCred, "GET", base+"/templates", a.listMailTemplates)
-	with(anyCred, "PUT", base+"/templates/{type}/{language}", a.setMailTemplate)
-	with(anyCred, "DELETE", base+"/templates/{type}/{language}", a.resetMailTemplate)
-	with(anyCred, "GET", base+"/smtp", a.getSMTP)
-	with(anyCred, "PATCH", base+"/smtp", a.updateSMTP)
-	with(anyCred, "POST", base+"/smtp:test", a.testSMTP)
-	with(anyCred, "GET", base+"/mailbox", a.getMailbox)
-	with(anyCred, "DELETE", base+"/mailbox", a.clearMailbox)
-	with(anyCred, "POST", base+"/users/{uid}:sendPasswordReset", a.sendPasswordReset)
+	h.m.Handle(anyCred, "GET", base+"/templates", h.listMailTemplates)
+	h.m.Handle(anyCred, "PUT", base+"/templates/{type}/{language}", h.setMailTemplate)
+	h.m.Handle(anyCred, "DELETE", base+"/templates/{type}/{language}", h.resetMailTemplate)
+	h.m.Handle(anyCred, "GET", base+"/smtp", h.getSMTP)
+	h.m.Handle(anyCred, "PATCH", base+"/smtp", h.updateSMTP)
+	h.m.Handle(anyCred, "POST", base+"/smtp:test", h.testSMTP)
+	h.m.Handle(anyCred, "GET", base+"/mailbox", h.getMailbox)
+	h.m.Handle(anyCred, "DELETE", base+"/mailbox", h.clearMailbox)
+	h.m.Handle(anyCred, "POST", base+"/users/{uid}:sendPasswordReset", h.sendPasswordReset)
 }
 
 type mailTemplateJSON struct {
@@ -33,19 +32,19 @@ type mailTemplateJSON struct {
 	Customized bool   `json:"customized"`
 }
 
-func toMailTemplateJSON(t identity.MailTemplate) mailTemplateJSON {
+func toMailTemplateJSON(t core.MailTemplate) mailTemplateJSON {
 	return mailTemplateJSON{Type: t.Kind, Language: t.Language, Subject: t.Subject, Body: t.Body, Customized: t.Customized}
 }
 
-func (a *API) listMailTemplates(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) listMailTemplates(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	ts, err := a.opts.Auth.MailTemplates(r.Context(), p)
+	ts, err := h.svc.MailTemplates(r.Context(), p)
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	out := make([]mailTemplateJSON, 0, len(ts))
@@ -55,10 +54,10 @@ func (a *API) listMailTemplates(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{"templates": out})
 }
 
-func (a *API) setMailTemplate(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) setMailTemplate(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
 	var in struct {
@@ -66,27 +65,27 @@ func (a *API) setMailTemplate(w http.ResponseWriter, r *http.Request) {
 		Body    string `json:"body"`
 	}
 	if err := httpx.DecodeJSON(r, &in, true); err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	t, err := a.opts.Auth.SetMailTemplate(r.Context(), p, r.PathValue("type"), r.PathValue("language"), in.Subject, in.Body)
+	t, err := h.svc.SetMailTemplate(r.Context(), p, r.PathValue("type"), r.PathValue("language"), in.Subject, in.Body)
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, toMailTemplateJSON(t))
 }
 
 // resetMailTemplate deletes the customisation and answers the built-in template.
-func (a *API) resetMailTemplate(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) resetMailTemplate(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	t, err := a.opts.Auth.ResetMailTemplate(r.Context(), p, r.PathValue("type"), r.PathValue("language"))
+	t, err := h.svc.ResetMailTemplate(r.Context(), p, r.PathValue("type"), r.PathValue("language"))
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, toMailTemplateJSON(t))
@@ -104,22 +103,22 @@ type smtpJSON struct {
 	DevMailbox    bool   `json:"devMailbox"`
 }
 
-func toSMTPJSON(s identity.SMTPSettings) smtpJSON {
+func toSMTPJSON(s core.SMTPSettings) smtpJSON {
 	return smtpJSON{
 		Host: s.Host, Port: s.Port, Username: s.Username, PasswordSet: s.PasswordSet, TLS: s.TLS,
 		SenderAddress: s.SenderAddress, SenderName: s.SenderName, ReplyTo: s.ReplyTo, DevMailbox: s.DevMailbox,
 	}
 }
 
-func (a *API) getSMTP(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) getSMTP(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	s, err := a.opts.Auth.SMTP(r.Context(), p)
+	s, err := h.svc.SMTP(r.Context(), p)
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, toSMTPJSON(s))
@@ -128,10 +127,10 @@ func (a *API) getSMTP(w http.ResponseWriter, r *http.Request) {
 // updateSMTP changes any of the settings. password is write-only: it is never returned, and an
 // empty string removes it. passwordSet is read-only and ignored, so the screen can send back
 // what it read.
-func (a *API) updateSMTP(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) updateSMTP(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
 	var in struct {
@@ -147,36 +146,36 @@ func (a *API) updateSMTP(w http.ResponseWriter, r *http.Request) {
 		DevMailbox    *bool   `json:"devMailbox"`
 	}
 	if err := httpx.DecodeJSON(r, &in, true); err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	s, err := a.opts.Auth.UpdateSMTP(r.Context(), p, identity.SMTPUpdate{
+	s, err := h.svc.UpdateSMTP(r.Context(), p, core.SMTPUpdate{
 		Host: in.Host, Port: in.Port, Username: in.Username, Password: in.Password, TLS: in.TLS,
 		SenderAddress: in.SenderAddress, SenderName: in.SenderName, ReplyTo: in.ReplyTo, DevMailbox: in.DevMailbox,
 	})
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, toSMTPJSON(s))
 }
 
-func (a *API) testSMTP(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) testSMTP(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
 	var in struct {
 		To string `json:"to"`
 	}
 	if err := httpx.DecodeJSON(r, &in, true); err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	dev, err := a.opts.Auth.SendTestMail(r.Context(), p, in.To)
+	dev, err := h.svc.SendTestMail(r.Context(), p, in.To)
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{"devMailbox": dev})
@@ -197,19 +196,19 @@ type mailboxMessageJSON struct {
 // errNoMailbox answers the mailbox routes on an instance that does not allow the dev mailbox.
 var errNoMailbox = apierr.New(apierr.NotFound, "The dev mailbox is off on this instance (mail.dev_mailbox).")
 
-func (a *API) getMailbox(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) getMailbox(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	if !a.opts.Auth.DevMailboxAllowed() {
-		a.fail(w, r, errNoMailbox)
+	if !h.svc.DevMailboxAllowed() {
+		h.m.Fail(w, r, errNoMailbox)
 		return
 	}
-	enabled, msgs, err := a.opts.Auth.Mailbox(r.Context(), p)
+	enabled, msgs, err := h.svc.Mailbox(r.Context(), p)
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	out := make([]mailboxMessageJSON, 0, len(msgs))
@@ -222,18 +221,18 @@ func (a *API) getMailbox(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{"enabled": enabled, "messages": out})
 }
 
-func (a *API) clearMailbox(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) clearMailbox(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	if !a.opts.Auth.DevMailboxAllowed() {
-		a.fail(w, r, errNoMailbox)
+	if !h.svc.DevMailboxAllowed() {
+		h.m.Fail(w, r, errNoMailbox)
 		return
 	}
-	if err := a.opts.Auth.ClearMailbox(r.Context(), p); err != nil {
-		a.failAuth(w, r, err)
+	if err := h.svc.ClearMailbox(r.Context(), p); err != nil {
+		h.failAuth(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -241,22 +240,22 @@ func (a *API) clearMailbox(w http.ResponseWriter, r *http.Request) {
 
 // sendPasswordReset emails the user a reset link and returns it. The optional language is
 // "ar" (the default) or "en".
-func (a *API) sendPasswordReset(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) sendPasswordReset(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
 	var in struct {
 		Language string `json:"language"`
 	}
 	if err := httpx.DecodeJSON(r, &in, true); err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	link, err := a.opts.Auth.SendPasswordResetEmail(r.Context(), p, r.PathValue("uid"), in.Language)
+	link, err := h.svc.SendPasswordResetEmail(r.Context(), p, r.PathValue("uid"), in.Language)
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{"link": link})

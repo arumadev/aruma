@@ -6,27 +6,26 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/platform/authn"
 	"github.com/osama300/aurma-project/internal/platform/httpx"
-	identityapi "github.com/osama300/aurma-project/internal/services/auth/api"
-	identity "github.com/osama300/aurma-project/internal/services/auth/core"
+	"github.com/osama300/aurma-project/internal/services/auth/api"
+	"github.com/osama300/aurma-project/internal/services/auth/core"
 	"github.com/osama300/aurma-project/internal/services/auth/queries"
 	"github.com/osama300/aurma-project/internal/services/auth/tokens"
 )
 
 // authRoutes registers the Users, Sign-in methods and Settings routes.
-func (a *API) authRoutes(with func(authn.Policy, string, string, http.HandlerFunc)) {
+func (h *handlers) authRoutes() {
 	const base = "/console/v1/projects/{project}/auth"
-	with(anyCred, "GET", base+"/users", a.listAuthUsers)
-	with(anyCred, "POST", base+"/users", a.createAuthUser)
-	with(anyCred, "GET", base+"/users/{uid}", a.getAuthUser)
-	with(anyCred, "PATCH", base+"/users/{uid}", a.updateAuthUser)
-	with(anyCred, "DELETE", base+"/users/{uid}", a.deleteAuthUser)
-	with(anyCred, "POST", base+"/users/{uid}:revokeSessions", a.revokeAuthUserSessions)
-	with(anyCred, "GET", base+"/config", a.getAuthConfig)
-	with(anyCred, "PATCH", base+"/config", a.updateAuthConfig)
-	with(anyCred, "GET", base+"/signingKeys", a.listSigningKeys)
-	with(anyCred, "POST", base+"/signingKeys:rotate", a.rotateSigningKey)
+	h.m.Handle(anyCred, "GET", base+"/users", h.listAuthUsers)
+	h.m.Handle(anyCred, "POST", base+"/users", h.createAuthUser)
+	h.m.Handle(anyCred, "GET", base+"/users/{uid}", h.getAuthUser)
+	h.m.Handle(anyCred, "PATCH", base+"/users/{uid}", h.updateAuthUser)
+	h.m.Handle(anyCred, "DELETE", base+"/users/{uid}", h.deleteAuthUser)
+	h.m.Handle(anyCred, "POST", base+"/users/{uid}:revokeSessions", h.revokeAuthUserSessions)
+	h.m.Handle(anyCred, "GET", base+"/config", h.getAuthConfig)
+	h.m.Handle(anyCred, "PATCH", base+"/config", h.updateAuthConfig)
+	h.m.Handle(anyCred, "GET", base+"/signingKeys", h.listSigningKeys)
+	h.m.Handle(anyCred, "POST", base+"/signingKeys:rotate", h.rotateSigningKey)
 }
 
 // authUserJSON is a user as the console shows it. The password hash never leaves the server;
@@ -52,7 +51,7 @@ type authProviderJSON struct {
 	Email      string `json:"email,omitempty"`
 }
 
-func toAuthUserJSON(u identity.User) authUserJSON {
+func toAuthUserJSON(u core.User) authUserJSON {
 	out := authUserJSON{
 		UID: u.UID, Email: u.Email, EmailVerified: u.EmailVerified, DisplayName: u.DisplayName, PhotoURL: u.PhotoURL,
 		Disabled: u.Disabled, Providers: []authProviderJSON{}, CustomClaims: string(u.CustomClaims), HasPassword: u.HasPassword,
@@ -64,10 +63,10 @@ func toAuthUserJSON(u identity.User) authUserJSON {
 	return out
 }
 
-func (a *API) listAuthUsers(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) listAuthUsers(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
 	q := r.URL.Query()
@@ -75,9 +74,9 @@ func (a *API) listAuthUsers(w http.ResponseWriter, r *http.Request) {
 	if size <= 0 {
 		size = 100
 	}
-	users, next, total, err := a.opts.Auth.SearchUsers(r.Context(), p, q.Get("query"), q.Get("pageToken"), size)
+	users, next, total, err := h.svc.SearchUsers(r.Context(), p, q.Get("query"), q.Get("pageToken"), size)
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	out := make([]authUserJSON, 0, len(users))
@@ -87,7 +86,7 @@ func (a *API) listAuthUsers(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{"users": out, "nextPageToken": next, "totalSize": total})
 }
 
-func (a *API) createAuthUser(w http.ResponseWriter, r *http.Request) {
+func (h *handlers) createAuthUser(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		UID           string  `json:"uid"`
 		Email         *string `json:"email"`
@@ -97,33 +96,33 @@ func (a *API) createAuthUser(w http.ResponseWriter, r *http.Request) {
 		Disabled      *bool   `json:"disabled"`
 	}
 	if err := httpx.DecodeJSON(r, &in, true); err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	p, err := a.authProject(r)
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	u, err := a.opts.Auth.CreateUser(r.Context(), p, identity.AdminUser{
+	u, err := h.svc.CreateUser(r.Context(), p, core.AdminUser{
 		UID: in.UID, Email: in.Email, Password: in.Password, DisplayName: in.DisplayName, EmailVerified: in.EmailVerified, Disabled: in.Disabled,
 	})
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, toAuthUserJSON(u))
 }
 
-func (a *API) getAuthUser(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) getAuthUser(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	u, err := a.opts.Auth.GetUser(r.Context(), p, r.PathValue("uid"))
+	u, err := h.svc.GetUser(r.Context(), p, r.PathValue("uid"))
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, toAuthUserJSON(u))
@@ -131,7 +130,7 @@ func (a *API) getAuthUser(w http.ResponseWriter, r *http.Request) {
 
 // updateAuthUser applies the fields present. customClaims is the claims object as a JSON
 // string, as the claims editor holds it; an empty string clears them.
-func (a *API) updateAuthUser(w http.ResponseWriter, r *http.Request) {
+func (h *handlers) updateAuthUser(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Email         *string `json:"email"`
 		Password      *string `json:"password"`
@@ -142,15 +141,15 @@ func (a *API) updateAuthUser(w http.ResponseWriter, r *http.Request) {
 		CustomClaims  *string `json:"customClaims"`
 	}
 	if err := httpx.DecodeJSON(r, &in, true); err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	p, err := a.authProject(r)
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	upd := identity.AdminUser{
+	upd := core.AdminUser{
 		UID: r.PathValue("uid"), Email: in.Email, Password: in.Password, DisplayName: in.DisplayName, PhotoURL: in.PhotoURL,
 		EmailVerified: in.EmailVerified, Disabled: in.Disabled,
 	}
@@ -158,37 +157,37 @@ func (a *API) updateAuthUser(w http.ResponseWriter, r *http.Request) {
 		claims := json.RawMessage(*in.CustomClaims)
 		upd.CustomClaims = &claims
 	}
-	u, err := a.opts.Auth.UpdateUser(r.Context(), p, upd)
+	u, err := h.svc.UpdateUser(r.Context(), p, upd)
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, toAuthUserJSON(u))
 }
 
-func (a *API) deleteAuthUser(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) deleteAuthUser(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	if err := a.opts.Auth.DeleteUser(r.Context(), p, r.PathValue("uid")); err != nil {
-		a.failAuth(w, r, err)
+	if err := h.svc.DeleteUser(r.Context(), p, r.PathValue("uid")); err != nil {
+		h.failAuth(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // revokeAuthUserSessions invalidates the user's refresh tokens and the ID tokens issued so far.
-func (a *API) revokeAuthUserSessions(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) revokeAuthUserSessions(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	u, err := a.opts.Auth.UpdateUser(r.Context(), p, identity.AdminUser{UID: r.PathValue("uid"), RevokeTokens: true})
+	u, err := h.svc.UpdateUser(r.Context(), p, core.AdminUser{UID: r.PathValue("uid"), RevokeTokens: true})
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, toAuthUserJSON(u))
@@ -228,9 +227,9 @@ type authLimitsJSON struct {
 }
 
 func toAuthConfigJSON(c queries.AuthProjectConfig) authConfigJSON {
-	l := identityapi.ClientLimits
+	l := api.ClientLimits
 	codeLifetimes := map[string]int64{}
-	for kind, d := range identity.EmailCodeLifetimes() {
+	for kind, d := range core.EmailCodeLifetimes() {
 		codeLifetimes[kind] = int64(d.Seconds())
 	}
 	return authConfigJSON{
@@ -241,7 +240,7 @@ func toAuthConfigJSON(c queries.AuthProjectConfig) authConfigJSON {
 		PasswordRequireSymbol: c.PasswordRequireSymbol, PasswordEnforcement: c.PasswordEnforcement, AppName: c.AppName,
 		UpdateTime: c.UpdatedAt,
 		Limits: authLimitsJSON{
-			IDTokenLifetime: int64(identity.TokenLifetime.Seconds()), SessionCookieMax: int64(tokens.SessionCookie.Lifetime().Seconds()),
+			IDTokenLifetime: int64(core.TokenLifetime.Seconds()), SessionCookieMax: int64(tokens.SessionCookie.Lifetime().Seconds()),
 			SigningKeyRotationDays: int64(tokens.RotateEvery.Hours() / 24),
 			RequestsPerMinute:      l.RequestsPerMinute, RequestBurst: l.RequestBurst, SignUpsPerMinute: l.SignUpsPerMinute, SignUpBurst: l.SignUpBurst,
 			PasswordFailures: l.PasswordFailures, PasswordFailureWindow: int64(l.FailureWindow.Seconds()), PasswordBackoffMax: int64(l.BackoffMax.Seconds()),
@@ -250,22 +249,22 @@ func toAuthConfigJSON(c queries.AuthProjectConfig) authConfigJSON {
 	}
 }
 
-func (a *API) getAuthConfig(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) getAuthConfig(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	c, err := a.opts.Auth.Config(r.Context(), p)
+	c, err := h.svc.Config(r.Context(), p)
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, toAuthConfigJSON(c))
 }
 
 // updateAuthConfig changes the settings present in the body.
-func (a *API) updateAuthConfig(w http.ResponseWriter, r *http.Request) {
+func (h *handlers) updateAuthConfig(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		PasswordEnabled          *bool     `json:"passwordEnabled"`
 		AnonymousEnabled         *bool     `json:"anonymousEnabled"`
@@ -281,15 +280,15 @@ func (a *API) updateAuthConfig(w http.ResponseWriter, r *http.Request) {
 		AppName                  *string   `json:"appName"`
 	}
 	if err := httpx.DecodeJSON(r, &in, true); err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	p, err := a.authProject(r)
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	c, err := a.opts.Auth.UpdateConfig(r.Context(), p, func(c *queries.AuthProjectConfig) error {
+	c, err := h.svc.UpdateConfig(r.Context(), p, func(c *queries.AuthProjectConfig) error {
 		set(&c.PasswordEnabled, in.PasswordEnabled)
 		set(&c.AnonymousEnabled, in.AnonymousEnabled)
 		set(&c.ClientSignupEnabled, in.ClientSignupEnabled)
@@ -305,7 +304,7 @@ func (a *API) updateAuthConfig(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, toAuthConfigJSON(c))
@@ -327,10 +326,10 @@ type signingKeyJSON struct {
 	RetireTime   *time.Time `json:"retireTime,omitempty"`
 }
 
-func (a *API) writeSigningKeys(w http.ResponseWriter, r *http.Request, p identity.Project) {
-	keys, err := a.opts.Auth.SigningKeys(r.Context(), p)
+func (h *handlers) writeSigningKeys(w http.ResponseWriter, r *http.Request, p core.Project) {
+	keys, err := h.svc.SigningKeys(r.Context(), p)
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	out := make([]signingKeyJSON, 0, len(keys))
@@ -340,33 +339,33 @@ func (a *API) writeSigningKeys(w http.ResponseWriter, r *http.Request, p identit
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{"keys": out})
 }
 
-func (a *API) listSigningKeys(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) listSigningKeys(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	a.writeSigningKeys(w, r, p)
+	h.writeSigningKeys(w, r, p)
 }
 
 // rotateSigningKey rotates the keys of one purpose and answers with the new list.
-func (a *API) rotateSigningKey(w http.ResponseWriter, r *http.Request) {
+func (h *handlers) rotateSigningKey(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Purpose   string `json:"purpose"`
 		Emergency bool   `json:"emergency"`
 	}
 	if err := httpx.DecodeJSON(r, &in, true); err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	p, err := a.authProject(r)
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	if err := a.opts.Auth.RotateSigningKey(r.Context(), p, in.Purpose, in.Emergency); err != nil {
-		a.failAuth(w, r, err)
+	if err := h.svc.RotateSigningKey(r.Context(), p, in.Purpose, in.Emergency); err != nil {
+		h.failAuth(w, r, err)
 		return
 	}
-	a.writeSigningKeys(w, r, p)
+	h.writeSigningKeys(w, r, p)
 }

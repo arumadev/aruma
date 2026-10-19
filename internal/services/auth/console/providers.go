@@ -6,20 +6,19 @@ import (
 	"strings"
 
 	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/authn"
 	"github.com/osama300/aurma-project/internal/platform/httpx"
-	identity "github.com/osama300/aurma-project/internal/services/auth/core"
+	"github.com/osama300/aurma-project/internal/services/auth/core"
 )
 
 // authProviderRoutes registers the Google and Apple sign-in settings routes. Secrets are
 // write-only: responses say whether one is set, never what it is.
-func (a *API) authProviderRoutes(with func(authn.Policy, string, string, http.HandlerFunc)) {
-	with(anyCred, "GET", "/console/v1/projects/{project}/auth/providers", a.listAuthProviders)
-	with(anyCred, "PATCH", "/console/v1/projects/{project}/auth/providers/{providerId}", a.updateAuthProvider)
+func (h *handlers) authProviderRoutes() {
+	h.m.Handle(anyCred, "GET", "/console/v1/projects/{project}/auth/providers", h.listAuthProviders)
+	h.m.Handle(anyCred, "PATCH", "/console/v1/projects/{project}/auth/providers/{providerId}", h.updateAuthProvider)
 }
 
-func providerJSON(c identity.IdPConfig) map[string]any {
-	if c.ProviderID == identity.AppleProvider {
+func providerJSON(c core.IdPConfig) map[string]any {
+	if c.ProviderID == core.AppleProvider {
 		return map[string]any{
 			"providerId": c.ProviderID, "enabled": c.Enabled, "servicesId": c.ClientID,
 			"teamId": c.TeamID, "keyId": c.KeyID, "privateKeySet": c.PrivateKeySet,
@@ -30,9 +29,9 @@ func providerJSON(c identity.IdPConfig) map[string]any {
 
 // redirectURI is the URL to register with Google and Apple: the handler on the project's own
 // authDomain, or on Aruma's public URL while the project uses the shared default.
-func (a *API) redirectURI(r *http.Request, p identity.Project) (string, error) {
-	pub := a.opts.Auth.PublicURL()
-	domain, err := a.opts.Auth.ProjectAuthDomain(r.Context(), p)
+func (h *handlers) redirectURI(r *http.Request, p core.Project) (string, error) {
+	pub := h.svc.PublicURL()
+	domain, err := h.svc.ProjectAuthDomain(r.Context(), p)
 	if err != nil {
 		return "", err
 	}
@@ -42,20 +41,20 @@ func (a *API) redirectURI(r *http.Request, p identity.Project) (string, error) {
 	return pub + "/__/auth/handler", nil
 }
 
-func (a *API) listAuthProviders(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) listAuthProviders(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
-	configs, err := a.opts.Auth.IdPConfigs(r.Context(), p)
+	configs, err := h.svc.IdPConfigs(r.Context(), p)
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
-	redirect, err := a.redirectURI(r, p)
+	redirect, err := h.redirectURI(r, p)
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	out := make([]map[string]any, 0, len(configs))
@@ -65,10 +64,10 @@ func (a *API) listAuthProviders(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{"redirectUri": redirect, "providers": out})
 }
 
-func (a *API) updateAuthProvider(w http.ResponseWriter, r *http.Request) {
-	p, err := a.authProject(r)
+func (h *handlers) updateAuthProvider(w http.ResponseWriter, r *http.Request) {
+	p, err := h.project(r)
 	if err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
 	var in struct {
@@ -81,26 +80,26 @@ func (a *API) updateAuthProvider(w http.ResponseWriter, r *http.Request) {
 		PrivateKey   *string `json:"privateKey"`
 	}
 	if err := httpx.DecodeJSON(r, &in, true); err != nil {
-		a.fail(w, r, err)
+		h.m.Fail(w, r, err)
 		return
 	}
 	provider := r.PathValue("providerId")
-	u := identity.IdPConfigUpdate{Enabled: in.Enabled, ClientSecret: in.ClientSecret, TeamID: in.TeamID, KeyID: in.KeyID, PrivateKey: in.PrivateKey}
+	u := core.IdPConfigUpdate{Enabled: in.Enabled, ClientSecret: in.ClientSecret, TeamID: in.TeamID, KeyID: in.KeyID, PrivateKey: in.PrivateKey}
 	switch {
-	case provider == identity.AppleProvider && in.ClientID != nil:
-		a.fail(w, r, apierr.Invalid("clientId", "Apple uses servicesId."))
+	case provider == core.AppleProvider && in.ClientID != nil:
+		h.m.Fail(w, r, apierr.Invalid("clientId", "Apple uses servicesId."))
 		return
-	case provider == identity.GoogleProvider && in.ServicesID != nil:
-		a.fail(w, r, apierr.Invalid("servicesId", "Google uses clientId."))
+	case provider == core.GoogleProvider && in.ServicesID != nil:
+		h.m.Fail(w, r, apierr.Invalid("servicesId", "Google uses clientId."))
 		return
-	case provider == identity.AppleProvider:
+	case provider == core.AppleProvider:
 		u.ClientID = in.ServicesID
 	default:
 		u.ClientID = in.ClientID
 	}
-	c, err := a.opts.Auth.UpdateIdPConfig(r.Context(), p, provider, u)
+	c, err := h.svc.UpdateIdPConfig(r.Context(), p, provider, u)
 	if err != nil {
-		a.failAuth(w, r, err)
+		h.failAuth(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, providerJSON(c))
