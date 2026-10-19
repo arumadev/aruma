@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"strings"
 	"testing"
 
+	"github.com/osama300/aurma-project/internal/store"
 	"github.com/osama300/aurma-project/internal/store/storetest"
 )
 
@@ -43,6 +45,36 @@ func TestOperatorAccountCommands(t *testing.T) {
 	}
 	if _, err := aruma(t, "", "accounts", "create"); err == nil {
 		t.Fatal("missing --email accepted")
+	}
+}
+
+// A database a newer aruma migrated: status says so, and up refuses instead of reporting
+// success with nothing applied.
+func TestMigrateNewerSchema(t *testing.T) {
+	url := storetest.NewDB(t)
+	t.Setenv("ARUMA_DATABASE_URL", url)
+	pool, err := store.Open(context.Background(), url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	if _, err := pool.Exec(context.Background(),
+		"INSERT INTO public.goose_auth (version_id, is_applied) SELECT max(version_id) + 1, true FROM public.goose_auth"); err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := aruma(t, "", "migrate", "status")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
+		newer := strings.HasSuffix(line, "newer than this binary")
+		if strings.HasPrefix(line, "auth ") != newer {
+			t.Errorf("status line %q", line)
+		}
+	}
+	if _, err := aruma(t, "", "migrate", "up"); !errors.Is(err, store.ErrSchemaNewer) {
+		t.Fatalf("migrate up = %v, want ErrSchemaNewer", err)
 	}
 }
 

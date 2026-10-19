@@ -138,8 +138,11 @@ func printStatus(ctx context.Context, url string, stdout io.Writer) error {
 	}
 	for _, s := range statuses {
 		state := "up to date"
-		if s.Pending() {
+		switch {
+		case s.Pending():
 			state = "pending"
+		case s.Ahead():
+			state = "newer than this binary"
 		}
 		fmt.Fprintf(stdout, "%-8s version %d/%d  %s\n", s.Schema, s.Current, s.Latest, state)
 	}

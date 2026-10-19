@@ -123,8 +123,8 @@ func (a *App) AnnounceSetup(ctx context.Context) error {
 	return nil
 }
 
-// Serve runs the server until ctx is cancelled. It refuses to start on an outdated schema,
-// and never migrates it itself (ADR-009).
+// Serve runs the server until ctx is cancelled. It refuses to start on an outdated schema or
+// one newer than the binary, and never migrates it itself (ADR-009).
 func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version string) error {
 	pool, err := store.Open(ctx, cfg.DatabaseURL.Reveal())
 	if err != nil {

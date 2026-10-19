@@ -26,16 +26,39 @@ type SchemaStatus struct {
 // Pending reports whether migrations are waiting to be applied.
 func (s SchemaStatus) Pending() bool { return s.Current < s.Latest }
 
+// Ahead reports whether the database has a migration this binary does not know: a newer
+// aruma migrated it, and this one would run on a schema it was not written for.
+func (s SchemaStatus) Ahead() bool { return s.Current > s.Latest }
+
 // ErrSchemaOutdated is returned when the database is behind the binary's migrations.
 var ErrSchemaOutdated = errors.New("database schema is outdated: run `aruma migrate up`")
 
+// ErrSchemaNewer is returned when the database is ahead of the binary's migrations. Neither
+// the server nor the migrator touches such a database.
+var ErrSchemaNewer = errors.New("database schema is newer than this binary")
+
+// checkNotAhead returns ErrSchemaNewer, naming the schema, when any schema is ahead.
+func checkNotAhead(statuses []SchemaStatus) error {
+	for _, s := range statuses {
+		if s.Ahead() {
+			return fmt.Errorf("%w (%s at %d of %d): run the matching or a newer aruma, or restore a backup",
+				ErrSchemaNewer, s.Schema, s.Current, s.Latest)
+		}
+	}
+	return nil
+}
+
 // Migrate applies every pending migration, schema by schema. Only the operator command calls
-// it; the server never runs DDL (ADR-009).
+// it; the server never runs DDL (ADR-009). It refuses a database whose schema is newer than
+// the binary before running anything: goose would report success there, applying nothing.
 func Migrate(ctx context.Context, databaseURL string) error {
 	// Parse as the server does, so pool settings such as pool_max_conns are understood rather
 	// than sent to Postgres as runtime parameters.
 	cfg, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
+		return err
+	}
+	if err := refuseAhead(ctx, cfg.ConnConfig); err != nil {
 		return err
 	}
 	db := stdlib.OpenDB(*cfg.ConnConfig)
@@ -73,10 +96,29 @@ func Status(ctx context.Context, conn Querier) ([]SchemaStatus, error) {
 	return out, nil
 }
 
-// CheckCurrent returns ErrSchemaOutdated unless every schema is fully migrated.
+// refuseAhead reads the status on a connection of its own and returns ErrSchemaNewer when the
+// database is ahead.
+func refuseAhead(ctx context.Context, cfg *pgx.ConnConfig) error {
+	conn, err := pgx.ConnectConfig(ctx, cfg)
+	if err != nil {
+		return fmt.Errorf("connect: %w", err)
+	}
+	defer conn.Close(context.WithoutCancel(ctx))
+	statuses, err := Status(ctx, conn)
+	if err != nil {
+		return err
+	}
+	return checkNotAhead(statuses)
+}
+
+// CheckCurrent returns ErrSchemaNewer when any schema is ahead of the binary, and
+// ErrSchemaOutdated unless every schema is fully migrated.
 func CheckCurrent(ctx context.Context, conn Querier) error {
 	statuses, err := Status(ctx, conn)
 	if err != nil {
+		return err
+	}
+	if err := checkNotAhead(statuses); err != nil {
 		return err
 	}
 	for _, s := range statuses {
