@@ -82,7 +82,7 @@ func (a *API) Handler() http.Handler {
 		r.Handle(method, pattern, h)
 	}
 	with := func(p authn.Policy, method, pattern string, h http.HandlerFunc) {
-		a.routes = append(a.routes, Route{Method: method, Pattern: pattern})
+		a.routes = append(a.routes, Route{Method: method, Pattern: pattern, Policy: p})
 		r.Handle(method, pattern, a.auth.Require(p, h))
 	}
 
@@ -120,6 +120,7 @@ type Route struct {
 	Method  string
 	Pattern string
 	Public  bool
+	Policy  authn.Policy // the credentials a non-public route accepts
 }
 
 // Routes lists the routes registered by the last call to Handler.

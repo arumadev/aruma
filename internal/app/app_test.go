@@ -44,9 +44,18 @@ func TestConsoleRouteTable(t *testing.T) {
 	}
 	var b strings.Builder
 	for _, r := range a.Console.Routes() {
-		access := "credentials"
-		if r.Public {
-			access = "public"
+		access := "public"
+		if !r.Public {
+			var accepts []string
+			for _, c := range []struct {
+				ok   bool
+				name string
+			}{{r.Policy.Session, "session"}, {r.Policy.AccessToken, "token"}, {r.Policy.ServiceToken, "service"}} {
+				if c.ok {
+					accepts = append(accepts, c.name)
+				}
+			}
+			access = strings.Join(accepts, "+")
 		}
 		fmt.Fprintf(&b, "%-6s %s %s\n", r.Method, r.Pattern, access)
 	}
