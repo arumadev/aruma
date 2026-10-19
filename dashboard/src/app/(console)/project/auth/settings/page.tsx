@@ -1,4 +1,4 @@
-import { AuthSettingsScreen } from '@/features/identity/AuthSettingsScreen';
+import { AuthSettingsScreen } from '@/features/auth/AuthSettingsScreen';
 
 export default function AuthSettingsPage() {
   return <AuthSettingsScreen />;
