@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"time"
 
-	identity "github.com/osama300/aurma-project/internal/identity/core"
 	"github.com/osama300/aurma-project/internal/platform/apierr"
 	"github.com/osama300/aurma-project/internal/platform/authn"
 	"github.com/osama300/aurma-project/internal/platform/httpx"
+	identity "github.com/osama300/aurma-project/internal/services/auth/core"
 )
 
 // authEmailRoutes registers the email templates, SMTP and dev mailbox routes.

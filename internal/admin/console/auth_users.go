@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"time"
 
-	identityapi "github.com/osama300/aurma-project/internal/identity/api"
-	identity "github.com/osama300/aurma-project/internal/identity/core"
-	"github.com/osama300/aurma-project/internal/identity/queries"
-	"github.com/osama300/aurma-project/internal/identity/tokens"
 	"github.com/osama300/aurma-project/internal/platform/authn"
 	"github.com/osama300/aurma-project/internal/platform/httpx"
+	identityapi "github.com/osama300/aurma-project/internal/services/auth/api"
+	identity "github.com/osama300/aurma-project/internal/services/auth/core"
+	"github.com/osama300/aurma-project/internal/services/auth/queries"
+	"github.com/osama300/aurma-project/internal/services/auth/tokens"
 )
 
 // authRoutes registers the Users, Sign-in methods and Settings routes.

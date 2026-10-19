@@ -5,10 +5,10 @@ import (
 	"net/url"
 	"strings"
 
-	identity "github.com/osama300/aurma-project/internal/identity/core"
 	"github.com/osama300/aurma-project/internal/platform/apierr"
 	"github.com/osama300/aurma-project/internal/platform/authn"
 	"github.com/osama300/aurma-project/internal/platform/httpx"
+	identity "github.com/osama300/aurma-project/internal/services/auth/core"
 )
 
 // authProviderRoutes registers the Google and Apple sign-in settings routes. Secrets are

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	identity "github.com/osama300/aurma-project/internal/identity/core"
 	"github.com/osama300/aurma-project/internal/platform/apierr"
+	identity "github.com/osama300/aurma-project/internal/services/auth/core"
 )
 
 // The project Auth screens act through the Auth service on a project the caller owns. Their

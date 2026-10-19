@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	identity "github.com/osama300/aurma-project/internal/identity/core"
+	identity "github.com/osama300/aurma-project/internal/services/auth/core"
 )
 
 // adminProject is an Auth project seen from a developer's server: the client view plus a
