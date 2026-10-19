@@ -1,4 +1,4 @@
-// Authorised domains, checked like the server does (internal/identity/core, checkConfig): a
+// Authorised domains, checked like the server does (internal/services/auth/core, checkConfig): a
 // bare host name or IP address, no scheme, port, path or wildcard.
 
 const LABEL = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;

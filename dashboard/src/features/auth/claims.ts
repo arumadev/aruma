@@ -1,4 +1,4 @@
-// Client-side checks of a custom claims object, mirroring the server (internal/identity/core,
+// Client-side checks of a custom claims object, mirroring the server (internal/services/auth/core,
 // validClaims) so the editor can explain a problem as the user types. The server stays the
 // authority.
 
