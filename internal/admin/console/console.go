@@ -13,6 +13,7 @@ import (
 
 	"github.com/osama300/aurma-project/internal/platform/apierr"
 	"github.com/osama300/aurma-project/internal/platform/authn"
+	"github.com/osama300/aurma-project/internal/platform/consolemount"
 	"github.com/osama300/aurma-project/internal/platform/httpx"
 	"github.com/osama300/aurma-project/internal/platform/ratelimit"
 	identity "github.com/osama300/aurma-project/internal/services/auth/core"
@@ -24,6 +25,8 @@ type Options struct {
 	Version       string
 	SecureCookies bool
 	Auth          *identity.Service // Aruma Auth, for the project Auth screens
+	// Mounts add the services' routes, after the console's own and in this order.
+	Mounts []func(*consolemount.Mount)
 }
 
 // API is the console API.
@@ -102,6 +105,11 @@ func (a *API) Handler() http.Handler {
 
 	a.projectRoutes(with)
 
+	m := &consolemount.Mount{Handle: with, Project: a.mountProject, Fail: a.fail}
+	for _, mount := range a.opts.Mounts {
+		mount(m)
+	}
+
 	cop := http.NewCrossOriginProtection()
 	cop.SetDenyHandler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		apierr.Write(w, apierr.New(apierr.PermissionDenied, "Cross-origin request refused."))
@@ -118,6 +126,15 @@ type Route struct {
 
 // Routes lists the routes registered by the last call to Handler.
 func (a *API) Routes() []Route { return a.routes }
+
+// mountProject resolves the {project} of a service route for the signed-in owner.
+func (a *API) mountProject(r *http.Request) (consolemount.ProjectRef, error) {
+	p, err := a.svc.GetProject(r.Context(), principal(r), r.PathValue("project"))
+	if err != nil {
+		return consolemount.ProjectRef{}, err
+	}
+	return consolemount.ProjectRef{Number: p.Number, ID: p.ID}, nil
+}
 
 func (a *API) fail(w http.ResponseWriter, r *http.Request, err error) {
 	httpx.WriteError(w, r, a.log, err)
