@@ -3,10 +3,10 @@
 - **التاريخ:** 2026-10-18
 - **المراجع:** جلسة مستقلة لم تكتب الكود. قرأت الكود، وكتبت اختبار إثبات لكل نتيجة حقيقية قبل إصلاحها.
 - **النطاق:**
-  - `internal/identity/**`: النواة، والواجهات، والرموز، والاستعلامات.
+  - `internal/services/auth/**`: النواة، والواجهات، والرموز، والاستعلامات.
   - migrations الـ Auth في `internal/store/migrations/auth`.
   - `internal/tenancy/core/dataplane*.go`.
-  - مسارات Auth في الكونسول: `internal/admin/console/auth*.go`، ومنها المستخدمون والإعدادات ومفاتيح التوقيع بعد دمج `8b12fe7`.
+  - مسارات Auth في الكونسول: `internal/services/auth/console/*.go`، ومنها المستخدمون والإعدادات ومفاتيح التوقيع بعد دمج `8b12fe7`.
   - أجزاء Auth في `internal/server` و`internal/app` و`internal/config`.
   - المكتبتان `sdk/node/admin-auth` و`sdk/go/adminauth`.
   - صفحات authDomain: صفحة الإجراء، و`/__/auth/handler` وiframe، و`/emulator/auth/*`.
@@ -63,7 +63,7 @@
 
 ### H-1: `signUp` مع `idToken` يستبدل الاعتمادات
 
-- **الموضع:** `upgradeAnonymous` في `internal/identity/core/signin.go`.
+- **الموضع:** `upgradeAnonymous` في `internal/services/auth/core/signin.go`.
 - **الخلل:**
   - `signUp` مع `idToken` يربط بريدًا وكلمة مرور بالمستخدم الحالي، وكان يقبل أي مستخدم لا المجهول وحده.
   - فيستبدل كلمة المرور الموجودة، أو ينقل الحساب إلى بريد آخر غير مؤكد.
@@ -83,7 +83,7 @@
 وجدته المراجعة الفرعية لدخول Google وApple، وأثبتته بالحزمة التجريبية للمزوّدين.
 
 - **الموضع:**
-  - `codeUser` في `internal/identity/core/oob.go`.
+  - `codeUser` في `internal/services/auth/core/oob.go`.
   - `dropCredentials` في `idp_signin.go`.
 - **الخلل:**
   - حماية الاستيلاء تحذف كلمة مرور من سبق إلى تسجيل البريد، وتبطل جلساته.
@@ -129,7 +129,7 @@
 
 ### M-1: الربط يتجاوز حد إنشاء الحسابات
 
-- **الموضع:** `signUp` في `internal/identity/api/client.go`.
+- **الموضع:** `signUp` في `internal/services/auth/api/client.go`.
 - **الخلل:**
   - `signUp` يجيب `EMAIL_EXISTS` قبل فحص `idToken`، كترتيب أخطاء المحاكي.
   - والطلبات التي تحمل `idToken` كانت خارج حد إنشاء الحسابات.
@@ -152,7 +152,7 @@
 ### M-3: التدوير الطارئ ليس فوريًا في المكتبتين
 
 - **الموضع:**
-  - `writeCached(w, 300, …)` في `internal/identity/api/discovery.go`.
+  - `writeCached(w, 300, …)` في `internal/services/auth/api/discovery.go`.
   - ذاكرة المفاتيح في المكتبتين، وهي تحترم `max-age`.
 - **الخلل:**
   - الخادم يرفض رموز المفتاح المتلَف فورًا.
@@ -187,7 +187,7 @@
 - **L-6:**
   - `Buffer.from(…, 'base64url')` يُسقط الأحرف غير الصالحة، و`RawURLEncoding` في Go يتخطى CR وLF.
   - لا تزوير، لكن من يستعمل نص الرمز مفتاحًا لقائمة منع يمكن تجاوزه.
-  - التوصية: فحص المقطع الثالث بالتعبير نفسه في Node، و`Strict()` في Go وفي `internal/identity/tokens`.
+  - التوصية: فحص المقطع الثالث بالتعبير نفسه في Node، و`Strict()` في Go وفي `internal/services/auth/tokens`.
 - **L-7:**
   - `https://identitytoolkit.googleapis.com.` يمر في المكتبتين.
   - التوصية: إزالة النقطة الأخيرة قبل المقارنة.
