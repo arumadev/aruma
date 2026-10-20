@@ -275,15 +275,22 @@ func TestAuthAdminEmailRemovalLeavesNoPasswordBehind(t *testing.T) {
 	e := newEnv(t, nil)
 	p := e.adminProject("chat-app")
 	ok(t, p.admin(p.sa, "accounts", map[string]any{"localId": "user-1", "email": "sara@example.com", "password": "secret1"}))
-	authErr(t, p.admin(p.sa, "accounts:update", map[string]any{"localId": "user-1", "email": ""}), "MISSING_EMAIL")
-	ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "sara@example.com", "password": "secret1"}))
 
-	upd := ok(t, p.admin(p.sa, "accounts:update", map[string]any{"localId": "user-1", "email": "", "deleteProvider": []string{"password"}}))
-	if upd.str("email") != "" || upd.str("passwordHash") != "" || upd.JSON["providerUserInfo"] != nil {
+	// Removing the email frees the address: the password provider goes with it.
+	upd := ok(t, p.admin(p.sa, "accounts:update", map[string]any{"localId": "user-1", "email": ""}))
+	if upd.str("email") != "" || upd.JSON["providerUserInfo"] != nil {
 		t.Fatalf("after removal: %s", upd.Body)
 	}
+	authErr(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "sara@example.com", "password": "secret1"}), "INVALID_LOGIN_CREDENTIALS")
 	again := ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "sara@example.com", "password": "secret2"}))
 	if again.str("localId") == "user-1" {
 		t.Fatal("the address came back to the old user")
+	}
+
+	// The password survives without an email and signs in again once the user has one.
+	ok(t, p.admin(p.sa, "accounts:update", map[string]any{"localId": "user-1", "email": "sara.new@example.com"}))
+	in := ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "sara.new@example.com", "password": "secret1"}))
+	if in.str("localId") != "user-1" {
+		t.Fatalf("sign-in after a new email: %s", in.Body)
 	}
 }

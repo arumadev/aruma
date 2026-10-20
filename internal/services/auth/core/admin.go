@@ -290,18 +290,17 @@ func (s *Service) UpdateUser(ctx context.Context, p Project, in AdminUser) (User
 		if in.CustomClaims != nil {
 			upd.CustomClaims = claims
 		}
-		if upd.Email == nil && raw.Email != nil && !slices.Contains(in.DeleteProviders, "password") {
-			// A password signs in with the email; removing the email alone would leave the
-			// password provider keyed by the old address, which then nobody could register.
-			if _, err := q.GetPassword(ctx, queries.GetPasswordParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: in.UID}); err == nil {
-				return ErrMissingEmail
-			} else if !errors.Is(err, pgx.ErrNoRows) {
-				return err
-			}
-		}
 		oldEmail := str(raw.Email)
 		if raw, err = q.UpdateUser(ctx, upd); err != nil {
 			return err
+		}
+		if upd.Email == nil && oldEmail != "" {
+			// The password provider is keyed by the email; left behind, it would hold the old
+			// address so nobody could register it. The hash stays, as for a password set without
+			// an email, and the provider returns with the next email.
+			if err := q.DeleteProviders(ctx, queries.DeleteProvidersParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: in.UID, ProviderIds: []string{"password"}}); err != nil {
+				return err
+			}
 		}
 		if len(in.DeleteProviders) > 0 {
 			if err := q.DeleteProviders(ctx, queries.DeleteProvidersParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: in.UID, ProviderIds: in.DeleteProviders}); err != nil {
