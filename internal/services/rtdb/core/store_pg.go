@@ -6,6 +6,7 @@ import (
 	"errors"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -106,6 +107,34 @@ func (t *pgTx) Read(ctx context.Context, p Path) (*Node, error) {
 		}
 	}
 	return treeOf(p, rows)
+}
+
+func (t *pgTx) Peek(ctx context.Context, p Path) (*Node, bool, error) {
+	rs, err := t.q.ReadRows(ctx, queries.ReadRowsParams{DatabaseID: t.db.ID, Paths: []string{p.String()}})
+	if err != nil {
+		return nil, false, err
+	}
+	if len(rs) == 1 && rs[0].Value != nil {
+		leaf, err := leafOf(rs[0].Value)
+		return leaf, false, err
+	}
+	// No row, or an object's priority row: children are what remains. Below a leaf there are
+	// no rows, so a path under a leaf holds nothing.
+	has, err := t.hasRowsBelow(ctx, p)
+	return nil, has, err
+}
+
+func (t *pgTx) HasChildExcept(ctx context.Context, p Path, keys []string) (bool, error) {
+	arg := queries.HasRowsOutsideParams{DatabaseID: t.db.ID, Keys: keys}
+	if keys == nil {
+		arg.Keys = []string{}
+	}
+	if !p.IsRoot() {
+		arg.Lo, arg.Hi = bounds(p)
+		arg.Bounded = true
+	}
+	arg.Skip = int32(utf8.RuneCountInString(arg.Lo) + 1) // substr counts characters from 1
+	return t.q.HasRowsOutside(ctx, arg)
 }
 
 // ancestors returns the rows stored at p's proper ancestors, the root first.

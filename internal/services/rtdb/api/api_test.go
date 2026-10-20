@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/netip"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -83,6 +84,21 @@ type memTx struct {
 }
 
 func (t *memTx) Read(_ context.Context, p core.Path) (*core.Node, error) { return t.root.Get(p), nil }
+func (t *memTx) Peek(_ context.Context, p core.Path) (*core.Node, bool, error) {
+	n := t.root.Get(p)
+	if n.IsLeaf() {
+		return n, false, nil
+	}
+	return nil, n != nil, nil
+}
+func (t *memTx) HasChildExcept(_ context.Context, p core.Path, keys []string) (bool, error) {
+	for _, k := range t.root.Get(p).Keys() {
+		if !slices.Contains(keys, k) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
 func (t *memTx) Write(_ context.Context, p core.Path, v *core.Node) error {
 	t.root = t.root.Set(p, v)
 	return nil

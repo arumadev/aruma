@@ -92,6 +92,41 @@ func (q *Queries) HasRowsIn(ctx context.Context, arg HasRowsInParams) (bool, err
 	return exists, err
 }
 
+const hasRowsOutside = `-- name: HasRowsOutside :one
+SELECT EXISTS (
+    SELECT 1 FROM rtdb.nodes
+    WHERE database_id = $1 AND path > $2::text AND (path < $3::text OR NOT $4::boolean)
+      AND NOT (split_part(substr(path, $5::integer), '/', 1) = ANY ($6::text[]))
+)
+`
+
+type HasRowsOutsideParams struct {
+	DatabaseID int64
+	Lo         string
+	Hi         string
+	Bounded    bool
+	Skip       int32
+	Keys       []string
+}
+
+// Whether a row lies below lo, and before hi when bounded, under a child whose key is not in
+// keys: the part of a path from its character skip, 1-based, up to the next slash, is that key. For
+// security rules, which ask whether a node survives a write that deletes some of its children.
+// scope: global — database_id comes from EnsureDatabase, which filters on project_number.
+func (q *Queries) HasRowsOutside(ctx context.Context, arg HasRowsOutsideParams) (bool, error) {
+	row := q.db.QueryRow(ctx, hasRowsOutside,
+		arg.DatabaseID,
+		arg.Lo,
+		arg.Hi,
+		arg.Bounded,
+		arg.Skip,
+		arg.Keys,
+	)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 type InsertNodesParams struct {
 	DatabaseID int64
 	Path       string

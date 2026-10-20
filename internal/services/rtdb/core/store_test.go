@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"errors"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -30,6 +31,8 @@ type memStore struct {
 	rules map[string]string
 	// slow delays every write, widening the window in which two writers would overlap.
 	slow time.Duration
+	// peekErr fails every read the rules make, as a database that is down.
+	peekErr error
 }
 
 type memDB struct {
@@ -119,6 +122,27 @@ type memTx struct {
 }
 
 func (t *memTx) Read(_ context.Context, p Path) (*Node, error) { return t.root.Get(p), nil }
+func (t *memTx) Peek(_ context.Context, p Path) (*Node, bool, error) {
+	t.s.mu.Lock()
+	err := t.s.peekErr
+	t.s.mu.Unlock()
+	if err != nil {
+		return nil, false, err
+	}
+	n := t.root.Get(p)
+	if n.IsLeaf() {
+		return n.WithPriority(nil), false, nil
+	}
+	return nil, n != nil, nil
+}
+func (t *memTx) HasChildExcept(_ context.Context, p Path, keys []string) (bool, error) {
+	for _, k := range t.root.Get(p).Keys() {
+		if !slices.Contains(keys, k) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
 func (t *memTx) Write(_ context.Context, p Path, v *Node) error {
 	t.s.mu.Lock()
 	refuse, slow := t.s.refuse, t.s.slow
@@ -223,6 +247,35 @@ func runStoreCases(t *testing.T, store Store) {
 			}
 			if s := string(got.ExportJSON()); s != c.want {
 				t.Errorf("read %q: %s, want %s", c.read, s, c.want)
+			}
+			// What rules read through Peek and HasChildExcept agrees with Read, at the path
+			// read and at the root.
+			for _, at := range []Path{p, nil} {
+				n, err := tx.Read(ctx, at)
+				if err != nil {
+					t.Fatal(err)
+				}
+				leaf, has, err := tx.Peek(ctx, at)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var wantLeaf *Node
+				if n.IsLeaf() {
+					wantLeaf = n.WithPriority(nil)
+				}
+				if has != (n != nil && !n.IsLeaf()) || !Equal(leaf.WithPriority(nil), wantLeaf) {
+					t.Errorf("peek %q: %v %v, read %s", at, leaf, has, n.ExportJSON())
+				}
+				keys := n.Keys()
+				for i := range len(keys) + 1 {
+					other, err := tx.HasChildExcept(ctx, at, keys[:i])
+					if err != nil {
+						t.Fatal(err)
+					}
+					if want := i < len(keys); other != want {
+						t.Errorf("HasChildExcept(%q, %q) = %v, want %v", at, keys[:i], other, want)
+					}
+				}
 			}
 		})
 	}

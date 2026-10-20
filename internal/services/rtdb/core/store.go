@@ -51,6 +51,11 @@ const LockedRules = `{"rules": {".read": false, ".write": false}}`
 type StoreTx interface {
 	// Read returns the value at p, or nil.
 	Read(ctx context.Context, p Path) (*Node, error)
+	// Peek tells what is at p without reading below it: the leaf there, or whether p has
+	// children. Security rules read the data through it (rulesSource).
+	Peek(ctx context.Context, p Path) (leaf *Node, hasChildren bool, err error)
+	// HasChildExcept reports whether p has a child whose key is not in keys.
+	HasChildExcept(ctx context.Context, p Path, keys []string) (bool, error)
 	// Write replaces the value at p with v (nil deletes), as the SDKs' updateChild does: see
 	// Node.Set. A path ending in .priority sets the priority of its parent.
 	Write(ctx context.Context, p Path, v *Node) error
