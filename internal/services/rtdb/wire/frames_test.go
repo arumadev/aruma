@@ -137,6 +137,53 @@ func TestAssembler(t *testing.T) {
 	}
 }
 
+type budget struct{ left, peak, held int }
+
+func (b *budget) Take(n int) bool {
+	if n > b.left {
+		return false
+	}
+	b.left -= n
+	b.held += n
+	b.peak = max(b.peak, b.held)
+	return true
+}
+
+func (b *budget) Give(n int) { b.left += n; b.held -= n }
+
+func TestAssemblerBudget(t *testing.T) {
+	b := &budget{left: 10}
+	a := Assembler{Max: 100, Budget: b}
+	feed := func(f string) ([]byte, error) { return a.Feed([]byte(f)) }
+
+	feed("2")
+	feed("12345")
+	if msg, err := feed("678"); string(msg) != "12345678" || err != nil || b.held != 0 {
+		t.Fatalf("within the budget: %q %v, %d held", msg, err, b.held)
+	}
+	// Past the shared budget the message is dropped like an oversized one, and what it held
+	// is given back.
+	feed("3")
+	feed("123456")
+	feed("123456")
+	if _, err := feed("x"); !errors.Is(err, ErrMessageTooBig) || b.held != 0 {
+		t.Fatalf("over the budget: %v, %d held", err, b.held)
+	}
+	// A connection that ends mid-message returns its bytes.
+	feed("2")
+	feed("1234")
+	if b.held != 4 {
+		t.Fatalf("held %d", b.held)
+	}
+	a.Reset()
+	if b.held != 0 || a.Pending() {
+		t.Fatalf("after reset: %d held", b.held)
+	}
+	if msg, _ := feed("ok"); string(msg) != "ok" {
+		t.Fatalf("after reset: %q", msg)
+	}
+}
+
 func TestSplitSharesMemory(t *testing.T) {
 	msg := bytes.Repeat([]byte("a"), 2*MaxFrameChars)
 	frames := Split(msg)

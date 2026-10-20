@@ -35,8 +35,10 @@ func EncodeHello(h Hello) []byte {
 	return encodeControl(ControlHello, h)
 }
 
-// EncodeShutdown tells the client the server is going away. The SDKs report the reason and
-// do not reconnect on their own (PersistentConnection.ts:879-882).
+// EncodeShutdown tells the client the database is gone for good. The SDKs report the reason
+// and never reconnect on their own (PersistentConnection.ts:876-882, Android
+// PersistentConnectionImpl.java:539-554), so it is for a database or project that has really
+// been disabled or deleted, never for a restart.
 func EncodeShutdown(reason string) []byte { return encodeControl(ControlShutdown, reason) }
 
 // EncodeReset sends the client to another host.

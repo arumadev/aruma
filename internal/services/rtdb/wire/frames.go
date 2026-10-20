@@ -54,15 +54,40 @@ var ErrMessageTooBig = errors.New("wire: message exceeds the size limit")
 // ErrBadFrameCount reports a count frame the protocol does not allow.
 var ErrBadFrameCount = errors.New("wire: invalid frame count")
 
+// Budget accounts for the bytes held by partly reassembled messages across connections.
+type Budget interface {
+	// Take reserves n bytes, or reports that they are not available.
+	Take(n int) bool
+	// Give returns n bytes.
+	Give(n int)
+}
+
 // Assembler rebuilds the client's messages from its text frames. The zero value is not
 // usable; set Max.
 type Assembler struct {
-	// Max caps a reassembled message, in bytes.
+	// Max caps a reassembled message, in bytes. It may change between messages.
 	Max int
+	// Budget, when set, is charged for the pieces of multi-frame messages while they are
+	// held; a message the budget cannot hold is dropped as too big.
+	Budget Budget
 
 	want    int // frames still expected for the current message; 0 when none is open
 	buf     []byte
-	discard bool // the current message passed Max: count its frames, keep nothing
+	discard bool // the current message is dropped: count its frames, keep nothing
+}
+
+// Reset drops a message in progress and returns its bytes to the budget, for a connection
+// that ends.
+func (a *Assembler) Reset() {
+	a.release()
+	a.want, a.discard = 0, false
+}
+
+func (a *Assembler) release() {
+	if a.Budget != nil && len(a.buf) > 0 {
+		a.Budget.Give(len(a.buf))
+	}
+	a.buf = nil
 }
 
 // Feed takes one text frame. It returns a complete message, or nil when the frame was a
@@ -86,8 +111,9 @@ func (a *Assembler) Feed(frame []byte) ([]byte, error) {
 	}
 	a.want--
 	if !a.discard {
-		if len(a.buf)+len(frame) > a.Max {
-			a.discard, a.buf = true, nil
+		if len(a.buf)+len(frame) > a.Max || a.Budget != nil && !a.Budget.Take(len(frame)) {
+			a.release()
+			a.discard = true
 		} else {
 			a.buf = append(a.buf, frame...)
 		}
@@ -100,6 +126,9 @@ func (a *Assembler) Feed(frame []byte) ([]byte, error) {
 		return nil, ErrMessageTooBig
 	}
 	msg := a.buf
+	if a.Budget != nil {
+		a.Budget.Give(len(msg))
+	}
 	a.buf = nil
 	return msg, nil
 }
