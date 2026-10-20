@@ -283,6 +283,16 @@ func (s *Service) UpdateUser(ctx context.Context, p Project, in AdminUser) (User
 		if in.CustomClaims != nil {
 			upd.CustomClaims = claims
 		}
+		if upd.Email == nil && raw.Email != nil && !slices.Contains(in.DeleteProviders, "password") {
+			// A password signs in with the email; removing the email alone would leave the
+			// password provider keyed by the old address, which then nobody could register.
+			if _, err := q.GetPassword(ctx, queries.GetPasswordParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: in.UID}); err == nil {
+				return ErrMissingEmail
+			} else if !errors.Is(err, pgx.ErrNoRows) {
+				return err
+			}
+		}
+		oldEmail := str(raw.Email)
 		if raw, err = q.UpdateUser(ctx, upd); err != nil {
 			return err
 		}
@@ -317,6 +327,15 @@ func (s *Service) UpdateUser(ctx context.Context, p Project, in AdminUser) (User
 			if raw.TokensValidAfter, err = q.RevokeUserTokens(ctx, queries.RevokeUserTokensParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: in.UID}); err != nil {
 				return err
 			}
+		}
+		switch {
+		case !strings.EqualFold(email, oldEmail):
+			err = retireCodes(ctx, q, p, in.UID, codesOfAddress)
+		case hash != "":
+			err = retireCodes(ctx, q, p, in.UID, codesOfPassword)
+		}
+		if err != nil {
+			return err
 		}
 		u, err = s.loadUser(ctx, q, p, raw)
 		return err

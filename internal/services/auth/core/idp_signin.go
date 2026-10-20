@@ -238,7 +238,7 @@ func profile(a *assertion) *IdPResult {
 		OAuthIDToken: a.tokens.IDToken, OAuthAccessToken: a.tokens.AccessToken, OAuthExpiresIn: a.tokens.ExpiresIn,
 	}
 	if email, ok := normalizeEmail(c.Email); ok {
-		r.Email, r.EmailVerified = email, bool(c.EmailVerified)
+		r.Email, r.EmailVerified = email, bool(c.EmailVerified) && vouchesFor(a.idp.provider, c, email)
 	}
 	switch a.idp.provider {
 	case GoogleProvider:
@@ -247,7 +247,7 @@ func profile(a *assertion) *IdPResult {
 		if validPhotoURL(c.Picture) {
 			r.PhotoURL = c.Picture
 		}
-		info := map[string]any{"id": c.Sub, "verified_email": r.EmailVerified}
+		info := map[string]any{"id": c.Sub, "verified_email": bool(c.EmailVerified)}
 		for k, v := range map[string]string{"email": r.Email, "name": c.Name, "given_name": c.GivenName, "family_name": c.FamilyName, "picture": r.PhotoURL, "granted_scopes": a.tokens.Scope} {
 			if v != "" {
 				info[k] = v
@@ -264,6 +264,27 @@ func profile(a *assertion) *IdPResult {
 		r.DisplayName = ""
 	}
 	return r
+}
+
+// vouchesFor reports whether the provider is authoritative for the address, so that its
+// email_verified makes the address verified (Firebase's trusted providers). Apple verifies
+// every address. Google is the mail host only for Gmail and for a Google Workspace account
+// whose hosted domain is the address's domain; anyone can open a Google account under another
+// address, and email_verified then says only that the address was checked once
+// (developers.google.com/identity/gsi/web/guides/verify-google-id-token). Firebase documents
+// Google as trusted "for @gmail.com addresses"; a Workspace account of the address's own
+// domain is trusted too, as Google names it authoritative and the domain is proven by DNS.
+func vouchesFor(provider string, c *providerClaims, email string) bool {
+	if provider != GoogleProvider {
+		return true
+	}
+	domain := email[strings.LastIndexByte(email, '@')+1:]
+	switch {
+	case strings.EqualFold(domain, "gmail.com"), strings.EqualFold(domain, "googlemail.com"):
+		return true
+	default:
+		return c.HostedDomain != "" && strings.EqualFold(c.HostedDomain, domain)
+	}
 }
 
 // signInIdP resolves the account for a sign-in: the one linked to this provider identity;

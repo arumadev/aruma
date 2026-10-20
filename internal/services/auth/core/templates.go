@@ -26,7 +26,8 @@ var (
 
 // MailTemplate is an email template. Body is HTML; the variables %LINK%, %APP_NAME%, %EMAIL%,
 // %NEW_EMAIL% and %DISPLAY_NAME% are replaced when a message is written, HTML-escaped in the
-// body and as plain text in the subject. Customized is false for Aruma's built-in text.
+// body and as plain text in the subject. %DISPLAY_NAME% is empty in mail to an address the
+// account has not verified. Customized is false for Aruma's built-in text.
 type MailTemplate struct {
 	Kind       string
 	Language   string
@@ -114,7 +115,8 @@ func validTemplate(subject, body string) error {
 
 // defaultTemplate returns Aruma's built-in template. The texts are Aruma's own (research §7):
 // a greeting, the action in one sentence, the link, what to do if the mail was unexpected,
-// and a sign-off from the app.
+// and a sign-off from the app. The greeting has no display name: the name is whatever the
+// account holder typed, and these mails reach addresses nobody has proven yet.
 func defaultTemplate(kind, lang string) MailTemplate {
 	t := defaultTemplates[lang][kind]
 	return MailTemplate{Kind: kind, Language: lang, Subject: t[0], Body: t[1]}
@@ -133,44 +135,44 @@ const linkPara = `<p><a href="%LINK%">%LINK%</a></p>`
 var defaultTemplates = map[string]map[string][2]string{
 	"ar": {
 		MailVerifyEmail: {"أكّد بريدك الإلكتروني في %APP_NAME%", wrapAr(
-			`<p>مرحبًا %DISPLAY_NAME%،</p>` +
+			`<p>مرحبًا،</p>` +
 				`<p>لتأكيد أن العنوان %EMAIL% يخصّك، افتح الرابط التالي:</p>` + linkPara +
 				`<p>إن لم تطلب هذا فتجاهل الرسالة، ولن يتغيّر شيء في أي حساب.</p>` +
 				`<p>مع التحية،<br>فريق %APP_NAME%</p>`)},
 		MailPasswordReset: {"إعادة تعيين كلمة المرور في %APP_NAME%", wrapAr(
-			`<p>مرحبًا %DISPLAY_NAME%،</p>` +
+			`<p>مرحبًا،</p>` +
 				`<p>وصلنا طلب لتعيين كلمة مرور جديدة لحسابك (%EMAIL%). اختر كلمة المرور الجديدة من هذا الرابط خلال ساعة:</p>` + linkPara +
 				`<p>إن لم تطلب ذلك فتجاهل الرسالة، وستبقى كلمة مرورك الحالية كما هي.</p>` +
 				`<p>مع التحية،<br>فريق %APP_NAME%</p>`)},
 		MailChangeEmail: {"أكّد بريدك الجديد في %APP_NAME%", wrapAr(
-			`<p>مرحبًا %DISPLAY_NAME%،</p>` +
+			`<p>مرحبًا،</p>` +
 				`<p>طُلب تغيير بريد حسابك من %EMAIL% إلى %NEW_EMAIL%. لإتمام التغيير، افتح الرابط التالي:</p>` + linkPara +
 				`<p>إن لم تطلب هذا فتجاهل الرسالة، وسيبقى بريد الحساب كما هو.</p>` +
 				`<p>مع التحية،<br>فريق %APP_NAME%</p>`)},
 		MailRecoverEmail: {"تغيّر بريد حسابك في %APP_NAME%", wrapAr(
-			`<p>مرحبًا %DISPLAY_NAME%،</p>` +
+			`<p>مرحبًا،</p>` +
 				`<p>تغيّر بريد الدخول إلى حسابك من %EMAIL% إلى %NEW_EMAIL%.</p>` +
 				`<p>إن لم تكن أنت من غيّره، فأعد البريد السابق من هذا الرابط، ثم غيّر كلمة المرور:</p>` + linkPara +
 				`<p>مع التحية،<br>فريق %APP_NAME%</p>`)},
 	},
 	"en": {
 		MailVerifyEmail: {"Confirm your email for %APP_NAME%", wrapEn(
-			`<p>Hello %DISPLAY_NAME%,</p>` +
+			`<p>Hello,</p>` +
 				`<p>To confirm that %EMAIL% is yours, open this link:</p>` + linkPara +
 				`<p>If you did not ask for this, ignore this message; no account changes.</p>` +
 				`<p>Regards,<br>The %APP_NAME% team</p>`)},
 		MailPasswordReset: {"Reset your %APP_NAME% password", wrapEn(
-			`<p>Hello %DISPLAY_NAME%,</p>` +
+			`<p>Hello,</p>` +
 				`<p>We received a request to set a new password for your account (%EMAIL%). Choose it from this link within an hour:</p>` + linkPara +
 				`<p>If you did not ask for this, ignore this message; your current password stays as it is.</p>` +
 				`<p>Regards,<br>The %APP_NAME% team</p>`)},
 		MailChangeEmail: {"Confirm your new email for %APP_NAME%", wrapEn(
-			`<p>Hello %DISPLAY_NAME%,</p>` +
+			`<p>Hello,</p>` +
 				`<p>Someone asked to change your account email from %EMAIL% to %NEW_EMAIL%. To complete the change, open this link:</p>` + linkPara +
 				`<p>If you did not ask for this, ignore this message; the account email stays as it is.</p>` +
 				`<p>Regards,<br>The %APP_NAME% team</p>`)},
 		MailRecoverEmail: {"Your %APP_NAME% email was changed", wrapEn(
-			`<p>Hello %DISPLAY_NAME%,</p>` +
+			`<p>Hello,</p>` +
 				`<p>The sign-in email of your account changed from %EMAIL% to %NEW_EMAIL%.</p>` +
 				`<p>If you did not make this change, restore your previous email with this link, then change your password:</p>` + linkPara +
 				`<p>Regards,<br>The %APP_NAME% team</p>`)},

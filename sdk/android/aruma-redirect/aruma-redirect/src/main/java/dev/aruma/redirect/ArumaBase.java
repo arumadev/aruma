@@ -14,7 +14,12 @@ final class ArumaBase {
     /** {@code scheme://authority[/prefix]}; never ends with a slash. */
     final String url;
 
-    ArumaBase(String raw, boolean allowInsecure) {
+    /**
+     * @param allowInsecure accept http to any host (ArumaAllowInsecureURL).
+     * @param debuggable the app is debuggable ({@code ApplicationInfo.FLAG_DEBUGGABLE}): http may then also go to the
+     *     emulators' aliases of the development machine, which on a real device are ordinary private addresses.
+     */
+    ArumaBase(String raw, boolean allowInsecure, boolean debuggable) {
         String trimmed = raw == null ? "" : raw.trim();
         URI uri;
         try {
@@ -29,9 +34,10 @@ final class ArumaBase {
                 || uri.getRawAuthority() == null || trimmed.contains("?") || trimmed.contains("#")) {
             throw invalid(trimmed);
         }
-        if (s.equals("http") && !allowInsecure && !isLocalHost(h)) {
-            throw new ArumaRedirectException("ArumaURL \"" + trimmed + "\" uses http to a host that is not loopback or an "
-                    + "emulator host; use https, or set ArumaAllowInsecureURL for development");
+        if (s.equals("http") && !allowInsecure && !isLoopback(h) && !(debuggable && isEmulatorHost(h))) {
+            throw new ArumaRedirectException("ArumaURL \"" + trimmed + "\" uses http to a host that is not loopback (or, "
+                    + "in a debuggable app, an emulator's alias of the development machine); use https, or set "
+                    + "ArumaAllowInsecureURL for development");
         }
         String path = uri.getRawPath() == null ? "" : uri.getRawPath();
         while (path.endsWith("/")) {
@@ -47,14 +53,21 @@ final class ArumaBase {
                 + "\" is not an absolute http(s) URL with a host and no query, fragment or credentials");
     }
 
-    /** localhost, 127.0.0.0/8, ::1, and the host aliases of the Android emulator (10.0.2.2) and Genymotion (10.0.3.2). */
-    static boolean isLocalHost(String host) {
+    /** The aliases of the development machine in the Android emulator (10.0.2.2) and Genymotion (10.0.3.2). */
+    static boolean isEmulatorHost(String host) {
+        return host.equals("10.0.2.2") || host.equals("10.0.3.2");
+    }
+
+    /**
+     * localhost, 127.0.0.0/8 and ::1. Names under .localhost are not included: RFC 6761 reserves them for loopback,
+     * but Android's resolver does not guarantee that, so such a name could reach the network in plain text.
+     */
+    static boolean isLoopback(String host) {
         String h = host.toLowerCase(Locale.ROOT);
         if (h.startsWith("[") && h.endsWith("]")) {
             h = h.substring(1, h.length() - 1);
         }
-        if (h.equals("localhost") || h.endsWith(".localhost") || h.equals("::1") || h.equals("10.0.2.2")
-                || h.equals("10.0.3.2")) {
+        if (h.equals("localhost") || h.equals("::1")) {
             return true;
         }
         String[] octets = h.split("\\.", -1);

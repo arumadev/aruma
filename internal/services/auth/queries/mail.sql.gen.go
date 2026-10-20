@@ -370,23 +370,24 @@ func (q *Queries) PurgeOutbox(ctx context.Context) (int64, error) {
 const retireOobCodes = `-- name: RetireOobCodes :exec
 UPDATE auth.oob_codes SET used_at = now()
 WHERE project_number = $1 AND tenant_id = $2 AND uid = $3
-  AND request_type = $4 AND used_at IS NULL
+  AND request_type = ANY($4::text[]) AND used_at IS NULL
 `
 
 type RetireOobCodesParams struct {
 	ProjectNumber int64
 	TenantID      string
 	Uid           *string
-	RequestType   string
+	RequestTypes  []string
 }
 
-// Retires the user's other open codes of a type once one of them has been used.
+// Retires the user's open codes of the given types: the others of a type once one has been
+// used, and those a change of address or password leaves behind.
 func (q *Queries) RetireOobCodes(ctx context.Context, arg RetireOobCodesParams) error {
 	_, err := q.db.Exec(ctx, retireOobCodes,
 		arg.ProjectNumber,
 		arg.TenantID,
 		arg.Uid,
-		arg.RequestType,
+		arg.RequestTypes,
 	)
 	return err
 }

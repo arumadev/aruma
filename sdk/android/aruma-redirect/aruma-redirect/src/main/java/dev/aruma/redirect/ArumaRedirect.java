@@ -42,18 +42,25 @@ public final class ArumaRedirect {
 
     private ArumaRedirect() {}
 
-    /** Redirects Firebase Auth requests to {@code url}. http is accepted only for loopback and emulator hosts. */
+    /** Redirects Firebase Auth requests to {@code url}. http is accepted only for loopback hosts. */
     public static void install(String url) {
         install(url, false, false);
     }
 
     /**
+     * Installs from code. http is accepted for loopback hosts; for the emulator's alias of the development machine
+     * ({@code 10.0.2.2}) pass {@code allowInsecure}, for example {@code BuildConfig.DEBUG}. (The manifest route
+     * accepts that alias by itself in a debuggable app.)
+     *
      * @param allowInsecure accept http to any host. Development only.
      * @param logRequests log host and path of each redirected request.
      * @throws ArumaRedirectException when the URL is refused or the factory cannot be installed. Nothing is installed.
      */
     public static void install(String url, boolean allowInsecure, boolean logRequests) {
-        ArumaBase base = new ArumaBase(url, allowInsecure);
+        install(new ArumaBase(url, allowInsecure, false), logRequests);
+    }
+
+    private static void install(ArumaBase base, boolean logRequests) {
         synchronized (LOCK) {
             if (baseUrl != null) {
                 if (baseUrl.equals(base.url)) {
@@ -89,13 +96,14 @@ public final class ArumaRedirect {
 
     /**
      * Installs from meta-data values (as read from the app manifest). A null or blank {@code url} does nothing and
-     * returns false; a present but invalid value throws.
+     * returns false; a present but invalid value throws. {@code debuggable} is the app's FLAG_DEBUGGABLE: only then
+     * may http go to an emulator's alias of the development machine without ArumaAllowInsecureURL.
      */
-    static boolean installFromValues(Object url, Object allowInsecure, Object logRequests) {
+    static boolean installFromValues(Object url, Object allowInsecure, Object logRequests, boolean debuggable) {
         if (url == null || url.toString().trim().isEmpty()) {
             return false;
         }
-        install(url.toString(), bool(allowInsecure), bool(logRequests));
+        install(new ArumaBase(url.toString(), bool(allowInsecure), debuggable), bool(logRequests));
         return true;
     }
 

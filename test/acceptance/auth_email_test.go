@@ -567,6 +567,8 @@ func TestAuthEmailConsole(t *testing.T) {
 	}
 	up := p.call(itk+"accounts:signUp", map[string]any{"email": "sara@example.com", "password": "secret1", "displayName": "<i>Sara</i>"})
 	ok(t, up)
+	// The name goes only to a verified address (security review v0.1, S-4).
+	p.sql(`UPDATE auth.users SET email_verified = true WHERE uid = $1`, up.str("localId"))
 	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "sara@example.com"}))
 	m := p.lastMail("sara@example.com")
 	if m["subject"] != "استعادة Chat-app" || !strings.Contains(m["html"].(string), "&lt;i&gt;Sara&lt;/i&gt;") || !strings.Contains(m["text"].(string), "اضغط: "+m["link"].(string)) {

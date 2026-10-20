@@ -45,6 +45,7 @@
       "MISSING_EMAIL": "A password needs an email address.",
       "PASSWORD_DOES_NOT_MEET_REQUIREMENTS": "The password doesn't meet this project's password policy.",
       "SMTP_ERROR": "The mail server refused the message. Check the host, port, security and sign-in details.",
+      "SMTP_HOST_PRIVATE": "This server doesn't send mail to a local or private network address. The operator can allow it with mail.smtp_allow_private (ARUMA_MAIL_SMTP_ALLOW_PRIVATE).",
       "USER_NOT_FOUND": "This user no longer exists.",
       "WEAK_PASSWORD": "The password is shorter than this project's policy allows."
     },

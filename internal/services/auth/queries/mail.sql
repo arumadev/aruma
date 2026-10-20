@@ -16,10 +16,11 @@ WHERE project_number = @project_number AND code_hash = @code_hash AND used_at IS
 RETURNING *;
 
 -- name: RetireOobCodes :exec
--- Retires the user's other open codes of a type once one of them has been used.
+-- Retires the user's open codes of the given types: the others of a type once one has been
+-- used, and those a change of address or password leaves behind.
 UPDATE auth.oob_codes SET used_at = now()
 WHERE project_number = @project_number AND tenant_id = @tenant_id AND uid = @uid
-  AND request_type = @request_type AND used_at IS NULL;
+  AND request_type = ANY(@request_types::text[]) AND used_at IS NULL;
 
 -- name: PurgeOobCodes :execrows
 -- scope: global — housekeeping across projects: codes a day past their use or expiry.

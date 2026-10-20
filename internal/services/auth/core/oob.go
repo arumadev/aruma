@@ -145,7 +145,8 @@ func (s *Service) sendPasswordReset(ctx context.Context, p Project, cfg queries.
 		return "", err
 	}
 	_, err = s.sendCode(ctx, p, cfg, codeRequest{
-		kind: MailPasswordReset, user: u, email: u.Email, to: u.Email, continueURL: in.ContinueURL, lang: in.Locale, apiKey: in.APIKey,
+		kind: MailPasswordReset, user: u, email: u.Email, to: u.Email, toVerified: u.EmailVerified,
+		continueURL: in.ContinueURL, lang: in.Locale, apiKey: in.APIKey,
 	}, true)
 	return email, err
 }
@@ -165,7 +166,8 @@ func (s *Service) sendVerifyEmail(ctx context.Context, p Project, cfg queries.Au
 		return "", err
 	}
 	_, err = s.sendCode(ctx, p, cfg, codeRequest{
-		kind: MailVerifyEmail, user: u, email: u.Email, to: u.Email, continueURL: in.ContinueURL, lang: in.Locale, apiKey: in.APIKey,
+		kind: MailVerifyEmail, user: u, email: u.Email, to: u.Email, toVerified: u.EmailVerified,
+		continueURL: in.ContinueURL, lang: in.Locale, apiKey: in.APIKey,
 	}, true)
 	return u.Email, err
 }
@@ -215,6 +217,7 @@ type codeRequest struct {
 	email       string // the address the code acts on (the old one for a change)
 	newEmail    string
 	to          string
+	toVerified  bool // the account has proven the address mailed to
 	continueURL string
 	lang        string
 	apiKey      string
@@ -250,8 +253,15 @@ func (s *Service) issueCode(ctx context.Context, q *queries.Queries, p Project, 
 	}
 	link := s.actionLink(prof, in.apiKey, oobModes[in.kind], code, in.continueURL, in.lang)
 	if send {
+		// The display name is the account holder's own text; mail to an address the account has
+		// not proven must not carry it, or anyone could send their words from the project to
+		// any inbox (sign up with the address, or ask to change to it).
+		name := ""
+		if in.toVerified {
+			name = in.user.DisplayName
+		}
 		err = s.enqueue(ctx, q, p, cfg, in.kind, in.lang, in.to, mailVars{
-			Link: link, AppName: appName(cfg, prof), Email: in.email, NewEmail: in.newEmail, DisplayName: in.user.DisplayName,
+			Link: link, AppName: appName(cfg, prof), Email: in.email, NewEmail: in.newEmail, DisplayName: name,
 		})
 	}
 	return link, err
@@ -339,7 +349,8 @@ func (s *Service) lookupCode(ctx context.Context, p Project, code string) (queri
 }
 
 // codeUser returns the user a code acts on, refusing a code that no longer fits it: a user
-// deleted or recreated, or (except for recovery) an address changed since it was issued.
+// deleted or recreated, or an address changed since it was issued. A recovery code acts on the
+// address it restores, so it fits while the account still has the address it took away.
 func (s *Service) codeUser(ctx context.Context, q *queries.Queries, p Project, row queries.AuthOobCode, forUpdate bool) (queries.AuthUser, error) {
 	if row.Uid == nil {
 		return queries.AuthUser{}, ErrInvalidOobCode
@@ -363,6 +374,10 @@ func (s *Service) codeUser(ctx context.Context, q *queries.Queries, p Project, r
 		return raw, ErrUserDisabled
 	case row.RequestType != MailRecoverEmail && !strings.EqualFold(str(raw.Email), row.Email):
 		return raw, ErrInvalidOobCode
+	case row.RequestType == MailRecoverEmail && !strings.EqualFold(str(raw.Email), str(row.NewEmail)):
+		// A recovery undoes one change, and only while it is the latest: after A→B→C the link
+		// sent to A must not override the later change.
+		return raw, ErrInvalidOobCode
 	case row.RequestType == MailChangeEmail && row.CreatedAt.Before(raw.TokensValidAfter):
 		// A change of address is the authority of the session that asked for it, sent to an
 		// address that session chose, so it ends with that session: after a password change,
@@ -371,6 +386,21 @@ func (s *Service) codeUser(ctx context.Context, q *queries.Queries, p Project, r
 		return raw, ErrInvalidOobCode
 	}
 	return raw, nil
+}
+
+// The codes a change leaves behind. A change of address retires every open code of the user:
+// each was issued for the old address (a recovery code, for the change just superseded) and
+// would come back to life if that address returned. A change of password retires the open
+// reset links. Recovery links survive it: they are the previous owner's way back when whoever
+// changed the address changed the password too.
+var (
+	codesOfAddress  = []string{MailPasswordReset, MailVerifyEmail, MailChangeEmail, MailRecoverEmail}
+	codesOfPassword = []string{MailPasswordReset}
+)
+
+// retireCodes retires the user's open codes of the given kinds.
+func retireCodes(ctx context.Context, q *queries.Queries, p Project, uid string, kinds []string) error {
+	return q.RetireOobCodes(ctx, queries.RetireOobCodesParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: &uid, RequestTypes: kinds})
 }
 
 func codeInfo(cfg queries.AuthProjectConfig, row queries.AuthOobCode) ActionCodeInfo {
@@ -450,7 +480,7 @@ func (s *Service) ResetPassword(ctx context.Context, p Project, code, newPasswor
 		if _, err := q.RevokeUserTokens(ctx, queries.RevokeUserTokensParams{ProjectNumber: p.Number, TenantID: row.TenantID, Uid: raw.Uid}); err != nil {
 			return err
 		}
-		return q.RetireOobCodes(ctx, queries.RetireOobCodesParams{ProjectNumber: p.Number, TenantID: row.TenantID, Uid: &raw.Uid, RequestType: MailPasswordReset})
+		return retireCodes(ctx, q, pr, raw.Uid, codesOfPassword)
 	})
 	if err != nil {
 		return ActionCodeInfo{}, err
@@ -521,7 +551,11 @@ func (s *Service) ApplyActionCode(ctx context.Context, p Project, code, lang, ap
 				return err
 			}
 		}
-		if err := q.RetireOobCodes(ctx, queries.RetireOobCodesParams{ProjectNumber: p.Number, TenantID: row.TenantID, Uid: &raw.Uid, RequestType: row.RequestType}); err != nil {
+		retire := []string{row.RequestType}
+		if changed {
+			retire = codesOfAddress
+		}
+		if err := retireCodes(ctx, q, pr, raw.Uid, retire); err != nil {
 			return err
 		}
 		if u, err = s.loadUser(ctx, q, pr, updated); err != nil {
@@ -529,7 +563,8 @@ func (s *Service) ApplyActionCode(ctx context.Context, p Project, code, lang, ap
 		}
 		if row.RequestType == MailChangeEmail && changed && str(raw.Email) != "" {
 			_, err = s.issueCode(ctx, q, pr, cfg, prof, codeRequest{
-				kind: MailRecoverEmail, user: u, email: *raw.Email, newEmail: u.Email, to: *raw.Email, lang: mailLanguage(lang), apiKey: apiKey,
+				kind: MailRecoverEmail, user: u, email: *raw.Email, newEmail: u.Email, to: *raw.Email, toVerified: raw.EmailVerified,
+				lang: mailLanguage(lang), apiKey: apiKey,
 			}, true)
 		}
 		return err
@@ -630,5 +665,7 @@ func (s *Service) SendPasswordResetEmail(ctx context.Context, p Project, uid, la
 	if err != nil {
 		return "", err
 	}
-	return s.sendCode(ctx, p, cfg, codeRequest{kind: MailPasswordReset, user: u, email: u.Email, to: u.Email, lang: mailLanguage(lang)}, true)
+	return s.sendCode(ctx, p, cfg, codeRequest{
+		kind: MailPasswordReset, user: u, email: u.Email, to: u.Email, toVerified: u.EmailVerified, lang: mailLanguage(lang),
+	}, true)
 }

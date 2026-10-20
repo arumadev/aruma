@@ -17,10 +17,16 @@ Additional sources:
   stored in `auth.oob_codes`; the code exists only in the link (tamper scenario "dump of DB").
 - **Single use.** Using a code marks it used in the same transaction as its effect
   (`UPDATE … WHERE used_at IS NULL`), so a concurrent second use finds nothing. Using a code
-  also retires the user's other open codes of the same type.
+  also retires the user's other open codes of the same type. Any change of address (a link, a
+  recovery, `accounts:update`, the Admin API) retires every open code of the user, so none of
+  them wakes up if the old address comes back; a change of password retires the open reset
+  links but not recovery links, which are the previous owner's way back when whoever changed
+  the address changed the password too (security review v0.1, S-3).
 - **Fit.** A code acts on the user it was issued for, and refuses (INVALID_OOB_CODE) if that
-  user was deleted or recreated, or if the address changed since (except for recovery, whose
-  purpose is to undo changes). A disabled user answers USER_DISABLED and leaves the code unused.
+  user was deleted or recreated, or if the address changed since. A recovery code fits while the
+  account still has the address that replaced the restored one (its `newEmail`): it undoes one
+  change, and only while that change is the latest. After A→B→C the link sent to A is dead; the
+  one sent to B works. A disabled user answers USER_DISABLED and leaves the code unused.
 - **Lifetimes.** No official figure exists ([phase2-identity-toolkit.md] §6, §9.7):
   `PASSWORD_RESET` 1 hour (it grants a credential), `VERIFY_EMAIL` 3 days (the commonly
   reported figure), `VERIFY_AND_CHANGE_EMAIL` and `RECOVER_EMAIL` 3 days as well: recovery must
@@ -114,6 +120,15 @@ HTML-escaped into the body and inserted plain into the subject with line breaks 
 plain-text part is derived from the template before substitution, so values cannot inject
 markup into either part. A saved template must contain `%LINK%`.
 
+`%DISPLAY_NAME%` is empty in mail to an address the account has not verified: every
+`VERIFY_EMAIL` and `VERIFY_AND_CHANGE_EMAIL` message, and a reset or recovery message to an
+unverified address. The name is whatever the account holder typed, so otherwise anyone could
+send their own text from the project's sender to any inbox, by signing up with the address or
+asking to change to it (the display-name spam abuse known on Firebase projects). The built-in
+texts greet without a name at all ("Hello," / "مرحبًا،"), which also avoids "Hello ," for
+users without one. Firebase's own defaults greet with `%DISPLAY_NAME%`; a custom template may
+still do so and gets the name for verified addresses (security review v0.1, S-4).
+
 ## Outbox, delivery and the dev mailbox
 
 - The message is rendered and written to `auth.email_outbox` in the transaction that creates
@@ -134,6 +149,24 @@ markup into either part. A saved template must contain `%LINK%`.
   `auth.project_config|smtp_password_enc|<project number>`. Headers are encoded (RFC 2047) and
   come from validated values, so none can add a header. Messages are multipart/alternative,
   UTF-8, quoted-printable, `Auto-Submitted: auto-generated`.
+- **Where SMTP may go.** The host is the console user's choice, so the server would otherwise
+  open TCP connections anywhere it can reach, and `smtp:test` would read back whatever a host
+  and port answer (security review v0.1, S-5). Unless the instance setting
+  `mail.smtp_allow_private` (`ARUMA_MAIL_SMTP_ALLOW_PRIVATE`) is on, a host on a loopback,
+  private (RFC 1918, `fc00::/7`), link-local (`169.254.0.0/16`, `fe80::/10`: the metadata
+  address of most clouds), unspecified, shared (`100.64.0.0/10`, Alibaba's metadata), reserved
+  or multicast address is refused (`SMTP_HOST_PRIVATE`): as an address or a `localhost` name
+  when saved, and for any name on the address actually dialled, after resolution,
+  so DNS rebinding gains nothing. IPv4-mapped and NAT64 addresses are judged by the IPv4
+  address they carry. The default is on only when `public_url` is loopback (a developer's own
+  machine, like the dev mailbox). A self-hosted single-owner install with a local relay
+  (Postfix on 127.0.0.1 or the LAN) turns it on with one line; it is off elsewhere because a
+  console account, even on an instance with closed sign-up, is not meant to reach the
+  operator's network. `smtp:test` answers a generic `SMTP_ERROR` and the server log keeps the
+  detail; only the private-address refusal is named, so the operator knows which setting to
+  change. Connecting and the server's greeting (with the TLS handshake for `tls`) each have
+  10 s, the whole conversation 30 s, so a silent port fails fast and the console's request
+  ends within the HTTP write timeout.
 
 ## Flood limits
 

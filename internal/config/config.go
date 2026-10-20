@@ -62,6 +62,10 @@ type Mail struct {
 	// DevMailbox allows the dev mailbox: projects without an SMTP host keep their Auth emails in
 	// the console instead of sending them. Defaults to on when public_url is a loopback address.
 	DevMailbox *bool `yaml:"dev_mailbox"`
+	// SMTPAllowPrivate lets projects use SMTP hosts on loopback, private or link-local
+	// addresses (a relay on the same machine or network). Off, the SMTP settings cannot reach
+	// the instance's own network. Defaults to on when public_url is a loopback address.
+	SMTPAllowPrivate *bool `yaml:"smtp_allow_private"`
 }
 
 // Defaults returns a configuration with every optional field set.
@@ -153,6 +157,11 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 		var b bool
 		boolean("ARUMA_MAIL_DEV_MAILBOX", &b)
 		c.Mail.DevMailbox = &b
+	}
+	if v := getenv("ARUMA_MAIL_SMTP_ALLOW_PRIVATE"); v != "" {
+		var b bool
+		boolean("ARUMA_MAIL_SMTP_ALLOW_PRIVATE", &b)
+		c.Mail.SMTPAllowPrivate = &b
 	}
 	return errors.Join(errs...)
 }
@@ -266,6 +275,16 @@ func (c *Config) SecureCookies() bool {
 func (c *Config) DevMailbox() bool {
 	if c.Mail.DevMailbox != nil {
 		return *c.Mail.DevMailbox
+	}
+	return c.loopback()
+}
+
+// SMTPAllowPrivate reports whether projects may send through SMTP hosts on loopback, private
+// or link-local addresses: as configured, else on loopback only, where the network is the
+// developer's own.
+func (c *Config) SMTPAllowPrivate() bool {
+	if c.Mail.SMTPAllowPrivate != nil {
+		return *c.Mail.SMTPAllowPrivate
 	}
 	return c.loopback()
 }

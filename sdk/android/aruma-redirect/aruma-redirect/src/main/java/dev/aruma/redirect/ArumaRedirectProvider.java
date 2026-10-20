@@ -19,17 +19,18 @@ import android.os.Bundle;
 public final class ArumaRedirectProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
-        Bundle meta;
+        ApplicationInfo info;
         try {
-            ApplicationInfo info = getContext().getPackageManager()
+            info = getContext().getPackageManager()
                     .getApplicationInfo(getContext().getPackageName(), PackageManager.GET_META_DATA);
-            meta = info.metaData;
         } catch (PackageManager.NameNotFoundException e) {
             throw new ArumaRedirectException("ArumaRedirect cannot read the app manifest", e);
         }
+        Bundle meta = info.metaData;
         if (meta != null) {
+            boolean debuggable = (info.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
             ArumaRedirect.installFromValues(meta.get(ArumaRedirect.META_URL),
-                    meta.get(ArumaRedirect.META_ALLOW_INSECURE), meta.get(ArumaRedirect.META_LOG));
+                    meta.get(ArumaRedirect.META_ALLOW_INSECURE), meta.get(ArumaRedirect.META_LOG), debuggable);
         }
         return true;
     }

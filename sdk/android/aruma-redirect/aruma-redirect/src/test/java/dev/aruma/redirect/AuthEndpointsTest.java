@@ -14,7 +14,7 @@ import java.net.URL;
 import org.junit.Test;
 
 public class AuthEndpointsTest {
-    private final ArumaBase base = new ArumaBase("https://aruma.example.com", false);
+    private final ArumaBase base = new ArumaBase("https://aruma.example.com", false, false);
 
     private String rewrite(String url) throws IOException {
         return AuthEndpoints.rewrite(new URL(url), base);
@@ -70,7 +70,7 @@ public class AuthEndpointsTest {
 
     @Test
     public void pathPrefixOfBaseIsKept() throws Exception {
-        ArumaBase prefixed = new ArumaBase("https://example.com/aruma/", false);
+        ArumaBase prefixed = new ArumaBase("https://example.com/aruma/", false, false);
         assertEquals("https://example.com/aruma/securetoken.googleapis.com/v1/token",
                 AuthEndpoints.rewrite(new URL("https://securetoken.googleapis.com/v1/token"), prefixed));
     }

@@ -126,7 +126,7 @@ Every path below starts with `/projects/{project}`.
 
 ## Auth email: templates, SMTP and the dev mailbox
 
-Every path below starts with `/projects/{project}/auth`. Errors from Auth keep the Identity Toolkit code at the start of the message (`INVALID_TEMPLATE : …`, `INVALID_SMTP_CONFIG : …`, `SMTP_ERROR : …`, `DEV_MAILBOX_DISABLED : …`) with status `INVALID_ARGUMENT`.
+Every path below starts with `/projects/{project}/auth`. Errors from Auth keep the Identity Toolkit code at the start of the message (`INVALID_TEMPLATE : …`, `INVALID_SMTP_CONFIG : …`, `SMTP_ERROR : …`, `SMTP_HOST_PRIVATE : …`, `DEV_MAILBOX_DISABLED : …`) with status `INVALID_ARGUMENT`.
 
 | Method | Path | Body → Response |
 |---|---|---|
@@ -135,12 +135,13 @@ Every path below starts with `/projects/{project}/auth`. Errors from Auth keep t
 | DELETE | `/templates/{type}/{language}` | → the built-in `Template` (`customized: false`) |
 | GET | `/smtp` | → `SMTP` |
 | PATCH | `/smtp` | any `SMTP` field, plus write-only `password` → `SMTP`. `password: ""` removes it; `passwordSet` is ignored. `devMailbox` pins the project's choice; `true` needs an instance that allows the dev mailbox |
-| POST | `/smtp:test` | `{to}` → `{devMailbox}`. Sends a short bilingual message now, over SMTP (the server's error comes back as `SMTP_ERROR`) or to the dev mailbox |
+| POST | `/smtp:test` | `{to}` → `{devMailbox}`. Sends a short bilingual message now, over SMTP or to the dev mailbox. A failure answers `SMTP_ERROR` with a generic message; the server's answer goes to the server log only. A host whose name resolves to a loopback, private or link-local address answers `SMTP_HOST_PRIVATE` unless the instance setting `mail.smtp_allow_private` allows it |
 | GET | `/mailbox` | → `{enabled, messages: [Message]}`, newest first, at most 100. `NOT_FOUND` when the instance does not allow the dev mailbox |
 | DELETE | `/mailbox` | → 204. Empties the dev mailbox |
 | POST | `/users/{uid}:sendPasswordReset` | `{language?: "ar"\|"en"}` → `{link}`. The link is also emailed (or kept in the dev mailbox) |
 
-- `Template` = `{type, language, subject, body, customized}`. `body` is HTML. The variables `%LINK%`, `%APP_NAME%`, `%EMAIL%`, `%NEW_EMAIL%` and `%DISPLAY_NAME%` are replaced when a message is written: HTML-escaped in the body, plain in the subject (line breaks removed). The plain-text part of the email is derived from the body.
+- `Template` = `{type, language, subject, body, customized}`. `body` is HTML. The variables `%LINK%`, `%APP_NAME%`, `%EMAIL%`, `%NEW_EMAIL%` and `%DISPLAY_NAME%` are replaced when a message is written: HTML-escaped in the body, plain in the subject (line breaks removed). `%DISPLAY_NAME%` is empty in mail to an address the account has not verified (every verification and change-of-address message). The plain-text part of the email is derived from the body.
+- `host` may not be a loopback, private or link-local address, nor a `localhost` name (`SMTP_HOST_PRIVATE`), unless the instance setting `mail.smtp_allow_private` (`ARUMA_MAIL_SMTP_ALLOW_PRIVATE`) is on; it defaults to on only when `public_url` is a loopback address. A name is also checked on the address it resolves to when mail is sent.
 - `SMTP` = `{host, port, username, passwordSet, tls: "starttls"|"tls"|"none", senderAddress, senderName, replyTo, devMailbox}`. `devMailbox` is the effective mode: the project's choice if pinned, otherwise on exactly when the instance allows the dev mailbox and `host` is empty. An empty `senderAddress` sends from `noreply@<authDomain>`; an empty `senderName` uses the app name. The password is stored envelope-encrypted and never returned.
 - `Message` = `{id, to, type, language, subject, text, html, link, createTime}`. `type` is a template type, or `TEST` for `smtp:test`.
 - The dev mailbox is allowed by the instance setting `mail.dev_mailbox` (`ARUMA_MAIL_DEV_MAILBOX`), which defaults to on only when `public_url` is a loopback address. When it is not allowed, the mailbox routes answer `NOT_FOUND`. When it is allowed but the project sends over SMTP, `enabled` is `false` and earlier messages stay readable.
@@ -174,7 +175,7 @@ Every path below starts with `/projects/{project}/auth`. They act on Aruma Auth 
 | GET | `/users?pageSize=&pageToken=&query=` | → `{users: [User], nextPageToken, totalSize}`. Ordered by uid. `query` matches an email prefix (case-insensitive) or an exact uid; `totalSize` counts the matches |
 | POST | `/users` | `{uid?, email?, password?, displayName?, emailVerified?, disabled?}` → `User`. A uid is generated when omitted; the password follows the project's policy |
 | GET | `/users/{uid}` | → `User` |
-| PATCH | `/users/{uid}` | `{email?, password?, displayName?, photoUrl?, emailVerified?, disabled?, customClaims?}` → `User`. `customClaims` is a JSON object as a string, at most 1000 characters, without reserved names; `""` clears them. A new email or password revokes the user's sessions |
+| PATCH | `/users/{uid}` | `{email?, password?, displayName?, photoUrl?, emailVerified?, disabled?, customClaims?}` → `User`. `customClaims` is a JSON object as a string, at most 1000 characters, without reserved names; `""` clears them. A new email or password revokes the user's sessions. `email: ""` removes the address; a user with a password answers `MISSING_EMAIL`, since the password signs in with it |
 | DELETE | `/users/{uid}` | → 204 |
 | POST | `/users/{uid}:revokeSessions` | → `User`. Refresh tokens and the ID tokens issued so far stop working (`tokensValidAfterTime` moves to now) |
 | GET | `/config` | → `AuthConfig` |

@@ -20,3 +20,6 @@ mail:
   # dev_mailbox: true              # keep Auth emails of projects without SMTP in the console's dev
                                    # mailbox instead of sending them; defaults to on only when
                                    # public_url is a loopback address (SMTP is set per project)
+  # smtp_allow_private: true       # let projects use an SMTP host on a loopback, private or
+                                   # link-local address (a local Postfix relay); defaults to on
+                                   # only when public_url is a loopback address

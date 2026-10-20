@@ -41,16 +41,16 @@ public class ArumaRedirectTest {
 
     @Test
     public void withoutArumaUrlNothingHappens() {
-        assertFalse(ArumaRedirect.installFromValues(null, null, null));
-        assertFalse(ArumaRedirect.installFromValues("", null, null));
-        assertFalse(ArumaRedirect.installFromValues("   ", Boolean.TRUE, null));
+        assertFalse(ArumaRedirect.installFromValues(null, null, null, false));
+        assertFalse(ArumaRedirect.installFromValues("", null, null, false));
+        assertFalse(ArumaRedirect.installFromValues("   ", Boolean.TRUE, null, false));
         assertEquals(0, installs.get());
         assertNull(ArumaRedirect.baseUrl());
     }
 
     @Test
     public void validMetaDataInstallsOnce() {
-        assertTrue(ArumaRedirect.installFromValues("https://aruma.example.com/", null, null));
+        assertTrue(ArumaRedirect.installFromValues("https://aruma.example.com/", null, null, false));
         assertEquals(1, installs.get());
         assertEquals("https://aruma.example.com", ArumaRedirect.baseUrl());
         assertTrue(last.createURLStreamHandler("https") != null);
@@ -61,13 +61,13 @@ public class ArumaRedirectTest {
     @Test
     public void invalidMetaDataThrowsAndInstallsNothing() {
         try {
-            ArumaRedirect.installFromValues("not a url", null, null);
+            ArumaRedirect.installFromValues("not a url", null, null, false);
             fail();
         } catch (ArumaRedirectException expected) {
             assertTrue(expected.getMessage().contains("not a url"));
         }
         try {
-            ArumaRedirect.installFromValues("http://aruma.example.com", null, null);
+            ArumaRedirect.installFromValues("http://aruma.example.com", null, null, false);
             fail();
         } catch (ArumaRedirectException expected) {
             assertTrue(expected.getMessage().contains("ArumaAllowInsecureURL"));
@@ -77,8 +77,21 @@ public class ArumaRedirectTest {
     }
 
     @Test
+    public void emulatorHostFromTheManifestNeedsADebuggableApp() {
+        try {
+            ArumaRedirect.installFromValues("http://10.0.2.2:8095", null, null, false);
+            fail();
+        } catch (ArumaRedirectException expected) {
+            assertTrue(expected.getMessage().contains("ArumaAllowInsecureURL"));
+        }
+        assertNull(ArumaRedirect.baseUrl());
+        assertTrue(ArumaRedirect.installFromValues("http://10.0.2.2:8095", null, null, true));
+        assertEquals("http://10.0.2.2:8095", ArumaRedirect.baseUrl());
+    }
+
+    @Test
     public void insecureFlagIsReadAsBooleanOrString() {
-        assertTrue(ArumaRedirect.installFromValues("http://192.168.1.5:8080", "true", null));
+        assertTrue(ArumaRedirect.installFromValues("http://192.168.1.5:8080", "true", null, false));
         assertEquals("http://192.168.1.5:8080", ArumaRedirect.baseUrl());
     }
 
