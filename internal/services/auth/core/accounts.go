@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/osama300/aurma-project/internal/platform/idtoken"
 	"github.com/osama300/aurma-project/internal/services/auth/queries"
 	"github.com/osama300/aurma-project/internal/services/auth/tokens"
 	"github.com/osama300/aurma-project/internal/store"
@@ -174,6 +176,8 @@ func (s *Service) Update(ctx context.Context, p Project, in UpdateInput) (*Updat
 		return nil, err
 	}
 	if sensitive {
+		// The session returned above starts at the revocation point, so it survives.
+		s.userChanged(p, u.UID, revocationCause(false, false, hash != "", true), out.User.TokensValidAfter)
 		s.audit(ctx, s.q, p, u.UID, "account.update", "ok", map[string]any{"email": in.Email != nil, "password": in.Password != nil})
 	}
 	return &out, nil
@@ -206,6 +210,7 @@ func (s *Service) deleteUser(ctx context.Context, p Project, u User) error {
 		return s.userEvent(ctx, tx, p, "auth.user.deleted", u)
 	})
 	if err == nil {
+		s.userChanged(p, u.UID, idtoken.Deleted, time.Time{})
 		s.audit(ctx, s.q, p, u.UID, "account.delete", "ok", nil)
 		s.revokeAppleOnDelete(ctx, p, u.UID, appleToken)
 	}

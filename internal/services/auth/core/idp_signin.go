@@ -7,9 +7,11 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/osama300/aurma-project/internal/platform/idtoken"
 	"github.com/osama300/aurma-project/internal/services/auth/queries"
 	"github.com/osama300/aurma-project/internal/services/auth/tokens"
 	"github.com/osama300/aurma-project/internal/store"
@@ -52,6 +54,11 @@ type IdPResult struct {
 	VerifiedProviders []string
 
 	Session *Session
+
+	// revokedUID's earlier sessions ended at revokedAt: the sign-in took over an account
+	// whose email was never verified (dropCredentials).
+	revokedUID string
+	revokedAt  time.Time
 }
 
 // Errors of signInWithIdp; the SDKs map them to auth/<code>.
@@ -140,6 +147,9 @@ func (s *Service) SignInWithIdP(ctx context.Context, p Project, in IdPInput) (*I
 			return r, err
 		}
 		return nil, err
+	}
+	if r.revokedUID != "" {
+		s.userChanged(p, r.revokedUID, idtoken.TokensRevoked, r.revokedAt)
 	}
 	if r.Session != nil {
 		s.audit(ctx, s.q, p, r.Session.User.UID, "signin.idp", "ok", map[string]any{"provider": r.ProviderID, "link": linkTo != nil})
@@ -313,9 +323,10 @@ func (s *Service) signInIdP(ctx context.Context, q *queries.Queries, tx pgx.Tx, 
 			}
 			name, photo := str(raw.DisplayName), str(raw.PhotoUrl)
 			if !raw.EmailVerified {
-				if err := s.dropCredentials(ctx, q, p, raw.Uid); err != nil {
+				if r.revokedAt, err = s.dropCredentials(ctx, q, p, raw.Uid); err != nil {
 					return err
 				}
+				r.revokedUID = raw.Uid
 				name, photo = r.DisplayName, r.PhotoURL
 				s.audit(ctx, q, p, raw.Uid, "signin.idp.takeover_protection", "ok", map[string]any{"provider": r.ProviderID})
 			}
@@ -364,18 +375,18 @@ func (s *Service) signInIdP(ctx context.Context, q *queries.Queries, tx pgx.Tx, 
 	return s.userEvent(ctx, tx, p, "auth.user.created", r.Session.User)
 }
 
-// dropCredentials removes an account's password and providers and ends its sessions.
-func (s *Service) dropCredentials(ctx context.Context, q *queries.Queries, p Project, uid string) error {
+// dropCredentials removes an account's password and providers and ends its sessions. It
+// returns the new revocation point.
+func (s *Service) dropCredentials(ctx context.Context, q *queries.Queries, p Project, uid string) (time.Time, error) {
 	if err := q.DeletePassword(ctx, queries.DeletePasswordParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: uid}); err != nil {
-		return err
+		return time.Time{}, err
 	}
 	if err := q.DeleteProviders(ctx, queries.DeleteProvidersParams{
 		ProjectNumber: p.Number, TenantID: p.Tenant, Uid: uid, ProviderIds: []string{"password", GoogleProvider, AppleProvider},
 	}); err != nil {
-		return err
+		return time.Time{}, err
 	}
-	_, err := q.RevokeUserTokens(ctx, queries.RevokeUserTokensParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: uid})
-	return err
+	return q.RevokeUserTokens(ctx, queries.RevokeUserTokensParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: uid})
 }
 
 // linkIdP adds the provider to the signed-in user, keeping its uid (an anonymous user is

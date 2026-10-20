@@ -19,6 +19,7 @@ import (
 	"github.com/osama300/aurma-project/internal/platform/authn"
 	"github.com/osama300/aurma-project/internal/platform/consolemount"
 	"github.com/osama300/aurma-project/internal/platform/crypto"
+	"github.com/osama300/aurma-project/internal/platform/idtoken"
 	"github.com/osama300/aurma-project/internal/platform/metrics"
 	"github.com/osama300/aurma-project/internal/server"
 	authapi "github.com/osama300/aurma-project/internal/services/auth/api"
@@ -36,6 +37,12 @@ type App struct {
 	Service *core.Service
 	Auth    *identity.Service
 	RTDB    *rtdb.Service // nil while Realtime Database is disabled
+
+	// Auth's side of the ID token contract (platform/idtoken), for the services that accept
+	// its tokens: Realtime Database from R4.
+	IDTokens    idtoken.Verifier
+	Revocations idtoken.Revocations
+
 	Server  *server.Server
 	Console *console.API
 	Mgmt    *mgmt.API
@@ -94,6 +101,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	if st.idp != nil {
 		st.idp(authSvc)
 	}
+	idTokens, revocations := authSvc.IDTokenVerifier(), authSvc.Revocations()
 	consoleAPI := console.New(svc, auth, logger, console.Options{
 		Version: version, SecureCookies: cfg.SecureCookies(),
 		Mounts: []func(*consolemount.Mount){authconsole.Routes(authSvc)},
@@ -122,6 +130,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 				ConnectionsPerIP: l.ConnectionsPerIP, OutboxBytes: l.OutboxBytes,
 			},
 			DevOpenRules: cfg.RTDB.DevOpenRules,
+			// R4: pass idTokens and revocations here.
 		}, logger)
 		handlers.RTDB = rtdbapi.New(rtdbSvc, rtdbapi.Options{
 			Domain:         cfg.RTDB.Domain,
@@ -135,7 +144,8 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	}
 
 	srv := server.New(cfg, logger, pool, metrics.New(version), handlers)
-	return &App{Config: cfg, Service: svc, Auth: authSvc, RTDB: rtdbSvc, Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
+	return &App{Config: cfg, Service: svc, Auth: authSvc, RTDB: rtdbSvc, IDTokens: idTokens, Revocations: revocations,
+		Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
 }
 
 // AnnounceSetup prints the one-time setup code when the instance has no account yet.

@@ -87,32 +87,6 @@ func (q *Queries) GetRefreshToken(ctx context.Context, arg GetRefreshTokenParams
 	return i, err
 }
 
-const getSigningKey = `-- name: GetSigningKey :one
-SELECT kid, project_number, purpose, state, private_key_enc, public_jwk, created_at, activated_at, retired_at FROM auth.signing_keys WHERE project_number = $1 AND kid = $2
-`
-
-type GetSigningKeyParams struct {
-	ProjectNumber int64
-	Kid           string
-}
-
-func (q *Queries) GetSigningKey(ctx context.Context, arg GetSigningKeyParams) (AuthSigningKey, error) {
-	row := q.db.QueryRow(ctx, getSigningKey, arg.ProjectNumber, arg.Kid)
-	var i AuthSigningKey
-	err := row.Scan(
-		&i.Kid,
-		&i.ProjectNumber,
-		&i.Purpose,
-		&i.State,
-		&i.PrivateKeyEnc,
-		&i.PublicJwk,
-		&i.CreatedAt,
-		&i.ActivatedAt,
-		&i.RetiredAt,
-	)
-	return i, err
-}
-
 const insertAuthAudit = `-- name: InsertAuthAudit :exec
 INSERT INTO auth.audit (project_number, tenant_id, uid, event, result, ip, details)
 VALUES ($1, $2, $3, $4, $5, $6, $7)

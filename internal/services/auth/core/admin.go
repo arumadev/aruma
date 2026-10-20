@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/osama300/aurma-project/internal/platform/idtoken"
 	"github.com/osama300/aurma-project/internal/services/auth/queries"
 	"github.com/osama300/aurma-project/internal/store"
 )
@@ -241,6 +242,8 @@ func (s *Service) UpdateUser(ctx context.Context, p Project, in AdminUser) (User
 		}
 	}
 	var u User
+	var ended idtoken.Cause // the sessions the update ends, for userChanged
+	var stateChanged bool
 	err = s.tx(ctx, func(q *queries.Queries, _ pgx.Tx) error {
 		raw, err := q.GetUserForUpdate(ctx, queries.GetUserForUpdateParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: in.UID})
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -290,7 +293,9 @@ func (s *Service) UpdateUser(ctx context.Context, p Project, in AdminUser) (User
 		if in.CustomClaims != nil {
 			upd.CustomClaims = claims
 		}
-		oldEmail := str(raw.Email)
+		oldEmail, wasDisabled := str(raw.Email), raw.Disabled
+		ended = revocationCause(upd.Disabled && !wasDisabled, in.RevokeTokens, hash != "", revoke)
+		stateChanged = revoke || upd.Disabled != wasDisabled
 		if raw, err = q.UpdateUser(ctx, upd); err != nil {
 			return err
 		}
@@ -347,6 +352,9 @@ func (s *Service) UpdateUser(ctx context.Context, p Project, in AdminUser) (User
 		return User{}, ErrEmailExists
 	}
 	if err == nil {
+		if stateChanged {
+			s.userChanged(p, in.UID, ended, u.TokensValidAfter)
+		}
 		s.audit(ctx, s.q, p, in.UID, "admin.user.update", "ok", map[string]any{
 			"disabled": in.Disabled, "revoked": in.RevokeTokens, "password": in.Password != nil, "claims": in.CustomClaims != nil,
 		})

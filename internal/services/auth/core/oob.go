@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/osama300/aurma-project/internal/platform/crypto"
+	"github.com/osama300/aurma-project/internal/platform/idtoken"
 	"github.com/osama300/aurma-project/internal/services/auth/queries"
 	"github.com/osama300/aurma-project/internal/store"
 	tcore "github.com/osama300/aurma-project/internal/tenancy/core"
@@ -456,6 +457,8 @@ func (s *Service) ResetPassword(ctx context.Context, p Project, code, newPasswor
 	if err != nil {
 		return ActionCodeInfo{}, err
 	}
+	pr := Project{Number: p.Number, ID: p.ID, Tenant: row.TenantID}
+	var validAfter time.Time
 	err = s.tx(ctx, func(q *queries.Queries, _ pgx.Tx) error {
 		if _, err := q.UseOobCode(ctx, queries.UseOobCodeParams{ProjectNumber: p.Number, CodeHash: row.CodeHash}); err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -467,7 +470,6 @@ func (s *Service) ResetPassword(ctx context.Context, p Project, code, newPasswor
 		if err != nil {
 			return err
 		}
-		pr := Project{Number: p.Number, ID: p.ID, Tenant: row.TenantID}
 		if _, err := q.UpdateUser(ctx, queries.UpdateUserParams{
 			ProjectNumber: p.Number, TenantID: row.TenantID, Uid: raw.Uid, Email: raw.Email, EmailVerified: true,
 			DisplayName: raw.DisplayName, PhotoUrl: raw.PhotoUrl, Disabled: raw.Disabled, CustomClaims: raw.CustomClaims,
@@ -477,7 +479,7 @@ func (s *Service) ResetPassword(ctx context.Context, p Project, code, newPasswor
 		if err := s.attachPassword(ctx, q, pr, raw.Uid, *raw.Email, hash); err != nil {
 			return err
 		}
-		if _, err := q.RevokeUserTokens(ctx, queries.RevokeUserTokensParams{ProjectNumber: p.Number, TenantID: row.TenantID, Uid: raw.Uid}); err != nil {
+		if validAfter, err = q.RevokeUserTokens(ctx, queries.RevokeUserTokensParams{ProjectNumber: p.Number, TenantID: row.TenantID, Uid: raw.Uid}); err != nil {
 			return err
 		}
 		return retireCodes(ctx, q, pr, raw.Uid, codesOfPassword)
@@ -485,6 +487,7 @@ func (s *Service) ResetPassword(ctx context.Context, p Project, code, newPasswor
 	if err != nil {
 		return ActionCodeInfo{}, err
 	}
+	s.userChanged(pr, *row.Uid, idtoken.PasswordChanged, validAfter)
 	s.audit(ctx, s.q, p, *row.Uid, "password.reset", "ok", nil)
 	return codeInfo(cfg, row), nil
 }
@@ -513,6 +516,7 @@ func (s *Service) ApplyActionCode(ctx context.Context, p Project, code, lang, ap
 	}
 	pr := Project{Number: p.Number, ID: p.ID, Tenant: row.TenantID}
 	var u User
+	var emailChanged bool
 	err = s.tx(ctx, func(q *queries.Queries, _ pgx.Tx) error {
 		if _, err := q.UseOobCode(ctx, queries.UseOobCodeParams{ProjectNumber: p.Number, CodeHash: row.CodeHash}); err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -535,6 +539,7 @@ func (s *Service) ApplyActionCode(ctx context.Context, p Project, code, lang, ap
 			upd.Email = &row.Email
 		}
 		changed := !strings.EqualFold(str(upd.Email), str(raw.Email))
+		emailChanged = changed
 		updated, err := q.UpdateUser(ctx, upd)
 		if err != nil {
 			return err
@@ -574,6 +579,9 @@ func (s *Service) ApplyActionCode(ctx context.Context, p Project, code, lang, ap
 	}
 	if err != nil {
 		return ActionCodeInfo{}, User{}, err
+	}
+	if emailChanged {
+		s.userChanged(pr, u.UID, idtoken.EmailChanged, u.TokensValidAfter)
 	}
 	s.audit(ctx, s.q, p, u.UID, "oob.apply", "ok", map[string]any{"type": row.RequestType})
 	return codeInfo(cfg, row), u, nil
