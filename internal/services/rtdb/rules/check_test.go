@@ -420,3 +420,32 @@ func TestMemorySourceNormalizes(t *testing.T) {
 		}
 	}
 }
+
+// auth.provider is the sign-in method without ".com", and anonymous when the token names none,
+// as the emulator 4.11.2 answers an unsigned token for each (wire golden auth_user.json).
+func TestUserProvider(t *testing.T) {
+	cases := map[string]string{
+		"password": "password", "google.com": "google", "github.com": "github", "custom": "custom",
+		"phone": "phone", "anonymous": "anonymous", "": "anonymous",
+	}
+	for signIn, want := range cases {
+		claims := map[string]any{"sub": "u1", "user_id": "u1"}
+		if signIn != "" {
+			claims["firebase"] = map[string]any{"sign_in_provider": signIn}
+		}
+		a, err := User("u1", claims)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := a.Value()["provider"]; got != want {
+			t.Errorf("%q: provider %v, want %s", signIn, got, want)
+		}
+		rs, err := Parse([]byte(`{"rules":{".read":"auth.provider == '` + want + `' && auth.user_id == auth.uid"}}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ok, err := rs.CanRead(context.Background(), Env{Auth: a, Data: &MemorySource{}}, nil, PlainListen); !ok || err != nil {
+			t.Errorf("%q: read %v %v", signIn, ok, err)
+		}
+	}
+}

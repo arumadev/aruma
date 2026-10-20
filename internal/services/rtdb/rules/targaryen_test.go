@@ -28,9 +28,7 @@ type targaryenFixtures struct {
 }
 
 // targaryenSkips are the fixtures Aruma answers differently on purpose.
-var targaryenSkips = map[int]string{
-	6: "auth.provider is refused at load (docs/research/rtdb-decisions.md, Q4)",
-}
+var targaryenSkips = map[int]string{}
 
 func TestTargaryenFixtures(t *testing.T) {
 	raw, err := os.ReadFile("testdata/targaryen/fixtures.json")

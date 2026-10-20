@@ -1,6 +1,9 @@
 package rules
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // Auth is who makes a request, as rules see it. The zero value is an unauthenticated client.
 type Auth struct {
@@ -16,9 +19,10 @@ func Admin() Auth { return Auth{admin: true} }
 // Unauthenticated is a client without a token: auth is null.
 func Unauthenticated() Auth { return Auth{} }
 
-// User is a client signed in with an ID token: auth.uid is uid and auth.token holds the
-// token's claims (sub, email, firebase.sign_in_provider, custom claims...), as verified.
-// auth.provider is refused when rules load, so it is not set.
+// User is a client signed in with an ID token: auth.uid is uid, auth.token holds the token's
+// claims (sub, email, firebase.sign_in_provider, custom claims...), as verified, and
+// auth.provider is the sign-in method the claims name (Provider). As on the emulator 4.11.2,
+// auth.user_id repeats the token's user_id claim when it has one.
 func User(uid string, claims map[string]any) (Auth, error) {
 	token, err := normalizeObject(claims)
 	if err != nil {
@@ -27,8 +31,29 @@ func User(uid string, claims map[string]any) (Auth, error) {
 	if token == nil {
 		token = map[string]any{}
 	}
-	return Auth{variable: map[string]any{"uid": uid, "token": token}}, nil
+	v := map[string]any{"uid": uid, "token": token, "provider": Provider(claims)}
+	if id, ok := token["user_id"].(string); ok {
+		v["user_id"] = id
+	}
+	return Auth{variable: v}, nil
 }
+
+// Provider is auth.provider for a token's claims: firebase.sign_in_provider without ".com"
+// ("google.com" is "google"; "password", "phone", "custom" stay as they are), and "anonymous"
+// for a token that names none, as the emulator 4.11.2 answers (golden auth_user.json in package
+// wire).
+func Provider(claims map[string]any) string {
+	fb, _ := claims["firebase"].(map[string]any)
+	p, _ := fb["sign_in_provider"].(string)
+	if p == "" {
+		return "anonymous"
+	}
+	return strings.TrimSuffix(p, ".com")
+}
+
+// Value returns the auth variable as rules see it: nil for an admin or an unauthenticated
+// client. Callers must not change it.
+func (a Auth) Value() map[string]any { return a.variable }
 
 // Variable makes auth exactly v: what an Admin SDK sends as auth_variable_override. A nil v is
 // an unauthenticated client.
