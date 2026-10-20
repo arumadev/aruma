@@ -39,7 +39,7 @@ type App struct {
 	RTDB    *rtdb.Service // nil while Realtime Database is disabled
 
 	// Auth's side of the ID token contract (platform/idtoken), for the services that accept
-	// its tokens: Realtime Database from R4.
+	// its tokens: the Realtime Database.
 	IDTokens    idtoken.Verifier
 	Revocations idtoken.Revocations
 
@@ -130,7 +130,10 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 				ConnectionsPerIP: l.ConnectionsPerIP, OutboxBytes: l.OutboxBytes,
 			},
 			DevOpenRules: cfg.RTDB.DevOpenRules,
-			// R4: pass idTokens and revocations here.
+			// Users sign in with Auth's ID tokens, and lose their sessions when Auth revokes
+			// them (ADR-015: Auth knows nothing of the Realtime Database).
+			IDTokens:    idTokens,
+			Revocations: revocations,
 		}, logger)
 		handlers.RTDB = rtdbapi.New(rtdbSvc, rtdbapi.Options{
 			Domain:         cfg.RTDB.Domain,
@@ -179,7 +182,7 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 		logger.Warn("rtdb.domain is not set: databases are reached with ?ns= on public_url, which suits local development only; set rtdb.domain")
 	}
 	if cfg.RTDB.DevOpenRules {
-		logger.Warn("rtdb.dev_open_rules is on: every client may read and write every Realtime Database")
+		logger.Warn("rtdb.dev_open_rules is on: every client on this machine may read and write every Realtime Database, whatever its rules")
 	}
 	a, err := New(cfg, logger, version, pool)
 	if err != nil {

@@ -1,8 +1,13 @@
 package core
 
 import (
+	"context"
 	"encoding/json"
 	"sync"
+	"time"
+
+	"github.com/osama300/aurma-project/internal/platform/idtoken"
+	"github.com/osama300/aurma-project/internal/services/rtdb/rules"
 )
 
 // Session is one client's state on one database, apart from any socket: who it acts as and
@@ -12,9 +17,8 @@ import (
 //
 // The methods taking a done callback run the request on the writer and call done there,
 // after the commit, in the order the requests were made. done must not block. Errors found
-// before the writer is involved (an invalid path, permission) are passed to done at once.
-// Permission is checked on the path before the data is parsed, so a client who may not write
-// cannot make the server parse anything large.
+// before the writer is involved (an invalid path, malformed data) are passed to done at once.
+// The writer checks the rules, as the session was when the request was made (access.go).
 type Session struct {
 	svc      *Service
 	db       *Database
@@ -22,12 +26,19 @@ type Session struct {
 	loopback bool
 	sink     Sink
 
-	mu         sync.Mutex
-	auth       Auth
+	mu   sync.Mutex
+	auth Auth
+	// principal is auth as the rules take it.
+	principal rules.Auth
+	// signIn counts the changes of auth, so that an expiry or a revocation meant for an
+	// earlier sign-in does nothing.
+	signIn uint64
+	// expiry ends a user's sign-in when its ID token expires.
+	expiry     *time.Timer
 	disconnect onDisconnect
 	closed     bool
 	// admitted is set once the session counts against its project's connection limit: on
-	// its first permitted operation, or when it signs in as an admin.
+	// its first operation the rules permit, or when it signs in.
 	admitted    bool
 	releaseSlot func()
 }
@@ -51,25 +62,110 @@ func (s *Session) Auth() Auth {
 	return s.auth
 }
 
-// SetAuth changes who the session acts as. An admin is admitted against the project's
-// connection limit at once; ErrTooManyConnections leaves the session as it was.
+// SetAuth changes who the session acts as. A session that signs in is admitted against the
+// project's connection limit at once; ErrTooManyConnections, or an auth variable that is not
+// an object, leaves the session as it was. The listens are not checked again here: the
+// caller does that with RevokeListens, ordered with its reply.
 func (s *Session) SetAuth(a Auth) error {
-	if a.Admin {
+	_, err := s.setAuth(a, nil)
+	return err
+}
+
+// setAuth is SetAuth, which with ifSignIn applies only while the session's sign-in is still
+// *ifSignIn, and reports whether it applied.
+func (s *Session) setAuth(a Auth, ifSignIn *uint64) (bool, error) {
+	p, err := a.principal()
+	if err != nil {
+		return false, err
+	}
+	if a.signedIn() {
 		if err := s.admit(); err != nil {
-			return err
+			return false, err
 		}
 	}
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.auth = a
-	return nil
+	if s.closed || (ifSignIn != nil && *ifSignIn != s.signIn) {
+		s.mu.Unlock()
+		return false, nil
+	}
+	wasUser := s.auth.User != nil
+	s.auth, s.principal = a, p
+	s.signIn++
+	if s.expiry != nil {
+		s.expiry.Stop()
+		s.expiry = nil
+	}
+	if a.User != nil && !a.User.Expires.IsZero() {
+		gen := s.signIn
+		s.expiry = time.AfterFunc(time.Until(a.User.Expires), func() {
+			s.revoke(gen, statusExpiredToken, "Auth token is expired.")
+		})
+	}
+	s.mu.Unlock()
+	switch {
+	case a.User != nil:
+		s.svc.revocations.join(s)
+	case wasUser:
+		s.svc.revocations.leave(s)
+	}
+	return true, nil
+}
+
+// SignIn verifies a user's ID token for the session's project and signs the session in as
+// that user (auth is {provider, uid, token}). A token the verifier refuses fails with its
+// idtoken error, whose Status is the reply's status; any other error is an outage. Either way
+// the session is left as it was.
+func (s *Session) SignIn(ctx context.Context, token string) error {
+	if s.svc.idTokens == nil {
+		return idtoken.ErrInvalid
+	}
+	// Hold the project's revocations from before the verification on, so that one that
+	// lands between the two is not missed (revoke.go).
+	w := s.svc.revocations.hold(s.target.Project)
+	defer s.svc.revocations.release(w)
+	claims, err := s.svc.idTokens.Verify(ctx, s.target.Project, token)
+	if err != nil {
+		return err
+	}
+	if w.revokedSince(claims) {
+		return idtoken.ErrRevoked
+	}
+	return s.SetAuth(Auth{User: claims, Token: token})
+}
+
+// RevokeIf ends the session's sign-in if it is one that which accepts, as the server does when
+// a credential stops being valid: the client is told with an ac push of status and reason,
+// the session becomes unauthenticated, and the listens it may then no longer read are
+// cancelled with c.
+func (s *Session) RevokeIf(which func(Auth) bool, status, reason string) {
+	s.mu.Lock()
+	gen, ok := s.signIn, which(s.auth)
+	s.mu.Unlock()
+	if ok {
+		s.revoke(gen, status, reason)
+	}
+}
+
+// revoke is Revoke for sign-in gen only.
+func (s *Session) revoke(gen uint64, status, reason string) {
+	s.mu.Lock()
+	if s.closed || s.signIn != gen {
+		s.mu.Unlock()
+		return
+	}
+	s.mu.Unlock()
+	if s.sink != nil {
+		s.sink.Push(Push{Action: PushAuthRevoked, Status: status, Reason: reason})
+	}
+	if ok, _ := s.setAuth(Auth{}, &gen); ok {
+		s.RevokeListens(func() {})
+	}
 }
 
 // Authenticated reports whether the session has signed in, or works under the open rules of
 // development: such sessions may send messages up to the full message limit.
 func (s *Session) Authenticated() bool {
-	a := s.Auth()
-	return a.Admin || a.Variable != nil || s.devOpen()
+	return s.Auth().signedIn() || s.devOpen()
 }
 
 func (s *Session) devOpen() bool { return s.svc.openRules && s.loopback }
@@ -89,22 +185,22 @@ func (s *Session) admit() error {
 	return nil
 }
 
-// Get reads the value at path, or with a query the part of it the query selects. A query
+// Get reads the value at path, or with a query the part of it a query selects. A query
 // ordered by a child or by value needs the .indexOn that covers it (NoIndexError).
 func (s *Session) Get(path string, spec *QuerySpec, done func(*Node, error)) {
-	p, q, err := s.parseRead(path, spec)
+	p, q, err := parseRead(path, spec)
 	if err != nil {
 		done(nil, err)
 		return
 	}
-	if q.IsDefault() {
-		s.db.submit(&command{read: p, done: func(r Result) { done(r.Node, r.Err) }})
-		return
+	c := &command{acc: s.access(), read: p, done: func(r Result) { done(r.Node, r.Err) }}
+	if !q.IsDefault() {
+		c.query = &q
 	}
-	s.db.submit(&command{read: p, query: &q, done: func(r Result) { done(r.Node, r.Err) }})
+	s.db.submit(c)
 }
 
-func (s *Session) parseRead(path string, spec *QuerySpec) (Path, Query, error) {
+func parseRead(path string, spec *QuerySpec) (Path, Query, error) {
 	p, err := ParsePath(path)
 	if err != nil {
 		return nil, Query{}, err
@@ -115,9 +211,6 @@ func (s *Session) parseRead(path string, spec *QuerySpec) (Path, Query, error) {
 			return nil, Query{}, err
 		}
 	}
-	if err := s.canRead(p); err != nil {
-		return nil, Query{}, err
-	}
 	return p, q, nil
 }
 
@@ -127,7 +220,7 @@ func (s *Session) parseRead(path string, spec *QuerySpec) (Path, Query, error) {
 // client already has; when it matches, no data are sent. A second listen with the same path
 // and query replaces the first.
 func (s *Session) Listen(path string, spec *QuerySpec, tag int64, hash string, done func(warnings []string, err error)) {
-	p, q, err := s.parseRead(path, spec)
+	p, q, err := parseRead(path, spec)
 	if err != nil {
 		done(nil, err)
 		return
@@ -136,23 +229,16 @@ func (s *Session) Listen(path string, spec *QuerySpec, tag int64, hash string, d
 		spec, tag = nil, 0
 	}
 	l := &listen{sess: s, path: p, query: q, spec: spec, tag: tag, id: tag}
-	s.db.submit(&command{listen: &listenCmd{l: l, hash: hash}, done: func(r Result) { done(r.Warnings, r.Err) }})
+	s.db.submit(&command{acc: s.access(), listen: &listenCmd{l: l, hash: hash}, done: func(r Result) { done(r.Warnings, r.Err) }})
 }
 
 // Unlisten stops the listen at path with the query (nil for the default listen) and the tag
 // it was started with. Stopping a listen that does not exist is not an error.
 func (s *Session) Unlisten(path string, spec *QuerySpec, tag int64, done func(error)) {
-	p, err := ParsePath(path)
+	p, q, err := parseRead(path, spec)
 	if err != nil {
 		done(err)
 		return
-	}
-	q := DefaultQuery
-	if spec != nil {
-		if q, err = NewQuery(*spec); err != nil {
-			done(err)
-			return
-		}
 	}
 	if q.IsDefault() {
 		tag = 0
@@ -160,15 +246,12 @@ func (s *Session) Unlisten(path string, spec *QuerySpec, tag int64, done func(er
 	s.db.submit(&command{unlisten: &unlistenCmd{sess: s, key: listenKey(p, q, tag)}, done: func(Result) { done(nil) }})
 }
 
-// RevokeListens cancels, with a c push each, the listens the session may no longer read,
-// after it signed out. done runs once the pushes are queued.
+// RevokeListens checks the session's listens against the rules again, as the session is now,
+// and cancels with a c push each those it may no longer read: after it signed out or in as
+// someone else. done runs once the pushes are queued.
 func (s *Session) RevokeListens(done func()) {
 	s.db.submit(&command{revoke: s, done: func(Result) { done() }})
 }
-
-// mayRead reports whether the session may read p now, without admitting it against the
-// connection limit.
-func (s *Session) mayRead(Path) bool { return s.Auth().Admin || s.devOpen() }
 
 // Set writes data, in export format, at path. With hash it applies only while the value at
 // path still hashes to *hash; done then receives the value written.
@@ -178,7 +261,7 @@ func (s *Session) Set(path string, data json.RawMessage, hash *string, done func
 		done(nil, err)
 		return
 	}
-	s.db.submit(&command{write: w, done: func(r Result) { done(r.Node, r.Err) }})
+	s.db.submit(&command{acc: s.access(), write: w, done: func(r Result) { done(r.Node, r.Err) }})
 }
 
 // Update writes each child of data, an object keyed by paths relative to path, at once.
@@ -188,15 +271,12 @@ func (s *Session) Update(path string, data json.RawMessage, done func(error)) {
 		done(err)
 		return
 	}
-	s.db.submit(&command{write: w, done: func(r Result) { done(r.Err) }})
+	s.db.submit(&command{acc: s.access(), write: w, done: func(r Result) { done(r.Err) }})
 }
 
 func (s *Session) parseSet(path string, data json.RawMessage, hash *string) (*Write, error) {
 	p, err := ParseWritePath(path)
 	if err != nil {
-		return nil, err
-	}
-	if err := s.canWrite(p); err != nil {
 		return nil, err
 	}
 	return ParseSet(p, data, hash, int(s.svc.limits.StringBytes))
@@ -207,38 +287,47 @@ func (s *Session) parseUpdate(path string, data json.RawMessage) (*Write, error)
 	if err != nil {
 		return nil, err
 	}
-	// Until rules (R4) check each child, the gate is the same for every path.
-	if err := s.canWrite(p); err != nil {
-		return nil, err
-	}
 	return ParseUpdate(p, data, int(s.svc.limits.StringBytes))
 }
 
-// OnDisconnectSet registers a set to run when the session closes. As in Firebase,
-// permission is checked when it is registered (and, with rules, again when it runs).
-func (s *Session) OnDisconnectSet(path string, data json.RawMessage) error {
+// OnDisconnectSet registers a set to run when the session closes. As in Firebase, the rules
+// check it when it is registered, and again when it runs.
+func (s *Session) OnDisconnectSet(path string, data json.RawMessage, done func(error)) {
 	w, err := s.parseSet(path, data, nil)
 	if err != nil {
-		return err
+		done(err)
+		return
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.disconnect.remember(w.Path, w.Value)
-	return nil
+	s.register(w, func() { s.disconnect.remember(w.Path, w.Value) }, done)
 }
 
-// OnDisconnectUpdate registers an update to run when the session closes.
-func (s *Session) OnDisconnectUpdate(path string, data json.RawMessage) error {
+// OnDisconnectUpdate registers an update to run when the session closes. The rules check
+// each of its children on its own.
+func (s *Session) OnDisconnectUpdate(path string, data json.RawMessage, done func(error)) {
 	w, err := s.parseUpdate(path, data)
 	if err != nil {
-		return err
+		done(err)
+		return
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for _, c := range w.Update {
-		s.disconnect.remember(w.Path.Join(c.Path), c.Value)
-	}
-	return nil
+	s.register(w, func() {
+		for _, c := range w.Update {
+			s.disconnect.remember(w.Path.Join(c.Path), c.Value)
+		}
+	}, done)
+}
+
+// register has the writer check an onDisconnect write, then keeps it with keep, under s.mu.
+// It is kept even when the session has begun to close: Close takes the writes only once
+// every command queued before it has run.
+func (s *Session) register(w *Write, keep func(), done func(error)) {
+	s.db.submit(&command{acc: s.access(), register: w, done: func(r Result) {
+		if r.Err == nil {
+			s.mu.Lock()
+			keep()
+			s.mu.Unlock()
+		}
+		done(r.Err)
+	}})
 }
 
 // OnDisconnectCancel drops the registered writes at path and below. It checks no rule, as
@@ -263,19 +352,28 @@ func (s *Session) Close() {
 		return
 	}
 	s.closed = true
-	w := s.disconnect.write()
+	if s.expiry != nil {
+		s.expiry.Stop()
+	}
 	release := s.releaseSlot
 	s.mu.Unlock()
+	s.svc.revocations.leave(s)
 
 	// The listens go first, so the session's own onDisconnect writes are not pushed to it.
-	// This also is a barrier: the writes this session queued before closing have all run
-	// before the reference goes, so a writer retired after this never leaves one behind.
+	// This also is a barrier: the writes and registrations this session queued before
+	// closing have all run before its onDisconnect writes are taken and before the reference
+	// goes, so a writer retired after this never leaves one behind.
 	dropped := make(chan struct{})
 	s.db.submit(&command{drop: s, done: func(Result) { close(dropped) }})
 	<-dropped
+	s.mu.Lock()
+	w := s.disconnect.write()
+	s.mu.Unlock()
 	if w != nil {
+		// The rules check each registered write again, as the session is now.
+		w.Separately = true
 		wait := make(chan Result, 1)
-		s.db.submit(&command{write: w, done: func(r Result) { wait <- r }})
+		s.db.submit(&command{acc: s.access(), write: w, done: func(r Result) { wait <- r }})
 		if r := <-wait; r.Err != nil {
 			s.svc.log.Warn("rtdb: onDisconnect writes failed", "database", s.db.name, "error", r.Err)
 		}

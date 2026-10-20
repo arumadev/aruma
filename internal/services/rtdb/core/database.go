@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/osama300/aurma-project/internal/services/rtdb/rules"
@@ -30,10 +31,11 @@ type Database struct {
 	onCommit func(Commit)
 
 	// The writer's own state.
-	info      DatabaseInfo
-	opened    bool
-	rate      rateWindow
-	rules     *rules.Ruleset // for .indexOn; nil when the stored rules do not parse
+	info   DatabaseInfo
+	opened bool
+	rate   rateWindow
+	rules  *rules.Ruleset // nil when the stored rules do not parse, which denies all
+
 	listeners *listeners
 
 	// Guarded by the registry's lock.
@@ -58,19 +60,23 @@ type Result struct {
 	Warnings []string
 }
 
-// command is one inbox entry. Exactly one of write, listen, unlisten, revoke and drop is
-// set, or none for a read of read (with query when not nil), or a barrier.
+// command is one inbox entry. Exactly one of write, register, listen, unlisten, revoke, drop
+// and rules is set, or none for a read of read (with query when not nil), or a barrier.
 type command struct {
+	// acc is who the command acts for, checked against the rules; nil checks nothing.
+	acc      *access
 	write    *Write
 	read     Path
 	query    *Query
 	listen   *listenCmd
 	unlisten *unlistenCmd
+	// register checks an onDisconnect write when it is registered, without applying it.
+	register *Write
 	// revoke re-checks a session's listens and cancels those no longer permitted.
 	revoke *Session
 	// drop removes the listens of a closing session.
 	drop *Session
-	// rules replaces the rules the writer reads .indexOn from.
+	// rules replaces the database's rules, and re-checks every listen against them.
 	rules *rules.Ruleset
 	// barrier does nothing: its done runs once every command queued before it has run.
 	barrier bool
@@ -149,8 +155,9 @@ func (d *Database) open(ctx context.Context) error {
 	if rs, err := rules.Parse([]byte(info.Rules)); err == nil {
 		d.rules = rs
 	} else {
-		// Saving rules checks them (R4), so this is a database edited by hand: without its
-		// .indexOn every child and value query is served unfiltered.
+		// Saving rules checks them, so this is a database edited by hand. It stays locked to
+		// clients, as a new database is, until valid rules are saved; without its .indexOn
+		// every child and value query is served unfiltered.
 		d.log.Error("rtdb: stored rules do not parse", "database", d.name, "error", err)
 	}
 	return nil
@@ -258,13 +265,23 @@ func (d *Database) apply(ctx context.Context, batch []*command, state *batchStat
 	now := d.now()
 	results := make([]Result, len(batch))
 	var changes []Change
+	// failed sorts a command's error: its own (*Error) goes in its result; any other is a
+	// storage failure that aborts the batch.
+	failed := func(i int, err error) bool {
+		var e *Error
+		if errors.As(err, &e) {
+			results[i].Err = err
+			return false
+		}
+		return err != nil
+	}
 	for i, c := range batch {
 		state.sent = nil
 		switch {
 		case c.barrier:
 			continue
 		case c.listen != nil:
-			if results[i], err = d.startListen(ctx, tx, c.listen, state); err != nil {
+			if results[i], err = d.startListen(ctx, tx, c.acc, c.listen, state, now); err != nil {
 				return nil, Commit{}, nil, err
 			}
 			continue
@@ -274,12 +291,18 @@ func (d *Database) apply(ctx context.Context, batch []*command, state *batchStat
 			}
 			continue
 		case c.revoke != nil:
-			d.revokeListens(c.revoke, state)
+			if err = d.revokeListens(ctx, tx, c.revoke, state, now); err != nil {
+				return nil, Commit{}, nil, err
+			}
 			continue
 		case c.rules != nil:
-			old := d.rules
+			// The rules are saved already, so they stay even if the batch fails. Should the
+			// check of the listens fail with the database, the listens stay too: while
+			// nothing can be written, nothing new reaches them either.
 			d.rules = c.rules
-			state.undo = append(state.undo, func() { d.rules = old })
+			if err = d.recheckListens(ctx, tx, state, now); err != nil {
+				return nil, Commit{}, nil, err
+			}
 			continue
 		case c.drop != nil:
 			for _, l := range d.listeners.of(c.drop) {
@@ -287,23 +310,49 @@ func (d *Database) apply(ctx context.Context, batch []*command, state *batchStat
 				state.undo = append(state.undo, func() { d.listeners.add(l) })
 			}
 			continue
-		case c.write == nil:
-			if results[i], err = d.read(ctx, tx, c.read, c.query); err != nil {
+		case c.register != nil:
+			if err = d.checkRegistration(ctx, tx, c.acc, c.register, now); failed(i, err) {
 				return nil, Commit{}, nil, err
 			}
 			continue
+		case c.write == nil:
+			if results[i], err = d.read(ctx, tx, c.acc, c.read, c.query, now); err != nil {
+				return nil, Commit{}, nil, err
+			}
+			continue
+		}
+		ch, err := c.write.resolve(ctx, tx, now.UnixMilli())
+		if failed(i, err) {
+			return nil, Commit{}, nil, err
+		} else if err != nil {
+			continue
+		}
+		// The rules come before the write rate, so writes they refuse cost the database
+		// nothing.
+		if c.write.Separately {
+			var left bool
+			if ch, left, err = d.allowedPart(ctx, tx, c.acc, ch, now); err != nil {
+				return nil, Commit{}, nil, err
+			}
+			if !left {
+				continue
+			}
+		} else {
+			rc, err := ruleChanges(ctx, tx, ch)
+			if err != nil {
+				return nil, Commit{}, nil, err
+			}
+			if err := d.mayWrite(ctx, tx, c.acc, now, rc...); failed(i, err) {
+				return nil, Commit{}, nil, err
+			} else if err != nil {
+				continue
+			}
 		}
 		if !d.rate.allow(now, c.write.Size) {
 			results[i].Err = ErrWriteRate
 			continue
 		}
-		ch, err := c.write.apply(ctx, tx, now.UnixMilli())
-		var e *Error
-		switch {
-		case errors.As(err, &e):
-			results[i].Err = err
-			continue
-		case err != nil:
+		if err := ch.store(ctx, tx); err != nil {
 			return nil, Commit{}, nil, err
 		}
 		if c.write.Hash != nil {
@@ -336,7 +385,19 @@ func (d *Database) indexed(p Path, q Query) bool {
 // read runs a get: the value at p, or the part of it a query selects. A query ordered by a
 // child or by value needs its .indexOn, as in Firebase (ADR-020 §1), even with no range or
 // limit: the emulator answers {"i":"s"} alone with no_index (golden query_get.json, r=12).
-func (d *Database) read(ctx context.Context, tx StoreTx, p Path, q *Query) (Result, error) {
+// The rules come first.
+func (d *Database) read(ctx context.Context, tx StoreTx, a *access, p Path, q *Query, now time.Time) (Result, error) {
+	query := DefaultQuery
+	if q != nil {
+		query = *q
+	}
+	if err := d.mayRead(ctx, tx, a, p, query, now); err != nil {
+		var e *Error
+		if errors.As(err, &e) {
+			return Result{Err: err}, nil
+		}
+		return Result{}, err
+	}
 	if q != nil && !d.indexed(p, *q) {
 		return Result{Err: NoIndexError(q.IndexKey(), p)}, nil
 	}
@@ -353,8 +414,15 @@ func (d *Database) read(ctx context.Context, tx StoreTx, p Path, q *Query) (Resu
 // startListen registers a listen and sends its data first, unless the client's hash shows it
 // already has them (B-emulator-oracle.md §1.4: no push for null, nor for a matching hash). A
 // query the rules cannot index is served whole and untagged, with the no_index warning.
-func (d *Database) startListen(ctx context.Context, tx StoreTx, c *listenCmd, state *batchState) (Result, error) {
+func (d *Database) startListen(ctx context.Context, tx StoreTx, a *access, c *listenCmd, state *batchState, now time.Time) (Result, error) {
 	l := c.l
+	if err := d.mayRead(ctx, tx, a, l.path, l.query, now); err != nil {
+		var e *Error
+		if errors.As(err, &e) {
+			return Result{Err: err}, nil
+		}
+		return Result{}, err
+	}
 	n, err := tx.Read(ctx, l.path)
 	if err != nil {
 		return Result{}, err
@@ -384,15 +452,107 @@ func (d *Database) startListen(ctx context.Context, tx StoreTx, c *listenCmd, st
 	return res, nil
 }
 
-// revokeListens cancels the listens of a session it may no longer read, with a c push each,
-// as the emulator does after unauth (B-emulator-oracle.md §1.8).
-func (d *Database) revokeListens(s *Session, state *batchState) {
-	for _, l := range d.listeners.of(s) {
-		if s.mayRead(l.path) {
+// revokeListens checks the listens of a session against the rules again, as the session is
+// now, and cancels those it may no longer read with a c push each: after unauth, a change of
+// token, or a revoked one, as the emulator does (B-emulator-oracle.md §1.8, golden
+// revoke_unauth.json and auth_change.json). The emulator's order of the pushes follows no rule
+// a client could rely on; here it is by path, then by query.
+func (d *Database) revokeListens(ctx context.Context, tx StoreTx, s *Session, state *batchState, now time.Time) error {
+	ls := d.listeners.of(s)
+	slices.SortFunc(ls, func(a, b *listen) int {
+		if c := comparePaths(a.path, b.path); c != 0 {
+			return c
+		}
+		return strings.Compare(a.key(), b.key())
+	})
+	a := s.access()
+	for _, l := range ls {
+		ok, err := d.readable(ctx, tx, a, l.path, l.query, now)
+		if err != nil {
+			return err
+		}
+		if ok {
 			continue
 		}
 		d.listeners.remove(s, l.key())
 		state.undo = append(state.undo, func() { d.listeners.add(l) })
 		state.deliver(s, Push{Action: PushCancel, Path: l.path, Query: l.spec})
 	}
+	return nil
+}
+
+// recheckListens checks every listen against new rules, and cancels with a c push those they
+// no longer permit. Firebase documents nothing on what a rules change does to listens that are
+// open; the emulator 4.11.2 cancels them at once (golden rules_change.json), and so does
+// Aruma, so that a rule tightened to stop a leak stops it now, not at the client's next
+// reconnection. Listens the new rules still permit are left alone, with no new data.
+func (d *Database) recheckListens(ctx context.Context, tx StoreTx, state *batchState, now time.Time) error {
+	sessions := make([]*Session, 0, len(d.listeners.bySession))
+	for s := range d.listeners.bySession {
+		sessions = append(sessions, s)
+	}
+	for _, s := range sessions {
+		if err := d.revokeListens(ctx, tx, s, state, now); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// checkRegistration checks an onDisconnect write as it is registered: a set as a write of its
+// own, an update one child at a time, each against the stored data, as the emulator 4.11.2
+// does (rules' matrix.golden.json). It writes nothing; the write runs, and is checked again,
+// when the session closes (allowedPart).
+func (d *Database) checkRegistration(ctx context.Context, tx StoreTx, a *access, w *Write, now time.Time) error {
+	ch, err := w.resolve(ctx, tx, now.UnixMilli())
+	if err != nil {
+		return err
+	}
+	for _, part := range ch.parts() {
+		rc, err := ruleChanges(ctx, tx, part)
+		if err != nil {
+			return err
+		}
+		if err := d.mayWrite(ctx, tx, a, now, rc...); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// allowedPart is the part of an onDisconnect write the rules let a session make as it
+// closes: each registered write is checked on its own, against the data before any of them,
+// and those denied are dropped while the others run (emulator 4.11.2, golden
+// ondisconnect_rules.json). left is false when nothing is left.
+func (d *Database) allowedPart(ctx context.Context, tx StoreTx, a *access, ch Change, now time.Time) (_ Change, left bool, err error) {
+	if a == nil || a.auth.IsAdmin() {
+		return ch, true, nil
+	}
+	rs := d.ruleset(a)
+	if rs == nil {
+		return Change{}, false, nil
+	}
+	var kept []Child
+	for _, part := range ch.parts() {
+		rc, err := ruleChanges(ctx, tx, part)
+		if err != nil {
+			return Change{}, false, err
+		}
+		ok, err := rs.CanWrite(ctx, env(a, tx, now), rc...)
+		if err != nil {
+			return Change{}, false, err
+		}
+		if !ok {
+			d.log.Debug("rtdb: onDisconnect write denied when it ran", "database", d.name, "path", part.Path.String())
+			continue
+		}
+		if ch.Merge == nil {
+			return ch, true, nil
+		}
+		kept = append(kept, part.Merge[0])
+	}
+	if len(kept) == 0 {
+		return Change{}, false, nil
+	}
+	return Change{Path: ch.Path, Merge: kept}, true, nil
 }

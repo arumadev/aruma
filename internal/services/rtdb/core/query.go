@@ -63,7 +63,7 @@ func NewQuery(s QuerySpec) (Query, error) {
 	default:
 		p, err := ParsePath(s.Index)
 		if err != nil || p.IsRoot() {
-			return Query{}, ErrInvalidQuery
+			return Query{}, ErrInvalidPath
 		}
 		q.Index = ByChild(p)
 	}
@@ -75,7 +75,7 @@ func NewQuery(s QuerySpec) (Query, error) {
 		return Query{}, err
 	}
 	if s.Limit < 0 {
-		return Query{}, ErrInvalidQuery
+		return Query{}, ErrInvalidLimit
 	}
 	q.Limit, q.FromRight = int(s.Limit), s.FromRight && s.Limit > 0
 	q.spec = s.canonical()

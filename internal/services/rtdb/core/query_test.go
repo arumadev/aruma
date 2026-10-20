@@ -101,9 +101,13 @@ func TestQueryIdentity(t *testing.T) {
 	if k.IsDefault() || !k.LoadsAll() || k.IndexKey() != "" {
 		t.Error("key order without bounds")
 	}
-	for _, bad := range []string{`{"i":"a.b"}`, `{"i":".key","sp":1}`, `{"sp":{"a":1}}`, `{"sp":{".sv":"timestamp"}}`, `{"l":-1}`} {
-		if _, err := NewQuery(spec(t, bad)); !errors.Is(err, ErrInvalidQuery) {
-			t.Errorf("%s: %v", bad, err)
+	for bad, want := range map[string]error{
+		`{"i":"a.b"}`: ErrInvalidPath, `{"i":"$bad"}`: ErrInvalidPath, // golden listen_errors.json
+		`{"l":-1}`:            ErrInvalidLimit,
+		`{"i":".key","sp":1}`: ErrInvalidQuery, `{"sp":{"a":1}}`: ErrInvalidQuery, `{"sp":{".sv":"timestamp"}}`: ErrInvalidQuery,
+	} {
+		if _, err := NewQuery(spec(t, bad)); !errors.Is(err, want) {
+			t.Errorf("%s: %v, want %v", bad, err, want)
 		}
 	}
 }

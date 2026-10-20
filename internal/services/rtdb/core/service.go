@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/osama300/aurma-project/internal/platform/apierr"
+	"github.com/osama300/aurma-project/internal/platform/idtoken"
 	"github.com/osama300/aurma-project/internal/services/rtdb/rules"
 )
 
@@ -28,9 +29,14 @@ type Projects interface {
 type Options struct {
 	Limits Limits
 	// DevOpenRules acts as the test-mode rules {".read": true, ".write": true} on every
-	// database, for sessions opened with OpenOptions.Loopback. Off, databases keep the locked
-	// rules they start with (ADR-020).
+	// database, for sessions opened with OpenOptions.Loopback, instead of the database's own
+	// rules. Off, every client answers to its database's rules, which start locked (ADR-020).
 	DevOpenRules bool
+	// IDTokens verifies the ID tokens of Aruma Auth users who sign in (Session.SignIn); nil
+	// refuses them. Revocations announces the users whose tokens stop being valid, so their
+	// sessions end (revoke.go); nil leaves them to their tokens' expiry.
+	IDTokens    idtoken.Verifier
+	Revocations idtoken.Revocations
 	// IdleTimeout is how long a database's writer outlives its last session; 0 means 5 minutes.
 	IdleTimeout time.Duration
 	// Now is the clock; nil means time.Now.
@@ -47,6 +53,9 @@ type Service struct {
 	store     Store
 	registry  *registry
 	conns     *counter
+	// idTokens verifies users' ID tokens; revocations ends their sessions (revoke.go).
+	idTokens    idtoken.Verifier
+	revocations *revocations
 }
 
 // New returns the service.
@@ -60,12 +69,19 @@ func New(store Store, projects Projects, opts Options, logger *slog.Logger) *Ser
 	if opts.Limits == (Limits{}) {
 		opts.Limits = DefaultLimits
 	}
-	return &Service{
+	svc := &Service{
 		projects: projects, limits: opts.Limits, openRules: opts.DevOpenRules, now: opts.Now, log: logger,
 		store:    store,
 		registry: newRegistry(store, opts.Now, logger, opts.Limits, opts.IdleTimeout),
 		conns:    &counter{limit: opts.Limits.ConnectionsPerProject, n: map[int64]int{}},
+		idTokens: opts.IDTokens,
 	}
+	src := opts.Revocations
+	if opts.IDTokens == nil {
+		src = nil // without a verifier no user signs in, and nothing needs watching
+	}
+	svc.revocations = newRevocations(src, opts.IDTokens, logger)
+	return svc
 }
 
 // Limits returns the configured limits.
@@ -149,8 +165,9 @@ func (s *Service) Rules(ctx context.Context, t Target) (string, error) {
 }
 
 // SetRules replaces a database's rules document, once it parses. The database's writer takes
-// the new rules in its order: commands queued before see the old ones. Until R4 only their
-// .indexOn has effect (queries); access stays as dev_open_rules or admin decide.
+// the new rules in its order: commands queued before see the old ones, and every listen open
+// then is checked against the new ones and cancelled with c if they no longer permit it
+// (Database.recheckListens). Their .indexOn takes effect at once too.
 func (s *Service) SetRules(ctx context.Context, t Target, doc string) error {
 	if len(doc) > maxRulesBytes {
 		return ErrTooBig

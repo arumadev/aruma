@@ -22,6 +22,9 @@ func (r *recorder) Push(p Push) {
 }
 
 func describePush(p Push) string {
+	if p.Action == PushAuthRevoked {
+		return p.Action + " " + p.Status + " " + p.Reason
+	}
 	s := p.Action + " " + p.Path.String()
 	if p.Tag != 0 {
 		s += " t" + strconv.FormatInt(p.Tag, 10)
@@ -253,7 +256,9 @@ func TestRevokeAndClose(t *testing.T) {
 	// A closing session's listens go before its onDisconnect writes run.
 	c, recC := listenWith(t, s, "chat-app-default-rtdb", admin)
 	listenSync(t, c, recC, "/od", "", 0, "")
-	c.OnDisconnectSet("/od/me", json.RawMessage(`"gone"`))
+	if err := onDisconnectSet(c, "/od/me", `"gone"`); err != nil {
+		t.Fatal(err)
+	}
 	recC.take()
 	c.Close()
 	want(t, "own onDisconnect", recC.take())

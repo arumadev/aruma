@@ -120,13 +120,14 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 	case wire.ActionOnDisconnPut, wire.ActionOnDisconnMerge:
 		var b wire.WriteBody
 		if s.decode(req, &b) {
-			var err error
+			// The rules check it against the data, on the writer.
+			sl := s.reserve(req.ID)
+			done := func(err error) { s.fill(sl, result(req.ID, err)) }
 			if req.Action == wire.ActionOnDisconnPut {
-				err = s.core.OnDisconnectSet(b.Path, b.Data)
+				s.core.OnDisconnectSet(b.Path, b.Data, done)
 			} else {
-				err = s.core.OnDisconnectUpdate(b.Path, b.Data)
+				s.core.OnDisconnectUpdate(b.Path, b.Data, done)
 			}
-			s.reply(req, replyOf(err))
 		}
 
 	case wire.ActionOnDisconnClear:
@@ -138,7 +139,12 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 	case wire.ActionAuth, wire.ActionGAuth:
 		var b wire.AuthBody
 		if s.decode(req, &b) {
-			s.reply(req, s.authenticate(ctx, b))
+			// Whoever the session now is, the listens it may no longer read are cancelled
+			// with c before the reply, as the emulator does when a client signs in as
+			// someone else (golden auth_change.json).
+			sl := s.reserve(req.ID)
+			r := s.authenticate(ctx, b)
+			s.core.RevokeListens(func() { s.fill(sl, wire.EncodeResponse(req.ID, r)) })
 		}
 
 	case wire.ActionUnauth:
@@ -231,5 +237,7 @@ func (s *session) Push(p core.Push) {
 		s.out.push(wire.EncodeMergePush(p.Path.String(), p.Data, tag))
 	case core.PushCancel:
 		s.out.push(wire.EncodeListenRevoked(p.Path.String(), wireQuery(p.Query)))
+	case core.PushAuthRevoked:
+		s.out.push(wire.EncodeAuthRevoked(p.Status, p.Reason))
 	}
 }
