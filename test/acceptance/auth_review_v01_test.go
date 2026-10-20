@@ -221,12 +221,12 @@ func TestAuthSMTPReachesOnlyPublicHosts(t *testing.T) {
 	p.owner.mustOK(p.owner.do("PATCH", smtp, map[string]any{"host": "smtp.example.com", "port": 587}))
 	p.owner.mustOK(p.owner.do("PATCH", smtp, map[string]any{"host": "93.184.216.34"}))
 
-	// A name is checked where it leads, at the moment of the connection: 127.1 is a name to
-	// the settings check, and resolves to loopback.
+	// A name is checked where it leads, at the moment of the connection: a loopback name the
+	// settings check cannot know is refused when dialled.
 	ln := banner(t, "+OK Dovecot ready, internal-mail-7\r\n")
 	_, port, _ := net.SplitHostPort(ln.Addr().String())
 	portN, _ := strconv.Atoi(port)
-	p.owner.mustOK(p.owner.do("PATCH", smtp, map[string]any{"host": "127.1", "port": portN, "tls": "none"}))
+	p.owner.mustOK(p.owner.do("PATCH", smtp, map[string]any{"host": loopbackName(t), "port": portN, "tls": "none"}))
 	r := p.owner.do("POST", smtp+":test", map[string]any{"to": "owner@example.com"})
 	expect(t, r, 400, "INVALID_ARGUMENT")
 	if !strings.Contains(string(r.Body), "SMTP_HOST_PRIVATE") || !strings.Contains(string(r.Body), "smtp_allow_private") {
@@ -248,6 +248,23 @@ func TestAuthSMTPReachesOnlyPublicHosts(t *testing.T) {
 }
 
 // banner listens on loopback and greets every connection with line.
+// loopbackName returns a host name, not "localhost", that this machine resolves to loopback:
+// 127.1 on macOS, ip6-localhost from /etc/hosts on Debian and Ubuntu.
+func loopbackName(t *testing.T) string {
+	t.Helper()
+	for _, name := range []string{"127.1", "ip6-localhost", "localhost.localdomain"} {
+		addrs, err := net.LookupHost(name)
+		if err != nil || len(addrs) == 0 {
+			continue
+		}
+		if ip := net.ParseIP(addrs[0]); ip != nil && ip.IsLoopback() {
+			return name
+		}
+	}
+	t.Skip("no loopback name other than localhost resolves here")
+	return ""
+}
+
 func banner(t *testing.T, line string) net.Listener {
 	t.Helper()
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
