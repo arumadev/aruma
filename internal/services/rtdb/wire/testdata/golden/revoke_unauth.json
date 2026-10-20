@@ -1,0 +1,254 @@
+{
+  "scenario": "revoke_unauth",
+  "description": "A authenticates with an unsigned JWT for u1, listens /users/u1 (untagged and tagged) and /open, then unauth: c pushes vs the unauth reply. Then listens again unauthenticated (denied), re-auths and listens again. W (another authed client) writes to /users/u1 throughout.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture_r3.mjs",
+  "namespace": "r3-revoke",
+  "setup": [
+    {
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r3-revoke",
+      "body": {
+        "rules": {
+          "users": {
+            "$uid": {
+              ".read": "auth != null && auth.uid === $uid",
+              ".write": "auth != null"
+            }
+          },
+          "open": {
+            ".read": true
+          }
+        }
+      },
+      "status": 200,
+      "response": "{\"status\":\"ok\"}"
+    },
+    {
+      "method": "PUT",
+      "path": "/.json?ns=r3-revoke",
+      "body": {
+        "users": {
+          "u1": {
+            "name": "one"
+          }
+        },
+        "open": {
+          "x": 1
+        }
+      },
+      "status": 200
+    }
+  ],
+  "connections": {
+    "A": "/.ws?v=5&ns=r3-revoke",
+    "W": "/.ws?v=5&ns=r3-revoke"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792526633671,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"6IrKXl0m9b8XX4KePlXhoyD2qjCMrXct\"}}}"
+    },
+    {
+      "conn": "W",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792526633673,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"NyW6WYBpql6mXspvASivi4HerL7F2FST\"}}}"
+    },
+    {
+      "conn": "W",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1aWQiOiJ3OSIsInN1YiI6Inc5IiwidXNlcl9pZCI6Inc5IiwiaWF0IjoxNzkyNTI2NjMzLCJleHAiOjE3OTI1MzAyMzN9.\"}}}"
+    },
+    {
+      "conn": "W",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"w9\",\"token\":{\"exp\":1792530233,\"user_id\":\"w9\",\"uid\":\"w9\",\"iat\":1792526633,\"sub\":\"w9\"},\"provider\":\"anonymous\",\"user_id\":\"w9\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1aWQiOiJ1MSIsInN1YiI6InUxIiwidXNlcl9pZCI6InUxIiwiaWF0IjoxNzkyNTI2NjM0LCJleHAiOjE3OTI1MzAyMzR9.\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"u1\",\"token\":{\"exp\":1792530234,\"user_id\":\"u1\",\"uid\":\"u1\",\"iat\":1792526634,\"sub\":\"u1\"},\"provider\":\"anonymous\",\"user_id\":\"u1\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"q\",\"b\":{\"p\":\"/users/u1\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"users/u1\",\"d\":{\"name\":\"one\"}},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"q\",\"b\":{\"p\":\"/users/u1\",\"q\":{\"l\":1,\"vf\":\"l\"},\"t\":1,\"h\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"users/u1\",\"d\":{\"name\":\"one\"},\"t\":1},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"q\",\"b\":{\"p\":\"/open\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"open\",\"d\":{\"x\":1}},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":{}}}}"
+    },
+    {
+      "conn": "W",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"p\",\"b\":{\"p\":\"/users/u1/name\",\"d\":\"two\"}}}"
+    },
+    {
+      "conn": "W",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"users/u1/name\",\"d\":\"two\"},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"users/u1/name\",\"d\":\"two\",\"t\":1},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"unauth\",\"b\":{}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"users/u1\",\"q\":[{\"sin\":true,\"ein\":true,\"l\":1,\"vf\":\"l\"}]},\"a\":\"c\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"users/u1\",\"q\":null},\"a\":\"c\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"ok\",\"d\":\"unauthenticated\"}}}"
+    },
+    {
+      "conn": "W",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"p\",\"b\":{\"p\":\"/users/u1/name\",\"d\":\"three\"}}}"
+    },
+    {
+      "conn": "W",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"a\":\"q\",\"b\":{\"p\":\"/users/u1\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"a\":\"g\",\"b\":{\"p\":\"/users/u1\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1aWQiOiJ1MSIsInN1YiI6InUxIiwidXNlcl9pZCI6InUxIiwiaWF0IjoxNzkyNTI2NjM0LCJleHAiOjE3OTI1MzAyMzR9.\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"u1\",\"token\":{\"exp\":1792530234,\"user_id\":\"u1\",\"uid\":\"u1\",\"iat\":1792526634,\"sub\":\"u1\"},\"provider\":\"anonymous\",\"user_id\":\"u1\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":9,\"a\":\"q\",\"b\":{\"p\":\"/users/u1\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"users/u1\",\"d\":{\"name\":\"three\"}},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":9,\"b\":{\"s\":\"ok\",\"d\":{}}}}"
+    },
+    {
+      "conn": "W",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"p\",\"b\":{\"p\":\"/users/u1/name\",\"d\":\"four\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"users/u1/name\",\"d\":\"four\"},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "W",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "W",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "jwt = header {\"alg\":\"none\",\"typ\":\"JWT\"}, payload {uid,sub,user_id = \"u1\", iat, exp = iat+3600}, empty signature. W authenticates as w9 (may write any /users/$uid).",
+    "Steps: A auth u1; A q /users/u1; A q /users/u1 {l:1,vf:\"l\"} t1; A q /open; W p /users/u1/name \"two\"; A unauth; W p \"three\"; A q /users/u1 (unauthenticated); A g /users/u1; A auth u1 again; A q /users/u1; W p \"four\".",
+    "WebSocket close initiated by the client (close frame with code 1000) on: A, W; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ],
+  "jwt": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1aWQiOiJ1MSIsInN1YiI6InUxIiwidXNlcl9pZCI6InUxIiwiaWF0IjoxNzkyNTI2NjM0LCJleHAiOjE3OTI1MzAyMzR9."
+}

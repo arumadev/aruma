@@ -1,0 +1,308 @@
+{
+  "scenario": "query_child_unindexed",
+  "description": "orderByChild(\"s\") limitToFirst(2) and orderByValue listens without .indexOn, writes afterwards, unlisten, and g with the same and with key/priority queries.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture_r3.mjs",
+  "namespace": "r3-qcu",
+  "setup": [
+    {
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r3-qcu",
+      "body": {
+        "rules": {
+          ".read": true,
+          ".write": true
+        }
+      },
+      "status": 200,
+      "response": "{\"status\":\"ok\"}"
+    },
+    {
+      "method": "PUT",
+      "path": "/.json?ns=r3-qcu",
+      "body": {
+        "q": {
+          "a": {
+            "s": 3
+          },
+          "b": {
+            "s": 1
+          },
+          "c": {
+            "s": 2
+          },
+          "d": {
+            "s": 0
+          }
+        },
+        "v": {
+          "a": 3,
+          "b": 1
+        }
+      },
+      "status": 200
+    }
+  ],
+  "connections": {
+    "A": "/.ws?v=5&ns=r3-qcu",
+    "B": "/.ws?v=5&ns=r3-qcu",
+    "C": "/.ws?v=5&ns=r3-qcu"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792526615834,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"fNvuL1yuzaR3c5e70fqiQsvC5xGNDqJp\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792526615837,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"NoWslPCye9Pru68kVdbifUgrsIPmYirL\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792526615840,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"R6kIRzVS5YTLz2XHTHc2xmkpxnVgWt8t\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"q\",\"b\":{\"p\":\"/q\",\"q\":{\"l\":2,\"vf\":\"l\",\"i\":\"s\"},\"t\":1,\"h\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"q\",\"d\":{\"a\":{\"s\":3},\"b\":{\"s\":1},\"c\":{\"s\":2},\"d\":{\"s\":0}}},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"w\":[\"no_index\"]}}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"q\",\"b\":{\"p\":\"/q\",\"q\":{\"sp\":1,\"sin\":true,\"i\":\"s\"},\"t\":1,\"h\":\"\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"q\",\"d\":{\"a\":{\"s\":3},\"b\":{\"s\":1},\"c\":{\"s\":2},\"d\":{\"s\":0}}},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"w\":[\"no_index\"]}}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"q\",\"b\":{\"p\":\"/v\",\"q\":{\"l\":1,\"vf\":\"r\",\"i\":\".value\"},\"t\":2,\"h\":\"\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"v\",\"d\":{\"a\":3,\"b\":1}},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{\"w\":[\"no_index\"]}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/q/e\",\"d\":{\"s\":-1}}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"q/e\",\"d\":{\"s\":-1}},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"q/e\",\"d\":{\"s\":-1}},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"p\",\"b\":{\"p\":\"/q/a/s\",\"d\":-5}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"q/a/s\",\"d\":-5},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"q/a/s\",\"d\":-5},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"p\",\"b\":{\"p\":\"/q/e\",\"d\":null}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"q/e\",\"d\":null},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"q/e\",\"d\":null},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"m\",\"b\":{\"p\":\"/q\",\"d\":{\"c/s\":9,\"f\":{\"s\":4}}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"q\",\"d\":{\"c/s\":9,\"f\":{\"s\":4}}},\"a\":\"m\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"q\",\"d\":{\"c/s\":9,\"f\":{\"s\":4}}},\"a\":\"m\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"p\",\"b\":{\"p\":\"/v/c\",\"d\":0}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"v/c\",\"d\":0},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{\"l\":2,\"vf\":\"l\",\"i\":\"s\"}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"no_index\",\"d\":\"Index not defined, add \\\".indexOn\\\": \\\"s\\\", for path \\\"/q\\\", to the rules\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{\"i\":\"s\"}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"no_index\",\"d\":\"Index not defined, add \\\".indexOn\\\": \\\"s\\\", for path \\\"/q\\\", to the rules\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{\"l\":2,\"vf\":\"l\",\"i\":\".key\"}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":{\"a\":{\"s\":-5},\"b\":{\"s\":1}}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{\"l\":2,\"vf\":\"r\"}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"ok\",\"d\":{\"d\":{\"s\":0},\"f\":{\"s\":4}}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"a\":\"g\",\"b\":{\"p\":\"/v\",\"q\":{\"l\":1,\"vf\":\"r\",\"i\":\".value\"}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"b\":{\"s\":\"no_index\",\"d\":\"Index not defined, add \\\".indexOn\\\": \\\".value\\\", for path \\\"/v\\\", to the rules\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"a\":\"n\",\"b\":{\"p\":\"/q\",\"q\":{\"l\":2,\"vf\":\"l\",\"i\":\"s\"},\"t\":1}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"a\":\"p\",\"b\":{\"p\":\"/q/z\",\"d\":{\"s\":0}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"q/z\",\"d\":{\"s\":0}},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "B",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "C",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "B listens /q {\"l\":2,\"vf\":\"l\",\"i\":\"s\"} t 1; C listens /q {\"sp\":1,\"sin\":true,\"i\":\"s\"} t 1 and /v {\"l\":1,\"vf\":\"r\",\"i\":\".value\"} t 2. No .indexOn anywhere.",
+    "Steps (A): p /q/e {s:-1}; p /q/a/s -5; p /q/e null; m /q {\"c/s\":9,f:{s:4}}; p /v/c 0. B gets: same child query, orderByChild only, key limitToFirst(2), priority limitToLast(2), orderByValue on /v. B unlistens; A p /q/z {s:0}.",
+    "WebSocket close initiated by the client (close frame with code 1000) on: A, B, C; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ]
+}

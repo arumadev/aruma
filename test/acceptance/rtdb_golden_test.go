@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -20,14 +21,31 @@ import (
 // what comes back. Every difference must be one listed in knownDifferences with its reason;
 // the test logs them, so the report of a run is the comparison itself.
 func TestRTDBMatchesEmulator(t *testing.T) {
-	files, err := filepath.Glob("../../internal/services/rtdb/wire/testdata/golden/*.json")
-	if err != nil || len(files) < 10 {
+	// RTDB_GOLDEN_DIR replays other captures, such as fresh ones not yet committed.
+	dir := "../../internal/services/rtdb/wire/testdata/golden"
+	if d := os.Getenv("RTDB_GOLDEN_DIR"); d != "" {
+		dir = d
+	}
+	files, err := filepath.Glob(dir + "/*.json")
+	if err != nil || len(files) == 0 {
 		t.Fatalf("golden files: %v %d", err, len(files))
 	}
 	e := rtdbEnv(t, false, nil)
 	owner := e.owner()
-	owner.project("demo-test")
-	owner.project("other-ns")
+	pat := owner.pat()
+	// Each emulator namespace becomes a project of the same id, lengthened to the 6
+	// characters a project id needs, whose default database the scenario uses.
+	projects := map[string]bool{}
+	database := func(ns string) string {
+		if len(ns) < 6 {
+			ns += "-test"
+		}
+		if !projects[ns] {
+			owner.project(ns)
+			projects[ns] = true
+		}
+		return ns + "-default-rtdb"
+	}
 
 	seen := map[string]bool{}
 	compared := 0
@@ -35,7 +53,12 @@ func TestRTDBMatchesEmulator(t *testing.T) {
 		var g struct {
 			Scenario    string            `json:"scenario"`
 			Connections map[string]string `json:"connections"`
-			Frames      []struct {
+			Setup       []struct {
+				Method string          `json:"method"`
+				Path   string          `json:"path"`
+				Body   json.RawMessage `json:"body"`
+			} `json:"setup"`
+			Frames []struct {
 				Conn string `json:"conn"`
 				Dir  string `json:"dir"`
 				Text string `json:"text"`
@@ -46,16 +69,43 @@ func TestRTDBMatchesEmulator(t *testing.T) {
 		if err := json.Unmarshal(b, &g); err != nil {
 			t.Fatal(err)
 		}
-		if g.Scenario == "origin" {
-			continue // HTTP-level; TestRTDBOrigin and TestRTDBHandshakeHostUnderDomain cover it
+		if reason, skip := skippedScenarios[g.Scenario]; skip {
+			t.Logf("scenario %s not replayed: %s", g.Scenario, reason)
+			continue
+		}
+		// The emulator's setup went through REST, which comes in R5: the rules through the
+		// rules endpoint, the data through an admin connection.
+		for _, s := range g.Setup {
+			path, query, _ := strings.Cut(s.Path, "?")
+			ns := strings.TrimPrefix(query, "ns=")
+			db := database(ns)
+			switch {
+			case s.Method == "PUT" && path == "/.settings/rules.json":
+				req, _ := http.NewRequest("PUT", e.URL+"/.settings/rules.json?ns="+db, strings.NewReader(string(s.Body)))
+				req.Header.Set("Authorization", "Bearer "+pat)
+				resp, err := http.DefaultClient.Do(req)
+				if err != nil || resp.StatusCode != 200 {
+					t.Fatalf("%s: rules: %v %v", g.Scenario, err, resp)
+				}
+				resp.Body.Close()
+			case s.Method == "PUT" && strings.HasSuffix(path, ".json"):
+				a := e.dial(db, dialOpts{})
+				a.call("auth", map[string]any{"cred": pat}).mustOK(t)
+				a.call("p", map[string]any{"p": strings.TrimSuffix(path, ".json"), "d": s.Body}).mustOK(t)
+				a.close()
+			case s.Method == "GET":
+				// A read the capture made for its notes (an ETag): nothing to set up.
+			default:
+				t.Fatalf("%s: setup %s %s", g.Scenario, s.Method, s.Path)
+			}
 		}
 		conns := map[string]*wsClient{}
 		conn := func(name string) *wsClient {
 			if c := conns[name]; c != nil {
 				return c
 			}
-			ns := regexp.MustCompile(`ns=([a-z-]+)`).FindStringSubmatch(g.Connections[name])[1]
-			c := e.dial(ns+"-default-rtdb", dialOpts{})
+			ns := regexp.MustCompile(`ns=([a-z0-9-]+)`).FindStringSubmatch(g.Connections[name])[1]
+			c := e.dial(database(ns), dialOpts{})
 			conns[name] = c
 			return c
 		}
@@ -162,6 +212,12 @@ func check(t *testing.T, seen map[string]bool, key, sent string, theirs, ours []
 	t.Logf("known difference, %s (%s):\n emulator %v\n aruma    %v", key, reason, abbreviateAll(theirs), abbreviateAll(ours))
 }
 
+// skippedScenarios are captures this replay does not cover, with where they are covered.
+var skippedScenarios = map[string]string{
+	"origin":        "HTTP-level; TestRTDBOrigin and TestRTDBHandshakeHostUnderDomain cover it",
+	"revoke_unauth": "needs rules with auth and the emulator's unsigned tokens (R4); TestRTDBUnauthRevokesListens covers the c push",
+}
+
 // knownDifferences are the places where Aruma answers otherwise than the emulator, keyed by
 // scenario, connection and request (action and r, "frame" for a non-request, or "pushes"
 // for a connection's pushes).
@@ -177,7 +233,23 @@ var knownDifferences = map[string]string{
 	"limits A p r=29":       "data nested past 32: reply instead of an error frame",
 	"server_values A p r=7": "unknown server value: reply instead of an error frame",
 	"server_values A p r=8": "non-number increment: reply instead of an error frame",
+	// When a write changes a child that stays in a query's window, the emulator pushes the
+	// change as written (q/c/s 2.5, or a merge {"c/s":1}); Aruma pushes the child's new value
+	// whole (q/c {"s":2.5}). Both leave the client's view of the window the same.
+	"query_child_indexed B pushes": windowPushes,
+	"query_child_indexed C pushes": windowPushes,
+	"query_child_indexed D pushes": windowPushes,
+	"query_child_indexed E pushes": windowPushes,
+	"query_child_indexed F pushes": windowPushes,
+	"query_child_indexed G pushes": windowPushes,
+	"query_key C pushes":           windowPushes,
+	"query_key E pushes":           windowPushes,
+	// A query on a leaf selects nothing: the emulator answers null for a limit and {} for a
+	// key range; Aruma answers null for both, which the SDKs read as the same empty node.
+	"query_get A g r=18": "empty query result on a leaf: null instead of {}",
 }
+
+const windowPushes = "a child changed inside a query window: pushed whole instead of as written"
 
 // requestKey names a client message: "<action> r=<n>", or "frame".
 func requestKey(text string) string {

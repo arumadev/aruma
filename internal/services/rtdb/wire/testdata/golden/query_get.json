@@ -1,0 +1,274 @@
+{
+  "scenario": "query_get",
+  "description": "g (get) with query objects: default-order limits, key ranges, indexed child order (/q has .indexOn s), unindexed child and value order (/u), equalTo, orderBy without limit, a missing path, a leaf.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture_r3.mjs",
+  "namespace": "r3-qget",
+  "setup": [
+    {
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r3-qget",
+      "body": {
+        "rules": {
+          ".read": true,
+          ".write": true,
+          "q": {
+            ".indexOn": [
+              "s"
+            ]
+          }
+        }
+      },
+      "status": 200,
+      "response": "{\"status\":\"ok\"}"
+    },
+    {
+      "method": "PUT",
+      "path": "/.json?ns=r3-qget",
+      "body": {
+        "q": {
+          "a": {
+            "s": 3
+          },
+          "b": {
+            "s": 1
+          },
+          "c": {
+            "s": 2
+          },
+          "d": {
+            "s": 0
+          }
+        },
+        "u": {
+          "a": {
+            "s": 3
+          },
+          "b": {
+            "s": 1
+          },
+          "c": {
+            "s": 2
+          },
+          "d": {
+            "s": 0
+          }
+        },
+        "leaf": "x"
+      },
+      "status": 200
+    }
+  ],
+  "connections": {
+    "A": "/.ws?v=5&ns=r3-qget"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792526631629,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"aaWoisOMuqktCTu37FaaRDj5uv2wqPaB\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{\"l\":2,\"vf\":\"l\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"a\":{\"s\":3},\"b\":{\"s\":1}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{\"l\":2,\"vf\":\"r\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{\"c\":{\"s\":2},\"d\":{\"s\":0}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{\"sp\":\"b\",\"sin\":true,\"ep\":\"c\",\"ein\":true,\"i\":\".key\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":{\"b\":{\"s\":1},\"c\":{\"s\":2}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{\"sp\":\"b\",\"sin\":false,\"i\":\".key\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":{\"c\":{\"s\":2},\"d\":{\"s\":0}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{\"ep\":\"c\",\"ein\":false,\"l\":1,\"vf\":\"r\",\"i\":\".key\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"ok\",\"d\":{\"b\":{\"s\":1}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{\"l\":2,\"vf\":\"l\",\"i\":\"s\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"b\":{\"s\":\"ok\",\"d\":{\"b\":{\"s\":1},\"d\":{\"s\":0}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{\"sp\":1,\"sin\":true,\"ep\":2,\"ein\":true,\"i\":\"s\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"b\":{\"s\":\"ok\",\"d\":{\"b\":{\"s\":1},\"c\":{\"s\":2}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{\"sp\":2,\"sin\":true,\"ep\":2,\"ein\":true,\"i\":\"s\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"b\":{\"s\":\"ok\",\"d\":{\"c\":{\"s\":2}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":9,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{\"sp\":1,\"sn\":\"[MAX_NAME]\",\"sin\":false,\"i\":\"s\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":9,\"b\":{\"s\":\"ok\",\"d\":{\"c\":{\"s\":2},\"a\":{\"s\":3}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":10,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{\"i\":\"s\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":10,\"b\":{\"s\":\"ok\",\"d\":{\"a\":{\"s\":3},\"b\":{\"s\":1},\"c\":{\"s\":2},\"d\":{\"s\":0}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":11,\"a\":\"g\",\"b\":{\"p\":\"/u\",\"q\":{\"l\":2,\"vf\":\"l\",\"i\":\"s\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":11,\"b\":{\"s\":\"no_index\",\"d\":\"Index not defined, add \\\".indexOn\\\": \\\"s\\\", for path \\\"/u\\\", to the rules\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":12,\"a\":\"g\",\"b\":{\"p\":\"/u\",\"q\":{\"i\":\"s\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":12,\"b\":{\"s\":\"no_index\",\"d\":\"Index not defined, add \\\".indexOn\\\": \\\"s\\\", for path \\\"/u\\\", to the rules\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":13,\"a\":\"g\",\"b\":{\"p\":\"/u\",\"q\":{\"l\":1,\"vf\":\"l\",\"i\":\".value\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":13,\"b\":{\"s\":\"no_index\",\"d\":\"Index not defined, add \\\".indexOn\\\": \\\".value\\\", for path \\\"/u\\\", to the rules\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":14,\"a\":\"g\",\"b\":{\"p\":\"/u\",\"q\":{\"l\":2,\"vf\":\"l\",\"i\":\".key\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":14,\"b\":{\"s\":\"ok\",\"d\":{\"a\":{\"s\":3},\"b\":{\"s\":1}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":15,\"a\":\"g\",\"b\":{\"p\":\"/missing\",\"q\":{\"l\":1,\"vf\":\"l\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":15,\"b\":{\"s\":\"ok\",\"d\":null}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":16,\"a\":\"g\",\"b\":{\"p\":\"/missing\",\"q\":{\"l\":1,\"vf\":\"l\",\"i\":\"s\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":16,\"b\":{\"s\":\"no_index\",\"d\":\"Index not defined, add \\\".indexOn\\\": \\\"s\\\", for path \\\"/missing\\\", to the rules\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":17,\"a\":\"g\",\"b\":{\"p\":\"/leaf\",\"q\":{\"l\":1,\"vf\":\"l\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":17,\"b\":{\"s\":\"ok\",\"d\":null}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":18,\"a\":\"g\",\"b\":{\"p\":\"/leaf\",\"q\":{\"sp\":\"z\",\"sin\":true,\"i\":\".key\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":18,\"b\":{\"s\":\"ok\",\"d\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":19,\"a\":\"g\",\"b\":{\"p\":\"/q\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":19,\"b\":{\"s\":\"ok\",\"d\":{\"a\":{\"s\":3},\"b\":{\"s\":1},\"c\":{\"s\":2},\"d\":{\"s\":0}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "Data: /q and /u = {a:{s:3},b:{s:1},c:{s:2},d:{s:0}} (.indexOn s only on /q), /leaf = \"x\".",
+    "WebSocket close initiated by the client (close frame with code 1000) on: A; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ]
+}

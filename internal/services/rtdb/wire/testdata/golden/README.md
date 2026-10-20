@@ -12,3 +12,5 @@ node capture.mjs 127.0.0.1:9400
 ```
 
 `SHA256SUMS` pins every `*.json` file and `capture.mjs` (check with `shasum -a 256 -c SHA256SUMS`).
+
+`capture_r3.mjs` records the phase R3 scenarios the same way (listens, server-side queries, listen revocation and, as `lp_*.json`, long polling over `/.lp`). Each scenario runs in its own namespace, whose rules and data it resets through REST first and lists under `setup`; long-poll HTTP exchanges are recorded as `http_req`/`http_resp`/`http_abort` frames. Regenerate with `node capture_r3.mjs 127.0.0.1:9400`, or `SCENARIOS=query_get,lp_upgrade node capture_r3.mjs 127.0.0.1:9400` for some of them.
