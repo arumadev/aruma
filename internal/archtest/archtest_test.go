@@ -183,6 +183,18 @@ func TestRulesThemselves(t *testing.T) {
 		{"internal/services/rtdb/core", "internal/services/rtdb/wire", true},
 		{"internal/services/rtdb/wire", "internal/services/rtdb/core", false},
 		{"internal/services/rtdb/wire", "internal/platform/log", false},
+		// The ID token contract lives in platform: Auth implements it, RTDB consumes it, only
+		// app joins the two, and neither service reaches into the other for it.
+		{"internal/platform/idtoken", "internal/platform/log", true},
+		{"internal/platform/idtoken", "internal/services/auth/core", false},
+		{"internal/platform/idtoken", "internal/tenancy/core", false},
+		{"internal/services/auth/core", "internal/platform/idtoken", true},
+		{"internal/services/rtdb/core", "internal/platform/idtoken", true},
+		{"internal/services/rtdb/api", "internal/platform/idtoken", true},
+		{"internal/services/rtdb/core", "internal/services/auth/tokens", false},
+		{"internal/services/rtdb/api", "internal/services/auth/core", false},
+		{"internal/services/auth/core", "internal/services/rtdb/core", false},
+		{"internal/app", "internal/platform/idtoken", true},
 		// Only app wires services into the console and the admin APIs.
 		{"internal/admin/console", "internal/services/auth/core", false},
 		{"internal/admin/console", "internal/services/auth/console", false},
