@@ -27,13 +27,21 @@ rtdb:
   enabled: false                   # Realtime Database; off until v0.2 ships
   # domain: rtdb.example.com       # databases at https://<project>-default-rtdb.<domain>, with a
                                    # wildcard DNS record (ADR-018); unset, ?ns= on public_url
-  # dev_open_rules: true           # every client may read and write every database, like
-                                   # Firebase's test mode; accepted only on a loopback public_url.
-                                   # Off, only admin and service credentials reach the data
+  # dev_open_rules: true           # clients on this machine may read and write every database,
+                                   # like Firebase's test mode; accepted only when public_url and
+                                   # listen are loopback. Off, only admin and service credentials
+                                   # reach the data
+  # allowed_origins: []            # hosts whose web pages may connect; empty allows all, as
+                                   # Firebase does (credentials travel in messages, not cookies)
+  # A proxy in front must keep the Host header, or send X-Forwarded-Host and be listed in
+  # trusted_proxies: the database is named by its host, and clients reconnect to that host.
   limits:
     message_bytes: 16777216        # one WebSocket message, so one SDK write
+    unauthenticated_message_bytes: 1048576  # one message before the connection signs in
+    inflight_bytes: 536870912      # partly received messages, all connections together
     rest_write_bytes: 16777216     # one REST write (Firebase allows 256 MB)
     string_bytes: 10485760         # one string value
     write_bytes_per_minute: 67108864
-    connections_per_project: 10000
+    connections_per_project: 10000 # counted once a connection signs in or is first allowed
+    connections_per_ip: 500        # counted from the handshake
     outbox_bytes: 67108864         # unsent data per connection before it is dropped

@@ -188,14 +188,22 @@ func TestRTDBSettings(t *testing.T) {
 	m["ARUMA_RTDB_ENABLED"] = "true"
 	m["ARUMA_RTDB_DOMAIN"] = "RTDB.Example.com."
 	m["ARUMA_RTDB_DEV_OPEN_RULES"] = "true"
+	m["ARUMA_LISTEN"] = "127.0.0.1:8080"
+	m["ARUMA_RTDB_ALLOWED_ORIGINS"] = "App.Example.com, localhost"
 	m["ARUMA_RTDB_OUTBOX_BYTES"] = "2097152"
 	m["ARUMA_RTDB_CONNECTIONS_PER_PROJECT"] = "5"
+	m["ARUMA_RTDB_CONNECTIONS_PER_IP"] = "7"
+	m["ARUMA_RTDB_UNAUTHENTICATED_MESSAGE_BYTES"] = "4096"
+	m["ARUMA_RTDB_INFLIGHT_BYTES"] = "2097152"
 	c, err := Load("", env(m))
 	if err != nil {
 		t.Fatal(err)
 	}
+	l := c.RTDB.Limits
 	if !c.RTDB.Enabled || !c.RTDB.DevOpenRules || c.RTDB.Domain != "rtdb.example.com" ||
-		c.RTDB.Limits.OutboxBytes != 2<<20 || c.RTDB.Limits.ConnectionsPerProject != 5 {
+		l.OutboxBytes != 2<<20 || l.ConnectionsPerProject != 5 || l.ConnectionsPerIP != 7 ||
+		l.UnauthenticatedMessageBytes != 4096 || l.InflightBytes != 2<<20 ||
+		strings.Join(c.RTDB.AllowedOrigins, ",") != "app.example.com,localhost" {
 		t.Errorf("settings not applied: %+v", c.RTDB)
 	}
 }
@@ -208,9 +216,19 @@ func TestRTDBRejectsBadValues(t *testing.T) {
 		{"ARUMA_RTDB_DOMAIN": "under_score.example.com"},
 		// Open rules on a public server would expose every project's data.
 		{"ARUMA_RTDB_DEV_OPEN_RULES": "true"},
+		// A loopback public_url is not enough: the listener must be loopback too (review #2).
+		{"ARUMA_RTDB_DEV_OPEN_RULES": "true", "ARUMA_PUBLIC_URL": "http://127.0.0.1:8080"},
+		{"ARUMA_RTDB_DEV_OPEN_RULES": "true", "ARUMA_PUBLIC_URL": "http://127.0.0.1:8080", "ARUMA_LISTEN": "0.0.0.0:8080"},
+		// Aruma's own hosts may not lie under rtdb.domain (review #7).
+		{"ARUMA_RTDB_DOMAIN": "example.com", "ARUMA_PUBLIC_URL": "https://aruma.example.com"},
+		{"ARUMA_RTDB_DOMAIN": "aruma.example.com", "ARUMA_PUBLIC_URL": "https://aruma.example.com"},
+		{"ARUMA_RTDB_DOMAIN": "rtdb.example.com", "ARUMA_PROJECT_DOMAIN": "apps.rtdb.example.com"},
+		{"ARUMA_RTDB_ALLOWED_ORIGINS": "https://app.example.com/"},
 		{"ARUMA_RTDB_MESSAGE_BYTES": "1024"},
 		{"ARUMA_RTDB_OUTBOX_BYTES": "x"},
 		{"ARUMA_RTDB_CONNECTIONS_PER_PROJECT": "0"},
+		{"ARUMA_RTDB_CONNECTIONS_PER_IP": "0"},
+		{"ARUMA_RTDB_UNAUTHENTICATED_MESSAGE_BYTES": "999999999"},
 	}
 	for _, c := range cases {
 		m := required()
@@ -220,5 +238,11 @@ func TestRTDBRejectsBadValues(t *testing.T) {
 		if _, err := Load("", env(m)); err == nil {
 			t.Errorf("%v should be rejected", c)
 		}
+	}
+	// rtdb.domain beside Aruma's hosts is fine.
+	m := required()
+	m["ARUMA_RTDB_DOMAIN"] = "rtdb.example.com"
+	if _, err := Load("", env(m)); err != nil {
+		t.Errorf("rtdb.example.com beside aruma.example.com: %v", err)
 	}
 }

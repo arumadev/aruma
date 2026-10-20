@@ -77,12 +77,18 @@ type RTDB struct {
 	// https://<project_id>-default-rtdb.<domain> (ADR-018). Empty, databases are reached on the
 	// main host with ?ns=<project_id>-default-rtdb, which only suits local development.
 	Domain string `yaml:"domain"`
-	// DevOpenRules lets every client read and write every database, as Firebase's test-mode
-	// rules {".read": true, ".write": true} do. Off, every database keeps the locked rules a new
-	// database starts with, and only admin and service credentials reach the data (ADR-020).
-	// Until the rules engine lands there is nothing in between, so the setting is accepted
-	// only on a loopback public_url.
+	// DevOpenRules lets clients on this machine read and write every database, as Firebase's
+	// test-mode rules {".read": true, ".write": true} do. Off, every database keeps the locked
+	// rules a new database starts with, and only admin and service credentials reach the data
+	// (ADR-020). Until the rules engine lands there is nothing in between, so the setting is
+	// accepted only when public_url and listen are loopback addresses, and it applies only to
+	// connections whose peer is a loopback address.
 	DevOpenRules bool `yaml:"dev_open_rules"`
+	// AllowedOrigins, when set, lists the hosts whose web pages may open a connection, besides
+	// a database's own host. Empty allows every origin, as Firebase does: the protocol carries
+	// its credentials inside the messages, never in cookies, so a foreign page gains nothing a
+	// script elsewhere could not do.
+	AllowedOrigins []string `yaml:"allowed_origins"`
 	// Limits are the server's capacity limits. The limits the SDKs enforce themselves (path
 	// depth 32, path length 768 bytes) are fixed: raising them would only break clients.
 	Limits RTDBLimits `yaml:"limits"`
@@ -93,14 +99,25 @@ type RTDB struct {
 type RTDBLimits struct {
 	// MessageBytes caps one reassembled WebSocket message, and so one write from an SDK.
 	MessageBytes int64 `yaml:"message_bytes"`
+	// UnauthenticatedMessageBytes caps a message on a connection that has not signed in, so
+	// anonymous clients cannot make the server buffer large messages.
+	UnauthenticatedMessageBytes int64 `yaml:"unauthenticated_message_bytes"`
+	// InflightBytes caps the bytes of partly received messages across all connections; past
+	// it, new multi-frame messages are refused.
+	InflightBytes int64 `yaml:"inflight_bytes"`
 	// RESTWriteBytes caps one REST write body (Firebase allows 256 MB).
 	RESTWriteBytes int64 `yaml:"rest_write_bytes"`
 	// StringBytes caps one string value.
 	StringBytes int64 `yaml:"string_bytes"`
 	// WriteBytesPerMinute caps the bytes written to one database per minute.
 	WriteBytesPerMinute int64 `yaml:"write_bytes_per_minute"`
-	// ConnectionsPerProject caps the open connections to one project's databases.
+	// ConnectionsPerProject caps the connections to one project's databases. A connection
+	// counts once it has signed in or done its first permitted operation, so anonymous sockets
+	// cannot take a project's slots.
 	ConnectionsPerProject int `yaml:"connections_per_project"`
+	// ConnectionsPerIP caps the open connections from one client address (resolved through
+	// trusted_proxies), counted from the handshake.
+	ConnectionsPerIP int `yaml:"connections_per_ip"`
 	// OutboxBytes caps what may wait to be sent on one connection; a slower client is
 	// disconnected, and resynchronises when it reconnects.
 	OutboxBytes int64 `yaml:"outbox_bytes"`
@@ -117,12 +134,15 @@ func Defaults() Config {
 			AbsoluteTimeout: 8 * time.Hour,
 		},
 		RTDB: RTDB{Limits: RTDBLimits{
-			MessageBytes:          16 << 20,
-			RESTWriteBytes:        16 << 20,
-			StringBytes:           10 << 20,
-			WriteBytesPerMinute:   64 << 20,
-			ConnectionsPerProject: 10_000,
-			OutboxBytes:           64 << 20,
+			MessageBytes:                16 << 20,
+			UnauthenticatedMessageBytes: 1 << 20,
+			InflightBytes:               512 << 20,
+			RESTWriteBytes:              16 << 20,
+			StringBytes:                 10 << 20,
+			WriteBytesPerMinute:         64 << 20,
+			ConnectionsPerProject:       10_000,
+			ConnectionsPerIP:            500,
+			OutboxBytes:                 64 << 20,
 		}},
 	}
 }
@@ -222,8 +242,16 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	boolean("ARUMA_RTDB_ENABLED", &c.RTDB.Enabled)
 	str("ARUMA_RTDB_DOMAIN", &c.RTDB.Domain)
 	boolean("ARUMA_RTDB_DEV_OPEN_RULES", &c.RTDB.DevOpenRules)
+	if v := getenv("ARUMA_RTDB_ALLOWED_ORIGINS"); v != "" {
+		c.RTDB.AllowedOrigins = splitList(v)
+	}
 	lim := &c.RTDB.Limits
 	integer("ARUMA_RTDB_MESSAGE_BYTES", &lim.MessageBytes)
+	integer("ARUMA_RTDB_UNAUTHENTICATED_MESSAGE_BYTES", &lim.UnauthenticatedMessageBytes)
+	integer("ARUMA_RTDB_INFLIGHT_BYTES", &lim.InflightBytes)
+	perIP := int64(lim.ConnectionsPerIP)
+	integer("ARUMA_RTDB_CONNECTIONS_PER_IP", &perIP)
+	lim.ConnectionsPerIP = int(perIP)
 	integer("ARUMA_RTDB_REST_WRITE_BYTES", &lim.RESTWriteBytes)
 	integer("ARUMA_RTDB_STRING_BYTES", &lim.StringBytes)
 	integer("ARUMA_RTDB_WRITE_BYTES_PER_MINUTE", &lim.WriteBytesPerMinute)
@@ -331,18 +359,51 @@ func (c *Config) validateRTDB() []error {
 	if r.Domain != "" && !validDomain(r.Domain) {
 		errs = append(errs, fmt.Errorf("rtdb.domain %q must be a DNS name such as rtdb.example.com, without scheme or port", r.Domain))
 	}
-	if r.DevOpenRules && (c.publicURL == nil || !c.loopback()) {
-		errs = append(errs, errors.New("rtdb.dev_open_rules lets anyone read and write every database; it is accepted only when public_url is a loopback address"))
+	if r.DevOpenRules && (c.publicURL == nil || !c.loopback() || !loopbackListen(c.Listen)) {
+		errs = append(errs, errors.New("rtdb.dev_open_rules lets anyone read and write every database; it is accepted only when public_url and listen are loopback addresses"))
+	}
+	if r.Domain != "" && c.publicURL != nil {
+		// A host under rtdb.domain is routed to the Realtime Database before anything else
+		// (ADR-018), so Aruma's own hosts must stay outside it.
+		for name, host := range map[string]string{"public_url": c.publicURL.Hostname(), "project_domain": c.ProjectDomain} {
+			if h := strings.TrimSuffix(strings.ToLower(host), "."); h == r.Domain || strings.HasSuffix(h, "."+r.Domain) {
+				errs = append(errs, fmt.Errorf("%s %q lies under rtdb.domain %q, whose hosts all belong to the Realtime Database", name, host, r.Domain))
+			}
+		}
+	}
+	for i, o := range r.AllowedOrigins {
+		r.AllowedOrigins[i] = strings.ToLower(strings.TrimSpace(o))
+		if strings.Contains(o, "/") || r.AllowedOrigins[i] == "" {
+			errs = append(errs, fmt.Errorf("rtdb.allowed_origins: %q must be a host name such as app.example.com", o))
+		}
 	}
 	l := r.Limits
-	if l.MessageBytes < 1<<20 || l.RESTWriteBytes < 1<<20 || l.StringBytes < 1<<10 || l.WriteBytesPerMinute < 1<<20 ||
-		l.ConnectionsPerProject < 1 || l.OutboxBytes < 1<<20 {
-		errs = append(errs, errors.New("rtdb.limits: byte limits must be at least 1 MiB (string_bytes 1 KiB) and connections_per_project at least 1"))
+	if l.MessageBytes < 1<<20 || l.UnauthenticatedMessageBytes < 1<<10 || l.InflightBytes < 1<<20 ||
+		l.RESTWriteBytes < 1<<20 || l.StringBytes < 1<<10 || l.WriteBytesPerMinute < 1<<20 ||
+		l.ConnectionsPerProject < 1 || l.ConnectionsPerIP < 1 || l.OutboxBytes < 1<<20 {
+		errs = append(errs, errors.New("rtdb.limits: byte limits must be at least 1 MiB (string_bytes and unauthenticated_message_bytes 1 KiB) and connection limits at least 1"))
 	}
 	if l.StringBytes > l.MessageBytes {
 		errs = append(errs, errors.New("rtdb.limits.string_bytes must not exceed message_bytes"))
 	}
+	if l.UnauthenticatedMessageBytes > l.MessageBytes {
+		errs = append(errs, errors.New("rtdb.limits.unauthenticated_message_bytes must not exceed message_bytes"))
+	}
 	return errs
+}
+
+// loopbackListen reports whether the listen address accepts connections from this machine
+// only.
+func loopbackListen(listen string) bool {
+	host, _, err := net.SplitHostPort(listen)
+	if err != nil {
+		return false
+	}
+	if host == "localhost" {
+		return true
+	}
+	ip, err := netip.ParseAddr(host)
+	return err == nil && ip.IsLoopback()
 }
 
 // validDomain reports whether d is a lower-case DNS name of at least two labels.
