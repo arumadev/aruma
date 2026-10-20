@@ -41,6 +41,9 @@ func run(upstream, project, listen, token string) error {
 	if a.apiKey, err = a.webAPIKey(ctx); err != nil {
 		return err
 	}
+	if a.signer, err = a.newSigner(ctx); err != nil {
+		return err
+	}
 	ln, err := net.Listen("tcp", listen)
 	if err != nil {
 		return err

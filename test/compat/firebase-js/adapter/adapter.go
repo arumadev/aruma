@@ -5,9 +5,11 @@
 //
 // It sits where the tests expect the emulator (FIREBASE_AUTH_EMULATOR_HOST) and:
 //
-//   - forwards every Auth call to Aruma unchanged, except for three substitutions the tests'
+//   - forwards every Auth call to Aruma unchanged, except for four substitutions the tests'
 //     fixed credentials need: any API key becomes the project's real web key, the emulator's
-//     "Bearer owner" admin credential becomes the owner's CLI token, and the client address
+//     "Bearer owner" admin credential becomes the owner's CLI token, an unsigned custom token
+//     (a JSON object or an "alg": "none" JWT, which only the emulator accepts) is signed with a
+//     service account key of the project as createCustomToken signs it, and the client address
 //     (X-Forwarded-For, which Aruma believes from this loopback proxy) changes on every reset,
 //     so per-address limits apply per test instead of to the whole suite;
 //   - serves the emulator-only helpers from Aruma's console and Admin APIs:
@@ -40,9 +42,10 @@ var firstClientAddr = netip.MustParseAddr("198.18.0.1")
 // Adapter is the emulator stand-in in front of one Aruma project.
 type Adapter struct {
 	upstream *url.URL
-	project  string // Aruma project id; the tests' GCLOUD_PROJECT must be the same
-	apiKey   string // the project's web API key
-	token    string // the project owner's CLI token
+	project  string  // Aruma project id; the tests' GCLOUD_PROJECT must be the same
+	apiKey   string  // the project's web API key
+	token    string  // the project owner's CLI token
+	signer   *signer // signs the tests' unsigned custom tokens
 	client   *http.Client
 	proxy    *httputil.ReverseProxy
 
@@ -65,8 +68,9 @@ func (a *Adapter) Handler() http.Handler {
 	mux.HandleFunc("GET /emulator/v1/projects/{project}/verificationCodes", a.helper(a.verificationCodes))
 	mux.HandleFunc("GET /emulator/v1/projects/{project}/config", a.helper(a.getConfig))
 	mux.HandleFunc("PATCH /emulator/v1/projects/{project}/config", a.helper(a.patchConfig))
-	mux.HandleFunc("OPTIONS /emulator/", preflight)
-	mux.HandleFunc("/emulator/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("OPTIONS /emulator/v1/", preflight)
+	// The other /emulator/v1 helpers are refused; /emulator/auth/* are Aruma's own pages (ADR-014).
+	mux.HandleFunc("/emulator/v1/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "this emulator helper is not provided by the adapter")
 	})
 	mux.Handle("/", a.proxy)
@@ -88,6 +92,13 @@ func (a *Adapter) rewrite(pr *httputil.ProxyRequest) {
 		pr.Out.Header.Set("Authorization", "Bearer "+a.token)
 	}
 	pr.Out.Header.Set("X-Forwarded-For", a.clientAddr().String())
+	if pr.Out.Method == http.MethodPost && pr.Out.Body != nil && isCustomTokenSignIn(pr.Out.URL.Path) {
+		if body, err := readBody(pr.Out.Body); err == nil {
+			replaceBody(pr.Out, a.signCustomToken(body))
+		} else {
+			replaceBody(pr.Out, nil)
+		}
+	}
 }
 
 func (a *Adapter) clientAddr() netip.Addr {
