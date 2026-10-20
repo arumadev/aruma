@@ -23,3 +23,17 @@ mail:
   # smtp_allow_private: true       # let projects use an SMTP host on a loopback, private or
                                    # link-local address (a local Postfix relay); defaults to on
                                    # only when public_url is a loopback address
+rtdb:
+  enabled: false                   # Realtime Database; off until v0.2 ships
+  # domain: rtdb.example.com       # databases at https://<project>-default-rtdb.<domain>, with a
+                                   # wildcard DNS record (ADR-018); unset, ?ns= on public_url
+  # dev_open_rules: true           # every client may read and write every database, like
+                                   # Firebase's test mode; accepted only on a loopback public_url.
+                                   # Off, only admin and service credentials reach the data
+  limits:
+    message_bytes: 16777216        # one WebSocket message, so one SDK write
+    rest_write_bytes: 16777216     # one REST write (Firebase allows 256 MB)
+    string_bytes: 10485760         # one string value
+    write_bytes_per_minute: 67108864
+    connections_per_project: 10000
+    outbox_bytes: 67108864         # unsent data per connection before it is dropped

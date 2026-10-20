@@ -168,3 +168,57 @@ func TestSMTPAllowPrivateDefaultsToLoopback(t *testing.T) {
 		}
 	}
 }
+
+func TestRTDBDefaultsOff(t *testing.T) {
+	c, err := Load("", env(required()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.RTDB.Enabled || c.RTDB.DevOpenRules || c.RTDB.Domain != "" {
+		t.Errorf("RTDB must be off and locked by default: %+v", c.RTDB)
+	}
+	if c.RTDB.Limits.MessageBytes != 16<<20 || c.RTDB.Limits.OutboxBytes != 64<<20 || c.RTDB.Limits.ConnectionsPerProject != 10000 {
+		t.Errorf("RTDB limits do not follow ADR-019: %+v", c.RTDB.Limits)
+	}
+}
+
+func TestRTDBSettings(t *testing.T) {
+	m := required()
+	m["ARUMA_PUBLIC_URL"] = "http://127.0.0.1:8080"
+	m["ARUMA_RTDB_ENABLED"] = "true"
+	m["ARUMA_RTDB_DOMAIN"] = "RTDB.Example.com."
+	m["ARUMA_RTDB_DEV_OPEN_RULES"] = "true"
+	m["ARUMA_RTDB_OUTBOX_BYTES"] = "2097152"
+	m["ARUMA_RTDB_CONNECTIONS_PER_PROJECT"] = "5"
+	c, err := Load("", env(m))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !c.RTDB.Enabled || !c.RTDB.DevOpenRules || c.RTDB.Domain != "rtdb.example.com" ||
+		c.RTDB.Limits.OutboxBytes != 2<<20 || c.RTDB.Limits.ConnectionsPerProject != 5 {
+		t.Errorf("settings not applied: %+v", c.RTDB)
+	}
+}
+
+func TestRTDBRejectsBadValues(t *testing.T) {
+	cases := []map[string]string{
+		{"ARUMA_RTDB_DOMAIN": "https://rtdb.example.com"},
+		{"ARUMA_RTDB_DOMAIN": "rtdb.example.com:443"},
+		{"ARUMA_RTDB_DOMAIN": "localhost"},
+		{"ARUMA_RTDB_DOMAIN": "under_score.example.com"},
+		// Open rules on a public server would expose every project's data.
+		{"ARUMA_RTDB_DEV_OPEN_RULES": "true"},
+		{"ARUMA_RTDB_MESSAGE_BYTES": "1024"},
+		{"ARUMA_RTDB_OUTBOX_BYTES": "x"},
+		{"ARUMA_RTDB_CONNECTIONS_PER_PROJECT": "0"},
+	}
+	for _, c := range cases {
+		m := required()
+		for k, v := range c {
+			m[k] = v
+		}
+		if _, err := Load("", env(m)); err == nil {
+			t.Errorf("%v should be rejected", c)
+		}
+	}
+}

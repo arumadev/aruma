@@ -45,6 +45,7 @@ type Config struct {
 
 	Session Session `yaml:"session"`
 	Mail    Mail    `yaml:"mail"`
+	RTDB    RTDB    `yaml:"rtdb"`
 
 	masterKey      []byte
 	publicURL      *url.URL
@@ -68,6 +69,43 @@ type Mail struct {
 	SMTPAllowPrivate *bool `yaml:"smtp_allow_private"`
 }
 
+// RTDB holds the Realtime Database settings (ADR-018, ADR-019, ADR-020).
+type RTDB struct {
+	// Enabled serves Realtime Database. Off by default until v0.2 ships.
+	Enabled bool `yaml:"enabled"`
+	// Domain is the parent domain of the database hosts: a database is reached at
+	// https://<project_id>-default-rtdb.<domain> (ADR-018). Empty, databases are reached on the
+	// main host with ?ns=<project_id>-default-rtdb, which only suits local development.
+	Domain string `yaml:"domain"`
+	// DevOpenRules lets every client read and write every database, as Firebase's test-mode
+	// rules {".read": true, ".write": true} do. Off, every database keeps the locked rules a new
+	// database starts with, and only admin and service credentials reach the data (ADR-020).
+	// Until the rules engine lands there is nothing in between, so the setting is accepted
+	// only on a loopback public_url.
+	DevOpenRules bool `yaml:"dev_open_rules"`
+	// Limits are the server's capacity limits. The limits the SDKs enforce themselves (path
+	// depth 32, path length 768 bytes) are fixed: raising them would only break clients.
+	Limits RTDBLimits `yaml:"limits"`
+}
+
+// RTDBLimits are the configurable Realtime Database limits, with Firebase's published values
+// as defaults where a developer can see them (ADR-019).
+type RTDBLimits struct {
+	// MessageBytes caps one reassembled WebSocket message, and so one write from an SDK.
+	MessageBytes int64 `yaml:"message_bytes"`
+	// RESTWriteBytes caps one REST write body (Firebase allows 256 MB).
+	RESTWriteBytes int64 `yaml:"rest_write_bytes"`
+	// StringBytes caps one string value.
+	StringBytes int64 `yaml:"string_bytes"`
+	// WriteBytesPerMinute caps the bytes written to one database per minute.
+	WriteBytesPerMinute int64 `yaml:"write_bytes_per_minute"`
+	// ConnectionsPerProject caps the open connections to one project's databases.
+	ConnectionsPerProject int `yaml:"connections_per_project"`
+	// OutboxBytes caps what may wait to be sent on one connection; a slower client is
+	// disconnected, and resynchronises when it reconnects.
+	OutboxBytes int64 `yaml:"outbox_bytes"`
+}
+
 // Defaults returns a configuration with every optional field set.
 func Defaults() Config {
 	return Config{
@@ -78,6 +116,14 @@ func Defaults() Config {
 			IdleTimeout:     30 * time.Minute,
 			AbsoluteTimeout: 8 * time.Hour,
 		},
+		RTDB: RTDB{Limits: RTDBLimits{
+			MessageBytes:          16 << 20,
+			RESTWriteBytes:        16 << 20,
+			StringBytes:           10 << 20,
+			WriteBytesPerMinute:   64 << 20,
+			ConnectionsPerProject: 10_000,
+			OutboxBytes:           64 << 20,
+		}},
 	}
 }
 
@@ -127,6 +173,16 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 			*dst = b
 		}
 	}
+	integer := func(name string, dst *int64) {
+		if v := getenv(name); v != "" {
+			n, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("%s: %w", name, err))
+				return
+			}
+			*dst = n
+		}
+	}
 	duration := func(name string, dst *time.Duration) {
 		if v := getenv(name); v != "" {
 			d, err := time.ParseDuration(v)
@@ -163,6 +219,18 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 		boolean("ARUMA_MAIL_SMTP_ALLOW_PRIVATE", &b)
 		c.Mail.SMTPAllowPrivate = &b
 	}
+	boolean("ARUMA_RTDB_ENABLED", &c.RTDB.Enabled)
+	str("ARUMA_RTDB_DOMAIN", &c.RTDB.Domain)
+	boolean("ARUMA_RTDB_DEV_OPEN_RULES", &c.RTDB.DevOpenRules)
+	lim := &c.RTDB.Limits
+	integer("ARUMA_RTDB_MESSAGE_BYTES", &lim.MessageBytes)
+	integer("ARUMA_RTDB_REST_WRITE_BYTES", &lim.RESTWriteBytes)
+	integer("ARUMA_RTDB_STRING_BYTES", &lim.StringBytes)
+	integer("ARUMA_RTDB_WRITE_BYTES_PER_MINUTE", &lim.WriteBytesPerMinute)
+	integer("ARUMA_RTDB_OUTBOX_BYTES", &lim.OutboxBytes)
+	conns := int64(lim.ConnectionsPerProject)
+	integer("ARUMA_RTDB_CONNECTIONS_PER_PROJECT", &conns)
+	lim.ConnectionsPerProject = int(conns)
 	return errors.Join(errs...)
 }
 
@@ -245,12 +313,55 @@ func (c *Config) validate() error {
 		c.trustedProxies = append(c.trustedProxies, prefix.Masked())
 	}
 
+	errs = append(errs, c.validateRTDB()...)
+
 	if c.Session.IdleTimeout <= 0 || c.Session.AbsoluteTimeout <= 0 {
 		errs = append(errs, errors.New("session timeouts must be positive"))
 	} else if c.Session.IdleTimeout > c.Session.AbsoluteTimeout {
 		errs = append(errs, errors.New("session.idle_timeout must not exceed session.absolute_timeout"))
 	}
 	return errors.Join(errs...)
+}
+
+// validateRTDB checks the rtdb section. It runs after public_url is parsed.
+func (c *Config) validateRTDB() []error {
+	var errs []error
+	r := &c.RTDB
+	r.Domain = strings.TrimSuffix(strings.ToLower(strings.TrimSpace(r.Domain)), ".")
+	if r.Domain != "" && !validDomain(r.Domain) {
+		errs = append(errs, fmt.Errorf("rtdb.domain %q must be a DNS name such as rtdb.example.com, without scheme or port", r.Domain))
+	}
+	if r.DevOpenRules && (c.publicURL == nil || !c.loopback()) {
+		errs = append(errs, errors.New("rtdb.dev_open_rules lets anyone read and write every database; it is accepted only when public_url is a loopback address"))
+	}
+	l := r.Limits
+	if l.MessageBytes < 1<<20 || l.RESTWriteBytes < 1<<20 || l.StringBytes < 1<<10 || l.WriteBytesPerMinute < 1<<20 ||
+		l.ConnectionsPerProject < 1 || l.OutboxBytes < 1<<20 {
+		errs = append(errs, errors.New("rtdb.limits: byte limits must be at least 1 MiB (string_bytes 1 KiB) and connections_per_project at least 1"))
+	}
+	if l.StringBytes > l.MessageBytes {
+		errs = append(errs, errors.New("rtdb.limits.string_bytes must not exceed message_bytes"))
+	}
+	return errs
+}
+
+// validDomain reports whether d is a lower-case DNS name of at least two labels.
+func validDomain(d string) bool {
+	labels := strings.Split(d, ".")
+	if len(labels) < 2 || len(d) > 253 {
+		return false
+	}
+	for _, l := range labels {
+		if l == "" || len(l) > 63 || l[0] == '-' || l[len(l)-1] == '-' {
+			return false
+		}
+		for _, r := range l {
+			if (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-' {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // MasterKeyBytes returns the decoded master key.
