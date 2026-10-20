@@ -1,0 +1,11 @@
+{
+  "name": "aruma-experiment-rtdb-lp-browser",
+  "private": true,
+  "type": "module",
+  "description": "J again, against Aruma: the long-poll trap of the web SDK in Chromium (restart, upgrade back to WebSocket, blocked localStorage). Driven by ../rtdb-lp-browser.sh.",
+  "dependencies": {
+    "esbuild": "0.28.2",
+    "firebase": "13.0.0",
+    "playwright-core": "1.64.0"
+  }
+}
