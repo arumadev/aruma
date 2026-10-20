@@ -97,6 +97,8 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.URL.Path == "/.lp":
 		// Long polling comes with the listeners in R3 (ADR-020).
 		writeError(w, http.StatusNotFound, "Long polling is not supported by this server yet.")
+	case r.URL.Path == "/.settings/rules.json":
+		a.serveRules(w, r, target)
 	case strings.HasSuffix(r.URL.Path, ".json"):
 		// REST comes in R5.
 		writeError(w, http.StatusNotImplemented, "The REST API is not supported by this server yet.")

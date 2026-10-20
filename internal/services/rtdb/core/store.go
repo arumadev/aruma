@@ -21,6 +21,8 @@ type Store interface {
 	Seq(ctx context.Context, db DatabaseInfo) (int64, error)
 	// DeleteProject removes every database of a project and its data.
 	DeleteProject(ctx context.Context, project int64) error
+	// SetRules replaces the rules document of a database that exists (OpenDatabase).
+	SetRules(ctx context.Context, project int64, name, doc string) error
 }
 
 // DataError is a value the storage refused, such as text Postgres cannot hold (SQLSTATE

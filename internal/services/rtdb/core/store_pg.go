@@ -53,6 +53,11 @@ func (s *PGStore) DeleteProject(ctx context.Context, project int64) error {
 	return s.q.DeleteProjectDatabases(ctx, project)
 }
 
+// SetRules implements Store.
+func (s *PGStore) SetRules(ctx context.Context, project int64, name, doc string) error {
+	return s.q.SetRules(ctx, queries.SetRulesParams{ProjectNumber: project, Name: name, Rules: doc})
+}
+
 // dataError marks the errors of a value Postgres refuses (SQLSTATE class 22, data
 // exception), so the writer fails that write alone.
 func dataError(err error) error {

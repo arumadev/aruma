@@ -32,10 +32,17 @@ type memStore struct {
 	mu    sync.Mutex
 	roots map[string]*core.Node
 	seq   map[string]int64
+	rules map[string]string
 }
 
 func (s *memStore) OpenDatabase(_ context.Context, project int64, name string) (core.DatabaseInfo, error) {
-	return core.DatabaseInfo{ID: 1, Project: project, Name: name}, nil
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	rules := s.rules[name]
+	if rules == "" {
+		rules = core.LockedRules
+	}
+	return core.DatabaseInfo{ID: 1, Project: project, Name: name, Rules: rules}, nil
 }
 
 func (s *memStore) Begin(_ context.Context, db core.DatabaseInfo) (core.StoreTx, error) {
@@ -51,6 +58,16 @@ func (s *memStore) Seq(_ context.Context, db core.DatabaseInfo) (int64, error) {
 }
 
 func (s *memStore) DeleteProject(context.Context, int64) error { return nil }
+
+func (s *memStore) SetRules(_ context.Context, _ int64, name, doc string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.rules == nil {
+		s.rules = map[string]string{}
+	}
+	s.rules[name] = doc
+	return nil
+}
 
 func (s *memStore) value(name string) *core.Node {
 	s.mu.Lock()

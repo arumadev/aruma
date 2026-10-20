@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/osama300/aurma-project/internal/platform/apierr"
+	"github.com/osama300/aurma-project/internal/services/rtdb/rules"
 )
 
 // Projects resolves project ids; the control plane implements it.
@@ -132,6 +133,49 @@ func (s *Service) Open(t Target, auth Auth, o OpenOptions) (*Session, error) {
 		return nil, err
 	}
 	return sess, nil
+}
+
+// maxRulesBytes caps a rules document.
+const maxRulesBytes = 256 << 10
+
+// Rules returns a database's rules document as stored.
+func (s *Service) Rules(ctx context.Context, t Target) (string, error) {
+	info, err := s.store.OpenDatabase(ctx, t.Project, t.Name)
+	if err != nil {
+		s.log.Error("rtdb: read rules", "database", t.Name, "error", err)
+		return "", ErrUnavailable
+	}
+	return info.Rules, nil
+}
+
+// SetRules replaces a database's rules document, once it parses. The database's writer takes
+// the new rules in its order: commands queued before see the old ones. Until R4 only their
+// .indexOn has effect (queries); access stays as dev_open_rules or admin decide.
+func (s *Service) SetRules(ctx context.Context, t Target, doc string) error {
+	if len(doc) > maxRulesBytes {
+		return ErrTooBig
+	}
+	rs, err := rules.Parse([]byte(doc))
+	if err != nil {
+		return &Error{statusInvalidParameters, err.Error(), http.StatusBadRequest}
+	}
+	if _, err := s.store.OpenDatabase(ctx, t.Project, t.Name); err != nil {
+		s.log.Error("rtdb: save rules", "database", t.Name, "error", err)
+		return ErrUnavailable
+	}
+	if err := s.store.SetRules(ctx, t.Project, t.Name, doc); err != nil {
+		s.log.Error("rtdb: save rules", "database", t.Name, "error", err)
+		return ErrUnavailable
+	}
+	db, err := s.registry.acquire(t.Project, t.Name)
+	if err != nil {
+		return err
+	}
+	defer s.registry.release(db)
+	done := make(chan struct{})
+	db.submit(&command{rules: rs, done: func(Result) { close(done) }})
+	<-done
+	return nil
 }
 
 // PurgeProject deletes every database of a project, for the control plane's purge of a

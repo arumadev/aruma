@@ -86,3 +86,20 @@ func (q *Queries) GetSeq(ctx context.Context, arg GetSeqParams) (int64, error) {
 	err := row.Scan(&seq)
 	return seq, err
 }
+
+const setRules = `-- name: SetRules :exec
+UPDATE rtdb.databases SET rules = $1, updated_at = now()
+WHERE project_number = $2 AND name = $3
+`
+
+type SetRulesParams struct {
+	Rules         string
+	ProjectNumber int64
+	Name          string
+}
+
+// Rewrites a database's rules document; the database exists (EnsureDatabase).
+func (q *Queries) SetRules(ctx context.Context, arg SetRulesParams) error {
+	_, err := q.db.Exec(ctx, setRules, arg.Rules, arg.ProjectNumber, arg.Name)
+	return err
+}

@@ -70,6 +70,8 @@ type command struct {
 	revoke *Session
 	// drop removes the listens of a closing session.
 	drop *Session
+	// rules replaces the rules the writer reads .indexOn from.
+	rules *rules.Ruleset
 	// barrier does nothing: its done runs once every command queued before it has run.
 	barrier bool
 	done    func(Result)
@@ -273,6 +275,11 @@ func (d *Database) apply(ctx context.Context, batch []*command, state *batchStat
 			continue
 		case c.revoke != nil:
 			d.revokeListens(c.revoke, state)
+			continue
+		case c.rules != nil:
+			old := d.rules
+			d.rules = c.rules
+			state.undo = append(state.undo, func() { d.rules = old })
 			continue
 		case c.drop != nil:
 			for _, l := range d.listeners.of(c.drop) {

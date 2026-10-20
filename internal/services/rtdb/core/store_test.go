@@ -85,6 +85,16 @@ func (s *memStore) DeleteProject(_ context.Context, project int64) error {
 	return nil
 }
 
+func (s *memStore) SetRules(_ context.Context, _ int64, name, doc string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if db := s.dbs[name]; db != nil {
+		db.info.Rules = doc
+		return nil
+	}
+	return errors.New("no database")
+}
+
 // set changes the store's failure settings under its lock.
 func (s *memStore) set(fn func()) {
 	s.mu.Lock()
