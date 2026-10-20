@@ -47,6 +47,10 @@ var denied = map[string][]string{
 	// one core serves its API, its console screens and any later protocol. net/http itself
 	// stays allowed: core maps errors to status codes and calls Google and Apple.
 	"internal/services/*/core": {"internal/services/*/api", "internal/services/*/console", "internal/platform/httpx"},
+	// The Realtime Database protocol and rules language stand alone, tested on recorded frames
+	// and recorded cases: the standard library only (rtdb-layout.md).
+	"internal/services/rtdb/wire":  {"internal"},
+	"internal/services/rtdb/rules": {"internal"},
 }
 
 func TestDependencyRules(t *testing.T) {
@@ -171,6 +175,11 @@ func TestRulesThemselves(t *testing.T) {
 		{"internal/services/rtdb/core/rules", "internal/services/rtdb/api", false},
 		{"internal/services/rtdb/core", "internal/platform/httpx", false},
 		{"internal/services/auth/api", "internal/platform/httpx", true},
+		{"internal/services/rtdb/api", "internal/services/rtdb/wire", true},
+		{"internal/services/rtdb/core", "internal/services/rtdb/wire", true},
+		{"internal/services/rtdb/wire", "internal/services/rtdb/core", false},
+		{"internal/services/rtdb/wire", "internal/platform/log", false},
+		{"internal/services/rtdb/rules", "internal/services/rtdb/core", false},
 		// Only app wires services into the console and the admin APIs.
 		{"internal/admin/console", "internal/services/auth/core", false},
 		{"internal/admin/console", "internal/services/auth/console", false},
