@@ -1,0 +1,66 @@
+# XcodeGen spec of AuthE2E.xcodeproj. The generated project is committed, so running the tests
+# needs only Xcode; after editing this file run `xcodegen generate` here and commit both.
+#
+# AuthE2EHost is an empty app: FirebaseAuth keeps the signed-in user in the keychain, and on the
+# simulator only a signed app has one (a test bundle without a host fails with keychain error
+# 17995). FirebaseAuth and ArumaRedirect are linked into the test bundle alone, so there is one
+# copy of each; ArumaRedirect's +load runs when the bundle is loaded into the app and reads
+# ArumaURL from the app's Info.plist, as in a real app.
+name: AuthE2E
+options:
+  bundleIdPrefix: com.aruma
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    # 12.x is the newest line that builds with Xcode 16; the exact version is in Package.resolved.
+    majorVersion: 12.0.0
+  ArumaRedirect:
+    path: ../../../sdk/ios/ArumaRedirect
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    # Set by run.sh: the Aruma server, written into the app's Info.plist as ArumaURL.
+    ARUMA_URL: ""
+targets:
+  AuthE2EHost:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes: [Info.plist]
+      # Written by run.sh from the server it starts (not in git).
+      - path: .generated/GoogleService-Info.plist
+        optional: true
+        buildPhase: resources
+    settings:
+      base:
+        INFOPLIST_FILE: App/Info.plist
+        # The bundle ID of the iOS app Aruma's GoogleService-Info.plist was made for.
+        PRODUCT_BUNDLE_IDENTIFIER: com.aruma.smoke
+        GENERATE_INFOPLIST_FILE: NO
+  AuthE2ETests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: AuthE2EHost
+      - package: Firebase
+        product: FirebaseAuth
+      - package: ArumaRedirect
+        product: ArumaRedirect
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.aruma.smoke.tests
+schemes:
+  AuthE2E:
+    build:
+      targets:
+        AuthE2EHost: all
+        AuthE2ETests: [test]
+    test:
+      targets: [AuthE2ETests]
+      gatherCoverageData: false
