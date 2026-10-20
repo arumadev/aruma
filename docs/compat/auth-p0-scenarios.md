@@ -11,6 +11,10 @@
   - لا يأخذ إلا إعداد الويب من Management API، والسطر الواحد (ADR-013).
   - حارس شبكة يُفشل أي اختبار يخرج منه طلب من الجهاز.
   - كل إصدار رئيسي يعمل على خادم جديد خاص به.
+- **e2e على الأجهزة:** [test/e2e/android-auth](../../test/e2e/android-auth) و[test/e2e/ios-auth](../../test/e2e/ios-auth).
+  - Firebase الرسمي لـ Android وiOS في وضع الإنتاج، عبر مكتبتي التحويل، بحارس شبكة.
+  - تغطي W-01 إلى W-04، وW-06 وW-07 وW-09 وW-12 وW-14 وW-17.
+  - تعمل آليًا: Android أسبوعيًا في GitHub Actions، وiOS مرتين في الأسبوع في Codemagic. التفاصيل في [auth-v0.1.md](auth-v0.1.md).
 - **acceptance:** [test/acceptance](../../test/acceptance)، عبر HTTP على خادم حقيقي.
   - جداول الأخطاء: `TestAuthErrorTables`.
   - تطابق v3: `TestAuthV3Parity`.
