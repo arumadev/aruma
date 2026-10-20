@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "todos": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        ".indexOn": ["done", "createdAt"],
+        "$todoId": {
+          ".validate": "newData.hasChildren(['title', 'done'])",
+          "title": { ".validate": "newData.isString() && newData.val().length < 200" },
+          "done": { ".validate": "newData.isBoolean()" },
+          "createdAt": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      }
+    }
+  }
+}

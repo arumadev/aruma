@@ -1,0 +1,24 @@
+{
+  "rules": {
+    "status": {
+      ".read": "auth != null",
+      "$uid": {
+        // Each client writes its own presence, onDisconnect included.
+        ".write": "auth != null && auth.uid == $uid",
+        ".validate": "newData.hasChildren(['state', 'last_changed'])",
+        "state": { ".validate": "newData.val() == 'online' || newData.val() == 'offline'" },
+        "last_changed": { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+        "$other": { ".validate": false }
+      }
+    },
+    "connections": {
+      "$uid": {
+        ".read": "auth.uid == $uid",
+        "$connectionId": {
+          ".write": "auth.uid == $uid",
+          ".validate": "newData.val() === true"
+        }
+      }
+    }
+  }
+}

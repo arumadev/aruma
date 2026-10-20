@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "whitelist": {
+      ".read": false,
+      ".write": false
+    },
+    "users": {
+      "$uid": {
+        ".read": "true",
+        // The reference's example: dots are not allowed in keys, so emails are stored with %2E.
+        ".write": "auth.uid == $uid && root.child('whitelist').child(newData.child('email').val().replace('.', '%2E')).exists()",
+        "email": { ".validate": "newData.isString() && newData.val().matches(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}$/i)" }
+      }
+    }
+  }
+}

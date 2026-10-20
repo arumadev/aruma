@@ -1,0 +1,7 @@
+{
+  /* Locked mode: only the Admin SDKs get in. */
+  "rules": {
+    ".read": false,
+    ".write": false
+  }
+}

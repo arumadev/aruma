@@ -1,0 +1,22 @@
+{
+  "rules": {
+    "orders": {
+      ".indexOn": ["customer", "status"],
+      "$orderId": {
+        ".read": "auth != null && (data.child('customer').val() == auth.uid || auth.token.staff == true)",
+        // Customers create orders; staff move them along.
+        ".write": "auth != null && ((!data.exists() && newData.child('customer').val() == auth.uid) || auth.token.staff == true)",
+        ".validate": "newData.hasChildren(['customer', 'items', 'total', 'status'])",
+        "items": {
+          ".validate": "newData.hasChildren()",
+          "$itemId": {
+            ".validate": "newData.hasChildren(['sku', 'qty']) && newData.child('qty').isNumber() && newData.child('qty').val() > 0"
+          }
+        },
+        "total": { ".validate": "newData.isNumber() && newData.val() > 0" },
+        "status": { ".validate": "newData.isString() && newData.val().matches(/^(pending|paid|shipped|cancelled)$/) && (auth.token.staff == true || newData.val() == 'pending')" },
+        "note": { ".validate": "newData.isString() && newData.val().length <= 140" }
+      }
+    }
+  }
+}

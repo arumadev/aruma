@@ -1,0 +1,7 @@
+{
+  // Test mode, as the Firebase console creates it: anyone reads and writes everything.
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}

@@ -246,6 +246,27 @@ func TestEmulatorVerdicts(t *testing.T) {
 		a.agree, a.differ, a.known, 100*float64(a.agree)/float64(a.agree+a.differ+a.known))
 }
 
+// TestEmulatorApps replays the rules files of twenty app shapes (testdata/apps) with the
+// operations their clients send.
+func TestEmulatorApps(t *testing.T) {
+	gf := readGolden(t, "apps.golden.json")
+	if len(gf.Groups) != 20 {
+		t.Fatalf("%d apps, want 20", len(gf.Groups))
+	}
+	for _, g := range gf.Groups {
+		disk, err := os.ReadFile("testdata/apps/" + g.Name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if g.RulesText == nil || string(disk) != *g.RulesText {
+			t.Fatalf("%s changed since apps.golden.json was captured", g.Name)
+		}
+	}
+	a := replayGolden(t, gf, nil)
+	t.Logf("emulator apps: %d verdicts agree, %d differ (%.1f%% agreement)",
+		a.agree, a.differ, 100*float64(a.agree)/float64(a.agree+a.differ))
+}
+
 // knownLoadDifferences are rules documents Aruma loads differently from the emulator.
 var knownLoadDifferences = map[string]string{
 	".read: auth.provider == 'x'":                "auth.provider is refused (decision Q4)",

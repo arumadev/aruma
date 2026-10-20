@@ -1,0 +1,24 @@
+{
+  "rules": {
+    "config": {
+      ".read": "auth != null",
+      ".write": "auth.token.admin === true"
+    },
+    "articles": {
+      ".read": true,
+      "$id": {
+        ".write": "auth.token.role === 'editor' || auth.token.admin === true",
+        "status": {
+          // Only admins publish.
+          ".validate": "newData.val() === 'draft' || (newData.val() === 'published' && auth.token.admin === true)"
+        }
+      }
+    },
+    "billing": {
+      "$uid": {
+        ".read": "auth.uid === $uid && auth.token.subscriptionStatus == 'active'",
+        ".write": false
+      }
+    }
+  }
+}

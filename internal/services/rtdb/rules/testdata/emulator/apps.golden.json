@@ -1,0 +1,4796 @@
+{
+ "provenance": {
+  "source": "Firebase Realtime Database emulator, run locally; no Firebase project was contacted",
+  "jar": "firebase-database-emulator-v4.11.2.jar",
+  "java": "Temurin 19.0.2",
+  "captured": "2026-10-20",
+  "script": "capture.mjs",
+  "matrix": "apps.mjs",
+  "transports": "REST (GET/PUT/PATCH/DELETE .json) and protocol v5 over WebSocket (q, p, m, o, om, oc)",
+  "auth": "none, or an unsigned alg:none ID token whose claims are listed under token",
+  "verdicts": "allow, deny, or \"error <status> <message>\" for an answer that is not a rules decision"
+ },
+ "loads": [],
+ "groups": [
+  {
+   "name": "01-open-dev.rules.json",
+   "rulesText": "{\n  // Test mode, as the Firebase console creates it: anyone reads and writes everything.\n  \"rules\": {\n    \".read\": true,\n    \".write\": true\n  }\n}\n",
+   "data": {
+    "a": 1
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/a/b",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/a",
+     "value": 2,
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "delete",
+     "path": "/",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "x/y": 1,
+      "a": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    }
+   ]
+  },
+  {
+   "name": "02-locked.rules.json",
+   "rulesText": "{\n  /* Locked mode: only the Admin SDKs get in. */\n  \"rules\": {\n    \".read\": false,\n    \".write\": false\n  }\n}\n",
+   "data": {
+    "a": 1
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/a",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/a",
+     "value": 2,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "delete",
+     "path": "/a",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {},
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "onDisconnectSet",
+     "path": "/a",
+     "value": 1,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "ws": "deny"
+    }
+   ]
+  },
+  {
+   "name": "03-signed-in-only.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    // Any signed-in user, nobody else.\n    \".read\": \"auth != null\",\n    \".write\": \"auth !== null\"\n  }\n}\n",
+   "data": {
+    "a": {
+     "b": 1
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/a",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/a",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/a/b",
+     "value": 2,
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/a/b",
+     "value": 2,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "c": 1
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "delete",
+     "path": "/a",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "onDisconnectSet",
+     "path": "/p",
+     "value": 1,
+     "auth": null,
+     "ws": "deny"
+    }
+   ]
+  },
+  {
+   "name": "04-user-profiles.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"users\": {\n      \"$uid\": {\n        \".read\": \"auth != null && auth.uid == $uid\",\n        \".write\": \"auth != null && auth.uid == $uid\",\n        \".validate\": \"newData.hasChildren(['name', 'age'])\",\n        \"name\": {\n          \".validate\": \"newData.isString() && newData.val().length > 0 && newData.val().length <= 50\"\n        },\n        \"age\": {\n          \".validate\": \"newData.isNumber() && newData.val() >= 13 && newData.val() < 150\"\n        },\n        \"bio\": {\n          \".validate\": \"newData.isString() && newData.val().length < 500\"\n        },\n        \"$other\": {\n          \".validate\": false\n        }\n      }\n    },\n    \"publicProfiles\": {\n      \".read\": true,\n      \"$uid\": {\n        \".write\": \"auth.uid === $uid\",\n        \"displayName\": { \".validate\": \"newData.isString()\" }\n      }\n    }\n  }\n}\n",
+   "data": {
+    "users": {
+     "u1": {
+      "name": "Ann",
+      "age": 30
+     }
+    },
+    "publicProfiles": {
+     "u1": {
+      "displayName": "Ann"
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/users/u1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/users/u1",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/users",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/publicProfiles/u1",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/users/u2",
+     "value": {
+      "name": "Bo",
+      "age": 20
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/users/u2",
+     "value": {
+      "name": "Bo"
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/users/u2",
+     "value": {
+      "name": "Bo",
+      "age": 9
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/users/u2",
+     "value": {
+      "name": "",
+      "age": 20
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/users/u2",
+     "value": {
+      "name": "Bo",
+      "age": 20,
+      "admin": true
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/users/u1/age",
+     "value": 31,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/users/u1/age",
+     "value": "31",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "delete",
+     "path": "/users/u1/name",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "delete",
+     "path": "/users/u1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/users/u1",
+     "value": {
+      "bio": "hello"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/users/u1",
+     "value": {
+      "bio": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/users/u1/age",
+     "value": 31,
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/publicProfiles/u2/displayName",
+     "value": "Bo",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/publicProfiles/u2/displayName",
+     "value": 7,
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/publicProfiles/u2/extra",
+     "value": 7,
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    }
+   ]
+  },
+  {
+   "name": "05-chat-rooms.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"rooms\": {\n      \".read\": \"auth != null\",\n      \"$roomId\": {\n        // Only the room's creator edits the room itself.\n        \".write\": \"auth != null && (!data.exists() || data.child('owner').val() === auth.uid)\",\n        \".validate\": \"newData.hasChildren(['name', 'owner'])\",\n        \"name\": { \".validate\": \"newData.isString() && newData.val().length <= 40\" },\n        \"owner\": { \".validate\": \"newData.val() === auth.uid || newData.val() === data.val()\" }\n      }\n    },\n    \"members\": {\n      \"$roomId\": {\n        \".read\": \"auth != null && data.child(auth.uid).exists()\",\n        \"$uid\": {\n          \".write\": \"auth.uid === $uid || root.child('rooms/' + $roomId + '/owner').val() === auth.uid\",\n          \".validate\": \"newData.isBoolean()\"\n        }\n      }\n    },\n    \"messages\": {\n      \"$roomId\": {\n        \".read\": \"root.child('members/' + $roomId + '/' + auth.uid).exists()\",\n        \".indexOn\": [\"ts\"],\n        \"$msgId\": {\n          \".write\": \"!data.exists() && root.child('members').child($roomId).child(auth.uid).val() === true\",\n          \".validate\": \"newData.hasChildren(['uid', 'text', 'ts'])\",\n          \"uid\": { \".validate\": \"newData.val() === auth.uid\" },\n          \"text\": { \".validate\": \"newData.isString() && newData.val().length > 0 && newData.val().length <= 500\" },\n          \"ts\": { \".validate\": \"newData.isNumber() && newData.val() <= now\" },\n          \"$other\": { \".validate\": false }\n        }\n      }\n    }\n  }\n}\n",
+   "data": {
+    "rooms": {
+     "r1": {
+      "name": "General",
+      "owner": "u1"
+     }
+    },
+    "members": {
+     "r1": {
+      "u1": true,
+      "u2": true
+     }
+    },
+    "messages": {
+     "r1": {
+      "m1": {
+       "uid": "u1",
+       "text": "hi",
+       "ts": 1000000000000
+      }
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/rooms",
+     "auth": {
+      "uid": "u3",
+      "token": {
+       "sub": "u3",
+       "user_id": "u3",
+       "uid": "u3",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/rooms",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/members/r1",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/members/r1",
+     "auth": {
+      "uid": "u3",
+      "token": {
+       "sub": "u3",
+       "user_id": "u3",
+       "uid": "u3",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/messages/r1",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/messages/r1",
+     "auth": {
+      "uid": "u3",
+      "token": {
+       "sub": "u3",
+       "user_id": "u3",
+       "uid": "u3",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/messages/r1/m2",
+     "value": {
+      "uid": "u2",
+      "text": "hello",
+      "ts": 1000000000000
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/messages/r1/m2",
+     "value": {
+      "uid": "u1",
+      "text": "hello",
+      "ts": 1000000000000
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/messages/r1/m2",
+     "value": {
+      "uid": "u3",
+      "text": "hello",
+      "ts": 1000000000000
+     },
+     "auth": {
+      "uid": "u3",
+      "token": {
+       "sub": "u3",
+       "user_id": "u3",
+       "uid": "u3",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/messages/r1/m2",
+     "value": {
+      "uid": "u2",
+      "text": "",
+      "ts": 1000000000000
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/messages/r1/m2",
+     "value": {
+      "uid": "u2",
+      "text": "hi",
+      "ts": 4000000000000
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/messages/r1/m2",
+     "value": {
+      "uid": "u2",
+      "text": "hi",
+      "ts": 1000000000000,
+      "x": 1
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/messages/r1/m1",
+     "value": {
+      "uid": "u1",
+      "text": "edit",
+      "ts": 1000000000000
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/members/r1/u3",
+     "value": true,
+     "auth": {
+      "uid": "u3",
+      "token": {
+       "sub": "u3",
+       "user_id": "u3",
+       "uid": "u3",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/members/r1/u3",
+     "value": true,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/members/r1/u3",
+     "value": "yes",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/rooms/r2",
+     "value": {
+      "name": "New",
+      "owner": "u3"
+     },
+     "auth": {
+      "uid": "u3",
+      "token": {
+       "sub": "u3",
+       "user_id": "u3",
+       "uid": "u3",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/rooms/r1/name",
+     "value": "Renamed",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/rooms/r1/name",
+     "value": "Renamed",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/rooms/r1",
+     "value": {
+      "owner": "u2"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "delete",
+     "path": "/rooms/r1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "rooms/r3": {
+       "name": "Three",
+       "owner": "u2"
+      },
+      "members/r3/u2": true
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/messages/r1",
+     "query": {
+      "orderBy": "ts",
+      "limitToLast": 10
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    }
+   ]
+  },
+  {
+   "name": "06-todo-list.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"todos\": {\n      \"$uid\": {\n        \".read\": \"$uid === auth.uid\",\n        \".write\": \"$uid === auth.uid\",\n        \".indexOn\": [\"done\", \"createdAt\"],\n        \"$todoId\": {\n          \".validate\": \"newData.hasChildren(['title', 'done'])\",\n          \"title\": { \".validate\": \"newData.isString() && newData.val().length < 200\" },\n          \"done\": { \".validate\": \"newData.isBoolean()\" },\n          \"createdAt\": { \".validate\": \"newData.isNumber()\" },\n          \"$other\": { \".validate\": false }\n        }\n      }\n    }\n  }\n}\n",
+   "data": {
+    "todos": {
+     "u1": {
+      "t1": {
+       "title": "Milk",
+       "done": false
+      }
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/todos/u1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/todos/u1",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/todos",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/todos/u1/t2",
+     "value": {
+      "title": "Eggs",
+      "done": false,
+      "createdAt": 1000000000000
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/todos/u1/t2",
+     "value": {
+      "title": "Eggs"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/todos/u1/t2",
+     "value": {
+      "title": "Eggs",
+      "done": "no"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/todos/u1/t2",
+     "value": {
+      "title": "Eggs",
+      "done": false,
+      "color": "red"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/todos/u1/t1/done",
+     "value": true,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/todos/u1/t1/done",
+     "value": true,
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "delete",
+     "path": "/todos/u1/t1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "delete",
+     "path": "/todos/u1/t1/title",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/todos/u1",
+     "value": {
+      "t1": null,
+      "t3": {
+       "title": "Bread",
+       "done": true
+      }
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/todos/u1",
+     "query": {
+      "orderBy": "done",
+      "equalTo": false
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    }
+   ]
+  },
+  {
+   "name": "07-blog.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"admins\": {\n      \".read\": \"root.child('admins').child(auth.uid).val() == true\",\n      \".write\": false\n    },\n    \"posts\": {\n      \".read\": true,\n      \".indexOn\": [\"author\", \"publishedAt\"],\n      \"$postId\": {\n        // Authors create their posts and edit them; admins edit anything.\n        \".write\": \"auth != null && ((!data.exists() && newData.child('author').val() == auth.uid) || data.child('author').val() == auth.uid || root.child('admins/' + auth.uid).val() == true)\",\n        \".validate\": \"newData.hasChildren(['title', 'body', 'author'])\",\n        \"title\": { \".validate\": \"newData.isString() && newData.val().length >= 3\" },\n        \"body\": { \".validate\": \"newData.isString()\" },\n        \"author\": { \".validate\": \"newData.val() == data.val() || !data.exists()\" },\n        \"publishedAt\": { \".validate\": \"newData.isNumber()\" },\n        \"comments\": {\n          \"$commentId\": {\n            \".write\": \"auth != null && !data.exists() && newData.child('by').val() == auth.uid\",\n            \".validate\": \"newData.child('text').isString()\"\n          }\n        }\n      }\n    }\n  }\n}\n",
+   "data": {
+    "admins": {
+     "u3": true
+    },
+    "posts": {
+     "p1": {
+      "title": "Hello",
+      "body": "...",
+      "author": "u1",
+      "publishedAt": 1000000000000
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/posts",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/admins",
+     "auth": {
+      "uid": "u3",
+      "token": {
+       "sub": "u3",
+       "user_id": "u3",
+       "uid": "u3",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/admins",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/posts/p2",
+     "value": {
+      "title": "Mine",
+      "body": "b",
+      "author": "u2"
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/posts/p2",
+     "value": {
+      "title": "Mine",
+      "body": "b",
+      "author": "u1"
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/posts/p2",
+     "value": {
+      "title": "No",
+      "body": "b",
+      "author": "u2"
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/posts/p1/title",
+     "value": "Hello again",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/posts/p1/title",
+     "value": "Hello again",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/posts/p1/title",
+     "value": "Moderated",
+     "auth": {
+      "uid": "u3",
+      "token": {
+       "sub": "u3",
+       "user_id": "u3",
+       "uid": "u3",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/posts/p1/author",
+     "value": "u2",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "delete",
+     "path": "/posts/p1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "delete",
+     "path": "/posts/p1",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/posts/p1/comments/c1",
+     "value": {
+      "by": "u2",
+      "text": "nice"
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/posts/p1/comments/c1",
+     "value": {
+      "by": "u1",
+      "text": "nice"
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/posts/p1/comments/c1",
+     "value": {
+      "by": "u2",
+      "text": 5
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/posts",
+     "query": {
+      "orderBy": "author",
+      "equalTo": "u1"
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    }
+   ]
+  },
+  {
+   "name": "08-custom-claims.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"config\": {\n      \".read\": \"auth != null\",\n      \".write\": \"auth.token.admin === true\"\n    },\n    \"articles\": {\n      \".read\": true,\n      \"$id\": {\n        \".write\": \"auth.token.role === 'editor' || auth.token.admin === true\",\n        \"status\": {\n          // Only admins publish.\n          \".validate\": \"newData.val() === 'draft' || (newData.val() === 'published' && auth.token.admin === true)\"\n        }\n      }\n    },\n    \"billing\": {\n      \"$uid\": {\n        \".read\": \"auth.uid === $uid && auth.token.subscriptionStatus == 'active'\",\n        \".write\": false\n      }\n    }\n  }\n}\n",
+   "data": {
+    "config": {
+     "theme": "dark"
+    },
+    "articles": {
+     "a1": {
+      "status": "draft"
+     }
+    },
+    "billing": {
+     "u1": {
+      "plan": "pro"
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/config",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/config",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/config/theme",
+     "value": "light",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/config/theme",
+     "value": "light",
+     "auth": {
+      "uid": "boss",
+      "token": {
+       "sub": "boss",
+       "user_id": "boss",
+       "uid": "boss",
+       "iat": 1,
+       "exp": 99999999999,
+       "admin": true
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/articles/a1/status",
+     "value": "draft",
+     "auth": {
+      "uid": "ed",
+      "token": {
+       "sub": "ed",
+       "user_id": "ed",
+       "uid": "ed",
+       "iat": 1,
+       "exp": 99999999999,
+       "role": "editor"
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/articles/a1/status",
+     "value": "published",
+     "auth": {
+      "uid": "ed",
+      "token": {
+       "sub": "ed",
+       "user_id": "ed",
+       "uid": "ed",
+       "iat": 1,
+       "exp": 99999999999,
+       "role": "editor"
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/articles/a1/status",
+     "value": "published",
+     "auth": {
+      "uid": "boss",
+      "token": {
+       "sub": "boss",
+       "user_id": "boss",
+       "uid": "boss",
+       "iat": 1,
+       "exp": 99999999999,
+       "admin": true
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/articles/a1/status",
+     "value": "draft",
+     "auth": {
+      "uid": "x",
+      "token": {
+       "sub": "x",
+       "user_id": "x",
+       "uid": "x",
+       "iat": 1,
+       "exp": 99999999999,
+       "role": "viewer"
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/billing/u1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999,
+       "subscriptionStatus": "active"
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/billing/u1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999,
+       "subscriptionStatus": "past_due"
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/billing/u1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/billing/u1/plan",
+     "value": "free",
+     "auth": {
+      "uid": "boss",
+      "token": {
+       "sub": "boss",
+       "user_id": "boss",
+       "uid": "boss",
+       "iat": 1,
+       "exp": 99999999999,
+       "admin": true
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    }
+   ]
+  },
+  {
+   "name": "09-company-email.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    // Staff only: a verified address at the company's domain.\n    \".read\": \"auth != null && auth.token.email_verified == true && auth.token.email.matches(/.*@example\\\\.com$/)\",\n    \"staff\": {\n      \"$uid\": {\n        \".write\": \"auth.uid == $uid && auth.token.email.endsWith('@example.com')\",\n        \"email\": { \".validate\": \"newData.isString() && newData.val().toLowerCase() == auth.token.email.toLowerCase()\" }\n      }\n    },\n    \"guests\": {\n      \".read\": \"auth != null\",\n      \"$uid\": {\n        \".write\": \"auth.uid == $uid && !auth.token.email.contains('@example.com')\"\n      }\n    }\n  }\n}\n",
+   "data": {
+    "staff": {
+     "u1": {
+      "email": "ann@example.com"
+     }
+    },
+    "guests": {}
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999,
+       "email": "ann@example.com",
+       "email_verified": true
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999,
+       "email": "ann@example.com",
+       "email_verified": false
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999,
+       "email": "ann@elsewhere.com",
+       "email_verified": true
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999,
+       "email": "ann@example.computer",
+       "email_verified": true
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/guests",
+     "auth": {
+      "uid": "g",
+      "token": {
+       "sub": "g",
+       "user_id": "g",
+       "uid": "g",
+       "iat": 1,
+       "exp": 99999999999,
+       "email": "g@gmail.com"
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/staff/u1/email",
+     "value": "Ann@Example.com",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999,
+       "email": "ann@example.com"
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/staff/u1/email",
+     "value": "bob@example.com",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999,
+       "email": "ann@example.com"
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/staff/u2/email",
+     "value": "x@gmail.com",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999,
+       "email": "x@gmail.com"
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/guests/g",
+     "value": {
+      "name": "G"
+     },
+     "auth": {
+      "uid": "g",
+      "token": {
+       "sub": "g",
+       "user_id": "g",
+       "uid": "g",
+       "iat": 1,
+       "exp": 99999999999,
+       "email": "g@gmail.com"
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/guests/g",
+     "value": {
+      "name": "G"
+     },
+     "auth": {
+      "uid": "g",
+      "token": {
+       "sub": "g",
+       "user_id": "g",
+       "uid": "g",
+       "iat": 1,
+       "exp": 99999999999,
+       "email": "g@example.com"
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/guests/g",
+     "value": {
+      "name": "G"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    }
+   ]
+  },
+  {
+   "name": "10-presence.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"status\": {\n      \".read\": \"auth != null\",\n      \"$uid\": {\n        // Each client writes its own presence, onDisconnect included.\n        \".write\": \"auth != null && auth.uid == $uid\",\n        \".validate\": \"newData.hasChildren(['state', 'last_changed'])\",\n        \"state\": { \".validate\": \"newData.val() == 'online' || newData.val() == 'offline'\" },\n        \"last_changed\": { \".validate\": \"newData.isNumber() && newData.val() <= now + 60000\" },\n        \"$other\": { \".validate\": false }\n      }\n    },\n    \"connections\": {\n      \"$uid\": {\n        \".read\": \"auth.uid == $uid\",\n        \"$connectionId\": {\n          \".write\": \"auth.uid == $uid\",\n          \".validate\": \"newData.val() === true\"\n        }\n      }\n    }\n  }\n}\n",
+   "data": {
+    "status": {
+     "u1": {
+      "state": "online",
+      "last_changed": 1000000000000
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/status",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/status",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/status/u1",
+     "value": {
+      "state": "offline",
+      "last_changed": 1000000000000
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/status/u1",
+     "value": {
+      "state": "away",
+      "last_changed": 1000000000000
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/status/u1",
+     "value": {
+      "state": "offline",
+      "last_changed": 4000000000000
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/status/u1",
+     "value": {
+      "state": "offline"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/status/u2",
+     "value": {
+      "state": "online",
+      "last_changed": 1000000000000
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "onDisconnectSet",
+     "path": "/status/u1",
+     "value": {
+      "state": "offline",
+      "last_changed": 1000000000000
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "ws": "allow"
+    },
+    {
+     "op": "onDisconnectSet",
+     "path": "/status/u1",
+     "value": {
+      "state": "gone",
+      "last_changed": 1000000000000
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "ws": "deny"
+    },
+    {
+     "op": "onDisconnectSet",
+     "path": "/status/u2",
+     "value": {
+      "state": "offline",
+      "last_changed": 1000000000000
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "ws": "deny"
+    },
+    {
+     "op": "onDisconnectUpdate",
+     "path": "/status/u1",
+     "value": {
+      "state": "offline"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "ws": "allow"
+    },
+    {
+     "op": "onDisconnectUpdate",
+     "path": "/status/u1",
+     "value": {
+      "state": "zzz"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "ws": "deny"
+    },
+    {
+     "op": "onDisconnectCancel",
+     "path": "/status/u1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/connections/u1/c1",
+     "value": true,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/connections/u1/c1",
+     "value": false,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "onDisconnectSet",
+     "path": "/connections/u1/c1",
+     "value": null,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "ws": "allow"
+    },
+    {
+     "op": "delete",
+     "path": "/connections/u1/c1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/connections/u1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/connections/u1",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    }
+   ]
+  },
+  {
+   "name": "11-leaderboard.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"scores\": {\n      \".read\": true,\n      \".indexOn\": \".value\",\n      \"$uid\": {\n        // A score only goes up.\n        \".write\": \"auth.uid === $uid\",\n        \".validate\": \"newData.isNumber() && newData.val() % 1 === 0 && (!data.exists() || newData.val() >= data.val())\"\n      }\n    },\n    \"likes\": {\n      \"$postId\": {\n        \".read\": true,\n        // The counter moves by exactly one.\n        \".write\": \"auth != null\",\n        \".validate\": \"newData.isNumber() && (data.exists() ? newData.val() === data.val() + 1 || newData.val() === data.val() - 1 : newData.val() === 1)\"\n      }\n    },\n    \"stats\": {\n      \".read\": true,\n      \"average\": {\n        \".write\": \"auth != null\",\n        \".validate\": \"newData.val() === root.child('stats/sum').val() / root.child('stats/count').val()\"\n      }\n    }\n  }\n}\n",
+   "data": {
+    "scores": {
+     "u1": 10,
+     "u2": 30
+    },
+    "likes": {
+     "p1": 5
+    },
+    "stats": {
+     "sum": 10,
+     "count": 4,
+     "average": 2.5
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/scores",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/scores",
+     "query": {
+      "orderBy": "value",
+      "limitToLast": 3
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/scores/u1",
+     "value": 11,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/scores/u1",
+     "value": 9,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/scores/u1",
+     "value": 10.5,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/scores/u3",
+     "value": 1,
+     "auth": {
+      "uid": "u3",
+      "token": {
+       "sub": "u3",
+       "user_id": "u3",
+       "uid": "u3",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/scores/u2",
+     "value": 99,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/likes/p1",
+     "value": 6,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/likes/p1",
+     "value": 4,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/likes/p1",
+     "value": 7,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/likes/p2",
+     "value": 1,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/likes/p2",
+     "value": 2,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/likes/p1",
+     "value": 6,
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "delete",
+     "path": "/likes/p1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/stats/average",
+     "value": 2.5,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/stats/average",
+     "value": 3,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    }
+   ]
+  },
+  {
+   "name": "12-marketplace-queries.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"listings\": {\n      // Users list only their own listings, through a query.\n      \".read\": \"auth != null && query.orderByChild == 'owner' && query.equalTo == auth.uid\",\n      \".indexOn\": [\"owner\", \"price\"],\n      \"$listingId\": {\n        \".read\": \"data.child('public').val() === true\",\n        \".write\": \"auth != null && (!data.exists() || data.child('owner').val() == auth.uid)\",\n        \".validate\": \"newData.child('owner').val() == auth.uid && newData.child('price').isNumber()\"\n      }\n    },\n    \"feed\": {\n      // Public feed, at most 50 at a time.\n      \".read\": \"query.orderByKey && query.limitToLast <= 50\",\n      \".write\": false\n    }\n  }\n}\n",
+   "data": {
+    "listings": {
+     "l1": {
+      "owner": "u1",
+      "price": 5,
+      "public": true
+     },
+     "l2": {
+      "owner": "u2",
+      "price": 9
+     }
+    },
+    "feed": {
+     "f1": 1
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/listings",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/listings",
+     "query": {
+      "orderBy": "owner",
+      "equalTo": "u1"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/listings",
+     "query": {
+      "orderBy": "owner",
+      "equalTo": "u2"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/listings",
+     "query": {
+      "orderBy": "owner",
+      "equalTo": "u1"
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/listings/l1",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/listings/l2",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/feed",
+     "query": {
+      "orderBy": "key",
+      "limitToLast": 20
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/feed",
+     "query": {
+      "orderBy": "key",
+      "limitToLast": 100
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/feed",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/listings/l3",
+     "value": {
+      "owner": "u2",
+      "price": 3
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/listings/l3",
+     "value": {
+      "owner": "u1",
+      "price": 3
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/listings/l3",
+     "value": {
+      "owner": "u2",
+      "price": "free"
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/listings/l1/price",
+     "value": 6,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/listings/l1/price",
+     "value": 6,
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "delete",
+     "path": "/listings/l1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    }
+   ]
+  },
+  {
+   "name": "13-email-whitelist.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"whitelist\": {\n      \".read\": false,\n      \".write\": false\n    },\n    \"users\": {\n      \"$uid\": {\n        \".read\": \"true\",\n        // The reference's example: dots are not allowed in keys, so emails are stored with %2E.\n        \".write\": \"auth.uid == $uid && root.child('whitelist').child(newData.child('email').val().replace('.', '%2E')).exists()\",\n        \"email\": { \".validate\": \"newData.isString() && newData.val().matches(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\\\.[A-Z]{2,4}$/i)\" }\n      }\n    }\n  }\n}\n",
+   "data": {
+    "whitelist": {
+     "fred@gmail%2Ecom": true
+    }
+   },
+   "checks": [
+    {
+     "op": "set",
+     "path": "/users/fred",
+     "value": {
+      "email": "fred@gmail.com"
+     },
+     "auth": {
+      "uid": "fred",
+      "token": {
+       "sub": "fred",
+       "user_id": "fred",
+       "uid": "fred",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/users/fred",
+     "value": {
+      "email": "barney@aol.com"
+     },
+     "auth": {
+      "uid": "fred",
+      "token": {
+       "sub": "fred",
+       "user_id": "fred",
+       "uid": "fred",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/users/fred",
+     "value": {
+      "email": "fred@gmail.com"
+     },
+     "auth": {
+      "uid": "other",
+      "token": {
+       "sub": "other",
+       "user_id": "other",
+       "uid": "other",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/users/fred",
+     "value": {
+      "name": "no email"
+     },
+     "auth": {
+      "uid": "fred",
+      "token": {
+       "sub": "fred",
+       "user_id": "fred",
+       "uid": "fred",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/users/fred",
+     "value": {
+      "email": "fred@gmail%2Ecom"
+     },
+     "auth": {
+      "uid": "fred",
+      "token": {
+       "sub": "fred",
+       "user_id": "fred",
+       "uid": "fred",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/users/fred",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/whitelist",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    }
+   ]
+  },
+  {
+   "name": "14-tic-tac-toe.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"games\": {\n      \"$gameId\": {\n        \".read\": \"auth != null && (data.child('players/x').val() == auth.uid || data.child('players/o').val() == auth.uid)\",\n        \"players\": {\n          \".write\": \"auth != null && !data.exists()\",\n          \".validate\": \"newData.hasChildren(['x', 'o']) && newData.child('x').val() != newData.child('o').val()\"\n        },\n        \"turn\": {\n          // Players alternate, and only the player whose turn it was may hand it over.\n          \".write\": \"data.parent().child('players').child(data.val()).val() == auth.uid\",\n          \".validate\": \"newData.val() == (data.val() == 'x' ? 'o' : 'x')\"\n        },\n        \"board\": {\n          \"$cell\": {\n            \".write\": \"!data.exists() && root.child('games/' + $gameId + '/players/' + newData.val()).val() == auth.uid && newData.parent().parent().child('turn').val() == newData.val()\",\n            \".validate\": \"newData.val() == 'x' || newData.val() == 'o'\"\n          }\n        },\n        \"moves\": {\n          \".write\": \"auth != null\",\n          \".validate\": \"newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1 && newData.val() <= 9\"\n        }\n      }\n    }\n  }\n}\n",
+   "data": {
+    "games": {
+     "g1": {
+      "players": {
+       "x": "u1",
+       "o": "u2"
+      },
+      "turn": "x",
+      "board": {},
+      "moves": 0
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/games/g1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/games/g1",
+     "auth": {
+      "uid": "u3",
+      "token": {
+       "sub": "u3",
+       "user_id": "u3",
+       "uid": "u3",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/games/g2/players",
+     "value": {
+      "x": "u1",
+      "o": "u3"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/games/g2/players",
+     "value": {
+      "x": "u1",
+      "o": "u1"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/games/g1/players",
+     "value": {
+      "x": "u3",
+      "o": "u2"
+     },
+     "auth": {
+      "uid": "u3",
+      "token": {
+       "sub": "u3",
+       "user_id": "u3",
+       "uid": "u3",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/games/g1/turn",
+     "value": "o",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/games/g1/turn",
+     "value": "o",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/games/g1/turn",
+     "value": "x",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/games/g1/board/c5",
+     "value": "x",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/games/g1/board/c5",
+     "value": "o",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/games/g1/board/c5",
+     "value": "x",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/games/g1/moves",
+     "value": 1,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/games/g1/moves",
+     "value": 2,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/games/g1",
+     "value": {
+      "board/c1": "x",
+      "turn": "o",
+      "moves": 1
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    }
+   ]
+  },
+  {
+   "name": "15-uploads-metadata.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"uploads\": {\n      \"$uid\": {\n        \".read\": \"auth.uid === $uid\",\n        \"$fileId\": {\n          \".write\": \"auth.uid === $uid\",\n          \".validate\": \"newData.hasChildren(['name', 'size', 'contentType'])\",\n          \"name\": { \".validate\": \"newData.isString() && newData.val().matches(/^[\\\\w\\\\-. ]+\\\\.(png|jpe?g|gif)$/i)\" },\n          \"size\": { \".validate\": \"newData.isNumber() && newData.val() > 0 && newData.val() < 5 * 1024 * 1024\" },\n          \"contentType\": { \".validate\": \"newData.isString() && newData.val().beginsWith('image/')\" },\n          \"path\": { \".validate\": \"newData.val() == 'images/' + $uid + '/' + $fileId\" },\n          \"$other\": { \".validate\": false }\n        }\n      }\n    }\n  }\n}\n",
+   "data": {
+    "uploads": {
+     "u1": {
+      "f1": {
+       "name": "cat.png",
+       "size": 100,
+       "contentType": "image/png"
+      }
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/uploads/u1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/uploads/u1",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/uploads/u1/f2",
+     "value": {
+      "name": "my dog.JPG",
+      "size": 2048,
+      "contentType": "image/jpeg"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/uploads/u1/f2",
+     "value": {
+      "name": "evil.exe",
+      "size": 2048,
+      "contentType": "image/jpeg"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/uploads/u1/f2",
+     "value": {
+      "name": "big.png",
+      "size": 6291456,
+      "contentType": "image/png"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/uploads/u1/f2",
+     "value": {
+      "name": "doc.png",
+      "size": 10,
+      "contentType": "application/pdf"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/uploads/u1/f2",
+     "value": {
+      "name": "a.gif",
+      "size": 10,
+      "contentType": "image/gif",
+      "path": "images/u1/f2"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/uploads/u1/f2",
+     "value": {
+      "name": "a.gif",
+      "size": 10,
+      "contentType": "image/gif",
+      "path": "images/u2/f2"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/uploads/u1/f2",
+     "value": {
+      "name": "a.gif",
+      "size": 10,
+      "contentType": "image/gif",
+      "owner": "u1"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/uploads/u1/f1/size",
+     "value": 0,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "delete",
+     "path": "/uploads/u1/f1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/uploads/u1/f2",
+     "value": {
+      "name": "x.png",
+      "size": 1,
+      "contentType": "image/png"
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    }
+   ]
+  },
+  {
+   "name": "16-multi-tenant.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"tenants\": {\n      \"$tenantId\": {\n        // Members of a tenant, signed in with a real account, see and edit its data.\n        \".read\": \"auth.token.tenantId === $tenantId\",\n        \".write\": \"auth.token.tenantId === $tenantId && auth.token.firebase.sign_in_provider != 'anonymous'\",\n        \"settings\": {\n          \".write\": \"auth.token.tenantId === $tenantId && auth.token.roleMap[$tenantId] === 'owner'\"\n        },\n        \"projects\": {\n          \"$projectId\": {\n            \".validate\": \"newData.child('tenant').val() === $tenantId\"\n          }\n        }\n      }\n    }\n  }\n}\n",
+   "data": {
+    "tenants": {
+     "t1": {
+      "settings": {
+       "plan": "pro"
+      },
+      "projects": {
+       "p1": {
+        "tenant": "t1",
+        "name": "One"
+       }
+      }
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/tenants/t1",
+     "auth": {
+      "uid": "a",
+      "token": {
+       "sub": "a",
+       "user_id": "a",
+       "uid": "a",
+       "iat": 1,
+       "exp": 99999999999,
+       "tenantId": "t1"
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/tenants/t1",
+     "auth": {
+      "uid": "b",
+      "token": {
+       "sub": "b",
+       "user_id": "b",
+       "uid": "b",
+       "iat": 1,
+       "exp": 99999999999,
+       "tenantId": "t2"
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/tenants/t1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/tenants/t1/projects/p2",
+     "value": {
+      "tenant": "t1",
+      "name": "Two"
+     },
+     "auth": {
+      "uid": "a",
+      "token": {
+       "sub": "a",
+       "user_id": "a",
+       "uid": "a",
+       "iat": 1,
+       "exp": 99999999999,
+       "tenantId": "t1",
+       "firebase": {
+        "sign_in_provider": "password"
+       }
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/tenants/t1/projects/p2",
+     "value": {
+      "tenant": "t1",
+      "name": "Two"
+     },
+     "auth": {
+      "uid": "a",
+      "token": {
+       "sub": "a",
+       "user_id": "a",
+       "uid": "a",
+       "iat": 1,
+       "exp": 99999999999,
+       "tenantId": "t1",
+       "firebase": {
+        "sign_in_provider": "anonymous"
+       }
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/tenants/t1/projects/p2",
+     "value": {
+      "tenant": "t2",
+      "name": "Two"
+     },
+     "auth": {
+      "uid": "a",
+      "token": {
+       "sub": "a",
+       "user_id": "a",
+       "uid": "a",
+       "iat": 1,
+       "exp": 99999999999,
+       "tenantId": "t1",
+       "firebase": {
+        "sign_in_provider": "password"
+       }
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/tenants/t1/projects/p2",
+     "value": {
+      "tenant": "t1",
+      "name": "Two"
+     },
+     "auth": {
+      "uid": "a",
+      "token": {
+       "sub": "a",
+       "user_id": "a",
+       "uid": "a",
+       "iat": 1,
+       "exp": 99999999999,
+       "tenantId": "t1"
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/tenants/t1/settings/plan",
+     "value": "free",
+     "auth": {
+      "uid": "a",
+      "token": {
+       "sub": "a",
+       "user_id": "a",
+       "uid": "a",
+       "iat": 1,
+       "exp": 99999999999,
+       "tenantId": "t1",
+       "roleMap": {
+        "t1": "owner"
+       },
+       "firebase": {
+        "sign_in_provider": "anonymous"
+       }
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/tenants/t1/settings/plan",
+     "value": "free",
+     "auth": {
+      "uid": "a",
+      "token": {
+       "sub": "a",
+       "user_id": "a",
+       "uid": "a",
+       "iat": 1,
+       "exp": 99999999999,
+       "tenantId": "t1",
+       "roleMap": {
+        "t1": "member"
+       }
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/tenants/t1/settings/plan",
+     "value": "free",
+     "auth": {
+      "uid": "a",
+      "token": {
+       "sub": "a",
+       "user_id": "a",
+       "uid": "a",
+       "iat": 1,
+       "exp": 99999999999,
+       "tenantId": "t1"
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    }
+   ]
+  },
+  {
+   "name": "17-social-graph.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"users\": {\n      \".read\": \"auth != null\",\n      \"$uid\": {\n        \".write\": \"auth.uid == $uid\"\n      }\n    },\n    \"friends\": {\n      \"$uid\": {\n        \".read\": \"auth.uid == $uid\",\n        \"$friendId\": {\n          // Both ends of a friendship are written together, in one update.\n          \".write\": \"auth.uid == $uid || auth.uid == $friendId\",\n          \".validate\": \"root.child('users/' + $friendId).exists() && $friendId != $uid && (!newData.exists() || newData.parent().parent().child($friendId).child($uid).exists())\"\n        }\n      }\n    },\n    \"requests\": {\n      \"$to\": {\n        \"$from\": {\n          \".read\": \"auth.uid == $to || auth.uid == $from\",\n          \".write\": \"auth.uid == $from && !root.child('friends/' + $to + '/' + $from).exists()\",\n          \".validate\": \"newData.isNumber()\"\n        }\n      }\n    }\n  }\n}\n",
+   "data": {
+    "users": {
+     "u1": {
+      "name": "A"
+     },
+     "u2": {
+      "name": "B"
+     }
+    },
+    "friends": {
+     "u1": {}
+    },
+    "requests": {
+     "u2": {
+      "u1": 1000000000000
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/users",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/friends/u1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/friends/u1",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/requests/u2/u1",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/requests/u2/u1",
+     "auth": {
+      "uid": "u3",
+      "token": {
+       "sub": "u3",
+       "user_id": "u3",
+       "uid": "u3",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "friends/u1/u2": true,
+      "friends/u2/u1": true,
+      "requests/u2/u1": null
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "friends/u1/u2": true
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "friends/u1/u3": true,
+      "friends/u3/u1": true
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "friends/u1/u1": true
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/requests/u1/u3",
+     "value": 1000000000000,
+     "auth": {
+      "uid": "u3",
+      "token": {
+       "sub": "u3",
+       "user_id": "u3",
+       "uid": "u3",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/requests/u1/u2",
+     "value": "hi",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/users/u1/name",
+     "value": "Z",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/users/u1/name",
+     "value": "Z",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    }
+   ]
+  },
+  {
+   "name": "18-orders.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"orders\": {\n      \".indexOn\": [\"customer\", \"status\"],\n      \"$orderId\": {\n        \".read\": \"auth != null && (data.child('customer').val() == auth.uid || auth.token.staff == true)\",\n        // Customers create orders; staff move them along.\n        \".write\": \"auth != null && ((!data.exists() && newData.child('customer').val() == auth.uid) || auth.token.staff == true)\",\n        \".validate\": \"newData.hasChildren(['customer', 'items', 'total', 'status'])\",\n        \"items\": {\n          \".validate\": \"newData.hasChildren()\",\n          \"$itemId\": {\n            \".validate\": \"newData.hasChildren(['sku', 'qty']) && newData.child('qty').isNumber() && newData.child('qty').val() > 0\"\n          }\n        },\n        \"total\": { \".validate\": \"newData.isNumber() && newData.val() > 0\" },\n        \"status\": { \".validate\": \"newData.isString() && newData.val().matches(/^(pending|paid|shipped|cancelled)$/) && (auth.token.staff == true || newData.val() == 'pending')\" },\n        \"note\": { \".validate\": \"newData.isString() && newData.val().length <= 140\" }\n      }\n    }\n  }\n}\n",
+   "data": {
+    "orders": {
+     "o1": {
+      "customer": "u1",
+      "items": {
+       "i1": {
+        "sku": "A",
+        "qty": 1
+       }
+      },
+      "total": 9.5,
+      "status": "pending"
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/orders/o1",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/orders/o1",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "read",
+     "path": "/orders/o1",
+     "auth": {
+      "uid": "s",
+      "token": {
+       "sub": "s",
+       "user_id": "s",
+       "uid": "s",
+       "iat": 1,
+       "exp": 99999999999,
+       "staff": true
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/orders",
+     "query": {
+      "orderBy": "status",
+      "equalTo": "paid"
+     },
+     "auth": {
+      "uid": "s",
+      "token": {
+       "sub": "s",
+       "user_id": "s",
+       "uid": "s",
+       "iat": 1,
+       "exp": 99999999999,
+       "staff": true
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/orders/o2",
+     "value": {
+      "customer": "u2",
+      "items": {
+       "i1": {
+        "sku": "B",
+        "qty": 2
+       }
+      },
+      "total": 3,
+      "status": "pending"
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/orders/o2",
+     "value": {
+      "customer": "u2",
+      "items": {
+       "i1": {
+        "sku": "B",
+        "qty": 0
+       }
+      },
+      "total": 3,
+      "status": "pending"
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/orders/o2",
+     "value": {
+      "customer": "u2",
+      "items": {},
+      "total": 3,
+      "status": "pending"
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/orders/o2",
+     "value": {
+      "customer": "u2",
+      "items": {
+       "i1": {
+        "sku": "B",
+        "qty": 2
+       }
+      },
+      "total": 3,
+      "status": "shipped"
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/orders/o2",
+     "value": {
+      "customer": "u1",
+      "items": {
+       "i1": {
+        "sku": "B",
+        "qty": 2
+       }
+      },
+      "total": 3,
+      "status": "pending"
+     },
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/orders/o1/status",
+     "value": "paid",
+     "auth": {
+      "uid": "s",
+      "token": {
+       "sub": "s",
+       "user_id": "s",
+       "uid": "s",
+       "iat": 1,
+       "exp": 99999999999,
+       "staff": true
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/orders/o1/status",
+     "value": "lost",
+     "auth": {
+      "uid": "s",
+      "token": {
+       "sub": "s",
+       "user_id": "s",
+       "uid": "s",
+       "iat": 1,
+       "exp": 99999999999,
+       "staff": true
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/orders/o1/status",
+     "value": "paid",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/orders/o1/note",
+     "value": "leave at door",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/orders/o1/note",
+     "value": "leave at door",
+     "auth": {
+      "uid": "s",
+      "token": {
+       "sub": "s",
+       "user_id": "s",
+       "uid": "s",
+       "iat": 1,
+       "exp": 99999999999,
+       "staff": true
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "delete",
+     "path": "/orders/o1/items/i1",
+     "auth": {
+      "uid": "s",
+      "token": {
+       "sub": "s",
+       "user_id": "s",
+       "uid": "s",
+       "iat": 1,
+       "exp": 99999999999,
+       "staff": true
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    }
+   ]
+  },
+  {
+   "name": "19-polls.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"polls\": {\n      \".read\": true,\n      \"$pollId\": {\n        \".write\": \"auth != null && !data.exists()\",\n        \".validate\": \"newData.hasChildren(['question', 'closesAt']) && newData.child('closesAt').val() > now\"\n      }\n    },\n    \"votes\": {\n      \"$pollId\": {\n        \".read\": true,\n        \"$uid\": {\n          // One vote per user, while the poll is open; a vote cannot be changed.\n          \".write\": \"auth != null && auth.uid == $uid && !data.exists() && root.child('polls').child($pollId).child('closesAt').val() > now\",\n          \".validate\": \"newData.isString() && root.child('polls/' + $pollId + '/options/' + newData.val()).exists()\"\n        }\n      }\n    }\n  }\n}\n",
+   "data": {
+    "polls": {
+     "open": {
+      "question": "Q?",
+      "closesAt": 4000000000000,
+      "options": {
+       "a": true,
+       "b": true
+      }
+     },
+     "closed": {
+      "question": "Old?",
+      "closesAt": 1000000000000,
+      "options": {
+       "a": true
+      }
+     }
+    },
+    "votes": {
+     "open": {
+      "u2": "a"
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/polls",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/votes/open",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/votes/open/u1",
+     "value": "a",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/votes/open/u1",
+     "value": "c",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/votes/open/u1",
+     "value": "a",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/votes/open/u2",
+     "value": "b",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/votes/closed/u1",
+     "value": "a",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "delete",
+     "path": "/votes/open/u2",
+     "auth": {
+      "uid": "u2",
+      "token": {
+       "sub": "u2",
+       "user_id": "u2",
+       "uid": "u2",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/polls/new",
+     "value": {
+      "question": "New?",
+      "closesAt": 4000000000000
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/polls/new",
+     "value": {
+      "question": "New?",
+      "closesAt": 1000000000000
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/polls/open/question",
+     "value": "Changed?",
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    }
+   ]
+  },
+  {
+   "name": "20-bolt-generated.rules.json",
+   "rulesText": "{\n  \"rules\": {\n    \"products\": {\n      \"$key1\": {\n        \".validate\": \"newData.hasChildren(['name', 'price', 'tags'])\",\n        \"name\": {\n          \".validate\": \"newData.isString() && newData.val().length > 0 && newData.val().length <= 100\"\n        },\n        \"price\": {\n          \".validate\": \"newData.isNumber() && newData.val() >= 0\"\n        },\n        \"tags\": {\n          \"$key2\": {\n            \".validate\": \"newData.isString() && newData.val().length <= 20\"\n          },\n          \".validate\": \"newData.hasChildren()\"\n        },\n        \"discount\": {\n          \".validate\": \"(newData.isNumber() && newData.val() >= 0 && newData.val() <= 100) || newData.isString() && newData.val().endsWith('%')\"\n        },\n        \"$other\": {\n          \".validate\": \"false\"\n        },\n        \".read\": \"true\",\n        \".write\": \"auth != null && auth.uid != null && (auth.token.admin == true || data.val() == null)\"\n      }\n    }\n  }\n}\n",
+   "data": {
+    "products": {
+     "p1": {
+      "name": "Lamp",
+      "price": 20,
+      "tags": {
+       "t1": "home"
+      }
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "read",
+     "path": "/products/p1",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "read",
+     "path": "/products",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/products/p2",
+     "value": {
+      "name": "Desk",
+      "price": 100,
+      "tags": {
+       "t1": "office"
+      }
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/products/p2",
+     "value": {
+      "name": "Desk",
+      "price": 100
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/products/p2",
+     "value": {
+      "name": "Desk",
+      "price": -1,
+      "tags": {
+       "t1": "office"
+      }
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/products/p2",
+     "value": {
+      "name": "Desk",
+      "price": 100,
+      "tags": {
+       "t1": "office"
+      },
+      "discount": 10
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/products/p2",
+     "value": {
+      "name": "Desk",
+      "price": 100,
+      "tags": {
+       "t1": "office"
+      },
+      "discount": "15%"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/products/p2",
+     "value": {
+      "name": "Desk",
+      "price": 100,
+      "tags": {
+       "t1": "office"
+      },
+      "discount": true
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/products/p2",
+     "value": {
+      "name": "Desk",
+      "price": 100,
+      "tags": {
+       "t1": "office"
+      },
+      "color": "red"
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/products/p2",
+     "value": {
+      "name": "Desk",
+      "price": 100,
+      "tags": {
+       "t1": "a-very-long-tag-name-indeed"
+      }
+     },
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/products/p1/price",
+     "value": 25,
+     "auth": {
+      "uid": "u1",
+      "token": {
+       "sub": "u1",
+       "user_id": "u1",
+       "uid": "u1",
+       "iat": 1,
+       "exp": 99999999999
+      }
+     },
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/products/p1/price",
+     "value": 25,
+     "auth": {
+      "uid": "boss",
+      "token": {
+       "sub": "boss",
+       "user_id": "boss",
+       "uid": "boss",
+       "iat": 1,
+       "exp": 99999999999,
+       "admin": true
+      }
+     },
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/products/p2",
+     "value": {
+      "name": "Desk",
+      "price": 100,
+      "tags": {
+       "t1": "office"
+      }
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    }
+   ]
+  }
+ ]
+}

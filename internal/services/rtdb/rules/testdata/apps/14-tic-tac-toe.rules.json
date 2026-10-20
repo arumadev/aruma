@@ -1,0 +1,28 @@
+{
+  "rules": {
+    "games": {
+      "$gameId": {
+        ".read": "auth != null && (data.child('players/x').val() == auth.uid || data.child('players/o').val() == auth.uid)",
+        "players": {
+          ".write": "auth != null && !data.exists()",
+          ".validate": "newData.hasChildren(['x', 'o']) && newData.child('x').val() != newData.child('o').val()"
+        },
+        "turn": {
+          // Players alternate, and only the player whose turn it was may hand it over.
+          ".write": "data.parent().child('players').child(data.val()).val() == auth.uid",
+          ".validate": "newData.val() == (data.val() == 'x' ? 'o' : 'x')"
+        },
+        "board": {
+          "$cell": {
+            ".write": "!data.exists() && root.child('games/' + $gameId + '/players/' + newData.val()).val() == auth.uid && newData.parent().parent().child('turn').val() == newData.val()",
+            ".validate": "newData.val() == 'x' || newData.val() == 'o'"
+          }
+        },
+        "moves": {
+          ".write": "auth != null",
+          ".validate": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1 && newData.val() <= 9"
+        }
+      }
+    }
+  }
+}
