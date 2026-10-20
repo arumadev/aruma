@@ -7,7 +7,9 @@
 //
 // With -serve the server keeps running (for the firebase CLI experiments and the web Auth
 // end-to-end tests) and its URL and a CLI token are printed as shell exports; Ctrl-C stops it
-// and drops the database. -anonymous turns on anonymous sign-in for the project.
+// and drops the database. -anonymous turns on anonymous sign-in for the project. -addr picks the
+// listen address (a device test maps that port into an emulator) and -db-prefix the name of the
+// throwaway database.
 package main
 
 import (
@@ -29,6 +31,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"syscall"
 
 	"github.com/jackc/pgx/v5"
@@ -75,15 +78,21 @@ func main() {
 	out := flag.String("out", "test/smoke/.generated", "directory to write the files to")
 	serve := flag.Bool("serve", false, "keep the server running after generating")
 	anonymous := flag.Bool("anonymous", false, "enable anonymous sign-in for the project")
+	addr := flag.String("addr", "127.0.0.1:0", "address to listen on (port 0: any free port)")
+	dbPrefix := flag.String("db-prefix", "aruma_smoke_", "prefix of the throwaway database's name")
 	flag.Parse()
-	if err := run(*out, *serve, *anonymous); err != nil {
+	if err := run(*out, *addr, *dbPrefix, *serve, *anonymous); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(out string, serve, anonymous bool) error {
+func run(out, addr, dbPrefix string, serve, anonymous bool) error {
 	ctx := context.Background()
-	dbName := "aruma_smoke_" + randomHex(4)
+	// The name goes into CREATE DATABASE unquoted.
+	if !regexp.MustCompile(`^[a-z_][a-z0-9_]*$`).MatchString(dbPrefix) {
+		return fmt.Errorf("-db-prefix %q: use lower-case letters, digits and _", dbPrefix)
+	}
+	dbName := dbPrefix + randomHex(4)
 	admin, err := pgx.Connect(ctx, storetest.AdminURL())
 	if err != nil {
 		return fmt.Errorf("connect to Postgres (ARUMA_TEST_DATABASE_URL): %w", err)
@@ -107,7 +116,7 @@ func run(out string, serve, anonymous bool) error {
 	}
 	defer pool.Close()
 
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
 	}
