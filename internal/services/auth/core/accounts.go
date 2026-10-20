@@ -103,7 +103,8 @@ func (s *Service) Update(ctx context.Context, p Project, in UpdateInput) (*Updat
 			return err
 		}
 		newEmail, verified := raw.Email, raw.EmailVerified
-		if in.Email != nil && email != str(raw.Email) {
+		emailChanged := in.Email != nil && email != str(raw.Email)
+		if emailChanged {
 			newEmail, verified = &email, false
 		}
 		raw, err = q.UpdateUser(ctx, queries.UpdateUserParams{
@@ -137,6 +138,13 @@ func (s *Service) Update(ctx context.Context, p Project, in UpdateInput) (*Updat
 		}
 		if sensitive {
 			if raw.TokensValidAfter, err = q.RevokeUserTokens(ctx, queries.RevokeUserTokensParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: u.UID}); err != nil {
+				return err
+			}
+			retire := codesOfPassword
+			if emailChanged {
+				retire = codesOfAddress
+			}
+			if err := retireCodes(ctx, q, p, u.UID, retire); err != nil {
 				return err
 			}
 		}

@@ -82,3 +82,68 @@ func TestAuthGoogleEmailTrustedOnlyWhereGoogleHostsIt(t *testing.T) {
 		t.Fatalf("bob verified=%v err=%v", verified, err)
 	}
 }
+
+// S-3: a recovery link undoes the change it was sent for, and only while that change is the
+// account's latest: after A→B→C the link sent to A cannot bring A back, nor can it once the
+// link sent to B has restored B. A change of address retires the codes of the old address, and
+// a change of password the open reset links.
+func TestAuthRecoverCodeUndoesOnlyTheLatestChange(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.authProject("chat-app")
+	up := p.signUp("a@example.com", "secret1")
+	code := func(to, kind string) string {
+		t.Helper()
+		m := p.lastMail(to)
+		assertEqual(t, "mail type", m["type"], kind)
+		_, q := linkCode(t, m["link"].(string))
+		return q.Get("oobCode")
+	}
+	apply := func(c string) *Response {
+		t.Helper()
+		return p.call(itk+"accounts:update", map[string]any{"oobCode": c})
+	}
+	change := func(idToken, to string) *Response {
+		t.Helper()
+		p.ageSessions()
+		ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "VERIFY_AND_CHANGE_EMAIL", "idToken": idToken, "newEmail": to}))
+		ok(t, apply(code(to, "VERIFY_AND_CHANGE_EMAIL")))
+		return ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": to, "password": "secret1", "returnSecureToken": true}))
+	}
+
+	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "a@example.com"}))
+	resetA := code("a@example.com", "PASSWORD_RESET")
+	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "VERIFY_EMAIL", "idToken": up.str("idToken")}))
+	verifyA := code("a@example.com", "VERIFY_EMAIL")
+
+	b := change(up.str("idToken"), "b@example.com")
+	recoverA := code("a@example.com", "RECOVER_EMAIL")
+	c := change(b.str("idToken"), "c@example.com")
+	recoverB := code("b@example.com", "RECOVER_EMAIL")
+	p.ageSessions()
+	ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": c.str("idToken"), "password": "secret2"}))
+
+	// The link sent to A is for the change A→B, which is no longer the latest.
+	authErr(t, p.call(itk+"accounts:resetPassword", map[string]any{"oobCode": recoverA}), "INVALID_OOB_CODE")
+	authErr(t, apply(recoverA), "INVALID_OOB_CODE")
+	// The link sent to B undoes B→C.
+	restored := ok(t, apply(recoverB))
+	assertEqual(t, "restored", restored.str("email"), "b@example.com")
+	// The account is at B again, but A's link was retired by the change it lost to.
+	authErr(t, apply(recoverA), "INVALID_OOB_CODE")
+	// So were the old address's other links, which would otherwise wake up if A came back.
+	authErr(t, p.call(itk+"accounts:resetPassword", map[string]any{"oobCode": resetA, "newPassword": "attacker1"}), "INVALID_OOB_CODE")
+	authErr(t, apply(verifyA), "INVALID_OOB_CODE")
+	var open int
+	if err := e.Pool.QueryRow(context.Background(), `SELECT count(*) FROM auth.oob_codes WHERE used_at IS NULL`).Scan(&open); err != nil || open != 0 {
+		t.Fatalf("open codes after the recovery: %d %v", open, err)
+	}
+
+	// A password change retires the reset links that were open before it.
+	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "b@example.com"}))
+	resetB := code("b@example.com", "PASSWORD_RESET")
+	p.ageSessions()
+	in := ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "b@example.com", "password": "secret2", "returnSecureToken": true}))
+	ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": in.str("idToken"), "password": "secret3"}))
+	authErr(t, p.call(itk+"accounts:resetPassword", map[string]any{"oobCode": resetB, "newPassword": "attacker1"}), "INVALID_OOB_CODE")
+	ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "b@example.com", "password": "secret3"}))
+}

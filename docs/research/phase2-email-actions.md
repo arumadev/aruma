@@ -17,10 +17,16 @@ Additional sources:
   stored in `auth.oob_codes`; the code exists only in the link (tamper scenario "dump of DB").
 - **Single use.** Using a code marks it used in the same transaction as its effect
   (`UPDATE … WHERE used_at IS NULL`), so a concurrent second use finds nothing. Using a code
-  also retires the user's other open codes of the same type.
+  also retires the user's other open codes of the same type. Any change of address (a link, a
+  recovery, `accounts:update`, the Admin API) retires every open code of the user, so none of
+  them wakes up if the old address comes back; a change of password retires the open reset
+  links but not recovery links, which are the previous owner's way back when whoever changed
+  the address changed the password too (security review v0.1, S-3).
 - **Fit.** A code acts on the user it was issued for, and refuses (INVALID_OOB_CODE) if that
-  user was deleted or recreated, or if the address changed since (except for recovery, whose
-  purpose is to undo changes). A disabled user answers USER_DISABLED and leaves the code unused.
+  user was deleted or recreated, or if the address changed since. A recovery code fits while the
+  account still has the address that replaced the restored one (its `newEmail`): it undoes one
+  change, and only while that change is the latest. After A→B→C the link sent to A is dead; the
+  one sent to B works. A disabled user answers USER_DISABLED and leaves the code unused.
 - **Lifetimes.** No official figure exists ([phase2-identity-toolkit.md] §6, §9.7):
   `PASSWORD_RESET` 1 hour (it grants a credential), `VERIFY_EMAIL` 3 days (the commonly
   reported figure), `VERIFY_AND_CHANGE_EMAIL` and `RECOVER_EMAIL` 3 days as well: recovery must

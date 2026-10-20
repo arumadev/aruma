@@ -283,6 +283,7 @@ func (s *Service) UpdateUser(ctx context.Context, p Project, in AdminUser) (User
 		if in.CustomClaims != nil {
 			upd.CustomClaims = claims
 		}
+		oldEmail := str(raw.Email)
 		if raw, err = q.UpdateUser(ctx, upd); err != nil {
 			return err
 		}
@@ -317,6 +318,15 @@ func (s *Service) UpdateUser(ctx context.Context, p Project, in AdminUser) (User
 			if raw.TokensValidAfter, err = q.RevokeUserTokens(ctx, queries.RevokeUserTokensParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: in.UID}); err != nil {
 				return err
 			}
+		}
+		switch {
+		case !strings.EqualFold(email, oldEmail):
+			err = retireCodes(ctx, q, p, in.UID, codesOfAddress)
+		case hash != "":
+			err = retireCodes(ctx, q, p, in.UID, codesOfPassword)
+		}
+		if err != nil {
+			return err
 		}
 		u, err = s.loadUser(ctx, q, p, raw)
 		return err
