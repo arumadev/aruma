@@ -6,11 +6,13 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/coder/websocket"
 
+	"github.com/osama300/aurma-project/internal/platform/httpx"
 	"github.com/osama300/aurma-project/internal/services/rtdb/core"
 	"github.com/osama300/aurma-project/internal/services/rtdb/wire"
 )
@@ -19,7 +21,8 @@ import (
 // connection until it ends. The connection is hijacked, so the entry point's 60-second
 // deadlines are lifted here; the idle timeout and the write timeout of conn.go take over.
 func (a *API) serveWS(w http.ResponseWriter, r *http.Request, target core.Target) {
-	if !a.originAllowed(r, target) {
+	host := a.host(r)
+	if !a.originAllowed(r, host) {
 		writeError(w, http.StatusForbidden, "This origin may not connect to the database.")
 		return
 	}
@@ -28,18 +31,21 @@ func (a *API) serveWS(w http.ResponseWriter, r *http.Request, target core.Target
 		return
 	}
 	defer a.wg.Done()
-	release, err := a.svc.Connect(target)
-	if err != nil {
-		writeError(w, http.StatusTooManyRequests, "Too many connections to this project's database.")
+	ip := httpx.ClientAddr(r.Context())
+	if !ip.IsValid() {
+		ip = httpx.ClientIP(r, a.opts.TrustedProxies)
+	}
+	if !a.perIP.acquire(ip) {
+		writeError(w, http.StatusTooManyRequests, "Too many connections from this address.")
 		return
 	}
-	defer release()
+	defer a.perIP.release(ip)
 
 	rc := http.NewResponseController(w)
 	_ = rc.SetReadDeadline(time.Time{})
 	_ = rc.SetWriteDeadline(time.Time{})
 	ws, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		// The Origin rule is applied above, with the project's authorised domains.
+		// The Origin rule, if any, is applied above.
 		InsecureSkipVerify: true,
 		CompressionMode:    websocket.CompressionDisabled,
 	})
@@ -47,17 +53,23 @@ func (a *API) serveWS(w http.ResponseWriter, r *http.Request, target core.Target
 		return // Accept has answered
 	}
 	ws.SetReadLimit(maxFrameBytes)
-	cs, err := a.svc.Open(target, core.Auth{})
+	// The open rules of development reach clients on this machine only, judged by the
+	// connection's own peer, never by forwarded headers.
+	cs, err := a.svc.Open(target, core.Auth{}, core.OpenOptions{Loopback: httpx.PeerIsLoopback(r)})
 	if err != nil {
 		_ = ws.Close(websocket.StatusTryAgainLater, "database unavailable")
 		return
 	}
 	c := newWSConn(a, ws, newSession(a, target, cs, a.svc.Limits().OutboxBytes))
+	if !a.track(c) {
+		cs.Close()
+		_ = ws.Close(websocket.StatusGoingAway, "")
+		return
+	}
+	defer a.untrack(c)
 	// The SDKs reconnect to the host the handshake names (h), so it is exactly the host and
 	// port this client used (ADR-018; docs/research/rtdb/J-lp-trap.md).
-	c.sess.send(wire.EncodeHello(wire.Hello{Timestamp: a.svc.Now().UnixMilli(), Host: r.Host, Session: c.sess.id}))
-	a.track(c)
-	defer a.untrack(c)
+	c.sess.send(wire.EncodeHello(wire.Hello{Timestamp: a.svc.Now().UnixMilli(), Host: host, Session: c.sess.id}))
 	c.run()
 }
 
@@ -66,38 +78,24 @@ func (a *API) serveWS(w http.ResponseWriter, r *http.Request, target core.Target
 // connection at 100 KB (B-emulator-oracle.md §1.9).
 const maxFrameBytes = 96 << 10
 
-// originAllowed applies the Origin rule (rtdb-plan.md, D-articles-design.md): no Origin, as
-// from Android, iOS and the Admin SDKs, is allowed; a browser's Origin must be the database's
-// own host or one of the project's authorised domains. Tokens travel inside the messages and
-// no cookie is read, so the rule narrows which pages may use the database, nothing more.
-// Firebase itself checks no Origin.
-func (a *API) originAllowed(r *http.Request, t core.Target) bool {
+// originAllowed applies rtdb.allowed_origins. Firebase checks no Origin, and by default
+// neither does Aruma: the protocol carries its credentials inside the messages and reads no
+// cookie, so a foreign page cannot borrow a user's session. An operator who wants to narrow
+// which pages connect lists their hosts; a request without Origin (Android, iOS, the Admin
+// SDKs) and a page on the database's own host are always allowed.
+func (a *API) originAllowed(r *http.Request, host string) bool {
 	origin := r.Header.Get("Origin")
-	if origin == "" {
+	if origin == "" || len(a.opts.AllowedOrigins) == 0 {
 		return true
 	}
 	u, err := url.Parse(origin)
 	if err != nil || u.Host == "" {
 		return false
 	}
-	if strings.EqualFold(u.Host, r.Host) {
+	if strings.EqualFold(u.Host, host) {
 		return true
 	}
-	if a.opts.AllowedOrigins == nil {
-		return false
-	}
-	hosts, err := a.opts.AllowedOrigins(r.Context(), t.Project)
-	if err != nil {
-		a.log.Warn("rtdb: authorised domains", "project", t.Project, "error", err)
-		return false
-	}
-	host := strings.ToLower(u.Hostname())
-	for _, h := range hosts {
-		if strings.EqualFold(h, host) {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(a.opts.AllowedOrigins, strings.ToLower(u.Hostname()))
 }
 
 // sessionID returns a random 32-character alphanumeric session id, as the emulator's.
@@ -126,10 +124,16 @@ func (a *API) enter() bool {
 	return true
 }
 
-func (a *API) track(c *wsConn) {
+// track registers a connection for Shutdown; false once shutdown has begun, so a connection
+// accepted meanwhile is closed rather than missed.
+func (a *API) track(c *wsConn) bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	if a.shuttingDown {
+		return false
+	}
 	a.conns[c] = struct{}{}
+	return true
 }
 
 func (a *API) untrack(c *wsConn) {
@@ -138,9 +142,12 @@ func (a *API) untrack(c *wsConn) {
 	delete(a.conns, c)
 }
 
-// Shutdown closes every connection: each client is told the server is going away (the s
-// control message, after which the SDKs report it and reconnect later), then its
-// onDisconnect writes run, as if it had dropped (ADR-019). http.Server.Shutdown does not see
+// Shutdown closes every connection with 1001 (going away), then runs each one's
+// onDisconnect writes, as if the client had dropped (ADR-019). It sends no s control message:
+// that tells the SDKs the server is gone for good, and they would not reconnect
+// (PersistentConnection.ts:876-882 interrupts with server_kill; Android
+// PersistentConnectionImpl.java:539-554), so every app would stay offline after a restart.
+// A plain close makes them back off and reconnect. http.Server.Shutdown does not see
 // hijacked connections, so the entry point calls this beside it. It waits for the
 // connections until ctx ends.
 func (a *API) Shutdown(ctx context.Context) error {

@@ -1,5 +1,7 @@
 package core
 
+import "math"
+
 // ServerValue is a value the server fills in when it applies a write: {".sv":"timestamp"} or
 // {".sv":{"increment":n}} (ServerValues.ts). The SDKs show an estimate until the server's
 // value arrives.
@@ -109,7 +111,21 @@ func (sv *ServerValue) resolve(at Path, now int64, existing map[string]*Node) *N
 		return Number(float64(now))
 	}
 	if cur := existing[at.String()]; cur.Kind() == KindNumber {
-		return Number(cur.n + sv.Increment)
+		return Number(saturate(cur.n + sv.Increment))
 	}
 	return Number(sv.Increment)
+}
+
+// saturate keeps an increment's result finite: past the largest double it stays at the
+// largest double, as the emulator 4.11.2 does (1e308 + 1e308 reads back as
+// 1.7976931348623157E308; -1e308 - 1e308 as its negative). JSON has no Infinity, so a client
+// could not read one back.
+func saturate(f float64) float64 {
+	switch {
+	case math.IsInf(f, 1):
+		return math.MaxFloat64
+	case math.IsInf(f, -1):
+		return -math.MaxFloat64
+	}
+	return f
 }

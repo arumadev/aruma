@@ -12,13 +12,16 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net"
 	"net/http"
+	"net/netip"
 	"strings"
 	"sync"
 
 	"github.com/osama300/aurma-project/internal/platform/authn"
+	"github.com/osama300/aurma-project/internal/platform/httpx"
 	"github.com/osama300/aurma-project/internal/services/rtdb/core"
 	tcore "github.com/osama300/aurma-project/internal/tenancy/core"
 )
@@ -34,13 +37,16 @@ type Options struct {
 	// Domain is rtdb.domain: requests to <ns>.<Domain> belong to database ns. Empty, only
 	// ?ns= on the main host names a database.
 	Domain string
+	// TrustedProxies are the proxies whose X-Forwarded-Host and X-Forwarded-For are
+	// believed (trusted_proxies).
+	TrustedProxies []netip.Prefix
 	// Credentials verifies the admin credentials an Admin SDK or the CLI signs in with.
 	Credentials authn.Verifier
 	// Projects checks that a credential may act on the project.
 	Projects Projects
-	// AllowedOrigins lists the hosts whose web pages may open a connection to a project's
-	// database, besides the database's own host. nil allows only the own host.
-	AllowedOrigins func(ctx context.Context, project int64) ([]string, error)
+	// AllowedOrigins, when set, lists the hosts whose web pages may connect besides a
+	// database's own host (rtdb.allowed_origins). Empty allows every origin, as Firebase does.
+	AllowedOrigins []string
 }
 
 // API is the Realtime Database endpoint.
@@ -48,6 +54,11 @@ type API struct {
 	svc  *core.Service
 	opts Options
 	log  *slog.Logger
+
+	// inflight is the bytes of partly received messages on all connections.
+	inflight *budget
+	// perIP counts open connections per client address.
+	perIP *ipCounter
 
 	mu           sync.Mutex
 	conns        map[*wsConn]struct{}
@@ -58,7 +69,12 @@ type API struct {
 // New returns the API.
 func New(svc *core.Service, opts Options, logger *slog.Logger) *API {
 	opts.Domain = strings.ToLower(opts.Domain)
-	return &API{svc: svc, opts: opts, log: logger, conns: map[*wsConn]struct{}{}}
+	lim := svc.Limits()
+	return &API{
+		svc: svc, opts: opts, log: logger, conns: map[*wsConn]struct{}{},
+		inflight: &budget{left: lim.InflightBytes},
+		perIP:    &ipCounter{limit: lim.ConnectionsPerIP, n: map[netip.Addr]int{}},
+	}
 }
 
 // ServeHTTP serves every request routed to the Realtime Database. The entry point also calls
@@ -71,7 +87,8 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	target, err := a.svc.Resolve(r.Context(), ns)
 	if err != nil {
-		writeError(w, http.StatusNotFound, core.AsError(err).Message)
+		e := core.AsError(err)
+		writeError(w, e.HTTP, e.Message)
 		return
 	}
 	switch {
@@ -91,26 +108,24 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// errNamespace explains a request whose database cannot be told.
-type errNamespace string
-
-func (e errNamespace) Error() string { return string(e) }
+// host is the host the client connected to, through a trusted proxy's X-Forwarded-Host.
+func (a *API) host(r *http.Request) string { return httpx.Host(r, a.opts.TrustedProxies) }
 
 // namespace returns the database a request names (ADR-018): the first label of a host under
 // rtdb.domain, else ?ns= on the main host. Both present and different is an error, so a
 // client never writes to another database than its URL says.
 func (a *API) namespace(r *http.Request) (string, error) {
-	fromHost := a.hostNamespace(r.Host)
+	fromHost := a.hostNamespace(a.host(r))
 	fromQuery := r.URL.Query().Get("ns")
 	switch {
 	case fromHost != "" && fromQuery != "" && fromHost != fromQuery:
-		return "", errNamespace("The namespace in ?ns= (" + fromQuery + ") does not match the host (" + fromHost + ").")
+		return "", errors.New("The namespace in ?ns= (" + fromQuery + ") does not match the host (" + fromHost + ").")
 	case fromHost != "":
 		return fromHost, nil
 	case fromQuery != "":
 		return fromQuery, nil
 	}
-	return "", errNamespace("Specify the database: use https://<project>-default-rtdb." + a.domainOrExample() + " or ?ns=<project>-default-rtdb.")
+	return "", errors.New("Specify the database: use https://<project>-default-rtdb." + a.domainOrExample() + " or ?ns=<project>-default-rtdb.")
 }
 
 func (a *API) domainOrExample() string {
@@ -128,7 +143,8 @@ func (a *API) hostNamespace(host string) string {
 	if h, _, err := net.SplitHostPort(host); err == nil {
 		host = h
 	}
-	label, ok := strings.CutSuffix(strings.ToLower(host), "."+a.opts.Domain)
+	host = strings.TrimSuffix(strings.ToLower(host), ".")
+	label, ok := strings.CutSuffix(host, "."+a.opts.Domain)
 	if !ok || label == "" || strings.Contains(label, ".") {
 		return ""
 	}
@@ -142,4 +158,51 @@ func writeError(w http.ResponseWriter, status int, msg string) {
 	w.WriteHeader(status)
 	b, _ := json.Marshal(map[string]string{"error": msg})
 	_, _ = w.Write(b)
+}
+
+// budget is the shared byte budget of partly received messages (wire.Budget).
+type budget struct {
+	mu   sync.Mutex
+	left int64
+}
+
+func (b *budget) Take(n int) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if int64(n) > b.left {
+		return false
+	}
+	b.left -= int64(n)
+	return true
+}
+
+func (b *budget) Give(n int) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.left += int64(n)
+}
+
+// ipCounter counts open connections per client address.
+type ipCounter struct {
+	mu    sync.Mutex
+	limit int
+	n     map[netip.Addr]int
+}
+
+func (c *ipCounter) acquire(ip netip.Addr) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.n[ip] >= c.limit {
+		return false
+	}
+	c.n[ip]++
+	return true
+}
+
+func (c *ipCounter) release(ip netip.Addr) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.n[ip]--; c.n[ip] <= 0 {
+		delete(c.n, ip)
+	}
 }

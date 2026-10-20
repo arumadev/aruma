@@ -72,11 +72,16 @@ func priorityHashText(p *Node) string {
 }
 
 // ieee754Hex is the double's 64 bits, big-endian, in lower-case hex: what the JS SDK's
-// doubleToIEEE754String (util.ts:393-445) means to compute. That function rounds wrongly for
-// some numbers (below 2^-971, and some at or next to a power of two, such as 2^53-1), while
-// the emulator hashes the true bits (testdata/sdk/emulator_etags.json), as Android does
-// (Utilities.doubleToHashString). The server follows the emulator: for those numbers a JS
-// transaction on such a value meets datastale here as it does against the emulator.
+// doubleToIEEE754String (util.ts:393-445) means to compute. That function gets the bits wrong
+// for some numbers, while the emulator hashes the true bits (testdata/sdk/emulator_etags.json),
+// as Android does (Utilities.doubleToHashString). The server follows the emulator, so a JS
+// transaction on one of these values meets datastale here as it does against the emulator:
+//
+//   - the largest double below each power of two from 2^2 up (3.9999999999999996, ...);
+//   - the integers 2^48-1 through 2^53-1;
+//   - 219 negative powers of two between 2^-1021 and 2^-29;
+//   - other magnitudes below 2^-971, where Math.pow(2, 52-ln) overflows and the mantissa
+//     comes out 0 (testdata/sdk/hash.json, "ieee754").
 func ieee754Hex(f float64) string {
 	s := strconv.FormatUint(math.Float64bits(f), 16)
 	return strings.Repeat("0", 16-len(s)) + s

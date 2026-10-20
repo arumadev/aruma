@@ -102,7 +102,8 @@ func (s *Server) Handler() http.Handler {
 // isRTDB reports whether a request belongs to the Realtime Database (ADR-018).
 func (s *Server) isRTDB(r *http.Request) bool {
 	if d := s.cfg.RTDB.Domain; d != "" {
-		host := r.Host
+		// The host the client asked for, through a trusted proxy's X-Forwarded-Host.
+		host := httpx.Host(r, s.cfg.TrustedProxyPrefixes())
 		if h, _, err := net.SplitHostPort(host); err == nil {
 			host = h
 		}

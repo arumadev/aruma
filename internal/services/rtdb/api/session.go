@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/osama300/aurma-project/internal/services/rtdb/core"
+	"github.com/osama300/aurma-project/internal/services/rtdb/wire"
 )
 
 // session is the protocol side of one client, apart from any socket: it turns requests into
@@ -19,10 +20,22 @@ type session struct {
 
 	mu      sync.Mutex
 	pending []*slot // replies not sent yet, in request order
+	closed  bool
+	admin   adminState // the admin credential the session signed in with (auth.go)
 }
 
 func newSession(a *API, target core.Target, cs *core.Session, outboxBytes int64) *session {
 	return &session{api: a, target: target, core: cs, out: newOutbox(outboxBytes), id: sessionID()}
+}
+
+// messageLimit is the largest message the session may send now: the full limit once it has
+// signed in, a small one before (rtdb.limits.unauthenticated_message_bytes).
+func (s *session) messageLimit() int {
+	lim := s.api.svc.Limits()
+	if s.core.Authenticated() {
+		return int(lim.MessageBytes)
+	}
+	return int(lim.UnauthenticatedMessageBytes)
 }
 
 // slot holds the reply to one request until every earlier reply is out. Requests the writer
@@ -31,23 +44,31 @@ func newSession(a *API, target core.Target, cs *core.Session, outboxBytes int64)
 // B-emulator-oracle.md §1.3). Pushes do not wait: a write's push reaches the outbox before
 // its ack, since the writer publishes before it replies.
 type slot struct {
+	id   int64
 	msg  []byte
 	done bool
 }
 
-// reserve takes the next reply slot.
-func (s *session) reserve() *slot {
+// reserve takes the next reply slot, for request id.
+func (s *session) reserve(id int64) *slot {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	sl := &slot{}
+	sl := &slot{id: id}
 	s.pending = append(s.pending, sl)
 	return sl
 }
 
-// fill completes a slot and sends every reply that is now first in line.
+// fill completes a slot and sends every reply that is now first in line. A reply larger than
+// the whole outbox could never be sent: it becomes a too_big error, which the SDKs know for
+// a read too large to answer, and the connection stays (review #9; a backlog of smaller
+// messages still closes it).
 func (s *session) fill(sl *slot, msg []byte) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if int64(len(msg)) > s.out.max {
+		msg = wire.EncodeResponse(sl.id, wire.Fail(wire.StatusTooBig,
+			"Data requested exceeds the maximum size that can be accessed with a single request."))
+	}
 	sl.msg, sl.done = msg, true
 	n := 0
 	for n < len(s.pending) && s.pending[n].done {
@@ -62,6 +83,10 @@ func (s *session) send(msg []byte) { s.out.push(msg) }
 
 // close ends the session: its onDisconnect writes run, and its database is released.
 func (s *session) close() {
+	s.mu.Lock()
+	s.closed = true
+	s.admin.stop()
+	s.mu.Unlock()
 	s.core.Close()
 	s.out.close()
 }

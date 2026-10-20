@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"strings"
 )
@@ -15,7 +16,19 @@ type Store interface {
 	OpenDatabase(ctx context.Context, project int64, name string) (DatabaseInfo, error)
 	// Begin starts a transaction on a database.
 	Begin(ctx context.Context, db DatabaseInfo) (StoreTx, error)
+	// Seq reads a database's committed write count, outside any transaction: after a commit
+	// whose outcome is unknown, it tells whether the commit took effect.
+	Seq(ctx context.Context, db DatabaseInfo) (int64, error)
+	// DeleteProject removes every database of a project and its data.
+	DeleteProject(ctx context.Context, project int64) error
 }
+
+// DataError is a value the storage refused, such as text Postgres cannot hold (SQLSTATE
+// class 22). It fails the one write that carried it, not the transaction's other writes.
+type DataError struct{ Err error }
+
+func (e *DataError) Error() string { return "rtdb: data refused by storage: " + e.Err.Error() }
+func (e *DataError) Unwrap() error { return e.Err }
 
 // DatabaseInfo identifies a stored database.
 type DatabaseInfo struct {
@@ -52,15 +65,26 @@ func rowsOf(p Path, v *Node) []row {
 	_ = v.leaves(p, func(at Path, n *Node, leaf bool) error {
 		r := row{Path: at.String()}
 		if leaf {
-			r.Value = n.appendLeaf(nil)
+			r.Value = storedLeaf(n)
 		}
 		if n.priority != nil {
-			r.Priority = n.priority.appendLeaf(nil)
+			r.Priority = storedLeaf(n.priority)
 		}
 		rows = append(rows, r)
 		return nil
 	})
 	return rows
+}
+
+// storedLeaf encodes a leaf for a jsonb column. Postgres cannot hold U+0000 in jsonb text,
+// while Firebase accepts it in values (the emulator 4.11.2 stores and returns "a\u0000b"), so
+// a string holding one is stored as a one-element array of its base64 UTF-8 bytes. Leaves
+// are never arrays otherwise, so the form is unambiguous.
+func storedLeaf(n *Node) json.RawMessage {
+	if n.kind == KindString && strings.IndexByte(n.s, 0) >= 0 {
+		return json.RawMessage(`["` + base64.StdEncoding.EncodeToString([]byte(n.s)) + `"]`)
+	}
+	return n.appendLeaf(nil)
 }
 
 // treeOf builds the value at base from its rows: base's own row and those below it. It
@@ -144,8 +168,19 @@ func (n *Node) objectAt(keys Path) *Node {
 	return n
 }
 
-// leafOf decodes a stored leaf value or priority.
+// leafOf decodes a stored leaf value or priority (storedLeaf).
 func leafOf(raw json.RawMessage) (*Node, error) {
+	if len(raw) > 0 && raw[0] == '[' {
+		var enc []string
+		if err := json.Unmarshal(raw, &enc); err != nil || len(enc) != 1 {
+			return nil, ErrInvalidData
+		}
+		b, err := base64.StdEncoding.DecodeString(enc[0])
+		if err != nil {
+			return nil, ErrInvalidData
+		}
+		return String(string(b)), nil
+	}
 	v, err := ParseData(raw, nil, len(raw))
 	if err != nil {
 		return nil, err

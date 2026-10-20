@@ -17,8 +17,6 @@ const (
 	idleTimeout = 120 * time.Second
 	// writeTimeout bounds one frame's write; a client that stops reading is dropped.
 	writeTimeout = 30 * time.Second
-	// shutdownReason is the s control message's text.
-	shutdownReason = "The server is shutting down."
 )
 
 // wsConn carries one session over a WebSocket: a reader that reassembles frames into
@@ -54,7 +52,8 @@ func (c *wsConn) run() {
 }
 
 func (c *wsConn) readLoop() {
-	asm := wire.Assembler{Max: int(c.api.svc.Limits().MessageBytes)}
+	asm := wire.Assembler{Budget: c.api.inflight}
+	defer asm.Reset()
 	for {
 		ctx, cancel := context.WithTimeout(c.ctx, idleTimeout)
 		typ, frame, err := c.ws.Read(ctx)
@@ -65,11 +64,18 @@ func (c *wsConn) readLoop() {
 		if typ != websocket.MessageText {
 			continue
 		}
+		if !asm.Pending() {
+			// A session that has not signed in gets a smaller limit, so anonymous sockets
+			// cannot make the server hold large messages.
+			asm.Max = c.sess.messageLimit()
+		}
 		msg, err := asm.Feed(frame)
 		switch {
 		case errors.Is(err, wire.ErrMessageTooBig):
-			// The emulator answers an oversized message with its error frame and drops it;
-			// the connection stays open.
+			// As the emulator does, an oversized message (or one the shared budget for
+			// partly received messages cannot hold) is dropped with the error frame, and
+			// the connection stays open; the request gets no reply. Kept on purpose: no SDK
+			// sends a write over the limits it checks itself.
 			c.sess.send(wire.EncodeError(errorFrame))
 			continue
 		case msg == nil:
@@ -112,11 +118,9 @@ func (c *wsConn) writeLoop() {
 	}
 }
 
-// shutdown tells the client the server is going away and closes the connection once that is
-// sent. The session then closes as on any disconnection.
+// shutdown closes the connection with 1001 once what is queued is sent, without the s
+// control message, so the client reconnects (see API.Shutdown). The session then closes as
+// on any disconnection.
 func (c *wsConn) shutdown() {
-	c.once.Do(func() {
-		c.sess.send(wire.EncodeShutdown(shutdownReason))
-		c.sess.out.close()
-	})
+	c.once.Do(c.sess.out.close)
 }

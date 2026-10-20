@@ -127,8 +127,18 @@ func TestReadiness(t *testing.T) {
 
 // ADR-018: the Realtime Database owns its hosts and a few paths of the main host.
 func TestRTDBRouting(t *testing.T) {
-	cfg := testConfig(t, "https://aruma.test")
-	cfg.RTDB.Domain = "rtdb.aruma.test"
+	cfg, err := config.Load("", func(k string) string {
+		return map[string]string{
+			"ARUMA_DATABASE_URL":    "postgres://unused",
+			"ARUMA_PUBLIC_URL":      "https://aruma.test",
+			"ARUMA_MASTER_KEY":      "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+			"ARUMA_RTDB_DOMAIN":     "rtdb.aruma.test",
+			"ARUMA_TRUSTED_PROXIES": "10.0.0.0/8",
+		}[k]
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	var hits []string
 	rtdb := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits = append(hits, r.Host+r.URL.RequestURI())
@@ -164,6 +174,29 @@ func TestRTDBRouting(t *testing.T) {
 		h.ServeHTTP(httptest.NewRecorder(), r)
 		if got := len(hits) == 1; got != c.rtdb {
 			t.Errorf("%s%s: routed to RTDB = %v, want %v", c.host, c.path, got, c.rtdb)
+		}
+	}
+	// A fully qualified host with its trailing dot (review #16), and the host a trusted
+	// proxy forwards (review #11); an untrusted peer's X-Forwarded-Host is ignored.
+	for _, c := range []struct {
+		peer, host, forwarded string
+		rtdb                  bool
+	}{
+		{"192.0.2.1:1", "chat-default-rtdb.rtdb.aruma.test.", "", true},
+		{"192.0.2.1:1", "chat-default-rtdb.rtdb.aruma.test.:443", "", true},
+		{"10.1.2.3:1", "aruma.test", "chat-default-rtdb.rtdb.aruma.test", true},
+		{"192.0.2.1:1", "aruma.test", "chat-default-rtdb.rtdb.aruma.test", false},
+		{"10.1.2.3:1", "chat-default-rtdb.rtdb.aruma.test", "aruma.test", false},
+	} {
+		hits = nil
+		r := httptest.NewRequest("GET", "/x", nil)
+		r.RemoteAddr, r.Host = c.peer, c.host
+		if c.forwarded != "" {
+			r.Header.Set("X-Forwarded-Host", c.forwarded)
+		}
+		h.ServeHTTP(httptest.NewRecorder(), r)
+		if got := len(hits) == 1; got != c.rtdb {
+			t.Errorf("peer %s host %s forwarded %q: routed to RTDB = %v, want %v", c.peer, c.host, c.forwarded, got, c.rtdb)
 		}
 	}
 

@@ -3,9 +3,12 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"slices"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/osama300/aurma-project/internal/services/rtdb/queries"
@@ -38,6 +41,26 @@ func (s *PGStore) Begin(ctx context.Context, db DatabaseInfo) (StoreTx, error) {
 		return nil, err
 	}
 	return &pgTx{tx: tx, q: s.q.WithTx(tx), db: db}, nil
+}
+
+// Seq implements Store.
+func (s *PGStore) Seq(ctx context.Context, db DatabaseInfo) (int64, error) {
+	return s.q.GetSeq(ctx, queries.GetSeqParams{ID: db.ID, ProjectNumber: db.Project})
+}
+
+// DeleteProject implements Store.
+func (s *PGStore) DeleteProject(ctx context.Context, project int64) error {
+	return s.q.DeleteProjectDatabases(ctx, project)
+}
+
+// dataError marks the errors of a value Postgres refuses (SQLSTATE class 22, data
+// exception), so the writer fails that write alone.
+func dataError(err error) error {
+	var pg *pgconn.PgError
+	if errors.As(err, &pg) && strings.HasPrefix(pg.Code, "22") {
+		return &DataError{Err: err}
+	}
+	return err
 }
 
 type pgTx struct {
@@ -99,6 +122,10 @@ func (t *pgTx) ancestors(ctx context.Context, p Path) ([]row, error) {
 }
 
 func (t *pgTx) Write(ctx context.Context, p Path, v *Node) error {
+	return dataError(t.write(ctx, p, v))
+}
+
+func (t *pgTx) write(ctx context.Context, p Path, v *Node) error {
 	if p.IsPriority() {
 		return t.writePriority(ctx, p.Parent(), v)
 	}
@@ -165,7 +192,7 @@ func (t *pgTx) writePriority(ctx context.Context, p Path, prio *Node) error {
 	}
 	var raw json.RawMessage
 	if prio != nil {
-		raw = prio.appendLeaf(nil)
+		raw = storedLeaf(prio)
 	}
 	if len(rs) == 1 {
 		r := rs[0]

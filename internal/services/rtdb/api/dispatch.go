@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/osama300/aurma-project/internal/services/rtdb/core"
 	"github.com/osama300/aurma-project/internal/services/rtdb/wire"
@@ -49,7 +48,7 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 	case wire.ActionPut:
 		var b wire.WriteBody
 		if s.decode(req, &b) {
-			sl := s.reserve()
+			sl := s.reserve(req.ID)
 			s.core.Set(b.Path, b.Data, b.Hash, func(n *core.Node, err error) {
 				switch {
 				case err != nil:
@@ -66,7 +65,7 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 	case wire.ActionMerge:
 		var b wire.WriteBody
 		if s.decode(req, &b) {
-			sl := s.reserve()
+			sl := s.reserve(req.ID)
 			s.core.Update(b.Path, b.Data, func(err error) { s.fill(sl, result(req.ID, err)) })
 		}
 
@@ -80,7 +79,7 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 			s.reply(req, wire.Fail(wire.StatusUnavailable, "Queries are not supported by this server yet."))
 			return
 		}
-		sl := s.reserve()
+		sl := s.reserve(req.ID)
 		s.core.Get(b.Path, func(n *core.Node, err error) {
 			if err != nil {
 				s.fill(sl, result(req.ID, err))
@@ -122,7 +121,7 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 		}
 
 	case wire.ActionUnauth:
-		s.core.SetAuth(core.Auth{})
+		s.signOut()
 		s.reply(req, wire.OKWith("unauthenticated")) // the emulator's reply
 
 	default:
@@ -141,7 +140,7 @@ func (s *session) decode(req *wire.Request, v any) bool {
 
 // reply answers a request on the spot, after the replies still pending before it.
 func (s *session) reply(req *wire.Request, r wire.Reply) {
-	s.fill(s.reserve(), wire.EncodeResponse(req.ID, r))
+	s.fill(s.reserve(req.ID), wire.EncodeResponse(req.ID, r))
 }
 
 func replyOf(err error) wire.Reply {
@@ -154,7 +153,3 @@ func replyOf(err error) wire.Reply {
 
 // result encodes the reply to request id: ok, or err's status and message.
 func result(id int64, err error) []byte { return wire.EncodeResponse(id, replyOf(err)) }
-
-// authExpiry is the expiry the auth reply announces for an admin credential, in the shape
-// the emulator uses ({"auth":null,"expires":<seconds>}).
-const authExpiry = time.Hour

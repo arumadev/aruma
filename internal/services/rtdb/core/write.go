@@ -29,12 +29,10 @@ type Child struct {
 // IsUpdate reports whether w is a multi-path update.
 func (w *Write) IsUpdate() bool { return w.Update != nil }
 
-// ParseSet reads a set as the SDKs send it (p, o): path, export-format data, optional hash.
-func ParseSet(path string, data json.RawMessage, hash *string, maxString int) (*Write, error) {
-	p, err := ParseWritePath(path)
-	if err != nil {
-		return nil, err
-	}
+// ParseSet reads a set as the SDKs send it (p, o): export-format data written at p, which
+// ParseWritePath read, and an optional hash. Callers check permission on p first, so data
+// from a client who may not write is never parsed.
+func ParseSet(p Path, data json.RawMessage, hash *string, maxString int) (*Write, error) {
 	v, err := parseAt(p, data, maxString)
 	if err != nil {
 		return nil, err
@@ -58,12 +56,9 @@ func parseAt(p Path, data json.RawMessage, maxString int) (*Node, error) {
 }
 
 // ParseUpdate reads an update as the SDKs send it (m, om): an object whose keys are paths
-// relative to path. No key may be another's ancestor, as validateFirebaseMergePaths requires.
-func ParseUpdate(path string, data json.RawMessage, maxString int) (*Write, error) {
-	base, err := ParsePath(path)
-	if err != nil {
-		return nil, err
-	}
+// relative to base. No key may be another's ancestor, as validateFirebaseMergePaths requires.
+// The children are put in key order, the order the SDKs' own update applies them in.
+func ParseUpdate(base Path, data json.RawMessage, maxString int) (*Write, error) {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	if tok, err := dec.Token(); err != nil || tok != json.Delim('{') {
 		return nil, ErrInvalidData
@@ -98,24 +93,24 @@ func ParseUpdate(path string, data json.RawMessage, maxString int) (*Write, erro
 	if _, err := dec.Token(); err != nil {
 		return nil, ErrInvalidData
 	}
-	if overlapping(w.Update) {
-		return nil, ErrOverlappingPaths
+	slices.SortStableFunc(w.Update, func(a, b Child) int { return comparePaths(a.Path, b.Path) })
+	for i := 1; i < len(w.Update); i++ {
+		// Sorted, a path comes right before the paths below it.
+		if w.Update[i-1].Path.Contains(w.Update[i].Path) {
+			return nil, ErrOverlappingPaths
+		}
 	}
 	return w, nil
 }
 
-func overlapping(children []Child) bool {
-	paths := make([]Path, len(children))
-	for i, c := range children {
-		paths[i] = c.Path
-	}
-	slices.SortFunc(paths, func(a, b Path) int { return slices.Compare(a, b) })
-	for i := 1; i < len(paths); i++ {
-		if paths[i-1].Contains(paths[i]) {
-			return true
+// comparePaths orders paths key by key, a path before those below it.
+func comparePaths(a, b Path) int {
+	for i := 0; i < len(a) && i < len(b); i++ {
+		if c := CompareKeys(a[i], b[i]); c != 0 {
+			return c
 		}
 	}
-	return false
+	return len(a) - len(b)
 }
 
 // Change is a write as applied, server values resolved, as listeners receive it: exactly

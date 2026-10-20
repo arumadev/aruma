@@ -15,3 +15,11 @@ LIMIT 1;
 UPDATE rtdb.databases SET seq = seq + @n::bigint, updated_at = now()
 WHERE id = @id AND project_number = @project_number
 RETURNING seq;
+
+-- name: GetSeq :one
+-- Reads the committed write count, to settle a commit whose outcome is unknown.
+SELECT seq FROM rtdb.databases WHERE id = @id AND project_number = @project_number;
+
+-- name: DeleteProjectDatabases :exec
+-- A purged project's databases go, their nodes with them (ON DELETE CASCADE).
+DELETE FROM rtdb.databases WHERE project_number = @project_number;

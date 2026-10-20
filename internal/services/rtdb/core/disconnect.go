@@ -56,14 +56,19 @@ func (o *onDisconnect) forget(p Path) {
 
 // write is the registered writes as one write: a set when there is one entry, else an update
 // at the entries' deepest common path, which the emulator pushes to listeners as a single
-// merge (B-emulator-oracle.md §1.6). nil when nothing is registered.
+// merge (B-emulator-oracle.md §1.6). nil when nothing is registered. Its Size is that of the
+// data it writes, which counts against the database's write rate as any write does.
 func (o *onDisconnect) write() *Write {
+	var size int64
+	for _, e := range o.entries {
+		size += int64(len(e.value.ExportJSON()))
+	}
 	switch len(o.entries) {
 	case 0:
 		return nil
 	case 1:
 		e := o.entries[0]
-		return &Write{Path: e.path, Value: e.value}
+		return &Write{Path: e.path, Value: e.value, Size: size}
 	}
 	base := o.entries[0].path
 	for _, e := range o.entries[1:] {
@@ -77,9 +82,10 @@ func (o *onDisconnect) write() *Write {
 		// An entry at the common path itself cannot be one of the update's children.
 		base = base[:n-1]
 	}
-	w := &Write{Path: base, Update: make([]Child, 0, len(o.entries))}
+	w := &Write{Path: base, Update: make([]Child, 0, len(o.entries)), Size: size}
 	for _, e := range o.entries {
 		w.Update = append(w.Update, Child{Path: base.Rel(e.path), Value: e.value})
 	}
+	slices.SortStableFunc(w.Update, func(a, b Child) int { return comparePaths(a.Path, b.Path) })
 	return w
 }

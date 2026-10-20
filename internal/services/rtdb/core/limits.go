@@ -10,6 +10,12 @@ import (
 type Limits struct {
 	// MessageBytes caps one WebSocket message, so one write from an SDK.
 	MessageBytes int64
+	// UnauthenticatedMessageBytes caps a message from a session that has not signed in.
+	UnauthenticatedMessageBytes int64
+	// InflightBytes caps the bytes of partly received messages across connections.
+	InflightBytes int64
+	// ConnectionsPerIP caps the open connections from one client address.
+	ConnectionsPerIP int
 	// RESTWriteBytes caps one REST write.
 	RESTWriteBytes int64
 	// StringBytes caps one string value.
@@ -24,12 +30,15 @@ type Limits struct {
 
 // DefaultLimits are Firebase's published limits where a developer sees them.
 var DefaultLimits = Limits{
-	MessageBytes:          16 << 20,
-	RESTWriteBytes:        16 << 20,
-	StringBytes:           10 << 20,
-	WriteBytesPerMinute:   64 << 20,
-	ConnectionsPerProject: 10_000,
-	OutboxBytes:           64 << 20,
+	MessageBytes:                16 << 20,
+	UnauthenticatedMessageBytes: 1 << 20,
+	InflightBytes:               512 << 20,
+	ConnectionsPerIP:            500,
+	RESTWriteBytes:              16 << 20,
+	StringBytes:                 10 << 20,
+	WriteBytesPerMinute:         64 << 20,
+	ConnectionsPerProject:       10_000,
+	OutboxBytes:                 64 << 20,
 }
 
 // rateWindow counts bytes per minute in two fixed windows, weighting the previous one by how

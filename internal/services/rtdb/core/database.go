@@ -33,6 +33,7 @@ type Database struct {
 
 	// Guarded by the registry's lock.
 	refs int
+	gen  uint64 // counts acquisitions, so a stale retirement timer is recognised
 	done chan struct{}
 }
 
@@ -55,7 +56,9 @@ type Result struct {
 type command struct {
 	write *Write
 	read  Path
-	done  func(Result)
+	// barrier does nothing: its done runs once every command queued before it has run.
+	barrier bool
+	done    func(Result)
 }
 
 const (
@@ -125,8 +128,10 @@ func (d *Database) execute(batch []*command) {
 		d.info, d.opened = info, true
 	}
 	rate := d.rate
-	commit, results, err := d.apply(ctx, batch)
+	tx, commit, results, err := d.apply(ctx, batch)
 	if err != nil {
+		// Nothing was committed, so the commands can run again, each on its own: one bad
+		// command cannot fail the others.
 		d.rate = rate
 		if len(batch) > 1 {
 			for _, c := range batch {
@@ -134,8 +139,23 @@ func (d *Database) execute(batch []*command) {
 			}
 			return
 		}
+		var de *DataError
+		if errors.As(err, &de) {
+			batch[0].done(Result{Err: ErrInvalidData})
+			return
+		}
 		d.log.Error("rtdb: write", "database", d.name, "error", err)
 		batch[0].done(Result{Err: ErrUnavailable})
+		return
+	}
+	if err := tx.Commit(ctx); err != nil && !d.committed(commit) {
+		// The commit may or may not have happened. Running the commands again could apply
+		// them twice, so they fail; the clients resend what they still want.
+		d.rate = rate
+		d.log.Error("rtdb: commit", "database", d.name, "error", err)
+		for _, c := range batch {
+			c.done(Result{Err: ErrUnavailable})
+		}
 		return
 	}
 	if len(commit.Changes) > 0 {
@@ -149,24 +169,49 @@ func (d *Database) execute(batch []*command) {
 	}
 }
 
-// apply runs the batch in a transaction and commits it. A command that fails on its own
+// committed settles a commit that returned an error: it took effect exactly when the
+// database's seq, read afresh, is the one the transaction set. A batch without writes left
+// no trace, so it counts as not committed. The writer's view of seq is refreshed either way.
+func (d *Database) committed(c Commit) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), batchTimeout)
+	defer cancel()
+	seq, err := d.store.Seq(ctx, d.info)
+	if err != nil {
+		// Unknown still; reopen before the next batch to read seq again.
+		d.opened = false
+		return false
+	}
+	ok := len(c.Changes) > 0 && seq == c.Seq
+	d.info.Seq = seq
+	return ok
+}
+
+// apply runs the batch in a transaction, up to its commit. A command that fails on its own
 // terms (datastale, the write rate) gets its error in results; any other error is a storage
-// failure that aborts the whole batch.
-func (d *Database) apply(ctx context.Context, batch []*command) (Commit, []Result, error) {
+// failure that aborts the whole batch, and the transaction is rolled back. On success the
+// caller commits the returned transaction.
+func (d *Database) apply(ctx context.Context, batch []*command) (_ StoreTx, _ Commit, _ []Result, err error) {
 	tx, err := d.store.Begin(ctx, d.info)
 	if err != nil {
-		return Commit{}, nil, err
+		return nil, Commit{}, nil, err
 	}
-	defer func() { _ = tx.Rollback(context.WithoutCancel(ctx)) }()
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback(context.WithoutCancel(ctx))
+		}
+	}()
 
 	now := d.now()
 	results := make([]Result, len(batch))
 	var changes []Change
 	for i, c := range batch {
+		if c.barrier {
+			continue
+		}
 		if c.write == nil {
 			n, err := tx.Read(ctx, c.read)
 			if err != nil {
-				return Commit{}, nil, err
+				return nil, Commit{}, nil, err
 			}
 			results[i].Node = n
 			continue
@@ -182,7 +227,7 @@ func (d *Database) apply(ctx context.Context, batch []*command) (Commit, []Resul
 			results[i].Err = err
 			continue
 		case err != nil:
-			return Commit{}, nil, err
+			return nil, Commit{}, nil, err
 		}
 		if c.write.Hash != nil {
 			results[i].Node = ch.Value
@@ -192,11 +237,8 @@ func (d *Database) apply(ctx context.Context, batch []*command) (Commit, []Resul
 	commit := Commit{Seq: d.info.Seq, Changes: changes}
 	if len(changes) > 0 {
 		if commit.Seq, err = tx.AdvanceSeq(ctx, int64(len(changes))); err != nil {
-			return Commit{}, nil, err
+			return nil, Commit{}, nil, err
 		}
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return Commit{}, nil, err
-	}
-	return commit, results, nil
+	return tx, commit, results, nil
 }

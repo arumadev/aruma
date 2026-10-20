@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/osama300/aurma-project/internal/services/rtdb/rules"
 	"github.com/osama300/aurma-project/internal/store/storetest"
@@ -15,9 +16,18 @@ import (
 type memStore struct {
 	mu  sync.Mutex
 	dbs map[string]*memDB
-	// failCommits makes the next n commits fail, as a lost database connection would.
+	// failCommits makes the next n commits fail without effect, as a lost connection before
+	// the commit reached the database would.
 	failCommits int
-	commits     int
+	// lostAcks makes the next n commits take effect and still report an error, as a lost
+	// connection after the commit would.
+	lostAcks int
+	// refuse makes writes of this string value fail as Postgres refuses data (class 22).
+	refuse  string
+	commits int
+	lastID  int64
+	// slow delays every write, widening the window in which two writers would overlap.
+	slow time.Duration
 }
 
 type memDB struct {
@@ -32,7 +42,8 @@ func (s *memStore) OpenDatabase(_ context.Context, project int64, name string) (
 	defer s.mu.Unlock()
 	db := s.dbs[name]
 	if db == nil {
-		db = &memDB{info: DatabaseInfo{ID: int64(len(s.dbs) + 1), Project: project, Name: name}}
+		s.lastID++
+		db = &memDB{info: DatabaseInfo{ID: s.lastID, Project: project, Name: name}}
 		s.dbs[name] = db
 	}
 	return db.info, nil
@@ -42,7 +53,37 @@ func (s *memStore) Begin(_ context.Context, info DatabaseInfo) (StoreTx, error) 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	db := s.dbs[info.Name]
+	if db == nil || db.info.ID != info.ID {
+		return nil, errors.New("database gone")
+	}
 	return &memTx{s: s, db: db, root: db.root, seq: db.info.Seq}, nil
+}
+
+func (s *memStore) Seq(_ context.Context, info DatabaseInfo) (int64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if db := s.dbs[info.Name]; db != nil {
+		return db.info.Seq, nil
+	}
+	return 0, errors.New("database gone")
+}
+
+func (s *memStore) DeleteProject(_ context.Context, project int64) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for name, db := range s.dbs {
+		if db.info.Project == project {
+			delete(s.dbs, name)
+		}
+	}
+	return nil
+}
+
+// set changes the store's failure settings under its lock.
+func (s *memStore) set(fn func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	fn()
 }
 
 func (s *memStore) value(name string) *Node {
@@ -63,6 +104,13 @@ type memTx struct {
 
 func (t *memTx) Read(_ context.Context, p Path) (*Node, error) { return t.root.Get(p), nil }
 func (t *memTx) Write(_ context.Context, p Path, v *Node) error {
+	t.s.mu.Lock()
+	refuse, slow := t.s.refuse, t.s.slow
+	t.s.mu.Unlock()
+	time.Sleep(slow)
+	if refuse != "" && v.StringValue() == refuse {
+		return &DataError{Err: errors.New("22P05: unsupported Unicode escape sequence")}
+	}
 	t.root = t.root.Set(p, v)
 	return nil
 }
@@ -77,6 +125,10 @@ func (t *memTx) Commit(context.Context) error {
 	}
 	t.s.commits++
 	t.db.root, t.db.info.Seq = t.root, t.seq
+	if t.s.lostAcks > 0 {
+		t.s.lostAcks--
+		return errors.New("connection lost after commit")
+	}
 	return nil
 }
 
@@ -88,6 +140,9 @@ var storeCases = []struct {
 	want   string
 }{
 	{"leaf", []struct{ path, value string }{{"a", `1`}}, "", `{"a":1}`},
+	// Firebase stores U+0000 in values (emulator 4.11.2); jsonb text cannot (review #6).
+	{"nul", []struct{ path, value string }{{"s", `"a\u0000b"`}}, "s", `"a\u0000b"`},
+	{"nul priority", []struct{ path, value string }{{"p", `{".value":"\u0000",".priority":"x\u0000y"}`}, {"q", `{".priority":"\u0000z","a":1}`}}, "", `{"p":{".value":"\u0000",".priority":"x\u0000y"},"q":{".priority":"\u0000z","a":1}}`},
 	{"root leaf", []struct{ path, value string }{{"", `"x"`}}, "", `"x"`},
 	{"root leaf replaced by a child", []struct{ path, value string }{{"", `"x"`}, {"a", `1`}}, "", `{"a":1}`},
 	{"object", []struct{ path, value string }{{"a", `{"b":{"c":true},"d":"s"}`}}, "a/b", `{"c":true}`},
@@ -199,6 +254,41 @@ func TestPGStore(t *testing.T) {
 	if _, err := pool.Exec(ctx, `INSERT INTO rtdb.databases (project_number, name) VALUES (1, 'Bad_Name')`); err == nil {
 		t.Error("accepted an invalid database name")
 	}
+
+	// A value Postgres refuses (SQLSTATE class 22) is a DataError, failing one write.
+	_, err = pool.Exec(ctx, `SELECT '"\u0000"'::jsonb`)
+	var de *DataError
+	if err == nil || !errors.As(dataError(err), &de) {
+		t.Errorf("class 22 error not marked: %v", err)
+	}
+	var unrelated *DataError
+	if errors.As(dataError(errors.New("connection reset")), &unrelated) {
+		t.Error("an unrelated error marked as data")
+	}
+
+	// Seq reads the committed count; a purged project's databases and nodes go.
+	tx, _ = store.Begin(ctx, db)
+	tx.Write(ctx, Path{"x"}, Number(1))
+	tx.AdvanceSeq(ctx, 2)
+	tx.Commit(ctx)
+	if seq, err := store.Seq(ctx, db); err != nil || seq != 2 {
+		t.Errorf("seq %d %v", seq, err)
+	}
+	other, _ := store.OpenDatabase(ctx, 582915736204, "keep-default-rtdb")
+	tx, _ = store.Begin(ctx, other)
+	tx.Write(ctx, Path{"y"}, Number(1))
+	tx.Commit(ctx)
+	if err := store.DeleteProject(ctx, 482915736204); err != nil {
+		t.Fatal(err)
+	}
+	var left int
+	pool.QueryRow(ctx, `SELECT count(*) FROM rtdb.nodes n JOIN rtdb.databases d ON d.id = n.database_id WHERE d.project_number = 482915736204`).Scan(&left)
+	var kept int
+	pool.QueryRow(ctx, `SELECT count(*) FROM rtdb.nodes WHERE database_id = $1`, other.ID).Scan(&kept)
+	if left != 0 || kept != 1 {
+		t.Errorf("after purge: %d rows left, %d of another project kept", left, kept)
+	}
+	db, _ = store.OpenDatabase(ctx, 482915736204, "seq-default-rtdb")
 
 	// A new database starts locked (ADR-020), in a document the rules engine reads; admins
 	// pass anyway.

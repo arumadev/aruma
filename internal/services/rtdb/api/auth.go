@@ -4,44 +4,169 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
+	"github.com/osama300/aurma-project/internal/platform/apierr"
 	"github.com/osama300/aurma-project/internal/platform/authn"
 	"github.com/osama300/aurma-project/internal/services/rtdb/core"
 	"github.com/osama300/aurma-project/internal/services/rtdb/wire"
 )
 
+// revalidateEvery is how often an admin credential is checked again while a connection
+// uses it, so a revoked token or a deleted service account stops working within it.
+var revalidateEvery = 5 * time.Minute
+
+// adminState is the admin credential a session signed in with. Guarded by session.mu.
+type adminState struct {
+	token   string
+	expires time.Time // zero: the credential does not expire
+	gen     uint64    // changes with every sign-in and sign-out, so stale checks stop
+	timer   *time.Timer
+}
+
+func (a *adminState) stop() {
+	if a.timer != nil {
+		a.timer.Stop()
+	}
+	a.gen++
+	a.token, a.expires, a.timer = "", time.Time{}, nil
+}
+
 // authenticate handles auth and gauth. Until R4 only admin credentials mean anything: a
 // service account's access token for this project (what the Admin SDKs send, from Aruma's
-// OAuth endpoint), or a personal CLI token of the project's owner. Both bypass rules, as
-// admin credentials do in Firebase. Any other credential, such as a user's ID token, signs
-// the session out and is answered ok, so web and mobile clients keep their connection;
-// the locked rules then deny them everything (ADR-020).
+// OAuth endpoint), or a personal CLI token of the project's owner. They bypass rules, as
+// admin credentials do in Firebase, until they expire or stop verifying (checked every
+// revalidateEvery), when the session is told with ac and becomes unauthenticated.
+//
+// An Admin SDK that sends an auth variable override (authvar) or noauth asks to act as that
+// client, not as an admin: its credential must verify, and the session then acts as the
+// override, which R4's rules will see; until then the locked rules deny it. Any other
+// credential, such as a user's ID token, signs the session out and is answered ok, so web
+// and mobile clients keep their connection while the locked rules deny them (ADR-020).
 func (s *session) authenticate(ctx context.Context, b wire.AuthBody) wire.Reply {
 	token := strings.TrimSpace(b.Credential)
 	if !strings.HasPrefix(token, authn.ServiceTokenPrefix) && !strings.HasPrefix(token, authn.AccessTokenPrefix) {
-		s.core.SetAuth(core.Auth{})
+		s.signOut()
 		return wire.OKWith(map[string]any{"auth": nil, "expires": nil})
 	}
 	p, err := s.api.verifyAdmin(ctx, s.target, token)
 	if err != nil {
-		s.core.SetAuth(core.Auth{})
+		s.signOut()
 		s.api.log.Info("rtdb: admin credential refused", "database", s.target.Name, "error", err)
 		return wire.Fail(wire.StatusInvalidToken, "Invalid token.")
 	}
-	auth := core.Auth{Admin: true, Account: p.Email}
-	if b.NoAuth {
-		// An Admin SDK asking to act as an unauthenticated client.
-		auth = core.Auth{}
+	var expires any
+	if !p.ExpiresAt.IsZero() {
+		expires = p.ExpiresAt.Unix()
 	}
-	s.core.SetAuth(auth)
-	return wire.OKWith(map[string]any{"auth": nil, "expires": s.api.svc.Now().Add(authExpiry).Unix()})
+	if b.NoAuth || hasAuthVar(b) {
+		s.signOut()
+		auth := core.Auth{}
+		if hasAuthVar(b) {
+			auth.Variable = b.AuthVar
+		}
+		_ = s.core.SetAuth(auth) // not an admin: nothing to admit
+		return wire.OKWith(map[string]any{"auth": nil, "expires": expires})
+	}
+	if err := s.core.SetAuth(core.Auth{Admin: true, Account: p.Email}); err != nil {
+		e := core.AsError(err)
+		return wire.Fail(e.Status, e.Message)
+	}
+	s.mu.Lock()
+	s.admin.stop()
+	s.admin.token, s.admin.expires = token, p.ExpiresAt
+	s.scheduleCheck()
+	s.mu.Unlock()
+	return wire.OKWith(map[string]any{"auth": nil, "expires": expires})
+}
+
+func hasAuthVar(b wire.AuthBody) bool {
+	return len(b.AuthVar) > 0 && string(b.AuthVar) != "null"
+}
+
+// signOut makes the session unauthenticated and stops checking its admin credential.
+func (s *session) signOut() {
+	s.mu.Lock()
+	s.admin.stop()
+	s.mu.Unlock()
+	_ = s.core.SetAuth(core.Auth{})
+}
+
+// scheduleCheck arms the next check of the admin credential: at its expiry, or after
+// revalidateEvery, whichever comes first. Callers hold s.mu.
+func (s *session) scheduleCheck() {
+	wait := revalidateEvery
+	if !s.admin.expires.IsZero() {
+		wait = min(wait, time.Until(s.admin.expires))
+	}
+	gen := s.admin.gen
+	s.admin.timer = time.AfterFunc(max(wait, 0), func() { s.checkAdmin(gen) })
+}
+
+// checkAdmin re-verifies the admin credential. An expired or refused credential is revoked:
+// the client gets ac and the session loses admin; it signs in again with a fresh token, as
+// the SDKs do on ac (PersistentConnection.ts:985-1004). A failure to check (the database is
+// down) leaves things as they are until the next check.
+func (s *session) checkAdmin(gen uint64) {
+	s.mu.Lock()
+	if s.closed || s.admin.gen != gen {
+		s.mu.Unlock()
+		return
+	}
+	token, expires := s.admin.token, s.admin.expires
+	s.mu.Unlock()
+
+	status, reason := "", ""
+	if !expires.IsZero() && !time.Now().Before(expires) {
+		status, reason = wire.StatusExpiredToken, "Auth token is expired."
+	} else {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		p, err := s.api.verifyAdmin(ctx, s.target, token)
+		cancel()
+		switch {
+		case err == nil:
+			expires = p.ExpiresAt
+		case refused(err):
+			status, reason = wire.StatusInvalidToken, "Auth token is no longer valid."
+		default:
+			s.api.log.Warn("rtdb: re-checking an admin credential", "database", s.target.Name, "error", err)
+		}
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.closed || s.admin.gen != gen {
+		return
+	}
+	if status == "" {
+		s.admin.expires = expires
+		s.scheduleCheck()
+		return
+	}
+	s.admin.stop()
+	_ = s.core.SetAuth(core.Auth{})
+	s.out.push(wire.EncodeAuthRevoked(status, reason))
+}
+
+// refused reports whether a verification error means the credential is no good, rather than
+// that it could not be checked.
+func refused(err error) bool {
+	var ae *apierr.Error
+	if !errors.As(err, &ae) {
+		return false
+	}
+	switch ae.Code {
+	case apierr.Unauthenticated, apierr.PermissionDenied, apierr.NotFound:
+		return true
+	}
+	return false
 }
 
 // verifyAdmin checks an admin credential and that it may act on the target's project: a
 // service account of that project, or an account that owns it.
 func (a *API) verifyAdmin(ctx context.Context, t core.Target, token string) (*authn.Principal, error) {
 	if a.opts.Credentials == nil || a.opts.Projects == nil {
-		return nil, errors.New("admin credentials are not configured")
+		return nil, apierr.New(apierr.Unauthenticated, "admin credentials are not configured")
 	}
 	var (
 		p   *authn.Principal

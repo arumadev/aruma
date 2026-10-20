@@ -28,6 +28,16 @@ func (q *Queries) AdvanceSeq(ctx context.Context, arg AdvanceSeqParams) (int64, 
 	return seq, err
 }
 
+const deleteProjectDatabases = `-- name: DeleteProjectDatabases :exec
+DELETE FROM rtdb.databases WHERE project_number = $1
+`
+
+// A purged project's databases go, their nodes with them (ON DELETE CASCADE).
+func (q *Queries) DeleteProjectDatabases(ctx context.Context, projectNumber int64) error {
+	_, err := q.db.Exec(ctx, deleteProjectDatabases, projectNumber)
+	return err
+}
+
 const ensureDatabase = `-- name: EnsureDatabase :one
 WITH created AS (
     INSERT INTO rtdb.databases (project_number, name)
@@ -57,4 +67,21 @@ func (q *Queries) EnsureDatabase(ctx context.Context, arg EnsureDatabaseParams) 
 	var i EnsureDatabaseRow
 	err := row.Scan(&i.ID, &i.Seq)
 	return i, err
+}
+
+const getSeq = `-- name: GetSeq :one
+SELECT seq FROM rtdb.databases WHERE id = $1 AND project_number = $2
+`
+
+type GetSeqParams struct {
+	ID            int64
+	ProjectNumber int64
+}
+
+// Reads the committed write count, to settle a commit whose outcome is unknown.
+func (q *Queries) GetSeq(ctx context.Context, arg GetSeqParams) (int64, error) {
+	row := q.db.QueryRow(ctx, getSeq, arg.ID, arg.ProjectNumber)
+	var seq int64
+	err := row.Scan(&seq)
+	return seq, err
 }

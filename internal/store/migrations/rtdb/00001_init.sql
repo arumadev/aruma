@@ -29,9 +29,12 @@ CREATE TABLE rtdb.databases (
 CREATE TABLE rtdb.nodes (
     database_id bigint NOT NULL REFERENCES rtdb.databases (id) ON DELETE CASCADE,
     path        text COLLATE "C" NOT NULL,
-    -- The leaf's value; NULL marks the row of an object that carries a priority.
-    value       jsonb CHECK (value IS NULL OR jsonb_typeof(value) IN ('boolean', 'number', 'string')),
-    priority    jsonb CHECK (priority IS NULL OR jsonb_typeof(priority) IN ('number', 'string')),
+    -- The leaf's value; NULL marks the row of an object that carries a priority. jsonb text
+    -- cannot hold U+0000, so a string with one is a one-element array of its base64 bytes.
+    value       jsonb CHECK (value IS NULL OR jsonb_typeof(value) IN ('boolean', 'number', 'string')
+                             OR jsonb_typeof(value) = 'array' AND jsonb_array_length(value) = 1),
+    priority    jsonb CHECK (priority IS NULL OR jsonb_typeof(priority) IN ('number', 'string')
+                             OR jsonb_typeof(priority) = 'array' AND jsonb_array_length(priority) = 1),
     PRIMARY KEY (database_id, path),
     CONSTRAINT nodes_row_kind CHECK (value IS NOT NULL OR priority IS NOT NULL)
 );

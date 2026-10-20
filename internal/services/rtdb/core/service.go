@@ -9,13 +9,17 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"net/http"
 	"strings"
 	"time"
+
+	"github.com/osama300/aurma-project/internal/platform/apierr"
 )
 
 // Projects resolves project ids; the control plane implements it.
 type Projects interface {
-	// ProjectNumber returns the number of an active project, or an error.
+	// ProjectNumber returns the number of an active project; an apierr NOT_FOUND when there
+	// is none, any other error when it cannot tell.
 	ProjectNumber(ctx context.Context, id string) (int64, error)
 }
 
@@ -23,7 +27,8 @@ type Projects interface {
 type Options struct {
 	Limits Limits
 	// DevOpenRules acts as the test-mode rules {".read": true, ".write": true} on every
-	// database. Off, databases keep the locked rules they start with (ADR-020).
+	// database, for sessions opened with OpenOptions.Loopback. Off, databases keep the locked
+	// rules they start with (ADR-020).
 	DevOpenRules bool
 	// IdleTimeout is how long a database's writer outlives its last session; 0 means 5 minutes.
 	IdleTimeout time.Duration
@@ -38,6 +43,7 @@ type Service struct {
 	openRules bool
 	now       func() time.Time
 	log       *slog.Logger
+	store     Store
 	registry  *registry
 	conns     *counter
 }
@@ -55,6 +61,7 @@ func New(store Store, projects Projects, opts Options, logger *slog.Logger) *Ser
 	}
 	return &Service{
 		projects: projects, limits: opts.Limits, openRules: opts.DevOpenRules, now: opts.Now, log: logger,
+		store:    store,
 		registry: newRegistry(store, opts.Now, logger, opts.Limits, opts.IdleTimeout),
 		conns:    &counter{limit: opts.Limits.ConnectionsPerProject, n: map[int64]int{}},
 	}
@@ -89,18 +96,24 @@ func (s *Service) Resolve(ctx context.Context, ns string) (Target, error) {
 		return Target{}, ErrNoDatabase
 	}
 	n, err := s.projects.ProjectNumber(ctx, id)
-	if err != nil {
+	var ae *apierr.Error
+	switch {
+	case errors.As(err, &ae) && ae.Code == apierr.NotFound:
 		return Target{}, ErrNoDatabase
+	case err != nil:
+		// The control plane could not answer: the database may well exist.
+		s.log.Error("rtdb: resolve namespace", "namespace", ns, "error", err)
+		return Target{}, ErrUnavailable
 	}
 	return Target{Name: ns, ProjectID: id, Project: n}, nil
 }
 
 // ErrTooManyConnections is a project at its connection limit.
-var ErrTooManyConnections = errors.New("rtdb: too many connections for this project")
+var ErrTooManyConnections = &Error{statusUnavailable, "Too many connections to this project's database.", http.StatusTooManyRequests}
 
-// Connect counts a connection against its project's limit. The returned release must be
-// called when the connection ends.
-func (s *Service) Connect(t Target) (release func(), err error) {
+// connect counts a session against its project's limit. The returned release must be called
+// when the session ends.
+func (s *Service) connect(t Target) (release func(), err error) {
 	if !s.conns.acquire(t.Project) {
 		return nil, ErrTooManyConnections
 	}
@@ -108,12 +121,23 @@ func (s *Service) Connect(t Target) (release func(), err error) {
 }
 
 // Open starts a session on a database as auth. Close it when the client goes.
-func (s *Service) Open(t Target, auth Auth) (*Session, error) {
+func (s *Service) Open(t Target, auth Auth, o OpenOptions) (*Session, error) {
 	db, err := s.registry.acquire(t.Project, t.Name)
 	if err != nil {
 		return nil, err
 	}
-	return &Session{svc: s, db: db, auth: auth}, nil
+	sess := &Session{svc: s, db: db, target: t, loopback: o.Loopback}
+	if err := sess.SetAuth(auth); err != nil {
+		s.registry.release(db)
+		return nil, err
+	}
+	return sess, nil
+}
+
+// PurgeProject deletes every database of a project, for the control plane's purge of a
+// project whose deletion has expired.
+func (s *Service) PurgeProject(ctx context.Context, project int64) error {
+	return s.store.DeleteProject(ctx, project)
 }
 
 // Close stops the writers once their sessions have closed, waiting for queued writes until

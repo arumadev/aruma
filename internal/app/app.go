@@ -116,21 +116,22 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		l := cfg.RTDB.Limits
 		rtdbSvc = rtdb.New(rtdb.NewPGStore(pool), svc, rtdb.Options{
 			Limits: rtdb.Limits{
-				MessageBytes: l.MessageBytes, RESTWriteBytes: l.RESTWriteBytes, StringBytes: l.StringBytes,
+				MessageBytes: l.MessageBytes, UnauthenticatedMessageBytes: l.UnauthenticatedMessageBytes,
+				InflightBytes: l.InflightBytes, RESTWriteBytes: l.RESTWriteBytes, StringBytes: l.StringBytes,
 				WriteBytesPerMinute: l.WriteBytesPerMinute, ConnectionsPerProject: l.ConnectionsPerProject,
-				OutboxBytes: l.OutboxBytes,
+				ConnectionsPerIP: l.ConnectionsPerIP, OutboxBytes: l.OutboxBytes,
 			},
 			DevOpenRules: cfg.RTDB.DevOpenRules,
 		}, logger)
 		handlers.RTDB = rtdbapi.New(rtdbSvc, rtdbapi.Options{
-			Domain:      cfg.RTDB.Domain,
-			Credentials: svc,
-			Projects:    svc,
-			// Pages on the project's authorised domains (Auth's list) may connect.
-			AllowedOrigins: func(ctx context.Context, project int64) ([]string, error) {
-				return authSvc.AuthorizedDomains(ctx, identity.Project{Number: project})
-			},
+			Domain:         cfg.RTDB.Domain,
+			TrustedProxies: cfg.TrustedProxyPrefixes(),
+			Credentials:    svc,
+			Projects:       svc,
+			AllowedOrigins: cfg.RTDB.AllowedOrigins,
 		}, logger)
+		// A purged project's databases go with it.
+		svc.OnProjectPurged(rtdbSvc.PurgeProject)
 	}
 
 	srv := server.New(cfg, logger, pool, metrics.New(version), handlers)

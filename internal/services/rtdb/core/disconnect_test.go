@@ -22,7 +22,7 @@ func TestOnDisconnect(t *testing.T) {
 			{"set", "od/cancelme", `"x"`},
 			{"cancel", "od/cancelme", ""},
 			{"set", "od/inc", `{".sv":{"increment":1}}`},
-		}, `update od: put="gone" m1=1 m2={".sv":"timestamp"} inc={".sv":{"increment":1}}`},
+		}, `update od: inc={".sv":{"increment":1}} m1=1 m2={".sv":"timestamp"} put="gone"`},
 		{"later set replaces below", []op{{"set", "a/b", `1`}, {"set", "a", `{"c":2}`}}, `set a={"c":2}`},
 		{"set folds into one above", []op{{"set", "a", `{"c":2}`}, {"set", "a/b", `1`}}, `set a={"b":1,"c":2}`},
 		{"cancel below a set splits it", []op{{"set", "a", `{"b":1,"c":2}`}, {"cancel", "a/b", ""}}, `set a/c=2`},
