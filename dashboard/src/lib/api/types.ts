@@ -133,6 +133,7 @@ export interface AndroidApplication {
 
 export interface Restrictions {
   browserKeyRestrictions?: { allowedReferrers: string[] };
+  serverKeyRestrictions?: { allowedIps: string[] };
   androidKeyRestrictions?: { allowedApplications: AndroidApplication[] };
   iosKeyRestrictions?: { allowedBundleIds: string[] };
   apiTargets?: { service: string }[];
