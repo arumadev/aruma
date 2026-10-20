@@ -96,12 +96,13 @@ type Revocation struct {
 	ValidAfter time.Time
 }
 
-// Revokes reports whether r ends the session a token with claims c opened in project.
+// Revokes reports whether r ends the session a token with claims c opened in project. Times
+// compare at second precision, as the Verifier and Firebase's validSince do.
 func (r Revocation) Revokes(project int64, c *Claims) bool {
 	if c == nil || r.Project != project || r.UID != c.UID || r.Tenant != c.Tenant {
 		return false
 	}
-	return r.ValidAfter.IsZero() || c.AuthTime.Before(r.ValidAfter)
+	return r.ValidAfter.IsZero() || c.AuthTime.Unix() < r.ValidAfter.Unix()
 }
 
 // Revocations delivers the revocations of a project's users.

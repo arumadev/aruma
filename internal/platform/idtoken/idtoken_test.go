@@ -40,6 +40,7 @@ func TestRevokes(t *testing.T) {
 		{"deleted", Revocation{Project: 1, UID: "u1", Cause: Deleted}, true},
 		{"session before the point", Revocation{Project: 1, UID: "u1", Cause: TokensRevoked, ValidAfter: at.Add(time.Second)}, true},
 		{"session the change started", Revocation{Project: 1, UID: "u1", Cause: PasswordChanged, ValidAfter: at}, false},
+		{"same second, at second precision", Revocation{Project: 1, UID: "u1", Cause: PasswordChanged, ValidAfter: at.Add(500 * time.Millisecond)}, false},
 		{"other user", Revocation{Project: 1, UID: "u2", Cause: Disabled}, false},
 		{"other project", Revocation{Project: 2, UID: "u1", Cause: Disabled}, false},
 		{"other tenant", Revocation{Project: 1, Tenant: "t1", UID: "u1", Cause: Disabled}, false},

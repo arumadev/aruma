@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/osama300/aurma-project/internal/platform/crypto"
+	"github.com/osama300/aurma-project/internal/platform/idtoken"
 	"github.com/osama300/aurma-project/internal/services/auth/queries"
 	"github.com/osama300/aurma-project/internal/services/auth/tokens"
 	tcore "github.com/osama300/aurma-project/internal/tenancy/core"
@@ -35,6 +36,11 @@ type Service struct {
 	now       func() time.Time
 	mail      *mailer
 	idp       *idpRuntime
+
+	// The ID token contract with other services (idtoken.go).
+	revocations *idtoken.Hub
+	ids         projectIDs
+	states      stateCache
 }
 
 // New returns the Auth service.
@@ -44,6 +50,8 @@ func New(pool *pgxpool.Pool, control *tcore.Service, keys *crypto.Keys, hasher *
 		keys: keys, hasher: hasher, publicURL: strings.TrimSuffix(publicURL, "/"), log: logger, now: time.Now,
 		mail: newMailer(),
 		idp:  newIdPRuntime(),
+
+		revocations: idtoken.NewHub(idtoken.DefaultBuffer),
 	}
 }
 
