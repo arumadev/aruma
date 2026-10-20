@@ -145,7 +145,8 @@ func (s *Service) sendPasswordReset(ctx context.Context, p Project, cfg queries.
 		return "", err
 	}
 	_, err = s.sendCode(ctx, p, cfg, codeRequest{
-		kind: MailPasswordReset, user: u, email: u.Email, to: u.Email, continueURL: in.ContinueURL, lang: in.Locale, apiKey: in.APIKey,
+		kind: MailPasswordReset, user: u, email: u.Email, to: u.Email, toVerified: u.EmailVerified,
+		continueURL: in.ContinueURL, lang: in.Locale, apiKey: in.APIKey,
 	}, true)
 	return email, err
 }
@@ -165,7 +166,8 @@ func (s *Service) sendVerifyEmail(ctx context.Context, p Project, cfg queries.Au
 		return "", err
 	}
 	_, err = s.sendCode(ctx, p, cfg, codeRequest{
-		kind: MailVerifyEmail, user: u, email: u.Email, to: u.Email, continueURL: in.ContinueURL, lang: in.Locale, apiKey: in.APIKey,
+		kind: MailVerifyEmail, user: u, email: u.Email, to: u.Email, toVerified: u.EmailVerified,
+		continueURL: in.ContinueURL, lang: in.Locale, apiKey: in.APIKey,
 	}, true)
 	return u.Email, err
 }
@@ -215,6 +217,7 @@ type codeRequest struct {
 	email       string // the address the code acts on (the old one for a change)
 	newEmail    string
 	to          string
+	toVerified  bool // the account has proven the address mailed to
 	continueURL string
 	lang        string
 	apiKey      string
@@ -250,8 +253,15 @@ func (s *Service) issueCode(ctx context.Context, q *queries.Queries, p Project, 
 	}
 	link := s.actionLink(prof, in.apiKey, oobModes[in.kind], code, in.continueURL, in.lang)
 	if send {
+		// The display name is the account holder's own text; mail to an address the account has
+		// not proven must not carry it, or anyone could send their words from the project to
+		// any inbox (sign up with the address, or ask to change to it).
+		name := ""
+		if in.toVerified {
+			name = in.user.DisplayName
+		}
 		err = s.enqueue(ctx, q, p, cfg, in.kind, in.lang, in.to, mailVars{
-			Link: link, AppName: appName(cfg, prof), Email: in.email, NewEmail: in.newEmail, DisplayName: in.user.DisplayName,
+			Link: link, AppName: appName(cfg, prof), Email: in.email, NewEmail: in.newEmail, DisplayName: name,
 		})
 	}
 	return link, err
@@ -553,7 +563,8 @@ func (s *Service) ApplyActionCode(ctx context.Context, p Project, code, lang, ap
 		}
 		if row.RequestType == MailChangeEmail && changed && str(raw.Email) != "" {
 			_, err = s.issueCode(ctx, q, pr, cfg, prof, codeRequest{
-				kind: MailRecoverEmail, user: u, email: *raw.Email, newEmail: u.Email, to: *raw.Email, lang: mailLanguage(lang), apiKey: apiKey,
+				kind: MailRecoverEmail, user: u, email: *raw.Email, newEmail: u.Email, to: *raw.Email, toVerified: raw.EmailVerified,
+				lang: mailLanguage(lang), apiKey: apiKey,
 			}, true)
 		}
 		return err
@@ -654,5 +665,7 @@ func (s *Service) SendPasswordResetEmail(ctx context.Context, p Project, uid, la
 	if err != nil {
 		return "", err
 	}
-	return s.sendCode(ctx, p, cfg, codeRequest{kind: MailPasswordReset, user: u, email: u.Email, to: u.Email, lang: mailLanguage(lang)}, true)
+	return s.sendCode(ctx, p, cfg, codeRequest{
+		kind: MailPasswordReset, user: u, email: u.Email, to: u.Email, toVerified: u.EmailVerified, lang: mailLanguage(lang),
+	}, true)
 }

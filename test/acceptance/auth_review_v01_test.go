@@ -147,3 +147,51 @@ func TestAuthRecoverCodeUndoesOnlyTheLatestChange(t *testing.T) {
 	authErr(t, p.call(itk+"accounts:resetPassword", map[string]any{"oobCode": resetB, "newPassword": "attacker1"}), "INVALID_OOB_CODE")
 	ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "b@example.com", "password": "secret3"}))
 }
+
+// S-4: a display name is whatever the account holder typed, so a mail to an address the account
+// has not proven (verification, a change of address, a reset or recovery for an unverified one)
+// would carry a stranger's text from the project to any inbox. The built-in templates greet
+// without the name, and a custom template's %DISPLAY_NAME% is empty in such mail.
+func TestAuthMailCarriesNoNameToUnprovenAddresses(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.authProject("chat-app")
+	const lure = "Your bank account is locked, call +1 555 0100"
+	up := p.signUp("victim@example.com", "secret1")
+	ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": up.str("idToken"), "displayName": lure}))
+	noLure := func(to, kind string) {
+		t.Helper()
+		m := p.lastMail(to)
+		assertEqual(t, "type", m["type"], kind)
+		for _, part := range []string{"subject", "text", "html"} {
+			if strings.Contains(m[part].(string), "bank account") {
+				t.Fatalf("%s mail to %s carries the display name in its %s: %v", kind, to, part, m[part])
+			}
+		}
+	}
+	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "VERIFY_EMAIL", "idToken": up.str("idToken")}))
+	noLure("victim@example.com", "VERIFY_EMAIL")
+	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "victim@example.com"}))
+	noLure("victim@example.com", "PASSWORD_RESET")
+	p.ageSessions()
+	in := ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "victim@example.com", "password": "secret1", "returnSecureToken": true}))
+	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "VERIFY_AND_CHANGE_EMAIL", "idToken": in.str("idToken"), "newEmail": "other@example.com"}))
+	noLure("other@example.com", "VERIFY_AND_CHANGE_EMAIL")
+	_, q := linkCode(t, p.lastMail("other@example.com")["link"].(string))
+	ok(t, p.call(itk+"accounts:update", map[string]any{"oobCode": q.Get("oobCode")}))
+	noLure("victim@example.com", "RECOVER_EMAIL") // the old address was never verified either
+
+	// A custom template may greet by name; the name goes only to an address the account proved.
+	for _, kind := range []string{"VERIFY_EMAIL", "PASSWORD_RESET"} {
+		p.owner.mustOK(p.owner.do("PUT", "/console/v1/projects/chat-app/auth/templates/"+kind+"/ar", map[string]any{
+			"subject": "Hi %DISPLAY_NAME%", "body": `<p>Hello %DISPLAY_NAME%</p><p><a href="%LINK%">open</a></p>`,
+		}))
+	}
+	in = ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "other@example.com", "password": "secret1", "returnSecureToken": true}))
+	ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": in.str("idToken"), "displayName": "Sara"}))
+	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "other@example.com"}))
+	assertEqual(t, "verified address", p.lastMail("other@example.com")["subject"], "Hi Sara")
+	other := p.signUp("new@example.com", "secret1")
+	ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": other.str("idToken"), "displayName": lure}))
+	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "VERIFY_EMAIL", "idToken": other.str("idToken")}))
+	assertEqual(t, "unverified address", p.lastMail("new@example.com")["subject"], "Hi")
+}

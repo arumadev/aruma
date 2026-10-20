@@ -120,6 +120,15 @@ HTML-escaped into the body and inserted plain into the subject with line breaks 
 plain-text part is derived from the template before substitution, so values cannot inject
 markup into either part. A saved template must contain `%LINK%`.
 
+`%DISPLAY_NAME%` is empty in mail to an address the account has not verified: every
+`VERIFY_EMAIL` and `VERIFY_AND_CHANGE_EMAIL` message, and a reset or recovery message to an
+unverified address. The name is whatever the account holder typed, so otherwise anyone could
+send their own text from the project's sender to any inbox, by signing up with the address or
+asking to change to it (the display-name spam abuse known on Firebase projects). The built-in
+texts greet without a name at all ("Hello," / "مرحبًا،"), which also avoids "Hello ," for
+users without one. Firebase's own defaults greet with `%DISPLAY_NAME%`; a custom template may
+still do so and gets the name for verified addresses (security review v0.1, S-4).
+
 ## Outbox, delivery and the dev mailbox
 
 - The message is rendered and written to `auth.email_outbox` in the transaction that creates
