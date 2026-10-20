@@ -89,9 +89,15 @@ var (
 
 // ProjectID returns the id of an active project by number, for the data services' token
 // issuer and audience.
+//
+// A missing or inactive project is NOT_FOUND; a database failure is INTERNAL, as in
+// ProjectNumber, so a token is not refused as foreign during an outage.
 func (s *Service) ProjectID(ctx context.Context, number int64) (string, error) {
 	p, err := s.q.GetProject(ctx, number)
-	if err != nil || p.State != "ACTIVE" {
+	switch {
+	case err != nil && !notFound(err):
+		return "", internal(err)
+	case err != nil || p.State != "ACTIVE":
 		return "", errNotFound()
 	}
 	return p.ProjectID, nil
