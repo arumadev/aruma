@@ -60,15 +60,21 @@ Use the `google-services.json` that Aruma generates for the Android app.
 | Name | Value | |
 |---|---|---|
 | `ArumaURL` | `https://aruma.example.com[/prefix]` | Absent or empty: the library does nothing. |
-| `ArumaAllowInsecureURL` | `true` | Accept `http` to a host that is not loopback or an emulator host. Development only. |
+| `ArumaAllowInsecureURL` | `true` | Accept `http` to any host. Development only. |
 | `ArumaRedirectLog` | `true` | Log host and path of each redirected request. Never the query, headers or body. |
 
-`http` is accepted without the flag only for `localhost`, `127.0.0.0/8`, `::1`, `10.0.2.2` (Android emulator) and
-`10.0.3.2` (Genymotion). Android blocks cleartext traffic by default: for `http://10.0.2.2:<port>` add a
-`networkSecurityConfig` that allows it, in debug builds only.
+`http` is accepted without the flag only for loopback: `localhost`, `127.0.0.0/8` and `::1`, as in the web and iOS
+libraries. A debuggable app (`android:debuggable`, which every debug build is) may also use `10.0.2.2` (the Android
+emulator's alias of the development machine) and `10.0.3.2` (Genymotion's): on a real device those are ordinary
+private addresses, so a release build needs `https` there or the explicit flag. Names under `.localhost` are not
+accepted: RFC 6761 reserves them for loopback, but Android's resolver does not guarantee it. Android blocks
+cleartext traffic by default: for `http://10.0.2.2:<port>` add a `networkSecurityConfig` that allows it, in debug
+builds only.
 
 Code instead of manifest: call `ArumaRedirect.install("https://aruma.example.com")` before Firebase's first request
 (for example in `Application.attachBaseContext`). Installing the same URL twice is a no-op; a different URL throws.
+From code, `http://10.0.2.2:<port>` needs `install(url, BuildConfig.DEBUG, false)`: the library cannot see the
+debuggable flag without a `Context`.
 
 ### Safety
 
@@ -115,8 +121,11 @@ Run the unit tests: `./gradlew :aruma-redirect:testDebugUnitTest`.
 ### الإعداد والأمان
 
 - `ArumaURL` غائب أو فارغ: لا تفعل المكتبة شيئًا.
-- http مقبول دون إعداد إضافي لـ `localhost` و`127.0.0.0/8` و`::1` و`10.0.2.2` (المحاكي) و`10.0.3.2`؛ وغيرها يحتاج
-  `ArumaAllowInsecureURL=true` للتطوير فقط. ويلزم أيضًا `networkSecurityConfig` يسمح بـ cleartext في بناء debug وحده.
+- http مقبول دون إعداد إضافي لعناوين loopback فقط: `localhost` و`127.0.0.0/8` و`::1`، كما في مكتبتي الويب وiOS.
+  ويُقبل كذلك `10.0.2.2` (المحاكي) و`10.0.3.2` (Genymotion) في تطبيق قابل للتنقيح (`debuggable`، أي كل بناء debug)
+  فقط، لأنهما على جهاز حقيقي عنوانان خاصان عاديان. أسماء `.localhost` غير مقبولة: يحجزها RFC 6761 لـ loopback لكن
+  محلّل أندرويد لا يضمن ذلك. وغير ذلك يحتاج `ArumaAllowInsecureURL=true` للتطوير فقط (ومن الكود:
+  `install(url, BuildConfig.DEBUG, false)`). ويلزم أيضًا `networkSecurityConfig` يسمح بـ cleartext في بناء debug وحده.
 - `ArumaRedirectLog=true` يسجّل النطاق والمسار فقط، لا الاستعلام ولا الترويسات ولا الأجسام.
 - **الفشل مغلق:** `ArumaURL` غير صالح، أو `setURLStreamHandlerFactory` مستدعى من مكتبة أخرى: يتوقف التطبيق عند الإقلاع
   برسالة واضحة بدل أن تذهب كلمة المرور إلى Google. وطلب Auth لا يمكن تحويله بأمان (منفذ غير 443، أو بيانات اعتماد في العنوان،

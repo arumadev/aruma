@@ -58,7 +58,7 @@ public class ForwardingTest {
         });
         t.setDaemon(true);
         t.start();
-        ArumaBase base = new ArumaBase("http://127.0.0.1:" + port(), false);
+        ArumaBase base = new ArumaBase("http://127.0.0.1:" + port(), false, false);
         ArumaStreamHandlerFactory factory = new ArumaStreamHandlerFactory(base, new URL("https://aruma.invalid/"), null);
         handler = factory.createURLStreamHandler("https");
     }
@@ -220,7 +220,7 @@ public class ForwardingTest {
 
     @Test
     public void handlerIsOnlyForHttps() throws Exception {
-        ArumaBase base = new ArumaBase("https://aruma.example.com", false);
+        ArumaBase base = new ArumaBase("https://aruma.example.com", false, false);
         ArumaStreamHandlerFactory f = new ArumaStreamHandlerFactory(base, new URL("https://aruma.invalid/"), null);
         assertNull(f.createURLStreamHandler("http"));
         assertNull(f.createURLStreamHandler("jar"));
@@ -230,7 +230,7 @@ public class ForwardingTest {
     @Test
     public void requestLogReceivesHostAndPathOnly() throws Exception {
         final List<String> logged = new ArrayList<>();
-        ArumaBase base = new ArumaBase("http://127.0.0.1:" + port(), false);
+        ArumaBase base = new ArumaBase("http://127.0.0.1:" + port(), false, false);
         URLStreamHandler h = new ArumaStreamHandlerFactory(base, new URL("https://aruma.invalid/"),
                 (host, path) -> logged.add(host + path)).createURLStreamHandler("https");
         HttpURLConnection c = (HttpURLConnection) new URL(null, "https://securetoken.googleapis.com/v1/token?key=SECRET", h)
