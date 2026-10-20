@@ -81,6 +81,7 @@
     "projects": "Projects",
     "overview": "Overview",
     "auth": "Authentication",
+    "database": "Realtime Database",
     "keys": "API keys",
     "serviceAccounts": "Service accounts",
     "audit": "Audit log",
@@ -192,7 +193,7 @@
     "noAppsBody": "Add an Android, iOS or web app to get its config file.",
     "deleted": "Deleted",
     "services": "Services",
-    "servicesHint": "Authentication is ready; the other services arrive in later releases.",
+    "servicesHint": "Authentication and Realtime Database are ready; the other services arrive in later releases.",
     "comingSoon": "Coming soon",
     "service": {
       "auth": "Authentication",
@@ -910,6 +911,95 @@
       "passwordFailures": "Wrong passwords",
       "failures": "After {count, plural, one {# wrong password} other {# wrong passwords}} within {window}, each attempt waits longer, up to {max}.",
       "codeLifetime": "{type} link lifetime"
+    }
+  },
+  "database": {
+    "section": {
+      "title": "Realtime Database",
+      "subtitle": "Data your apps sync in real time, and the rules that guard it.",
+      "sections": "Realtime Database pages",
+      "data": "Data",
+      "rules": "Rules",
+      "databaseUrl": "databaseURL",
+      "copyUrl": "Copy database URL",
+      "disabledTitle": "Realtime Database is off on this server",
+      "disabledBody": "Turn it on with <code>rtdb.enabled</code> (or <code>ARUMA_RTDB_ENABLED=true</code>) and restart the server. Apps already carry the database URL above.",
+      "devOpenTitle": "Development rules are on",
+      "devOpenBody": "<code>rtdb.dev_open_rules</code> lets apps on the server's own machine read and write everything, whatever the rules below say."
+    },
+    "data": {
+      "title": "Data",
+      "tree": "Database data",
+      "rootList": "Top-level keys",
+      "childList": "Children of {path}",
+      "stored": "{capped, select, true {More than {count, number} values stored.} other {{count, plural, =0 {No values stored.} one {# value stored.} other {# values stored.}}}}",
+      "refreshHint": "Changes made by apps show when you refresh.",
+      "refresh": "Refresh",
+      "export": "Export JSON",
+      "exportNode": "Export {key} as JSON",
+      "addChild": "Add child",
+      "addTo": "Add a child to {key}",
+      "expand": "Expand {key}",
+      "collapse": "Collapse {key}",
+      "edit": "Edit {key}",
+      "editRoot": "Edit the root value",
+      "delete": "Delete {key}",
+      "deleteRoot": "Delete all data",
+      "loadMore": "Load more",
+      "emptyTitle": "No data yet",
+      "emptyBody": "Add a child here, or write from an app with the Firebase SDK.",
+      "saved": "Saved {path}.",
+      "added": "Added {path}.",
+      "deleted": "Deleted {path}.",
+      "deleteTitle": "Delete this data?",
+      "deleteBody": "<path></path> and everything below it are deleted. Apps listening to it see the change at once. This can't be undone.",
+      "deleteConfirm": "Delete"
+    },
+    "editor": {
+      "addLabel": "Add a child to {path}",
+      "editLabel": "Edit {path}",
+      "keyLabel": "Key",
+      "valueLabel": "Value",
+      "valueHint": "Text, a number, true or false, or JSON. Quote text that looks like a number.",
+      "savedAs": {
+        "text": "Saved as text.",
+        "number": "Saved as a number.",
+        "boolean": "Saved as true or false.",
+        "object": "Saved as JSON: an object, or an array kept as an object keyed 0, 1, 2…",
+        "null": "Nothing to save."
+      },
+      "add": "Add",
+      "key": {
+        "empty": "Enter a key.",
+        "chars": "A key can't contain . # $ [ ] / or control characters.",
+        "long": "A key can be at most {max} bytes."
+      },
+      "value": {
+        "empty": "Enter a value.",
+        "json": "This isn't valid JSON. Check the brackets and quotes.",
+        "null": "To remove data, delete it instead.",
+        "key": "The key \"{key}\" isn't allowed: keys can't be empty or contain . # $ [ ] / or control characters.",
+        "string": "A string can be at most {max} bytes.",
+        "depth": "Data can be at most {max} levels deep, counting from the root.",
+        "path": "A path inside this value is longer than {max} bytes.",
+        "size": "This is more than {max} bytes. Import large data with the REST API or an Admin SDK."
+      }
+    },
+    "rules": {
+      "title": "Rules",
+      "description": "Who can read and write which data. Admin SDKs and this dashboard are not bound by them.",
+      "templates": "Start from:",
+      "locked": "Locked mode",
+      "testMode": "Test mode",
+      "openTitle": "Anyone can reach your data",
+      "openRead": "With these rules, anyone who has your database URL can read all of the data. Use them only while testing.",
+      "openWrite": "With these rules, anyone who has your database URL can read, change and delete all of the data. Use them only while testing.",
+      "invalidTitle": "{count, plural, one {The rules have an error} other {The rules have # errors}}",
+      "at": "Line {line}, column {column}:",
+      "editor": "Rules (JSON)",
+      "publish": "Publish",
+      "revert": "Discard changes",
+      "published": "Rules published."
     }
   }
 }

@@ -24,4 +24,6 @@ export const routes = {
   authTemplates: (id: string) => withQuery('/project/auth/templates/', { id }),
   authMailbox: (id: string) => withQuery('/project/auth/mailbox/', { id }),
   authSettings: (id: string) => withQuery('/project/auth/settings/', { id }),
+  database: (id: string) => withQuery('/project/database/', { id }),
+  databaseRules: (id: string) => withQuery('/project/database/rules/', { id }),
 } as const;

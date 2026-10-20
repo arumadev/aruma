@@ -9,12 +9,15 @@ import type {
   AuthConfigUpdate,
   AuthUser,
   AuthUserUpdate,
+  DatabaseInfo,
+  DataPage,
   EmailTemplate,
   EmailTemplateType,
   FederatedProvider,
   FederatedProviders,
   FederatedProviderUpdate,
   FlutterSelection,
+  JsonValue,
   Locale,
   Login,
   Mailbox,
@@ -183,3 +186,23 @@ export const updateSmtp = (p: string, body: SmtpUpdate) => request<SmtpSettings>
 export const testSmtp = (p: string, to: string) => request<{ devMailbox: boolean }>(`${auth(p)}/smtp:test`, { method: 'POST', body: { to } });
 export const getMailbox = (p: string, signal?: AbortSignal) => request<Mailbox>(`${auth(p)}/mailbox`, { signal });
 export const clearMailbox = (p: string) => requestEmpty(`${auth(p)}/mailbox`, { method: 'DELETE' });
+
+// Realtime Database. Paths are /-separated from the root: "/", "/users/amal".
+const database = (p: string) => `${project(p)}/database`;
+
+export const getDatabase = (p: string, signal?: AbortSignal) => request<DatabaseInfo>(database(p), { signal });
+/** One level of the node at `path`, a page of its children at a time. */
+export const browseData = (p: string, path: string, query: { pageSize?: number; pageToken?: string }, signal?: AbortSignal) =>
+  request<DataPage>(`${database(p)}/data`, { query: { path, ...query }, signal });
+/** Replaces the node, as set() does; the value is in the SDKs' export format. */
+export const setData = (p: string, path: string, value: JsonValue) =>
+  requestEmpty(`${database(p)}/data`, { method: 'PUT', query: { path }, body: { value } });
+/** Writes the children of `value`, keyed by relative paths, at once, as update() does. */
+export const updateData = (p: string, path: string, value: Record<string, JsonValue>) =>
+  requestEmpty(`${database(p)}/data`, { method: 'PATCH', query: { path }, body: { value } });
+export const deleteData = (p: string, path: string) => requestEmpty(`${database(p)}/data`, { method: 'DELETE', query: { path } });
+export const exportData = (p: string, path: string) =>
+  downloadFile(`${database(p)}/data:export`, { query: { path }, fallbackName: 'export.json' });
+export const getRules = (p: string, signal?: AbortSignal) => request<{ rules: string }>(`${database(p)}/rules`, { signal });
+/** Saves the rules once they load; otherwise fails with their errors (see ruleErrors). */
+export const saveRules = (p: string, rules: string) => request<{ rules: string }>(`${database(p)}/rules`, { method: 'PUT', body: { rules } });

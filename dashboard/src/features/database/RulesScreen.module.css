@@ -1,0 +1,135 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+
+.templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.templatesLabel {
+  margin-inline-end: var(--space-2);
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-label-large);
+}
+
+.errors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.errorLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.errorLink:focus-visible {
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.message {
+  font: var(--md-sys-typescale-code);
+  overflow-wrap: anywhere;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.label {
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-medium);
+}
+
+/* Code reads left to right in both languages, line numbers on its left. */
+.editor {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  background: var(--md-sys-color-surface);
+  font: var(--md-sys-typescale-code);
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+}
+
+.editor:has(:focus) {
+  border-color: var(--md-sys-color-primary);
+  box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
+}
+
+.field[data-invalid] .editor {
+  border-color: var(--md-sys-color-error);
+}
+
+.gutter {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  min-inline-size: 3.5rem;
+  padding-block: var(--space-3);
+  padding-inline: var(--space-2);
+  border-inline-end: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-low);
+  color: var(--md-sys-color-on-surface-variant);
+  text-align: end;
+  overflow: hidden;
+  user-select: none;
+}
+
+.gutter > span {
+  display: block;
+  min-block-size: 1.5rem;
+}
+
+.errorLine {
+  color: var(--md-sys-color-on-error-container);
+  background: var(--md-sys-color-error-container);
+  font-weight: 600;
+}
+
+.area {
+  flex: 1;
+  min-inline-size: 0;
+  padding-block: var(--space-3);
+  padding-inline: var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--md-sys-color-on-surface);
+  font: inherit;
+  line-height: inherit;
+  white-space: pre;
+  resize: block;
+  overflow: auto;
+  tab-size: 2;
+}
+
+.area:focus {
+  outline: none;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

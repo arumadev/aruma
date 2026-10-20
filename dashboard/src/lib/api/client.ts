@@ -17,14 +17,17 @@ export class ApiError extends Error {
   readonly fieldViolations: FieldViolation[];
   /** Seconds from the Retry-After header of a 429. */
   readonly retryAfter?: number;
+  /** Every detail of the status as sent, such as a rules document's errors with their positions. */
+  readonly details: unknown[];
 
-  constructor(code: number, status: string, message: string, fieldViolations: FieldViolation[] = [], retryAfter?: number) {
+  constructor(code: number, status: string, message: string, fieldViolations: FieldViolation[] = [], retryAfter?: number, details: unknown[] = []) {
     super(message);
     this.name = 'ApiError';
     this.code = code;
     this.status = status;
     this.fieldViolations = fieldViolations;
     this.retryAfter = retryAfter;
+    this.details = details;
   }
 
   /** The violation reported for `field`, if any. */
@@ -105,7 +108,7 @@ async function toApiError(res: Response): Promise<ApiError> {
       error: { code: number; status: string; message: string; details?: { '@type'?: string; fieldViolations?: FieldViolation[] }[] };
     };
     const violations = (error.details ?? []).flatMap((d) => (d['@type']?.endsWith('google.rpc.BadRequest') ? (d.fieldViolations ?? []) : []));
-    return new ApiError(res.status, error.status, error.message, violations, retryAfter);
+    return new ApiError(res.status, error.status, error.message, violations, retryAfter, error.details ?? []);
   } catch {
     return new ApiError(res.status, 'UNKNOWN', res.statusText, [], retryAfter);
   }

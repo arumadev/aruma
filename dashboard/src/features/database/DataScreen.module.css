@@ -1,0 +1,143 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.summary {
+  flex: 1 1 280px;
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-medium);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tree {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface);
+  overflow: auto;
+}
+
+.rootRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  align-items: center;
+  min-block-size: 40px;
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-title-small);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nested {
+  margin-inline-start: 19px;
+  padding-inline-start: var(--space-4);
+  border-inline-start: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  min-block-size: 40px;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+}
+
+.row:hover {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-hover), transparent);
+}
+
+.toggle,
+.toggleOpen {
+  flex: none;
+  transition: transform var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+}
+
+.toggleOpen {
+  transform: rotate(90deg);
+}
+
+/* The chevron points along the reading direction; open, it points down either way. */
+:global([dir='rtl']) .toggleOpen {
+  transform: rotate(-90deg);
+}
+
+.spacer {
+  flex: none;
+  inline-size: 40px;
+}
+
+.entry {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  align-items: baseline;
+  min-inline-size: 0;
+  font: var(--md-sys-typescale-code);
+}
+
+.key {
+  color: var(--md-sys-color-on-surface);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.colon {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.value {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.string {
+  color: var(--md-sys-color-tertiary);
+}
+
+.number {
+  color: var(--md-sys-color-primary);
+}
+
+.boolean {
+  color: var(--md-sys-color-secondary);
+}
+
+.actions {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+
+.inlineEditor {
+  padding-block: var(--space-2);
+  padding-inline-start: 44px;
+}
+
+.more {
+  padding-inline-start: 36px;
+}

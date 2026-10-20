@@ -345,3 +345,63 @@ export interface Mailbox {
   enabled: boolean;
   messages: MailboxMessage[];
 }
+
+// Realtime Database (/projects/{project}/database)
+
+/** Any JSON value, as a database stores it. */
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
+export interface DatabaseLimits {
+  /** UTF-8 bytes of a key, and of a whole path. */
+  keyBytes: number;
+  pathBytes: number;
+  /** Keys from the root: the path and the data written there counted together. */
+  depth: number;
+  stringBytes: number;
+  /** The body of one console write. */
+  writeBytes: number;
+  exportBytes: number;
+}
+
+export interface DatabaseInfo {
+  name: string;
+  /** What config files carry: https://<project>-default-rtdb.<rtdb.domain>, or the development form. */
+  databaseURL: string;
+  /** False while the server runs without rtdb.enabled; the fields below are then absent. */
+  enabled: boolean;
+  devOpenRules?: boolean;
+  writeCount?: number;
+  size?: { rows: number; bytes: number; capped: boolean };
+  limits?: DatabaseLimits;
+}
+
+/** A value stored at a leaf. */
+export type LeafValue = string | number | boolean;
+
+/** One child in a page: a leaf's value, or `hasChildren` for an object. */
+export interface DataChild {
+  key: string;
+  value?: LeafValue;
+  /** A string over 1000 bytes, cut; read the child's own path for all of it. */
+  truncated?: boolean;
+  hasChildren?: boolean;
+}
+
+/** One level of a node, as REST's shallow=true shows it. */
+export interface DataPage {
+  path: string;
+  exists: boolean;
+  /** The node itself when it is a leaf. */
+  value?: LeafValue;
+  children: DataChild[];
+  nextPageToken: string;
+}
+
+/** A problem in a rules document, at its 1-based line and column. */
+export interface RuleError {
+  line: number;
+  column: number;
+  /** The rule it is in, such as rules/users/$uid/.write. */
+  path?: string;
+  message: string;
+}
