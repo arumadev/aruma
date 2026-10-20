@@ -267,3 +267,23 @@ func banner(t *testing.T, line string) net.Listener {
 	}()
 	return ln
 }
+
+// Info: removing a user's email through the Admin API left its password sign-in behind, keyed
+// by the old address, so nobody could register that address again. A password needs an
+// email: the removal is refused unless the password goes in the same call.
+func TestAuthAdminEmailRemovalLeavesNoPasswordBehind(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.adminProject("chat-app")
+	ok(t, p.admin(p.sa, "accounts", map[string]any{"localId": "user-1", "email": "sara@example.com", "password": "secret1"}))
+	authErr(t, p.admin(p.sa, "accounts:update", map[string]any{"localId": "user-1", "email": ""}), "MISSING_EMAIL")
+	ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "sara@example.com", "password": "secret1"}))
+
+	upd := ok(t, p.admin(p.sa, "accounts:update", map[string]any{"localId": "user-1", "email": "", "deleteProvider": []string{"password"}}))
+	if upd.str("email") != "" || upd.str("passwordHash") != "" || upd.JSON["providerUserInfo"] != nil {
+		t.Fatalf("after removal: %s", upd.Body)
+	}
+	again := ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "sara@example.com", "password": "secret2"}))
+	if again.str("localId") == "user-1" {
+		t.Fatal("the address came back to the old user")
+	}
+}

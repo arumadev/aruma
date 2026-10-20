@@ -175,7 +175,7 @@ Every path below starts with `/projects/{project}/auth`. They act on Aruma Auth 
 | GET | `/users?pageSize=&pageToken=&query=` | → `{users: [User], nextPageToken, totalSize}`. Ordered by uid. `query` matches an email prefix (case-insensitive) or an exact uid; `totalSize` counts the matches |
 | POST | `/users` | `{uid?, email?, password?, displayName?, emailVerified?, disabled?}` → `User`. A uid is generated when omitted; the password follows the project's policy |
 | GET | `/users/{uid}` | → `User` |
-| PATCH | `/users/{uid}` | `{email?, password?, displayName?, photoUrl?, emailVerified?, disabled?, customClaims?}` → `User`. `customClaims` is a JSON object as a string, at most 1000 characters, without reserved names; `""` clears them. A new email or password revokes the user's sessions |
+| PATCH | `/users/{uid}` | `{email?, password?, displayName?, photoUrl?, emailVerified?, disabled?, customClaims?}` → `User`. `customClaims` is a JSON object as a string, at most 1000 characters, without reserved names; `""` clears them. A new email or password revokes the user's sessions. `email: ""` removes the address; a user with a password answers `MISSING_EMAIL`, since the password signs in with it |
 | DELETE | `/users/{uid}` | → 204 |
 | POST | `/users/{uid}:revokeSessions` | → `User`. Refresh tokens and the ID tokens issued so far stop working (`tokensValidAfterTime` moves to now) |
 | GET | `/config` | → `AuthConfig` |
