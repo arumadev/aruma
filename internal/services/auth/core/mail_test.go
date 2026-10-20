@@ -8,12 +8,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"errors"
 	"io"
 	"math/big"
 	"mime"
 	"mime/multipart"
 	"net"
 	"net/mail"
+	"net/netip"
 	"strings"
 	"testing"
 	"time"
@@ -133,7 +135,7 @@ func selfSigned(t *testing.T) (*tls.Config, *x509.CertPool) {
 func TestSendOverSTARTTLS(t *testing.T) {
 	serverTLS, roots := selfSigned(t)
 	srv := smtptest.Start(t, serverTLS)
-	m := newMailer()
+	m := localMailer()
 	m.roots = roots
 	msg := outgoing{
 		From: mail.Address{Name: "تطبيق الدردشة", Address: "noreply@chat.example"}, To: "sara@example.com",
@@ -177,7 +179,7 @@ func TestSendOverSTARTTLS(t *testing.T) {
 
 func TestSendNeverDowngradesSTARTTLS(t *testing.T) {
 	srv := smtptest.Start(t, nil) // offers no STARTTLS
-	err := newMailer().send(context.Background(), smtpServer{Host: srv.Host, Port: srv.Port, TLS: "starttls"}, "aruma.test",
+	err := localMailer().send(context.Background(), smtpServer{Host: srv.Host, Port: srv.Port, TLS: "starttls"}, "aruma.test",
 		outgoing{From: mail.Address{Address: "a@example.com"}, To: "b@example.com"})
 	if err == nil || !strings.Contains(err.Error(), "STARTTLS") || len(srv.Messages()) != 0 {
 		t.Fatalf("err = %v, messages = %d", err, len(srv.Messages()))
@@ -187,9 +189,87 @@ func TestSendNeverDowngradesSTARTTLS(t *testing.T) {
 func TestSendRejectsUntrustedCertificate(t *testing.T) {
 	serverTLS, _ := selfSigned(t)
 	srv := smtptest.Start(t, serverTLS)
-	err := newMailer().send(context.Background(), smtpServer{Host: srv.Host, Port: srv.Port, TLS: "starttls"}, "aruma.test",
+	err := localMailer().send(context.Background(), smtpServer{Host: srv.Host, Port: srv.Port, TLS: "starttls"}, "aruma.test",
 		outgoing{From: mail.Address{Address: "a@example.com"}, To: "b@example.com"})
 	if err == nil || len(srv.Messages()) != 0 {
 		t.Fatalf("an untrusted certificate was accepted: %v", err)
+	}
+}
+
+// localMailer is a mailer that may reach the test servers on loopback.
+func localMailer() *mailer {
+	m := newMailer()
+	m.allowPrivate = true
+	return m
+}
+
+func TestPublicAddr(t *testing.T) {
+	for addr, want := range map[string]bool{
+		"93.184.216.34": true, "8.8.8.8": true, "2606:4700::1111": true, "64:ff9b::808:808": true,
+		"127.0.0.1": false, "127.9.9.9": false, "::1": false, "10.0.0.1": false, "172.31.255.255": false,
+		"192.168.0.1": false, "169.254.169.254": false, "fe80::1": false, "fd00:ec2::254": false,
+		"100.100.100.200": false, "0.0.0.0": false, "0.1.2.3": false, "::": false, "::ffff:127.0.0.1": false,
+		"::ffff:10.0.0.1": false, "64:ff9b::7f00:1": false, "64:ff9b::a9fe:a9fe": false, "224.0.0.1": false,
+		"255.255.255.255": false, "240.0.0.1": false, "198.18.0.1": false, "fe80::1%en0": false,
+	} {
+		if got := publicAddr(netip.MustParseAddr(addr)); got != want {
+			t.Errorf("publicAddr(%s) = %v, want %v", addr, got, want)
+		}
+	}
+	for host, want := range map[string]bool{
+		"localhost": true, "LocalHost.": true, "relay.localhost": true, "[::1]": true, "10.0.0.5": true,
+		"smtp.example.com": false, "127.1": false, "93.184.216.34": false, // 127.1 is a name: refused when dialled
+	} {
+		if got := privateHost(host); got != want {
+			t.Errorf("privateHost(%q) = %v, want %v", host, got, want)
+		}
+	}
+}
+
+// The check runs on the address dialled, after name resolution.
+func TestSendRefusesPrivateAddressesWhenDialling(t *testing.T) {
+	srv := smtptest.Start(t, nil)
+	for _, host := range []string{srv.Host, "localhost", "127.1"} {
+		err := newMailer().send(context.Background(), smtpServer{Host: host, Port: srv.Port, TLS: "none"}, "aruma.test",
+			outgoing{From: mail.Address{Address: "a@example.com"}, To: "b@example.com"})
+		if !errors.Is(err, errPrivateSMTPHost) {
+			t.Errorf("%s: err = %v", host, err)
+		}
+	}
+	if len(srv.Messages()) != 0 {
+		t.Fatal("a message reached a loopback server")
+	}
+}
+
+// A port that accepts and stays silent fails at the greeting timeout, not the whole one.
+func TestSendGivesUpOnASilentPort(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	go func() { // accepts, says nothing, and hangs up when the listener closes
+		var conns []net.Conn
+		for {
+			c, err := ln.Accept()
+			if err != nil {
+				for _, c := range conns {
+					c.Close()
+				}
+				return
+			}
+			conns = append(conns, c)
+		}
+	}()
+	defer func(d time.Duration) { smtpGreetingTimeout = d }(smtpGreetingTimeout)
+	smtpGreetingTimeout = 200 * time.Millisecond
+	port := ln.Addr().(*net.TCPAddr).Port
+	for _, mode := range []string{"none", "tls"} {
+		start := time.Now()
+		err = localMailer().send(context.Background(), smtpServer{Host: "127.0.0.1", Port: port, TLS: mode}, "aruma.test",
+			outgoing{From: mail.Address{Address: "a@example.com"}, To: "b@example.com"})
+		if err == nil || time.Since(start) > 5*time.Second {
+			t.Fatalf("%s: err = %v after %v", mode, err, time.Since(start))
+		}
 	}
 }

@@ -87,7 +87,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		Logger:     logger,
 	}
 	authSvc := identity.New(pool, svc, keys, hasher, strings.TrimSuffix(cfg.PublicBaseURL().String(), "/"), logger)
-	authSvc.ConfigureMail(identity.MailOptions{DevMailbox: cfg.DevMailbox()})
+	authSvc.ConfigureMail(identity.MailOptions{DevMailbox: cfg.DevMailbox(), SMTPAllowPrivate: cfg.SMTPAllowPrivate()})
 	if st.idp != nil {
 		st.idp(authSvc)
 	}

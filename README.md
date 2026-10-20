@@ -54,6 +54,7 @@ make dev         # ينشئ .env بمفتاح عشوائي عند أول تشغ�
 | `ARUMA_TRUSTED_PROXIES` | | | عناوين CIDR التي تُصدَّق منها `X-Forwarded-For` |
 | `ARUMA_SESSION_IDLE_TIMEOUT` / `ARUMA_SESSION_ABSOLUTE_TIMEOUT` | | `30m` / `8h` | عمر جلسة اللوحة |
 | `ARUMA_MAIL_DEV_MAILBOX` | | `true` إن كان `public_url` على loopback، وإلا `false` | صندوق بريد التطوير: رسائل Auth للمشاريع التي بلا SMTP تُحفظ في اللوحة بدل إرسالها. خادم SMTP يُضبط لكل مشروع من اللوحة |
+| `ARUMA_MAIL_SMTP_ALLOW_PRIVATE` | | `true` إن كان `public_url` على loopback، وإلا `false` | السماح بخادم SMTP على عنوان loopback أو خاص أو link-local (مثل Postfix على الجهاز نفسه). مغلق، لا تصل إعدادات SMTP في اللوحة إلى شبكة الخادم الداخلية ولا إلى عنوان metadata السحابي. فعّله إن كان مرحّل البريد محليًا |
 
 ## أوامر المشغّل: `aruma`
 

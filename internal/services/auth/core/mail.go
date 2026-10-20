@@ -52,13 +52,18 @@ type MailOptions struct {
 	// DevMailbox allows the dev mailbox: projects that have not chosen otherwise keep their
 	// messages in the console instead of sending them, unless they have an SMTP host.
 	DevMailbox bool
+	// SMTPAllowPrivate lets projects send through SMTP hosts on loopback, private or
+	// link-local addresses, such as a relay on the same machine. Off, such hosts are refused,
+	// so the SMTP settings cannot probe the instance's own network.
+	SMTPAllowPrivate bool
 }
 
 type mailer struct {
-	devMailbox bool
-	recipient  *ratelimit.Limiter // per project and recipient address
-	project    *ratelimit.Limiter // per project
-	roots      *x509.CertPool     // SMTP TLS roots; nil means the system's
+	devMailbox   bool
+	allowPrivate bool               // SMTP hosts may be loopback, private or link-local
+	recipient    *ratelimit.Limiter // per project and recipient address
+	project      *ratelimit.Limiter // per project
+	roots        *x509.CertPool     // SMTP TLS roots; nil means the system's
 }
 
 func newMailer() *mailer {
@@ -69,7 +74,9 @@ func newMailer() *mailer {
 }
 
 // ConfigureMail applies the instance's email settings. Call it before serving.
-func (s *Service) ConfigureMail(o MailOptions) { s.mail.devMailbox = o.DevMailbox }
+func (s *Service) ConfigureMail(o MailOptions) {
+	s.mail.devMailbox, s.mail.allowPrivate = o.DevMailbox, o.SMTPAllowPrivate
+}
 
 // DevMailboxAllowed reports whether this instance offers the dev mailbox at all.
 func (s *Service) DevMailboxAllowed() bool { return s.mail.devMailbox }
@@ -265,6 +272,9 @@ func (s *Service) UpdateSMTP(ctx context.Context, p Project, u SMTPUpdate) (SMTP
 		if h != "" && !validHost(h) {
 			return bad("host must be a host name or address")
 		}
+		if h != "" && !s.mail.allowPrivate && privateHost(h) {
+			return SMTPSettings{}, failf(ErrSMTPHostPrivate.Code, errPrivateSMTPHost.Error())
+		}
 		c.SmtpHost = h
 	}
 	if u.Port != nil {
@@ -391,7 +401,7 @@ func (s *Service) ClearMailbox(ctx context.Context, p Project) error {
 }
 
 // SendTestMail sends a short message to check the project's settings: to the dev mailbox when
-// the project uses it, otherwise straight over SMTP, so the console sees the server's answer.
+// the project uses it, otherwise straight over SMTP, so the console learns whether it worked.
 func (s *Service) SendTestMail(ctx context.Context, p Project, to string) (devMailbox bool, err error) {
 	addr, ok := normalizeEmail(to)
 	if !ok {
@@ -417,7 +427,13 @@ func (s *Service) SendTestMail(ctx context.Context, p Project, to string) (devMa
 		return true, s.queue(ctx, s.q, p, c, "TEST", defaultMailLang, addr, m)
 	}
 	if err := s.deliver(ctx, c, prof, addr, m); err != nil {
-		return false, failf("SMTP_ERROR", err.Error())
+		// The server's answer stays in the log: echoed to the console, it would make the
+		// settings a reader of whatever banner a host and port return.
+		s.log.Warn("auth smtp test failed", "project", p.Number, "host", c.SmtpHost, "port", c.SmtpPort, "error", err)
+		if errors.Is(err, errPrivateSMTPHost) {
+			return false, failf(ErrSMTPHostPrivate.Code, errPrivateSMTPHost.Error())
+		}
+		return false, failf("SMTP_ERROR", "the test message could not be sent; the server log has the details")
 	}
 	return false, nil
 }

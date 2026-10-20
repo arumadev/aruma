@@ -149,6 +149,24 @@ still do so and gets the name for verified addresses (security review v0.1, S-4)
   `auth.project_config|smtp_password_enc|<project number>`. Headers are encoded (RFC 2047) and
   come from validated values, so none can add a header. Messages are multipart/alternative,
   UTF-8, quoted-printable, `Auto-Submitted: auto-generated`.
+- **Where SMTP may go.** The host is the console user's choice, so the server would otherwise
+  open TCP connections anywhere it can reach, and `smtp:test` would read back whatever a host
+  and port answer (security review v0.1, S-5). Unless the instance setting
+  `mail.smtp_allow_private` (`ARUMA_MAIL_SMTP_ALLOW_PRIVATE`) is on, a host on a loopback,
+  private (RFC 1918, `fc00::/7`), link-local (`169.254.0.0/16`, `fe80::/10`: the metadata
+  address of most clouds), unspecified, shared (`100.64.0.0/10`, Alibaba's metadata), reserved
+  or multicast address is refused (`SMTP_HOST_PRIVATE`): as an address or a `localhost` name
+  when saved, and for any name on the address actually dialled, after resolution,
+  so DNS rebinding gains nothing. IPv4-mapped and NAT64 addresses are judged by the IPv4
+  address they carry. The default is on only when `public_url` is loopback (a developer's own
+  machine, like the dev mailbox). A self-hosted single-owner install with a local relay
+  (Postfix on 127.0.0.1 or the LAN) turns it on with one line; it is off elsewhere because a
+  console account, even on an instance with closed sign-up, is not meant to reach the
+  operator's network. `smtp:test` answers a generic `SMTP_ERROR` and the server log keeps the
+  detail; only the private-address refusal is named, so the operator knows which setting to
+  change. Connecting and the server's greeting (with the TLS handshake for `tls`) each have
+  10 s, the whole conversation 30 s, so a silent port fails fast and the console's request
+  ends within the HTTP write timeout.
 
 ## Flood limits
 

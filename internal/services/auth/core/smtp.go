@@ -11,17 +11,90 @@ import (
 	"mime/quotedprintable"
 	"net"
 	"net/mail"
+	"net/netip"
 	"net/smtp"
 	"net/textproto"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/osama300/aurma-project/internal/platform/crypto"
 )
 
-// smtpTimeout bounds one whole SMTP conversation.
-const smtpTimeout = 60 * time.Second
+// SMTP time limits. Connecting and the server's greeting are bounded tightly, so a port that
+// accepts and stays silent fails fast instead of holding the console's request; the whole
+// conversation ends well within the HTTP write timeout.
+var (
+	smtpDialTimeout     = 10 * time.Second
+	smtpGreetingTimeout = 10 * time.Second
+	smtpTimeout         = 30 * time.Second
+)
+
+// errPrivateSMTPHost refuses a connection to an address outside the public internet;
+// ErrSMTPHostPrivate is how the console hears of it, so it can name the setting to change.
+var (
+	errPrivateSMTPHost = errors.New("the SMTP host is a loopback, private or link-local address, which this instance does not allow (mail.smtp_allow_private, ARUMA_MAIL_SMTP_ALLOW_PRIVATE)")
+	ErrSMTPHostPrivate = fail("SMTP_HOST_PRIVATE")
+)
+
+// nonPublic are the ranges, beyond what netip classifies, that an SMTP host must not be in
+// unless the instance allows private hosts: this network, shared address space (carrier NAT,
+// and Alibaba Cloud's metadata at 100.100.100.200), IETF protocol assignments, benchmarking,
+// reserved, and local-use NAT64.
+var nonPublic = []netip.Prefix{
+	netip.MustParsePrefix("0.0.0.0/8"),
+	netip.MustParsePrefix("100.64.0.0/10"),
+	netip.MustParsePrefix("192.0.0.0/24"),
+	netip.MustParsePrefix("198.18.0.0/15"),
+	netip.MustParsePrefix("240.0.0.0/4"),
+	netip.MustParsePrefix("64:ff9b:1::/48"),
+}
+
+// nat64 is the well-known NAT64 prefix, whose addresses stand for the IPv4 address they end in.
+var nat64 = netip.MustParsePrefix("64:ff9b::/96")
+
+// publicAddr reports whether ip is a public unicast address: not loopback, private (RFC 1918,
+// fc00::/7, which holds AWS's IPv6 metadata address), link-local (169.254.0.0/16, the metadata
+// address of most clouds, and fe80::/10), unspecified, multicast or broadcast.
+func publicAddr(ip netip.Addr) bool {
+	ip = ip.Unmap().WithZone("")
+	if nat64.Contains(ip) {
+		b := ip.As16()
+		return publicAddr(netip.AddrFrom4([4]byte(b[12:])))
+	}
+	if !ip.IsGlobalUnicast() || ip.IsPrivate() {
+		return false
+	}
+	for _, p := range nonPublic {
+		if p.Contains(ip) {
+			return false
+		}
+	}
+	return true
+}
+
+// privateHost reports whether a configured host is plainly not public: an address outside the
+// public internet, or a localhost name. Other names are checked where they lead when a
+// connection is made, so a name that later resolves elsewhere gains nothing.
+func privateHost(h string) bool {
+	h = strings.ToLower(strings.TrimSuffix(strings.Trim(h, "[]"), "."))
+	if h == "localhost" || strings.HasSuffix(h, ".localhost") {
+		return true
+	}
+	ip, err := netip.ParseAddr(h)
+	return err == nil && !publicAddr(ip)
+}
+
+// refusePrivate is a dialer's Control: it sees the address actually being connected to, after
+// name resolution, so DNS rebinding cannot slip a private address past the settings check.
+func refusePrivate(_, address string, _ syscall.RawConn) error {
+	ap, err := netip.ParseAddrPort(address)
+	if err != nil || !publicAddr(ap.Addr()) {
+		return errPrivateSMTPHost
+	}
+	return nil
+}
 
 // smtpServer is a project's outgoing server.
 type smtpServer struct {
@@ -49,22 +122,35 @@ func (m *mailer) send(ctx context.Context, srv smtpServer, helo string, msg outg
 	ctx, cancel := context.WithTimeout(ctx, smtpTimeout)
 	defer cancel()
 	addr := net.JoinHostPort(srv.Host, strconv.Itoa(srv.Port))
-	conn, err := (&net.Dialer{Timeout: 15 * time.Second}).DialContext(ctx, "tcp", addr)
+	dialer := &net.Dialer{Timeout: smtpDialTimeout}
+	if !m.allowPrivate {
+		dialer.Control = refusePrivate
+	}
+	raw, err := dialer.DialContext(ctx, "tcp", addr)
+	if errors.Is(err, errPrivateSMTPHost) {
+		return errPrivateSMTPHost
+	}
 	if err != nil {
 		return fmt.Errorf("connect to %s: %w", addr, err)
 	}
-	defer conn.Close()
+	defer raw.Close()
 	deadline, _ := ctx.Deadline()
-	_ = conn.SetDeadline(deadline)
+	greeting := time.Now().Add(smtpGreetingTimeout)
+	if deadline.Before(greeting) {
+		greeting = deadline
+	}
+	_ = raw.SetDeadline(greeting) // the TLS handshake, for "tls", and the greeting
+	conn := raw
 	tlsConfig := &tls.Config{ServerName: srv.Host, RootCAs: m.roots, MinVersion: tls.VersionTLS12}
 	if srv.TLS == "tls" {
-		conn = tls.Client(conn, tlsConfig)
+		conn = tls.Client(raw, tlsConfig)
 	}
 	c, err := smtp.NewClient(conn, srv.Host)
 	if err != nil {
 		return fmt.Errorf("smtp greeting: %w", err)
 	}
 	defer c.Close()
+	_ = raw.SetDeadline(deadline)
 	if err := c.Hello(helo); err != nil {
 		return fmt.Errorf("smtp hello: %w", err)
 	}

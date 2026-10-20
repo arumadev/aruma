@@ -2,8 +2,11 @@ package acceptance
 
 import (
 	"context"
+	"net"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Regression tests for the v0.1 security review (docs/security/review-v0.1.md).
@@ -194,4 +197,73 @@ func TestAuthMailCarriesNoNameToUnprovenAddresses(t *testing.T) {
 	ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": other.str("idToken"), "displayName": lure}))
 	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "VERIFY_EMAIL", "idToken": other.str("idToken")}))
 	assertEqual(t, "unverified address", p.lastMail("new@example.com")["subject"], "Hi")
+}
+
+// S-5: a project's SMTP settings make the server open TCP connections where the console user
+// says, and smtp:test reported the raw answer: a port scanner and banner reader for the
+// operator's network and the cloud metadata service. Loopback, private, link-local and similar
+// hosts are refused unless the instance allows them (mail.smtp_allow_private), checked on the
+// address actually dialled; the console gets a generic error and the log the detail.
+func TestAuthSMTPReachesOnlyPublicHosts(t *testing.T) {
+	e := newEnv(t, map[string]string{"ARUMA_MAIL_SMTP_ALLOW_PRIVATE": "false"})
+	p := e.authProject("chat-app")
+	smtp := "/console/v1/projects/chat-app/auth/smtp"
+	for _, host := range []string{
+		"127.0.0.1", "localhost", "LOCALHOST.", "mail.localhost", "10.1.2.3", "172.16.0.1", "192.168.1.1", "169.254.169.254",
+		"100.100.100.200", "0.0.0.0", "::1", "[::1]", "fe80::1", "fd00:ec2::254", "::ffff:127.0.0.1", "::",
+	} {
+		r := p.owner.do("PATCH", smtp, map[string]any{"host": host, "port": 25})
+		expect(t, r, 400, "INVALID_ARGUMENT")
+		if !strings.Contains(string(r.Body), "SMTP_HOST_PRIVATE") || !strings.Contains(string(r.Body), "smtp_allow_private") {
+			t.Fatalf("%s: %s", host, r.Body)
+		}
+	}
+	p.owner.mustOK(p.owner.do("PATCH", smtp, map[string]any{"host": "smtp.example.com", "port": 587}))
+	p.owner.mustOK(p.owner.do("PATCH", smtp, map[string]any{"host": "93.184.216.34"}))
+
+	// A name is checked where it leads, at the moment of the connection: 127.1 is a name to
+	// the settings check, and resolves to loopback.
+	ln := banner(t, "+OK Dovecot ready, internal-mail-7\r\n")
+	_, port, _ := net.SplitHostPort(ln.Addr().String())
+	portN, _ := strconv.Atoi(port)
+	p.owner.mustOK(p.owner.do("PATCH", smtp, map[string]any{"host": "127.1", "port": portN, "tls": "none"}))
+	r := p.owner.do("POST", smtp+":test", map[string]any{"to": "owner@example.com"})
+	expect(t, r, 400, "INVALID_ARGUMENT")
+	if !strings.Contains(string(r.Body), "SMTP_HOST_PRIVATE") || !strings.Contains(string(r.Body), "smtp_allow_private") {
+		t.Fatalf("private name: %s", r.Body)
+	}
+
+	// Where private hosts are allowed (a local relay), the console still gets no banner.
+	e = newEnv(t, map[string]string{"ARUMA_MAIL_SMTP_ALLOW_PRIVATE": "true"})
+	p = e.authProject("chat-app")
+	p.owner.mustOK(p.owner.do("PATCH", smtp, map[string]any{"host": "127.0.0.1", "port": portN, "tls": "none"}))
+	r = p.owner.do("POST", smtp+":test", map[string]any{"to": "owner@example.com"})
+	expect(t, r, 400, "INVALID_ARGUMENT")
+	if strings.Contains(string(r.Body), "Dovecot") || strings.Contains(string(r.Body), port) || !strings.Contains(string(r.Body), "SMTP_ERROR") {
+		t.Fatalf("smtp:test leaks the server's answer: %s", r.Body)
+	}
+	if !strings.Contains(e.Logs.String(), "Dovecot") {
+		t.Fatal("the detail is not in the server log")
+	}
+}
+
+// banner listens on loopback and greets every connection with line.
+func banner(t *testing.T, line string) net.Listener {
+	t.Helper()
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { ln.Close() })
+	go func() {
+		for {
+			c, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			_, _ = c.Write([]byte(line))
+			time.AfterFunc(5*time.Second, func() { c.Close() })
+		}
+	}()
+	return ln
 }
