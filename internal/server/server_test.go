@@ -125,6 +125,93 @@ func TestReadiness(t *testing.T) {
 	}
 }
 
+// ADR-018: the Realtime Database owns its hosts and a few paths of the main host.
+func TestRTDBRouting(t *testing.T) {
+	cfg := testConfig(t, "https://aruma.test")
+	cfg.RTDB.Domain = "rtdb.aruma.test"
+	var hits []string
+	rtdb := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits = append(hits, r.Host+r.URL.RequestURI())
+		// Bodies may exceed the 1 MB cap of the other APIs.
+		n, err := io.Copy(io.Discard, r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
+			return
+		}
+		w.Write([]byte(strconv.FormatInt(n, 10)))
+	})
+	s := New(cfg, slog.New(slog.NewTextHandler(io.Discard, nil)), nil, metrics.New("test"), Handlers{RTDB: rtdb})
+	h := s.Handler()
+	cases := []struct {
+		host, path string
+		rtdb       bool
+	}{
+		{"chat-default-rtdb.rtdb.aruma.test", "/.ws?v=5", true},
+		{"chat-default-rtdb.rtdb.aruma.test:443", "/users.json", true},
+		{"Chat-Default-RTDB.RTDB.aruma.test", "/anything", true},
+		{"aruma.test", "/.ws?v=5&ns=chat-default-rtdb", true},
+		{"aruma.test", "/.lp?start=t", true},
+		{"aruma.test", "/users.json?ns=chat-default-rtdb", true},
+		{"aruma.test", "/users.json", false},
+		{"aruma.test", "/healthz", false},
+		{"rtdb.aruma.test", "/healthz", false},
+		{"evil-rtdb.aruma.test", "/x.json", false},
+	}
+	for _, c := range cases {
+		hits = nil
+		r := httptest.NewRequest("GET", c.path, nil)
+		r.Host = c.host
+		h.ServeHTTP(httptest.NewRecorder(), r)
+		if got := len(hits) == 1; got != c.rtdb {
+			t.Errorf("%s%s: routed to RTDB = %v, want %v", c.host, c.path, got, c.rtdb)
+		}
+	}
+
+	big := strings.Repeat("x", 2<<20)
+	r := httptest.NewRequest("PUT", "/x.json?ns=chat-default-rtdb", strings.NewReader(big))
+	r.Host = "aruma.test"
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, r)
+	if rec.Code != http.StatusOK || rec.Body.String() != strconv.Itoa(len(big)) {
+		t.Errorf("2 MB body: %d %s", rec.Code, rec.Body)
+	}
+
+	// Disabled, the paths fall through to the rest of the entry point.
+	off := New(testConfig(t, "https://aruma.test"), slog.New(slog.NewTextHandler(io.Discard, nil)), nil, metrics.New("test"), Handlers{})
+	rec = httptest.NewRecorder()
+	off.Handler().ServeHTTP(rec, httptest.NewRequest("GET", "/.ws?ns=chat-default-rtdb", nil))
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("RTDB disabled: %d", rec.Code)
+	}
+}
+
+type shutdownHandler struct {
+	http.Handler
+	called chan struct{}
+}
+
+func (h shutdownHandler) Shutdown(context.Context) error { close(h.called); return nil }
+
+func TestRTDBShutdown(t *testing.T) {
+	cfg := testConfig(t, "http://127.0.0.1:8080")
+	cfg.Listen = "127.0.0.1:8621"
+	cfg.MetricsListen = ""
+	h := shutdownHandler{Handler: http.NotFoundHandler(), called: make(chan struct{})}
+	s := New(cfg, slog.New(slog.NewTextHandler(io.Discard, nil)), nil, metrics.New("test"), Handlers{RTDB: h})
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- s.Run(ctx) }()
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-h.called:
+	default:
+		t.Error("Run did not shut the RTDB handler down")
+	}
+}
+
 // Review H-1: client-chosen methods must not create metric series.
 func TestMetricsMethodLabelIsBounded(t *testing.T) {
 	m := metrics.New("test")

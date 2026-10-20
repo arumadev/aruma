@@ -35,13 +35,19 @@ func ClientAddr(ctx context.Context) netip.Addr {
 // client address, caps the body, recovers panics as INTERNAL errors and logs one line per
 // request. The query string is never logged, since tokens sometimes travel there.
 func Common(next http.Handler, logger *slog.Logger, trusted []netip.Prefix) http.Handler {
+	return CommonWithLimit(next, logger, trusted, MaxBodyBytes)
+}
+
+// CommonWithLimit is Common with another body cap, for the APIs whose protocol allows larger
+// bodies than MaxBodyBytes (Realtime Database REST writes, ADR-019).
+func CommonWithLimit(next http.Handler, logger *slog.Logger, trusted []netip.Prefix, maxBody int64) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		id := crypto.RandomHex(8)
 		ip := ClientIP(r, trusted)
 		ctx := context.WithValue(context.WithValue(r.Context(), requestIDKey, id), clientIPKey, ip)
 		r = r.WithContext(ctx)
-		r.Body = http.MaxBytesReader(w, r.Body, MaxBodyBytes)
+		r.Body = http.MaxBytesReader(w, r.Body, maxBody)
 		w.Header().Set("X-Request-Id", id)
 
 		rec := &StatusRecorder{ResponseWriter: w, Status: http.StatusOK}

@@ -9,6 +9,8 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -27,6 +29,16 @@ type Handlers struct {
 	OAuth   http.Handler // /oauth2/
 	Auth    http.Handler // AuthPrefixes: the Identity Toolkit, Secure Token and discovery paths (ADR-014)
 	Static  http.Handler // everything else: the dashboard
+	// RTDB is the Realtime Database (ADR-018): every request to a host under rtdb.domain, and
+	// on the main host /.ws, /.lp and the .json paths that carry ?ns=. Nil while it is
+	// disabled. If it has a Shutdown(context.Context) error method, Run calls it on shutdown
+	// to close its hijacked connections, which http.Server.Shutdown does not see.
+	RTDB http.Handler
+}
+
+// shutdowner is a handler that holds connections of its own.
+type shutdowner interface {
+	Shutdown(ctx context.Context) error
 }
 
 // AuthPrefixes are the paths routed to Handlers.Auth.
@@ -70,7 +82,41 @@ func (s *Server) Handler() http.Handler {
 		static = http.NotFoundHandler()
 	}
 	mux.Handle("/", s.metrics.Instrument("static", static))
-	return httpx.Common(s.securityHeaders(mux), s.log, s.cfg.TrustedProxyPrefixes())
+	main := httpx.Common(s.securityHeaders(mux), s.log, s.cfg.TrustedProxyPrefixes())
+	if s.handlers.RTDB == nil {
+		return main
+	}
+	// The Realtime Database is routed by host before path (ADR-018), and its bodies may be
+	// larger than other APIs' (ADR-019).
+	rtdb := httpx.CommonWithLimit(s.securityHeaders(s.metrics.Instrument("rtdb", s.handlers.RTDB)),
+		s.log, s.cfg.TrustedProxyPrefixes(), s.cfg.RTDB.Limits.RESTWriteBytes)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if s.isRTDB(r) {
+			rtdb.ServeHTTP(w, r)
+			return
+		}
+		main.ServeHTTP(w, r)
+	})
+}
+
+// isRTDB reports whether a request belongs to the Realtime Database (ADR-018).
+func (s *Server) isRTDB(r *http.Request) bool {
+	if d := s.cfg.RTDB.Domain; d != "" {
+		host := r.Host
+		if h, _, err := net.SplitHostPort(host); err == nil {
+			host = h
+		}
+		if strings.HasSuffix(strings.ToLower(host), "."+d) {
+			return true
+		}
+	}
+	switch p := r.URL.Path; {
+	case p == "/.ws" || p == "/.lp":
+		return true
+	case strings.HasSuffix(p, ".json"):
+		return r.URL.Query().Has("ns")
+	}
+	return false
 }
 
 // securityHeaders applies the headers every response carries (ADR-010 S-8, S-9). Only the
@@ -175,10 +221,19 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 	shutdown, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
+	var wg sync.WaitGroup
+	if sh, ok := s.handlers.RTDB.(shutdowner); ok {
+		wg.Go(func() {
+			if err := sh.Shutdown(shutdown); err != nil {
+				s.log.Warn("shutdown", "handler", "rtdb", "error", err)
+			}
+		})
+	}
 	for _, srv := range servers {
 		if err := srv.Shutdown(shutdown); err != nil {
 			s.log.Warn("shutdown", "addr", srv.Addr, "error", err)
 		}
 	}
+	wg.Wait()
 	return runErr
 }
