@@ -133,13 +133,14 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 			DevOpenRules: cfg.RTDB.DevOpenRules,
 			// R4: pass idTokens and revocations here.
 		}, logger)
-		handlers.RTDB = rtdbapi.New(rtdbSvc, rtdbapi.Options{
+		rtdbAPI := rtdbapi.New(rtdbSvc, rtdbapi.Options{
 			Domain:         cfg.RTDB.Domain,
 			TrustedProxies: cfg.TrustedProxyPrefixes(),
 			Credentials:    svc,
 			Projects:       svc,
 			AllowedOrigins: cfg.RTDB.AllowedOrigins,
 		}, logger)
+		handlers.RTDB, handlers.TLSAsk = rtdbAPI, rtdbAPI.TLSAsk()
 		// A purged project's databases go with it.
 		svc.OnProjectPurged(rtdbSvc.PurgeProject)
 	}

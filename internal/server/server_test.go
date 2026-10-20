@@ -87,6 +87,38 @@ func TestMetricsNotPublic(t *testing.T) {
 	}
 }
 
+// ADR-018 §5: the TLS proxy's ask tells which projects exist, so it is served on the private
+// address only, next to /metrics.
+func TestTLSAskOnlyOnPrivateAddress(t *testing.T) {
+	ask := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ask " + r.URL.Query().Get("domain"))) })
+	s := New(testConfig(t, "https://aruma.test"), slog.New(slog.NewTextHandler(io.Discard, nil)), nil, metrics.New("test"), Handlers{TLSAsk: ask})
+	public := httptest.NewServer(s.Handler())
+	t.Cleanup(public.Close)
+	if resp := get(t, public, "GET", "/rtdb/tls-ask?domain=x", nil); resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("ask on the public entry point: %d", resp.StatusCode)
+	}
+	private := httptest.NewServer(s.PrivateHandler())
+	t.Cleanup(private.Close)
+	resp := get(t, private, "GET", "/rtdb/tls-ask?domain=x", nil)
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK || string(body) != "ask x" {
+		t.Fatalf("ask on the private address: %d %q", resp.StatusCode, body)
+	}
+	if resp := get(t, private, "POST", "/rtdb/tls-ask?domain=x", nil); resp.StatusCode != http.StatusMethodNotAllowed {
+		t.Fatalf("POST ask: %d", resp.StatusCode)
+	}
+	if resp := get(t, private, "GET", "/metrics", nil); resp.StatusCode != http.StatusOK {
+		t.Fatalf("/metrics on the private address: %d", resp.StatusCode)
+	}
+
+	// Disabled, the private address serves /metrics alone.
+	off := httptest.NewServer(New(testConfig(t, "https://aruma.test"), slog.New(slog.NewTextHandler(io.Discard, nil)), nil, metrics.New("test"), Handlers{}).PrivateHandler())
+	t.Cleanup(off.Close)
+	if resp := get(t, off, "GET", "/rtdb/tls-ask?domain=x", nil); resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("ask while the database is off: %d", resp.StatusCode)
+	}
+}
+
 func TestUnmountedAPIsAnswerGoogleNotFound(t *testing.T) {
 	ts := newServer(t, nil, Handlers{})
 	resp := get(t, ts, "GET", "/v1beta1/projects", nil)

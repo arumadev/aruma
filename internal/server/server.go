@@ -34,6 +34,10 @@ type Handlers struct {
 	// disabled. If it has a Shutdown(context.Context) error method, Run calls it on shutdown
 	// to close its hijacked connections, which http.Server.Shutdown does not see.
 	RTDB http.Handler
+	// TLSAsk answers GET /rtdb/tls-ask on the private metrics_listen address only, for a TLS
+	// proxy that issues the database hosts' certificates on demand (ADR-018 §5). Nil while the
+	// Realtime Database is disabled.
+	TLSAsk http.Handler
 }
 
 // shutdowner is a handler that holds connections of its own.
@@ -171,6 +175,17 @@ func (s *Server) readyz(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
+// PrivateHandler serves the private metrics_listen address: /metrics, and the TLS proxy's
+// ask when the Realtime Database is on. Nothing here is reachable from the public entry point.
+func (s *Server) PrivateHandler() http.Handler {
+	mux := http.NewServeMux()
+	mux.Handle("GET /metrics", s.metrics.Handler())
+	if s.handlers.TLSAsk != nil {
+		mux.Handle("GET /rtdb/tls-ask", s.handlers.TLSAsk)
+	}
+	return mux
+}
+
 // Run serves until ctx is cancelled, then shuts down gracefully.
 func (s *Server) Run(ctx context.Context) error {
 	public := &http.Server{
@@ -185,11 +200,9 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 	servers := []*http.Server{public}
 	if s.cfg.MetricsListen != "" {
-		mux := http.NewServeMux()
-		mux.Handle("GET /metrics", s.metrics.Handler())
 		servers = append(servers, &http.Server{
 			Addr:              s.cfg.MetricsListen,
-			Handler:           mux,
+			Handler:           s.PrivateHandler(),
 			ReadHeaderTimeout: 10 * time.Second,
 			ReadTimeout:       30 * time.Second,
 			WriteTimeout:      30 * time.Second,
