@@ -98,3 +98,33 @@ func TestIDTokenContract(t *testing.T) {
 		t.Fatalf("after deleting: %v", err)
 	}
 }
+
+// Google sign-in that takes over an account whose email was never verified ends the
+// squatter's sessions, and says so; the owner's new session is valid.
+func TestIDTokenRevokedByIdPTakeover(t *testing.T) {
+	ctx := context.Background()
+	x := newIdPEnv(t)
+	number := x.ref().Number
+	sub := x.env.App.Revocations.Subscribe(number)
+	defer sub.Close()
+	squatter := ok(t, x.call(itk+"accounts:signUp", map[string]any{"email": "victim@gmail.com", "password": "squatter1", "returnSecureToken": true}))
+	if _, err := x.env.App.IDTokens.Verify(ctx, number, squatter.str("idToken")); err != nil {
+		t.Fatal(err)
+	}
+	ev := x.flow("google.com", "signInViaPopup", googleClaims("g-victim", "victim@gmail.com", true))
+	owner := ok(t, x.signIn(ev, ""))
+	select {
+	case r := <-sub.C():
+		if r.UID != squatter.str("localId") || r.Cause != idtoken.TokensRevoked {
+			t.Fatalf("got %+v", r)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("no revocation within 1s")
+	}
+	if _, err := x.env.App.IDTokens.Verify(ctx, number, squatter.str("idToken")); !errors.Is(err, idtoken.ErrRevoked) {
+		t.Fatalf("the squatter's token: %v", err)
+	}
+	if _, err := x.env.App.IDTokens.Verify(ctx, number, owner.str("idToken")); err != nil {
+		t.Fatalf("the owner's token: %v", err)
+	}
+}
