@@ -488,6 +488,21 @@ func TestAuthDeferredMethods(t *testing.T) {
 	}
 }
 
+// The web SDK's phone sign-in first fetches the reCAPTCHA site key, cross-origin. Found by
+// Firebase's own phone integration tests (docs/compat/firebase-js-suites.md): without an
+// answer carrying CORS headers the browser saw auth/network-request-failed, not the deferral.
+func TestAuthDeferredPhoneRecaptchaParams(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.authProject("chat-app")
+	for _, path := range []string{itk + "recaptchaParams", rp + "getRecaptchaParam"} {
+		r := e.client().do("GET", path+"?key="+p.key, nil)
+		authErr(t, r, "OPERATION_NOT_ALLOWED")
+		if r.Header.Get("Access-Control-Allow-Origin") != "*" {
+			t.Fatalf("%s: the browser needs CORS to read the error: %v", path, r.Header)
+		}
+	}
+}
+
 // The web SDK's reauthenticate then updatePassword, within one second: the SDK keeps the
 // refresh token it holds when the ID token the update returns is byte for byte its own. The
 // returned session is dated at the revocation point, so its ID token always differs, the SDK
