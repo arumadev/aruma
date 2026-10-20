@@ -103,7 +103,13 @@ func (a *API) serveLP(w http.ResponseWriter, r *http.Request, target core.Target
 		if ns := q.Get("ns"); ns != "" {
 			u.Set("ns", ns)
 		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		// The app's page frames it, from another origin: the server's defaults forbid both
+		// framing and inline scripts, so this page sets its own.
+		h := w.Header()
+		h.Del("X-Frame-Options")
+		h.Set("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline'; connect-src 'self'")
+		h.Set("Cross-Origin-Resource-Policy", "cross-origin")
+		h.Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write(wire.EncodeLPDisconnectFrame("/.lp?" + u.Encode()))
 	case q.Get(wire.LPDisconnect) == "t":
 		if c := a.lpFind(q.Get(wire.LPID), q.Get(wire.LPPassword)); c != nil {
@@ -440,10 +446,12 @@ func (c *lpConn) leave(ws *wsConn) {
 // reconnects. After the move the WebSocket is shut down on its own.
 func (c *lpConn) shutdown() { c.close() }
 
-// writeLP sends a script answer.
+// writeLP sends a script answer. The app's page loads it as a script from another origin,
+// which the server's default Cross-Origin-Resource-Policy, same-origin, would block.
 func writeLP(w http.ResponseWriter, body []byte) {
 	w.Header().Set("Content-Type", wire.LPContentType)
 	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Cross-Origin-Resource-Policy", "cross-origin")
 	_, _ = w.Write(body)
 }
 

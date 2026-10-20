@@ -191,6 +191,10 @@ func TestRTDBLongPollHandshake(t *testing.T) {
 	if resp.StatusCode != 200 || resp.Header.Get("Content-Type") != "application/javascript; charset=utf-8" {
 		t.Fatalf("start: %d %s", resp.StatusCode, resp.Header.Get("Content-Type"))
 	}
+	// The app's page loads the answers as scripts from another origin.
+	if corp := resp.Header.Get("Cross-Origin-Resource-Policy"); corp != "cross-origin" {
+		t.Errorf("Cross-Origin-Resource-Policy: %q", corp)
+	}
 	// The emulator's script (golden lp_handshake.json): callbacks forwarded to the parent
 	// window under the client's callback id, then start and the hello as batch 0, whose h is
 	// the host the client used.
@@ -204,9 +208,19 @@ func TestRTDBLongPollHandshake(t *testing.T) {
 	}
 	m := lpStartRE.FindStringSubmatch(string(b))
 	// The dframe page sends disconn for the session when it unloads.
-	_, page := c.get("dframe=t&id=" + m[1] + "&pw=" + m[2] + "&ns=" + ns)
-	if !strings.Contains(page, `EnvSendPing("/.lp?disconn=t&id=`+m[1]+`&ns=`+ns+`&pw=`+m[2]+`");`) {
-		t.Errorf("dframe page: %s", page)
+	resp, err = http.Get(e.URL + "/.lp?dframe=t&id=" + m[1] + "&pw=" + m[2] + "&ns=" + ns)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ = io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if !strings.Contains(string(b), `EnvSendPing("/.lp?disconn=t&id=`+m[1]+`&ns=`+ns+`&pw=`+m[2]+`");`) {
+		t.Errorf("dframe page: %s", b)
+	}
+	// It is framed by the app's page and runs an inline script.
+	if h := resp.Header; h.Get("X-Frame-Options") != "" || !strings.Contains(h.Get("Content-Security-Policy"), "script-src 'unsafe-inline'") ||
+		strings.Contains(h.Get("Content-Security-Policy"), "frame-ancestors") {
+		t.Errorf("dframe headers: %v", h)
 	}
 	// A poll for no session: back to the host to start again.
 	if _, body := c.get("id=1&pw=nope&ser=1&ns=" + ns); body != `pRTLPCB(0,[{"t":"c","d":{"t":"r","d":"`+host+`"}}]);`+"\npLPCommand('close');\n" {
