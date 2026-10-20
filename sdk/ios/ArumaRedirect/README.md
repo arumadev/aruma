@@ -81,6 +81,10 @@ then does nothing.
 - **The SDK's URLs are an implementation detail.** If a Firebase release moves Auth to new hosts
   or paths, they pass through unchanged and fail against Google with Aruma's API key. Nothing
   leaks to Aruma. Pin the Firebase version and run the conformance suite before upgrading.
+- **Other Firebase pods still call Google.** With Analytics, Crashlytics or Remote Config in the
+  app, the Installations SDK sends one `POST https://firebaseinstallations.googleapis.com/…` at
+  launch, even with data collection off. It carries no Auth data. Leave those pods out if the
+  app must not contact Google at all.
 
 ## Tests
 
@@ -134,3 +138,6 @@ Aruma. أضف الحزمة ومفتاحًا واحدًا في Info.plist، دو�
 - الجلسات الخلفية (background) لا تمر بـ URLProtocol.
 - Firestore يستخدم gRPC لا URLSession، فلا تحوّله هذه الحزمة.
 - عناوين المكتبة تفصيل داخلي قد يتغير. ثبّت إصدار Firebase وشغّل اختبارات التوافق قبل الترقية.
+- مكتبات Firebase الأخرى تتصل بـ Google: مع Analytics أو Crashlytics أو Remote Config يرسل Installations طلبًا واحدًا إلى
+  `firebaseinstallations.googleapis.com` عند الإقلاع، حتى مع إيقاف جمع البيانات، ولا بيانات Auth فيه.
+  احذف هذه المكتبات إن كان التطبيق يجب ألا يتصل بـ Google أبدًا.
