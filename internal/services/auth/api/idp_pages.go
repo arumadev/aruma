@@ -240,10 +240,14 @@ func (a *API) startPage(w http.ResponseWriter, r *http.Request, q url.Values) {
 		return
 	}
 	d.ErrorCode = "auth/argument-error"
-	p, err := a.svc.ProjectForKey(r.Context(), d.APIKey)
+	p, err := a.svc.ProjectForKey(r.Context(), d.APIKey, a.pageCaller(r))
 	if err != nil {
 		d.AuthType = ""
-		writePage(w, http.StatusBadRequest, d)
+		status := http.StatusBadRequest
+		if keyRefused(err) {
+			status = http.StatusForbidden
+		}
+		writePage(w, status, d)
 		return
 	}
 	redirectURL := q.Get("redirectUrl")
@@ -322,7 +326,7 @@ var hostRe = regexp.MustCompile(`^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$`)
 func (a *API) iframePage(w http.ResponseWriter, r *http.Request) {
 	ancestors := "'none'"
 	if key := r.URL.Query().Get("apiKey"); key != "" {
-		if p, err := a.svc.ProjectForKey(r.Context(), key); err == nil {
+		if p, err := a.svc.ProjectForKey(r.Context(), key, a.pageCaller(r)); err == nil {
 			if domains, err := a.svc.AuthorizedDomains(r.Context(), p); err == nil {
 				var srcs []string
 				for _, d := range domains {

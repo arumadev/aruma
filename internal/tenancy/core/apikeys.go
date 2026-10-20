@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,12 +32,18 @@ type APIKey struct {
 	UpdatedAt     time.Time
 }
 
-// Restrictions limit where a key is accepted. Phase 1 stores and validates them; the data
-// services that receive keys enforce them from Phase 2 on. The shape follows Google's API keys.
+// Restrictions limit where a key is accepted. The shape follows Google's API keys: API targets
+// name the services the key may call, and at most one kind of application restriction names
+// the websites, servers, Android apps or iOS apps it may be used from. Every data service checks
+// them with Check (keycheck.go) when it resolves a key; Auth does so on every client call, the
+// token refresh and the pages it serves. Method lists in API targets are not supported.
 type Restrictions struct {
 	BrowserKeyRestrictions *struct {
 		AllowedReferrers []string `json:"allowedReferrers"`
 	} `json:"browserKeyRestrictions,omitempty"`
+	ServerKeyRestrictions *struct {
+		AllowedIPs []string `json:"allowedIps"`
+	} `json:"serverKeyRestrictions,omitempty"`
 	AndroidKeyRestrictions *struct {
 		AllowedApplications []struct {
 			SHA1Fingerprint string `json:"sha1Fingerprint"`
@@ -59,6 +66,23 @@ func (r Restrictions) validate() error {
 		kinds++
 		if len(b.AllowedReferrers) > maxRestrictionEntries {
 			return errTooManyRestrictions
+		}
+		for _, ref := range b.AllowedReferrers {
+			if !ValidReferrerPattern(ref) {
+				return apierr.Invalid("restrictions.browserKeyRestrictions",
+					"Each website must look like example.com, *.example.com/* or https://example.com:8080/path; a * may only stand for a subdomain or end the path.")
+			}
+		}
+	}
+	if s := r.ServerKeyRestrictions; s != nil {
+		kinds++
+		if len(s.AllowedIPs) > maxRestrictionEntries {
+			return errTooManyRestrictions
+		}
+		for _, ip := range s.AllowedIPs {
+			if _, ok := parseIPEntry(ip); !ok {
+				return apierr.Invalid("restrictions.serverKeyRestrictions", "Each IP address must be an IPv4 or IPv6 address or a CIDR range such as 198.51.100.0/24.")
+			}
 		}
 	}
 	if a := r.AndroidKeyRestrictions; a != nil {
@@ -84,10 +108,15 @@ func (r Restrictions) validate() error {
 		}
 	}
 	if kinds > 1 {
-		return apierr.Invalid("restrictions", "A key can carry browser, Android or iOS restrictions, not several kinds.")
+		return apierr.Invalid("restrictions", "A key can carry website, IP address, Android or iOS restrictions, not several kinds.")
 	}
 	if len(r.APITargets) > maxRestrictionEntries {
 		return errTooManyRestrictions
+	}
+	for _, t := range r.APITargets {
+		if strings.TrimSpace(t.Service) == "" {
+			return apierr.Invalid("restrictions.apiTargets", "Each API target names a service, such as identitytoolkit.googleapis.com.")
+		}
 	}
 	return nil
 }

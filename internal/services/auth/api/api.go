@@ -27,6 +27,7 @@ import (
 	"github.com/osama300/aurma-project/internal/platform/httpx"
 	"github.com/osama300/aurma-project/internal/platform/ratelimit"
 	"github.com/osama300/aurma-project/internal/services/auth/core"
+	tcore "github.com/osama300/aurma-project/internal/tenancy/core"
 )
 
 // API is the Auth HTTP layer.
@@ -100,7 +101,8 @@ func apiKey(r *http.Request) string {
 
 var errMissingKey = &core.Error{Code: "The request is missing a valid API key.", Status: http.StatusForbidden}
 
-// project resolves the API key of a client call and applies the per-address limit.
+// project resolves the API key of a client call, checks the key's restrictions against the
+// caller and applies the per-address limit.
 func (a *API) project(r *http.Request) (core.Project, error) {
 	if ok, _ := a.ipLimit.Allow(ratelimit.AddrKey(httpx.ClientAddr(r.Context()))); !ok {
 		return core.Project{}, core.ErrTooManyAttempts
@@ -109,7 +111,32 @@ func (a *API) project(r *http.Request) (core.Project, error) {
 	if key == "" {
 		return core.Project{}, errMissingKey
 	}
-	return a.svc.ProjectForKey(r.Context(), key)
+	return a.svc.ProjectForKey(r.Context(), key, tcore.CallerOf(r, serviceOf(r)))
+}
+
+// serviceOf names the Google API a client call belongs to, for the key's API restrictions:
+// the token refresh is the Secure Token API, everything else the Identity Toolkit API (the v3
+// paths under www.googleapis.com included).
+func serviceOf(r *http.Request) string {
+	if strings.HasPrefix(r.URL.Path, "/securetoken.googleapis.com/") {
+		return tcore.ServiceSecureToken
+	}
+	return tcore.ServiceIdentityToolkit
+}
+
+// keyRefused reports whether err is an API key's restrictions refusing the caller.
+func keyRefused(err error) bool {
+	var e *core.Error
+	return errors.As(err, &e) && e.Info != nil
+}
+
+// pageCaller is the caller of a page Aruma serves in place of Firebase Hosting's (the email
+// action and sign-in handler pages). Google's pages call the API from the browser, so the key's
+// website restrictions see the page's own URL; here the page itself is that URL.
+func (a *API) pageCaller(r *http.Request) tcore.KeyCaller {
+	c := tcore.CallerOf(r, tcore.ServiceIdentityToolkit)
+	c.Referrer, c.Page = a.pageOrigin(r)+r.URL.EscapedPath(), true
+	return c
 }
 
 // decode reads a request body into v. It accepts JSON and form encoding, and both camelCase
@@ -237,7 +264,15 @@ type errorBody struct {
 		Message string      `json:"message"`
 		Errors  []errorItem `json:"errors"`
 		Status  string      `json:"status,omitempty"`
+		Details []errorInfo `json:"details,omitempty"`
 	} `json:"error"`
+}
+
+type errorInfo struct {
+	Type     string            `json:"@type"`
+	Reason   string            `json:"reason"`
+	Domain   string            `json:"domain"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 // writeError renders an Auth error in the Identity Toolkit envelope; other API errors keep
@@ -254,6 +289,11 @@ func (a *API) writeError(w http.ResponseWriter, r *http.Request, err error) {
 	body.Error.Errors = []errorItem{{Message: e.Error(), Domain: "global", Reason: "invalid"}}
 	if e.Status == http.StatusForbidden {
 		body.Error.Status = "PERMISSION_DENIED"
+	}
+	if i := e.Info; i != nil {
+		// As Google answers a key its restrictions refuse.
+		body.Error.Errors[0].Reason = "forbidden"
+		body.Error.Details = []errorInfo{{Type: "type.googleapis.com/google.rpc.ErrorInfo", Reason: i.Reason, Domain: i.Domain, Metadata: i.Metadata}}
 	}
 	httpx.WriteJSON(w, e.Status, body)
 }

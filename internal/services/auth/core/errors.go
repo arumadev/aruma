@@ -12,6 +12,16 @@ type Error struct {
 	Code   string
 	Detail string
 	Status int
+	// Info is the google.rpc.ErrorInfo detail Google adds to some errors, such as a request
+	// that an API key's restrictions refuse; nil for the Identity Toolkit codes.
+	Info *ErrorInfo
+}
+
+// ErrorInfo is a google.rpc.ErrorInfo.
+type ErrorInfo struct {
+	Reason   string
+	Domain   string
+	Metadata map[string]string
 }
 
 func (e *Error) Error() string {

@@ -221,10 +221,14 @@ func (a *API) begin(w http.ResponseWriter, r *http.Request, req actionRequest) (
 		return nil, core.Project{}, core.ActionCodeInfo{}, false
 	}
 	v.Title = v.T[m.key+"Title"]
-	p, err := a.svc.ProjectForKey(r.Context(), req.key)
+	p, err := a.svc.ProjectForKey(r.Context(), req.key, a.pageCaller(r))
 	if err != nil {
+		status := http.StatusBadRequest
 		v.Error = v.T["invalid"]
-		writeActionPage(w, http.StatusBadRequest, v)
+		if keyRefused(err) {
+			v.Error, status = v.T["failed"], http.StatusForbidden
+		}
+		writeActionPage(w, status, v)
 		return nil, core.Project{}, core.ActionCodeInfo{}, false
 	}
 	info, err := a.svc.CheckActionCode(r.Context(), p, req.code)
