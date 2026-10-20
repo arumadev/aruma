@@ -1,0 +1,74 @@
+name: devices
+
+# Auth end-to-end on a real Android emulator: the official firebase-auth in production mode
+# through aruma-redirect, against a real server, with a network guard (test/e2e/android-auth).
+# Weekly and by hand, not on every push: an emulator run costs about as many minutes as the whole
+# ci workflow. The iOS half runs in Codemagic (codemagic.yaml, workflow ios-auth).
+on:
+  schedule:
+    - cron: "17 3 * * 1"   # Mondays 03:17 UTC
+  workflow_dispatch:
+  # Temporary: workflow_dispatch runs only workflows already on the default branch.
+  push:
+    branches: [device-auth-e2e]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: devices-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ARUMA_TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+
+jobs:
+  android-auth:
+    name: Android Auth e2e (emulator, production mode, network guard)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+          cache-dependency-path: |
+            test/e2e/android-auth/**/*.gradle.kts
+            sdk/android/aruma-redirect/**/*.gradle.kts
+      # Hardware acceleration for the emulator (GitHub's Linux runners have KVM).
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      # google_apis (not google_apis_playstore): adb root works there, which the device guard needs.
+      - name: Official SDK against a real server, no request leaving the device
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: test/e2e/android-auth/run.sh
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: android-auth-logs
+          path: |
+            test/e2e/android-auth/.generated/instrument.txt
+            test/e2e/android-auth/.generated/logcat.txt
+            test/e2e/android-auth/.generated/server.log
