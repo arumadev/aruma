@@ -275,4 +275,61 @@ func (c *Client) projectNS(id string) string {
 	return id + "-default-rtdb"
 }
 
+// rtdbUsers makes Aruma Auth users of the owner's projects and signs them in as the client
+// SDKs do, for the Realtime Database's rules: each project gets a web app, whose API key the
+// clients use, and a service account, which creates users with the uids a test chooses.
+type rtdbUsers struct {
+	e      *Env
+	owner  *Client
+	keys   map[string]string
+	admins map[string]*Client
+}
+
+func (e *Env) rtdbUsers(owner *Client) *rtdbUsers {
+	return &rtdbUsers{e: e, owner: owner, keys: map[string]string{}, admins: map[string]*Client{}}
+}
+
+func (u *rtdbUsers) setUp(project string) {
+	u.e.t.Helper()
+	if u.keys[project] != "" {
+		return
+	}
+	web := u.owner.app(project, "WEB", "")
+	u.keys[project] = u.owner.mustOK(u.owner.do("GET", "/console/v1/projects/"+project+"/apiKeys/"+web.str("apiKeyId"), nil)).str("keyString")
+	_, key := u.owner.serviceAccountKey(project, "rtdb-users")
+	token, _, err := exchange(u.e.t, key)
+	if err != nil {
+		u.e.t.Fatal(err)
+	}
+	u.admins[project] = u.e.withBearer(token)
+}
+
+// admin calls the project's Admin API, as firebase-admin would.
+func (u *rtdbUsers) admin(project, call string, body any) *Response {
+	u.e.t.Helper()
+	u.setUp(project)
+	return ok(u.e.t, u.admins[project].do("POST", itk+"projects/"+project+"/"+call, body))
+}
+
+// create makes user uid, with the email <uid>@example.com and a password.
+func (u *rtdbUsers) create(project, uid string) {
+	u.e.t.Helper()
+	u.admin(project, "accounts", map[string]any{"localId": uid, "email": uid + "@example.com", "password": "secret-" + uid})
+}
+
+// signIn signs uid in with its password and returns the response: idToken, refreshToken.
+func (u *rtdbUsers) signIn(project, uid string) *Response {
+	u.e.t.Helper()
+	u.setUp(project)
+	return ok(u.e.t, u.e.client().do("POST", itk+"accounts:signInWithPassword?key="+u.keys[project],
+		map[string]any{"email": uid + "@example.com", "password": "secret-" + uid, "returnSecureToken": true}))
+}
+
+// refresh exchanges a refresh token for a new ID token, as the SDKs do after ac.
+func (u *rtdbUsers) refresh(project, refreshToken string) *Response {
+	u.e.t.Helper()
+	p := &authProject{env: u.e, key: u.keys[project]}
+	return p.refresh(refreshToken)
+}
+
 func itoa(n int) string { return strconv.Itoa(n) }

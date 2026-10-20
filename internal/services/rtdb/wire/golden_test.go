@@ -92,7 +92,7 @@ func TestGoldenChecksums(t *testing.T) {
 
 func TestGoldenClientFrames(t *testing.T) {
 	for _, g := range loadGolden(t) {
-		for _, f := range g.Frames {
+		for i, f := range g.Frames {
 			if f.Dir != "send" || f.Text == "" {
 				continue
 			}
@@ -124,11 +124,25 @@ func TestGoldenClientFrames(t *testing.T) {
 				continue
 			}
 			err = DecodeBody(in.Request, body)
-			if bad := in.Request.Body == nil; (err != nil) != bad {
+			// A body this package cannot decode is one the emulator could not either; the
+			// emulator also refuses some that decode, on their data, which core checks.
+			noBody := in.Request.Body == nil
+			if noBody != (err != nil) && !(err != nil && answeredWithError(g.Frames[i+1:], f.Conn)) {
 				t.Errorf("%s: %s: DecodeBody = %v", g.Scenario, f.Text, err)
 			}
 		}
 	}
+}
+
+// answeredWithError reports whether the emulator's next frame to conn, after a request, was
+// its generic error frame: a body it could not decode either (golden listen_errors.json).
+func answeredWithError(rest []goldenFrame, conn string) bool {
+	for _, f := range rest {
+		if f.Conn == conn && f.Dir == "recv" {
+			return strings.Contains(f.Text, `"t":"e"`)
+		}
+	}
+	return false
 }
 
 func TestGoldenServerFrames(t *testing.T) {

@@ -1,0 +1,182 @@
+{
+  "scenario": "auth_user",
+  "description": "auth with unsigned ID tokens of each sign-in provider: the reply's auth (uid, token, provider, user_id) and expires. Then tokens the emulator refuses, and a read after each.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-21",
+  "script": "capture_r4.mjs",
+  "namespace": "r4-auth-user",
+  "setup": [
+    {
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r4-auth-user",
+      "body": {
+        "rules": {
+          ".read": "auth != null",
+          ".write": false
+        }
+      },
+      "status": 200,
+      "response": "{\"status\":\"ok\"}"
+    },
+    {
+      "method": "PUT",
+      "path": "/.json?ns=r4-auth-user",
+      "body": {
+        "x": 1
+      },
+      "status": 200
+    }
+  ],
+  "connections": {
+    "A": "/.ws?v=5&ns=r4-auth-user"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792534108166,\"v\":\"5\",\"h\":\"127.0.0.1:9420\",\"s\":\"DaCA3fmoDW6U2rp7IgnM23q0pluErMq1\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MSIsInVzZXJfaWQiOiJ1MSIsImlhdCI6MTc5MjUzNDEwOCwiZXhwIjoxNzkyNTM3NzA4LCJmaXJlYmFzZSI6eyJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"u1\",\"token\":{\"exp\":1792537708,\"user_id\":\"u1\",\"iat\":1792534108,\"sub\":\"u1\",\"firebase\":{\"sign_in_provider\":\"password\"}},\"provider\":\"password\",\"user_id\":\"u1\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MSIsInVzZXJfaWQiOiJ1MSIsImlhdCI6MTc5MjUzNDEwOCwiZXhwIjoxNzkyNTM3NzA4LCJmaXJlYmFzZSI6eyJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"u1\",\"token\":{\"exp\":1792537708,\"user_id\":\"u1\",\"iat\":1792534108,\"sub\":\"u1\",\"firebase\":{\"sign_in_provider\":\"google.com\"}},\"provider\":\"google\",\"user_id\":\"u1\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MSIsInVzZXJfaWQiOiJ1MSIsImlhdCI6MTc5MjUzNDEwOCwiZXhwIjoxNzkyNTM3NzA4LCJmaXJlYmFzZSI6eyJzaWduX2luX3Byb3ZpZGVyIjoiZ2l0aHViLmNvbSJ9fQ.\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"u1\",\"token\":{\"exp\":1792537708,\"user_id\":\"u1\",\"iat\":1792534108,\"sub\":\"u1\",\"firebase\":{\"sign_in_provider\":\"github.com\"}},\"provider\":\"github\",\"user_id\":\"u1\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MSIsInVzZXJfaWQiOiJ1MSIsImlhdCI6MTc5MjUzNDEwOCwiZXhwIjoxNzkyNTM3NzA4LCJmaXJlYmFzZSI6eyJzaWduX2luX3Byb3ZpZGVyIjoiY3VzdG9tIn19.\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"u1\",\"token\":{\"exp\":1792537708,\"user_id\":\"u1\",\"iat\":1792534108,\"sub\":\"u1\",\"firebase\":{\"sign_in_provider\":\"custom\"}},\"provider\":\"custom\",\"user_id\":\"u1\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MSIsInVzZXJfaWQiOiJ1MSIsImlhdCI6MTc5MjUzNDEwOCwiZXhwIjoxNzkyNTM3NzA4LCJmaXJlYmFzZSI6eyJzaWduX2luX3Byb3ZpZGVyIjoicGhvbmUifX0.\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"u1\",\"token\":{\"exp\":1792537708,\"user_id\":\"u1\",\"iat\":1792534108,\"sub\":\"u1\",\"firebase\":{\"sign_in_provider\":\"phone\"}},\"provider\":\"phone\",\"user_id\":\"u1\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MSIsInVzZXJfaWQiOiJ1MSIsImlhdCI6MTc5MjUzNDEwOCwiZXhwIjoxNzkyNTM3NzA4LCJmaXJlYmFzZSI6eyJzaWduX2luX3Byb3ZpZGVyIjoiYW5vbnltb3VzIn19.\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"u1\",\"token\":{\"exp\":1792537708,\"user_id\":\"u1\",\"iat\":1792534108,\"sub\":\"u1\",\"firebase\":{\"sign_in_provider\":\"anonymous\"}},\"provider\":\"anonymous\",\"user_id\":\"u1\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MSIsImlhdCI6MTc5MjUzNDEwOCwiZXhwIjoxNzkyNTM3NzA4fQ.\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"u1\",\"token\":{\"sub\":\"u1\",\"iat\":1792534108,\"exp\":1792537708},\"provider\":\"anonymous\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpYXQiOjE3OTI1MzQxMDgsImV4cCI6MTc5MjUzNzcwOH0.\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"b\":{\"s\":\"invalid_token\",\"d\":\"Missing claim 'sub' in auth token.\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":9,\"a\":\"g\",\"b\":{\"p\":\"/x\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":9,\"b\":{\"s\":\"ok\",\"d\":1}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":10,\"a\":\"auth\",\"b\":{\"cred\":\"garbage\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":10,\"b\":{\"s\":\"invalid_token\",\"d\":\"Could not parse auth token.\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":11,\"a\":\"g\",\"b\":{\"p\":\"/x\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":11,\"b\":{\"s\":\"ok\",\"d\":1}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":12,\"a\":\"unauth\",\"b\":{}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":12,\"b\":{\"s\":\"ok\",\"d\":\"unauthenticated\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":13,\"a\":\"g\",\"b\":{\"p\":\"/x\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":13,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "Providers, in order: password, google.com, github.com, custom, phone, anonymous (firebase.sign_in_provider); then a token without user_id or firebase claims; one without sub; g /x; \"garbage\"; g /x; unauth; g /x.",
+    "The emulator keeps the previous sign-in when a token is refused (g /x after \"garbage\" is ok); Aruma signs the session out, as the SDKs close the connection on any refusal anyway (PersistentConnection.onAuthRevoked_).",
+    "WebSocket close initiated by the client (close frame with code 1000) on: A; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ]
+}
