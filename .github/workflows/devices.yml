@@ -48,6 +48,11 @@ jobs:
           cache-dependency-path: |
             test/e2e/android-auth/**/*.gradle.kts
             sdk/android/aruma-redirect/**/*.gradle.kts
+      # The emulator's userdata image needs more room than a fresh runner has left.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/.ghcup /opt/ghc /usr/local/share/boost
+          df -h /
       # Hardware acceleration for the emulator (GitHub's Linux runners have KVM).
       - name: Enable KVM
         run: |
@@ -61,8 +66,10 @@ jobs:
           api-level: 34
           target: google_apis
           arch: x86_64
+          disk-size: 3072M
+          emulator-boot-timeout: 300
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics
           script: test/e2e/android-auth/run.sh
       - uses: actions/upload-artifact@v7
         if: failure()
