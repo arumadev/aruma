@@ -4,11 +4,11 @@ WITH created AS (
     INSERT INTO rtdb.databases (project_number, name)
     VALUES (@project_number, @name)
     ON CONFLICT (project_number, name) DO NOTHING
-    RETURNING id, seq
+    RETURNING id, seq, rules
 )
-SELECT id, seq FROM created
+SELECT id, seq, rules FROM created
 UNION ALL
-SELECT id, seq FROM rtdb.databases WHERE project_number = @project_number AND name = @name
+SELECT id, seq, rules FROM rtdb.databases WHERE project_number = @project_number AND name = @name
 LIMIT 1;
 
 -- name: AdvanceSeq :one

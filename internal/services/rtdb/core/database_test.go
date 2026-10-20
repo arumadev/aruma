@@ -62,7 +62,7 @@ func open(t *testing.T, s *Service, ns string, auth Auth) *Session {
 // sync helpers turn the callbacks into return values.
 func set(s *Session, path, data string, hash *string) (*Node, error) {
 	ch := make(chan Result, 1)
-	s.Set(path, json.RawMessage(data), hash, func(n *Node, err error) { ch <- Result{n, err} })
+	s.Set(path, json.RawMessage(data), hash, func(n *Node, err error) { ch <- Result{Node: n, Err: err} })
 	r := <-ch
 	return r.Node, r.Err
 }
@@ -75,7 +75,7 @@ func update(s *Session, path, data string) error {
 
 func get(s *Session, path string) (string, error) {
 	ch := make(chan Result, 1)
-	s.Get(path, func(n *Node, err error) { ch <- Result{n, err} })
+	s.Get(path, nil, func(n *Node, err error) { ch <- Result{Node: n, Err: err} })
 	r := <-ch
 	return string(r.Node.ExportJSON()), r.Err
 }

@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"slices"
 	"time"
+
+	"github.com/osama300/aurma-project/internal/services/rtdb/rules"
 )
 
 // Database is the single writer of one database (ADR-019): a goroutine that owns an inbox
@@ -27,9 +30,11 @@ type Database struct {
 	onCommit func(Commit)
 
 	// The writer's own state.
-	info   DatabaseInfo
-	opened bool
-	rate   rateWindow
+	info      DatabaseInfo
+	opened    bool
+	rate      rateWindow
+	rules     *rules.Ruleset // for .indexOn; nil when the stored rules do not parse
+	listeners *listeners
 
 	// Guarded by the registry's lock.
 	refs int
@@ -46,19 +51,38 @@ type Commit struct {
 }
 
 // Result is a command's outcome. Node is the value read, or for a conditional write the value
-// written: the emulator acks such a write with the data.
+// written: the emulator acks such a write with the data. Warnings are a listen's (no_index).
 type Result struct {
-	Node *Node
-	Err  error
+	Node     *Node
+	Err      error
+	Warnings []string
 }
 
-// command is one inbox entry: a write, or a read of Read when Write is nil.
+// command is one inbox entry. Exactly one of write, listen, unlisten, revoke and drop is
+// set, or none for a read of read (with query when not nil), or a barrier.
 type command struct {
-	write *Write
-	read  Path
+	write    *Write
+	read     Path
+	query    *Query
+	listen   *listenCmd
+	unlisten *unlistenCmd
+	// revoke re-checks a session's listens and cancels those no longer permitted.
+	revoke *Session
+	// drop removes the listens of a closing session.
+	drop *Session
 	// barrier does nothing: its done runs once every command queued before it has run.
 	barrier bool
 	done    func(Result)
+}
+
+type listenCmd struct {
+	l    *listen
+	hash string
+}
+
+type unlistenCmd struct {
+	sess *Session
+	key  string
 }
 
 const (
@@ -74,9 +98,10 @@ const (
 func newDatabase(project int64, name string, store Store, now func() time.Time, log *slog.Logger, limits Limits, onCommit func(Commit)) *Database {
 	return &Database{
 		project: project, name: name, store: store, now: now, log: log, onCommit: onCommit,
-		inbox: make(chan *command, inboxSize),
-		rate:  rateWindow{limit: limits.WriteBytesPerMinute, start: now()},
-		done:  make(chan struct{}),
+		inbox:     make(chan *command, inboxSize),
+		rate:      rateWindow{limit: limits.WriteBytesPerMinute, start: now()},
+		listeners: newListeners(),
+		done:      make(chan struct{}),
 	}
 }
 
@@ -111,28 +136,46 @@ func (d *Database) run() {
 	}
 }
 
+// open loads the database's row and its rules on the first batch.
+func (d *Database) open(ctx context.Context) error {
+	info, err := d.store.OpenDatabase(ctx, d.project, d.name)
+	if err != nil {
+		return err
+	}
+	d.info, d.opened = info, true
+	d.rules = nil
+	if rs, err := rules.Parse([]byte(info.Rules)); err == nil {
+		d.rules = rs
+	} else {
+		// Saving rules checks them (R4), so this is a database edited by hand: without its
+		// .indexOn every child and value query is served unfiltered.
+		d.log.Error("rtdb: stored rules do not parse", "database", d.name, "error", err)
+	}
+	return nil
+}
+
 // execute applies a batch in one transaction. When the transaction fails, each command is
 // retried on its own, so one bad command cannot fail the others.
 func (d *Database) execute(batch []*command) {
 	ctx, cancel := context.WithTimeout(context.Background(), batchTimeout)
 	defer cancel()
 	if !d.opened {
-		info, err := d.store.OpenDatabase(ctx, d.project, d.name)
-		if err != nil {
+		if err := d.open(ctx); err != nil {
 			d.log.Error("rtdb: open database", "database", d.name, "error", err)
 			for _, c := range batch {
 				c.done(Result{Err: ErrUnavailable})
 			}
 			return
 		}
-		d.info, d.opened = info, true
 	}
 	rate := d.rate
-	tx, commit, results, err := d.apply(ctx, batch)
+	state := &batchState{}
+	tx, commit, results, err := d.apply(ctx, batch, state)
 	if err != nil {
 		// Nothing was committed, so the commands can run again, each on its own: one bad
 		// command cannot fail the others.
 		d.rate = rate
+		state.rollback()
 		if len(batch) > 1 {
 			for _, c := range batch {
 				d.execute([]*command{c})
@@ -152,6 +195,7 @@ func (d *Database) execute(batch []*command) {
 		// The commit may or may not have happened. Running the commands again could apply
 		// them twice, so they fail; the clients resend what they still want.
 		d.rate = rate
+		state.rollback()
 		d.log.Error("rtdb: commit", "database", d.name, "error", err)
 		for _, c := range batch {
 			c.done(Result{Err: ErrUnavailable})
@@ -160,9 +204,16 @@ func (d *Database) execute(batch []*command) {
 	}
 	if len(commit.Changes) > 0 {
 		d.info.Seq = commit.Seq
-		if d.onCommit != nil {
-			d.onCommit(commit)
+	}
+	// Pushes go first, then the hook, then the replies: a writer's own listens get the data
+	// before its ack, and a listen's data comes before its ok.
+	for _, dl := range state.deliveries {
+		if dl.sess.sink != nil {
+			dl.sess.sink.Push(dl.push)
 		}
+	}
+	if len(commit.Changes) > 0 && d.onCommit != nil {
+		d.onCommit(commit)
 	}
 	for i, c := range batch {
 		c.done(results[i])
@@ -189,8 +240,9 @@ func (d *Database) committed(c Commit) bool {
 // apply runs the batch in a transaction, up to its commit. A command that fails on its own
 // terms (datastale, the write rate) gets its error in results; any other error is a storage
 // failure that aborts the whole batch, and the transaction is rolled back. On success the
-// caller commits the returned transaction.
-func (d *Database) apply(ctx context.Context, batch []*command) (_ StoreTx, _ Commit, _ []Result, err error) {
+// caller commits the returned transaction. Listens and their pushes are worked out command
+// by command, in order, into state, so each listen sees exactly the writes after it.
+func (d *Database) apply(ctx context.Context, batch []*command, state *batchState) (_ StoreTx, _ Commit, _ []Result, err error) {
 	tx, err := d.store.Begin(ctx, d.info)
 	if err != nil {
 		return nil, Commit{}, nil, err
@@ -205,15 +257,33 @@ func (d *Database) apply(ctx context.Context, batch []*command) (_ StoreTx, _ Co
 	results := make([]Result, len(batch))
 	var changes []Change
 	for i, c := range batch {
-		if c.barrier {
+		state.sent = nil
+		switch {
+		case c.barrier:
 			continue
-		}
-		if c.write == nil {
-			n, err := tx.Read(ctx, c.read)
-			if err != nil {
+		case c.listen != nil:
+			if results[i], err = d.startListen(ctx, tx, c.listen, state); err != nil {
 				return nil, Commit{}, nil, err
 			}
-			results[i].Node = n
+			continue
+		case c.unlisten != nil:
+			if l := d.listeners.remove(c.unlisten.sess, c.unlisten.key); l != nil {
+				state.undo = append(state.undo, func() { d.listeners.add(l) })
+			}
+			continue
+		case c.revoke != nil:
+			d.revokeListens(c.revoke, state)
+			continue
+		case c.drop != nil:
+			for _, l := range d.listeners.of(c.drop) {
+				d.listeners.remove(l.sess, l.key())
+				state.undo = append(state.undo, func() { d.listeners.add(l) })
+			}
+			continue
+		case c.write == nil:
+			if results[i], err = d.read(ctx, tx, c.read, c.query); err != nil {
+				return nil, Commit{}, nil, err
+			}
 			continue
 		}
 		if !d.rate.allow(now, c.write.Size) {
@@ -233,6 +303,9 @@ func (d *Database) apply(ctx context.Context, batch []*command) (_ StoreTx, _ Co
 			results[i].Node = ch.Value
 		}
 		changes = append(changes, ch)
+		if err := d.fanout(ctx, tx, ch, state); err != nil {
+			return nil, Commit{}, nil, err
+		}
 	}
 	commit := Commit{Seq: d.info.Seq, Changes: changes}
 	if len(changes) > 0 {
@@ -241,4 +314,77 @@ func (d *Database) apply(ctx context.Context, batch []*command) (_ StoreTx, _ Co
 		}
 	}
 	return tx, commit, results, nil
+}
+
+// indexed reports whether the rules declare the index a query at p needs. Key and priority
+// order need none.
+func (d *Database) indexed(p Path, q Query) bool {
+	key := q.IndexKey()
+	if key == "" {
+		return true
+	}
+	return d.rules != nil && slices.Contains(d.rules.IndexOn(p), key)
+}
+
+// read runs a get: the value at p, or the part of it a query selects. A query ordered by a
+// child or by value needs its .indexOn, as in Firebase (ADR-020 §1).
+func (d *Database) read(ctx context.Context, tx StoreTx, p Path, q *Query) (Result, error) {
+	if q != nil && !q.LoadsAll() && !d.indexed(p, *q) {
+		return Result{Err: NoIndexError(q.IndexKey(), p)}, nil
+	}
+	n, err := tx.Read(ctx, p)
+	if err != nil {
+		return Result{}, err
+	}
+	if q != nil {
+		n = q.Filter(n)
+	}
+	return Result{Node: n}, nil
+}
+
+// startListen registers a listen and sends its data first, unless the client's hash shows it
+// already has them (B-emulator-oracle.md §1.4: no push for null, nor for a matching hash). A
+// query the rules cannot index is served whole and untagged, with the no_index warning.
+func (d *Database) startListen(ctx context.Context, tx StoreTx, c *listenCmd, state *batchState) (Result, error) {
+	l := c.l
+	n, err := tx.Read(ctx, l.path)
+	if err != nil {
+		return Result{}, err
+	}
+	var res Result
+	view := n
+	switch {
+	case l.query.IsDefault():
+		l.tag = 0
+	case !d.indexed(l.path, l.query):
+		l.tag = 0
+		res.Warnings = []string{"no_index"}
+	default:
+		view = l.query.Filter(n)
+		l.window = view
+	}
+	if Hash(view) != c.hash {
+		state.deliver(l.sess, Push{Action: PushData, Path: l.path, Data: view.ExportJSON(), Tag: l.tag})
+	}
+	old := d.listeners.add(l)
+	state.undo = append(state.undo, func() {
+		d.listeners.remove(l.sess, l.key())
+		if old != nil {
+			d.listeners.add(old)
+		}
+	})
+	return res, nil
+}
+
+// revokeListens cancels the listens of a session it may no longer read, with a c push each,
+// as the emulator does after unauth (B-emulator-oracle.md §1.8).
+func (d *Database) revokeListens(s *Session, state *batchState) {
+	for _, l := range d.listeners.of(s) {
+		if s.mayRead(l.path) {
+			continue
+		}
+		d.listeners.remove(s, l.key())
+		state.undo = append(state.undo, func() { d.listeners.add(l) })
+		state.deliver(s, Push{Action: PushCancel, Path: l.path, Query: l.spec})
+	}
 }

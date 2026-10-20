@@ -26,6 +26,8 @@ type memStore struct {
 	refuse  string
 	commits int
 	lastID  int64
+	// rules are the rules documents of databases yet to be opened, by name.
+	rules map[string]string
 	// slow delays every write, widening the window in which two writers would overlap.
 	slow time.Duration
 }
@@ -43,7 +45,11 @@ func (s *memStore) OpenDatabase(_ context.Context, project int64, name string) (
 	db := s.dbs[name]
 	if db == nil {
 		s.lastID++
-		db = &memDB{info: DatabaseInfo{ID: s.lastID, Project: project, Name: name}}
+		rules := s.rules[name]
+		if rules == "" {
+			rules = LockedRules
+		}
+		db = &memDB{info: DatabaseInfo{ID: s.lastID, Project: project, Name: name, Rules: rules}}
 		s.dbs[name] = db
 	}
 	return db.info, nil

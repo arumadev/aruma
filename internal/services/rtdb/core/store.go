@@ -37,7 +37,13 @@ type DatabaseInfo struct {
 	Name    string
 	// Seq is the number of writes applied so far; it grows in the transaction of each write.
 	Seq int64
+	// Rules is the rules document as stored (locked for a new database, ADR-020).
+	Rules string
 }
+
+// LockedRules is the rules document a new database starts with (ADR-020), as the migration
+// stores it.
+const LockedRules = `{"rules": {".read": false, ".write": false}}`
 
 // StoreTx is a transaction on one database. Reads see the transaction's own writes.
 type StoreTx interface {

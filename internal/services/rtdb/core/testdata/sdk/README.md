@@ -5,12 +5,14 @@ Hash, ordering and export vectors computed by the official Firebase JS SDK code,
 - `hash.json`: `nodeFromJSON(json).hash()` plus the canonical pre-SHA-1 string, and `ieee754`: the SDK's `doubleToIEEE754String` against the real IEEE-754 bits. They differ for |v| < 2^-971 and for some values at or next to a power of two (e.g. 2^53-1).
 - `order.json`: `nameCompare` (sorted keys, key pairs), `VALUE_INDEX`, `PRIORITY_INDEX` and `PathIndex` comparisons, as signs.
 - `export.json`: `val(false)` and `val(true)` (export format) for each input.
+- `query.json` (`gen_query.js`): for four data sets and 51 queries, the wire query object the SDK sends and the children its own filter keeps (`queryParamsGetNodeFilter(params).updateFullNode`), in index order: ranges with keys and the `[MIN_NAME]`/`[MAX_NAME]` sentinels of `startAfter`/`endBefore`, limits from either side, every order.
 - `emulator_etags.json`: REST ETags from the emulator (v4.11.2) for sample values from `hash.json`, compared with the SDK hash. They match except for the numbers where the SDK's IEEE-754 string is wrong; there the emulator hashes the real bits.
 
 Regenerate:
 
 ```
 node gen.js <path>/node_modules/@firebase/database        # hash.json, order.json, export.json
+node gen_query.js <path>/node_modules/@firebase/database  # query.json
 node emulator_etags.mjs 127.0.0.1:9400                    # needs the emulator on that port
 ```
 

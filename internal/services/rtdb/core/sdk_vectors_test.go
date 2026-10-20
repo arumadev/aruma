@@ -239,6 +239,34 @@ func TestValueOrderMatchesSDK(t *testing.T) {
 	}
 }
 
+func TestQueryWindowsMatchSDK(t *testing.T) {
+	var f struct {
+		Data    map[string]json.RawMessage `json:"data"`
+		Vectors []struct {
+			Data  string          `json:"data"`
+			Order string          `json:"order"`
+			Ops   json.RawMessage `json:"ops"`
+			Wire  json.RawMessage `json:"wire"`
+			Keys  []string        `json:"keys"`
+		} `json:"vectors"`
+	}
+	loadVectors(t, "query.json", &f)
+	if len(f.Vectors) < 200 {
+		t.Fatalf("%d query vectors", len(f.Vectors))
+	}
+	for _, v := range f.Vectors {
+		q, err := NewQuery(spec(t, string(v.Wire)))
+		if err != nil {
+			t.Errorf("%s %s %s: %v", v.Data, v.Order, v.Ops, err)
+			continue
+		}
+		got := q.Keys(parse(t, f.Data[v.Data]))
+		if strings.Join(got, ",") != strings.Join(v.Keys, ",") {
+			t.Errorf("%s ordered by %s %s (wire %s):\n got  %q\n want %q", v.Data, v.Order, v.Ops, v.Wire, got, v.Keys)
+		}
+	}
+}
+
 func TestExportMatchesSDK(t *testing.T) {
 	var f struct {
 		Vectors []struct {

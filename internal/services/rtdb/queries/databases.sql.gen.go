@@ -43,11 +43,11 @@ WITH created AS (
     INSERT INTO rtdb.databases (project_number, name)
     VALUES ($1, $2)
     ON CONFLICT (project_number, name) DO NOTHING
-    RETURNING id, seq
+    RETURNING id, seq, rules
 )
-SELECT id, seq FROM created
+SELECT id, seq, rules FROM created
 UNION ALL
-SELECT id, seq FROM rtdb.databases WHERE project_number = $1 AND name = $2
+SELECT id, seq, rules FROM rtdb.databases WHERE project_number = $1 AND name = $2
 LIMIT 1
 `
 
@@ -57,15 +57,16 @@ type EnsureDatabaseParams struct {
 }
 
 type EnsureDatabaseRow struct {
-	ID  int64
-	Seq int64
+	ID    int64
+	Seq   int64
+	Rules string
 }
 
 // Creates a project's database on first use; a database is never renamed or moved.
 func (q *Queries) EnsureDatabase(ctx context.Context, arg EnsureDatabaseParams) (EnsureDatabaseRow, error) {
 	row := q.db.QueryRow(ctx, ensureDatabase, arg.ProjectNumber, arg.Name)
 	var i EnsureDatabaseRow
-	err := row.Scan(&i.ID, &i.Seq)
+	err := row.Scan(&i.ID, &i.Seq, &i.Rules)
 	return i, err
 }
 

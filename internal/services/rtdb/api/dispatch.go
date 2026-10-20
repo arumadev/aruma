@@ -74,13 +74,8 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 		if !s.decode(req, &b) {
 			return
 		}
-		if err := b.Query.Validate(); err != nil || !b.Query.IsDefault() {
-			// Queries are served with the listeners (R3).
-			s.reply(req, wire.Fail(wire.StatusUnavailable, "Queries are not supported by this server yet."))
-			return
-		}
 		sl := s.reserve(req.ID)
-		s.core.Get(b.Path, func(n *core.Node, err error) {
+		s.core.Get(b.Path, querySpec(b.Query), func(n *core.Node, err error) {
 			if err != nil {
 				s.fill(sl, result(req.ID, err))
 				return
@@ -88,12 +83,34 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 			s.fill(sl, wire.EncodeResponse(req.ID, wire.OKWith(json.RawMessage(n.ExportJSON()))))
 		})
 
-	case wire.ActionListen, wire.ActionUnlisten:
-		// Listening comes in R3. Until then a listen fails cleanly: the SDKs remove it and
-		// report the error, where an "ok" would leave them waiting for data that never comes.
+	case wire.ActionListen:
+		var b wire.ListenBody
+		if !s.decode(req, &b) {
+			return
+		}
+		var tag int64
+		if b.Tag != nil {
+			tag = *b.Tag
+		}
+		// The data come before the reply: the writer pushes them before calling back.
+		sl := s.reserve(req.ID)
+		s.core.Listen(b.Path, querySpec(b.Query), tag, b.Hash, func(warnings []string, err error) {
+			switch {
+			case err != nil:
+				s.fill(sl, result(req.ID, err))
+			case len(warnings) > 0:
+				s.fill(sl, wire.EncodeResponse(req.ID, wire.OKWith(map[string]any{"w": warnings})))
+			default:
+				// Always an object: Android reads the reply's data as a map.
+				s.fill(sl, wire.EncodeResponse(req.ID, wire.OKWith(map[string]any{})))
+			}
+		})
+
+	case wire.ActionUnlisten:
 		var b wire.ListenBody
 		if s.decode(req, &b) {
-			s.reply(req, wire.Fail(wire.StatusUnavailable, "Listening is not supported by this server yet."))
+			sl := s.reserve(req.ID)
+			s.core.Unlisten(b.Path, querySpec(b.Query), func(err error) { s.fill(sl, result(req.ID, err)) })
 		}
 
 	case wire.ActionOnDisconnPut, wire.ActionOnDisconnMerge:
@@ -121,8 +138,13 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 		}
 
 	case wire.ActionUnauth:
+		// Listens the session may no longer read are cancelled with c before the reply, as
+		// the emulator does (B-emulator-oracle.md §1.8).
 		s.signOut()
-		s.reply(req, wire.OKWith("unauthenticated")) // the emulator's reply
+		sl := s.reserve(req.ID)
+		s.core.RevokeListens(func() {
+			s.fill(sl, wire.EncodeResponse(req.ID, wire.OKWith("unauthenticated"))) // the emulator's reply
+		})
 
 	default:
 		s.send(wire.EncodeError(errorFrame))
@@ -153,3 +175,57 @@ func replyOf(err error) wire.Reply {
 
 // result encodes the reply to request id: ok, or err's status and message.
 func result(id int64, err error) []byte { return wire.EncodeResponse(id, replyOf(err)) }
+
+// querySpec turns the protocol's query object into core's; nil (no q) stays nil.
+func querySpec(q *wire.Query) *core.QuerySpec {
+	if q == nil {
+		return nil
+	}
+	var limit int64
+	if q.Limit != nil {
+		limit = *q.Limit
+	}
+	return &core.QuerySpec{
+		Index:      q.Index,
+		StartValue: q.StartValue, StartName: q.StartName, StartInclusive: q.StartInclusive,
+		EndValue: q.EndValue, EndName: q.EndName, EndInclusive: q.EndInclusive,
+		Limit: limit, FromRight: q.ViewFrom == wire.ViewFromRight,
+	}
+}
+
+// wireQuery turns a core query back into the protocol's object, for the c push that cancels
+// a listen; nil for a default listen (the emulator sends "q":null).
+func wireQuery(s *core.QuerySpec) *wire.Query {
+	if s == nil {
+		return nil
+	}
+	q := &wire.Query{
+		Index:      s.Index,
+		StartValue: s.StartValue, StartName: s.StartName, StartInclusive: s.StartInclusive,
+		EndValue: s.EndValue, EndName: s.EndName, EndInclusive: s.EndInclusive,
+	}
+	if s.Limit > 0 {
+		q.Limit = &s.Limit
+		q.ViewFrom = wire.ViewFromLeft
+		if s.FromRight {
+			q.ViewFrom = wire.ViewFromRight
+		}
+	}
+	return q
+}
+
+// Push implements core.Sink: it queues a push from the database's writer.
+func (s *session) Push(p core.Push) {
+	var tag *int64
+	if p.Tag != 0 {
+		tag = &p.Tag
+	}
+	switch p.Action {
+	case core.PushData:
+		s.out.push(wire.EncodeDataPush(p.Path.String(), p.Data, tag))
+	case core.PushMerge:
+		s.out.push(wire.EncodeMergePush(p.Path.String(), p.Data, tag))
+	case core.PushCancel:
+		s.out.push(wire.EncodeListenRevoked(p.Path.String(), wireQuery(p.Query)))
+	}
+}

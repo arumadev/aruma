@@ -1,7 +1,10 @@
 package api
 
 import (
+	"net/http"
 	"sync"
+
+	"github.com/osama300/aurma-project/internal/platform/httpx"
 
 	"github.com/osama300/aurma-project/internal/services/rtdb/core"
 	"github.com/osama300/aurma-project/internal/services/rtdb/wire"
@@ -24,8 +27,17 @@ type session struct {
 	admin   adminState // the admin credential the session signed in with (auth.go)
 }
 
-func newSession(a *API, target core.Target, cs *core.Session, outboxBytes int64) *session {
-	return &session{api: a, target: target, core: cs, out: newOutbox(outboxBytes), id: sessionID()}
+// openSession starts a protocol session and its core session, which pushes into it. The
+// open rules of development reach clients on this machine only, judged by the connection's
+// own peer, never by forwarded headers.
+func (a *API) openSession(target core.Target, r *http.Request) (*session, error) {
+	s := &session{api: a, target: target, out: newOutbox(a.svc.Limits().OutboxBytes), id: sessionID()}
+	cs, err := a.svc.Open(target, core.Auth{}, core.OpenOptions{Loopback: httpx.PeerIsLoopback(r), Sink: s})
+	if err != nil {
+		return nil, err
+	}
+	s.core = cs
+	return s, nil
 }
 
 // messageLimit is the largest message the session may send now: the full limit once it has

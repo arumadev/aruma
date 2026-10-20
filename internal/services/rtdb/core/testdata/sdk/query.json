@@ -1,0 +1,4449 @@
+{
+  "source": {
+    "package": "@firebase/database",
+    "version": "1.1.5",
+    "bundle": "dist/index.node.cjs.js",
+    "generator": "gen_query.js",
+    "appStub": true,
+    "note": "keys = the children queryParamsGetNodeFilter(params).updateFullNode keeps, in index order; wire = queryParamsGetQueryObject(params)."
+  },
+  "references": [
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/view/QueryParams.ts",
+      "what": "query parameters, startAfter/endBefore sentinels, the wire query object"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/view/filter/RangedFilter.ts",
+      "what": "range bounds as posts, inclusive or not"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/view/filter/LimitedFilter.ts",
+      "what": "limit from the left or the right"
+    }
+  ],
+  "data": {
+    "mixed": {
+      "1": {
+        "s": 1
+      },
+      "2": {
+        "s": -1
+      },
+      "10": {
+        "s": 1
+      },
+      "a": {
+        "s": 3,
+        "n": "x"
+      },
+      "b": {
+        "s": 1
+      },
+      "c": {
+        ".priority": 2,
+        "s": 2
+      },
+      "d": {
+        "s": 0
+      },
+      "e": {
+        ".priority": 1,
+        "s": "str"
+      },
+      "f": 5,
+      "g": {
+        "t": 1
+      },
+      "h": {
+        "s": true
+      },
+      "i": {
+        "s": false
+      },
+      "j": {
+        "s": null,
+        "u": 1
+      }
+    },
+    "scores": {
+      "alice": {
+        "score": 10,
+        "meta": {
+          "at": 3
+        }
+      },
+      "bob": {
+        "score": 7,
+        "meta": {
+          "at": 1
+        }
+      },
+      "carol": {
+        "score": 10,
+        "meta": {
+          "at": 2
+        }
+      },
+      "dave": {
+        "score": 2
+      },
+      "eve": {
+        "score": "x"
+      }
+    },
+    "leaves": {
+      "5": 0,
+      "a": "b",
+      "b": 3,
+      "c": true,
+      "d": false,
+      "e": "a",
+      "f": 3,
+      "g": {
+        "x": 1
+      },
+      "h": -1
+    },
+    "priorities": {
+      "a": {
+        ".value": 1,
+        ".priority": "b"
+      },
+      "b": {
+        ".value": 2,
+        ".priority": 3
+      },
+      "c": 3,
+      "d": {
+        ".value": 4,
+        ".priority": "a"
+      },
+      "e": {
+        ".value": 5,
+        ".priority": 3
+      },
+      "f": {
+        ".value": 6,
+        ".priority": -1
+      }
+    }
+  },
+  "vectors": [
+    {
+      "data": "mixed",
+      "order": "priority",
+      "ops": [],
+      "wire": {},
+      "keys": [
+        "1",
+        "2",
+        "10",
+        "a",
+        "b",
+        "d",
+        "f",
+        "g",
+        "h",
+        "i",
+        "j",
+        "e",
+        "c"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "priority",
+      "ops": [
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "l"
+      },
+      "keys": [
+        "1",
+        "2"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "priority",
+      "ops": [
+        [
+          "limitToLast",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "r"
+      },
+      "keys": [
+        "j",
+        "e",
+        "c"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true
+      },
+      "keys": []
+    },
+    {
+      "data": "mixed",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          3,
+          "e"
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "e",
+        "sin": true
+      },
+      "keys": []
+    },
+    {
+      "data": "mixed",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          "a"
+        ],
+        [
+          "endAt",
+          "b"
+        ]
+      ],
+      "wire": {
+        "sp": "a",
+        "sin": true,
+        "ep": "b",
+        "ein": true
+      },
+      "keys": []
+    },
+    {
+      "data": "mixed",
+      "order": "priority",
+      "ops": [
+        [
+          "startAfter",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "[MAX_NAME]",
+        "sin": false
+      },
+      "keys": []
+    },
+    {
+      "data": "mixed",
+      "order": "priority",
+      "ops": [
+        [
+          "endBefore",
+          3
+        ]
+      ],
+      "wire": {
+        "ep": 3,
+        "en": "[MIN_NAME]",
+        "ein": false
+      },
+      "keys": [
+        "1",
+        "2",
+        "10",
+        "a",
+        "b",
+        "d",
+        "f",
+        "g",
+        "h",
+        "i",
+        "j",
+        "e",
+        "c"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          null
+        ],
+        [
+          "endAt",
+          null
+        ]
+      ],
+      "wire": {
+        "sp": null,
+        "sin": true,
+        "ep": null,
+        "ein": true
+      },
+      "keys": [
+        "1",
+        "2",
+        "10",
+        "a",
+        "b",
+        "d",
+        "f",
+        "g",
+        "h",
+        "i",
+        "j"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "priority",
+      "ops": [
+        [
+          "equalTo",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true,
+        "ep": 3,
+        "ein": true
+      },
+      "keys": []
+    },
+    {
+      "data": "mixed",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          3
+        ],
+        [
+          "limitToLast",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true,
+        "l": 1,
+        "vf": "r"
+      },
+      "keys": []
+    },
+    {
+      "data": "mixed",
+      "order": "key",
+      "ops": [],
+      "wire": {
+        "i": ".key"
+      },
+      "keys": [
+        "1",
+        "2",
+        "10",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h",
+        "i",
+        "j"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "key",
+      "ops": [
+        [
+          "startAt",
+          "b"
+        ],
+        [
+          "endAt",
+          "e"
+        ]
+      ],
+      "wire": {
+        "sp": "b",
+        "sin": true,
+        "ep": "e",
+        "ein": true,
+        "i": ".key"
+      },
+      "keys": [
+        "b",
+        "c",
+        "d",
+        "e"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "key",
+      "ops": [
+        [
+          "startAfter",
+          "b"
+        ],
+        [
+          "endBefore",
+          "e"
+        ]
+      ],
+      "wire": {
+        "sp": "b",
+        "sin": false,
+        "ep": "e",
+        "ein": false,
+        "i": ".key"
+      },
+      "keys": [
+        "c",
+        "d"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "key",
+      "ops": [
+        [
+          "limitToFirst",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "l",
+        "i": ".key"
+      },
+      "keys": [
+        "1",
+        "2",
+        "10"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "key",
+      "ops": [
+        [
+          "limitToLast",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "r",
+        "i": ".key"
+      },
+      "keys": [
+        "i",
+        "j"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "key",
+      "ops": [
+        [
+          "equalTo",
+          "c"
+        ]
+      ],
+      "wire": {
+        "sp": "c",
+        "sin": true,
+        "ep": "c",
+        "ein": true,
+        "i": ".key"
+      },
+      "keys": [
+        "c"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "key",
+      "ops": [
+        [
+          "startAt",
+          "1"
+        ],
+        [
+          "endAt",
+          "2"
+        ]
+      ],
+      "wire": {
+        "sp": "1",
+        "sin": true,
+        "ep": "2",
+        "ein": true,
+        "i": ".key"
+      },
+      "keys": [
+        "1",
+        "2"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "key",
+      "ops": [
+        [
+          "startAt",
+          "c"
+        ],
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": "c",
+        "sin": true,
+        "l": 2,
+        "vf": "l",
+        "i": ".key"
+      },
+      "keys": [
+        "c",
+        "d"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "value",
+      "ops": [],
+      "wire": {
+        "i": ".value"
+      },
+      "keys": [
+        "f",
+        "1",
+        "2",
+        "10",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "g",
+        "h",
+        "i",
+        "j"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "value",
+      "ops": [
+        [
+          "limitToFirst",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "l",
+        "i": ".value"
+      },
+      "keys": [
+        "f",
+        "1",
+        "2"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "value",
+      "ops": [
+        [
+          "limitToLast",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "r",
+        "i": ".value"
+      },
+      "keys": [
+        "h",
+        "i",
+        "j"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true,
+        "i": ".value"
+      },
+      "keys": [
+        "f",
+        "1",
+        "2",
+        "10",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "g",
+        "h",
+        "i",
+        "j"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          3,
+          "f"
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "f",
+        "sin": true,
+        "i": ".value"
+      },
+      "keys": [
+        "f",
+        "1",
+        "2",
+        "10",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "g",
+        "h",
+        "i",
+        "j"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "value",
+      "ops": [
+        [
+          "startAfter",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "[MAX_NAME]",
+        "sin": false,
+        "i": ".value"
+      },
+      "keys": [
+        "f",
+        "1",
+        "2",
+        "10",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "g",
+        "h",
+        "i",
+        "j"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "value",
+      "ops": [
+        [
+          "endBefore",
+          "b"
+        ]
+      ],
+      "wire": {
+        "ep": "b",
+        "en": "[MIN_NAME]",
+        "ein": false,
+        "i": ".value"
+      },
+      "keys": [
+        "f"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "value",
+      "ops": [
+        [
+          "equalTo",
+          true
+        ]
+      ],
+      "wire": {
+        "sp": true,
+        "sin": true,
+        "ep": true,
+        "ein": true,
+        "i": ".value"
+      },
+      "keys": []
+    },
+    {
+      "data": "mixed",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          false
+        ],
+        [
+          "endAt",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": false,
+        "sin": true,
+        "ep": 3,
+        "ein": true,
+        "i": ".value"
+      },
+      "keys": []
+    },
+    {
+      "data": "mixed",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          "a"
+        ]
+      ],
+      "wire": {
+        "sp": "a",
+        "sin": true,
+        "i": ".value"
+      },
+      "keys": [
+        "1",
+        "2",
+        "10",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "g",
+        "h",
+        "i",
+        "j"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [],
+      "wire": {
+        "i": "s"
+      },
+      "keys": [
+        "f",
+        "g",
+        "j",
+        "i",
+        "h",
+        "2",
+        "d",
+        "1",
+        "10",
+        "b",
+        "c",
+        "a",
+        "e"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "limitToFirst",
+          4
+        ]
+      ],
+      "wire": {
+        "l": 4,
+        "vf": "l",
+        "i": "s"
+      },
+      "keys": [
+        "f",
+        "g",
+        "j",
+        "i"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "limitToLast",
+          4
+        ]
+      ],
+      "wire": {
+        "l": 4,
+        "vf": "r",
+        "i": "s"
+      },
+      "keys": [
+        "b",
+        "c",
+        "a",
+        "e"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sin": true,
+        "i": "s"
+      },
+      "keys": [
+        "1",
+        "10",
+        "b",
+        "c",
+        "a",
+        "e"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          1,
+          "b"
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sn": "b",
+        "sin": true,
+        "i": "s"
+      },
+      "keys": [
+        "b",
+        "c",
+        "a",
+        "e"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAfter",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sn": "[MAX_NAME]",
+        "sin": false,
+        "i": "s"
+      },
+      "keys": [
+        "c",
+        "a",
+        "e"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAfter",
+          1,
+          "1"
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sn": "1",
+        "sin": false,
+        "i": "s"
+      },
+      "keys": [
+        "10",
+        "b",
+        "c",
+        "a",
+        "e"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "endAt",
+          1
+        ]
+      ],
+      "wire": {
+        "ep": 1,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": [
+        "f",
+        "g",
+        "j",
+        "i",
+        "h",
+        "2",
+        "d",
+        "1",
+        "10",
+        "b"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "endBefore",
+          1
+        ]
+      ],
+      "wire": {
+        "ep": 1,
+        "en": "[MIN_NAME]",
+        "ein": false,
+        "i": "s"
+      },
+      "keys": [
+        "f",
+        "g",
+        "j",
+        "i",
+        "h",
+        "2",
+        "d"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "endBefore",
+          1,
+          "b"
+        ]
+      ],
+      "wire": {
+        "ep": 1,
+        "en": "b",
+        "ein": false,
+        "i": "s"
+      },
+      "keys": [
+        "f",
+        "g",
+        "j",
+        "i",
+        "h",
+        "2",
+        "d",
+        "1",
+        "10"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "equalTo",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sin": true,
+        "ep": 1,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": [
+        "1",
+        "10",
+        "b"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "equalTo",
+          null
+        ]
+      ],
+      "wire": {
+        "sp": null,
+        "sin": true,
+        "ep": null,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": [
+        "f",
+        "g",
+        "j"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          false
+        ],
+        [
+          "endAt",
+          true
+        ]
+      ],
+      "wire": {
+        "sp": false,
+        "sin": true,
+        "ep": true,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": [
+        "i",
+        "h"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          "a"
+        ],
+        [
+          "endAt",
+          "z"
+        ]
+      ],
+      "wire": {
+        "sp": "a",
+        "sin": true,
+        "ep": "z",
+        "ein": true,
+        "i": "s"
+      },
+      "keys": [
+        "e"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          0
+        ],
+        [
+          "limitToLast",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": 0,
+        "sin": true,
+        "l": 2,
+        "vf": "r",
+        "i": "s"
+      },
+      "keys": [
+        "a",
+        "e"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          0
+        ],
+        [
+          "endAt",
+          10
+        ],
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": 0,
+        "sin": true,
+        "ep": 10,
+        "ein": true,
+        "l": 2,
+        "vf": "l",
+        "i": "s"
+      },
+      "keys": [
+        "d",
+        "1"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:score",
+      "ops": [
+        [
+          "limitToLast",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "r",
+        "i": "score"
+      },
+      "keys": [
+        "i",
+        "j"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:score",
+      "ops": [
+        [
+          "equalTo",
+          10
+        ]
+      ],
+      "wire": {
+        "sp": 10,
+        "sin": true,
+        "ep": 10,
+        "ein": true,
+        "i": "score"
+      },
+      "keys": []
+    },
+    {
+      "data": "mixed",
+      "order": "child:score",
+      "ops": [
+        [
+          "startAt",
+          7
+        ],
+        [
+          "endAt",
+          10
+        ]
+      ],
+      "wire": {
+        "sp": 7,
+        "sin": true,
+        "ep": 10,
+        "ein": true,
+        "i": "score"
+      },
+      "keys": []
+    },
+    {
+      "data": "mixed",
+      "order": "child:meta/at",
+      "ops": [],
+      "wire": {
+        "i": "meta/at"
+      },
+      "keys": [
+        "1",
+        "2",
+        "10",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h",
+        "i",
+        "j"
+      ]
+    },
+    {
+      "data": "mixed",
+      "order": "child:meta/at",
+      "ops": [
+        [
+          "startAt",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": 2,
+        "sin": true,
+        "i": "meta/at"
+      },
+      "keys": []
+    },
+    {
+      "data": "mixed",
+      "order": "child:meta/at",
+      "ops": [
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "l",
+        "i": "meta/at"
+      },
+      "keys": [
+        "1",
+        "2"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "priority",
+      "ops": [],
+      "wire": {},
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "priority",
+      "ops": [
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "l"
+      },
+      "keys": [
+        "alice",
+        "bob"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "priority",
+      "ops": [
+        [
+          "limitToLast",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "r"
+      },
+      "keys": [
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          3,
+          "e"
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "e",
+        "sin": true
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          "a"
+        ],
+        [
+          "endAt",
+          "b"
+        ]
+      ],
+      "wire": {
+        "sp": "a",
+        "sin": true,
+        "ep": "b",
+        "ein": true
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "priority",
+      "ops": [
+        [
+          "startAfter",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "[MAX_NAME]",
+        "sin": false
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "priority",
+      "ops": [
+        [
+          "endBefore",
+          3
+        ]
+      ],
+      "wire": {
+        "ep": 3,
+        "en": "[MIN_NAME]",
+        "ein": false
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          null
+        ],
+        [
+          "endAt",
+          null
+        ]
+      ],
+      "wire": {
+        "sp": null,
+        "sin": true,
+        "ep": null,
+        "ein": true
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "priority",
+      "ops": [
+        [
+          "equalTo",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true,
+        "ep": 3,
+        "ein": true
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          3
+        ],
+        [
+          "limitToLast",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true,
+        "l": 1,
+        "vf": "r"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "key",
+      "ops": [],
+      "wire": {
+        "i": ".key"
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "key",
+      "ops": [
+        [
+          "startAt",
+          "b"
+        ],
+        [
+          "endAt",
+          "e"
+        ]
+      ],
+      "wire": {
+        "sp": "b",
+        "sin": true,
+        "ep": "e",
+        "ein": true,
+        "i": ".key"
+      },
+      "keys": [
+        "bob",
+        "carol",
+        "dave"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "key",
+      "ops": [
+        [
+          "startAfter",
+          "b"
+        ],
+        [
+          "endBefore",
+          "e"
+        ]
+      ],
+      "wire": {
+        "sp": "b",
+        "sin": false,
+        "ep": "e",
+        "ein": false,
+        "i": ".key"
+      },
+      "keys": [
+        "bob",
+        "carol",
+        "dave"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "key",
+      "ops": [
+        [
+          "limitToFirst",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "l",
+        "i": ".key"
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "key",
+      "ops": [
+        [
+          "limitToLast",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "r",
+        "i": ".key"
+      },
+      "keys": [
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "key",
+      "ops": [
+        [
+          "equalTo",
+          "c"
+        ]
+      ],
+      "wire": {
+        "sp": "c",
+        "sin": true,
+        "ep": "c",
+        "ein": true,
+        "i": ".key"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "key",
+      "ops": [
+        [
+          "startAt",
+          "1"
+        ],
+        [
+          "endAt",
+          "2"
+        ]
+      ],
+      "wire": {
+        "sp": "1",
+        "sin": true,
+        "ep": "2",
+        "ein": true,
+        "i": ".key"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "key",
+      "ops": [
+        [
+          "startAt",
+          "c"
+        ],
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": "c",
+        "sin": true,
+        "l": 2,
+        "vf": "l",
+        "i": ".key"
+      },
+      "keys": [
+        "carol",
+        "dave"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "value",
+      "ops": [],
+      "wire": {
+        "i": ".value"
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "value",
+      "ops": [
+        [
+          "limitToFirst",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "l",
+        "i": ".value"
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "value",
+      "ops": [
+        [
+          "limitToLast",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "r",
+        "i": ".value"
+      },
+      "keys": [
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true,
+        "i": ".value"
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          3,
+          "f"
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "f",
+        "sin": true,
+        "i": ".value"
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "value",
+      "ops": [
+        [
+          "startAfter",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "[MAX_NAME]",
+        "sin": false,
+        "i": ".value"
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "value",
+      "ops": [
+        [
+          "endBefore",
+          "b"
+        ]
+      ],
+      "wire": {
+        "ep": "b",
+        "en": "[MIN_NAME]",
+        "ein": false,
+        "i": ".value"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "value",
+      "ops": [
+        [
+          "equalTo",
+          true
+        ]
+      ],
+      "wire": {
+        "sp": true,
+        "sin": true,
+        "ep": true,
+        "ein": true,
+        "i": ".value"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          false
+        ],
+        [
+          "endAt",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": false,
+        "sin": true,
+        "ep": 3,
+        "ein": true,
+        "i": ".value"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          "a"
+        ]
+      ],
+      "wire": {
+        "sp": "a",
+        "sin": true,
+        "i": ".value"
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [],
+      "wire": {
+        "i": "s"
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "limitToFirst",
+          4
+        ]
+      ],
+      "wire": {
+        "l": 4,
+        "vf": "l",
+        "i": "s"
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "limitToLast",
+          4
+        ]
+      ],
+      "wire": {
+        "l": 4,
+        "vf": "r",
+        "i": "s"
+      },
+      "keys": [
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sin": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          1,
+          "b"
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sn": "b",
+        "sin": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAfter",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sn": "[MAX_NAME]",
+        "sin": false,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAfter",
+          1,
+          "1"
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sn": "1",
+        "sin": false,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "endAt",
+          1
+        ]
+      ],
+      "wire": {
+        "ep": 1,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "endBefore",
+          1
+        ]
+      ],
+      "wire": {
+        "ep": 1,
+        "en": "[MIN_NAME]",
+        "ein": false,
+        "i": "s"
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "endBefore",
+          1,
+          "b"
+        ]
+      ],
+      "wire": {
+        "ep": 1,
+        "en": "b",
+        "ein": false,
+        "i": "s"
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "equalTo",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sin": true,
+        "ep": 1,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "equalTo",
+          null
+        ]
+      ],
+      "wire": {
+        "sp": null,
+        "sin": true,
+        "ep": null,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": [
+        "alice",
+        "bob",
+        "carol",
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          false
+        ],
+        [
+          "endAt",
+          true
+        ]
+      ],
+      "wire": {
+        "sp": false,
+        "sin": true,
+        "ep": true,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          "a"
+        ],
+        [
+          "endAt",
+          "z"
+        ]
+      ],
+      "wire": {
+        "sp": "a",
+        "sin": true,
+        "ep": "z",
+        "ein": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          0
+        ],
+        [
+          "limitToLast",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": 0,
+        "sin": true,
+        "l": 2,
+        "vf": "r",
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          0
+        ],
+        [
+          "endAt",
+          10
+        ],
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": 0,
+        "sin": true,
+        "ep": 10,
+        "ein": true,
+        "l": 2,
+        "vf": "l",
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "scores",
+      "order": "child:score",
+      "ops": [
+        [
+          "limitToLast",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "r",
+        "i": "score"
+      },
+      "keys": [
+        "carol",
+        "eve"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "child:score",
+      "ops": [
+        [
+          "equalTo",
+          10
+        ]
+      ],
+      "wire": {
+        "sp": 10,
+        "sin": true,
+        "ep": 10,
+        "ein": true,
+        "i": "score"
+      },
+      "keys": [
+        "alice",
+        "carol"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "child:score",
+      "ops": [
+        [
+          "startAt",
+          7
+        ],
+        [
+          "endAt",
+          10
+        ]
+      ],
+      "wire": {
+        "sp": 7,
+        "sin": true,
+        "ep": 10,
+        "ein": true,
+        "i": "score"
+      },
+      "keys": [
+        "bob",
+        "alice",
+        "carol"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "child:meta/at",
+      "ops": [],
+      "wire": {
+        "i": "meta/at"
+      },
+      "keys": [
+        "dave",
+        "eve",
+        "bob",
+        "carol",
+        "alice"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "child:meta/at",
+      "ops": [
+        [
+          "startAt",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": 2,
+        "sin": true,
+        "i": "meta/at"
+      },
+      "keys": [
+        "carol",
+        "alice"
+      ]
+    },
+    {
+      "data": "scores",
+      "order": "child:meta/at",
+      "ops": [
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "l",
+        "i": "meta/at"
+      },
+      "keys": [
+        "dave",
+        "eve"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "priority",
+      "ops": [],
+      "wire": {},
+      "keys": [
+        "5",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "priority",
+      "ops": [
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "l"
+      },
+      "keys": [
+        "5",
+        "a"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "priority",
+      "ops": [
+        [
+          "limitToLast",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "r"
+      },
+      "keys": [
+        "f",
+        "g",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          3,
+          "e"
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "e",
+        "sin": true
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          "a"
+        ],
+        [
+          "endAt",
+          "b"
+        ]
+      ],
+      "wire": {
+        "sp": "a",
+        "sin": true,
+        "ep": "b",
+        "ein": true
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "priority",
+      "ops": [
+        [
+          "startAfter",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "[MAX_NAME]",
+        "sin": false
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "priority",
+      "ops": [
+        [
+          "endBefore",
+          3
+        ]
+      ],
+      "wire": {
+        "ep": 3,
+        "en": "[MIN_NAME]",
+        "ein": false
+      },
+      "keys": [
+        "5",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          null
+        ],
+        [
+          "endAt",
+          null
+        ]
+      ],
+      "wire": {
+        "sp": null,
+        "sin": true,
+        "ep": null,
+        "ein": true
+      },
+      "keys": [
+        "5",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "priority",
+      "ops": [
+        [
+          "equalTo",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true,
+        "ep": 3,
+        "ein": true
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          3
+        ],
+        [
+          "limitToLast",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true,
+        "l": 1,
+        "vf": "r"
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "key",
+      "ops": [],
+      "wire": {
+        "i": ".key"
+      },
+      "keys": [
+        "5",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "key",
+      "ops": [
+        [
+          "startAt",
+          "b"
+        ],
+        [
+          "endAt",
+          "e"
+        ]
+      ],
+      "wire": {
+        "sp": "b",
+        "sin": true,
+        "ep": "e",
+        "ein": true,
+        "i": ".key"
+      },
+      "keys": [
+        "b",
+        "c",
+        "d",
+        "e"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "key",
+      "ops": [
+        [
+          "startAfter",
+          "b"
+        ],
+        [
+          "endBefore",
+          "e"
+        ]
+      ],
+      "wire": {
+        "sp": "b",
+        "sin": false,
+        "ep": "e",
+        "ein": false,
+        "i": ".key"
+      },
+      "keys": [
+        "c",
+        "d"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "key",
+      "ops": [
+        [
+          "limitToFirst",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "l",
+        "i": ".key"
+      },
+      "keys": [
+        "5",
+        "a",
+        "b"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "key",
+      "ops": [
+        [
+          "limitToLast",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "r",
+        "i": ".key"
+      },
+      "keys": [
+        "g",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "key",
+      "ops": [
+        [
+          "equalTo",
+          "c"
+        ]
+      ],
+      "wire": {
+        "sp": "c",
+        "sin": true,
+        "ep": "c",
+        "ein": true,
+        "i": ".key"
+      },
+      "keys": [
+        "c"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "key",
+      "ops": [
+        [
+          "startAt",
+          "1"
+        ],
+        [
+          "endAt",
+          "2"
+        ]
+      ],
+      "wire": {
+        "sp": "1",
+        "sin": true,
+        "ep": "2",
+        "ein": true,
+        "i": ".key"
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "key",
+      "ops": [
+        [
+          "startAt",
+          "c"
+        ],
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": "c",
+        "sin": true,
+        "l": 2,
+        "vf": "l",
+        "i": ".key"
+      },
+      "keys": [
+        "c",
+        "d"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "value",
+      "ops": [],
+      "wire": {
+        "i": ".value"
+      },
+      "keys": [
+        "d",
+        "c",
+        "h",
+        "5",
+        "b",
+        "f",
+        "e",
+        "a",
+        "g"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "value",
+      "ops": [
+        [
+          "limitToFirst",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "l",
+        "i": ".value"
+      },
+      "keys": [
+        "d",
+        "c",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "value",
+      "ops": [
+        [
+          "limitToLast",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "r",
+        "i": ".value"
+      },
+      "keys": [
+        "e",
+        "a",
+        "g"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true,
+        "i": ".value"
+      },
+      "keys": [
+        "b",
+        "f",
+        "e",
+        "a",
+        "g"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          3,
+          "f"
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "f",
+        "sin": true,
+        "i": ".value"
+      },
+      "keys": [
+        "f",
+        "e",
+        "a",
+        "g"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "value",
+      "ops": [
+        [
+          "startAfter",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "[MAX_NAME]",
+        "sin": false,
+        "i": ".value"
+      },
+      "keys": [
+        "e",
+        "a",
+        "g"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "value",
+      "ops": [
+        [
+          "endBefore",
+          "b"
+        ]
+      ],
+      "wire": {
+        "ep": "b",
+        "en": "[MIN_NAME]",
+        "ein": false,
+        "i": ".value"
+      },
+      "keys": [
+        "d",
+        "c",
+        "h",
+        "5",
+        "b",
+        "f",
+        "e"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "value",
+      "ops": [
+        [
+          "equalTo",
+          true
+        ]
+      ],
+      "wire": {
+        "sp": true,
+        "sin": true,
+        "ep": true,
+        "ein": true,
+        "i": ".value"
+      },
+      "keys": [
+        "c"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          false
+        ],
+        [
+          "endAt",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": false,
+        "sin": true,
+        "ep": 3,
+        "ein": true,
+        "i": ".value"
+      },
+      "keys": [
+        "d",
+        "c",
+        "h",
+        "5",
+        "b",
+        "f"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          "a"
+        ]
+      ],
+      "wire": {
+        "sp": "a",
+        "sin": true,
+        "i": ".value"
+      },
+      "keys": [
+        "e",
+        "a",
+        "g"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [],
+      "wire": {
+        "i": "s"
+      },
+      "keys": [
+        "5",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "limitToFirst",
+          4
+        ]
+      ],
+      "wire": {
+        "l": 4,
+        "vf": "l",
+        "i": "s"
+      },
+      "keys": [
+        "5",
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "limitToLast",
+          4
+        ]
+      ],
+      "wire": {
+        "l": 4,
+        "vf": "r",
+        "i": "s"
+      },
+      "keys": [
+        "e",
+        "f",
+        "g",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sin": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          1,
+          "b"
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sn": "b",
+        "sin": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAfter",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sn": "[MAX_NAME]",
+        "sin": false,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAfter",
+          1,
+          "1"
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sn": "1",
+        "sin": false,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "endAt",
+          1
+        ]
+      ],
+      "wire": {
+        "ep": 1,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": [
+        "5",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "endBefore",
+          1
+        ]
+      ],
+      "wire": {
+        "ep": 1,
+        "en": "[MIN_NAME]",
+        "ein": false,
+        "i": "s"
+      },
+      "keys": [
+        "5",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "endBefore",
+          1,
+          "b"
+        ]
+      ],
+      "wire": {
+        "ep": 1,
+        "en": "b",
+        "ein": false,
+        "i": "s"
+      },
+      "keys": [
+        "5",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "equalTo",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sin": true,
+        "ep": 1,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "equalTo",
+          null
+        ]
+      ],
+      "wire": {
+        "sp": null,
+        "sin": true,
+        "ep": null,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": [
+        "5",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          false
+        ],
+        [
+          "endAt",
+          true
+        ]
+      ],
+      "wire": {
+        "sp": false,
+        "sin": true,
+        "ep": true,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          "a"
+        ],
+        [
+          "endAt",
+          "z"
+        ]
+      ],
+      "wire": {
+        "sp": "a",
+        "sin": true,
+        "ep": "z",
+        "ein": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          0
+        ],
+        [
+          "limitToLast",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": 0,
+        "sin": true,
+        "l": 2,
+        "vf": "r",
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          0
+        ],
+        [
+          "endAt",
+          10
+        ],
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": 0,
+        "sin": true,
+        "ep": 10,
+        "ein": true,
+        "l": 2,
+        "vf": "l",
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "child:score",
+      "ops": [
+        [
+          "limitToLast",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "r",
+        "i": "score"
+      },
+      "keys": [
+        "g",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "child:score",
+      "ops": [
+        [
+          "equalTo",
+          10
+        ]
+      ],
+      "wire": {
+        "sp": 10,
+        "sin": true,
+        "ep": 10,
+        "ein": true,
+        "i": "score"
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "child:score",
+      "ops": [
+        [
+          "startAt",
+          7
+        ],
+        [
+          "endAt",
+          10
+        ]
+      ],
+      "wire": {
+        "sp": 7,
+        "sin": true,
+        "ep": 10,
+        "ein": true,
+        "i": "score"
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "child:meta/at",
+      "ops": [],
+      "wire": {
+        "i": "meta/at"
+      },
+      "keys": [
+        "5",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h"
+      ]
+    },
+    {
+      "data": "leaves",
+      "order": "child:meta/at",
+      "ops": [
+        [
+          "startAt",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": 2,
+        "sin": true,
+        "i": "meta/at"
+      },
+      "keys": []
+    },
+    {
+      "data": "leaves",
+      "order": "child:meta/at",
+      "ops": [
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "l",
+        "i": "meta/at"
+      },
+      "keys": [
+        "5",
+        "a"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "priority",
+      "ops": [],
+      "wire": {},
+      "keys": [
+        "c",
+        "f",
+        "b",
+        "e",
+        "d",
+        "a"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "priority",
+      "ops": [
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "l"
+      },
+      "keys": [
+        "c",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "priority",
+      "ops": [
+        [
+          "limitToLast",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "r"
+      },
+      "keys": [
+        "e",
+        "d",
+        "a"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true
+      },
+      "keys": [
+        "b",
+        "e",
+        "d",
+        "a"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          3,
+          "e"
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "e",
+        "sin": true
+      },
+      "keys": [
+        "e",
+        "d",
+        "a"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          "a"
+        ],
+        [
+          "endAt",
+          "b"
+        ]
+      ],
+      "wire": {
+        "sp": "a",
+        "sin": true,
+        "ep": "b",
+        "ein": true
+      },
+      "keys": [
+        "d",
+        "a"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "priority",
+      "ops": [
+        [
+          "startAfter",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "[MAX_NAME]",
+        "sin": false
+      },
+      "keys": [
+        "d",
+        "a"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "priority",
+      "ops": [
+        [
+          "endBefore",
+          3
+        ]
+      ],
+      "wire": {
+        "ep": 3,
+        "en": "[MIN_NAME]",
+        "ein": false
+      },
+      "keys": [
+        "c",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          null
+        ],
+        [
+          "endAt",
+          null
+        ]
+      ],
+      "wire": {
+        "sp": null,
+        "sin": true,
+        "ep": null,
+        "ein": true
+      },
+      "keys": [
+        "c"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "priority",
+      "ops": [
+        [
+          "equalTo",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true,
+        "ep": 3,
+        "ein": true
+      },
+      "keys": [
+        "b",
+        "e"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "priority",
+      "ops": [
+        [
+          "startAt",
+          3
+        ],
+        [
+          "limitToLast",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true,
+        "l": 1,
+        "vf": "r"
+      },
+      "keys": [
+        "a"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "key",
+      "ops": [],
+      "wire": {
+        "i": ".key"
+      },
+      "keys": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "key",
+      "ops": [
+        [
+          "startAt",
+          "b"
+        ],
+        [
+          "endAt",
+          "e"
+        ]
+      ],
+      "wire": {
+        "sp": "b",
+        "sin": true,
+        "ep": "e",
+        "ein": true,
+        "i": ".key"
+      },
+      "keys": [
+        "b",
+        "c",
+        "d",
+        "e"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "key",
+      "ops": [
+        [
+          "startAfter",
+          "b"
+        ],
+        [
+          "endBefore",
+          "e"
+        ]
+      ],
+      "wire": {
+        "sp": "b",
+        "sin": false,
+        "ep": "e",
+        "ein": false,
+        "i": ".key"
+      },
+      "keys": [
+        "c",
+        "d"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "key",
+      "ops": [
+        [
+          "limitToFirst",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "l",
+        "i": ".key"
+      },
+      "keys": [
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "key",
+      "ops": [
+        [
+          "limitToLast",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "r",
+        "i": ".key"
+      },
+      "keys": [
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "key",
+      "ops": [
+        [
+          "equalTo",
+          "c"
+        ]
+      ],
+      "wire": {
+        "sp": "c",
+        "sin": true,
+        "ep": "c",
+        "ein": true,
+        "i": ".key"
+      },
+      "keys": [
+        "c"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "key",
+      "ops": [
+        [
+          "startAt",
+          "1"
+        ],
+        [
+          "endAt",
+          "2"
+        ]
+      ],
+      "wire": {
+        "sp": "1",
+        "sin": true,
+        "ep": "2",
+        "ein": true,
+        "i": ".key"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "key",
+      "ops": [
+        [
+          "startAt",
+          "c"
+        ],
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": "c",
+        "sin": true,
+        "l": 2,
+        "vf": "l",
+        "i": ".key"
+      },
+      "keys": [
+        "c",
+        "d"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "value",
+      "ops": [],
+      "wire": {
+        "i": ".value"
+      },
+      "keys": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "value",
+      "ops": [
+        [
+          "limitToFirst",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "l",
+        "i": ".value"
+      },
+      "keys": [
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "value",
+      "ops": [
+        [
+          "limitToLast",
+          3
+        ]
+      ],
+      "wire": {
+        "l": 3,
+        "vf": "r",
+        "i": ".value"
+      },
+      "keys": [
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sin": true,
+        "i": ".value"
+      },
+      "keys": [
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          3,
+          "f"
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "f",
+        "sin": true,
+        "i": ".value"
+      },
+      "keys": [
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "value",
+      "ops": [
+        [
+          "startAfter",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": 3,
+        "sn": "[MAX_NAME]",
+        "sin": false,
+        "i": ".value"
+      },
+      "keys": [
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "value",
+      "ops": [
+        [
+          "endBefore",
+          "b"
+        ]
+      ],
+      "wire": {
+        "ep": "b",
+        "en": "[MIN_NAME]",
+        "ein": false,
+        "i": ".value"
+      },
+      "keys": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "value",
+      "ops": [
+        [
+          "equalTo",
+          true
+        ]
+      ],
+      "wire": {
+        "sp": true,
+        "sin": true,
+        "ep": true,
+        "ein": true,
+        "i": ".value"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          false
+        ],
+        [
+          "endAt",
+          3
+        ]
+      ],
+      "wire": {
+        "sp": false,
+        "sin": true,
+        "ep": 3,
+        "ein": true,
+        "i": ".value"
+      },
+      "keys": [
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "value",
+      "ops": [
+        [
+          "startAt",
+          "a"
+        ]
+      ],
+      "wire": {
+        "sp": "a",
+        "sin": true,
+        "i": ".value"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [],
+      "wire": {
+        "i": "s"
+      },
+      "keys": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "limitToFirst",
+          4
+        ]
+      ],
+      "wire": {
+        "l": 4,
+        "vf": "l",
+        "i": "s"
+      },
+      "keys": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "limitToLast",
+          4
+        ]
+      ],
+      "wire": {
+        "l": 4,
+        "vf": "r",
+        "i": "s"
+      },
+      "keys": [
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sin": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          1,
+          "b"
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sn": "b",
+        "sin": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAfter",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sn": "[MAX_NAME]",
+        "sin": false,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAfter",
+          1,
+          "1"
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sn": "1",
+        "sin": false,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "endAt",
+          1
+        ]
+      ],
+      "wire": {
+        "ep": 1,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "endBefore",
+          1
+        ]
+      ],
+      "wire": {
+        "ep": 1,
+        "en": "[MIN_NAME]",
+        "ein": false,
+        "i": "s"
+      },
+      "keys": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "endBefore",
+          1,
+          "b"
+        ]
+      ],
+      "wire": {
+        "ep": 1,
+        "en": "b",
+        "ein": false,
+        "i": "s"
+      },
+      "keys": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "equalTo",
+          1
+        ]
+      ],
+      "wire": {
+        "sp": 1,
+        "sin": true,
+        "ep": 1,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "equalTo",
+          null
+        ]
+      ],
+      "wire": {
+        "sp": null,
+        "sin": true,
+        "ep": null,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          false
+        ],
+        [
+          "endAt",
+          true
+        ]
+      ],
+      "wire": {
+        "sp": false,
+        "sin": true,
+        "ep": true,
+        "ein": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          "a"
+        ],
+        [
+          "endAt",
+          "z"
+        ]
+      ],
+      "wire": {
+        "sp": "a",
+        "sin": true,
+        "ep": "z",
+        "ein": true,
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          0
+        ],
+        [
+          "limitToLast",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": 0,
+        "sin": true,
+        "l": 2,
+        "vf": "r",
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "child:s",
+      "ops": [
+        [
+          "startAt",
+          0
+        ],
+        [
+          "endAt",
+          10
+        ],
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": 0,
+        "sin": true,
+        "ep": 10,
+        "ein": true,
+        "l": 2,
+        "vf": "l",
+        "i": "s"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "child:score",
+      "ops": [
+        [
+          "limitToLast",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "r",
+        "i": "score"
+      },
+      "keys": [
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "child:score",
+      "ops": [
+        [
+          "equalTo",
+          10
+        ]
+      ],
+      "wire": {
+        "sp": 10,
+        "sin": true,
+        "ep": 10,
+        "ein": true,
+        "i": "score"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "child:score",
+      "ops": [
+        [
+          "startAt",
+          7
+        ],
+        [
+          "endAt",
+          10
+        ]
+      ],
+      "wire": {
+        "sp": 7,
+        "sin": true,
+        "ep": 10,
+        "ein": true,
+        "i": "score"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "child:meta/at",
+      "ops": [],
+      "wire": {
+        "i": "meta/at"
+      },
+      "keys": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    {
+      "data": "priorities",
+      "order": "child:meta/at",
+      "ops": [
+        [
+          "startAt",
+          2
+        ]
+      ],
+      "wire": {
+        "sp": 2,
+        "sin": true,
+        "i": "meta/at"
+      },
+      "keys": []
+    },
+    {
+      "data": "priorities",
+      "order": "child:meta/at",
+      "ops": [
+        [
+          "limitToFirst",
+          2
+        ]
+      ],
+      "wire": {
+        "l": 2,
+        "vf": "l",
+        "i": "meta/at"
+      },
+      "keys": [
+        "a",
+        "b"
+      ]
+    }
+  ]
+}

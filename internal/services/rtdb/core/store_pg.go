@@ -31,7 +31,7 @@ func (s *PGStore) OpenDatabase(ctx context.Context, project int64, name string) 
 	if err != nil {
 		return DatabaseInfo{}, err
 	}
-	return DatabaseInfo{ID: row.ID, Project: project, Name: name, Seq: row.Seq}, nil
+	return DatabaseInfo{ID: row.ID, Project: project, Name: name, Seq: row.Seq, Rules: row.Rules}, nil
 }
 
 // Begin implements Store.

@@ -3,9 +3,11 @@ package acceptance
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -57,7 +59,36 @@ func TestRTDBMatchesEmulator(t *testing.T) {
 			conns[name] = c
 			return c
 		}
+		// Pushes are compared per connection, in order, apart from the replies: when a push
+		// arrives relative to another connection's requests is a matter of timing.
+		ourPushes, theirPushes := map[string][]string{}, map[string][]string{}
+		for _, fr := range g.Frames {
+			if fr.Dir == "recv" && isPush(fr.Text) {
+				theirPushes[fr.Conn] = append(theirPushes[fr.Conn], fr.Text)
+			}
+		}
 		sentinel := 900000
+		// exchange sends one message (or none) and a sentinel request, which marks the end of
+		// what the message produced, and returns the replies; pushes go to ourPushes.
+		exchange := func(name string, c *wsClient, msg string) []string {
+			if msg != "" {
+				c.sendRaw(msg)
+			}
+			sentinel++
+			c.sendRaw(`{"t":"d","d":{"r":` + strconv.Itoa(sentinel) + `,"a":"s","b":{"c":{}}}}`)
+			var replies []string
+			for {
+				m := c.next()
+				switch {
+				case strings.Contains(m, `"r":`+strconv.Itoa(sentinel)+`,`):
+					return replies
+				case isPush(m):
+					ourPushes[name] = append(ourPushes[name], m)
+				default:
+					replies = append(replies, m)
+				}
+			}
+		}
 		for i := 0; i < len(g.Frames); i++ {
 			fr := g.Frames[i]
 			switch {
@@ -65,6 +96,7 @@ func TestRTDBMatchesEmulator(t *testing.T) {
 				conn(fr.Conn) // the handshake: TestRTDBHandshake checks its fields
 			case fr.Dir == "close" && fr.Text == "":
 				if c := conns[fr.Conn]; c != nil {
+					exchange(fr.Conn, c, "") // collect what is still on its way
 					c.close()
 					delete(conns, fr.Conn)
 					// The emulator applied onDisconnect writes about 230 ms after a close.
@@ -80,39 +112,24 @@ func TestRTDBMatchesEmulator(t *testing.T) {
 					i++
 				}
 			case fr.Dir == "send":
-				c := conn(fr.Conn)
-				c.sendRaw(fr.Text)
-				// A sentinel request marks the end of what this message produced.
-				sentinel++
-				c.sendRaw(`{"t":"d","d":{"r":` + strconv.Itoa(sentinel) + `,"a":"s","b":{"c":{}}}}`)
-				var ours []string
-				for {
-					m := c.next()
-					if strings.Contains(m, `"r":`+strconv.Itoa(sentinel)+`,`) {
-						break
-					}
-					ours = append(ours, m)
-				}
-				// What the emulator sent this connection before its next request; pushes to
-				// listeners come with R3 and are compared there.
+				ours := exchange(fr.Conn, conn(fr.Conn), fr.Text)
+				// What the emulator answered this connection before its next request.
 				var theirs []string
 				for j := i + 1; j < len(g.Frames) && !(g.Frames[j].Conn == fr.Conn && g.Frames[j].Dir == "send"); j++ {
-					if r := g.Frames[j]; r.Conn == fr.Conn && r.Dir == "recv" && !isPush(r.Text) && !isCount(r.Text) {
+					if r := g.Frames[j]; r.Conn == fr.Conn && r.Dir == "recv" && r.Text != "" && !isPush(r.Text) && !isCount(r.Text) {
 						theirs = append(theirs, r.Text)
 					}
 				}
-				key := g.Scenario + " " + fr.Conn + " " + requestKey(fr.Text)
-				if !sameFrames(theirs, ours) {
-					reason, ok := knownDifferences[key]
-					if !ok {
-						t.Errorf("%s: %s\n emulator %v\n aruma    %v", key, abbreviate(fr.Text), abbreviateAll(theirs), abbreviateAll(ours))
-						continue
-					}
-					seen[key] = true
-					t.Logf("known difference, %s (%s):\n emulator %v\n aruma    %v", key, reason, abbreviateAll(theirs), abbreviateAll(ours))
-				}
 				compared++
+				check(t, seen, g.Scenario+" "+fr.Conn+" "+requestKey(fr.Text), abbreviate(fr.Text), theirs, ours)
 			}
+		}
+		for name, c := range conns {
+			exchange(name, c, "")
+		}
+		for _, name := range slices.Sorted(maps.Keys(g.Connections)) {
+			compared++
+			check(t, seen, g.Scenario+" "+name+" pushes", "", theirPushes[name], ourPushes[name])
 		}
 	}
 	if compared < 60 {
@@ -130,15 +147,25 @@ func TestRTDBMatchesEmulator(t *testing.T) {
 	}
 }
 
+// check compares what Aruma sent with what the emulator sent, allowing a listed difference.
+func check(t *testing.T, seen map[string]bool, key, sent string, theirs, ours []string) {
+	t.Helper()
+	if sameFrames(theirs, ours) {
+		return
+	}
+	reason, ok := knownDifferences[key]
+	if !ok {
+		t.Errorf("%s: %s\n emulator %v\n aruma    %v", key, sent, abbreviateAll(theirs), abbreviateAll(ours))
+		return
+	}
+	seen[key] = true
+	t.Logf("known difference, %s (%s):\n emulator %v\n aruma    %v", key, reason, abbreviateAll(theirs), abbreviateAll(ours))
+}
+
 // knownDifferences are the places where Aruma answers otherwise than the emulator, keyed by
-// scenario, connection and request (action and r, or "frame" for a non-request).
+// scenario, connection and request (action and r, "frame" for a non-request, or "pushes"
+// for a connection's pushes).
 var knownDifferences = map[string]string{
-	// Listening is R3: a listen fails with unavailable until then.
-	"update_multipath B q r=1": "listen arrives in R3",
-	"ondisconnect B q r=1":     "listen arrives in R3",
-	"limits B q r=1":           "listen arrives in R3",
-	"listen_basic B q r=1":     "listen arrives in R3",
-	"listen_basic B n r=2":     "listen arrives in R3",
 	// The emulator answers data it cannot parse with a bare error frame and leaves the request
 	// unanswered; Aruma replies with the error status, so a client is never left waiting. The
 	// SDKs validate the same rules before sending, so they never see either.

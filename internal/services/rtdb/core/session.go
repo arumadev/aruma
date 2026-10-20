@@ -20,6 +20,7 @@ type Session struct {
 	db       *Database
 	target   Target
 	loopback bool
+	sink     Sink
 
 	mu         sync.Mutex
 	auth       Auth
@@ -36,6 +37,8 @@ type OpenOptions struct {
 	// Loopback is a client whose connection comes from this machine: the only clients the
 	// dev_open_rules setting opens the data to.
 	Loopback bool
+	// Sink receives the session's pushes; nil for a session that never listens (REST).
+	Sink Sink
 }
 
 // Database is the database the session works on.
@@ -86,18 +89,83 @@ func (s *Session) admit() error {
 	return nil
 }
 
-// Get reads the value at path.
-func (s *Session) Get(path string, done func(*Node, error)) {
-	p, err := ParsePath(path)
-	if err == nil {
-		err = s.canRead(p)
-	}
+// Get reads the value at path, or with a query the part of it the query selects. A query
+// ordered by a child or by value needs the .indexOn that covers it (NoIndexError).
+func (s *Session) Get(path string, spec *QuerySpec, done func(*Node, error)) {
+	p, q, err := s.parseRead(path, spec)
 	if err != nil {
 		done(nil, err)
 		return
 	}
-	s.db.submit(&command{read: p, done: func(r Result) { done(r.Node, r.Err) }})
+	if q.IsDefault() {
+		s.db.submit(&command{read: p, done: func(r Result) { done(r.Node, r.Err) }})
+		return
+	}
+	s.db.submit(&command{read: p, query: &q, done: func(r Result) { done(r.Node, r.Err) }})
 }
+
+func (s *Session) parseRead(path string, spec *QuerySpec) (Path, Query, error) {
+	p, err := ParsePath(path)
+	if err != nil {
+		return nil, Query{}, err
+	}
+	q := DefaultQuery
+	if spec != nil {
+		if q, err = NewQuery(*spec); err != nil {
+			return nil, Query{}, err
+		}
+	}
+	if err := s.canRead(p); err != nil {
+		return nil, Query{}, err
+	}
+	return p, q, nil
+}
+
+// Listen starts a listen at path with a query (nil for the default listen), tagged tag by
+// the client. The data go to the session's sink before done, which receives the listen's
+// warnings (no_index when the query is served unfiltered). hash is the hash of what the
+// client already has; when it matches, no data are sent. A second listen with the same path
+// and query replaces the first.
+func (s *Session) Listen(path string, spec *QuerySpec, tag int64, hash string, done func(warnings []string, err error)) {
+	p, q, err := s.parseRead(path, spec)
+	if err != nil {
+		done(nil, err)
+		return
+	}
+	if q.IsDefault() {
+		spec, tag = nil, 0
+	}
+	l := &listen{sess: s, path: p, query: q, spec: spec, tag: tag}
+	s.db.submit(&command{listen: &listenCmd{l: l, hash: hash}, done: func(r Result) { done(r.Warnings, r.Err) }})
+}
+
+// Unlisten stops the listen at path with the query (nil for the default listen). Stopping a
+// listen that does not exist is not an error.
+func (s *Session) Unlisten(path string, spec *QuerySpec, done func(error)) {
+	p, err := ParsePath(path)
+	if err != nil {
+		done(err)
+		return
+	}
+	q := DefaultQuery
+	if spec != nil {
+		if q, err = NewQuery(*spec); err != nil {
+			done(err)
+			return
+		}
+	}
+	s.db.submit(&command{unlisten: &unlistenCmd{sess: s, key: listenKey(p, q)}, done: func(Result) { done(nil) }})
+}
+
+// RevokeListens cancels, with a c push each, the listens the session may no longer read,
+// after it signed out. done runs once the pushes are queued.
+func (s *Session) RevokeListens(done func()) {
+	s.db.submit(&command{revoke: s, done: func(Result) { done() }})
+}
+
+// mayRead reports whether the session may read p now, without admitting it against the
+// connection limit.
+func (s *Session) mayRead(Path) bool { return s.Auth().Admin || s.devOpen() }
 
 // Set writes data, in export format, at path. With hash it applies only while the value at
 // path still hashes to *hash; done then receives the value written.
@@ -196,18 +264,18 @@ func (s *Session) Close() {
 	release := s.releaseSlot
 	s.mu.Unlock()
 
+	// The listens go first, so the session's own onDisconnect writes are not pushed to it.
+	// This also is a barrier: the writes this session queued before closing have all run
+	// before the reference goes, so a writer retired after this never leaves one behind.
+	dropped := make(chan struct{})
+	s.db.submit(&command{drop: s, done: func(Result) { close(dropped) }})
+	<-dropped
 	if w != nil {
 		wait := make(chan Result, 1)
 		s.db.submit(&command{write: w, done: func(r Result) { wait <- r }})
 		if r := <-wait; r.Err != nil {
 			s.svc.log.Warn("rtdb: onDisconnect writes failed", "database", s.db.name, "error", r.Err)
 		}
-	} else {
-		// A barrier: the writes this session queued before closing have all run before the
-		// reference goes, so a writer retired after this never leaves one behind.
-		wait := make(chan struct{})
-		s.db.submit(&command{barrier: true, done: func(Result) { close(wait) }})
-		<-wait
 	}
 	if release != nil {
 		release()

@@ -126,7 +126,7 @@ func (s *Service) Open(t Target, auth Auth, o OpenOptions) (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	sess := &Session{svc: s, db: db, target: t, loopback: o.Loopback}
+	sess := &Session{svc: s, db: db, target: t, loopback: o.Loopback, sink: o.Sink}
 	if err := sess.SetAuth(auth); err != nil {
 		s.registry.release(db)
 		return nil, err

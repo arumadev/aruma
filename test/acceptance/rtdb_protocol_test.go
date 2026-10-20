@@ -449,17 +449,10 @@ func TestRTDBLockedUntilAdmin(t *testing.T) {
 	}
 }
 
-// Requests this phase does not serve fail cleanly; malformed messages get the emulator's
-// error frame and the connection stays usable.
-func TestRTDBUnsupportedAndMalformed(t *testing.T) {
+// Malformed messages get the emulator's error frame and the connection stays usable.
+func TestRTDBMalformed(t *testing.T) {
 	e := rtdbEnv(t, false, nil)
 	c := e.dial(e.owner().projectNS("chat-app"), dialOpts{})
-	if r := c.call("q", map[string]any{"p": "/x", "h": ""}); r.Status != "unavailable" {
-		t.Errorf("listen: %+v", r)
-	}
-	if r := c.call("g", map[string]any{"p": "/x", "q": map[string]any{"l": 2, "vf": "l"}}); r.Status != "unavailable" {
-		t.Errorf("query get: %+v", r)
-	}
 	for _, m := range []string{`{"t":"d","d":{"r":50,"a":"zzz","b":{}}}`, "hello", `{"t":"d","d":{"r":51,"a":"p"}}`} {
 		c.send(m)
 		if got := c.next(); got != `{"t":"c","d":{"t":"e","d":"Error on incoming message"}}` {

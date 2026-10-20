@@ -55,14 +55,14 @@ func (a *API) serveWS(w http.ResponseWriter, r *http.Request, target core.Target
 	ws.SetReadLimit(maxFrameBytes)
 	// The open rules of development reach clients on this machine only, judged by the
 	// connection's own peer, never by forwarded headers.
-	cs, err := a.svc.Open(target, core.Auth{}, core.OpenOptions{Loopback: httpx.PeerIsLoopback(r)})
+	sess, err := a.openSession(target, r)
 	if err != nil {
 		_ = ws.Close(websocket.StatusTryAgainLater, "database unavailable")
 		return
 	}
-	c := newWSConn(a, ws, newSession(a, target, cs, a.svc.Limits().OutboxBytes))
+	c := newWSConn(a, ws, sess)
 	if !a.track(c) {
-		cs.Close()
+		sess.core.Close()
 		_ = ws.Close(websocket.StatusGoingAway, "")
 		return
 	}

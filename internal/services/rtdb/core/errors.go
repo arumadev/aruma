@@ -55,10 +55,25 @@ var (
 	// ErrUnsupported is a request this version does not serve yet.
 	ErrUnsupported = &Error{statusUnavailable, "Not supported by this server yet.", http.StatusNotImplemented}
 
+	// ErrInvalidQuery is a query object the SDKs would not send.
+	ErrInvalidQuery = &Error{statusInvalidParameters, "Invalid query.", http.StatusBadRequest}
+
 	// ErrNoDatabase is a namespace that names no database: not <project>-default-rtdb, or a
 	// project that does not exist.
 	ErrNoDatabase = &Error{statusInvalidParameters, "Firebase error. Please ensure that you have the URL of your Firebase Realtime Database instance configured correctly.", http.StatusNotFound}
 )
+
+// statusNoIndex answers a read whose order needs an index the rules do not declare.
+const statusNoIndex = "no_index"
+
+// NoIndexError is the emulator's answer to a get, or a REST read, ordered by a child or by
+// value without the .indexOn that covers it (B-emulator-oracle.md, queries addendum). A listen
+// is served anyway, unfiltered, with the warning instead.
+func NoIndexError(key string, p Path) *Error {
+	return &Error{statusNoIndex,
+		`Index not defined, add ".indexOn": "` + key + `", for path "/` + p.String() + `", to the rules`,
+		http.StatusBadRequest}
+}
 
 // AsError returns err as an *Error, mapping anything unexpected to ErrUnavailable.
 func AsError(err error) *Error {
