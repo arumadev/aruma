@@ -51,6 +51,10 @@ type Manager struct {
 
 	mu      sync.Mutex
 	signers map[signerKey]*Signer
+	// published caches each project's published keys of a purpose for Verify; gen counts the
+	// key changes, so a load that raced one is not kept (keycache.go).
+	published map[signerKey]*keySet
+	gen       uint64
 }
 
 type signerKey struct {
@@ -69,7 +73,7 @@ func (s *Signer) Sign(claims any) (string, error) { return sign(s.kid, s.key, cl
 
 // NewManager returns a token manager.
 func NewManager(pool *pgxpool.Pool, keys *crypto.Keys) *Manager {
-	return &Manager{pool: pool, q: queries.New(pool), keys: keys, now: time.Now, signers: map[signerKey]*Signer{}}
+	return &Manager{pool: pool, q: queries.New(pool), keys: keys, now: time.Now, signers: map[signerKey]*Signer{}, published: map[signerKey]*keySet{}}
 }
 
 func aad(kid string) []byte { return []byte("auth.signing_keys|private_key|" + kid) }
@@ -137,6 +141,7 @@ func (m *Manager) bootstrap(ctx context.Context, project int64, purpose Purpose)
 		_, err = m.newKey(ctx, q, project, purpose, "next")
 		return err
 	})
+	m.keysChanged(project, purpose)
 	if _, ok := store.UniqueViolation(err); ok {
 		rows, err := m.q.ListSigningKeys(ctx, queries.ListSigningKeysParams{ProjectNumber: project, Purpose: string(purpose)})
 		if err != nil {
@@ -225,31 +230,20 @@ func (m *Manager) JWKS(ctx context.Context, project int64, purpose Purpose) ([]J
 }
 
 // Verify checks a token's signature against the project's published keys of the purpose and
-// returns its payload. Time and audience checks are the caller's (Claims.Check).
+// returns its payload. Time and audience checks are the caller's (Claims.Check). The keys come
+// from a cache that every key change in this process clears (keycache.go), so a verification
+// normally does not touch the database.
 func (m *Manager) Verify(ctx context.Context, project int64, purpose Purpose, token string) ([]byte, error) {
 	p, err := parse(token)
 	if err != nil {
 		return nil, err
 	}
-	row, err := m.q.GetSigningKey(ctx, queries.GetSigningKeyParams{ProjectNumber: project, Kid: p.header.Kid})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrSignature
-		}
-		return nil, err
-	}
-	if row.Purpose != string(purpose) || row.State == "destroyed" {
-		return nil, ErrSignature
-	}
-	var j JWK
-	if err := json.Unmarshal(row.PublicJwk, &j); err != nil {
-		return nil, err
-	}
-	pub, err := j.publicKey()
+	set, err := m.publishedKeys(ctx, project, purpose)
 	if err != nil {
 		return nil, err
 	}
-	if !p.verify(pub) {
+	pub, ok := set.keys[p.header.Kid]
+	if !ok || !p.verify(pub) {
 		return nil, ErrSignature
 	}
 	return p.payload, nil
@@ -296,6 +290,7 @@ func (m *Manager) Rotate(ctx context.Context, project int64, purpose Purpose, em
 	m.mu.Lock()
 	delete(m.signers, signerKey{project, purpose})
 	m.mu.Unlock()
+	m.keysChanged(project, purpose)
 	return err
 }
 
@@ -319,7 +314,9 @@ func (m *Manager) Maintain(ctx context.Context) error {
 			return err
 		}
 		for _, o := range old {
-			if err := m.q.SetSigningKeyState(ctx, queries.SetSigningKeyStateParams{ProjectNumber: o.ProjectNumber, Kid: o.Kid, State: "destroyed"}); err != nil {
+			err := m.q.SetSigningKeyState(ctx, queries.SetSigningKeyStateParams{ProjectNumber: o.ProjectNumber, Kid: o.Kid, State: "destroyed"})
+			m.keysChanged(o.ProjectNumber, p)
+			if err != nil {
 				return err
 			}
 		}

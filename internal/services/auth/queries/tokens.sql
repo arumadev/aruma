@@ -36,9 +36,6 @@ SELECT * FROM auth.signing_keys
 WHERE project_number = @project_number AND purpose = @purpose AND state <> 'destroyed'
 ORDER BY created_at;
 
--- name: GetSigningKey :one
-SELECT * FROM auth.signing_keys WHERE project_number = @project_number AND kid = @kid;
-
 -- name: SetSigningKeyState :exec
 UPDATE auth.signing_keys SET
     state = @state,
