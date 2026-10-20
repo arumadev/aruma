@@ -1,0 +1,91 @@
+{
+  "scenario": "update_multipath",
+  "description": "B listens; A sets an object then sends a multi-path merge (m) with a deep path, a delete and a new deep path; A reads back.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture.mjs",
+  "connections": {
+    "A": "/.ws?v=5&ns=demo-test",
+    "B": "/.ws?v=5&ns=demo-test"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512699743,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"lyuzkUHpxXkDX25ScXABW1VCpHz62QMh\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512699748,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"t0XRE0YZiTwo0sGryb4yzdQFGtVtp1JM\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"q\",\"b\":{\"p\":\"/golden/up\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/golden/up\",\"d\":{\"a\":1,\"b\":{\"c\":2},\"d\":3}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"golden/up\",\"d\":{\"a\":1,\"b\":{\"c\":2},\"d\":3}},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"m\",\"b\":{\"p\":\"/golden/up\",\"d\":{\"b/c\":20,\"d\":null,\"e/f\":5}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"golden/up\",\"d\":{\"b/c\":20,\"d\":null,\"e/f\":5}},\"a\":\"m\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"g\",\"b\":{\"p\":\"/golden/up\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":{\"a\":1,\"b\":{\"c\":20},\"e\":{\"f\":5}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "B",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "Frames of A and B are interleaved in the order this single-threaded client observed them.",
+    "Observed with firebase-database-emulator-v4.11.2: the m push to the listener carries the merge map exactly as sent (slash paths and nulls kept), not the resulting tree; pushes use paths without a leading slash.",
+    "close initiated by the client (close frame with code 1000) on: A, B; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ]
+}

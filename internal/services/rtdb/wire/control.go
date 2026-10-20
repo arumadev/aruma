@@ -46,8 +46,8 @@ func EncodeReset(host string) []byte { return encodeControl(ControlReset, host) 
 // Android and iOS ignore it.
 func EncodeError(msg string) []byte { return encodeControl(ControlError, msg) }
 
-// EncodePong answers a ping.
-func EncodePong() []byte { return encodeControl(ControlPong, struct{}{}) }
+// EncodePong answers a ping, with null data as the emulator does (golden/handshake.json).
+func EncodePong() []byte { return encodeControl(ControlPong, nil) }
 
 func encodeControl(t string, d any) []byte {
 	return encode(envelope2{T: TypeControl, D: struct {

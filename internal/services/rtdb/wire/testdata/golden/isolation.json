@@ -1,0 +1,80 @@
+{
+  "scenario": "isolation",
+  "description": "Two namespaces write the same path; each reads back its own value.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture.mjs",
+  "connections": {
+    "A": "/.ws?v=5&ns=demo-test",
+    "B": "/.ws?v=5&ns=other-ns"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512725842,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"1qtY05lh44svLy2dBTSpwsdFYaVBeGkA\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512725848,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"mEiUqQuUIXs9kmntWIJcwHkvBzw2xQV5\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/golden/iso\",\"d\":\"A\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/golden/iso\",\"d\":\"B\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"g\",\"b\":{\"p\":\"/golden/iso\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"A\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"g\",\"b\":{\"p\":\"/golden/iso\",\"q\":{}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"B\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "B",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "Observed with firebase-database-emulator-v4.11.2: each namespace keeps its own data at the same path.",
+    "close initiated by the client (close frame with code 1000) on: A, B; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ]
+}

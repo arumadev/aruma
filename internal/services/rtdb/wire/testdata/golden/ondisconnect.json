@@ -1,0 +1,116 @@
+{
+  "scenario": "ondisconnect",
+  "description": "A registers onDisconnect put/merge/cancel/increment, closes; listener B sees the result.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture.mjs",
+  "connections": {
+    "A": "/.ws?v=5&ns=demo-test",
+    "B": "/.ws?v=5&ns=demo-test"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512726977,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"P98IAdaDXwn9cdOhpWbvxII1D5FAvLoV\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512726993,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"WcjYPZdHVkxfy7KE7tuiaVPYYV2MKox3\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"q\",\"b\":{\"p\":\"/golden/od\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"o\",\"b\":{\"p\":\"/golden/od/put\",\"d\":\"gone\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"om\",\"b\":{\"p\":\"/golden/od\",\"d\":{\"m1\":1,\"m2\":{\".sv\":\"timestamp\"}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"o\",\"b\":{\"p\":\"/golden/od/cancelme\",\"d\":\"x\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"oc\",\"b\":{\"p\":\"/golden/od/cancelme\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"o\",\"b\":{\"p\":\"/golden/od/inc\",\"d\":{\".sv\":{\"increment\":1}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"golden/od\",\"d\":{\"put\":\"gone\",\"m1\":1,\"m2\":1792512728592,\"inc\":1}},\"a\":\"m\"}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"g\",\"b\":{\"p\":\"/golden/od\",\"q\":{}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{\"inc\":1,\"m1\":1,\"m2\":1792512728592,\"put\":\"gone\"}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "Observed with firebase-database-emulator-v4.11.2: o/om/oc are acked immediately with d:\"\"; after A closes, B gets a single m push at golden/od with put, m1, m2 (timestamp resolved at disconnect time) and inc (increment from 0 = 1).",
+    "The onDisconnect writes reached B after A closed, as one coalesced m push; the cancelled one (oc) is absent.",
+    "close initiated by the client (close frame with code 1000) on: A, B; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ]
+}

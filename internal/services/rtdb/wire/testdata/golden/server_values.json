@@ -1,0 +1,120 @@
+{
+  "scenario": "server_values",
+  "description": "Server values: timestamp, increment on number/missing/string nodes, and invalid server values.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture.mjs",
+  "connections": {
+    "A": "/.ws?v=5&ns=demo-test"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512702424,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"NYWOlniD22SKZJHxydd6IEfYgSnYO1bV\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/golden/sv\",\"d\":{\"ts\":{\".sv\":\"timestamp\"},\"n\":{\".sv\":{\"increment\":5}}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"p\",\"b\":{\"p\":\"/golden/sv/n\",\"d\":{\".sv\":{\"increment\":2.5}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"p\",\"b\":{\"p\":\"/golden/sv/m\",\"d\":{\".sv\":{\"increment\":1}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"p\",\"b\":{\"p\":\"/golden/sv/s\",\"d\":\"str\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"p\",\"b\":{\"p\":\"/golden/sv/s\",\"d\":{\".sv\":{\"increment\":3}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"a\":\"g\",\"b\":{\"p\":\"/golden/sv\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"b\":{\"s\":\"ok\",\"d\":{\"m\":1,\"n\":7.5,\"s\":3,\"ts\":1792512702435}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"a\":\"p\",\"b\":{\"p\":\"/golden/sv/u\",\"d\":{\".sv\":\"unknown\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"e\",\"d\":\"ClientId[6]:ErrorId[1]: Error on incoming message\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"a\":\"p\",\"b\":{\"p\":\"/golden/sv/x\",\"d\":{\".sv\":{\"increment\":\"x\"}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"e\",\"d\":\"ClientId[6]:ErrorId[2]: Error on incoming message\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":9,\"a\":\"g\",\"b\":{\"p\":\"/golden/sv\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":9,\"b\":{\"s\":\"ok\",\"d\":{\"m\":1,\"n\":7.5,\"s\":3,\"ts\":1792512702435}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "Observed with firebase-database-emulator-v4.11.2: increment adds to a number (5 + 2.5 = 7.5), starts from 0 on a missing node, and replaces a string with the increment value (3); timestamp is server ms epoch. Unknown .sv names and a non-number increment produce a control frame t:\"e\" \"ClientId[n]:ErrorId[m]: Error on incoming message\" and no reply; the socket stays open.",
+    "A r=7: no reply within 1500 ms",
+    "A r=8: no reply within 1500 ms",
+    "close initiated by the client (close frame with code 1000) on: A; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ]
+}

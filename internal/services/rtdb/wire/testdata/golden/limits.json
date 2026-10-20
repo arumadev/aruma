@@ -1,0 +1,425 @@
+{
+  "scenario": "limits",
+  "description": "Invalid keys and paths, path depth/length limits, key length, data nesting, a chunked 60 KB put with a listener, and an unsplit 120 KB frame.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture.mjs",
+  "connections": {
+    "A": "/.ws?v=5&ns=demo-test",
+    "B": "/.ws?v=5&ns=demo-test"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512707821,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"GgaoeAAKVYDm42tgsPTPsyI069c4AhQx\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/golden/limits/a\",\"d\":{\"a.b\":1}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"e\",\"d\":\"ClientId[7]:ErrorId[3]: Error on incoming message\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"p\",\"b\":{\"p\":\"/golden/bad/x.y\",\"d\":1}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"invalid_parameters\",\"d\":\"Invalid token in path\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"p\",\"b\":{\"p\":\"/golden/depth/s3/s4/s5/s6/s7/s8/s9/s10/s11/s12/s13/s14/s15/s16/s17/s18/s19/s20/s21/s22/s23/s24/s25/s26/s27/s28/s29/s30/s31/s32/s33\",\"d\":33}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"invalid_parameters\",\"d\":\"Path specified exceeds the maximum depth that can be written (32).\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"p\",\"b\":{\"p\":\"/golden/depth/s3/s4/s5/s6/s7/s8/s9/s10/s11/s12/s13/s14/s15/s16/s17/s18/s19/s20/s21/s22/s23/s24/s25/s26/s27/s28/s29/s30/s31/s32\",\"d\":32}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"p\",\"b\":{\"p\":\"/golden/depth/s3/s4/s5/s6/s7/s8/s9/s10/s11/s12/s13/s14/s15/s16/s17/s18/s19/s20/s21/s22/s23/s24/s25/s26/s27/s28/s29/s30/s31\",\"d\":31}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"a\":\"p\",\"b\":{\"p\":\"/golden/len/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"d\":812}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"b\":{\"s\":\"invalid_parameters\",\"d\":\"Path specified exceeds the maximum length that can be written (768 bytes).\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"a\":\"p\",\"b\":{\"p\":\"/golden/len/dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"d\":769}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"a\":\"p\",\"b\":{\"p\":\"/golden/len/ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"d\":768}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":9,\"a\":\"p\",\"b\":{\"p\":\"/golden/len/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"d\":\"sum768\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":9,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":10,\"a\":\"p\",\"b\":{\"p\":\"/golden/len/yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\",\"d\":\"sum769\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":10,\"b\":{\"s\":\"invalid_parameters\",\"d\":\"Path specified exceeds the maximum length that can be written (768 bytes).\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":11,\"a\":\"p\",\"b\":{\"p\":\"/golden/limits/k766\",\"d\":{\"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\":1}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":11,\"b\":{\"s\":\"invalid_parameters\",\"d\":\"Path specified exceeds the maximum length that can be written (768 bytes).\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":12,\"a\":\"p\",\"b\":{\"p\":\"/golden/limits/k767\",\"d\":{\"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\":1}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":12,\"b\":{\"s\":\"invalid_parameters\",\"d\":\"Path specified exceeds the maximum length that can be written (768 bytes).\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":13,\"a\":\"p\",\"b\":{\"p\":\"/golden/limits/k768\",\"d\":{\"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\":1}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"e\",\"d\":\"ClientId[7]:ErrorId[4]: Error on incoming message\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":14,\"a\":\"p\",\"b\":{\"p\":\"/golden/limits/k769\",\"d\":{\"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\":1}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"e\",\"d\":\"ClientId[7]:ErrorId[5]: Error on incoming message\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":15,\"a\":\"p\",\"b\":{\"p\":\"/gk\",\"d\":{\"ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg\":1}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":15,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":16,\"a\":\"p\",\"b\":{\"p\":\"/gk\",\"d\":{\"hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh\":1}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":16,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":17,\"a\":\"p\",\"b\":{\"p\":\"/g\",\"d\":{\"a\":{\"ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\":1}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":17,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":18,\"a\":\"p\",\"b\":{\"p\":\"/g\",\"d\":{\"ab\":{\"ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\":1}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"e\",\"d\":\"ClientId[7]:ErrorId[6]: Error on incoming message\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":19,\"a\":\"p\",\"b\":{\"p\":\"/gg\",\"d\":{\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\":1}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":19,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":20,\"a\":\"p\",\"b\":{\"p\":\"/gg\",\"d\":{\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\":1}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":20,\"b\":{\"s\":\"invalid_parameters\",\"d\":\"Path specified exceeds the maximum length that can be written (768 bytes).\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":21,\"a\":\"p\",\"b\":{\"p\":\"/golden/deep/l29\",\"d\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":21,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":22,\"a\":\"p\",\"b\":{\"p\":\"/golden/deep/l30\",\"d\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":22,\"b\":{\"s\":\"invalid_parameters\",\"d\":\"Path specified exceeds the maximum depth that can be written (32).\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":23,\"a\":\"p\",\"b\":{\"p\":\"/golden/deep/l31\",\"d\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":23,\"b\":{\"s\":\"invalid_parameters\",\"d\":\"Path specified exceeds the maximum depth that can be written (32).\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":24,\"a\":\"p\",\"b\":{\"p\":\"/golden/deep/l32\",\"d\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":24,\"b\":{\"s\":\"invalid_parameters\",\"d\":\"Path specified exceeds the maximum depth that can be written (32).\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":25,\"a\":\"p\",\"b\":{\"p\":\"/golden/deep/l33\",\"d\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"e\",\"d\":\"ClientId[7]:ErrorId[7]: Error on incoming message\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":26,\"a\":\"p\",\"b\":{\"p\":\"/gdeep\",\"d\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":26,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":27,\"a\":\"p\",\"b\":{\"p\":\"/gdeep\",\"d\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":27,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":28,\"a\":\"p\",\"b\":{\"p\":\"/gdeep\",\"d\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":28,\"b\":{\"s\":\"invalid_parameters\",\"d\":\"Path specified exceeds the maximum depth that can be written (32).\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":29,\"a\":\"p\",\"b\":{\"p\":\"/gdeep\",\"d\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"e\",\"d\":\"ClientId[7]:ErrorId[8]: Error on incoming message\"}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512724282,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"0kO9UvHx7PNZ7sdj8gSllCaro79xhhy9\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"q\",\"b\":{\"p\":\"/golden/big\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "4"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "len": 16384,
+      "sha256": "ab2c3679ee7f78355c2ecf0b1fa14ab88511fc67b39ffee7973d3d5bd7d633ef"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "len": 16384,
+      "sha256": "1536c422c31cc98834759d7085cda394a3510a03d78188248986a6b1a7207d03"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "len": 16384,
+      "sha256": "1536c422c31cc98834759d7085cda394a3510a03d78188248986a6b1a7207d03"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "len": 10909,
+      "sha256": "14da6c06bd1ee4df2ffa6b4b18b8bec51e63eaf0fc9ad0844dfba46f09d8c0db"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":30,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "4"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "len": 16384,
+      "sha256": "18e9decec59f8ce38447afd79e4df6a73456090134b011c4a81561942b7c4d43"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "len": 16384,
+      "sha256": "1536c422c31cc98834759d7085cda394a3510a03d78188248986a6b1a7207d03"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "len": 16384,
+      "sha256": "1536c422c31cc98834759d7085cda394a3510a03d78188248986a6b1a7207d03"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "len": 10901,
+      "sha256": "dbfe7d7179e510c170f32ddc588fc5c5ad40faa9eb495729664e5f8661b58dd2"
+    },
+    {
+      "conn": "B",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "len": 120062,
+      "sha256": "a2dce8a7eceafb9f79ac6ed917a8da880735faaf8b064fedc79a40793ecdc39f"
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1002,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "A r=1: no reply within 1500 ms",
+    "path byte lengths are counted on the path without the leading slash, segments joined by \"/\", UTF-8 bytes (all ASCII here): 812 (two 400-char segments under golden/len), 769, 768; the put value d is that byte count.",
+    "(d2) /golden/len/<759 x> has segment bytes 6+3+759 = 768 (770 joined with \"/\"); /golden/len/<760 y> has 769 (771 joined).",
+    "A r=13: no reply within 1500 ms",
+    "A r=14: no reply within 1500 ms",
+    "A r=18: no reply within 1500 ms",
+    "data-path cases: /g {a:{<765>}} (keys inside data joined \"a/<765>\" = 767 bytes), /g {ab:{<765>}} (768 bytes); /gg {<766>} (segment-byte sum path+key = 2+766 = 768), /gg {<767>} (769).",
+    "key-length cases:keys of 766, 767, 768 and 769 bytes in data under /golden/limits/k<len>, then keys of 765 and 766 bytes under /gk, i.e. full path gk/<key> of exactly 768 and 769 bytes.",
+    "A r=25: no reply within 1500 ms",
+    "A r=29: no reply within 1500 ms",
+    "nesting cases: put at /golden/deep/l<N> (3 path segments) of {\"k\":{\"k\":...1}} with N nested objects, N in 29..33; then put at /gdeep (1 path segment) with N in 30..33. Each data leaf sits at depth (path segments + N).",
+    "(g) chunked put: message of 60061 chars sent as count frame + 4 chunks of <= 16384 chars.",
+    "A r=31: no reply within 1500 ms (connection closed)",
+    "(h) single unsplit text frame of 120062 chars.",
+    "Frames longer than 1000 chars are stored as {len, sha256} (sha256 of the UTF-8 frame text).",
+    "Observed with firebase-database-emulator-v4.11.2: forbidden char in a data key -> t:\"e\" control frame, no reply. Forbidden char in path -> invalid_parameters \"Invalid token in path\". Depth: path segments + data nesting must be <= 32 (31 and 32 segment paths pass, 33 fails) else invalid_parameters \"Path specified exceeds the maximum depth that can be written (32).\"; a value nested >= 33 objects deep inside d fails earlier with the t:\"e\" frame. Length: the sum of UTF-8 bytes of all segments (path + keys inside d), separators not counted, must be <= 768 else invalid_parameters \"Path specified exceeds the maximum length that can be written (768 bytes).\"; independently, keys inside d joined with \"/\" must be < 768 bytes, else the t:\"e\" frame. A count-prefixed chunked 60 KB message is accepted and pushed to the listener in 16384-char chunks with a count frame; a single unsplit ~120 KB text frame makes the server close the socket with 1002.",
+    "close initiated by the client (close frame with code 1000) on: B; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code).",
+    "close initiated by the server on: A."
+  ]
+}

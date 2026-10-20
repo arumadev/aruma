@@ -105,7 +105,7 @@ func TestEncodeResponse(t *testing.T) {
 func TestControlFrames(t *testing.T) {
 	cases := map[string][]byte{
 		`{"t":"c","d":{"t":"h","d":{"ts":1792507779527,"v":"5","h":"127.0.0.1:9400","s":"GdAQ4HP6X0SOwGPPHTbRJoKaNZrGYU3u"}}}`: EncodeHello(Hello{Timestamp: 1792507779527, Host: "127.0.0.1:9400", Session: "GdAQ4HP6X0SOwGPPHTbRJoKaNZrGYU3u"}),
-		`{"t":"c","d":{"t":"o","d":{}}}`:            EncodePong(),
+		`{"t":"c","d":{"t":"o","d":null}}`:          EncodePong(),
 		`{"t":"c","d":{"t":"s","d":"going away"}}`:  EncodeShutdown("going away"),
 		`{"t":"c","d":{"t":"r","d":"s-host:1"}}`:    EncodeReset("s-host:1"),
 		`{"t":"c","d":{"t":"e","d":"bad message"}}`: EncodeError("bad message"),

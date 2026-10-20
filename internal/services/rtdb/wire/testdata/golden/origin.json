@@ -1,0 +1,234 @@
+{
+  "scenario": "origin",
+  "description": "Raw HTTP upgrades: hostile Origin header, namespace from Host without ?ns, and ?ns vs Host mismatch; markers show which namespace received the data.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture.mjs",
+  "connections": {
+    "A": "/.ws?v=5&ns=demo-test",
+    "B": "/.ws?v=5",
+    "C": "/.ws?v=5&ns=other-ns",
+    "D": "/.ws?v=5",
+    "E": "/.ws?v=5&ns=demo-test"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "http",
+      "text": "HTTP/1.1 101 Switching Protocols\r\nX-Firebase-Uuid: 5021c184-ce0a-45b9-9335-7614720802f8\r\nX-Firebase-Project-Id: demo-test\r\nX-Firebase-Project-Number: 123456789\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512739309,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"DhDbZ4DOVOvEink9lV73id2EAjIAujqG\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/golden/origin/evilOrigin\",\"d\":\"evilOrigin\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"g\",\"b\":{\"p\":\"/golden/origin\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{\"evilOrigin\":\"evilOrigin\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "B",
+      "dir": "http",
+      "text": "HTTP/1.1 101 Switching Protocols\r\nX-Firebase-Uuid: 71cf4332-c8e4-443b-84c3-e64df533159b\r\nX-Firebase-Project-Id: other-ns\r\nX-Firebase-Project-Number: 123456789\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512739823,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"27ZzWudKBdPDaZLLjnbHmQBJtpsRrnBb\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/golden/origin/hostOnly\",\"d\":\"hostOnly\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"g\",\"b\":{\"p\":\"/golden/origin\",\"q\":{}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{\"hostOnly\":\"hostOnly\"}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "C",
+      "dir": "http",
+      "text": "HTTP/1.1 101 Switching Protocols\r\nX-Firebase-Uuid: 71cf4332-c8e4-443b-84c3-e64df533159b\r\nX-Firebase-Project-Id: other-ns\r\nX-Firebase-Project-Number: 123456789\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512740334,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"SueMNBxfxwx2Qrl5lVOgOZyQ13gcXHDt\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/golden/origin/nsVsHost\",\"d\":\"nsVsHost\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"g\",\"b\":{\"p\":\"/golden/origin\",\"q\":{}}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{\"hostOnly\":\"hostOnly\",\"nsVsHost\":\"nsVsHost\"}}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "D",
+      "dir": "http",
+      "text": "HTTP/1.1 101 Switching Protocols\r\nX-Firebase-Uuid: 71cf4332-c8e4-443b-84c3-e64df533159b\r\nX-Firebase-Project-Id: other-ns\r\nX-Firebase-Project-Number: 123456789\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+    },
+    {
+      "conn": "D",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512740854,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"MOzPxt6AbmjRabeFNTSpTCT3JrkxIZeu\"}}}"
+    },
+    {
+      "conn": "D",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/golden/origin/hostOnlyWithPort\",\"d\":\"hostOnlyWithPort\"}}}"
+    },
+    {
+      "conn": "D",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "D",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"g\",\"b\":{\"p\":\"/golden/origin\",\"q\":{}}}}"
+    },
+    {
+      "conn": "D",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{\"hostOnly\":\"hostOnly\",\"hostOnlyWithPort\":\"hostOnlyWithPort\",\"nsVsHost\":\"nsVsHost\"}}}}"
+    },
+    {
+      "conn": "D",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "E",
+      "dir": "http",
+      "text": "HTTP/1.1 101 Switching Protocols\r\nX-Firebase-Uuid: 5021c184-ce0a-45b9-9335-7614720802f8\r\nX-Firebase-Project-Id: demo-test\r\nX-Firebase-Project-Number: 123456789\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+    },
+    {
+      "conn": "E",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512741390,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"mWXjO7YouIaFkrRlBUeyQk2a5yHgjVPj\"}}}"
+    },
+    {
+      "conn": "E",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/golden/origin/otherHostHeader\",\"d\":\"otherHostHeader\"}}}"
+    },
+    {
+      "conn": "E",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "E",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"g\",\"b\":{\"p\":\"/golden/origin\",\"q\":{}}}}"
+    },
+    {
+      "conn": "E",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{\"evilOrigin\":\"evilOrigin\",\"otherHostHeader\":\"otherHostHeader\"}}}}"
+    },
+    {
+      "conn": "E",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "A: hostile Origin; B: no ns, Host other-ns.example.com; C: ns=other-ns, Host demo-test.example.com; D: no ns, Host other-ns.example.com:<port>; E: ns=demo-test, Host localhost:1234 (to see whether hello h follows Host).",
+    "requests holds the exact HTTP upgrade request text sent per connection (fixed Sec-WebSocket-Key).",
+    "rest holds REST GETs of /golden/origin on ns=demo-test, ns=other-ns and with no ns (Host 127.0.0.1) after all markers were written.",
+    "Observed with firebase-database-emulator-v4.11.2: Origin is not checked (101 for https://evil.example). Without ?ns the namespace is the first label of the Host header (other-ns.example.com -> other-ns, with or without port); when ?ns is present it wins over Host. The hello h field stays the emulator host:port whatever the Host header says. X-Firebase-Project-Id names the chosen namespace.",
+    "close initiated by the client (close frame with code 1000) on: A, B, C, D, E; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ],
+  "rest": [
+    {
+      "method": "GET",
+      "url": "/golden/origin.json?ns=demo-test",
+      "status": 200,
+      "etag": null,
+      "body": "{\"evilOrigin\":\"evilOrigin\",\"otherHostHeader\":\"otherHostHeader\"}"
+    },
+    {
+      "method": "GET",
+      "url": "/golden/origin.json?ns=other-ns",
+      "status": 200,
+      "etag": null,
+      "body": "{\"hostOnly\":\"hostOnly\",\"hostOnlyWithPort\":\"hostOnlyWithPort\",\"nsVsHost\":\"nsVsHost\"}"
+    },
+    {
+      "method": "GET",
+      "url": "/golden/origin.json",
+      "status": 200,
+      "etag": null,
+      "body": "null"
+    }
+  ],
+  "requests": {
+    "A": "GET /.ws?v=5&ns=demo-test HTTP/1.1\r\nHost: 127.0.0.1:9400\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\nOrigin: https://evil.example\r\n\r\n",
+    "B": "GET /.ws?v=5 HTTP/1.1\r\nHost: other-ns.example.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n",
+    "C": "GET /.ws?v=5&ns=other-ns HTTP/1.1\r\nHost: demo-test.example.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n",
+    "D": "GET /.ws?v=5 HTTP/1.1\r\nHost: other-ns.example.com:9400\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n",
+    "E": "GET /.ws?v=5&ns=demo-test HTTP/1.1\r\nHost: localhost:1234\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n"
+  }
+}

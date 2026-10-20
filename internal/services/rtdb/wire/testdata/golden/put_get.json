@@ -1,0 +1,108 @@
+{
+  "scenario": "put_get",
+  "description": "Put objects, priorities and arrays, then read them back with g (get), including a missing path and a child path.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture.mjs",
+  "connections": {
+    "A": "/.ws?v=5&ns=demo-test"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512697403,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"lbEGpytVcGvi1NtYcztSihpQFPL3dwDK\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/golden/pg\",\"d\":{\"a\":1,\"b\":\"hi\",\"n\":{\"c\":true}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"g\",\"b\":{\"p\":\"/golden/pg\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{\"a\":1,\"b\":\"hi\",\"n\":{\"c\":true}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"g\",\"b\":{\"p\":\"/golden/pgmissing\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":null}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"g\",\"b\":{\"p\":\"/golden/pg/n\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":{\"c\":true}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"p\",\"b\":{\"p\":\"/golden/pg/pr\",\"d\":{\".value\":\"v\",\".priority\":7}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"a\":\"g\",\"b\":{\"p\":\"/golden/pg/pr\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"b\":{\"s\":\"ok\",\"d\":{\".value\":\"v\",\".priority\":7.0}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"a\":\"p\",\"b\":{\"p\":\"/golden/pg/arr\",\"d\":[1,2]}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"a\":\"g\",\"b\":{\"p\":\"/golden/pg/arr\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"b\":{\"s\":\"ok\",\"d\":{\"0\":1,\"1\":2}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "Observed with firebase-database-emulator-v4.11.2: puts are acked with d:\"\"; g returns the value (null for a missing path); a leaf priority comes back in export form with the number as 7.0; an array is stored and returned as an object with keys \"0\",\"1\".",
+    "close initiated by the client (close frame with code 1000) on: A; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ]
+}

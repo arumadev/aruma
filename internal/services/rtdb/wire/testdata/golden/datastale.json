@@ -1,0 +1,97 @@
+{
+  "scenario": "datastale",
+  "description": "Conditional put (transaction) with a wrong hash, with the REST ETag as hash, and with an empty hash on a missing path.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture.mjs",
+  "connections": {
+    "A": "/.ws?v=5&ns=demo-test"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512700869,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"FRYZYf91PGED3xVqcKUQMzoKAQdTkbNh\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/golden/tx\",\"d\":{\"s\":1}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"p\",\"b\":{\"p\":\"/golden/tx\",\"d\":{\"s\":2},\"h\":\"wronghash\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"datastale\",\"d\":\"Transaction ETag does not match\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"p\",\"b\":{\"p\":\"/golden/tx\",\"d\":{\"s\":2},\"h\":\"8n5kEPKa77xiDo6xsHQrcom3mJ4=\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":{\"s\":2}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"g\",\"b\":{\"p\":\"/golden/tx\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":{\"s\":2}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"p\",\"b\":{\"p\":\"/golden/txmissing\",\"d\":\"new\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"ok\",\"d\":\"new\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "etag = REST ETag of /golden/tx after the first put (value {\"s\":1}), fetched with X-Firebase-ETag: true; it is used as h for the successful conditional put.",
+    "Observed with firebase-database-emulator-v4.11.2: wrong h gives s:\"datastale\" with d:\"Transaction ETag does not match\"; matching h gives ok with d = the written data; h:\"\" on a missing path succeeds (ok, d = written data), so \"\" is the hash of null.",
+    "close initiated by the client (close frame with code 1000) on: A; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ],
+  "rest": [
+    {
+      "method": "GET",
+      "url": "/golden/tx.json?ns=demo-test",
+      "status": 200,
+      "etag": "8n5kEPKa77xiDo6xsHQrcom3mJ4=",
+      "body": "{\"s\":1}"
+    },
+    {
+      "method": "GET",
+      "url": "/golden/txmissing.json?ns=demo-test",
+      "status": 200,
+      "etag": "ECFapkKpb5PK+HS0unEQfPlwgQg=",
+      "body": "\"new\""
+    }
+  ],
+  "etag": "8n5kEPKa77xiDo6xsHQrcom3mJ4=",
+  "etagBody": "{\"s\":1}"
+}

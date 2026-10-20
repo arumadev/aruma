@@ -1,0 +1,81 @@
+{
+  "scenario": "unknown_action",
+  "description": "Unknown action, a non-JSON text frame, and requests without b.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture.mjs",
+  "connections": {
+    "A": "/.ws?v=5&ns=demo-test"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792512732215,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"fZwgZ1Lpwmn4IXDSPmuy9EFaDKteT9AG\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"zzz\",\"b\":{}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"e\",\"d\":\"ClientId[15]:ErrorId[9]: Error on incoming message\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "hello"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"e\",\"d\":\"ClientId[15]:ErrorId[10]: Error on incoming message\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"p\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"e\",\"d\":\"ClientId[15]:ErrorId[11]: Error on incoming message\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"s\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"e\",\"d\":\"ClientId[15]:ErrorId[12]: Error on incoming message\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"g\",\"b\":{\"p\":\"/golden/unknown\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":null}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "A r=1: no reply within 1500 ms",
+    "A r=2: no reply within 1500 ms",
+    "A r=3: no reply within 1500 ms",
+    "Observed with firebase-database-emulator-v4.11.2: an unknown action, a non-JSON text frame and requests without b all produce the generic t:\"e\" control frame and no reply; the socket stays open and later requests work.",
+    "close initiated by the client (close frame with code 1000) on: A; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ]
+}
