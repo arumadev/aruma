@@ -8,6 +8,9 @@ const (
 	ControlError    = "e" // server: an error not tied to a request
 	ControlPing     = "p" // client: are you there?
 	ControlPong     = "o" // server: the answer to a ping
+	// The upgrade from long polling to a WebSocket (Connection.ts:240-304, 353-360).
+	ControlSwitchAck       = "a" // both: on the new WebSocket, it is ready / the client moves to it
+	ControlEndTransmission = "n" // both: on the long poll, nothing more comes this way
 )
 
 // ProtocolVersion is the only version the SDKs speak.
@@ -47,6 +50,14 @@ func EncodeReset(host string) []byte { return encodeControl(ControlReset, host) 
 // EncodeError reports an error the client cannot match to a request. The JS SDK only logs it;
 // Android and iOS ignore it.
 func EncodeError(msg string) []byte { return encodeControl(ControlError, msg) }
+
+// EncodeSwitchAck is the server's first frame on a WebSocket that joins a long-poll session,
+// with null data as the emulator's (golden/lp_upgrade.json).
+func EncodeSwitchAck() []byte { return encodeControl(ControlSwitchAck, nil) }
+
+// EncodeEndTransmission is the server's last message on a long poll whose session moved to a
+// WebSocket: the client reads the WebSocket from then on.
+func EncodeEndTransmission() []byte { return encodeControl(ControlEndTransmission, nil) }
 
 // EncodePong answers a ping, with null data as the emulator does (golden/handshake.json).
 func EncodePong() []byte { return encodeControl(ControlPong, nil) }

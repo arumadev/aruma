@@ -1,0 +1,126 @@
+{
+  "scenario": "lp_handshake",
+  "description": "Long-poll handshake as the JS SDK builds it (start, ser, cb, v, ns), the disconnect-frame page (dframe), a start without cb, and a start with an unknown protocol version.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture_r3.mjs",
+  "namespace": "r3-lp-handshake",
+  "setup": [
+    {
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r3-lp-handshake",
+      "body": {
+        "rules": {
+          ".read": true,
+          ".write": true
+        }
+      },
+      "status": 200,
+      "response": "{\"status\":\"ok\"}"
+    },
+    {
+      "method": "PUT",
+      "path": "/.json?ns=r3-lp-handshake",
+      "body": null,
+      "status": 200
+    }
+  ],
+  "connections": {
+    "A": "/.lp (long polling, JS SDK BrowserPollConnection emulation)",
+    "B": "/.lp (long polling, JS SDK BrowserPollConnection emulation)"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?start=t&ser=31415926&cb=1&v=5&ns=r3-lp-handshake"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 31415926,
+      "status": 200,
+      "headers": {
+        "content-length": "400",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-handshake",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 205,
+      "text": "\nfunction pLPCommand(c, a1, a2, a3, a4) {\nparent.window[\"pLPCommand1\"] && parent.window[\"pLPCommand1\"](c, a1, a2, a3, a4);\n}\nfunction pRTLPCB(pN, data) {\nparent.window[\"pRTLPCB1\"] && parent.window[\"pRTLPCB1\"](pN, data);\n}\n         pLPCommand('start','1','Mm4TW7DfqK');\npRTLPCB(0,[{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792529141595,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"YJ6oxVrPPWMypHhpHHomGZBSkDxs5OZM\"}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?dframe=t&id=1&pw=Mm4TW7DfqK&ns=r3-lp-handshake"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "status": 200,
+      "headers": {
+        "content-length": "414",
+        "content-type": "text/html; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-handshake",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 6,
+      "text": "<html><body><script>\nfunction EnvSendPing(destURL) {\ntry{\nvar xhr=new XMLHttpRequest();\nxhr.open(\"GET\", destURL, false);\nxhr.send(null);\n} catch (e) { }\n}\nfunction EnvDisconnect() {\nEnvSendPing(\"/.lp?disconn=t&id=1&pw=Mm4TW7DfqK\");\n}\nif(window.addEventListener)\nwindow.addEventListener('unload',EnvDisconnect,false);\nelse if(window.attachEvent)\nwindow.attachEvent('onunload',EnvDisconnect);\n</script></body></html>"
+    },
+    {
+      "conn": "B",
+      "dir": "http_req",
+      "text": "GET /.lp?start=t&ser=31415926&v=5&ns=r3-lp-handshake"
+    },
+    {
+      "conn": "B",
+      "dir": "http_resp",
+      "ser": 31415926,
+      "status": 200,
+      "headers": {
+        "content-length": "169",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-handshake",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 4,
+      "text": "pLPCommand('start','2','in26Vy7lE2');\npRTLPCB(0,[{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792529141647,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"NPJtb82tTAl70OVio37ymZeVW2dTW6IF\"}}}]);\n"
+    },
+    {
+      "conn": "B",
+      "dir": "http_req",
+      "text": "GET /.lp?start=t&ser=31415926&cb=3&v=4&ns=r3-lp-handshake"
+    },
+    {
+      "conn": "B",
+      "dir": "http_abort",
+      "ser": 31415926,
+      "ms": 10005,
+      "text": "GET /.lp?start=t&ser=31415926&cb=3&v=4&ns=r3-lp-handshake"
+    },
+    {
+      "conn": "B",
+      "dir": "http_req",
+      "text": "GET /.lp?start=t&ser=31415926&cb=4&v=5&ls=YJ6oxVrPPWMypHhpHHomGZBSkDxs5OZM&p=1:123:web:abc&ns=r3-lp-handshake"
+    },
+    {
+      "conn": "B",
+      "dir": "http_resp",
+      "ser": 31415926,
+      "status": 200,
+      "headers": {
+        "content-length": "400",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-handshake",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 24,
+      "text": "\nfunction pLPCommand(c, a1, a2, a3, a4) {\nparent.window[\"pLPCommand4\"] && parent.window[\"pLPCommand4\"](c, a1, a2, a3, a4);\n}\nfunction pRTLPCB(pN, data) {\nparent.window[\"pRTLPCB4\"] && parent.window[\"pRTLPCB4\"](pN, data);\n}\n         pLPCommand('start','3','mixfRXcBDH');\npRTLPCB(0,[{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792529151675,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"dQQFZLEI0IzKIhOhO4JQjgh1cNkYYfxM\"}}}]);\n"
+    }
+  ],
+  "notes": [
+    "A: SDK start URL: start=t, ser=<random int>, cb=<callback id>, v=5, then ns (BrowserPollConnection.ts:206-235, RepoInfo.ts:118-149). Then the dframe URL the SDK puts in a hidden iframe after the handshake (dframe=t&id&pw&ns, BrowserPollConnection.ts:376-389).",
+    "B: start without cb; start with v=4 and cb=3 (the client gives up after 10 s, recorded as http_abort; an earlier run waited 300 s without any answer); start with ls=<A hello s> and p=<app id> and cb=4."
+  ]
+}

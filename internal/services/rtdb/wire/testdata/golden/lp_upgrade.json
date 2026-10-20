@@ -1,0 +1,338 @@
+{
+  "scenario": "lp_upgrade",
+  "description": "LP -> WebSocket upgrade as Connection.ts does it: LP handshake, listen over LP, open the secondary WebSocket with s=<hello s>, ping until 2 pongs, send a on the WebSocket and n on LP, then use the WebSocket. B writes during and after the switch.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture_r3.mjs",
+  "namespace": "r3-lp-upgrade",
+  "setup": [
+    {
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r3-lp-upgrade",
+      "body": {
+        "rules": {
+          ".read": true,
+          ".write": true
+        }
+      },
+      "status": 200,
+      "response": "{\"status\":\"ok\"}"
+    },
+    {
+      "method": "PUT",
+      "path": "/.json?ns=r3-lp-upgrade",
+      "body": {
+        "u": {
+          "v": 1
+        }
+      },
+      "status": 200
+    }
+  ],
+  "connections": {
+    "A": "/.lp (long polling, JS SDK BrowserPollConnection emulation)",
+    "B": "/.ws?v=5&ns=r3-lp-upgrade",
+    "A-ws": "/.ws?v=5&s=EM0PHz3eIE9j4It07JmE3G3mVkZ5g9YL&ns=r3-lp-upgrade",
+    "X": "/.ws?v=5&s=unknownsession0000000000000000&ns=r3-lp-upgrade"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?start=t&ser=31415926&cb=1&v=5&ns=r3-lp-upgrade"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 31415926,
+      "status": 200,
+      "headers": {
+        "content-length": "400",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-upgrade",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 3,
+      "text": "\nfunction pLPCommand(c, a1, a2, a3, a4) {\nparent.window[\"pLPCommand1\"] && parent.window[\"pLPCommand1\"](c, a1, a2, a3, a4);\n}\nfunction pRTLPCB(pN, data) {\nparent.window[\"pRTLPCB1\"] && parent.window[\"pRTLPCB1\"](pN, data);\n}\n         pLPCommand('start','5','USjyPku9km');\npRTLPCB(0,[{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792529167604,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"EM0PHz3eIE9j4It07JmE3G3mVkZ5g9YL\"}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=5&pw=USjyPku9km&ser=27182819&ns=r3-lp-upgrade"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792529167943,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"2Ef2RSMZYwjhgf3SgfLo7HKvNLM0XY3X\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"q\",\"b\":{\"p\":\"/u\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=5&pw=USjyPku9km&ser=27182820&ns=r3-lp-upgrade&seg0=0&ts0=1&d0=eyJ0IjoiZCIsImQiOnsiciI6MSwiYSI6InEiLCJiIjp7InAiOiIvdSIsImgiOiIifX19"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182819,
+      "status": 200,
+      "headers": {
+        "content-length": "15",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-upgrade",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 352,
+      "text": "pRTLPCB(1,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182820,
+      "status": 200,
+      "headers": {
+        "content-length": "64",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-upgrade",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 5,
+      "text": "pRTLPCB(2,[{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"u\",\"d\":{\"v\":1}},\"a\":\"d\"}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=5&pw=USjyPku9km&ser=27182821&ns=r3-lp-upgrade"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182821,
+      "status": 200,
+      "headers": {
+        "content-length": "58",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-upgrade",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 1,
+      "text": "pRTLPCB(3,[{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{}}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=5&pw=USjyPku9km&ser=27182822&ns=r3-lp-upgrade"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/u/v\",\"d\":2}}}"
+    },
+    {
+      "conn": "A-ws",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"a\",\"d\":null}}"
+    },
+    {
+      "conn": "A-ws",
+      "dir": "send",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"p\",\"d\":{}}}"
+    },
+    {
+      "conn": "A-ws",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"o\",\"d\":null}}"
+    },
+    {
+      "conn": "A-ws",
+      "dir": "send",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"p\",\"d\":{}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182822,
+      "status": 200,
+      "headers": {
+        "content-length": "60",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-upgrade",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 527,
+      "text": "pRTLPCB(4,[{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"u/v\",\"d\":2},\"a\":\"d\"}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=5&pw=USjyPku9km&ser=27182823&ns=r3-lp-upgrade"
+    },
+    {
+      "conn": "A-ws",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"o\",\"d\":null}}"
+    },
+    {
+      "conn": "A-ws",
+      "dir": "send",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"a\",\"d\":{}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"n\",\"d\":{}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"p\",\"b\":{\"p\":\"/u/v\",\"d\":3}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=5&pw=USjyPku9km&ser=27182824&ns=r3-lp-upgrade&seg0=1&ts0=1&d0=eyJ0IjoiYyIsImQiOnsidCI6Im4iLCJkIjp7fX19"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182823,
+      "status": 200,
+      "headers": {
+        "content-length": "47",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-upgrade",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 5,
+      "text": "pRTLPCB(5,[{\"t\":\"c\",\"d\":{\"t\":\"n\",\"d\":null}}]);\n"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A-ws",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"u/v\",\"d\":3},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182824,
+      "status": 200,
+      "headers": {
+        "content-length": "38",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-upgrade",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 6,
+      "text": "pRTLPCB(6,[]);\npLPCommand('close',6);\n"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"p\",\"b\":{\"p\":\"/u/v\",\"d\":4}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A-ws",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"u/v\",\"d\":4},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A-ws",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"g\",\"b\":{\"p\":\"/u\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A-ws",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"v\":4}}}}"
+    },
+    {
+      "conn": "A-ws",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"p\",\"b\":{\"p\":\"/u/w\",\"d\":1}}}"
+    },
+    {
+      "conn": "A-ws",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"u/w\",\"d\":1},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A-ws",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=5&pw=USjyPku9km&ser=27182825&ns=r3-lp-upgrade"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182825,
+      "status": 200,
+      "headers": {
+        "content-length": "80",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-upgrade",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 12,
+      "text": "pRTLPCB(0,[{\"t\":\"c\",\"d\":{\"t\":\"r\",\"d\":\"127.0.0.1:9400\"}}]);\npLPCommand('close');\n"
+    },
+    {
+      "conn": "X",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"r\",\"d\":\"127.0.0.1:9400\"}}"
+    },
+    {
+      "conn": "X",
+      "dir": "close",
+      "code": 1006,
+      "reason": ""
+    },
+    {
+      "conn": "B",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "A-ws",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "Client logic follows Connection.ts: on a or o from the secondary: if fewer than 2 pongs, send ping p; after the 2nd pong send a on the secondary and n on the primary (LP) and switch tx (Connection.ts:240-304). B writes /u/v 2 while the secondary is validated, /u/v 3 right after the switch request, /u/v 4 after the LP close.",
+    "result.rxSwitchedByServerN = whether the server sent a control n on LP (Connection.ts:353-360 switches rx only then); lpServerClose = the pLPCommand close seen on LP.",
+    "X: a WebSocket with s=<unknown session id>.",
+    "WebSocket close initiated by the client (close frame with code 1000) on: B, A-ws; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code).",
+    "WebSocket close initiated by the server on: X."
+  ],
+  "result": {
+    "rxSwitchedByServerN": true,
+    "bufferedDataOnWsBeforeSwitch": 0,
+    "lpServerClose": "close after 6"
+  }
+}

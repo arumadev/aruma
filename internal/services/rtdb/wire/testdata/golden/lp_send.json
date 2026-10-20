@@ -1,0 +1,515 @@
+{
+  "scenario": "lp_send",
+  "description": "Client-to-server messages over long polling with the SDK segment encoding (web-safe base64 of the JSON, 1840-char segments, segN/tsN/dN params): stats, listen, put, a put needing several segments, a control ping, and a request batching several small messages in one URL.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture_r3.mjs",
+  "namespace": "r3-lp-send",
+  "setup": [
+    {
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r3-lp-send",
+      "body": {
+        "rules": {
+          ".read": true,
+          ".write": true
+        }
+      },
+      "status": 200,
+      "response": "{\"status\":\"ok\"}"
+    },
+    {
+      "method": "PUT",
+      "path": "/.json?ns=r3-lp-send",
+      "body": {
+        "s": {
+          "a": 1
+        }
+      },
+      "status": 200
+    }
+  ],
+  "connections": {
+    "A": "/.lp (long polling, JS SDK BrowserPollConnection emulation)"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?start=t&ser=31415926&cb=1&v=5&ns=r3-lp-send"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 31415926,
+      "status": 200,
+      "headers": {
+        "content-length": "400",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 5,
+      "text": "\nfunction pLPCommand(c, a1, a2, a3, a4) {\nparent.window[\"pLPCommand1\"] && parent.window[\"pLPCommand1\"](c, a1, a2, a3, a4);\n}\nfunction pRTLPCB(pN, data) {\nparent.window[\"pRTLPCB1\"] && parent.window[\"pRTLPCB1\"](pN, data);\n}\n         pLPCommand('start','4','5tHQXet2xX');\npRTLPCB(0,[{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792529160644,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"HVAxHmhHoUVk9vV7Zs17kzuBxk9Puv53\"}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182819&ns=r3-lp-send"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"s\",\"b\":{\"c\":{\"sdk.js.10-0-0\":1}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182820&ns=r3-lp-send&seg0=0&ts0=1&d0=eyJ0IjoiZCIsImQiOnsiciI6MSwiYSI6InMiLCJiIjp7ImMiOnsic2RrLmpzLjEwLTAtMCI6MX19fX0."
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182819,
+      "status": 200,
+      "headers": {
+        "content-length": "15",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 379,
+      "text": "pRTLPCB(1,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182820,
+      "status": 200,
+      "headers": {
+        "content-length": "58",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 84,
+      "text": "pRTLPCB(2,[{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182821&ns=r3-lp-send"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"q\",\"b\":{\"p\":\"/s\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182822&ns=r3-lp-send&seg0=1&ts0=1&d0=eyJ0IjoiZCIsImQiOnsiciI6MiwiYSI6InEiLCJiIjp7InAiOiIvcyIsImgiOiIifX19"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182821,
+      "status": 200,
+      "headers": {
+        "content-length": "15",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 539,
+      "text": "pRTLPCB(3,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182822,
+      "status": 200,
+      "headers": {
+        "content-length": "64",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 64,
+      "text": "pRTLPCB(4,[{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"s\",\"d\":{\"a\":1}},\"a\":\"d\"}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182823&ns=r3-lp-send"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182823,
+      "status": 200,
+      "headers": {
+        "content-length": "58",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 1,
+      "text": "pRTLPCB(5,[{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{}}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182824&ns=r3-lp-send"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"p\",\"b\":{\"p\":\"/s/b\",\"d\":\"x\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182825&ns=r3-lp-send&seg0=2&ts0=1&d0=eyJ0IjoiZCIsImQiOnsiciI6MywiYSI6InAiLCJiIjp7InAiOiIvcy9iIiwiZCI6IngifX19"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182824,
+      "status": 200,
+      "headers": {
+        "content-length": "15",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 526,
+      "text": "pRTLPCB(6,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182825,
+      "status": 200,
+      "headers": {
+        "content-length": "62",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 42,
+      "text": "pRTLPCB(7,[{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"s/b\",\"d\":\"x\"},\"a\":\"d\"}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182826&ns=r3-lp-send"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182826,
+      "status": 200,
+      "headers": {
+        "content-length": "58",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 2,
+      "text": "pRTLPCB(8,[{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182827&ns=r3-lp-send"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "len": 3855,
+      "sha256": "05b9a5ff63c391eed45a9948a407e868c5f3fc7fd45721cc94eef9cb292726af"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182828&ns=r3-lp-send&seg0=3&ts0=4&d0=eyJ0IjoiZCIsImQiOnsiciI6NCwiYSI6InAiLCJiIjp7InAiOiIvcy9iaWciLCJkIjoiw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nD"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182827,
+      "status": 200,
+      "headers": {
+        "content-length": "15",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 511,
+      "text": "pRTLPCB(9,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182829&ns=r3-lp-send&seg0=4&ts0=4&d0=qcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182828,
+      "status": 200,
+      "headers": {
+        "content-length": "16",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 15,
+      "text": "pRTLPCB(10,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182830&ns=r3-lp-send&seg0=5&ts0=4&d0=eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182829,
+      "status": 200,
+      "headers": {
+        "content-length": "16",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 11,
+      "text": "pRTLPCB(11,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182831&ns=r3-lp-send&seg0=6&ts0=4&d0=eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eSJ9fX0."
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182830,
+      "status": 200,
+      "headers": {
+        "content-length": "16",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 13,
+      "text": "pRTLPCB(12,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182831,
+      "status": 200,
+      "headers": {
+        "content-length": "4664",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 11,
+      "len": 3864,
+      "sha256": "59b0d9ec9c9fccc1b7185d24fd1d2bb4876c5c89d5d7215ffa19c20dcf8505f1"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182832&ns=r3-lp-send"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182832,
+      "status": 200,
+      "headers": {
+        "content-length": "59",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 2,
+      "text": "pRTLPCB(14,[{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182833&ns=r3-lp-send"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"p\",\"d\":{}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182834&ns=r3-lp-send&seg0=7&ts0=1&d0=eyJ0IjoiYyIsImQiOnsidCI6InAiLCJkIjp7fX19"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182833,
+      "status": 200,
+      "headers": {
+        "content-length": "48",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 527,
+      "text": "pRTLPCB(15,[{\"t\":\"c\",\"d\":{\"t\":\"o\",\"d\":null}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"p\",\"b\":{\"p\":\"/s/c\",\"d\":1}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"a\":\"g\",\"b\":{\"p\":\"/s/c\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182835&ns=r3-lp-send&seg0=8&ts0=1&d0=eyJ0IjoiZCIsImQiOnsiciI6NSwiYSI6InAiLCJiIjp7InAiOiIvcy9jIiwiZCI6MX19fQ..&seg1=9&ts1=1&d1=eyJ0IjoiZCIsImQiOnsiciI6NiwiYSI6ImciLCJiIjp7InAiOiIvcy9jIiwicSI6e319fX0."
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182834,
+      "status": 200,
+      "headers": {
+        "content-length": "16",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 2332,
+      "text": "pRTLPCB(16,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182835,
+      "status": 200,
+      "headers": {
+        "content-length": "61",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 29,
+      "text": "pRTLPCB(17,[{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"s/c\",\"d\":1},\"a\":\"d\"}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182836&ns=r3-lp-send"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182836,
+      "status": 200,
+      "headers": {
+        "content-length": "59",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 4,
+      "text": "pRTLPCB(18,[{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182837&ns=r3-lp-send"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182837,
+      "status": 200,
+      "headers": {
+        "content-length": "58",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 3,
+      "text": "pRTLPCB(19,[{\"t\":\"d\",\"d\":{\"r\":6,\"b\":{\"s\":\"ok\",\"d\":1}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182838&ns=r3-lp-send"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"a\":\"g\",\"b\":{\"p\":\"/s\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182839&ns=r3-lp-send&seg0=10&ts0=1&d0=eyJ0IjoiZCIsImQiOnsiciI6NywiYSI6ImciLCJiIjp7InAiOiIvcyIsInEiOnt9fX19"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182838,
+      "status": 200,
+      "headers": {
+        "content-length": "16",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 1471,
+      "text": "pRTLPCB(20,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182839,
+      "status": 200,
+      "headers": {
+        "content-length": "4687",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-send",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 13,
+      "len": 3887,
+      "sha256": "f52c543332c711bacd7bb2c9036015afd88dbcf6ba5db0d75b23d4fa3087271d"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182840&ns=r3-lp-send"
+    },
+    {
+      "conn": "A",
+      "dir": "http_abort",
+      "ser": 27182840,
+      "ms": 507,
+      "text": "GET /.lp?id=4&pw=5tHQXet2xX&ser=27182840&ns=r3-lp-send"
+    }
+  ],
+  "notes": [
+    "The big put is 3855 chars of JSON (800 x U+00E9 + 3000 x \"y\"), sent as 4 segments.",
+    "The batched request carries two complete messages (seg0/ts0/d0 and seg1/ts1/d1) in one URL, as the SDK does when several small segments are queued."
+  ]
+}

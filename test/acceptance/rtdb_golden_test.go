@@ -69,6 +69,11 @@ func TestRTDBMatchesEmulator(t *testing.T) {
 		if err := json.Unmarshal(b, &g); err != nil {
 			t.Fatal(err)
 		}
+		if strings.HasPrefix(g.Scenario, "lp_") {
+			// Long polling is HTTP: TestRTDBLongPoll* replay it, and wire's tests hold the
+			// envelope to these captures byte for byte.
+			continue
+		}
 		if reason, skip := skippedScenarios[g.Scenario]; skip {
 			t.Logf("scenario %s not replayed: %s", g.Scenario, reason)
 			continue

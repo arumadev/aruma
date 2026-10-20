@@ -1,0 +1,449 @@
+{
+  "scenario": "lp_poll",
+  "description": "A pending idle poll held by the server until it answers on its own (no client keepalive); then a listen sent over LP, an outstanding poll answered with a data push when WebSocket client B writes, and how a newer request releases an older pending poll.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture_r3.mjs",
+  "namespace": "r3-lp-poll",
+  "setup": [
+    {
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r3-lp-poll",
+      "body": {
+        "rules": {
+          ".read": true,
+          ".write": true
+        }
+      },
+      "status": 200,
+      "response": "{\"status\":\"ok\"}"
+    },
+    {
+      "method": "PUT",
+      "path": "/.json?ns=r3-lp-poll",
+      "body": {
+        "w": {
+          "v": 1
+        }
+      },
+      "status": 200
+    }
+  ],
+  "connections": {
+    "A": "/.lp (long polling, JS SDK BrowserPollConnection emulation)",
+    "B": "/.ws?v=5&ns=r3-lp-poll",
+    "A2": "/.lp (long polling, JS SDK BrowserPollConnection emulation)"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?start=t&ser=31415926&cb=1&v=5&ns=r3-lp-poll"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 31415926,
+      "status": 200,
+      "headers": {
+        "content-length": "400",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 4,
+      "text": "\nfunction pLPCommand(c, a1, a2, a3, a4) {\nparent.window[\"pLPCommand1\"] && parent.window[\"pLPCommand1\"](c, a1, a2, a3, a4);\n}\nfunction pRTLPCB(pN, data) {\nparent.window[\"pRTLPCB1\"] && parent.window[\"pRTLPCB1\"](pN, data);\n}\n         pLPCommand('start','6','5NACrW2sGi');\npRTLPCB(0,[{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792529175576,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"eDSXAeDOQgtJTRBVPZai2G8XRcYNQJTy\"}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=6&pw=5NACrW2sGi&ser=27182819&ns=r3-lp-poll"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792529175885,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"asevPWc9eRpm5sDP0gnAwmpxnRlPlOL0\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"q\",\"b\":{\"p\":\"/w\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=6&pw=5NACrW2sGi&ser=27182820&ns=r3-lp-poll&seg0=0&ts0=1&d0=eyJ0IjoiZCIsImQiOnsiciI6MSwiYSI6InEiLCJiIjp7InAiOiIvdyIsImgiOiIifX19"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182819,
+      "status": 200,
+      "headers": {
+        "content-length": "15",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 313,
+      "text": "pRTLPCB(1,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182820,
+      "status": 200,
+      "headers": {
+        "content-length": "64",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 5,
+      "text": "pRTLPCB(2,[{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"w\",\"d\":{\"v\":1}},\"a\":\"d\"}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=6&pw=5NACrW2sGi&ser=27182821&ns=r3-lp-poll"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182821,
+      "status": 200,
+      "headers": {
+        "content-length": "58",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 2,
+      "text": "pRTLPCB(3,[{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{}}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=6&pw=5NACrW2sGi&ser=27182822&ns=r3-lp-poll"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"p\",\"b\":{\"p\":\"/w/v\",\"d\":2}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182822,
+      "status": 200,
+      "headers": {
+        "content-length": "60",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 817,
+      "text": "pRTLPCB(4,[{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"w/v\",\"d\":2},\"a\":\"d\"}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=6&pw=5NACrW2sGi&ser=27182823&ns=r3-lp-poll"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"m\",\"b\":{\"p\":\"/w\",\"d\":{\"v\":3,\"n\":1}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182823,
+      "status": 200,
+      "headers": {
+        "content-length": "70",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 836,
+      "text": "pRTLPCB(5,[{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"w\",\"d\":{\"v\":3,\"n\":1}},\"a\":\"m\"}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=6&pw=5NACrW2sGi&ser=27182824&ns=r3-lp-poll"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=6&pw=5NACrW2sGi&ser=27182825&ns=r3-lp-poll"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182824,
+      "status": 200,
+      "headers": {
+        "content-length": "15",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 25015,
+      "text": "pRTLPCB(6,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=6&pw=5NACrW2sGi&ser=27182826&ns=r3-lp-poll"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182825,
+      "status": 200,
+      "headers": {
+        "content-length": "15",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 2503,
+      "text": "pRTLPCB(7,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=6&pw=5NACrW2sGi&ser=27182827&ns=r3-lp-poll"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182826,
+      "status": 200,
+      "headers": {
+        "content-length": "15",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 1008,
+      "text": "pRTLPCB(8,[]);\n"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"p\",\"b\":{\"p\":\"/w/v\",\"d\":4}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182827,
+      "status": 200,
+      "headers": {
+        "content-length": "60",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 1018,
+      "text": "pRTLPCB(9,[{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"w/v\",\"d\":4},\"a\":\"d\"}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=6&pw=5NACrW2sGi&ser=27182829&ns=r3-lp-poll"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=6&pw=5NACrW2sGi&ser=27182828&ns=r3-lp-poll"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182829,
+      "status": 200,
+      "headers": {
+        "content-length": "16",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 508,
+      "text": "pRTLPCB(11,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182828,
+      "status": 200,
+      "headers": {
+        "content-length": "16",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 8,
+      "text": "pRTLPCB(10,[]);\n"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"p\",\"b\":{\"p\":\"/w/v\",\"d\":5}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=6&pw=5NACrW2sGi&ser=27182830&ns=r3-lp-poll"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182830,
+      "status": 200,
+      "headers": {
+        "content-length": "61",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 7,
+      "text": "pRTLPCB(12,[{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"w/v\",\"d\":5},\"a\":\"d\"}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=6&pw=5NACrW2sGi&ser=27182831&ns=r3-lp-poll"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182831,
+      "status": 200,
+      "headers": {
+        "content-length": "8",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 96360,
+      "text": "<!-- -->"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=6&pw=5NACrW2sGi&ser=27182832&ns=r3-lp-poll"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182832,
+      "status": 200,
+      "headers": {
+        "content-length": "80",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 7,
+      "text": "pRTLPCB(0,[{\"t\":\"c\",\"d\":{\"t\":\"r\",\"d\":\"127.0.0.1:9400\"}}]);\npLPCommand('close');\n"
+    },
+    {
+      "conn": "A2",
+      "dir": "http_req",
+      "text": "GET /.lp?start=t&ser=31415926&cb=2&v=5&ns=r3-lp-poll"
+    },
+    {
+      "conn": "A2",
+      "dir": "http_resp",
+      "ser": 31415926,
+      "status": 200,
+      "headers": {
+        "content-length": "400",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 12,
+      "text": "\nfunction pLPCommand(c, a1, a2, a3, a4) {\nparent.window[\"pLPCommand2\"] && parent.window[\"pLPCommand2\"](c, a1, a2, a3, a4);\n}\nfunction pRTLPCB(pN, data) {\nparent.window[\"pRTLPCB2\"] && parent.window[\"pRTLPCB2\"](pN, data);\n}\n         pLPCommand('start','7','PHRZsoV6I7');\npRTLPCB(0,[{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792529306966,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"6h71ozlFg0iVN7uheH0zbke6NUVxvuLh\"}}}]);\n"
+    },
+    {
+      "conn": "A2",
+      "dir": "http_req",
+      "text": "GET /.lp?id=7&pw=PHRZsoV6I7&ser=27182819&ns=r3-lp-poll"
+    },
+    {
+      "conn": "A2",
+      "dir": "http_req",
+      "text": "GET /.lp?id=7&pw=PHRZsoV6I7&ser=27182820&ns=r3-lp-poll"
+    },
+    {
+      "conn": "A2",
+      "dir": "http_resp",
+      "ser": 27182819,
+      "status": 200,
+      "headers": {
+        "content-length": "15",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 60010,
+      "text": "pRTLPCB(1,[]);\n"
+    },
+    {
+      "conn": "A2",
+      "dir": "http_resp",
+      "ser": 27182820,
+      "status": 200,
+      "headers": {
+        "content-length": "8",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-poll",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 104479,
+      "text": "<!-- -->"
+    },
+    {
+      "conn": "B",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "Step 1: SDK-style polling (one outstanding poll; a second request while data is queued; a new poll after 25 s keepalive), A listens /w over LP, B writes /w/v 2 and merges /w over WebSocket, then 27 s idle.",
+    "Step 2: automatic polling stopped; poll p1, 1 s later poll p2 (higher ser), then B writes /w/v 4.",
+    "Step 3: poll with ser N+1 sent first, then ser N; then B writes /w/v 5.",
+    "Step 4: one poll that collects what step 3 left queued, then one idle poll and nothing else: answered by the server after 96360 ms (single run); then one more poll on the same session.",
+    "Step 5: session A2: poll at t0, second poll at t0+60 s; the second poll was answered after 104479 ms (t0 + 164481 ms).",
+    "WebSocket close initiated by the client (close frame with code 1000) on: B; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ],
+  "idleHoldMs": 96360,
+  "secondPollHoldMs": 104479,
+  "sessionLifeMs": 164481
+}

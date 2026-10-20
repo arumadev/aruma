@@ -180,6 +180,14 @@ func reencode(t *testing.T, text string) (string, []byte) {
 			return "hello", EncodeHello(h)
 		case ControlPong:
 			return "pong", EncodePong()
+		case ControlSwitchAck:
+			return "switch ack", EncodeSwitchAck()
+		case ControlEndTransmission:
+			return "end transmission", EncodeEndTransmission()
+		case ControlReset:
+			var host string
+			json.Unmarshal(c.D, &host)
+			return "reset", EncodeReset(host)
 		case ControlError:
 			var msg string
 			json.Unmarshal(c.D, &msg)

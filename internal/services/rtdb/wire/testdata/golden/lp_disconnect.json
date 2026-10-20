@@ -1,0 +1,345 @@
+{
+  "scenario": "lp_disconnect",
+  "description": "LP client A registers onDisconnect writes, then sends the disconn request that the dframe page fires on unload; WebSocket listener B shows when the onDisconnect writes run. Then a poll on the dead session, and a second LP session C that is abandoned (no disconn) to see if/when its onDisconnect fires.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "capture_r3.mjs",
+  "namespace": "r3-lp-disconnect",
+  "setup": [
+    {
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r3-lp-disconnect",
+      "body": {
+        "rules": {
+          ".read": true,
+          ".write": true
+        }
+      },
+      "status": 200,
+      "response": "{\"status\":\"ok\"}"
+    },
+    {
+      "method": "PUT",
+      "path": "/.json?ns=r3-lp-disconnect",
+      "body": {
+        "od": {
+          "here": true
+        }
+      },
+      "status": 200
+    }
+  ],
+  "connections": {
+    "B": "/.ws?v=5&ns=r3-lp-disconnect",
+    "A": "/.lp (long polling, JS SDK BrowserPollConnection emulation)",
+    "C": "/.lp (long polling, JS SDK BrowserPollConnection emulation)"
+  },
+  "frames": [
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792529471591,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"hsEaU0GHK3QEe0OTcL7K1cQ9Zhbkounu\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"q\",\"b\":{\"p\":\"/od\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"od\",\"d\":{\"here\":true}},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?start=t&ser=31415926&cb=1&v=5&ns=r3-lp-disconnect"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 31415926,
+      "status": 200,
+      "headers": {
+        "content-length": "400",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-disconnect",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 5,
+      "text": "\nfunction pLPCommand(c, a1, a2, a3, a4) {\nparent.window[\"pLPCommand1\"] && parent.window[\"pLPCommand1\"](c, a1, a2, a3, a4);\n}\nfunction pRTLPCB(pN, data) {\nparent.window[\"pRTLPCB1\"] && parent.window[\"pRTLPCB1\"](pN, data);\n}\n         pLPCommand('start','8','EloZJNn4Qu');\npRTLPCB(0,[{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792529472111,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"cpgjZE9eV4j3s1sQzwhms5xm24X7I8Ed\"}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=8&pw=EloZJNn4Qu&ser=27182819&ns=r3-lp-disconnect"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"o\",\"b\":{\"p\":\"/od/a\",\"d\":\"gone\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=8&pw=EloZJNn4Qu&ser=27182820&ns=r3-lp-disconnect&seg0=0&ts0=1&d0=eyJ0IjoiZCIsImQiOnsiciI6MSwiYSI6Im8iLCJiIjp7InAiOiIvb2QvYSIsImQiOiJnb25lIn19fQ.."
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182819,
+      "status": 200,
+      "headers": {
+        "content-length": "15",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-disconnect",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 314,
+      "text": "pRTLPCB(1,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182820,
+      "status": 200,
+      "headers": {
+        "content-length": "58",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-disconnect",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 19,
+      "text": "pRTLPCB(2,[{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=8&pw=EloZJNn4Qu&ser=27182821&ns=r3-lp-disconnect"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"om\",\"b\":{\"p\":\"/od\",\"d\":{\"m\":{\".sv\":\"timestamp\"}}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=8&pw=EloZJNn4Qu&ser=27182822&ns=r3-lp-disconnect&seg0=1&ts0=1&d0=eyJ0IjoiZCIsImQiOnsiciI6MiwiYSI6Im9tIiwiYiI6eyJwIjoiL29kIiwiZCI6eyJtIjp7Ii5zdiI6InRpbWVzdGFtcCJ9fX19fQ.."
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182821,
+      "status": 200,
+      "headers": {
+        "content-length": "15",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-disconnect",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 508,
+      "text": "pRTLPCB(3,[]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182822,
+      "status": 200,
+      "headers": {
+        "content-length": "58",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-disconnect",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 11,
+      "text": "pRTLPCB(4,[{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}]);\n"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=8&pw=EloZJNn4Qu&ser=27182823&ns=r3-lp-disconnect"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?dframe=t&id=8&pw=EloZJNn4Qu&ns=r3-lp-disconnect"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "status": 200,
+      "headers": {
+        "content-length": "414",
+        "content-type": "text/html; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-disconnect",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 6,
+      "text": "<html><body><script>\nfunction EnvSendPing(destURL) {\ntry{\nvar xhr=new XMLHttpRequest();\nxhr.open(\"GET\", destURL, false);\nxhr.send(null);\n} catch (e) { }\n}\nfunction EnvDisconnect() {\nEnvSendPing(\"/.lp?disconn=t&id=8&pw=EloZJNn4Qu\");\n}\nif(window.addEventListener)\nwindow.addEventListener('unload',EnvDisconnect,false);\nelse if(window.attachEvent)\nwindow.attachEvent('onunload',EnvDisconnect);\n</script></body></html>"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?disconn=t&id=8&pw=EloZJNn4Qu"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "status": 200,
+      "headers": {
+        "content-length": "8",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "fake-server",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 8,
+      "text": "<!-- -->"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"od\",\"d\":{\"a\":\"gone\",\"m\":1792529473466}},\"a\":\"m\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "http_abort",
+      "ser": 27182823,
+      "ms": 3519,
+      "text": "GET /.lp?id=8&pw=EloZJNn4Qu&ser=27182823&ns=r3-lp-disconnect"
+    },
+    {
+      "conn": "A",
+      "dir": "http_req",
+      "text": "GET /.lp?id=8&pw=EloZJNn4Qu&ser=27182824&ns=r3-lp-disconnect"
+    },
+    {
+      "conn": "A",
+      "dir": "http_resp",
+      "ser": 27182824,
+      "status": 200,
+      "headers": {
+        "content-length": "80",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-disconnect",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 2,
+      "text": "pRTLPCB(0,[{\"t\":\"c\",\"d\":{\"t\":\"r\",\"d\":\"127.0.0.1:9400\"}}]);\npLPCommand('close');\n"
+    },
+    {
+      "conn": "C",
+      "dir": "http_req",
+      "text": "GET /.lp?start=t&ser=31415926&cb=2&v=5&ns=r3-lp-disconnect"
+    },
+    {
+      "conn": "C",
+      "dir": "http_resp",
+      "ser": 31415926,
+      "status": 200,
+      "headers": {
+        "content-length": "400",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-disconnect",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 4,
+      "text": "\nfunction pLPCommand(c, a1, a2, a3, a4) {\nparent.window[\"pLPCommand2\"] && parent.window[\"pLPCommand2\"](c, a1, a2, a3, a4);\n}\nfunction pRTLPCB(pN, data) {\nparent.window[\"pRTLPCB2\"] && parent.window[\"pRTLPCB2\"](pN, data);\n}\n         pLPCommand('start','9','kq4fF7ZMEw');\npRTLPCB(0,[{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792529476524,\"v\":\"5\",\"h\":\"127.0.0.1:9400\",\"s\":\"8sQ15hWHgkDtH8KwtbZ35VnKST6P1ycZ\"}}}]);\n"
+    },
+    {
+      "conn": "C",
+      "dir": "http_req",
+      "text": "GET /.lp?id=9&pw=kq4fF7ZMEw&ser=27182819&ns=r3-lp-disconnect"
+    },
+    {
+      "conn": "C",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"o\",\"b\":{\"p\":\"/od/c\",\"d\":\"abandoned\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "http_req",
+      "text": "GET /.lp?id=9&pw=kq4fF7ZMEw&ser=27182820&ns=r3-lp-disconnect&seg0=0&ts0=1&d0=eyJ0IjoiZCIsImQiOnsiciI6MSwiYSI6Im8iLCJiIjp7InAiOiIvb2QvYyIsImQiOiJhYmFuZG9uZWQifX19"
+    },
+    {
+      "conn": "C",
+      "dir": "http_resp",
+      "ser": 27182819,
+      "status": 200,
+      "headers": {
+        "content-length": "15",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-disconnect",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 305,
+      "text": "pRTLPCB(1,[]);\n"
+    },
+    {
+      "conn": "C",
+      "dir": "http_resp",
+      "ser": 27182820,
+      "status": 200,
+      "headers": {
+        "content-length": "58",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-disconnect",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 5,
+      "text": "pRTLPCB(2,[{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}]);\n"
+    },
+    {
+      "conn": "C",
+      "dir": "http_req",
+      "text": "GET /.lp?id=9&pw=kq4fF7ZMEw&ser=27182821&ns=r3-lp-disconnect"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "0"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "0"
+    },
+    {
+      "conn": "C",
+      "dir": "http_resp",
+      "ser": 27182821,
+      "status": 200,
+      "headers": {
+        "content-length": "8",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-project-id": "r3-lp-disconnect",
+        "x-firebase-project-number": "123456789"
+      },
+      "ms": 99498,
+      "text": "<!-- -->"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"od\",\"d\":{\"c\":\"abandoned\"}},\"a\":\"m\"}}"
+    },
+    {
+      "conn": "B",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "The disconn URL is taken verbatim from the dframe page (EnvSendPing argument).",
+    "Abandoned session C: its last request completed, then no further requests; onDisconnect write seen by B after 99995 ms (null = not within 200 s). B sends \"0\" keepalives meanwhile.",
+    "WebSocket close initiated by the client (close frame with code 1000) on: B; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ],
+  "abandonWaitMs": 99995
+}
