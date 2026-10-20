@@ -1,0 +1,182 @@
+{
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-20",
+  "script": "emulator_etags.mjs",
+  "sdkHashFrom": "hash.json (@firebase/database 1.1.5)",
+  "notes": [
+    "Each value is written with REST PUT /golden/etag/<i>.json?ns=demo-test (body = json, export format), then read with GET and header X-Firebase-ETag: true.",
+    "sdkHash is the hash.json vector with the same name; match = (etag === sdkHash).",
+    "For plain numbers, trueIeeeHash = base64(sha1(\"number:\" + true IEEE-754 hex)); matchTrueIeee shows whether the emulator hashes the real double bits instead of the JS SDK doubleToIEEE754String output."
+  ],
+  "vectors": [
+    {
+      "name": "{s:1} (datastale value)",
+      "json": {
+        "s": 1
+      },
+      "putStatus": 200,
+      "putBody": "{\"s\":1}",
+      "getBody": "{\"s\":1}",
+      "etag": "8n5kEPKa77xiDo6xsHQrcom3mJ4=",
+      "sdkHash": "8n5kEPKa77xiDo6xsHQrcom3mJ4=",
+      "match": true
+    },
+    {
+      "name": "new (datastale txmissing value)",
+      "json": "new",
+      "putStatus": 200,
+      "putBody": "\"new\"",
+      "getBody": "\"new\"",
+      "etag": "ECFapkKpb5PK+HS0unEQfPlwgQg=",
+      "sdkHash": "ECFapkKpb5PK+HS0unEQfPlwgQg=",
+      "match": true
+    },
+    {
+      "name": "1.5",
+      "json": 1.5,
+      "putStatus": 200,
+      "putBody": "1.5",
+      "getBody": "1.5",
+      "etag": "4MftviR9Z/2MQCMkjh2RNbvlLJc=",
+      "sdkHash": "4MftviR9Z/2MQCMkjh2RNbvlLJc=",
+      "match": true,
+      "sdkCanonical": "number:3ff8000000000000",
+      "trueIeeeCanonical": "number:3ff8000000000000",
+      "trueIeeeHash": "4MftviR9Z/2MQCMkjh2RNbvlLJc=",
+      "matchTrueIeee": true
+    },
+    {
+      "name": "true",
+      "json": true,
+      "putStatus": 200,
+      "putBody": "true",
+      "getBody": "true",
+      "etag": "E5z61QM0lN/U2WsOnusszCTkR8M=",
+      "sdkHash": "E5z61QM0lN/U2WsOnusszCTkR8M=",
+      "match": true
+    },
+    {
+      "name": "unicode mix",
+      "json": "a-日本-😀-مرحبا é",
+      "putStatus": 200,
+      "putBody": "\"a-日本-😀-مرحبا é\"",
+      "getBody": "\"a-日本-😀-مرحبا é\"",
+      "etag": "mx0OQcjLMppM6Z9Q4lCIjuERBjE=",
+      "sdkHash": "mx0OQcjLMppM6Z9Q4lCIjuERBjE=",
+      "match": true
+    },
+    {
+      "name": "int-like keys",
+      "json": {
+        "1": "i1",
+        "2": "i2",
+        "10": "i10",
+        "2147483648": "big",
+        "-1": "m1",
+        "001": "z1",
+        "-2147483649": "mbig",
+        "a": "a",
+        "A": "A",
+        "_": "u"
+      },
+      "putStatus": 200,
+      "putBody": "{\"-1\":\"m1\",\"1\":\"i1\",\"001\":\"z1\",\"2\":\"i2\",\"10\":\"i10\",\"-2147483649\":\"mbig\",\"2147483648\":\"big\",\"A\":\"A\",\"_\":\"u\",\"a\":\"a\"}",
+      "getBody": "{\"-1\":\"m1\",\"1\":\"i1\",\"001\":\"z1\",\"2\":\"i2\",\"10\":\"i10\",\"-2147483649\":\"mbig\",\"2147483648\":\"big\",\"A\":\"A\",\"_\":\"u\",\"a\":\"a\"}",
+      "etag": "lhD27tJLxBpt/NHlKag1PgmgTTU=",
+      "sdkHash": "lhD27tJLxBpt/NHlKag1PgmgTTU=",
+      "match": true
+    },
+    {
+      "name": "children with priorities (priority order != key order)",
+      "json": {
+        "a": {
+          ".value": 1,
+          ".priority": 3
+        },
+        "b": {
+          ".value": 2,
+          ".priority": 1
+        },
+        "c": 3
+      },
+      "putStatus": 200,
+      "putBody": "{\"a\":{\".value\":1,\".priority\":3.0},\"b\":{\".value\":2,\".priority\":1.0},\"c\":3}",
+      "getBody": "{\"a\":1,\"b\":2,\"c\":3}",
+      "etag": "iQ1ts723pLlpnfh5RnGeaZsCcW0=",
+      "sdkHash": "iQ1ts723pLlpnfh5RnGeaZsCcW0=",
+      "match": true
+    },
+    {
+      "name": "object string priority with child priority",
+      "json": {
+        ".priority": "s",
+        "b": {
+          ".value": 1,
+          ".priority": 3
+        }
+      },
+      "putStatus": 200,
+      "putBody": "{\".priority\":\"s\",\"b\":{\".value\":1,\".priority\":3.0}}",
+      "getBody": "{\"b\":1}",
+      "etag": "rz48b4i0SUiBVGIDaNxSsywoTF4=",
+      "sdkHash": "rz48b4i0SUiBVGIDaNxSsywoTF4=",
+      "match": true
+    },
+    {
+      "name": "leaf priority number",
+      "json": {
+        ".value": "v",
+        ".priority": 7
+      },
+      "putStatus": 200,
+      "putBody": "{\".value\":\"v\",\".priority\":7.0}",
+      "getBody": "\"v\"",
+      "etag": "t9AIIsnpHZgA9VdG1PpLBhWXTi8=",
+      "sdkHash": "t9AIIsnpHZgA9VdG1PpLBhWXTi8=",
+      "match": true
+    },
+    {
+      "name": "2^53-1 (SDK ieee754 differs)",
+      "json": 9007199254740991,
+      "putStatus": 200,
+      "putBody": "9007199254740991",
+      "getBody": "9007199254740991",
+      "etag": "zP1cy9AKj8mOJfzxsijijNJ8QdY=",
+      "sdkHash": "m4qsp/5BbIWTdjthNlnOX+WCTB0=",
+      "match": false,
+      "sdkCanonical": "number:4340000000000000",
+      "trueIeeeCanonical": "number:433fffffffffffff",
+      "trueIeeeHash": "zP1cy9AKj8mOJfzxsijijNJ8QdY=",
+      "matchTrueIeee": true
+    },
+    {
+      "name": "2^-29 (SDK ieee754 differs)",
+      "json": 1.862645149230957e-9,
+      "putStatus": 200,
+      "putBody": "1.862645149230957E-9",
+      "getBody": "1.862645149230957E-9",
+      "etag": "dyLRtYRlqaZqVt5GFvnXG88bDdc=",
+      "sdkHash": "7d5QMiELKDnWdrss5Z2LtOES7JA=",
+      "match": false,
+      "sdkCanonical": "number:3e10000000000000",
+      "trueIeeeCanonical": "number:3e20000000000000",
+      "trueIeeeHash": "dyLRtYRlqaZqVt5GFvnXG88bDdc=",
+      "matchTrueIeee": true
+    },
+    {
+      "name": "1e-300 (SDK ieee754 differs)",
+      "json": 1e-300,
+      "putStatus": 200,
+      "putBody": "1.0E-300",
+      "getBody": "1.0E-300",
+      "etag": "dcj/dN5757mDfBMwq/8GIrEDwqk=",
+      "sdkHash": "gAV59vXFMUsME/Mb0qgszm4v4BU=",
+      "match": false,
+      "sdkCanonical": "number:01a0000000000000",
+      "trueIeeeCanonical": "number:01a56e1fc2f8f359",
+      "trueIeeeHash": "dcj/dN5757mDfBMwq/8GIrEDwqk=",
+      "matchTrueIeee": true
+    }
+  ]
+}

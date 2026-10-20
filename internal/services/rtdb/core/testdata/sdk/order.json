@@ -1,0 +1,1500 @@
+{
+  "source": {
+    "package": "@firebase/database",
+    "version": "1.1.5",
+    "bundle": "dist/index.node.cjs.js",
+    "generator": "gen.js",
+    "appStub": true,
+    "hooks": [
+      "nodeFromJSON",
+      "nameCompare",
+      "stringCompare",
+      "tryParseInt",
+      "doubleToIEEE754String",
+      "priorityHashText",
+      "sha1",
+      "NamedNode",
+      "PathIndex",
+      "Path",
+      "LeafNode",
+      "ChildrenNode",
+      "PRIORITY_INDEX",
+      "VALUE_INDEX",
+      "KEY_INDEX"
+    ],
+    "note": "sha1() patched in memory to record its input (the canonical pre-hash string); no other code changed."
+  },
+  "references": [
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/util/util.ts",
+      "line": 254,
+      "what": "nameCompare: int32-like keys first numerically (tie: shorter first), then strings by JS < (UTF-16 code units)"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/util/util.ts",
+      "line": 496,
+      "what": "INTEGER_REGEXP_ = /^-?(0*)\\d{1,10}$/"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/util/util.ts",
+      "line": 511,
+      "what": "tryParseInt: within [-2147483648, 2147483647]"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/util/util.ts",
+      "line": 282,
+      "what": "stringCompare"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/indexes/ValueIndex.ts",
+      "line": 25,
+      "what": "ValueIndex.compare: node.compareTo then nameCompare"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/LeafNode.ts",
+      "line": 212,
+      "what": "LeafNode.compareTo: leaf < non-empty children; empty < leaf"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/LeafNode.ts",
+      "line": 226,
+      "what": "compareToLeafNode_: type order via VALUE_TYPE_ORDER (LeafNode.ts:55) object, boolean, number, string; same type: JS < and ==="
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/ChildrenNode.ts",
+      "line": 386,
+      "what": "ChildrenNode.compareTo: empty first, any two non-empty children nodes equal"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/indexes/PriorityIndex.ts",
+      "line": 36,
+      "what": "PriorityIndex.compare: priority node compareTo, then nameCompare"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/indexes/PathIndex.ts",
+      "line": 44,
+      "what": "PathIndex.compare: child node compareTo, then nameCompare"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/indexes/KeyIndex.ts",
+      "line": 36,
+      "what": "KeyIndex.compare: nameCompare"
+    }
+  ],
+  "notes": [
+    "cmp is the sign (-1, 0, 1) of the SDK comparator result; the SDK may return any negative/positive number.",
+    "sortedKeys = keys sorted with nameCompare. keyPairs: sign(nameCompare(a, b)); [MIN_NAME]/[MAX_NAME] pairs show the sentinels.",
+    "valuePairs without an/bn: sign(VALUE_INDEX.compare(NamedNode(\"k\", nodeFromJSON(a)), NamedNode(\"k\", nodeFromJSON(b)))); with an/bn the given names are used (key tiebreak).",
+    "priorityPairs: sign(PRIORITY_INDEX.compare(NamedNode(an, nodeFromJSON(a)), NamedNode(bn, nodeFromJSON(b)))); a/b in export format.",
+    "childPairs: sign(new PathIndex(new Path(index)).compare(NamedNode(an, nodeFromJSON(a)), NamedNode(bn, nodeFromJSON(b)))).",
+    "aJsonText/bJsonText give the exact JSON text when the value is negative zero.",
+    "Strings compare with JS < (UTF-16 code units), so \"😀\" (U+1F600, surrogates D83D DE00) sorts before \"￿\"."
+  ],
+  "keys": [
+    "0",
+    "1",
+    "2",
+    "10",
+    "-1",
+    "-10",
+    "01",
+    "001",
+    "00",
+    "-0",
+    "2147483647",
+    "2147483648",
+    "-2147483648",
+    "-2147483649",
+    "9999999999",
+    "10000000000",
+    "a",
+    "b",
+    "A",
+    "Z",
+    "_",
+    "-",
+    "~",
+    "a1",
+    "1a",
+    "aa",
+    "a b",
+    " ",
+    "日本",
+    "😀",
+    "￿",
+    "é",
+    "e",
+    "!",
+    "1.5",
+    "+1",
+    " 1",
+    "1e3",
+    "٣",
+    "zz"
+  ],
+  "sortedKeys": [
+    "-2147483648",
+    "-10",
+    "-1",
+    "0",
+    "00",
+    "-0",
+    "1",
+    "01",
+    "001",
+    "2",
+    "10",
+    "2147483647",
+    " ",
+    " 1",
+    "!",
+    "+1",
+    "-",
+    "-2147483649",
+    "1.5",
+    "10000000000",
+    "1a",
+    "1e3",
+    "2147483648",
+    "9999999999",
+    "A",
+    "Z",
+    "_",
+    "a",
+    "a b",
+    "a1",
+    "aa",
+    "b",
+    "e",
+    "zz",
+    "~",
+    "é",
+    "٣",
+    "日本",
+    "😀",
+    "￿"
+  ],
+  "keyPairs": [
+    {
+      "a": "1",
+      "b": "2",
+      "cmp": -1
+    },
+    {
+      "a": "2",
+      "b": "10",
+      "cmp": -1
+    },
+    {
+      "a": "10",
+      "b": "9",
+      "cmp": 1
+    },
+    {
+      "a": "1",
+      "b": "01",
+      "cmp": -1
+    },
+    {
+      "a": "01",
+      "b": "001",
+      "cmp": -1
+    },
+    {
+      "a": "0",
+      "b": "-0",
+      "cmp": -1
+    },
+    {
+      "a": "-0",
+      "b": "00",
+      "cmp": 0
+    },
+    {
+      "a": "-1",
+      "b": "0",
+      "cmp": -1
+    },
+    {
+      "a": "-10",
+      "b": "-9",
+      "cmp": -1
+    },
+    {
+      "a": "2147483647",
+      "b": "2147483648",
+      "cmp": -1
+    },
+    {
+      "a": "2147483648",
+      "b": "a",
+      "cmp": -1
+    },
+    {
+      "a": "2147483648",
+      "b": "3",
+      "cmp": 1
+    },
+    {
+      "a": "-2147483648",
+      "b": "-2147483649",
+      "cmp": -1
+    },
+    {
+      "a": "-2147483649",
+      "b": "0",
+      "cmp": 1
+    },
+    {
+      "a": "9999999999",
+      "b": "10000000000",
+      "cmp": 1
+    },
+    {
+      "a": "1",
+      "b": "a",
+      "cmp": -1
+    },
+    {
+      "a": "a",
+      "b": "1",
+      "cmp": 1
+    },
+    {
+      "a": "a",
+      "b": "b",
+      "cmp": -1
+    },
+    {
+      "a": "A",
+      "b": "a",
+      "cmp": -1
+    },
+    {
+      "a": "Z",
+      "b": "_",
+      "cmp": -1
+    },
+    {
+      "a": "_",
+      "b": "a",
+      "cmp": -1
+    },
+    {
+      "a": "-",
+      "b": "0",
+      "cmp": 1
+    },
+    {
+      "a": "-",
+      "b": "a",
+      "cmp": -1
+    },
+    {
+      "a": "~",
+      "b": "z",
+      "cmp": 1
+    },
+    {
+      "a": "a1",
+      "b": "1a",
+      "cmp": 1
+    },
+    {
+      "a": "1a",
+      "b": "2",
+      "cmp": 1
+    },
+    {
+      "a": "aa",
+      "b": "b",
+      "cmp": -1
+    },
+    {
+      "a": " ",
+      "b": "!",
+      "cmp": -1
+    },
+    {
+      "a": "é",
+      "b": "z",
+      "cmp": 1
+    },
+    {
+      "a": "日本",
+      "b": "😀",
+      "cmp": -1
+    },
+    {
+      "a": "😀",
+      "b": "￿",
+      "cmp": -1
+    },
+    {
+      "a": "￿",
+      "b": "𐀀",
+      "cmp": 1
+    },
+    {
+      "a": "1.5",
+      "b": "2",
+      "cmp": 1
+    },
+    {
+      "a": "+1",
+      "b": "1",
+      "cmp": 1
+    },
+    {
+      "a": " 1",
+      "b": "1",
+      "cmp": 1
+    },
+    {
+      "a": "1e3",
+      "b": "2",
+      "cmp": 1
+    },
+    {
+      "a": "٣",
+      "b": "3",
+      "cmp": 1
+    },
+    {
+      "a": "a",
+      "b": "a",
+      "cmp": 0
+    },
+    {
+      "a": "10",
+      "b": "10",
+      "cmp": 0
+    },
+    {
+      "a": "abc",
+      "b": "abd",
+      "cmp": -1
+    },
+    {
+      "a": "ab",
+      "b": "abc",
+      "cmp": -1
+    },
+    {
+      "a": "[MIN_NAME]",
+      "b": "a",
+      "cmp": -1
+    },
+    {
+      "a": "a",
+      "b": "[MAX_NAME]",
+      "cmp": -1
+    }
+  ],
+  "valuePairs": [
+    {
+      "a": null,
+      "b": false,
+      "cmp": -1
+    },
+    {
+      "a": null,
+      "b": null,
+      "cmp": 0
+    },
+    {
+      "a": null,
+      "b": 0,
+      "cmp": -1
+    },
+    {
+      "a": null,
+      "b": "",
+      "cmp": -1
+    },
+    {
+      "a": null,
+      "b": {
+        "a": 1
+      },
+      "cmp": -1
+    },
+    {
+      "a": false,
+      "b": true,
+      "cmp": -1
+    },
+    {
+      "a": true,
+      "b": true,
+      "cmp": 0
+    },
+    {
+      "a": false,
+      "b": false,
+      "cmp": 0
+    },
+    {
+      "a": true,
+      "b": 0,
+      "cmp": -1
+    },
+    {
+      "a": true,
+      "b": -1e+300,
+      "cmp": -1
+    },
+    {
+      "a": false,
+      "b": "a",
+      "cmp": -1
+    },
+    {
+      "a": 0,
+      "b": 1,
+      "cmp": -1
+    },
+    {
+      "a": -1,
+      "b": 0,
+      "cmp": -1
+    },
+    {
+      "a": 1,
+      "b": 1,
+      "cmp": 0
+    },
+    {
+      "a": 1,
+      "b": 1,
+      "cmp": 0
+    },
+    {
+      "a": 1.5,
+      "b": 2,
+      "cmp": -1
+    },
+    {
+      "a": -2.25,
+      "b": -2,
+      "cmp": -1
+    },
+    {
+      "a": 1e+21,
+      "b": 1e+22,
+      "cmp": -1
+    },
+    {
+      "a": 0.1,
+      "b": 0.2,
+      "cmp": -1
+    },
+    {
+      "a": 5e-324,
+      "b": 0,
+      "cmp": 1
+    },
+    {
+      "a": 0,
+      "b": 0,
+      "cmp": 0,
+      "aJsonText": "-0"
+    },
+    {
+      "a": 9007199254740992,
+      "b": 9007199254740994,
+      "cmp": -1
+    },
+    {
+      "a": 1e+300,
+      "b": "a",
+      "cmp": -1
+    },
+    {
+      "a": 0,
+      "b": "",
+      "cmp": -1
+    },
+    {
+      "a": 1,
+      "b": "1",
+      "cmp": -1
+    },
+    {
+      "a": "",
+      "b": "a",
+      "cmp": -1
+    },
+    {
+      "a": "a",
+      "b": "b",
+      "cmp": -1
+    },
+    {
+      "a": "a",
+      "b": "B",
+      "cmp": 1
+    },
+    {
+      "a": "B",
+      "b": "a",
+      "cmp": -1
+    },
+    {
+      "a": "a",
+      "b": "aa",
+      "cmp": -1
+    },
+    {
+      "a": "aa",
+      "b": "b",
+      "cmp": -1
+    },
+    {
+      "a": "1",
+      "b": "10",
+      "cmp": -1
+    },
+    {
+      "a": "10",
+      "b": "9",
+      "cmp": -1
+    },
+    {
+      "a": "2",
+      "b": "10",
+      "cmp": 1
+    },
+    {
+      "a": "é",
+      "b": "f",
+      "cmp": 1
+    },
+    {
+      "a": "￿",
+      "b": "😀",
+      "cmp": 1
+    },
+    {
+      "a": "😀",
+      "b": "￿",
+      "cmp": -1
+    },
+    {
+      "a": "日本",
+      "b": "😀",
+      "cmp": -1
+    },
+    {
+      "a": "𐀀",
+      "b": "￿",
+      "cmp": -1
+    },
+    {
+      "a": "a",
+      "b": "a",
+      "cmp": 0
+    },
+    {
+      "a": "abc",
+      "b": "abd",
+      "cmp": -1
+    },
+    {
+      "a": "Z",
+      "b": "a",
+      "cmp": -1
+    },
+    {
+      "a": "z",
+      "b": "{",
+      "cmp": -1
+    },
+    {
+      "a": "a",
+      "b": {
+        "a": 1
+      },
+      "cmp": -1
+    },
+    {
+      "a": 1,
+      "b": {
+        "a": 1
+      },
+      "cmp": -1
+    },
+    {
+      "a": true,
+      "b": {
+        "a": 1
+      },
+      "cmp": -1
+    },
+    {
+      "a": {
+        "a": 1
+      },
+      "b": {
+        "b": 2
+      },
+      "cmp": 0
+    },
+    {
+      "a": {
+        "a": 1
+      },
+      "b": {
+        "a": 1
+      },
+      "cmp": 0
+    },
+    {
+      "a": {
+        "z": 0
+      },
+      "b": {
+        "a": "x"
+      },
+      "cmp": 0
+    },
+    {
+      "a": {},
+      "b": null,
+      "cmp": 0
+    },
+    {
+      "a": {},
+      "b": 1,
+      "cmp": -1
+    },
+    {
+      "a": [
+        1
+      ],
+      "b": {
+        "a": 1
+      },
+      "cmp": 0
+    },
+    {
+      "a": "x",
+      "b": {
+        ".value": "x",
+        ".priority": 1
+      },
+      "cmp": 0
+    },
+    {
+      "a": {
+        ".value": 1,
+        ".priority": 9
+      },
+      "b": {
+        ".value": 2,
+        ".priority": 1
+      },
+      "cmp": -1
+    },
+    {
+      "a": {
+        ".value": "a",
+        ".priority": "z"
+      },
+      "b": "a",
+      "cmp": 0
+    },
+    {
+      "a": {
+        "a": null
+      },
+      "b": 0,
+      "cmp": -1
+    },
+    {
+      "a": -1e+300,
+      "b": -1,
+      "cmp": -1
+    },
+    {
+      "a": 1.7976931348623157e+308,
+      "b": "",
+      "cmp": -1
+    },
+    {
+      "a": "1e3",
+      "b": 1000,
+      "cmp": 1
+    },
+    {
+      "a": "true",
+      "b": true,
+      "cmp": 1
+    },
+    {
+      "an": "a",
+      "a": 1,
+      "bn": "b",
+      "b": 1,
+      "cmp": -1
+    },
+    {
+      "an": "b",
+      "a": 1,
+      "bn": "a",
+      "b": 1,
+      "cmp": 1
+    },
+    {
+      "an": "1",
+      "a": "x",
+      "bn": "a",
+      "b": "x",
+      "cmp": -1
+    },
+    {
+      "an": "10",
+      "a": "x",
+      "bn": "9",
+      "b": "x",
+      "cmp": 1
+    },
+    {
+      "an": "a",
+      "a": null,
+      "bn": "b",
+      "b": null,
+      "cmp": -1
+    },
+    {
+      "an": "b",
+      "a": {
+        "x": 1
+      },
+      "bn": "a",
+      "b": {
+        "y": 2
+      },
+      "cmp": 1
+    },
+    {
+      "an": "k2",
+      "a": true,
+      "bn": "k1",
+      "b": true,
+      "cmp": 1
+    },
+    {
+      "an": "2",
+      "a": 5,
+      "bn": "10",
+      "b": 5,
+      "cmp": -1
+    },
+    {
+      "an": "a",
+      "a": 1,
+      "bn": "b",
+      "b": 2,
+      "cmp": -1
+    },
+    {
+      "an": "b",
+      "a": 1,
+      "bn": "a",
+      "b": 2,
+      "cmp": -1
+    },
+    {
+      "an": "001",
+      "a": 0,
+      "bn": "1",
+      "b": 0,
+      "cmp": 1
+    },
+    {
+      "an": "a",
+      "a": {
+        "x": 1
+      },
+      "bn": "b",
+      "b": "zzz",
+      "cmp": 1
+    }
+  ],
+  "priorityPairs": [
+    {
+      "an": "k1",
+      "a": 1,
+      "bn": "k2",
+      "b": 1,
+      "cmp": -1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": 1
+      },
+      "bn": "k2",
+      "b": 1,
+      "cmp": 1
+    },
+    {
+      "an": "k1",
+      "a": 1,
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": 1
+      },
+      "cmp": -1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": 1
+      },
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": 2
+      },
+      "cmp": -1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": 2
+      },
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": 1
+      },
+      "cmp": 1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": 5
+      },
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": "a"
+      },
+      "cmp": -1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": "a"
+      },
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": 5
+      },
+      "cmp": 1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": "a"
+      },
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": "b"
+      },
+      "cmp": -1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": "b"
+      },
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": "B"
+      },
+      "cmp": 1
+    },
+    {
+      "an": "k2",
+      "a": {
+        ".value": 1,
+        ".priority": 3
+      },
+      "bn": "k1",
+      "b": {
+        ".value": 1,
+        ".priority": 3
+      },
+      "cmp": 1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": 3
+      },
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": 3
+      },
+      "cmp": -1
+    },
+    {
+      "an": "a",
+      "a": {
+        ".value": 1,
+        ".priority": "x"
+      },
+      "bn": "b",
+      "b": {
+        ".value": 9,
+        ".priority": "x"
+      },
+      "cmp": -1
+    },
+    {
+      "an": "10",
+      "a": {
+        ".value": 0,
+        ".priority": 0
+      },
+      "bn": "9",
+      "b": {
+        ".value": 0,
+        ".priority": 0
+      },
+      "cmp": 1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": -1
+      },
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": 0
+      },
+      "cmp": -1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": 0
+      },
+      "bn": "k2",
+      "b": 1,
+      "cmp": 1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": 1.5
+      },
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": 1.25
+      },
+      "cmp": 1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": 1e+21
+      },
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": "1"
+      },
+      "cmp": -1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": "10"
+      },
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": "9"
+      },
+      "cmp": -1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": ""
+      },
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": 0
+      },
+      "cmp": 1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": 1,
+        ".priority": ""
+      },
+      "bn": "k2",
+      "b": 1,
+      "cmp": 1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".priority": 2,
+        "a": 1
+      },
+      "bn": "k2",
+      "b": {
+        ".priority": 1,
+        "a": 1
+      },
+      "cmp": 1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".priority": "b",
+        "a": 1
+      },
+      "bn": "k2",
+      "b": {
+        ".value": "x",
+        ".priority": "a"
+      },
+      "cmp": 1
+    },
+    {
+      "an": "k1",
+      "a": {
+        "a": 1
+      },
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": 1
+      },
+      "cmp": -1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".priority": 1,
+        "a": 1
+      },
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": 1
+      },
+      "cmp": -1
+    },
+    {
+      "an": "b",
+      "a": {
+        ".priority": 1,
+        "a": 1
+      },
+      "bn": "a",
+      "b": {
+        ".value": 1,
+        ".priority": 1
+      },
+      "cmp": 1
+    },
+    {
+      "an": "k1",
+      "a": null,
+      "bn": "k2",
+      "b": 1,
+      "cmp": -1
+    },
+    {
+      "an": "k1",
+      "a": null,
+      "bn": "k2",
+      "b": {
+        ".value": 1,
+        ".priority": 1
+      },
+      "cmp": -1
+    },
+    {
+      "an": "a",
+      "a": "z",
+      "bn": "b",
+      "b": "a",
+      "cmp": -1
+    },
+    {
+      "an": "1",
+      "a": {
+        ".value": 1,
+        ".priority": "😀"
+      },
+      "bn": "2",
+      "b": {
+        ".value": 1,
+        ".priority": "￿"
+      },
+      "cmp": -1
+    },
+    {
+      "an": "k1",
+      "a": {
+        ".value": true,
+        ".priority": 7
+      },
+      "bn": "k2",
+      "b": {
+        ".value": false,
+        ".priority": 7
+      },
+      "cmp": -1
+    }
+  ],
+  "childPairs": [
+    {
+      "index": "s",
+      "an": "k1",
+      "a": {
+        "s": 1
+      },
+      "bn": "k2",
+      "b": {
+        "s": 2
+      },
+      "cmp": -1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": {
+        "s": 2
+      },
+      "bn": "k2",
+      "b": {
+        "s": 1
+      },
+      "cmp": 1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": {
+        "s": 1
+      },
+      "bn": "k2",
+      "b": {
+        "s": 1
+      },
+      "cmp": -1
+    },
+    {
+      "index": "s",
+      "an": "k2",
+      "a": {
+        "s": 1
+      },
+      "bn": "k1",
+      "b": {
+        "s": 1
+      },
+      "cmp": 1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": {
+        "x": 1
+      },
+      "bn": "k2",
+      "b": {
+        "s": 1
+      },
+      "cmp": -1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": {
+        "s": 1
+      },
+      "bn": "k2",
+      "b": {
+        "x": 1
+      },
+      "cmp": 1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": {
+        "x": 1
+      },
+      "bn": "k2",
+      "b": {
+        "y": 1
+      },
+      "cmp": -1
+    },
+    {
+      "index": "s",
+      "an": "b",
+      "a": {
+        "x": 1
+      },
+      "bn": "a",
+      "b": {
+        "y": 1
+      },
+      "cmp": 1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": {
+        "s": null
+      },
+      "bn": "k2",
+      "b": {
+        "s": false
+      },
+      "cmp": -1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": {
+        "s": false
+      },
+      "bn": "k2",
+      "b": {
+        "s": true
+      },
+      "cmp": -1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": {
+        "s": true
+      },
+      "bn": "k2",
+      "b": {
+        "s": 0
+      },
+      "cmp": -1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": {
+        "s": 99
+      },
+      "bn": "k2",
+      "b": {
+        "s": ""
+      },
+      "cmp": -1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": {
+        "s": "a"
+      },
+      "bn": "k2",
+      "b": {
+        "s": "b"
+      },
+      "cmp": -1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": {
+        "s": "z"
+      },
+      "bn": "k2",
+      "b": {
+        "s": {
+          "t": 1
+        }
+      },
+      "cmp": -1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": {
+        "s": {
+          "t": 1
+        }
+      },
+      "bn": "k2",
+      "b": {
+        "s": {
+          "u": 2
+        }
+      },
+      "cmp": -1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": 5,
+      "bn": "k2",
+      "b": {
+        "s": 1
+      },
+      "cmp": -1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": "str",
+      "bn": "k2",
+      "b": "str",
+      "cmp": -1
+    },
+    {
+      "index": "s",
+      "an": "10",
+      "a": {
+        "s": 1
+      },
+      "bn": "9",
+      "b": {
+        "s": 1
+      },
+      "cmp": 1
+    },
+    {
+      "index": "s",
+      "an": "k1",
+      "a": {
+        "s": {
+          ".value": 1,
+          ".priority": 5
+        }
+      },
+      "bn": "k2",
+      "b": {
+        "s": 2
+      },
+      "cmp": -1
+    },
+    {
+      "index": "a/b",
+      "an": "k1",
+      "a": {
+        "a": {
+          "b": 2
+        }
+      },
+      "bn": "k2",
+      "b": {
+        "a": {
+          "b": 1
+        }
+      },
+      "cmp": 1
+    },
+    {
+      "index": "a/b",
+      "an": "k1",
+      "a": {
+        "a": 1
+      },
+      "bn": "k2",
+      "b": {
+        "a": {
+          "b": 1
+        }
+      },
+      "cmp": -1
+    },
+    {
+      "index": "a/b",
+      "an": "k1",
+      "a": {
+        "a": {
+          "c": 1
+        }
+      },
+      "bn": "k2",
+      "b": {
+        "a": {
+          "b": "x"
+        }
+      },
+      "cmp": -1
+    },
+    {
+      "index": "a/b",
+      "an": "b",
+      "a": {
+        "a": {
+          "b": 1
+        }
+      },
+      "bn": "a",
+      "b": {
+        "a": {
+          "b": 1
+        }
+      },
+      "cmp": 1
+    }
+  ]
+}

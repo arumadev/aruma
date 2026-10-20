@@ -1,0 +1,676 @@
+{
+  "source": {
+    "package": "@firebase/database",
+    "version": "1.1.5",
+    "bundle": "dist/index.node.cjs.js",
+    "generator": "gen.js",
+    "appStub": true,
+    "hooks": [
+      "nodeFromJSON",
+      "nameCompare",
+      "stringCompare",
+      "tryParseInt",
+      "doubleToIEEE754String",
+      "priorityHashText",
+      "sha1",
+      "NamedNode",
+      "PathIndex",
+      "Path",
+      "LeafNode",
+      "ChildrenNode",
+      "PRIORITY_INDEX",
+      "VALUE_INDEX",
+      "KEY_INDEX"
+    ],
+    "note": "sha1() patched in memory to record its input (the canonical pre-hash string); no other code changed."
+  },
+  "references": [
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/ChildrenNode.ts",
+      "line": 197,
+      "what": "ChildrenNode.val: array when all keys match /^(0|[1-9]\\d*)$/ and maxKey < 2*numKeys (not in export format); export adds .priority"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/LeafNode.ts",
+      "line": 171,
+      "what": "LeafNode.val: export format {.value,.priority} when priority set"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/nodeFromJSON.ts",
+      "line": 40,
+      "what": "nodeFromJSON"
+    }
+  ],
+  "notes": [
+    "val = nodeFromJSON(json).val(false); export = nodeFromJSON(json).val(true). Values are serialized with JSON.stringify.",
+    "Arrays produced by val(false) may have holes (sparse keys); JSON.stringify writes holes as null, so [\"a\",null,\"c\"] here may mean a hole at index 1.",
+    "The array rule: all keys match /^(0|[1-9]\\d*)$/ and maxKey < 2 * numKeys -> array (non-export only).",
+    "JS has one number type: 1 and 1.0 are the same value and serialize as 1; -0 serializes as 0 (jsonText \"-0\" marks it).",
+    "Input JS objects are serialized here as JSON.stringify writes them: integer-like keys come first in ascending order (JS property order), which does not affect the result."
+  ],
+  "vectors": [
+    {
+      "json": {
+        "0": "a",
+        "1": "b"
+      },
+      "val": [
+        "a",
+        "b"
+      ],
+      "export": {
+        "0": "a",
+        "1": "b"
+      }
+    },
+    {
+      "json": {
+        "0": "a",
+        "2": "c"
+      },
+      "val": [
+        "a",
+        null,
+        "c"
+      ],
+      "export": {
+        "0": "a",
+        "2": "c"
+      }
+    },
+    {
+      "json": {
+        "0": "a",
+        "3": "c"
+      },
+      "val": [
+        "a",
+        null,
+        null,
+        "c"
+      ],
+      "export": {
+        "0": "a",
+        "3": "c"
+      }
+    },
+    {
+      "json": {
+        "1": "a"
+      },
+      "val": [
+        null,
+        "a"
+      ],
+      "export": {
+        "1": "a"
+      }
+    },
+    {
+      "json": {
+        "2": "a"
+      },
+      "val": {
+        "2": "a"
+      },
+      "export": {
+        "2": "a"
+      }
+    },
+    {
+      "json": {
+        "1": "a",
+        "2": "b"
+      },
+      "val": [
+        null,
+        "a",
+        "b"
+      ],
+      "export": {
+        "1": "a",
+        "2": "b"
+      }
+    },
+    {
+      "json": {
+        "0": "a",
+        "b": 1
+      },
+      "val": {
+        "0": "a",
+        "b": 1
+      },
+      "export": {
+        "0": "a",
+        "b": 1
+      }
+    },
+    {
+      "json": {
+        "0": "y",
+        "-1": "x"
+      },
+      "val": {
+        "0": "y",
+        "-1": "x"
+      },
+      "export": {
+        "0": "y",
+        "-1": "x"
+      }
+    },
+    {
+      "json": {
+        "00": "x"
+      },
+      "val": {
+        "00": "x"
+      },
+      "export": {
+        "00": "x"
+      }
+    },
+    {
+      "json": {
+        "1": "y",
+        "01": "x"
+      },
+      "val": {
+        "1": "y",
+        "01": "x"
+      },
+      "export": {
+        "1": "y",
+        "01": "x"
+      }
+    },
+    {
+      "json": {
+        "0": "a",
+        "1": null,
+        "2": "c"
+      },
+      "val": [
+        "a",
+        null,
+        "c"
+      ],
+      "export": {
+        "0": "a",
+        "2": "c"
+      }
+    },
+    {
+      "json": {
+        "5": "a",
+        "6": "b",
+        "7": "c"
+      },
+      "val": {
+        "5": "a",
+        "6": "b",
+        "7": "c"
+      },
+      "export": {
+        "5": "a",
+        "6": "b",
+        "7": "c"
+      }
+    },
+    {
+      "json": {
+        "4": "a",
+        "5": "b",
+        "6": "c"
+      },
+      "val": {
+        "4": "a",
+        "5": "b",
+        "6": "c"
+      },
+      "export": {
+        "4": "a",
+        "5": "b",
+        "6": "c"
+      }
+    },
+    {
+      "json": [
+        "a",
+        "b",
+        "c"
+      ],
+      "val": [
+        "a",
+        "b",
+        "c"
+      ],
+      "export": {
+        "0": "a",
+        "1": "b",
+        "2": "c"
+      }
+    },
+    {
+      "json": [
+        "a",
+        null,
+        "c"
+      ],
+      "val": [
+        "a",
+        null,
+        "c"
+      ],
+      "export": {
+        "0": "a",
+        "2": "c"
+      }
+    },
+    {
+      "json": [
+        null,
+        "b"
+      ],
+      "val": [
+        null,
+        "b"
+      ],
+      "export": {
+        "1": "b"
+      }
+    },
+    {
+      "json": [
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          [
+            4
+          ]
+        ]
+      ],
+      "val": [
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          [
+            4
+          ]
+        ]
+      ],
+      "export": {
+        "0": {
+          "0": 1,
+          "1": 2
+        },
+        "1": {
+          "0": 3,
+          "1": {
+            "0": 4
+          }
+        }
+      }
+    },
+    {
+      "json": [
+        {
+          "a": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "val": [
+        {
+          "a": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "export": {
+        "0": {
+          "a": 1
+        },
+        "1": {
+          "b": 2
+        }
+      }
+    },
+    {
+      "json": [],
+      "val": null,
+      "export": null
+    },
+    {
+      "json": {},
+      "val": null,
+      "export": null
+    },
+    {
+      "json": null,
+      "val": null,
+      "export": null
+    },
+    {
+      "json": {
+        "a": null
+      },
+      "val": null,
+      "export": null
+    },
+    {
+      "json": {
+        "a": 1,
+        "b": null
+      },
+      "val": {
+        "a": 1
+      },
+      "export": {
+        "a": 1
+      }
+    },
+    {
+      "json": {
+        "a": {},
+        "b": 1
+      },
+      "val": {
+        "b": 1
+      },
+      "export": {
+        "b": 1
+      }
+    },
+    {
+      "json": 1,
+      "val": 1,
+      "export": 1
+    },
+    {
+      "json": 1,
+      "val": 1,
+      "export": 1
+    },
+    {
+      "json": 1.5,
+      "val": 1.5,
+      "export": 1.5
+    },
+    {
+      "json": 0,
+      "val": 0,
+      "export": 0,
+      "jsonText": "-0"
+    },
+    {
+      "json": "str",
+      "val": "str",
+      "export": "str"
+    },
+    {
+      "json": true,
+      "val": true,
+      "export": true
+    },
+    {
+      "json": false,
+      "val": false,
+      "export": false
+    },
+    {
+      "json": {
+        ".value": "v",
+        ".priority": 7
+      },
+      "val": "v",
+      "export": {
+        ".value": "v",
+        ".priority": 7
+      }
+    },
+    {
+      "json": {
+        ".value": 1,
+        ".priority": "p"
+      },
+      "val": 1,
+      "export": {
+        ".value": 1,
+        ".priority": "p"
+      }
+    },
+    {
+      "json": {
+        ".priority": 2,
+        "a": 1
+      },
+      "val": {
+        "a": 1
+      },
+      "export": {
+        "a": 1,
+        ".priority": 2
+      }
+    },
+    {
+      "json": {
+        ".priority": "s",
+        "b": {
+          ".value": 1,
+          ".priority": 3
+        }
+      },
+      "val": {
+        "b": 1
+      },
+      "export": {
+        "b": {
+          ".value": 1,
+          ".priority": 3
+        },
+        ".priority": "s"
+      }
+    },
+    {
+      "json": {
+        ".value": {
+          "a": 1
+        },
+        ".priority": 5
+      },
+      "val": {
+        "a": 1
+      },
+      "export": {
+        "a": 1,
+        ".priority": 5
+      }
+    },
+    {
+      "json": {
+        "0": {
+          ".value": "a",
+          ".priority": 1
+        },
+        "1": "b"
+      },
+      "val": [
+        "a",
+        "b"
+      ],
+      "export": {
+        "0": {
+          ".value": "a",
+          ".priority": 1
+        },
+        "1": "b"
+      }
+    },
+    {
+      "json": {
+        "0": "a",
+        "1": "b",
+        ".priority": 1
+      },
+      "val": [
+        "a",
+        "b"
+      ],
+      "export": {
+        "0": "a",
+        "1": "b",
+        ".priority": 1
+      }
+    },
+    {
+      "json": {
+        "a": {
+          "0": "x",
+          "1": "y"
+        },
+        "b": {
+          "1": "z"
+        }
+      },
+      "val": {
+        "a": [
+          "x",
+          "y"
+        ],
+        "b": [
+          null,
+          "z"
+        ]
+      },
+      "export": {
+        "a": {
+          "0": "x",
+          "1": "y"
+        },
+        "b": {
+          "1": "z"
+        }
+      }
+    },
+    {
+      "json": {
+        "0": "y",
+        "2147483648": "x"
+      },
+      "val": {
+        "0": "y",
+        "2147483648": "x"
+      },
+      "export": {
+        "0": "y",
+        "2147483648": "x"
+      }
+    },
+    {
+      "json": {
+        "0": "a",
+        "1": "b",
+        "x": {
+          "0": 1,
+          ".priority": 3
+        }
+      },
+      "val": {
+        "0": "a",
+        "1": "b",
+        "x": [
+          1
+        ]
+      },
+      "export": {
+        "0": "a",
+        "1": "b",
+        "x": {
+          "0": 1,
+          ".priority": 3
+        }
+      }
+    },
+    {
+      "json": {
+        "a": [
+          1,
+          null,
+          3,
+          null
+        ]
+      },
+      "val": {
+        "a": [
+          1,
+          null,
+          3
+        ]
+      },
+      "export": {
+        "a": {
+          "0": 1,
+          "2": 3
+        }
+      }
+    },
+    {
+      "json": {
+        "0": "a",
+        "10": "b"
+      },
+      "val": {
+        "0": "a",
+        "10": "b"
+      },
+      "export": {
+        "0": "a",
+        "10": "b"
+      }
+    },
+    {
+      "json": {
+        "0": 1,
+        "1": 2,
+        "2": 3,
+        "3": 4,
+        "9": 5
+      },
+      "val": [
+        1,
+        2,
+        3,
+        4,
+        null,
+        null,
+        null,
+        null,
+        null,
+        5
+      ],
+      "export": {
+        "0": 1,
+        "1": 2,
+        "2": 3,
+        "3": 4,
+        "9": 5
+      }
+    }
+  ]
+}

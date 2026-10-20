@@ -1,0 +1,1709 @@
+{
+  "source": {
+    "package": "@firebase/database",
+    "version": "1.1.5",
+    "bundle": "dist/index.node.cjs.js",
+    "generator": "gen.js",
+    "appStub": true,
+    "hooks": [
+      "nodeFromJSON",
+      "nameCompare",
+      "stringCompare",
+      "tryParseInt",
+      "doubleToIEEE754String",
+      "priorityHashText",
+      "sha1",
+      "NamedNode",
+      "PathIndex",
+      "Path",
+      "LeafNode",
+      "ChildrenNode",
+      "PRIORITY_INDEX",
+      "VALUE_INDEX",
+      "KEY_INDEX"
+    ],
+    "note": "sha1() patched in memory to record its input (the canonical pre-hash string); no other code changed."
+  },
+  "references": [
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/LeafNode.ts",
+      "line": 183,
+      "what": "LeafNode.hash: [priority:<priorityHashText>:]<typeof value>:<value or doubleToIEEE754String>"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/ChildrenNode.ts",
+      "line": 235,
+      "what": "ChildrenNode.hash: [priority:<p>:] then :<key>:<childHash> per child in PRIORITY_INDEX order, skipping empty child hashes; \"\" stays \"\""
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/snap.ts",
+      "line": 31,
+      "what": "priorityHashText: number:<ieee754 hex> | string:<s>"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/util/util.ts",
+      "line": 52,
+      "what": "sha1: SHA-1 of UTF-8 bytes, base64 (standard alphabet, padded)"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/util/util.ts",
+      "line": 393,
+      "what": "doubleToIEEE754String: 16 lowercase hex chars, big-endian"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/nodeFromJSON.ts",
+      "line": 40,
+      "what": "nodeFromJSON: .priority/.value handling, null children dropped, arrays as objects"
+    },
+    {
+      "repo": "firebase-js-sdk",
+      "commit": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+      "file": "packages/database/src/core/snap/indexes/PriorityIndex.ts",
+      "line": 36,
+      "what": "PriorityIndex.compare (child order used by hash)"
+    }
+  ],
+  "notes": [
+    "json is the input in export format; it goes through nodeFromJSON(json) and hash is node.hash().",
+    "canonical is the exact string passed to sha1() for the top-level node (captured by hooking sha1); \"\" means no sha1 call (empty node, hash \"\").",
+    "jsonText, when present, is the exact JSON text of the input when JSON.stringify cannot express it (negative zero).",
+    "Child hashes are hashed recursively; children with an empty hash (null / empty objects) are skipped.",
+    "ieee754 compares the SDK's doubleToIEEE754String (used for every number in a hash) with the true IEEE-754 big-endian hex. They differ in two classes: (1) |v| < 2^-971 with a normal exponent: Math.pow(2, 52 - ln) overflows to Infinity and the mantissa bits come out as 0 (random scan: 5240 of 199733 pseudo-random finite doubles differ, all with unbiased exponent in [-1022, -972]); (2) values at or next to a power of two, where floor(log(v)/LN2) is off by one (scan of 2^k, its predecessor and successor: 2299 of 6294 differ, e.g. 2^53-1 = 9007199254740991, 2^-29, 3.9999999999999996). The list contains fixed values plus every scan mismatch with k in [-60, 64]. A server that must produce the same hashes as JS clients has to reproduce this algorithm, not the true bits."
+  ],
+  "vectors": [
+    {
+      "name": "null",
+      "json": null,
+      "hash": "",
+      "canonical": ""
+    },
+    {
+      "name": "true",
+      "json": true,
+      "hash": "E5z61QM0lN/U2WsOnusszCTkR8M=",
+      "canonical": "boolean:true"
+    },
+    {
+      "name": "false",
+      "json": false,
+      "hash": "aSSNoqcS4oQwJ2xxH20rvpp3zP0=",
+      "canonical": "boolean:false"
+    },
+    {
+      "name": "zero",
+      "json": 0,
+      "hash": "7ysMph9WPitGP7poMnMHMVPtUlI=",
+      "canonical": "number:0000000000000000"
+    },
+    {
+      "name": "negative zero (json text -0)",
+      "json": 0,
+      "jsonText": "-0",
+      "hash": "m/gA365Q5OBo06Bg8wdybAAiMSQ=",
+      "canonical": "number:8000000000000000"
+    },
+    {
+      "name": "one",
+      "json": 1,
+      "hash": "YPVfR2bXt/lcDjiQZ8pOkAd3qkQ=",
+      "canonical": "number:3ff0000000000000"
+    },
+    {
+      "name": "minus one",
+      "json": -1,
+      "hash": "dMw8oUBNk57KCeIcgAKXVS2BfB0=",
+      "canonical": "number:bff0000000000000"
+    },
+    {
+      "name": "1.5",
+      "json": 1.5,
+      "hash": "4MftviR9Z/2MQCMkjh2RNbvlLJc=",
+      "canonical": "number:3ff8000000000000"
+    },
+    {
+      "name": "-2.25",
+      "json": -2.25,
+      "hash": "itPfj0+DZ7Nw5xc0HKfS9saFfUA=",
+      "canonical": "number:c002000000000000"
+    },
+    {
+      "name": "0.1",
+      "json": 0.1,
+      "hash": "wtQjBi5TBE+ZcdekL6INiSeCSQI=",
+      "canonical": "number:3fb999999999999a"
+    },
+    {
+      "name": "3.14159",
+      "json": 3.14159,
+      "hash": "rYZTh5GPpcpS36h2C4adc5r4dZk=",
+      "canonical": "number:400921f9f01b866e"
+    },
+    {
+      "name": "100",
+      "json": 100,
+      "hash": "5PG1TllwFpsPMPTAduN1cJllS2g=",
+      "canonical": "number:4059000000000000"
+    },
+    {
+      "name": "1e21",
+      "json": 1e+21,
+      "hash": "rZwDOBGJ9Z0+flzyrCWzeSigSyE=",
+      "canonical": "number:444b1ae4d6e2ef50"
+    },
+    {
+      "name": "1e-7",
+      "json": 1e-7,
+      "hash": "T1JzgFJ6Xba7ZXpL1pazMbiNVnY=",
+      "canonical": "number:3e7ad7f29abcaf48"
+    },
+    {
+      "name": "1e300",
+      "json": 1e+300,
+      "hash": "PATxuxN46FZOmKG2i19P8ZCsqpw=",
+      "canonical": "number:7e37e43c8800759c"
+    },
+    {
+      "name": "-1e-300",
+      "json": -1e-300,
+      "hash": "Kdlwgy36ih22Ie851em0+56vkiQ=",
+      "canonical": "number:81a0000000000000"
+    },
+    {
+      "name": "2^31-1",
+      "json": 2147483647,
+      "hash": "YKbfGta+wZaazEUmBrjXLSOz+LQ=",
+      "canonical": "number:41dfffffffc00000"
+    },
+    {
+      "name": "-2^31",
+      "json": -2147483648,
+      "hash": "mEKrhHe6qIqdc8QVs1DBt65OukQ=",
+      "canonical": "number:c1e0000000000000"
+    },
+    {
+      "name": "2^32",
+      "json": 4294967296,
+      "hash": "bV2bmXQknSjHHW2jz/IkAysI2SE=",
+      "canonical": "number:41f0000000000000"
+    },
+    {
+      "name": "2^53",
+      "json": 9007199254740992,
+      "hash": "m4qsp/5BbIWTdjthNlnOX+WCTB0=",
+      "canonical": "number:4340000000000000"
+    },
+    {
+      "name": "2^53+2",
+      "json": 9007199254740994,
+      "hash": "muVB4EB4jFr5Qycr9qfl5xmd4Oo=",
+      "canonical": "number:4340000000000001"
+    },
+    {
+      "name": "max double",
+      "json": 1.7976931348623157e+308,
+      "hash": "8R+ekVQmxs6ZWP0fdzFHxVeGnWo=",
+      "canonical": "number:7fefffffffffffff"
+    },
+    {
+      "name": "min denormal",
+      "json": 5e-324,
+      "hash": "AVzIJwC869iLHq/DQh6bzLDrVO4=",
+      "canonical": "number:0000000000000001"
+    },
+    {
+      "name": "min normal 2^-1022",
+      "json": 2.2250738585072014e-308,
+      "hash": "O5l9DxuCo6i/M7tWjHQUB4Tnuno=",
+      "canonical": "number:0010000000000000"
+    },
+    {
+      "name": "123456789012",
+      "json": 123456789012,
+      "hash": "QoKv2P2ogaeJFD8dejM64aGogYE=",
+      "canonical": "number:423cbe991a140000"
+    },
+    {
+      "name": "2^53-1 (SDK ieee754 differs)",
+      "json": 9007199254740991,
+      "hash": "m4qsp/5BbIWTdjthNlnOX+WCTB0=",
+      "canonical": "number:4340000000000000"
+    },
+    {
+      "name": "2^-29 (SDK ieee754 differs)",
+      "json": 1.862645149230957e-9,
+      "hash": "7d5QMiELKDnWdrss5Z2LtOES7JA=",
+      "canonical": "number:3e10000000000000"
+    },
+    {
+      "name": "3.9999999999999996 (SDK ieee754 differs)",
+      "json": 3.9999999999999996,
+      "hash": "eVih19a6ZDz3NL32uVBtg9KSgQY=",
+      "canonical": "number:4010000000000000"
+    },
+    {
+      "name": "1e-300 (SDK ieee754 differs)",
+      "json": 1e-300,
+      "hash": "gAV59vXFMUsME/Mb0qgszm4v4BU=",
+      "canonical": "number:01a0000000000000"
+    },
+    {
+      "name": "empty string",
+      "json": "",
+      "hash": "Ki0Xy0V6morg0TO3Sxi/jwugYDQ=",
+      "canonical": "string:"
+    },
+    {
+      "name": "a",
+      "json": "a",
+      "hash": "eMfSk0nU+CieTkCbO5r7cKNp7qU=",
+      "canonical": "string:a"
+    },
+    {
+      "name": "string \"1\"",
+      "json": "1",
+      "hash": "3OcCYPn6BP6lbeJ80arb4O3Xhp0=",
+      "canonical": "string:1"
+    },
+    {
+      "name": "string \"true\"",
+      "json": "true",
+      "hash": "SguBQTzes2fMe/fIMwCRPdBZ4MI=",
+      "canonical": "string:true"
+    },
+    {
+      "name": "string \"null\"",
+      "json": "null",
+      "hash": "DrFGT3wA6BVTaGc0BLwwIxCC+zU=",
+      "canonical": "string:null"
+    },
+    {
+      "name": "arabic",
+      "json": "مرحبا",
+      "hash": "hIJkEvb/lj5itNGy7KD5jY8EonI=",
+      "canonical": "string:مرحبا"
+    },
+    {
+      "name": "japanese",
+      "json": "日本",
+      "hash": "hsL1bLa1lqEquIIRK8lCDGoEtYQ=",
+      "canonical": "string:日本"
+    },
+    {
+      "name": "emoji",
+      "json": "😀",
+      "hash": "MK8AFmo8GmKyFMO+8POk61hHbOQ=",
+      "canonical": "string:😀"
+    },
+    {
+      "name": "unicode mix",
+      "json": "a-日本-😀-مرحبا é",
+      "hash": "mx0OQcjLMppM6Z9Q4lCIjuERBjE=",
+      "canonical": "string:a-日本-😀-مرحبا é"
+    },
+    {
+      "name": "quotes",
+      "json": "say \"hi\"",
+      "hash": "RYqebVtjJE2aQi4M+YjcvdHQh/0=",
+      "canonical": "string:say \"hi\""
+    },
+    {
+      "name": "backslash",
+      "json": "back\\slash",
+      "hash": "9P6JqbiDGTarv66hudWkvdZ6PLA=",
+      "canonical": "string:back\\slash"
+    },
+    {
+      "name": "colons",
+      "json": "a:b:c:",
+      "hash": "TxkeAtIhcT+695A3LcDAfTqQyQM=",
+      "canonical": "string:a:b:c:"
+    },
+    {
+      "name": "newline and tab",
+      "json": "line1\nline2\tend",
+      "hash": "EIyejp6u1cegTwACXiCYyrFJA6w=",
+      "canonical": "string:line1\nline2\tend"
+    },
+    {
+      "name": "string with priority: prefix",
+      "json": "priority:number:3ff0000000000000:",
+      "hash": "UFKPefGZA1s4c11ROlZrfv//9vg=",
+      "canonical": "string:priority:number:3ff0000000000000:"
+    },
+    {
+      "name": "new (datastale txmissing value)",
+      "json": "new",
+      "hash": "ECFapkKpb5PK+HS0unEQfPlwgQg=",
+      "canonical": "string:new"
+    },
+    {
+      "name": "{s:1} (datastale value)",
+      "json": {
+        "s": 1
+      },
+      "hash": "8n5kEPKa77xiDo6xsHQrcom3mJ4=",
+      "canonical": ":s:YPVfR2bXt/lcDjiQZ8pOkAd3qkQ="
+    },
+    {
+      "name": "{s:2}",
+      "json": {
+        "s": 2
+      },
+      "hash": "n8n1zMJTZXldCLoqvudiNBSfjdg=",
+      "canonical": ":s:WtSt2Xo3L0JtPuArzQHofPrZOuU="
+    },
+    {
+      "name": "{a:1}",
+      "json": {
+        "a": 1
+      },
+      "hash": "gIphxiFGusLh2VwSNVKSvNu90m4=",
+      "canonical": ":a:YPVfR2bXt/lcDjiQZ8pOkAd3qkQ="
+    },
+    {
+      "name": "{a:1,b:2}",
+      "json": {
+        "a": 1,
+        "b": 2
+      },
+      "hash": "AUZnXhNqrfbznYVxcCvNpzpjvTU=",
+      "canonical": ":a:YPVfR2bXt/lcDjiQZ8pOkAd3qkQ=:b:WtSt2Xo3L0JtPuArzQHofPrZOuU="
+    },
+    {
+      "name": "{b:2,a:1} (same as {a:1,b:2})",
+      "json": {
+        "b": 2,
+        "a": 1
+      },
+      "hash": "AUZnXhNqrfbznYVxcCvNpzpjvTU=",
+      "canonical": ":a:YPVfR2bXt/lcDjiQZ8pOkAd3qkQ=:b:WtSt2Xo3L0JtPuArzQHofPrZOuU="
+    },
+    {
+      "name": "nested 3 levels",
+      "json": {
+        "a": {
+          "b": {
+            "c": 1
+          }
+        }
+      },
+      "hash": "7Y68YFaYND/F4bcwkbinQKwDUQ8=",
+      "canonical": ":a:dPKQLYCMNxX5g39l5gVksfDQEKs="
+    },
+    {
+      "name": "mixed types",
+      "json": {
+        "s": "x",
+        "n": 1,
+        "b": true,
+        "f": false,
+        "o": {
+          "x": 1
+        }
+      },
+      "hash": "aNvZ5VichaDWFz6hmHP9r92TRmk=",
+      "canonical": ":b:E5z61QM0lN/U2WsOnusszCTkR8M=:f:aSSNoqcS4oQwJ2xxH20rvpp3zP0=:n:YPVfR2bXt/lcDjiQZ8pOkAd3qkQ=:o:LkoDN24bwRWG2p4jGZoe8M/Acf8=:s:OJSeRnP1mf0vTrhq7izmWGPiNx4="
+    },
+    {
+      "name": "int-like keys",
+      "json": {
+        "1": "i1",
+        "2": "i2",
+        "10": "i10",
+        "2147483648": "big",
+        "-1": "m1",
+        "001": "z1",
+        "-2147483649": "mbig",
+        "a": "a",
+        "A": "A",
+        "_": "u"
+      },
+      "hash": "lhD27tJLxBpt/NHlKag1PgmgTTU=",
+      "canonical": ":-1:l9stwR9wdYSb86LGRLPBndSP8CE=:1:Z7rsiNu8HgypwM7eKqGZtqKnAk0=:001:n9E4fl+etQWGF7k/0q4bZo18pUM=:2:o5FoB1+xGDAbWkzZLtfRI5SlQ8Y=:10:WcllI2kZ585IOfibbbYwDQWgIEQ=:-2147483649:MwX8JVl8i0Ns6/8gBY2D83vZBzg=:2147483648:x/O/SYEdHasaK5cBudb3/XiHulE=:A:sMWx5UmLcIYlppainLzSw2s3ZP8=:_:AabaieDqCttjtRJQwTsT8ZttAxY=:a:eMfSk0nU+CieTkCbO5r7cKNp7qU="
+    },
+    {
+      "name": "numeric key order",
+      "json": {
+        "9": 4,
+        "10": 3,
+        "b": 1,
+        "a": 2
+      },
+      "hash": "TGvn+e6qlVLQpUieYzMAtR6kwgo=",
+      "canonical": ":9:eVih19a6ZDz3NL32uVBtg9KSgQY=:10:3tYODYzGXwaGnXNech4jb4T9las=:a:WtSt2Xo3L0JtPuArzQHofPrZOuU=:b:YPVfR2bXt/lcDjiQZ8pOkAd3qkQ="
+    },
+    {
+      "name": "unicode keys",
+      "json": {
+        "日本": 1,
+        "😀": 2,
+        "a": 3,
+        "￿": 4
+      },
+      "hash": "/4EzufLp3MQJo4YayPF0ICZg7fo=",
+      "canonical": ":a:3tYODYzGXwaGnXNech4jb4T9las=:日本:YPVfR2bXt/lcDjiQZ8pOkAd3qkQ=:😀:WtSt2Xo3L0JtPuArzQHofPrZOuU=:￿:eVih19a6ZDz3NL32uVBtg9KSgQY="
+    },
+    {
+      "name": "object with null child",
+      "json": {
+        "a": 1,
+        "b": null
+      },
+      "hash": "gIphxiFGusLh2VwSNVKSvNu90m4=",
+      "canonical": ":a:YPVfR2bXt/lcDjiQZ8pOkAd3qkQ="
+    },
+    {
+      "name": "object with only null children",
+      "json": {
+        "a": null,
+        "b": null
+      },
+      "hash": "",
+      "canonical": ""
+    },
+    {
+      "name": "empty object",
+      "json": {},
+      "hash": "",
+      "canonical": ""
+    },
+    {
+      "name": "object with empty child",
+      "json": {
+        "a": {},
+        "b": 1
+      },
+      "hash": "lUwqxaYTHjA4XN/UJjS/cI8JKaM=",
+      "canonical": ":b:YPVfR2bXt/lcDjiQZ8pOkAd3qkQ="
+    },
+    {
+      "name": "array [1,2,3]",
+      "json": [
+        1,
+        2,
+        3
+      ],
+      "hash": "h6XOC3OcidJlNC1Velmi3gphgQk=",
+      "canonical": ":0:YPVfR2bXt/lcDjiQZ8pOkAd3qkQ=:1:WtSt2Xo3L0JtPuArzQHofPrZOuU=:2:3tYODYzGXwaGnXNech4jb4T9las="
+    },
+    {
+      "name": "array [\"a\",null,\"c\"]",
+      "json": [
+        "a",
+        null,
+        "c"
+      ],
+      "hash": "2fxxCJsSXIlYUoOX1uyTGPcEh8Y=",
+      "canonical": ":0:eMfSk0nU+CieTkCbO5r7cKNp7qU=:2:EMllr+JgyWuIFhd9ddBmO2zFPpI="
+    },
+    {
+      "name": "empty array",
+      "json": [],
+      "hash": "",
+      "canonical": ""
+    },
+    {
+      "name": "nested arrays",
+      "json": [
+        [
+          1,
+          2
+        ],
+        [
+          3
+        ]
+      ],
+      "hash": "7KhHmLM/SOgNw0CL960zlbNJuwg=",
+      "canonical": ":0:fOnL2UowZBFe3bI9YA5uUzua3N8=:1:vDMbD8qHZ2LDhYENlZv5xOstHh4="
+    },
+    {
+      "name": "leaf priority number",
+      "json": {
+        ".value": "v",
+        ".priority": 7
+      },
+      "hash": "t9AIIsnpHZgA9VdG1PpLBhWXTi8=",
+      "canonical": "priority:number:401c000000000000:string:v"
+    },
+    {
+      "name": "leaf priority string",
+      "json": {
+        ".value": 1,
+        ".priority": "p"
+      },
+      "hash": "s13vB6y8qX48gxbXkr8YCSDaUwM=",
+      "canonical": "priority:string:p:number:3ff0000000000000"
+    },
+    {
+      "name": "leaf priority 0",
+      "json": {
+        ".value": true,
+        ".priority": 0
+      },
+      "hash": "I6km7S4iTXNEdCUVelqkkn9WdX4=",
+      "canonical": "priority:number:0000000000000000:boolean:true"
+    },
+    {
+      "name": "leaf priority negative",
+      "json": {
+        ".value": "x",
+        ".priority": -3
+      },
+      "hash": "fxo3HVlCvY4XppbxHzZlCD24QzM=",
+      "canonical": "priority:number:c008000000000000:string:x"
+    },
+    {
+      "name": "leaf priority float",
+      "json": {
+        ".value": 2,
+        ".priority": 1.5
+      },
+      "hash": "ac4C4zuPyR2gN5NaCm7It1iU2c8=",
+      "canonical": "priority:number:3ff8000000000000:number:4000000000000000"
+    },
+    {
+      "name": "leaf priority numeric string",
+      "json": {
+        ".value": "x",
+        ".priority": "7"
+      },
+      "hash": "W2AtzdvYZB6GPukjEG2P0dnFaFw=",
+      "canonical": "priority:string:7:string:x"
+    },
+    {
+      "name": "leaf priority null",
+      "json": {
+        ".value": 1,
+        ".priority": null
+      },
+      "hash": "YPVfR2bXt/lcDjiQZ8pOkAd3qkQ=",
+      "canonical": "number:3ff0000000000000"
+    },
+    {
+      "name": "object priority",
+      "json": {
+        ".priority": 2,
+        "a": 1
+      },
+      "hash": "glP6JrENJQmn+fwlQdjXR3Q6jCE=",
+      "canonical": "priority:number:4000000000000000::a:YPVfR2bXt/lcDjiQZ8pOkAd3qkQ="
+    },
+    {
+      "name": "object string priority with child priority",
+      "json": {
+        ".priority": "s",
+        "b": {
+          ".value": 1,
+          ".priority": 3
+        }
+      },
+      "hash": "rz48b4i0SUiBVGIDaNxSsywoTF4=",
+      "canonical": "priority:string:s::b:5O5lGh3+M+PjYbuBNGzQ3M+hzQ4="
+    },
+    {
+      "name": ".value object with priority",
+      "json": {
+        ".value": {
+          "a": 1
+        },
+        ".priority": 5
+      },
+      "hash": "7Ucnc9YfKfydVr+rPBCMEKdsVEI=",
+      "canonical": "priority:number:4014000000000000::a:YPVfR2bXt/lcDjiQZ8pOkAd3qkQ="
+    },
+    {
+      "name": "only .priority",
+      "json": {
+        ".priority": 1
+      },
+      "hash": "",
+      "canonical": ""
+    },
+    {
+      "name": "children with priorities (priority order != key order)",
+      "json": {
+        "a": {
+          ".value": 1,
+          ".priority": 3
+        },
+        "b": {
+          ".value": 2,
+          ".priority": 1
+        },
+        "c": 3
+      },
+      "hash": "iQ1ts723pLlpnfh5RnGeaZsCcW0=",
+      "canonical": ":c:3tYODYzGXwaGnXNech4jb4T9las=:b:iiz9CIvYWkKdETTpjVFBJNx1SiI=:a:5O5lGh3+M+PjYbuBNGzQ3M+hzQ4="
+    },
+    {
+      "name": "children with string and number priorities",
+      "json": {
+        "x": {
+          ".value": 1,
+          ".priority": "b"
+        },
+        "y": {
+          ".value": 2,
+          ".priority": "a"
+        },
+        "z": {
+          ".value": 3,
+          ".priority": 10
+        },
+        "w": 4
+      },
+      "hash": "d7/pAGpbIOkewb+Xe2vNSpDMKzU=",
+      "canonical": ":w:eVih19a6ZDz3NL32uVBtg9KSgQY=:z:hBSTJt2uFOtnl5tHSfmBy3x0/Gc=:y:SmbpiV2mFsokdml67bAROl6In8s=:x:iuAWxrGvbPoLeFedwWwFBPZn1+k="
+    },
+    {
+      "name": "children equal priorities tie by key",
+      "json": {
+        "5": {
+          ".value": 3,
+          ".priority": 1
+        },
+        "b": {
+          ".value": 1,
+          ".priority": 1
+        },
+        "a": {
+          ".value": 2,
+          ".priority": 1
+        }
+      },
+      "hash": "M7Dq29AuLezeDsnpV0W0VOnnxuQ=",
+      "canonical": ":5:3wXWF3gDap6hMAJkscycMFLN0IA=:a:iiz9CIvYWkKdETTpjVFBJNx1SiI=:b:MEW0UDkkMtVWOWOEkIqiXwuoUGs="
+    },
+    {
+      "name": "deep 10 levels",
+      "json": {
+        "l1": {
+          "l2": {
+            "l3": {
+              "l4": {
+                "l5": {
+                  "l6": {
+                    "l7": {
+                      "l8": {
+                        "l9": {
+                          "l10": "leaf"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "hash": "BHh1Hmx/xO6Hr6T5aW2ijhr31Sc=",
+      "canonical": ":l1:PUzBbtK2tRv/m8HD4VB8h/yHkg4="
+    },
+    {
+      "name": "wide 50 keys",
+      "json": {
+        "k00": 0,
+        "k01": "v1",
+        "k02": true,
+        "k03": 3,
+        "k04": "v4",
+        "k05": false,
+        "k06": 6,
+        "k07": "v7",
+        "k08": true,
+        "k09": 9,
+        "k10": "v10",
+        "k11": false,
+        "k12": 12,
+        "k13": "v13",
+        "k14": true,
+        "k15": 15,
+        "k16": "v16",
+        "k17": false,
+        "k18": 18,
+        "k19": "v19",
+        "k20": true,
+        "k21": 21,
+        "k22": "v22",
+        "k23": false,
+        "k24": 24,
+        "k25": "v25",
+        "k26": true,
+        "k27": 27,
+        "k28": "v28",
+        "k29": false,
+        "k30": 30,
+        "k31": "v31",
+        "k32": true,
+        "k33": 33,
+        "k34": "v34",
+        "k35": false,
+        "k36": 36,
+        "k37": "v37",
+        "k38": true,
+        "k39": 39,
+        "k40": "v40",
+        "k41": false,
+        "k42": 42,
+        "k43": "v43",
+        "k44": true,
+        "k45": 45,
+        "k46": "v46",
+        "k47": false,
+        "k48": 48,
+        "k49": "v49"
+      },
+      "hash": "EsLW1aZFxwWJTWSRm1tgSfd6/L0=",
+      "canonical": ":k00:7ysMph9WPitGP7poMnMHMVPtUlI=:k01:hdGQJEizTB/UAh58ETiFzAnNCIs=:k02:E5z61QM0lN/U2WsOnusszCTkR8M=:k03:3tYODYzGXwaGnXNech4jb4T9las=:k04:+BJ8S1loJzgr8B/FiOUILktvrXY=:k05:aSSNoqcS4oQwJ2xxH20rvpp3zP0=:k06:qb1N9GrUXfC3JyZPF8EXiNYcv4I=:k07:2R1vsanX+lR0/iPi3BApm2OrkA4=:k08:E5z61QM0lN/U2WsOnusszCTkR8M=:k09:M7Kyw8zsPkNHRw35uJ1vdPacr90=:k10:tO9NBCXu1OIUXbea7rVBDGCi2J0=:k11:aSSNoqcS4oQwJ2xxH20rvpp3zP0=:k12:faLmDyyRLmn84BABqn7M8fPeH54=:k13:SszmhbGDi1n7+7BEjxB3mhWAUhw=:k14:E5z61QM0lN/U2WsOnusszCTkR8M=:k15:o0Z01FiFkcaCNvXrl/rO9/d+zjk=:k16:92+WhQStikGdu8aGVhEt9pZO1w0=:k17:aSSNoqcS4oQwJ2xxH20rvpp3zP0=:k18:P3ONFhs8wdRHHFq69fiGClM7p/s=:k19:bYFq5HCgxlk27HrhHJnmvIDzKvo=:k20:E5z61QM0lN/U2WsOnusszCTkR8M=:k21:AdALTt+bzofzGHiYG0y8rBvz0mY=:k22:IwNO99Yr3ZHaNaOq92Lc5THmojo=:k23:aSSNoqcS4oQwJ2xxH20rvpp3zP0=:k24:vnrgFNYoudZoMZhW3o6EPA/Z87A=:k25:aUoTq+0U9+n88MkPYcXxqSW5j1M=:k26:E5z61QM0lN/U2WsOnusszCTkR8M=:k27:18sBqBNtKiZL+XcnbDB3BD83hb0=:k28:BJDdBCBABRS9usBTh5DfWD4Fa+Y=:k29:aSSNoqcS4oQwJ2xxH20rvpp3zP0=:k30:HGAH76RuKjJ9imJvpZnjCZsDImo=:k31:OfWBi+tDlkaUUrEz1fTiKt5SUiA=:k32:E5z61QM0lN/U2WsOnusszCTkR8M=:k33:gQm3UCH8h9Tl0GIDwK1OB7MljUw=:k34:rNYYEz/XclqZhnFa2i3IFg3p5Kc=:k35:aSSNoqcS4oQwJ2xxH20rvpp3zP0=:k36:9QMOSNp/ijQeF29ZJooj5kiEP6Q=:k37:jg3CeDUSSgSNBHijcUnn0TM4zyc=:k38:E5z61QM0lN/U2WsOnusszCTkR8M=:k39:ikbmOyZlsHMCDhHCy23cmQjjF1I=:k40:oBQsFOl/W6C86eCzCLD34Sbutkg=:k41:aSSNoqcS4oQwJ2xxH20rvpp3zP0=:k42:bQ5XV5L9riGZgerGMb/8Z87RxeI=:k43:jDckcyjYx2T2pnxQ0bm4YoWlGvc=:k44:E5z61QM0lN/U2WsOnusszCTkR8M=:k45:Nq7wb8IFKmneQMeWYWDCXq3ryig=:k46:WK0X31wT8WTaC1gwJfhbV1y+EMM=:k47:aSSNoqcS4oQwJ2xxH20rvpp3zP0=:k48:DUPVfXXdbnNStcA2x5uOebHeHQw=:k49:lZd7mT52eA94euBf+frhUPRXXUA="
+    },
+    {
+      "name": "rtdb export typical",
+      "json": {
+        "users": {
+          "alice": {
+            "name": "Alice",
+            "age": 30,
+            "admin": true
+          },
+          "bob": {
+            "name": "Bob",
+            "age": 25.5,
+            "tags": [
+              "x",
+              "y"
+            ]
+          }
+        }
+      },
+      "hash": "W9kO5H5J6FbVOO9wgV/4/6Zzwng=",
+      "canonical": ":users:73XtuJoqnLPA4RLTRnixhUK04jU="
+    }
+  ],
+  "ieee754": [
+    {
+      "value": 0,
+      "sdk": "0000000000000000",
+      "ieee754": "0000000000000000",
+      "equal": true
+    },
+    {
+      "value": 1,
+      "sdk": "3ff0000000000000",
+      "ieee754": "3ff0000000000000",
+      "equal": true
+    },
+    {
+      "value": -1,
+      "sdk": "bff0000000000000",
+      "ieee754": "bff0000000000000",
+      "equal": true
+    },
+    {
+      "value": 0.1,
+      "sdk": "3fb999999999999a",
+      "ieee754": "3fb999999999999a",
+      "equal": true
+    },
+    {
+      "value": 0.5,
+      "sdk": "3fe0000000000000",
+      "ieee754": "3fe0000000000000",
+      "equal": true
+    },
+    {
+      "value": 1.5,
+      "sdk": "3ff8000000000000",
+      "ieee754": "3ff8000000000000",
+      "equal": true
+    },
+    {
+      "value": -2.25,
+      "sdk": "c002000000000000",
+      "ieee754": "c002000000000000",
+      "equal": true
+    },
+    {
+      "value": 3.14159,
+      "sdk": "400921f9f01b866e",
+      "ieee754": "400921f9f01b866e",
+      "equal": true
+    },
+    {
+      "value": 100,
+      "sdk": "4059000000000000",
+      "ieee754": "4059000000000000",
+      "equal": true
+    },
+    {
+      "value": 1e+21,
+      "sdk": "444b1ae4d6e2ef50",
+      "ieee754": "444b1ae4d6e2ef50",
+      "equal": true
+    },
+    {
+      "value": 1e-7,
+      "sdk": "3e7ad7f29abcaf48",
+      "ieee754": "3e7ad7f29abcaf48",
+      "equal": true
+    },
+    {
+      "value": 1e+300,
+      "sdk": "7e37e43c8800759c",
+      "ieee754": "7e37e43c8800759c",
+      "equal": true
+    },
+    {
+      "value": 9007199254740992,
+      "sdk": "4340000000000000",
+      "ieee754": "4340000000000000",
+      "equal": true
+    },
+    {
+      "value": 9007199254740994,
+      "sdk": "4340000000000001",
+      "ieee754": "4340000000000001",
+      "equal": true
+    },
+    {
+      "value": 1.7976931348623157e+308,
+      "sdk": "7fefffffffffffff",
+      "ieee754": "7fefffffffffffff",
+      "equal": true
+    },
+    {
+      "value": 5e-324,
+      "sdk": "0000000000000001",
+      "ieee754": "0000000000000001",
+      "equal": true
+    },
+    {
+      "value": 2.2250738585072014e-308,
+      "sdk": "0010000000000000",
+      "ieee754": "0010000000000000",
+      "equal": true
+    },
+    {
+      "value": 2.225073858507201e-308,
+      "sdk": "000fffffffffffff",
+      "ieee754": "000fffffffffffff",
+      "equal": true
+    },
+    {
+      "value": 2147483647,
+      "sdk": "41dfffffffc00000",
+      "ieee754": "41dfffffffc00000",
+      "equal": true
+    },
+    {
+      "value": -2147483648,
+      "sdk": "c1e0000000000000",
+      "ieee754": "c1e0000000000000",
+      "equal": true
+    },
+    {
+      "value": 4294967296,
+      "sdk": "41f0000000000000",
+      "ieee754": "41f0000000000000",
+      "equal": true
+    },
+    {
+      "value": 123456789012,
+      "sdk": "423cbe991a140000",
+      "ieee754": "423cbe991a140000",
+      "equal": true
+    },
+    {
+      "value": 9007199254740991,
+      "sdk": "4340000000000000",
+      "ieee754": "433fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": -9007199254740991,
+      "sdk": "c340000000000000",
+      "ieee754": "c33fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1.862645149230957e-9,
+      "sdk": "3e10000000000000",
+      "ieee754": "3e20000000000000",
+      "equal": false
+    },
+    {
+      "value": 4.656612873077393e-10,
+      "sdk": "3df0000000000000",
+      "ieee754": "3e00000000000000",
+      "equal": false
+    },
+    {
+      "value": 3.9999999999999996,
+      "sdk": "4010000000000000",
+      "ieee754": "400fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 2147483647.9999998,
+      "sdk": "41e0000000000000",
+      "ieee754": "41dfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1e-300,
+      "sdk": "01a0000000000000",
+      "ieee754": "01a56e1fc2f8f359",
+      "equal": false
+    },
+    {
+      "value": -1e-300,
+      "sdk": "81a0000000000000",
+      "ieee754": "81a56e1fc2f8f359",
+      "equal": false
+    },
+    {
+      "value": 5.010420900022432e-293,
+      "sdk": "0330000000000000",
+      "ieee754": "0340000000000000",
+      "equal": false
+    },
+    {
+      "value": 2.505210450011216e-293,
+      "sdk": "0330000000000000",
+      "ieee754": "0330000000000000",
+      "equal": true
+    },
+    {
+      "value": 9.332636185032189e-302,
+      "sdk": "0160000000000000",
+      "ieee754": "0170000000000000",
+      "equal": false
+    },
+    {
+      "value": 8.6736173798840345e-19,
+      "sdk": "3c30000000000000",
+      "ieee754": "3c2fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1.734723475976807e-18,
+      "sdk": "3c30000000000000",
+      "ieee754": "3c40000000000000",
+      "equal": false
+    },
+    {
+      "value": 3.469446951953614e-18,
+      "sdk": "3c40000000000000",
+      "ieee754": "3c50000000000000",
+      "equal": false
+    },
+    {
+      "value": 3.469446951953615e-18,
+      "sdk": "3c40000000000002",
+      "ieee754": "3c50000000000001",
+      "equal": false
+    },
+    {
+      "value": 6.9388939039072276e-18,
+      "sdk": "3c60000000000000",
+      "ieee754": "3c5fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1.3877787807814455e-17,
+      "sdk": "3c70000000000000",
+      "ieee754": "3c6fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 2.7755575615628914e-17,
+      "sdk": "3c70000000000000",
+      "ieee754": "3c80000000000000",
+      "equal": false
+    },
+    {
+      "value": 2.775557561562892e-17,
+      "sdk": "3c70000000000002",
+      "ieee754": "3c80000000000001",
+      "equal": false
+    },
+    {
+      "value": 5.551115123125782e-17,
+      "sdk": "3c90000000000000",
+      "ieee754": "3c8fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1.1102230246251564e-16,
+      "sdk": "3ca0000000000000",
+      "ieee754": "3c9fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 2.2204460492503128e-16,
+      "sdk": "3cb0000000000000",
+      "ieee754": "3cafffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 4.440892098500626e-16,
+      "sdk": "3cb0000000000000",
+      "ieee754": "3cc0000000000000",
+      "equal": false
+    },
+    {
+      "value": 4.440892098500627e-16,
+      "sdk": "3cb0000000000002",
+      "ieee754": "3cc0000000000001",
+      "equal": false
+    },
+    {
+      "value": 8.881784197001251e-16,
+      "sdk": "3cd0000000000000",
+      "ieee754": "3ccfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1.7763568394002503e-15,
+      "sdk": "3ce0000000000000",
+      "ieee754": "3cdfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 3.5527136788005005e-15,
+      "sdk": "3cf0000000000000",
+      "ieee754": "3cefffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 7.105427357601002e-15,
+      "sdk": "3cf0000000000000",
+      "ieee754": "3d00000000000000",
+      "equal": false
+    },
+    {
+      "value": 7.105427357601003e-15,
+      "sdk": "3cf0000000000002",
+      "ieee754": "3d00000000000001",
+      "equal": false
+    },
+    {
+      "value": 1.4210854715202002e-14,
+      "sdk": "3d10000000000000",
+      "ieee754": "3d0fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 2.8421709430404004e-14,
+      "sdk": "3d20000000000000",
+      "ieee754": "3d1fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 5.684341886080801e-14,
+      "sdk": "3d30000000000000",
+      "ieee754": "3d2fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1.1368683772161602e-13,
+      "sdk": "3d40000000000000",
+      "ieee754": "3d3fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 2.2737367544323203e-13,
+      "sdk": "3d50000000000000",
+      "ieee754": "3d4fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 9.094947017729281e-13,
+      "sdk": "3d70000000000000",
+      "ieee754": "3d6fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1.8189894035458565e-12,
+      "sdk": "3d70000000000000",
+      "ieee754": "3d80000000000000",
+      "equal": false
+    },
+    {
+      "value": 3.6379788070917125e-12,
+      "sdk": "3d90000000000000",
+      "ieee754": "3d8fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 7.275957614183425e-12,
+      "sdk": "3da0000000000000",
+      "ieee754": "3d9fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1.455191522836685e-11,
+      "sdk": "3db0000000000000",
+      "ieee754": "3dafffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 2.91038304567337e-11,
+      "sdk": "3dc0000000000000",
+      "ieee754": "3dbfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 5.82076609134674e-11,
+      "sdk": "3dd0000000000000",
+      "ieee754": "3dcfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1.164153218269348e-10,
+      "sdk": "3de0000000000000",
+      "ieee754": "3ddfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 2.328306436538696e-10,
+      "sdk": "3df0000000000000",
+      "ieee754": "3defffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 4.656612873077394e-10,
+      "sdk": "3df0000000000002",
+      "ieee754": "3e00000000000001",
+      "equal": false
+    },
+    {
+      "value": 9.313225746154784e-10,
+      "sdk": "3e10000000000000",
+      "ieee754": "3e0fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1.8626451492309574e-9,
+      "sdk": "3e10000000000002",
+      "ieee754": "3e20000000000001",
+      "equal": false
+    },
+    {
+      "value": 3.7252902984619136e-9,
+      "sdk": "3e30000000000000",
+      "ieee754": "3e2fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 7.450580596923827e-9,
+      "sdk": "3e40000000000000",
+      "ieee754": "3e3fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1.4901161193847655e-8,
+      "sdk": "3e50000000000000",
+      "ieee754": "3e4fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 2.980232238769531e-8,
+      "sdk": "3e60000000000000",
+      "ieee754": "3e5fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 5.960464477539062e-8,
+      "sdk": "3e70000000000000",
+      "ieee754": "3e6fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1.1920928955078124e-7,
+      "sdk": "3e80000000000000",
+      "ieee754": "3e7fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 2.3841857910156247e-7,
+      "sdk": "3e90000000000000",
+      "ieee754": "3e8fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 4.7683715820312495e-7,
+      "sdk": "3ea0000000000000",
+      "ieee754": "3e9fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 9.536743164062499e-7,
+      "sdk": "3eb0000000000000",
+      "ieee754": "3eafffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.0000019073486328124998,
+      "sdk": "3ec0000000000000",
+      "ieee754": "3ebfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.0000038146972656249996,
+      "sdk": "3ed0000000000000",
+      "ieee754": "3ecfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.000007629394531249999,
+      "sdk": "3ee0000000000000",
+      "ieee754": "3edfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.000015258789062499998,
+      "sdk": "3ef0000000000000",
+      "ieee754": "3eefffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.000030517578124999997,
+      "sdk": "3f00000000000000",
+      "ieee754": "3effffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.00006103515624999999,
+      "sdk": "3f10000000000000",
+      "ieee754": "3f0fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.00012207031249999999,
+      "sdk": "3f20000000000000",
+      "ieee754": "3f1fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.00024414062499999997,
+      "sdk": "3f30000000000000",
+      "ieee754": "3f2fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.00048828124999999995,
+      "sdk": "3f40000000000000",
+      "ieee754": "3f3fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.0009765624999999999,
+      "sdk": "3f50000000000000",
+      "ieee754": "3f4fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.0019531249999999998,
+      "sdk": "3f60000000000000",
+      "ieee754": "3f5fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.0039062499999999996,
+      "sdk": "3f70000000000000",
+      "ieee754": "3f6fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.007812499999999999,
+      "sdk": "3f80000000000000",
+      "ieee754": "3f7fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.031249999999999997,
+      "sdk": "3fa0000000000000",
+      "ieee754": "3f9fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 0.06249999999999999,
+      "sdk": "3fb0000000000000",
+      "ieee754": "3fafffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 7.999999999999999,
+      "sdk": "4020000000000000",
+      "ieee754": "401fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 15.999999999999998,
+      "sdk": "4030000000000000",
+      "ieee754": "402fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 31.999999999999996,
+      "sdk": "4040000000000000",
+      "ieee754": "403fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 63.99999999999999,
+      "sdk": "4050000000000000",
+      "ieee754": "404fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 127.99999999999999,
+      "sdk": "4060000000000000",
+      "ieee754": "405fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 255.99999999999997,
+      "sdk": "4070000000000000",
+      "ieee754": "406fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 511.99999999999994,
+      "sdk": "4080000000000000",
+      "ieee754": "407fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1023.9999999999999,
+      "sdk": "4090000000000000",
+      "ieee754": "408fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 2047.9999999999998,
+      "sdk": "40a0000000000000",
+      "ieee754": "409fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 4095.9999999999995,
+      "sdk": "40b0000000000000",
+      "ieee754": "40afffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 8191.999999999999,
+      "sdk": "40c0000000000000",
+      "ieee754": "40bfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 16383.999999999998,
+      "sdk": "40d0000000000000",
+      "ieee754": "40cfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 32767.999999999996,
+      "sdk": "40e0000000000000",
+      "ieee754": "40dfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 65535.99999999999,
+      "sdk": "40f0000000000000",
+      "ieee754": "40efffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 131071.99999999999,
+      "sdk": "4100000000000000",
+      "ieee754": "40ffffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 262143.99999999997,
+      "sdk": "4110000000000000",
+      "ieee754": "410fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 524287.99999999994,
+      "sdk": "4120000000000000",
+      "ieee754": "411fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1048575.9999999999,
+      "sdk": "4130000000000000",
+      "ieee754": "412fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 2097151.9999999998,
+      "sdk": "4140000000000000",
+      "ieee754": "413fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 4194303.9999999995,
+      "sdk": "4150000000000000",
+      "ieee754": "414fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 8388607.999999999,
+      "sdk": "4160000000000000",
+      "ieee754": "415fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 16777215.999999998,
+      "sdk": "4170000000000000",
+      "ieee754": "416fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 33554431.999999996,
+      "sdk": "4180000000000000",
+      "ieee754": "417fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 67108863.99999999,
+      "sdk": "4190000000000000",
+      "ieee754": "418fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 134217727.99999999,
+      "sdk": "41a0000000000000",
+      "ieee754": "419fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 268435455.99999997,
+      "sdk": "41b0000000000000",
+      "ieee754": "41afffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 536870911.99999994,
+      "sdk": "41c0000000000000",
+      "ieee754": "41bfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1073741823.9999999,
+      "sdk": "41d0000000000000",
+      "ieee754": "41cfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 4294967295.9999995,
+      "sdk": "41f0000000000000",
+      "ieee754": "41efffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 8589934591.999999,
+      "sdk": "4200000000000000",
+      "ieee754": "41ffffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 17179869183.999998,
+      "sdk": "4210000000000000",
+      "ieee754": "420fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 34359738367.999996,
+      "sdk": "4220000000000000",
+      "ieee754": "421fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 68719476735.99999,
+      "sdk": "4230000000000000",
+      "ieee754": "422fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 137438953471.99998,
+      "sdk": "4240000000000000",
+      "ieee754": "423fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 274877906943.99997,
+      "sdk": "4250000000000000",
+      "ieee754": "424fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 549755813887.99994,
+      "sdk": "4260000000000000",
+      "ieee754": "425fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1099511627775.9999,
+      "sdk": "4270000000000000",
+      "ieee754": "426fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 2199023255551.9998,
+      "sdk": "4280000000000000",
+      "ieee754": "427fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 4398046511103.9995,
+      "sdk": "4290000000000000",
+      "ieee754": "428fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 8796093022207.999,
+      "sdk": "42a0000000000000",
+      "ieee754": "429fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 17592186044415.998,
+      "sdk": "42b0000000000000",
+      "ieee754": "42afffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 35184372088831.996,
+      "sdk": "42c0000000000000",
+      "ieee754": "42bfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 70368744177663.99,
+      "sdk": "42d0000000000000",
+      "ieee754": "42cfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 140737488355327.98,
+      "sdk": "42e0000000000000",
+      "ieee754": "42dfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 281474976710655.97,
+      "sdk": "42f0000000000000",
+      "ieee754": "42efffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 562949953421311.94,
+      "sdk": "4300000000000000",
+      "ieee754": "42ffffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1125899906842623.9,
+      "sdk": "4310000000000000",
+      "ieee754": "430fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 2251799813685247.8,
+      "sdk": "4320000000000000",
+      "ieee754": "431fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 4503599627370495.5,
+      "sdk": "4330000000000000",
+      "ieee754": "432fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 18014398509481982,
+      "sdk": "4350000000000000",
+      "ieee754": "434fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 36028797018963964,
+      "sdk": "4360000000000000",
+      "ieee754": "435fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 72057594037927930,
+      "sdk": "4370000000000000",
+      "ieee754": "436fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 144115188075855860,
+      "sdk": "4380000000000000",
+      "ieee754": "437fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 288230376151711700,
+      "sdk": "4390000000000000",
+      "ieee754": "438fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 576460752303423400,
+      "sdk": "43a0000000000000",
+      "ieee754": "439fffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 1152921504606846800,
+      "sdk": "43b0000000000000",
+      "ieee754": "43afffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 2305843009213693700,
+      "sdk": "43c0000000000000",
+      "ieee754": "43bfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 4611686018427387400,
+      "sdk": "43d0000000000000",
+      "ieee754": "43cfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 9223372036854775000,
+      "sdk": "43e0000000000000",
+      "ieee754": "43dfffffffffffff",
+      "equal": false
+    },
+    {
+      "value": 18446744073709550000,
+      "sdk": "43f0000000000000",
+      "ieee754": "43efffffffffffff",
+      "equal": false
+    }
+  ]
+}
