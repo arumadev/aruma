@@ -148,7 +148,7 @@ func TestGoldenServerFrames(t *testing.T) {
 			}
 		}
 	}
-	for _, kind := range []string{"hello", "pong", "error", "response", "push d", "push m"} {
+	for _, kind := range []string{"hello", "pong", "error", "response", "push d", "push m", "push c"} {
 		if seen[kind] == 0 {
 			t.Errorf("no golden %s frame was checked", kind)
 		}
@@ -212,6 +212,19 @@ func reencode(t *testing.T, text string) (string, []byte) {
 		return "push d", EncodeDataPush(p.P, p.D, p.T)
 	case PushMerge:
 		return "push m", EncodeMergePush(p.P, p.D, p.T)
+	case PushListenRevoked:
+		var c struct {
+			Q []Query `json:"q"`
+		}
+		json.Unmarshal(d.B, &c)
+		if len(c.Q) > 1 {
+			t.Errorf("revoke with %d queries: %s", len(c.Q), text)
+		}
+		var q *Query
+		if len(c.Q) == 1 {
+			q = &c.Q[0]
+		}
+		return "push c", EncodeListenRevoked(p.P, q)
 	}
 	t.Fatalf("unknown push %s", text)
 	return "", nil

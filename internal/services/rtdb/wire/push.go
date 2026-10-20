@@ -23,13 +23,18 @@ func EncodeMergePush(path string, data json.RawMessage, tag *int64) []byte {
 }
 
 // EncodeListenRevoked cancels the listen at path with query q (nil for a default listen); the
-// emulator sends "q":null then. JS removes the matching listen and raises permission_denied;
-// Android and iOS remove every listen at path.
+// emulator sends "q":null then, and otherwise a list of one query object, which JS joins into
+// its query id (PersistentConnection.ts:954-966). JS removes the matching listen and raises
+// permission_denied; Android and iOS remove every listen at path.
 func EncodeListenRevoked(path string, q *Query) []byte {
+	var qs []Query
+	if q != nil {
+		qs = []Query{*q}
+	}
 	return encodePush(PushListenRevoked, struct {
-		Path  string `json:"p"`
-		Query *Query `json:"q"`
-	}{PushPath(path), q})
+		Path  string  `json:"p"`
+		Query []Query `json:"q"`
+	}{PushPath(path), qs})
 }
 
 // EncodeAuthRevoked tells the client its credential no longer holds. The SDKs drop the token,

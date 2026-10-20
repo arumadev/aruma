@@ -118,13 +118,14 @@ func TestControlFrames(t *testing.T) {
 }
 
 func TestPushes(t *testing.T) {
-	tag := int64(1)
+	tag, one := int64(1), int64(1)
 	cases := map[string][]byte{
 		`{"t":"d","d":{"a":"d","b":{"p":"x","d":{"a":1}}}}`:                EncodeDataPush("/x", json.RawMessage(`{"a":1}`), nil),
 		`{"t":"d","d":{"a":"d","b":{"p":"h","d":null}}}`:                   EncodeDataPush("h", nil, nil),
 		`{"t":"d","d":{"a":"d","b":{"p":"","d":5}}}`:                       EncodeDataPush("/", json.RawMessage(`5`), nil),
 		`{"t":"d","d":{"a":"m","b":{"p":"f","d":{"x":null,"w":9},"t":1}}}`: EncodeMergePush("/f", json.RawMessage(`{"x":null,"w":9}`), &tag),
 		`{"t":"d","d":{"a":"c","b":{"p":"users/u1","q":null}}}`:            EncodeListenRevoked("/users/u1", nil),
+		`{"t":"d","d":{"a":"c","b":{"p":"u","q":[{"l":1,"vf":"l"}]}}}`:     EncodeListenRevoked("/u", &Query{Limit: &one, ViewFrom: ViewFromLeft}),
 		`{"t":"d","d":{"a":"ac","b":{"s":"invalid_token","d":"revoked"}}}`: EncodeAuthRevoked(StatusInvalidToken, "revoked"),
 	}
 	for want, got := range cases {

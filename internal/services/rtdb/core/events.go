@@ -28,7 +28,12 @@ type sentKey struct {
 }
 
 func (b *batchState) deliver(s *Session, p Push) {
-	desc, _ := json.Marshal([]any{p.Action, p.Path.String(), p.Tag, string(p.Data)})
+	// The query tells apart the c pushes of two listens at one path.
+	query := ""
+	if p.Query != nil {
+		query = p.Query.canonical()
+	}
+	desc, _ := json.Marshal([]any{p.Action, p.Path.String(), p.Tag, string(p.Data), query})
 	key := sentKey{s, string(desc)}
 	if b.sent[key] {
 		return

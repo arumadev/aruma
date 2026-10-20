@@ -145,9 +145,18 @@ func TestRTDBUnauthRevokesListens(t *testing.T) {
 		t.Fatal(rep)
 	}
 	c.call("q", map[string]any{"p": "/x", "h": ""}).mustOK(t)
+	c.call("q", map[string]any{"p": "/x", "h": "", "q": map[string]any{"l": 1, "vf": "l"}, "t": 1}).mustOK(t)
 	r := c.request("unauth", map[string]any{})
-	if m := c.next(); m != `{"t":"d","d":{"a":"c","b":{"p":"x","q":null}}}` {
-		t.Errorf("revoke: %s", m)
+	// A query comes back as a list of its query object, which JS turns into its query id
+	// (golden revoke_unauth.json).
+	want := map[string]bool{
+		`{"t":"d","d":{"a":"c","b":{"p":"x","q":null}}}`:               true,
+		`{"t":"d","d":{"a":"c","b":{"p":"x","q":[{"l":1,"vf":"l"}]}}}`: true,
+	}
+	for range 2 {
+		if m := c.next(); !want[m] {
+			t.Errorf("revoke: %s", m)
+		}
 	}
 	if rep := c.await(r); string(rep.Data) != `"unauthenticated"` {
 		t.Errorf("unauth: %+v", rep)
