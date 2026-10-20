@@ -93,7 +93,10 @@ development URL of ADR-018.
   127.0.0.1:9470.
 - `aruma`: this checkout built and served on a fresh database (`aruma_rtdbc_<random>`, dropped
   at exit), with `ARUMA_RTDB_DOMAIN=rtdb.aruma.test`, an owner account, and the project
-  `compat-tests`.
+  `compat-tests`. Realtime Database is enabled (`ARUMA_RTDB_ENABLED`) with
+  `ARUMA_RTDB_DEV_OPEN_RULES`: until the rules engine is wired (R4), the stored rules give only
+  `.indexOn`, and access is open to clients on this machine, which the suites (and the TLS
+  front) are. The rules are still loaded, for their `.indexOn`.
 
 ## Before the tests
 

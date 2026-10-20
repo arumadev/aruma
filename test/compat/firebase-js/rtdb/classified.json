@@ -14,6 +14,13 @@
       "targets": ["emulator"],
       "modes": ["production"],
       "why": "goOnline() reconnects to the hello's h, 127.0.0.1:9470, with TLS. Fails only with RTDB_EMULATOR_HELLO=keep (emulator 4.11.2, 2026-10-20)."
+    },
+    {
+      "file": "packages/database-compat/test/servervalues.test.ts",
+      "title": "ServerValue tests resolves timestamps locally",
+      "class": "timing",
+      "targets": ["aruma"],
+      "why": "The test needs the server's timestamp to differ from the SDK's local estimate (Date.now() + serverTimeOffset), so that two value events fire. Aruma on loopback acks within the same millisecond, on the same clock, so the two are equal and the SDK raises one event (2026-10-20). Over a real network, or against the slower emulator, they differ."
     }
   ]
 }
