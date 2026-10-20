@@ -42,12 +42,16 @@ type evaluator struct {
 	query *Query
 	vars  map[string]string
 	path  []string
+	trace tracer
 }
 
 // run evaluates a rule and reports whether it grants.
 func (ev *evaluator) run(r *rule) bool {
 	if r.expr == nil {
 		return false
+	}
+	if ev.trace != nil {
+		ev.trace(r.path, ev.path)
 	}
 	v, err := ev.eval(r.expr)
 	return err == nil && v == true

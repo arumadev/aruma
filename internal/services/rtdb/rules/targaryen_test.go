@@ -132,7 +132,7 @@ func evalExpr(src string, kind ruleKind, vars map[string]string, auth Auth, data
 		return nil, nil, err
 	}
 	w := &world{ctx: context.Background(), src: src2, cache: map[string]Node{}}
-	ev := newEvaluator(w, Env{Auth: auth})
+	ev := newEvaluator(w, Env{Auth: auth}, nil)
 	ev.query = &q
 	for k, v := range vars {
 		ev.vars[k] = v

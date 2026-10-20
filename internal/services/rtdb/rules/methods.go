@@ -180,7 +180,7 @@ func javaLower(s string) string {
 	for i, r := range runes {
 		switch r {
 		case 'İ':
-			b.WriteString("i̇")
+			b.WriteString("i" + string(rune(0x307))) // i and a combining dot above
 			continue
 		case 'Σ':
 			if finalSigma(runes, i) {

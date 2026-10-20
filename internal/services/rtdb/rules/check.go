@@ -100,11 +100,19 @@ func Update(path []string, values map[string]any) []Change {
 // below path does not allow reading path. The error is a failure to read env.Data, never a
 // denial.
 func (rs *Ruleset) CanRead(ctx context.Context, env Env, path []string, q Query) (bool, error) {
+	return rs.canRead(ctx, env, path, q, nil)
+}
+
+// tracer observes each rule a check evaluates, for tests: the rule's place in the document and
+// the data path it ran at.
+type tracer func(rule string, at []string)
+
+func (rs *Ruleset) canRead(ctx context.Context, env Env, path []string, q Query, trace tracer) (bool, error) {
 	if env.Auth.admin {
 		return true, nil
 	}
 	w := &world{ctx: ctx, src: env.Data, cache: map[string]Node{}}
-	ev := newEvaluator(w, env)
+	ev := newEvaluator(w, env, trace)
 	ev.query = &q
 	n := rs.root
 	for depth := 0; n != nil; depth++ {
@@ -130,8 +138,16 @@ func (rs *Ruleset) CanRead(ctx context.Context, env Env, path []string, q Query)
 // on the way from the root to the change's path must grant, and every .validate must pass on
 // that way and on every node the change writes, except where the new data is null. newData is
 // the stored data with all the changes applied; root and data are the stored data. No changes
-// at all, an empty update, is allowed (emulator 4.11.2).
+// at all, an empty update, is allowed.
+//
+// onDisconnect writes are checked when they are registered, like other writes, with two
+// differences the emulator 4.11.2 shows: an onDisconnect update is checked one child at a time,
+// each as its own CanWrite against the stored data, and cancelling checks no rule at all.
 func (rs *Ruleset) CanWrite(ctx context.Context, env Env, changes ...Change) (bool, error) {
+	return rs.canWrite(ctx, env, nil, changes)
+}
+
+func (rs *Ruleset) canWrite(ctx context.Context, env Env, trace tracer, changes []Change) (bool, error) {
 	if env.Auth.admin {
 		return true, nil
 	}
@@ -143,7 +159,7 @@ func (rs *Ruleset) CanWrite(ctx context.Context, env Env, changes ...Change) (bo
 		}
 		w.changes = append(w.changes, change{path: c.Path, value: v})
 	}
-	ev := newEvaluator(w, env)
+	ev := newEvaluator(w, env, trace)
 	ev.query = &Query{} // a write has no query: every field is false or null (emulator 4.11.2)
 	validated := map[validation]bool{}
 	for _, c := range w.changes {
@@ -250,12 +266,12 @@ func (n *node) descend(k string, vars map[string]string) *node {
 	return n.wild
 }
 
-func newEvaluator(w *world, env Env) *evaluator {
+func newEvaluator(w *world, env Env, trace tracer) *evaluator {
 	now := env.Now
 	if now.IsZero() {
 		now = time.Now()
 	}
-	ev := &evaluator{w: w, now: float64(now.UnixMilli()), vars: map[string]string{}}
+	ev := &evaluator{w: w, now: float64(now.UnixMilli()), vars: map[string]string{}, trace: trace}
 	if env.Auth.variable != nil {
 		ev.auth = env.Auth.variable
 	}

@@ -172,10 +172,11 @@ func normalize(v any, depth int) (any, error) {
 // world is the data one check reads: the stored data through a cached Source, and the data as
 // it would be after the write, newData, as the stored data overlaid with the changes.
 type world struct {
-	ctx     context.Context
-	src     Source
-	cache   map[string]Node
-	changes []change
+	ctx      context.Context
+	src      Source
+	cache    map[string]Node // stored data by path
+	newCache map[string]Node // newData by path
+	changes  []change
 	// err is the first Source failure. The check that meets one returns it instead of a
 	// verdict: a database that cannot be read is not a denial.
 	err error
@@ -208,6 +209,21 @@ func (w *world) old(path []string) Node {
 
 // fresh reads newData at path.
 func (w *world) fresh(path []string) Node {
+	key := pathKey(path)
+	if n, ok := w.newCache[key]; ok {
+		return n
+	}
+	n := w.overlay(path)
+	if w.err == nil {
+		if w.newCache == nil {
+			w.newCache = map[string]Node{}
+		}
+		w.newCache[key] = n
+	}
+	return n
+}
+
+func (w *world) overlay(path []string) Node {
 	var below []string // the keys under path that lead to changes
 	for _, c := range w.changes {
 		if hasPrefix(path, c.path) {
