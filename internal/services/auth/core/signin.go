@@ -81,8 +81,12 @@ func (s *Service) createAndSignIn(ctx context.Context, p Project, email, passwor
 			return nil, err
 		}
 	}
+	sg, err := s.idSigner(ctx, p)
+	if err != nil {
+		return nil, err
+	}
 	var sess *Session
-	err := s.tx(ctx, func(q *queries.Queries, tx pgx.Tx) error {
+	err = s.tx(ctx, func(q *queries.Queries, tx pgx.Tx) error {
 		raw, err := q.CreateUser(ctx, queries.CreateUserParams{
 			ProjectNumber: p.Number, TenantID: p.Tenant, Uid: newUID(), Email: ptr(email), DisplayName: ptr(displayName),
 		})
@@ -101,7 +105,7 @@ func (s *Service) createAndSignIn(ctx context.Context, p Project, email, passwor
 		if err := s.userEvent(ctx, tx, p, "auth.user.created", u); err != nil {
 			return err
 		}
-		sess, err = s.startSession(ctx, q, p, u, u.SignInProvider(), nil, true)
+		sess, err = s.startSession(ctx, q, sg, p, u, u.SignInProvider(), nil, true)
 		return err
 	})
 	if _, ok := store.UniqueViolation(err); ok {
@@ -146,6 +150,10 @@ func (s *Service) upgradeAnonymous(ctx context.Context, p Project, idToken, emai
 	if err != nil {
 		return nil, err
 	}
+	sg, err := s.idSigner(ctx, p)
+	if err != nil {
+		return nil, err
+	}
 	var sess *Session
 	err = s.tx(ctx, func(q *queries.Queries, _ pgx.Tx) error {
 		raw, err := q.GetUserForUpdate(ctx, queries.GetUserForUpdateParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: u.UID})
@@ -170,7 +178,7 @@ func (s *Service) upgradeAnonymous(ctx context.Context, p Project, idToken, emai
 		if err != nil {
 			return err
 		}
-		sess, err = s.startSession(ctx, q, p, upgraded, "password", nil, false)
+		sess, err = s.startSession(ctx, q, sg, p, upgraded, "password", nil, false)
 		return err
 	})
 	if _, ok := store.UniqueViolation(err); ok {
@@ -243,13 +251,17 @@ func (s *Service) SignInWithPassword(ctx context.Context, p Project, email, pass
 			_ = s.q.SetPassword(ctx, queries.SetPasswordParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: raw.Uid, Hash: h})
 		}
 	}
+	sg, err := s.idSigner(ctx, p)
+	if err != nil {
+		return nil, err
+	}
 	var sess *Session
 	err = s.tx(ctx, func(q *queries.Queries, _ pgx.Tx) error {
 		u, err := s.loadUser(ctx, q, p, raw)
 		if err != nil {
 			return err
 		}
-		sess, err = s.startSession(ctx, q, p, u, "password", nil, false)
+		sess, err = s.startSession(ctx, q, sg, p, u, "password", nil, false)
 		return err
 	})
 	if err == nil {
@@ -300,6 +312,10 @@ func (s *Service) SignInWithCustomToken(ctx context.Context, p Project, token st
 	if err != nil {
 		return nil, err
 	}
+	sg, err := s.idSigner(ctx, p)
+	if err != nil {
+		return nil, err
+	}
 	var sess *Session
 	err = s.tx(ctx, func(q *queries.Queries, tx pgx.Tx) error {
 		raw, err := q.GetUser(ctx, queries.GetUserParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: c.UID})
@@ -323,7 +339,7 @@ func (s *Service) SignInWithCustomToken(ctx context.Context, p Project, token st
 				return err
 			}
 		}
-		sess, err = s.startSession(ctx, q, p, u, "custom", claims, isNew)
+		sess, err = s.startSession(ctx, q, sg, p, u, "custom", claims, isNew)
 		return err
 	})
 	return sess, err

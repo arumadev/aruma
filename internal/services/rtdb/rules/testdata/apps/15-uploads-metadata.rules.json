@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "uploads": {
+      "$uid": {
+        ".read": "auth.uid === $uid",
+        "$fileId": {
+          ".write": "auth.uid === $uid",
+          ".validate": "newData.hasChildren(['name', 'size', 'contentType'])",
+          "name": { ".validate": "newData.isString() && newData.val().matches(/^[\\w\\-. ]+\\.(png|jpe?g|gif)$/i)" },
+          "size": { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 5 * 1024 * 1024" },
+          "contentType": { ".validate": "newData.isString() && newData.val().beginsWith('image/')" },
+          "path": { ".validate": "newData.val() == 'images/' + $uid + '/' + $fileId" },
+          "$other": { ".validate": false }
+        }
+      }
+    }
+  }
+}

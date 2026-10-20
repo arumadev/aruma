@@ -1,0 +1,28 @@
+{
+  "rules": {
+    "scores": {
+      ".read": true,
+      ".indexOn": ".value",
+      "$uid": {
+        // A score only goes up.
+        ".write": "auth.uid === $uid",
+        ".validate": "newData.isNumber() && newData.val() % 1 === 0 && (!data.exists() || newData.val() >= data.val())"
+      }
+    },
+    "likes": {
+      "$postId": {
+        ".read": true,
+        // The counter moves by exactly one.
+        ".write": "auth != null",
+        ".validate": "newData.isNumber() && (data.exists() ? newData.val() === data.val() + 1 || newData.val() === data.val() - 1 : newData.val() === 1)"
+      }
+    },
+    "stats": {
+      ".read": true,
+      "average": {
+        ".write": "auth != null",
+        ".validate": "newData.val() === root.child('stats/sum').val() / root.child('stats/count').val()"
+      }
+    }
+  }
+}

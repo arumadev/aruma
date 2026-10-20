@@ -1,0 +1,29 @@
+{
+  "rules": {
+    "products": {
+      "$key1": {
+        ".validate": "newData.hasChildren(['name', 'price', 'tags'])",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "price": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "tags": {
+          "$key2": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          ".validate": "newData.hasChildren()"
+        },
+        "discount": {
+          ".validate": "(newData.isNumber() && newData.val() >= 0 && newData.val() <= 100) || newData.isString() && newData.val().endsWith('%')"
+        },
+        "$other": {
+          ".validate": "false"
+        },
+        ".read": "true",
+        ".write": "auth != null && auth.uid != null && (auth.token.admin == true || data.val() == null)"
+      }
+    }
+  }
+}

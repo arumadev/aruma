@@ -1,0 +1,37 @@
+{
+  "rules": {
+    "rooms": {
+      ".read": "auth != null",
+      "$roomId": {
+        // Only the room's creator edits the room itself.
+        ".write": "auth != null && (!data.exists() || data.child('owner').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['name', 'owner'])",
+        "name": { ".validate": "newData.isString() && newData.val().length <= 40" },
+        "owner": { ".validate": "newData.val() === auth.uid || newData.val() === data.val()" }
+      }
+    },
+    "members": {
+      "$roomId": {
+        ".read": "auth != null && data.child(auth.uid).exists()",
+        "$uid": {
+          ".write": "auth.uid === $uid || root.child('rooms/' + $roomId + '/owner').val() === auth.uid",
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    },
+    "messages": {
+      "$roomId": {
+        ".read": "root.child('members/' + $roomId + '/' + auth.uid).exists()",
+        ".indexOn": ["ts"],
+        "$msgId": {
+          ".write": "!data.exists() && root.child('members').child($roomId).child(auth.uid).val() === true",
+          ".validate": "newData.hasChildren(['uid', 'text', 'ts'])",
+          "uid": { ".validate": "newData.val() === auth.uid" },
+          "text": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500" },
+          "ts": { ".validate": "newData.isNumber() && newData.val() <= now" },
+          "$other": { ".validate": false }
+        }
+      }
+    }
+  }
+}

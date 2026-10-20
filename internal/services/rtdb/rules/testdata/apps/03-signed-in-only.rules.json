@@ -1,0 +1,7 @@
+{
+  "rules": {
+    // Any signed-in user, nobody else.
+    ".read": "auth != null",
+    ".write": "auth !== null"
+  }
+}

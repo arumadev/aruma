@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/osama300/aurma-project/internal/services/auth/queries"
+	"github.com/osama300/aurma-project/internal/services/auth/tokens"
 	"github.com/osama300/aurma-project/internal/store"
 )
 
@@ -96,6 +97,12 @@ func (s *Service) Update(ctx context.Context, p Project, in UpdateInput) (*Updat
 		}
 	}
 
+	var sg *tokens.Signer // a sensitive change returns a new session
+	if sensitive {
+		if sg, err = s.idSigner(ctx, p); err != nil {
+			return nil, err
+		}
+	}
 	var out UpdateResult
 	err = s.tx(ctx, func(q *queries.Queries, _ pgx.Tx) error {
 		raw, err := q.GetUserForUpdate(ctx, queries.GetUserForUpdateParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: u.UID})
@@ -156,7 +163,7 @@ func (s *Service) Update(ctx context.Context, p Project, in UpdateInput) (*Updat
 			if hash != "" {
 				provider = "password"
 			}
-			out.Session, err = s.startSession(ctx, q, p, out.User, provider, nil, false)
+			out.Session, err = s.startSession(ctx, q, sg, p, out.User, provider, nil, false)
 		}
 		return err
 	})

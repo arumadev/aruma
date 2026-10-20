@@ -1,0 +1,19 @@
+{
+  "rules": {
+    "listings": {
+      // Users list only their own listings, through a query.
+      ".read": "auth != null && query.orderByChild == 'owner' && query.equalTo == auth.uid",
+      ".indexOn": ["owner", "price"],
+      "$listingId": {
+        ".read": "data.child('public').val() === true",
+        ".write": "auth != null && (!data.exists() || data.child('owner').val() == auth.uid)",
+        ".validate": "newData.child('owner').val() == auth.uid && newData.child('price').isNumber()"
+      }
+    },
+    "feed": {
+      // Public feed, at most 50 at a time.
+      ".read": "query.orderByKey && query.limitToLast <= 50",
+      ".write": false
+    }
+  }
+}

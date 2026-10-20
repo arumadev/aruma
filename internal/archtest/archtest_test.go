@@ -27,6 +27,8 @@ var allowed = map[string][]string{
 	"internal/tenancy":   {"internal/store", "internal/events", "internal/platform", "internal/config"},
 	// Data services resolve keys and service accounts through the control plane, never the reverse.
 	"internal/services/*": {"internal/tenancy", "internal/store", "internal/events", "internal/platform", "internal/config"},
+	// The rules language stands alone: core feeds it data through an interface it defines.
+	"internal/services/rtdb/rules": {},
 	// The console mounts the services' routes through platform/consolemount; only app wires them.
 	"internal/admin":  {"internal/tenancy", "internal/configgen", "internal/events", "internal/store", "internal/platform", "internal/config"},
 	"internal/server": {"internal/admin", "internal/services/", "internal/tenancy", "internal/platform", "internal/config", "internal/store"},
@@ -174,6 +176,10 @@ func TestRulesThemselves(t *testing.T) {
 		{"internal/services/auth/core", "internal/services/auth/console", false},
 		{"internal/services/rtdb/core/rules", "internal/services/rtdb/api", false},
 		{"internal/services/rtdb/core", "internal/platform/httpx", false},
+		// The rules language imports nothing; core imports it.
+		{"internal/services/rtdb/core", "internal/services/rtdb/rules", true},
+		{"internal/services/rtdb/rules", "internal/services/rtdb/core", false},
+		{"internal/services/rtdb/rules", "internal/platform/log", false},
 		{"internal/services/auth/api", "internal/platform/httpx", true},
 		{"internal/services/rtdb/api", "internal/services/rtdb/wire", true},
 		{"internal/services/rtdb/core", "internal/services/rtdb/wire", true},

@@ -1,0 +1,19 @@
+{
+  "rules": {
+    "tenants": {
+      "$tenantId": {
+        // Members of a tenant, signed in with a real account, see and edit its data.
+        ".read": "auth.token.tenantId === $tenantId",
+        ".write": "auth.token.tenantId === $tenantId && auth.token.firebase.sign_in_provider != 'anonymous'",
+        "settings": {
+          ".write": "auth.token.tenantId === $tenantId && auth.token.roleMap[$tenantId] === 'owner'"
+        },
+        "projects": {
+          "$projectId": {
+            ".validate": "newData.child('tenant').val() === $tenantId"
+          }
+        }
+      }
+    }
+  }
+}

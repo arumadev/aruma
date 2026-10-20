@@ -1,0 +1,21 @@
+{
+  "rules": {
+    "polls": {
+      ".read": true,
+      "$pollId": {
+        ".write": "auth != null && !data.exists()",
+        ".validate": "newData.hasChildren(['question', 'closesAt']) && newData.child('closesAt').val() > now"
+      }
+    },
+    "votes": {
+      "$pollId": {
+        ".read": true,
+        "$uid": {
+          // One vote per user, while the poll is open; a vote cannot be changed.
+          ".write": "auth != null && auth.uid == $uid && !data.exists() && root.child('polls').child($pollId).child('closesAt').val() > now",
+          ".validate": "newData.isString() && root.child('polls/' + $pollId + '/options/' + newData.val()).exists()"
+        }
+      }
+    }
+  }
+}

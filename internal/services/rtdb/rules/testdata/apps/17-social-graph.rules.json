@@ -1,0 +1,29 @@
+{
+  "rules": {
+    "users": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth.uid == $uid"
+      }
+    },
+    "friends": {
+      "$uid": {
+        ".read": "auth.uid == $uid",
+        "$friendId": {
+          // Both ends of a friendship are written together, in one update.
+          ".write": "auth.uid == $uid || auth.uid == $friendId",
+          ".validate": "root.child('users/' + $friendId).exists() && $friendId != $uid && (!newData.exists() || newData.parent().parent().child($friendId).child($uid).exists())"
+        }
+      }
+    },
+    "requests": {
+      "$to": {
+        "$from": {
+          ".read": "auth.uid == $to || auth.uid == $from",
+          ".write": "auth.uid == $from && !root.child('friends/' + $to + '/' + $from).exists()",
+          ".validate": "newData.isNumber()"
+        }
+      }
+    }
+  }
+}

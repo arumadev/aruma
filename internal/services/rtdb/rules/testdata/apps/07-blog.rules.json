@@ -1,0 +1,27 @@
+{
+  "rules": {
+    "admins": {
+      ".read": "root.child('admins').child(auth.uid).val() == true",
+      ".write": false
+    },
+    "posts": {
+      ".read": true,
+      ".indexOn": ["author", "publishedAt"],
+      "$postId": {
+        // Authors create their posts and edit them; admins edit anything.
+        ".write": "auth != null && ((!data.exists() && newData.child('author').val() == auth.uid) || data.child('author').val() == auth.uid || root.child('admins/' + auth.uid).val() == true)",
+        ".validate": "newData.hasChildren(['title', 'body', 'author'])",
+        "title": { ".validate": "newData.isString() && newData.val().length >= 3" },
+        "body": { ".validate": "newData.isString()" },
+        "author": { ".validate": "newData.val() == data.val() || !data.exists()" },
+        "publishedAt": { ".validate": "newData.isNumber()" },
+        "comments": {
+          "$commentId": {
+            ".write": "auth != null && !data.exists() && newData.child('by').val() == auth.uid",
+            ".validate": "newData.child('text').isString()"
+          }
+        }
+      }
+    }
+  }
+}

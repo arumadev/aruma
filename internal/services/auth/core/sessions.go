@@ -45,7 +45,7 @@ type IDClaims struct {
 // tokens, from the token) sit at the top level as in Firebase; they never override the standard
 // claims, which validClaims already forbids. It is never issued before its sign-in: a session
 // started by a revocation is dated at the revocation point, up to a second ahead.
-func (s *Service) mint(ctx context.Context, p Project, u User, provider string, tokenClaims json.RawMessage, authTime time.Time) (string, error) {
+func (s *Service) mint(sg *tokens.Signer, p Project, u User, provider string, tokenClaims json.RawMessage, authTime time.Time) (string, error) {
 	now := s.now()
 	if authTime.After(now) {
 		now = authTime
@@ -96,11 +96,17 @@ func (s *Service) mint(ctx context.Context, p Project, u User, provider string, 
 	claims["exp"] = now.Add(TokenLifetime).Unix()
 	claims["auth_time"] = authTime.Unix()
 	claims["firebase"] = firebase
-	return s.tokens.Sign(ctx, p.Number, tokens.IDToken, claims)
+	return sg.Sign(claims)
 }
 
-// startSession mints an ID token and a new refresh token for a sign-in.
-func (s *Service) startSession(ctx context.Context, q *queries.Queries, p Project, u User, provider string, tokenClaims json.RawMessage, isNew bool) (*Session, error) {
+// idSigner returns the project's ID token signer. A sign-in gets it before its transaction
+// begins (tokens.Manager.Signer says why), and startSession signs with it inside.
+func (s *Service) idSigner(ctx context.Context, p Project) (*tokens.Signer, error) {
+	return s.tokens.Signer(ctx, p.Number, tokens.IDToken)
+}
+
+// startSession mints an ID token with sg and a new refresh token for a sign-in.
+func (s *Service) startSession(ctx context.Context, q *queries.Queries, sg *tokens.Signer, p Project, u User, provider string, tokenClaims json.RawMessage, isNew bool) (*Session, error) {
 	refresh := crypto.RandomString(crypto.TokenBytes)
 	authTime, err := q.CreateRefreshToken(ctx, queries.CreateRefreshTokenParams{
 		TokenHash: s.keys.HashToken("auth-refresh:" + refresh), ProjectNumber: p.Number, TenantID: p.Tenant,
@@ -112,7 +118,7 @@ func (s *Service) startSession(ctx context.Context, q *queries.Queries, p Projec
 	if err := q.TouchLogin(ctx, queries.TouchLoginParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: u.UID}); err != nil {
 		return nil, err
 	}
-	idToken, err := s.mint(ctx, p, u, provider, tokenClaims, authTime)
+	idToken, err := s.mint(sg, p, u, provider, tokenClaims, authTime)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +166,11 @@ func (s *Service) Refresh(ctx context.Context, p Project, refresh string) (*Sess
 	if err != nil {
 		return nil, err
 	}
-	idToken, err := s.mint(ctx, p, u, row.SignInProvider, row.CustomClaims, row.AuthTime)
+	sg, err := s.idSigner(ctx, p)
+	if err != nil {
+		return nil, err
+	}
+	idToken, err := s.mint(sg, p, u, row.SignInProvider, row.CustomClaims, row.AuthTime)
 	if err != nil {
 		return nil, err
 	}

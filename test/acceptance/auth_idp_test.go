@@ -239,6 +239,12 @@ type idpEnv struct {
 
 func newIdPEnv(t *testing.T) *idpEnv {
 	t.Helper()
+	return newIdPEnvWithPool(t, 0)
+}
+
+// newIdPEnvWithPool is newIdPEnv on a pool of maxConns connections (newEnvWithPool).
+func newIdPEnvWithPool(t *testing.T, maxConns int) *idpEnv {
+	t.Helper()
 	google := newFakeIdP(t, "https://accounts.google.com")
 	google.clientSecret = googleSecret
 	apple := newFakeIdP(t, "https://appleid.apple.com")
@@ -250,7 +256,7 @@ func newIdPEnv(t *testing.T) *idpEnv {
 	der, _ := x509.MarshalPKCS8PrivateKey(ecKey)
 	applePEM := string(pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der}))
 
-	e := newEnv(t, nil, app.WithIdPEndpoints(
+	e := newEnvWithPool(t, maxConns, nil, app.WithIdPEndpoints(
 		google.endpoints("https://accounts.google.com", "accounts.google.com"),
 		apple.endpoints("https://appleid.apple.com"), http.DefaultClient))
 	p := e.authProject("chat-app")

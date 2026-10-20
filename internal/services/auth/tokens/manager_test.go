@@ -154,7 +154,7 @@ func TestConcurrentBootstrapMakesOneActiveKey(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// Separate managers model separate request goroutines with cold caches.
-			mm := &Manager{pool: m.pool, q: m.q, keys: m.keys, now: time.Now, signers: map[signerKey]*signer{}}
+			mm := &Manager{pool: m.pool, q: m.q, keys: m.keys, now: time.Now, signers: map[signerKey]*Signer{}}
 			tok, err := mm.Sign(ctx, projB, IDToken, testClaims{Sub: "x"})
 			if err != nil {
 				t.Error(err)

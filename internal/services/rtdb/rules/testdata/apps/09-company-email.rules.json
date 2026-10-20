@@ -1,0 +1,18 @@
+{
+  "rules": {
+    // Staff only: a verified address at the company's domain.
+    ".read": "auth != null && auth.token.email_verified == true && auth.token.email.matches(/.*@example\\.com$/)",
+    "staff": {
+      "$uid": {
+        ".write": "auth.uid == $uid && auth.token.email.endsWith('@example.com')",
+        "email": { ".validate": "newData.isString() && newData.val().toLowerCase() == auth.token.email.toLowerCase()" }
+      }
+    },
+    "guests": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth.uid == $uid && !auth.token.email.contains('@example.com')"
+      }
+    }
+  }
+}

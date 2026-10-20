@@ -1,0 +1,30 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid",
+        ".validate": "newData.hasChildren(['name', 'age'])",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+        },
+        "age": {
+          ".validate": "newData.isNumber() && newData.val() >= 13 && newData.val() < 150"
+        },
+        "bio": {
+          ".validate": "newData.isString() && newData.val().length < 500"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "publicProfiles": {
+      ".read": true,
+      "$uid": {
+        ".write": "auth.uid === $uid",
+        "displayName": { ".validate": "newData.isString()" }
+      }
+    }
+  }
+}
