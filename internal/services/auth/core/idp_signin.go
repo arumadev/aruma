@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/osama300/aurma-project/internal/services/auth/queries"
+	"github.com/osama300/aurma-project/internal/services/auth/tokens"
 	"github.com/osama300/aurma-project/internal/store"
 )
 
@@ -118,11 +119,15 @@ func (s *Service) SignInWithIdP(ctx context.Context, p Project, in IdPInput) (*I
 	if err != nil {
 		return nil, err
 	}
+	sg, err := s.idSigner(ctx, p)
+	if err != nil {
+		return nil, err
+	}
 	err = s.tx(ctx, func(q *queries.Queries, tx pgx.Tx) error {
 		if linkTo != nil {
-			return s.linkIdP(ctx, q, p, a, r, *linkTo)
+			return s.linkIdP(ctx, q, sg, p, a, r, *linkTo)
 		}
-		return s.signInIdP(ctx, q, tx, p, cfg, a, r, autoCreate)
+		return s.signInIdP(ctx, q, tx, sg, p, cfg, a, r, autoCreate)
 	})
 	if c, ok := store.UniqueViolation(err); ok {
 		err = ErrEmailExists
@@ -291,11 +296,11 @@ func vouchesFor(provider string, c *providerClaims, email string) bool {
 // else, when the provider vouches for the email, the account with that email (whose password
 // and other providers are dropped if its email was never verified, so whoever registered the
 // address first cannot keep a way in); else a confirmation is needed; else a new account.
-func (s *Service) signInIdP(ctx context.Context, q *queries.Queries, tx pgx.Tx, p Project, cfg queries.AuthProjectConfig, a *assertion, r *IdPResult, autoCreate bool) error {
+func (s *Service) signInIdP(ctx context.Context, q *queries.Queries, tx pgx.Tx, sg *tokens.Signer, p Project, cfg queries.AuthProjectConfig, a *assertion, r *IdPResult, autoCreate bool) error {
 	raw, err := q.GetUserByProvider(ctx, queries.GetUserByProviderParams{ProjectNumber: p.Number, TenantID: p.Tenant, ProviderID: r.ProviderID, RawID: r.RawID})
 	switch {
 	case err == nil:
-		return s.finishIdP(ctx, q, p, a, r, raw, false)
+		return s.finishIdP(ctx, q, sg, p, a, r, raw, false)
 	case !errors.Is(err, pgx.ErrNoRows):
 		return err
 	}
@@ -321,7 +326,7 @@ func (s *Service) signInIdP(ctx context.Context, q *queries.Queries, tx pgx.Tx, 
 			}); err != nil {
 				return err
 			}
-			return s.finishIdP(ctx, q, p, a, r, raw, false)
+			return s.finishIdP(ctx, q, sg, p, a, r, raw, false)
 		case err == nil:
 			r.NeedConfirmation = true
 			if !cfg.EnumerationProtection {
@@ -353,7 +358,7 @@ func (s *Service) signInIdP(ctx context.Context, q *queries.Queries, tx pgx.Tx, 
 	if err != nil {
 		return err
 	}
-	if err := s.finishIdP(ctx, q, p, a, r, raw, true); err != nil {
+	if err := s.finishIdP(ctx, q, sg, p, a, r, raw, true); err != nil {
 		return err
 	}
 	return s.userEvent(ctx, tx, p, "auth.user.created", r.Session.User)
@@ -375,7 +380,7 @@ func (s *Service) dropCredentials(ctx context.Context, q *queries.Queries, p Pro
 
 // linkIdP adds the provider to the signed-in user, keeping its uid (an anonymous user is
 // upgraded in place). The identity must not belong to another account, nor its email.
-func (s *Service) linkIdP(ctx context.Context, q *queries.Queries, p Project, a *assertion, r *IdPResult, u User) error {
+func (s *Service) linkIdP(ctx context.Context, q *queries.Queries, sg *tokens.Signer, p Project, a *assertion, r *IdPResult, u User) error {
 	owner, err := q.GetUserByProvider(ctx, queries.GetUserByProviderParams{ProjectNumber: p.Number, TenantID: p.Tenant, ProviderID: r.ProviderID, RawID: r.RawID})
 	switch {
 	case err == nil && owner.Uid != u.UID:
@@ -415,12 +420,12 @@ func (s *Service) linkIdP(ctx context.Context, q *queries.Queries, p Project, a 
 	}); err != nil {
 		return err
 	}
-	return s.finishIdP(ctx, q, p, a, r, raw, false)
+	return s.finishIdP(ctx, q, sg, p, a, r, raw, false)
 }
 
 // finishIdP records the provider on the account, keeps Apple's refresh token for revocation,
 // and starts the session.
-func (s *Service) finishIdP(ctx context.Context, q *queries.Queries, p Project, a *assertion, r *IdPResult, raw queries.AuthUser, isNew bool) error {
+func (s *Service) finishIdP(ctx context.Context, q *queries.Queries, sg *tokens.Signer, p Project, a *assertion, r *IdPResult, raw queries.AuthUser, isNew bool) error {
 	if raw.Disabled {
 		return ErrUserDisabled
 	}
@@ -445,7 +450,7 @@ func (s *Service) finishIdP(ctx context.Context, q *queries.Queries, p Project, 
 	if err != nil {
 		return err
 	}
-	r.Session, err = s.startSession(ctx, q, p, u, r.ProviderID, nil, isNew)
+	r.Session, err = s.startSession(ctx, q, sg, p, u, r.ProviderID, nil, isNew)
 	return err
 }
 

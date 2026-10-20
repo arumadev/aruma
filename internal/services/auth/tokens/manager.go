@@ -50,7 +50,7 @@ type Manager struct {
 	now  func() time.Time
 
 	mu      sync.Mutex
-	signers map[signerKey]*signer
+	signers map[signerKey]*Signer
 }
 
 type signerKey struct {
@@ -58,28 +58,37 @@ type signerKey struct {
 	purpose Purpose
 }
 
-type signer struct {
+// Signer signs with one key, held in memory: signing does not touch the database.
+type Signer struct {
 	kid string
 	key *rsa.PrivateKey
 }
 
+// Sign returns claims as an RS256 JWT.
+func (s *Signer) Sign(claims any) (string, error) { return sign(s.kid, s.key, claims) }
+
 // NewManager returns a token manager.
 func NewManager(pool *pgxpool.Pool, keys *crypto.Keys) *Manager {
-	return &Manager{pool: pool, q: queries.New(pool), keys: keys, now: time.Now, signers: map[signerKey]*signer{}}
+	return &Manager{pool: pool, q: queries.New(pool), keys: keys, now: time.Now, signers: map[signerKey]*Signer{}}
 }
 
 func aad(kid string) []byte { return []byte("auth.signing_keys|private_key|" + kid) }
 
 // Sign issues a token for the project with its active key, creating the key on first use.
 func (m *Manager) Sign(ctx context.Context, project int64, purpose Purpose, claims any) (string, error) {
-	s, err := m.activeSigner(ctx, project, purpose)
+	s, err := m.Signer(ctx, project, purpose)
 	if err != nil {
 		return "", err
 	}
-	return sign(s.kid, s.key, claims)
+	return s.Sign(claims)
 }
 
-func (m *Manager) activeSigner(ctx context.Context, project int64, purpose Purpose) (*signer, error) {
+// Signer returns the project's active key for the purpose, creating the keys on first use.
+// Until it is cached it reads, and may create, the key through the pool, on a connection of its
+// own. A caller that signs inside a transaction therefore gets its Signer before it begins:
+// asking inside would hold one connection while waiting for another, and once every
+// connection is held that way none is ever freed.
+func (m *Manager) Signer(ctx context.Context, project int64, purpose Purpose) (*Signer, error) {
 	k := signerKey{project, purpose}
 	m.mu.Lock()
 	s, ok := m.signers[k]
@@ -108,7 +117,7 @@ func (m *Manager) activeSigner(ctx context.Context, project int64, purpose Purpo
 	if err != nil {
 		return nil, err
 	}
-	s = &signer{kid: active.Kid, key: priv}
+	s = &Signer{kid: active.Kid, key: priv}
 	m.mu.Lock()
 	m.signers[k] = s
 	m.mu.Unlock()
@@ -197,7 +206,7 @@ func (m *Manager) decrypt(k queries.AuthSigningKey) (*rsa.PrivateKey, error) {
 // JWKS returns the published keys of a project: next, active and retired. Destroyed keys are
 // gone, so tokens they signed no longer verify anywhere.
 func (m *Manager) JWKS(ctx context.Context, project int64, purpose Purpose) ([]JWK, error) {
-	if _, err := m.activeSigner(ctx, project, purpose); err != nil {
+	if _, err := m.Signer(ctx, project, purpose); err != nil {
 		return nil, err
 	}
 	rows, err := m.q.ListSigningKeys(ctx, queries.ListSigningKeysParams{ProjectNumber: project, Purpose: string(purpose)})
