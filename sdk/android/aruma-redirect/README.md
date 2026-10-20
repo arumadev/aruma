@@ -93,7 +93,8 @@ debuggable flag without a `Context`.
   version and re-run a network-guarded conformance pass on each upgrade.
 - Auth only. Firestore (gRPC) and Realtime Database (WebSocket) do not use `URL.openConnection`.
 - Not covered: phone auth, Google sign-in, App Check, reCAPTCHA (they may go through Play services).
-- Tested on an API 33 emulator. R8: the consumer rules keep the provider and the public class.
+- Tested on an API 33 emulator, in debug and in a release build shrunk by R8 (the consumer rules keep the provider,
+  the public class and the configuration error). No physical device yet.
 
 Run the unit tests: `./gradlew :aruma-redirect:testDebugUnitTest`.
 
@@ -137,4 +138,4 @@ Run the unit tests: `./gradlew :aruma-redirect:testDebugUnitTest`.
 - مرتبطة بالنقل الحالي (`URL.openConnection`): لو انتقلت Firebase Auth لاحقًا إلى OkHttp أو Cronet أو gRPC فلن تُرى طلباتها
   **وستذهب إلى Google**. ثبّت إصدار Firebase وأعد اختبار التوافق بحارس شبكة عند كل ترقية.
 - Auth فقط: Firestore (gRPC) وRealtime Database (WebSocket) لا يمرّان بهذه الطبقة. وغير مغطّى: الهاتف ودخول Google وApp Check وreCAPTCHA.
-- جُرّبت على محاكي API 33 فقط.
+- جُرّبت على محاكي API 33، في debug وفي release مصغّر بـ R8 (قواعد المستهلك تبقي المزوّد والصنف العام وخطأ الإعداد). لم تُجرَّب على جهاز حقيقي بعد.
