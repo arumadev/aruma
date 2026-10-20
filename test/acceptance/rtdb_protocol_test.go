@@ -393,9 +393,9 @@ func TestRTDBLockedUntilAdmin(t *testing.T) {
 			t.Errorf("unauthenticated: %+v", r)
 		}
 	}
-	// A user's ID token signs in to nothing until the rules engine (R4).
-	if r := c.call("auth", map[string]any{"cred": "eyJhbGciOiJSUzI1NiJ9.e30.c2ln"}); r.Status != "ok" {
-		t.Errorf("user token: %+v", r)
+	// A token that is no Aruma ID token is refused.
+	if r := c.call("auth", map[string]any{"cred": "eyJhbGciOiJSUzI1NiJ9.e30.c2ln"}); r.Status != "invalid_token" {
+		t.Errorf("forged user token: %+v", r)
 	}
 	if r := c.call("p", map[string]any{"p": "/a", "d": 1}); r.Status != "permission_denied" {
 		t.Errorf("user token wrote: %+v", r)
