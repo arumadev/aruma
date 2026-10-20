@@ -25,6 +25,9 @@ type wsConn struct {
 	api  *API
 	ws   *websocket.Conn
 	sess *session
+	// lp is the long-poll connection this WebSocket joined, for an upgrade (lp.go); nil for
+	// a WebSocket that started its own session.
+	lp *lpConn
 
 	ctx    context.Context // ends both loops
 	cancel context.CancelFunc
@@ -81,7 +84,44 @@ func (c *wsConn) readLoop() {
 		case msg == nil:
 			continue
 		}
+		if c.lp != nil {
+			c.lp.fromSecondary(c, msg)
+			continue
+		}
 		c.sess.handle(c.ctx, msg)
+	}
+}
+
+// runSecondary serves a WebSocket that joined a long-poll session. It drains the outbox only
+// once the long poll has sent its last message; until then it answers pings itself. If it
+// closes before that, the long poll carries on; after, the session ends with it.
+func (c *wsConn) runSecondary() {
+	written := make(chan struct{})
+	go func() {
+		defer close(written)
+		select {
+		case <-c.lp.handover:
+			c.writeLoop()
+		case <-c.ctx.Done():
+		}
+	}()
+	c.readLoop()
+	c.cancel()
+	<-written
+	c.lp.leave(c)
+	if c.lp.moved() {
+		c.sess.close()
+	}
+	_ = c.ws.CloseNow()
+}
+
+// writeNow writes one message at once, beside the outbox: the frames of an upgrade that
+// belong to this WebSocket alone.
+func (c *wsConn) writeNow(msg []byte) {
+	ctx, cancel := context.WithTimeout(c.ctx, writeTimeout)
+	defer cancel()
+	if err := c.ws.Write(ctx, websocket.MessageText, msg); err != nil {
+		c.cancel()
 	}
 }
 

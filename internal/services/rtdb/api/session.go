@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"slices"
 	"sync"
 
 	"github.com/osama300/aurma-project/internal/platform/httpx"
@@ -148,10 +149,50 @@ func (o *outbox) signal() {
 // take returns everything queued. closed reports that nothing more will come; overflowed
 // that the client fell too far behind.
 func (o *outbox) take() (msgs [][]byte, closed, overflowed bool) {
+	msgs, _, closed, overflowed = o.takeUntilFence()
+	return msgs, closed, overflowed
+}
+
+// pushLast queues msg as the last message of one transport and marks the place where the
+// next transport's part of the stream begins (a long poll handing its session over to a
+// WebSocket, lp.go). Both go in at once, so nothing can come between them.
+func (o *outbox) pushLast(msg []byte) bool {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	msgs, o.msgs, o.size = o.msgs, nil, 0
-	return msgs, o.closed, o.overflowed
+	if o.closed {
+		return false
+	}
+	o.msgs = append(o.msgs, msg, nil)
+	o.size += int64(len(msg))
+	o.signal()
+	return true
+}
+
+// takeUntilFence returns what is queued up to the first fence, which it removes; fenced
+// reports that it found one, and whatever follows stays for the next transport.
+func (o *outbox) takeUntilFence() (msgs [][]byte, fenced, closed, overflowed bool) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	n := len(o.msgs)
+	for i, m := range o.msgs {
+		if m == nil {
+			n, fenced = i, true
+			break
+		}
+	}
+	msgs = o.msgs[:n:n]
+	rest := o.msgs[n:]
+	if fenced {
+		rest = rest[1:]
+	}
+	o.msgs = slices.Clone(rest)
+	for _, m := range msgs {
+		o.size -= int64(len(m))
+	}
+	if len(o.msgs) > 0 {
+		o.signal()
+	}
+	return msgs, fenced, o.closed && len(o.msgs) == 0, o.overflowed
 }
 
 // close stops the outbox; what is queued can still be taken.

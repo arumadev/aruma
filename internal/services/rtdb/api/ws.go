@@ -53,6 +53,10 @@ func (a *API) serveWS(w http.ResponseWriter, r *http.Request, target core.Target
 		return // Accept has answered
 	}
 	ws.SetReadLimit(maxFrameBytes)
+	if s := r.URL.Query().Get("s"); s != "" {
+		a.joinLP(ws, s, host)
+		return
+	}
 	// The open rules of development reach clients on this machine only, judged by the
 	// connection's own peer, never by forwarded headers.
 	sess, err := a.openSession(target, r)
@@ -71,6 +75,33 @@ func (a *API) serveWS(w http.ResponseWriter, r *http.Request, target core.Target
 	// port this client used (ADR-018; docs/research/rtdb/J-lp-trap.md).
 	c.sess.send(wire.EncodeHello(wire.Hello{Timestamp: a.svc.Now().UnixMilli(), Host: host, Session: c.sess.id}))
 	c.run()
+}
+
+// joinLP serves a WebSocket that comes to take over the long-poll session s, the session id
+// of its hello (lp.go). The emulator answers an unknown session with a reset to the host and
+// drops the socket (golden lp_upgrade.json); so does Aruma.
+func (a *API) joinLP(ws *websocket.Conn, s, host string) {
+	lp := a.lpOfSession(s)
+	var c *wsConn
+	if lp != nil {
+		c = newWSConn(a, ws, lp.sess)
+		c.lp = lp
+	}
+	if c == nil || !lp.join(c) {
+		ctx, cancel := context.WithTimeout(context.Background(), writeTimeout)
+		defer cancel()
+		_ = ws.Write(ctx, websocket.MessageText, wire.EncodeReset(host))
+		_ = ws.CloseNow()
+		return
+	}
+	if !a.track(c) {
+		lp.leave(c)
+		_ = ws.Close(websocket.StatusGoingAway, "")
+		return
+	}
+	defer a.untrack(c)
+	c.writeNow(wire.EncodeSwitchAck())
+	c.runSecondary()
 }
 
 // maxFrameBytes caps one WebSocket frame. The SDKs send at most 16384 UTF-16 code units per
@@ -126,7 +157,7 @@ func (a *API) enter() bool {
 
 // track registers a connection for Shutdown; false once shutdown has begun, so a connection
 // accepted meanwhile is closed rather than missed.
-func (a *API) track(c *wsConn) bool {
+func (a *API) track(c transport) bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if a.shuttingDown {
@@ -136,7 +167,7 @@ func (a *API) track(c *wsConn) bool {
 	return true
 }
 
-func (a *API) untrack(c *wsConn) {
+func (a *API) untrack(c transport) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	delete(a.conns, c)
@@ -153,7 +184,7 @@ func (a *API) untrack(c *wsConn) {
 func (a *API) Shutdown(ctx context.Context) error {
 	a.mu.Lock()
 	a.shuttingDown = true
-	conns := make([]*wsConn, 0, len(a.conns))
+	conns := make([]transport, 0, len(a.conns))
 	for c := range a.conns {
 		conns = append(conns, c)
 	}

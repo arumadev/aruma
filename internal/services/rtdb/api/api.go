@@ -1,12 +1,11 @@
 // Package api serves Aruma's Realtime Database to the Firebase SDKs: the WebSocket protocol
-// at /.ws (ws.go, conn.go, dispatch.go), and later long polling at /.lp and REST at
+// at /.ws (ws.go, conn.go, dispatch.go), long polling at /.lp (lp.go), and later REST at
 // /<path>.json. A request names its database by host, https://<ns>.<rtdb.domain>, or on the
 // main host by ?ns=<ns> (ADR-018).
 //
 // The protocol session (session.go) is separate from its transport: it decodes requests,
 // orders replies and fills a byte-bounded outbox that a transport drains. A WebSocket is one
-// transport; the long poll of R3 will be another, able to hand its session over to a
-// WebSocket.
+// transport; the long poll is another, able to hand its session over to a WebSocket.
 package api
 
 import (
@@ -61,9 +60,18 @@ type API struct {
 	perIP *ipCounter
 
 	mu           sync.Mutex
-	conns        map[*wsConn]struct{}
+	conns        map[transport]struct{}
 	shuttingDown bool
 	wg           sync.WaitGroup
+	// lps are the long-poll connections by id, lpSessions by session id (lp.go).
+	lps        map[string]*lpConn
+	lpSessions map[string]*lpConn
+	lpSeq      int64
+}
+
+// transport is an open connection that Shutdown closes.
+type transport interface {
+	shutdown()
 }
 
 // New returns the API.
@@ -71,7 +79,8 @@ func New(svc *core.Service, opts Options, logger *slog.Logger) *API {
 	opts.Domain = strings.ToLower(opts.Domain)
 	lim := svc.Limits()
 	return &API{
-		svc: svc, opts: opts, log: logger, conns: map[*wsConn]struct{}{},
+		svc: svc, opts: opts, log: logger, conns: map[transport]struct{}{},
+		lps: map[string]*lpConn{}, lpSessions: map[string]*lpConn{},
 		inflight: &budget{left: lim.InflightBytes},
 		perIP:    &ipCounter{limit: lim.ConnectionsPerIP, n: map[netip.Addr]int{}},
 	}
@@ -95,8 +104,7 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.URL.Path == "/.ws":
 		a.serveWS(w, r, target)
 	case r.URL.Path == "/.lp":
-		// Long polling comes with the listeners in R3 (ADR-020).
-		writeError(w, http.StatusNotFound, "Long polling is not supported by this server yet.")
+		a.serveLP(w, r, target)
 	case r.URL.Path == "/.settings/rules.json":
 		a.serveRules(w, r, target)
 	case strings.HasSuffix(r.URL.Path, ".json"):

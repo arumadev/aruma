@@ -167,7 +167,10 @@ func newTestAPI(t *testing.T, opts Options, co core.Options) (*API, *memStore, *
 	if opts.Credentials == nil {
 		opts.Credentials, opts.Projects = v, owner{}
 	}
-	return New(svc, opts, discard), store, v
+	a := New(svc, opts, discard)
+	// Long-poll connections outlive their requests: close them before the service.
+	t.Cleanup(func() { a.Shutdown(context.Background()) })
+	return a, store, v
 }
 
 // client is a raw protocol connection to an API served by httptest.
@@ -297,7 +300,7 @@ func TestRoutes(t *testing.T) {
 		// The control plane being down is no missing database (review #13).
 		{"/.ws?ns=outage-default-rtdb", http.StatusServiceUnavailable},
 		{"/.ws", http.StatusBadRequest},
-		{"/.lp?ns=chat-app-default-rtdb&start=t", http.StatusNotFound},
+		{"/.lp?ns=chat-app-default-rtdb&start=t", http.StatusOK},
 		{"/x.json?ns=chat-app-default-rtdb", http.StatusNotImplemented},
 		{"/x?ns=chat-app-default-rtdb", http.StatusBadRequest},
 		{"/.ws?ns=chat-app-default-rtdb", http.StatusUpgradeRequired}, // not an upgrade
