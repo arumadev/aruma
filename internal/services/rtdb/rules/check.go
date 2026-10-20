@@ -144,7 +144,7 @@ func (rs *Ruleset) CanWrite(ctx context.Context, env Env, changes ...Change) (bo
 		w.changes = append(w.changes, change{path: c.Path, value: v})
 	}
 	ev := newEvaluator(w, env)
-	ev.query = &PlainListen
+	ev.query = &Query{} // a write has no query: every field is false or null (emulator 4.11.2)
 	validated := map[validation]bool{}
 	for _, c := range w.changes {
 		ok := rs.checkChange(ev, c, validated)

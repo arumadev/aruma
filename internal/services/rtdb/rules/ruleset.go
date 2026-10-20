@@ -135,11 +135,19 @@ func (b *builder) node(v *jsonValue, path string, vars []string) (*node, error) 
 	n := &node{}
 	seen := map[string]bool{}
 	for _, m := range v.members {
+		childPath := path + "/" + m.key
+		// Firebase reports a problem with a child key once it has read the child, at its end.
+		end := m.val.off
+		if m.val.kind == jsonObject {
+			end = m.val.end
+		}
 		if seen[m.key] {
-			return nil, b.at(m.keyOff, path, fmt.Sprintf("Cannot have multiple '%s' rules.", m.key))
+			if strings.HasPrefix(m.key, ".") {
+				return nil, b.at(m.keyOff, path, fmt.Sprintf("Cannot have multiple '%s' rules.", m.key))
+			}
+			return nil, b.at(end, path, fmt.Sprintf("'%s' occurs multiple times.", m.key))
 		}
 		seen[m.key] = true
-		childPath := path + "/" + m.key
 		switch {
 		case m.key == ".read" || m.key == ".write" || m.key == ".validate":
 			kind := map[string]ruleKind{".read": kindRead, ".write": kindWrite, ".validate": kindValidate}[m.key]
@@ -165,10 +173,10 @@ func (b *builder) node(v *jsonValue, path string, vars []string) (*node, error) 
 			return nil, b.at(m.val.off, childPath, "Expected '{'.")
 		case strings.HasPrefix(m.key, "$"):
 			if !validKey(m.key[1:]) {
-				return nil, b.at(m.val.off, childPath, `String can't contain ".", "#", "$", "/", "[", or "]"`)
+				return nil, b.at(end, childPath, `String can't contain ".", "#", "$", "/", "[", or "]"`)
 			}
 			if n.wild != nil {
-				return nil, b.at(m.val.off, childPath, fmt.Sprintf("Cannot have multiple default rules ('%s' and '%s').", n.wildName, m.key))
+				return nil, b.at(end, childPath, fmt.Sprintf("Cannot have multiple default rules ('%s' and '%s').", n.wildName, m.key))
 			}
 			child, err := b.node(m.val, childPath, append(vars[:len(vars):len(vars)], m.key))
 			if err != nil {
@@ -180,7 +188,7 @@ func (b *builder) node(v *jsonValue, path string, vars []string) (*node, error) 
 				return nil, b.at(m.keyOff, childPath, "Unexpected empty string.")
 			}
 			if !validKey(m.key) {
-				return nil, b.at(m.val.off, childPath, `String can't contain ".", "#", "$", "/", "[", or "]"`)
+				return nil, b.at(end, childPath, `String can't contain ".", "#", "$", "/", "[", or "]"`)
 			}
 			child, err := b.node(m.val, childPath, vars)
 			if err != nil {

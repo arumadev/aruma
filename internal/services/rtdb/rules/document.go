@@ -25,6 +25,7 @@ const (
 type jsonValue struct {
 	kind jsonKind
 	off  int // offset of the value's first byte in the document
+	end  int // offset of an object's closing brace
 	str  string
 	// offs maps each byte of str to its offset in the document, plus one entry for the end, so
 	// escapes such as \" or é do not shift the positions reported inside an expression.
@@ -166,6 +167,7 @@ func (r *docReader) object(depth int) (*jsonValue, error) {
 			return nil, r.fail(r.pos, "Unexpected EOF.")
 		}
 		if r.src[r.pos] == '}' {
+			v.end = r.pos
 			r.pos++
 			return v, nil
 		}

@@ -271,7 +271,7 @@ func (l *lexer) regex() (string, string, *exprError) {
 	inClass := false
 	for {
 		if l.pos >= len(l.src) || l.src[l.pos] == '\n' || l.src[l.pos] == '\r' {
-			return "", "", errAt(start, "unterminated regular expression literal")
+			return "", "", errAt(min(l.pos, len(l.src)), "unterminated regular expression literal")
 		}
 		c := l.src[l.pos]
 		switch {

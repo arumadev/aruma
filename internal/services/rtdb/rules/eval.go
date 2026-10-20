@@ -280,6 +280,14 @@ func (ev *evaluator) member(e *member) (any, error) {
 			return nil, fail("a property name must be a string or a number")
 		}
 	}
+	if e.recv == tStr || e.recv == tPrim {
+		// .length of a value that is not a string fails, null included, where the same
+		// property of something under auth is null (emulator 4.11.2).
+		if s, ok := obj.(string); ok && key == "length" {
+			return float64(utf16Len(s)), nil
+		}
+		return nil, fail("length needs a string")
+	}
 	switch o := obj.(type) {
 	case nil:
 		return nil, nil // auth.uid is null when auth is (reference)

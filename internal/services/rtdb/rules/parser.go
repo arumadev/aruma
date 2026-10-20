@@ -39,7 +39,7 @@ func parseExpr(src string) (expr, *exprError) {
 			return nil, errAt(e.at(), commaRefused)
 		}
 		if semicolon || p.tok.nl {
-			return nil, errAt(e.at(), "Rule expressions may not contain multiple expressions.")
+			return nil, errAt(p.tok.pos, "Rule expressions may not contain multiple expressions.")
 		}
 		return nil, p.unexpected()
 	}
