@@ -189,3 +189,22 @@ Every path below starts with `/projects/{project}/auth`. They act on Aruma Auth 
 `User` = `{uid, email?, emailVerified, displayName?, photoUrl?, disabled, providers: [{providerId, email?}], customClaims?, hasPassword, createTime, lastSignInTime?, lastRefreshTime?, tokensValidAfterTime}`. The password hash is never returned. An anonymous user has no providers and no email.
 
 `AuthConfig` = `{passwordEnabled, anonymousEnabled, clientSignupEnabled, enumerationProtection, authorizedDomains, passwordMinLength, passwordRequireLowercase, passwordRequireUppercase, passwordRequireNumeric, passwordRequireSymbol, passwordEnforcement, appName, updateTime, limits}`. `limits` is read-only: the values no setting changes, `{idTokenLifetimeSeconds, sessionCookieMaxSeconds, signingKeyRotationDays, requestsPerMinute, requestBurst, signUpsPerMinute, signUpBurst, passwordFailures, passwordFailureWindowSeconds, passwordBackoffMaxSeconds, emailCodeLifetimeSeconds: {VERIFY_EMAIL, PASSWORD_RESET, VERIFY_AND_CHANGE_EMAIL, RECOVER_EMAIL}}` (client calls and sign-ups are counted per address, password failures per project and email).
+
+## Realtime Database: data and rules
+
+Every path below starts with `/projects/{project}/database`. Session or CLI token. They act on the project's default database, `<project_id>-default-rtdb`, as an admin: rules do not apply. Writes go through the database's writer like an SDK's, so clients listening see them at once. While the server runs without `rtdb.enabled`, `GET /database` answers `enabled: false` and every other route `FAILED_PRECONDITION`. Errors keep Firebase's message (`Invalid data; Key value can't be empty or contain $ # [ ] / or .`): invalid paths and data are `INVALID_ARGUMENT`, a project at its connection or write-rate limit `RESOURCE_EXHAUSTED`.
+
+| Method | Path | Body → Response |
+|---|---|---|
+| GET | (the prefix itself) | → `{name, databaseURL, enabled, devOpenRules, writeCount, size: {rows, bytes, capped}, limits: {keyBytes, pathBytes, depth, stringBytes, writeBytes, exportBytes}}`. `databaseURL` is what config files carry (ADR-018). `size` counts stored values up to 100 000 (`capped` past it) |
+| GET | `/data?path=&pageSize=&pageToken=` | → `{path, exists, value?, children: [Child], nextPageToken}`. One level, as REST's `shallow=true`: `value` when the node is a leaf, else a page of its children (`pageSize` default 100, max 1000). Pages follow the keys' byte order; a page holding every child is in Firebase's key order. Read from the stored rows, so a large node is never loaded whole |
+| GET | `/data:export?path=` | → the subtree as a JSON file (`Content-Disposition: attachment`), without priorities. Over 200 000 values or 16 MiB of values it is `FAILED_PRECONDITION`: use the REST API or an Admin SDK |
+| PUT | `/data?path=` | `{value}` → 204. `set()`: replaces the node; `value` is in the SDKs' export format (`.priority`, `.value`, `{".sv": "timestamp"}`); `null` deletes |
+| PATCH | `/data?path=` | `{value: {"<relative/path>": value, …}}` → 204. `update()`: the children are written at once |
+| DELETE | `/data?path=` | → 204. Removes the node and everything below it |
+| GET | `/rules` | → `{rules}`: the document as stored, comments included |
+| PUT | `/rules` | `{rules}` → `{rules}`. Saved as written once it loads, the way `PUT /.settings/rules.json` saves it. Otherwise `INVALID_ARGUMENT` with a `BadRequest` violation on `rules` and a detail `{"@type": "type.aruma.dev/rtdb.RulesErrors", errors: [{line, column, path?, message}]}` listing every error at its 1-based line and column (characters), and `path` naming the rule (`rules/users/$uid/.write`) |
+
+- `path` is `/`-separated from the root (`/`, `/users/amal`); keys may not be empty or hold `. # $ [ ] /` or control characters, at most 768 bytes in all and 32 deep.
+- `Child` = `{key, value}` for a leaf (`truncated: true` when a string over 1000 bytes is cut; read the child's own path for all of it), or `{key, hasChildren: true}`.
+- Bodies are capped at 1 MiB, like every console route; larger imports belong to the REST API.

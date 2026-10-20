@@ -26,6 +26,7 @@ import (
 	authconsole "github.com/osama300/aurma-project/internal/services/auth/console"
 	identity "github.com/osama300/aurma-project/internal/services/auth/core"
 	rtdbapi "github.com/osama300/aurma-project/internal/services/rtdb/api"
+	rtdbconsole "github.com/osama300/aurma-project/internal/services/rtdb/console"
 	rtdb "github.com/osama300/aurma-project/internal/services/rtdb/core"
 	"github.com/osama300/aurma-project/internal/store"
 	"github.com/osama300/aurma-project/internal/tenancy/core"
@@ -103,9 +104,26 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		st.idp(authSvc)
 	}
 	idTokens, revocations := authSvc.IDTokenVerifier(), authSvc.Revocations()
+	var rtdbSvc *rtdb.Service
+	if cfg.RTDB.Enabled {
+		l := cfg.RTDB.Limits
+		rtdbSvc = rtdb.New(rtdb.NewPGStore(pool), svc, rtdb.Options{
+			Limits: rtdb.Limits{
+				MessageBytes: l.MessageBytes, UnauthenticatedMessageBytes: l.UnauthenticatedMessageBytes,
+				InflightBytes: l.InflightBytes, RESTWriteBytes: l.RESTWriteBytes, StringBytes: l.StringBytes,
+				WriteBytesPerMinute: l.WriteBytesPerMinute, ConnectionsPerProject: l.ConnectionsPerProject,
+				ConnectionsPerIP: l.ConnectionsPerIP, OutboxBytes: l.OutboxBytes,
+			},
+			DevOpenRules: cfg.RTDB.DevOpenRules,
+			// R4: pass idTokens and revocations here.
+		}, logger)
+	}
 	consoleAPI := console.New(svc, auth, logger, console.Options{
 		Version: version, SecureCookies: cfg.SecureCookies(),
-		Mounts: []func(*consolemount.Mount){authconsole.Routes(authSvc)},
+		Mounts: []func(*consolemount.Mount){
+			authconsole.Routes(authSvc),
+			rtdbconsole.Routes(rtdbSvc, rtdbconsole.Options{DatabaseURL: svc.DatabaseURL, DevOpenRules: cfg.RTDB.DevOpenRules}),
+		},
 	})
 	mgmtAPI := mgmt.New(svc, auth, logger)
 	dashboard, err := web.New(web.Embedded())
@@ -120,19 +138,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		Auth:    authapi.New(authSvc, auth, logger).Handler(),
 		Static:  dashboard,
 	}
-	var rtdbSvc *rtdb.Service
-	if cfg.RTDB.Enabled {
-		l := cfg.RTDB.Limits
-		rtdbSvc = rtdb.New(rtdb.NewPGStore(pool), svc, rtdb.Options{
-			Limits: rtdb.Limits{
-				MessageBytes: l.MessageBytes, UnauthenticatedMessageBytes: l.UnauthenticatedMessageBytes,
-				InflightBytes: l.InflightBytes, RESTWriteBytes: l.RESTWriteBytes, StringBytes: l.StringBytes,
-				WriteBytesPerMinute: l.WriteBytesPerMinute, ConnectionsPerProject: l.ConnectionsPerProject,
-				ConnectionsPerIP: l.ConnectionsPerIP, OutboxBytes: l.OutboxBytes,
-			},
-			DevOpenRules: cfg.RTDB.DevOpenRules,
-			// R4: pass idTokens and revocations here.
-		}, logger)
+	if rtdbSvc != nil {
 		rtdbAPI := rtdbapi.New(rtdbSvc, rtdbapi.Options{
 			Domain:         cfg.RTDB.Domain,
 			TrustedProxies: cfg.TrustedProxyPrefixes(),

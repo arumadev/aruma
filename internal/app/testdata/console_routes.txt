@@ -66,3 +66,11 @@ DELETE /console/v1/projects/{project}/auth/mailbox session+token
 POST   /console/v1/projects/{project}/auth/users/{uid}:sendPasswordReset session+token
 GET    /console/v1/projects/{project}/auth/providers session+token
 PATCH  /console/v1/projects/{project}/auth/providers/{providerId} session+token
+GET    /console/v1/projects/{project}/database session+token
+GET    /console/v1/projects/{project}/database/data session+token
+GET    /console/v1/projects/{project}/database/data:export session+token
+PUT    /console/v1/projects/{project}/database/data session+token
+PATCH  /console/v1/projects/{project}/database/data session+token
+DELETE /console/v1/projects/{project}/database/data session+token
+GET    /console/v1/projects/{project}/database/rules session+token
+PUT    /console/v1/projects/{project}/database/rules session+token
