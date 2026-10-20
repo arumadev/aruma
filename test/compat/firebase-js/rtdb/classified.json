@@ -1,0 +1,19 @@
+{
+  "about": "Tests that fail on a target for a known reason that is not a bug in that target. summarize.mjs prints the class next to the failure and does not count it as a regression. An entry matches by file and full title, and only for the targets and modes it names (all when left out).",
+  "classes": {
+    "emulator-hello-host": "The emulator names its own plain-http bind address in the hello (h), where the SDK sends later connections; behind TLS they fail. The TLS front rewrites it unless RTDB_EMULATOR_HELLO=keep, so these fail only then.",
+    "assumes-firebaseio": "The test only works with a *.firebaseio.com databaseURL.",
+    "needs-real-project": "The test needs a real Firebase project or Google service.",
+    "timing": "The test depends on timing the target cannot be expected to match."
+  },
+  "tests": [
+    {
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests blocks get requests until the database is online",
+      "class": "emulator-hello-host",
+      "targets": ["emulator"],
+      "modes": ["production"],
+      "why": "goOnline() reconnects to the hello's h, 127.0.0.1:9470, with TLS. Fails only with RTDB_EMULATOR_HELLO=keep (emulator 4.11.2, 2026-10-20)."
+    }
+  ]
+}

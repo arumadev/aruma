@@ -4,6 +4,10 @@
 written for the Auth emulator, against a throwaway Aruma server. Results and the
 classification of every non-passing test: [docs/compat/firebase-js-suites.md](../../../docs/compat/firebase-js-suites.md).
 
+The Realtime Database suites run from `rtdb/`, against the emulator or Aruma:
+`run.sh rtdb --target emulator|aruma --mode emulator|production` (see
+[rtdb/README.md](rtdb/README.md)).
+
 ## What it runs
 
 | Suite | Upstream | Tests |

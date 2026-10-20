@@ -1,0 +1,36 @@
+{
+  "name": "aruma-rtdb-compat-runner",
+  "private": true,
+  "description": "What the RTDB suites of firebase-js-sdk need to run from source: the @firebase packages at the versions firebase@13.0.0 ships, and the test tools at the versions its yarn.lock pins. run.sh installs it with npm ci --ignore-scripts next to the extracted sources.",
+  "dependencies": {
+    "@firebase/app": "0.16.3",
+    "@firebase/app-check-interop-types": "0.3.5",
+    "@firebase/app-compat": "0.5.19",
+    "@firebase/app-types": "0.9.6",
+    "@firebase/auth-interop-types": "0.2.6",
+    "@firebase/component": "0.7.5",
+    "@firebase/database": "1.1.5",
+    "@firebase/database-types": "1.0.22",
+    "@firebase/logger": "0.5.2",
+    "@firebase/util": "1.15.3",
+    "faye-websocket": "0.11.4",
+    "tslib": "2.8.1"
+  },
+  "devDependencies": {
+    "@types/chai": "4.3.20",
+    "@types/chai-as-promised": "7.1.8",
+    "@types/mocha": "10.0.10",
+    "@types/node": "24.1.0",
+    "@types/sinon": "22.0.0",
+    "@types/sinon-chai": "4.0.0",
+    "@types/trusted-types": "2.0.7",
+    "chai": "4.5.0",
+    "chai-as-promised": "7.1.2",
+    "lodash": "4.18.1",
+    "mocha": "11.8.0",
+    "sinon": "22.1.0",
+    "sinon-chai": "3.7.0",
+    "ts-node": "10.9.2",
+    "typescript": "5.5.4"
+  }
+}

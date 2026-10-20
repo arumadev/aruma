@@ -1,0 +1,2155 @@
+{
+  "note": "Written by run.sh --update-baseline. Durations and retries are left out, so that a new recording only differs where a result does.",
+  "meta": {
+    "date": "2026-10-20T16:36:06Z",
+    "target": "emulator",
+    "mode": "emulator",
+    "targetVersion": "emulator 4.11.2 (firebase-database-emulator-v4.11.2.jar)",
+    "databaseURL": "http://localhost:9470?ns=compat-tests-default-rtdb",
+    "helloRewritten": false,
+    "suites": [
+      "compat",
+      "exp"
+    ],
+    "firebaseJsSdk": "d7bb0e16f2b13ba15f74b690596eb70ef145d4f6",
+    "node": "v24.21.0",
+    "skippedFiles": [
+      "packages/database-compat/test/browser/crawler_support.test.ts"
+    ],
+    "handshake": {
+      "v": "5",
+      "h": "127.0.0.1:9470"
+    }
+  },
+  "counts": {
+    "passed": 336,
+    "failed": 0,
+    "skipped": 18
+  },
+  "tests": [
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get database.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get database with custom URL",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get database with custom URL and port",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get database with https URL",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get database with multi-region URL",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get database with upper case URL",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get database with localhost URL",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get database with localhost URL and port",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get database with a upper case localhost URL",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get database with a upper case localhost URL and ns",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can infer database URL from project Id",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can read ns query param",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Reads ns query param even when subdomain is set",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Interprets FIREBASE_DATABASE_EMULATOR_HOST var correctly",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Different instances for different URLs",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Different instances for different URLs (with FIREBASE_DATABASE_EMULATOR_HOST)",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Cannot use same URL twice",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Cannot use same URL twice (with FIREBASE_DATABASE_EMULATOR_HOST)",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Databases with legacy domain",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Databases with invalid custom URLs",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get app",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get root ref",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get child ref",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get deep child ref",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get ref from ref",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests ref() validates arguments",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests ref() validates project",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests Can get refFromURL()",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests refFromURL() validates domain",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests refFromURL() validates argument",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests can call useEmulator before use",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests initializes usingEmulator to false before use",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests uses ssl when useEmulator is called with ssl specified",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests cannot call useEmulator after use",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/database.test.ts",
+      "title": "Database Tests refFromURL returns an emulated ref with useEmulator",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/datasnapshot.test.ts",
+      "title": "DataSnapshot Tests DataSnapshot.hasChildren() works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/datasnapshot.test.ts",
+      "title": "DataSnapshot Tests DataSnapshot.exists() works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/datasnapshot.test.ts",
+      "title": "DataSnapshot Tests DataSnapshot.val() works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/datasnapshot.test.ts",
+      "title": "DataSnapshot Tests DataSnapshot.child() works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/datasnapshot.test.ts",
+      "title": "DataSnapshot Tests DataSnapshot.hasChild() works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/datasnapshot.test.ts",
+      "title": "DataSnapshot Tests DataSnapshot.key works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/datasnapshot.test.ts",
+      "title": "DataSnapshot Tests DataSnapshot.forEach() works: no priorities.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/datasnapshot.test.ts",
+      "title": "DataSnapshot Tests DataSnapshot.forEach() works: numeric priorities.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/datasnapshot.test.ts",
+      "title": "DataSnapshot Tests DataSnapshot.forEach() works: numeric priorities as strings.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/datasnapshot.test.ts",
+      "title": "DataSnapshot Tests DataSnapshot.forEach() works: alpha priorities.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/datasnapshot.test.ts",
+      "title": "DataSnapshot Tests DataSnapshot.foreach() works: mixed alpha and numeric priorities",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/datasnapshot.test.ts",
+      "title": "DataSnapshot Tests .val() exports array-like data as arrays.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/datasnapshot.test.ts",
+      "title": "DataSnapshot Tests DataSnapshot can be JSON serialized",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/info.test.ts",
+      "title": ".info Tests Can get a reference to .info nodes.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/info.test.ts",
+      "title": ".info Tests Can't write to .info",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/info.test.ts",
+      "title": ".info Tests Can watch .info/connected.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/info.test.ts",
+      "title": ".info Tests .info/connected correctly goes to false when disconnected.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/info.test.ts",
+      "title": ".info Tests .info/serverTimeOffset",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests Snapshots are iterated in order",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests Snapshots are iterated in order for value",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests Fires child_moved events",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests Callback removal works",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests child_added events are in the correct order",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests Can use key index",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests Queries work on leaf nodes",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests Updates for unindexed queries work",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests Server respects KeyIndex",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests startAt/endAt works on value index",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests startAfter / endAt works on value index",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests startAt / endBefore works on value index",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests startAfter / endBefore works on value index",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests Removing default listener removes non-default listener that loads all data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order_by.test.ts",
+      "title": ".orderBy tests Can define and use an deep index",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Push a bunch of data, enumerate it back; ensure order is correct.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Push a bunch of paths, then write; ensure order is correct.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Push a bunch of data, reconnect, read it back; ensure order is chronological.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Push a bunch of data with explicit priority, reconnect, read it back; ensure order is correct.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Push data with exponential priority and ensure order is correct.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Verify nodes without values aren't enumerated.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Inserting a node under a leaf node preserves its priority.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Verify order of mixed numbers / strings / no priorities.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Verify order of integer keys.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Ensure prevName is correct on child_added event.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Ensure prevName is correct when adding new nodes.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Ensure prevName is correct when adding new nodes with JSON.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Ensure prevName is correct when moving nodes.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Ensure prevName is correct when moving nodes by setting whole JSON.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Case 595: Should not get child_moved event when deleting prioritized grandchild.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Can set value with priority of 0.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Can set object with priority of 0.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Case 2003: Should get child_moved for any priority change, regardless of whether it affects ordering.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Case 2003: Should get child_moved for any priority change, regardless of whether it affects ordering (2).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Can create basic queries.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Exposes database as read-only property",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Invalid queries throw",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests can produce a valid ref",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Passing invalidKeys to startAt / endAt throws.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Passing invalidKeys to startAfter throws.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Passing invalid paths to orderBy throws",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Query.queryIdentifier works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Passing invalid queries to isEqual throws",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Query.isEqual works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Query.off can be called on the default query.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Query.off can be called on the specific query.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Query.off can be called without a callback specified.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Query.off can be called without an event type or callback specified.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Query.off respects provided context (for value events).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Query.off respects provided context (for child events).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Query.off with no callback/context removes all callbacks, even with contexts (for value events).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Query.off with no callback/context removes all callbacks, even with contexts (for child events).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Query.off with no event type / callback removes all callbacks (even those with contexts).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set a limit of 5, add a bunch of nodes, ensure only last 5 items are kept.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Raises snapshots synchronously",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set a limit of 5, add a bunch of nodes, ensure only last 5 items are sent from server.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set various limits, ensure resulting data is correct.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set various limits with a startAt name, ensure resulting data is correct.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set various limits with a startAfter name, ensure resulting data is correct.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set various limits with a endAt name, ensure resulting data is correct.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set various limits with a startAt name, ensure resulting data is correct from the server.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set limit, ensure child_removed and child_added events are fired when limit is hit.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set limit, ensure child_removed and child_added events are fired when limit is hit, using server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set start and limit, ensure child_removed and child_added events are fired when limit is hit.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set startAfter and limit, ensure child_removed and child_added events are fired when limit is hit.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set start and limit, ensure child_removed and child_added events are fired when limit is hit, using server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set start and limit, ensure child_removed and child_added events are fired when limit is hit, using server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set start and limit, ensure child_added events are fired when limit isn't hit yet.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set startAfter and limit, ensure child_added events are fired when limit isn't hit yet.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set start and limit, ensure child_added events are fired when limit isn't hit yet, using server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set startAfter and limit, ensure child_added events are fired when limit isn't hit yet, using server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set a limit, ensure child_removed and child_added events are fired when limit is satisfied and you remove an item.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set a limit, ensure child_removed and child_added events are fired when limit is satisfied and you remove an item. Using server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set a limit, ensure child_removed events are fired when limit is satisfied, you remove an item, and there are no more.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set a limit, ensure child_removed events are fired when limit is satisfied, you remove an item, and there are no more. Using server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAfter on key index works",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure endBefore on key index works",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAfter on key index works with overlapping listener",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure endBefore on key index works with overlapping listener",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAt / endAt with priority works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAfter / endAt with priority works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAt / endBefore with priority works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAfter / endBefore with priority works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAt / endAt with priority work with server data.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAfter / endAt with priority work with server data.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAt / endBefore with priority work with server data.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAfter / endBefore with priority work with server data.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAt / endAt with priority and name works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAfter / endAt with priority and name works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAt / endBefore with priority and name works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAfter / endBefore with priority and name works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAt / endAt with priority and name work with server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAfter / endAt with priority and name work with server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAt / endBefore with priority and name work with server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAfter / endBefore with priority and name work with server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAt / endAt with priority and name works (2).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAfter / endAt with priority and name works (2).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAt / endBefore with priority and name works with queries before set.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAfter / endBefore with priority and name works (2).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAt / endAt with priority and name works (2). With server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAfter / endAt with priority and name works (2). With server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAt / endBefore with priority and name works (2). With server data.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure startAfter / endBefore with priority and name works (2). With server data.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set a limit, add some nodes, ensure prevName works correctly.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set a limit, add some nodes, ensure prevName works correctly. With server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set a limit, move some nodes, ensure prevName works correctly.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set a limit, move some nodes, ensure prevName works correctly, with server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Numeric priorities: Set a limit, move some nodes, ensure prevName works correctly.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Numeric priorities: Set a limit, move some nodes, ensure prevName works correctly. With server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set a limit, add a bunch of nodes, ensure local events are correct.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Set a limit, add a bunch of nodes, ensure remote events are correct.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Query.once() only fires once",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Ensure on() returns callback function.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Limit on unsynced node fires 'value'.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Filtering to only null priorities works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Null priorities not included in startAfter().",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests null priorities included in endAt(2).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests null priorities included in endBefore.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests null priorities not included in startAt(2).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests null priorities not included in startAfter(2).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Dedupe listens: listen on parent.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Dedupe listens: listen on grandchild.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Dedupe listens: listen on grandparent of two children.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Dedupe queried listens: multiple queried listens; no dupes",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Dedupe queried listens: listen on parent of queried children.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Limit with mix of null and non-null priorities.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Limit with mix of null and non-null priorities using server data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests .on() with a context works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests .once() with a context works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests handles an update that deletes the entire window in a query",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests handles an out-of-view query on a child",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests handles a child query going out of view of the parent",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests handles diverging views",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests handles removing a queried element",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests .startAt().limitToFirst(1) works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests .startAt().limitToFirst(1) and then remove first child (case 1664).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests .startAt() with two arguments works properly (case 1169).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests .startAfter() with two arguments works properly (case 1169).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests handles multiple queries on the same node",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests handles once called on a node with a default listener",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests handles once called on a node with a default listener and non-complete limit",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Remote remove triggers events.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests .endAt(null, 'f').limitToLast(5) returns the right set of children.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests .endBefore(null, 'f').limitToLast(5) returns the right set of children.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests complex update() at query root raises correct value event",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests update() at query root raises correct value event",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get at empty node is null",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get at node returns correct value",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get for child returns correct value",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get for parent returns correct value",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get for removed node returns correct value",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get for missing node while offline is rejected",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get reads node from cache when not connected",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get reads child node from cache when not connected",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get reads parent node from cache when not connected",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get with pending node writes when not connected",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get with pending child writes when not connected",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get with pending parent writes when not connected",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get with pending writes",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get child of pending writes",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests get does not cache sibling data",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests set() at query root raises correct value event",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests listen for child_added events with limit and different types fires properly",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests listen for child_changed events with limit and different types fires properly",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests listen for child_remove events with limit and different types fires properly",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests listen for child_remove events when parent removed",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests listen for child_remove events when parent set to scalar",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Queries behave wrong after .once().",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Case 2003: Correctly get events for startAt/endAt queries when priority changes.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Case 2003: Correctly get events for startAfter/endAt queries when priority changes.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Correctly get events for startAt/endBefore queries when priority changes.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Behaves with diverging queries",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Priority-only updates are processed correctly by server.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Server: Test re-listen",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Server: Test re-listen 2",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Server: Test re-listen 3",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Server limit below limit works properly.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Server: Setting grandchild of item in limit works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Server: Updating grandchildren of item in limit works.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Server: New child at end of limit shows up.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Server: Priority-only updates are processed correctly by server (1).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Server: Priority-only updates are processed correctly by server (2).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Latency compensation works with limit and pushed object.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Cache doesn't remove items that have fallen out of view.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests handles an update that moves another child that has a deeper listener out of view",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Integer keys behave numerically 1.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Integer keys behave numerically 2.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Integer keys behave numerically 3.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Integer keys behave numerically with startAfter.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Integer keys behave numerically with startAfter with overflow.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Integer keys behave numerically with endBefore.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Integer keys behave numerically with endBefore with underflow.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Integer keys behave numerically with endBefore at boundary.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests .limitToLast() on node with priority.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests .equalTo works",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Handles fallback for orderBy",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Get notified of deletes that happen while offline.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Snapshot children respect default ordering",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Adding listens for the same paths does not check fail",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/query.test.ts",
+      "title": "Query Tests Can JSON serialize refs",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/servervalues.test.ts",
+      "title": "ServerValue tests resolves timestamps locally",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/servervalues.test.ts",
+      "title": "ServerValue tests handles increments without listeners",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/servervalues.test.ts",
+      "title": "ServerValue tests handles sparse updates",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/servervalues.test.ts",
+      "title": "ServerValue tests handles races",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/servervalues.test.ts",
+      "title": "ServerValue tests handles increments offline",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/servervalues.test.ts",
+      "title": "ServerValue tests handles increments online",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests New value is immediately visible.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Event is raised for new value.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Transaction result can be converted to JSON.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Non-aborted transaction sets committed to true in callback.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Aborted transaction sets committed to false in callback.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Tetris bug test - set data, reconnect, do transaction that aborts once data arrives, verify correct events.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Use transaction to create a node, make sure exactly one event is received.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Use transaction to update one of two existing child nodes. Make sure events are only raised for the changed node.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Transaction is only called once when initializing an empty node.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Second transaction gets run immediately on previous output and only runs once.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Set() cancels pending transactions and re-runs affected transactions.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests transaction(), set(), set() should work.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Priority is preserved when setting data.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Tetris bug test - Can do transactions from transaction callback.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Resulting snapshot is passed to onComplete callback.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Transaction aborts after 25 retries.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Set should cancel already sent transactions that come back as datastale.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Update should not cancel unrelated transactions",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Test transaction on wacky unicode data.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Test immediately aborted transaction.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Test adding to an array with a transaction.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Merged transactions have correct snapshot in onComplete.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Doing set() in successful transaction callback works. Case 870.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Doing set() in aborted transaction callback works. Case 870.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Pending transactions are canceled on disconnect.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Transaction without local events (1)",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Transaction from value callback.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Transaction runs on null only once after reconnect (Case 1981).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests makeFriends user test case.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests transaction() respects .priority.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Transaction properly reverts data when you add a deeper listen.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Transaction with integer keys",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Return null from first run of transaction.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Bubble-app transaction bug.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Transaction and priority: Can set priority in transaction on empty node",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Transaction and priority: Transaction doesn't change priority.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Transaction and priority: Transaction can change priority on non-empty node.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Transaction and priority: Changing priority on siblings.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Transaction and priority: Leaving priority on siblings.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests transaction() doesn't pick up cached data from previous once().",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests transaction() doesn't pick up cached data from previous transaction.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests server values: local timestamp should eventually (but not immediately) match the server with txns",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests transaction() still works when there's a query listen.",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests transaction() on queried location doesn't run initially on null (firebase-worker-queue depends on this).",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests transactions raise correct child_changed events on queries",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests transactions can use local merges",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests transactions works with merges without the transaction path",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests out of order remove writes are handled correctly",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Can listen to transaction changes",
+      "state": "passed"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/info.test.ts",
+      "title": ".info Tests database.goOffline() / database.goOnline() connection management",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Receive child_moved event when priority changes.",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/order.test.ts",
+      "title": "Order Tests Can reset priority to null.",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/promise.test.ts",
+      "title": "Promise Tests wraps Query.once",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/promise.test.ts",
+      "title": "Promise Tests wraps Firebase.set",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/promise.test.ts",
+      "title": "Promise Tests wraps Firebase.push when no value is passed",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/promise.test.ts",
+      "title": "Promise Tests wraps Firebase.push when a value is passed",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/promise.test.ts",
+      "title": "Promise Tests wraps Firebase.remove",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/promise.test.ts",
+      "title": "Promise Tests wraps Firebase.update",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/promise.test.ts",
+      "title": "Promise Tests wraps Firebase.setPriority",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/promise.test.ts",
+      "title": "Promise Tests wraps Firebase.setWithPriority",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/promise.test.ts",
+      "title": "Promise Tests wraps Firebase.transaction",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/promise.test.ts",
+      "title": "Promise Tests exposes catch in the return of Firebase.push",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/promise.test.ts",
+      "title": "Promise Tests wraps onDisconnect.remove",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/promise.test.ts",
+      "title": "Promise Tests wraps onDisconnect.update",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/promise.test.ts",
+      "title": "Promise Tests wraps onDisconnect.set",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/promise.test.ts",
+      "title": "Promise Tests wraps onDisconnect.setWithPriority",
+      "state": "skipped"
+    },
+    {
+      "suite": "compat",
+      "file": "packages/database-compat/test/transaction.test.ts",
+      "title": "Transaction Tests Transaction without local events (2)",
+      "state": "skipped"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests Can get database",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests doesn't try to connect to emulator after database has already started",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests Can get database with custom URL",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests Can get app",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests Can set and get ref",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests Can get refFromUrl",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests Can get updates",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests can connect to emulator",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests can change emulator config before network operations",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests can connect to emulator after network operations with same parameters",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests cannot connect to emulator after network operations with different parameters",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests can properly handle unknown deep merges",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests calls onValue only once after get request with a non-default query",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests [smoketest] - calls onValue() listener when get() is called on a parent node",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests calls onValue and expects no issues with removing the listener",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests calls onValue only once after get request with a default query",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests calls onValue only once after get request with a nested query",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests calls onValue only once after parent get request",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests Can use onlyOnce",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests Can unsubscribe",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests Can delete app",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests blocks get requests until the database is online",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests resolves get to serverCache when the database is offline",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests resolves get to serverCache when the database is offline and using a parent-level listener",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests only fires listener once when calling get with limitTo",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests should listen to a disjointed path and get should return the corresponding value",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests should test startAt get with listener only fires once",
+      "state": "passed"
+    },
+    {
+      "suite": "exp",
+      "file": "packages/database/test/exp/integration.test.ts",
+      "title": "Database@exp Tests Can listen to transaction changes",
+      "state": "passed"
+    }
+  ]
+}
