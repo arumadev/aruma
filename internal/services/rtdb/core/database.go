@@ -334,9 +334,10 @@ func (d *Database) indexed(p Path, q Query) bool {
 }
 
 // read runs a get: the value at p, or the part of it a query selects. A query ordered by a
-// child or by value needs its .indexOn, as in Firebase (ADR-020 §1).
+// child or by value needs its .indexOn, as in Firebase (ADR-020 §1), even with no range or
+// limit: the emulator answers {"i":"s"} alone with no_index (golden query_get.json, r=12).
 func (d *Database) read(ctx context.Context, tx StoreTx, p Path, q *Query) (Result, error) {
-	if q != nil && !q.LoadsAll() && !d.indexed(p, *q) {
+	if q != nil && !d.indexed(p, *q) {
 		return Result{Err: NoIndexError(q.IndexKey(), p)}, nil
 	}
 	n, err := tx.Read(ctx, p)

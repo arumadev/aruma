@@ -222,6 +222,9 @@ func TestListenChildOrderNeedsIndex(t *testing.T) {
 	if !errors.As(err, &e) || e.Status != "no_index" || e.Message != `Index not defined, add ".indexOn": "s", for path "/r", to the rules` {
 		t.Errorf("unindexed get: %v", err)
 	}
+	if _, err := g("/r", `{"i":"s"}`); !errors.As(err, &e) || e.Status != "no_index" {
+		t.Errorf("unindexed get without a limit: %v", err)
+	}
 	if got, err := g("/r", `{"i":".key","l":1,"vf":"r"}`); err != nil || got != `{"c":{"s":0}}` {
 		t.Errorf("key get: %s %v", got, err)
 	}
