@@ -118,9 +118,10 @@ func normalizeEmail(raw string) (string, bool) {
 
 func validDisplayName(s string) bool { return utf8.ValidString(s) && utf8.RuneCountInString(s) <= 256 }
 
-func validPhotoURL(s string) bool {
-	return s == "" || (len(s) <= 2048 && (strings.HasPrefix(s, "https://") || strings.HasPrefix(s, "http://")))
-}
+// validPhotoURL bounds the photo URL and nothing more: Identity Toolkit stores whatever string
+// the app sends, and the web SDK's own integration tests set "photo-url" and read it back. The
+// 2048-byte bound is Aruma's.
+func validPhotoURL(s string) bool { return utf8.ValidString(s) && len(s) <= 2048 }
 
 // reservedClaims may not be set as custom claims (Firebase's list).
 var reservedClaims = map[string]bool{

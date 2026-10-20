@@ -164,9 +164,6 @@ func (s *Service) CreateUser(ctx context.Context, p Project, in AdminUser) (User
 	}
 	var hash string
 	if in.Password != nil {
-		if email == "" {
-			return User{}, ErrMissingEmail
-		}
 		if err := checkPassword(cfg, *in.Password); err != nil {
 			return User{}, err
 		}
@@ -190,7 +187,7 @@ func (s *Service) CreateUser(ctx context.Context, p Project, in AdminUser) (User
 			return err
 		}
 		if hash != "" {
-			if err := s.attachPassword(ctx, q, p, uid, email, hash); err != nil {
+			if err := s.setAdminPassword(ctx, q, p, uid, email, hash); err != nil {
 				return err
 			}
 		}
@@ -209,6 +206,16 @@ func (s *Service) CreateUser(ctx context.Context, p Project, in AdminUser) (User
 		s.audit(ctx, s.q, p, uid, "admin.user.create", "ok", nil)
 	}
 	return u, err
+}
+
+// setAdminPassword sets the password createUser or updateUser gives. Firebase takes one without
+// an email (firebase-admin's own integration tests create {uid, password} users): the hash is
+// kept, and the password provider appears once the user has an email to sign in with.
+func (s *Service) setAdminPassword(ctx context.Context, q *queries.Queries, p Project, uid, email, hash string) error {
+	if email == "" {
+		return q.SetPassword(ctx, queries.SetPasswordParams{ProjectNumber: p.Number, TenantID: p.Tenant, Uid: uid, Hash: hash})
+	}
+	return s.attachPassword(ctx, q, p, uid, email, hash)
 }
 
 // UpdateUser applies an admin change. A new email or password revokes the user's sessions,
@@ -309,10 +316,7 @@ func (s *Service) UpdateUser(ctx context.Context, p Project, in AdminUser) (User
 		email := str(upd.Email)
 		switch {
 		case hash != "":
-			if email == "" {
-				return ErrMissingEmail
-			}
-			if err := s.attachPassword(ctx, q, p, in.UID, email, hash); err != nil {
+			if err := s.setAdminPassword(ctx, q, p, in.UID, email, hash); err != nil {
 				return err
 			}
 		case in.Email != nil && email != "":

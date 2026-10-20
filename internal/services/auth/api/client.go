@@ -57,6 +57,10 @@ func (a *API) clientRoutes(r *httpx.Router) {
 	} {
 		handle(r, http.MethodPost, path, notAllowed)
 	}
+	// The web RecaptchaVerifier reads its site key before any phone call (iOS: getRecaptchaParam).
+	// Unanswered, the SDK would report a network error instead of the disabled provider.
+	handle(r, http.MethodGet, v1+"/recaptchaParams", notAllowed)
+	handle(r, http.MethodGet, v3+"/getRecaptchaParam", notAllowed)
 	a.oobRoutes(r)
 	a.idpRoutes(r)
 }

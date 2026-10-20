@@ -488,6 +488,21 @@ func TestAuthDeferredMethods(t *testing.T) {
 	}
 }
 
+// The web SDK's phone sign-in first fetches the reCAPTCHA site key, cross-origin. Found by
+// Firebase's own phone integration tests (docs/compat/firebase-js-suites.md): without an
+// answer carrying CORS headers the browser saw auth/network-request-failed, not the deferral.
+func TestAuthDeferredPhoneRecaptchaParams(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.authProject("chat-app")
+	for _, path := range []string{itk + "recaptchaParams", rp + "getRecaptchaParam"} {
+		r := e.client().do("GET", path+"?key="+p.key, nil)
+		authErr(t, r, "OPERATION_NOT_ALLOWED")
+		if r.Header.Get("Access-Control-Allow-Origin") != "*" {
+			t.Fatalf("%s: the browser needs CORS to read the error: %v", path, r.Header)
+		}
+	}
+}
+
 // The web SDK's reauthenticate then updatePassword, within one second: the SDK keeps the
 // refresh token it holds when the ID token the update returns is byte for byte its own. The
 // returned session is dated at the revocation point, so its ID token always differs, the SDK
@@ -503,4 +518,23 @@ func TestAuthPasswordChangeRightAfterSignIn(t *testing.T) {
 	}
 	ok(t, p.refresh(upd.str("refreshToken")))
 	authErr(t, p.refresh(in.str("refreshToken")), "TOKEN_EXPIRED")
+}
+
+// A photo URL is any string the app sends, as in Identity Toolkit: the web SDK's own
+// integration tests (email.test.ts, docs/compat/firebase-js-suites.md) set "photo-url" and read
+// it back after a reload. Aruma refused anything but http(s) with a code Firebase does not have.
+func TestAuthPhotoURLIsAnyString(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.adminProject("chat-app")
+	up := p.signUp("sara@example.com", "secret1")
+
+	upd := ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": up.str("idToken"), "photoUrl": "photo-url", "returnSecureToken": true}))
+	assertEqual(t, "photoUrl", upd.str("photoUrl"), "photo-url")
+	assertEqual(t, "stored", p.lookup(up.str("localId"))["photoUrl"], "photo-url")
+	refreshed := ok(t, p.refresh(up.str("refreshToken")))
+	assertEqual(t, "picture", claims(t, refreshed.str("id_token"))["picture"], "photo-url")
+
+	created := ok(t, p.admin(p.sa, "accounts", map[string]any{"localId": "u-2", "photoUrl": "avatars/2.png"}))
+	assertEqual(t, "admin photoUrl", p.lookup(created.str("localId"))["photoUrl"], "avatars/2.png")
+	authErr(t, p.admin(p.sa, "accounts:update", map[string]any{"localId": "u-2", "photoUrl": tooLongPhotoURL}), "INVALID_PHOTO_URL")
 }
