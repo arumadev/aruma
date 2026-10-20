@@ -1,0 +1,48 @@
+fetched 2956 parsed-unique 2255 dup-content 510 unparsable/no-rules 191
+| feature | files | % of 2255 |
+|---|---|---|
+| any .read/.write present | 2255 | 100.0% |
+| .read/.write literal true at root (open) | 183 | 8.1% |
+| all-false/locked (no true/auth anywhere) | 50 | 2.2% |
+| auth != null / !== null | 1699 | 75.3% |
+| auth.uid == $var / ===  | 1413 | 62.7% |
+| auth.uid (any) | 1589 | 70.5% |
+| auth.token.* (any) | 329 | 14.6% |
+| auth.token.email_verified | 58 | 2.6% |
+| auth.token.email | 166 | 7.4% |
+| auth.provider | 6 | 0.3% |
+| $uid-style $variable capture (any $key) | 2001 | 88.7% |
+| .validate present | 1166 | 51.7% |
+| .validate isString/isNumber/isBoolean | 909 | 40.3% |
+| .validate .length | 607 | 26.9% |
+| hasChildren / hasChild | 997 | 44.2% |
+| newData (any) | 1332 | 59.1% |
+| data.exists()/!data.exists() | 880 | 39.0% |
+| data.child / data.parent | 764 | 33.9% |
+| root.child(...) | 867 | 38.4% |
+| .val() (any) | 1420 | 63.0% |
+| now | 335 | 14.9% |
+| query.* (any) | 77 | 3.4% |
+| regex matches(/../) | 323 | 14.3% |
+| string methods contains/beginsWith/endsWith/replace/toLower/toUpper | 145 | 6.4% |
+| getPriority / .priority | 2 | 0.1% |
+| ternary ?: | 122 | 5.4% |
+| arithmetic + - * / % | 102 | 4.5% |
+| .indexOn | 791 | 35.1% |
+| uses parent() | 231 | 10.2% |
+| .read/.write true/false literal only (no exprs at all) | 134 | 5.9% |
+total expressions 43851
+method histogram [('child', 78952), ('val', 49792), ('exists', 12064), ('isString', 9719), ('isNumber', 6250), ('parent', 4244), ('hasChildren', 4162), ('matches', 1829), ('replace', 1352), ('isBoolean', 1313), ('hasChild', 1215), ('contains', 207), ('beginsWith', 207), ('toLowerCase', 181), ('endsWith', 79), ('numChildren', 24), ('length', 17), ('isObject', 8), ('orderByChild', 7), ('equalTo', 7), ('mod', 6), ('isArray', 4), ('childrenCount', 4), ('getPriority', 4), ('match', 3)]
+var histogram [('newData', 53069), ('auth.uid', 28027), ('root', 19771), ('data', 11884), ('auth.token.email', 2079), ('now', 1977), ('auth.token.email_verified', 611), ('auth.token.admin', 578), ('auth.token.role', 419), ('auth.token.firebase', 364), ('query.orderByChild', 165), ('query.equalTo', 164), ('auth.token.roleMap', 157), ('auth.token.superadmin', 135), ('auth.token.auth_time', 132), ('auth.token.tenantId', 90), ('auth.token.subscriptionStatus', 88), ('auth.token.companyId', 84), ('auth.token.companyID', 84), ('auth.token.operator', 66), ('auth.token.schoolIds', 56), ('auth.provider', 49), ('auth.email', 48), ('auth.token.phone_number', 42), ('auth.id', 40), ('auth.token.schoolId', 34), ('auth.token.isTempAccount', 24), ('query.limitToLast', 19), ('auth.token.registered', 18), ('auth.token.isActive', 16)]
+files with only auth/uid/data/newData basic stuff: 1028
+unique repos 2227
+--- coverage tiers
+files using at least one "rarer" feature: 868 38.5%
+files using none (core only): 1387 61.5%
+dropping ['regex'] -> files broken 323 14.3%
+dropping ['regex', 'strmeth'] -> files broken 404 17.9%
+dropping ['arith', 'priority', 'regex', 'strmeth', 'ternary'] -> files broken 594 26.3%
+dropping ['arith', 'priority', 'query', 'regex', 'strmeth', 'ternary'] -> files broken 630 27.9%
+dropping ['arith', 'now', 'priority', 'query', 'regex', 'strmeth', 'ternary'] -> files broken 711 31.5%
+dropping ['arith', 'now', 'priority', 'query', 'regex', 'strmeth', 'ternary', 'token'] -> files broken 868 38.5%
+file size bytes median/p90/max 1242 6899 149834

@@ -7,7 +7,7 @@
 | السجل | الموضوع | الحالة |
 |---|---|---|
 | [ADR-004](ADR-004-token-contract.md) | عقد رمز المستخدم ومُصدِره | معتمد (المرحلة 2) |
-| [ADR-007](ADR-007-projects-and-keys.md) | المشاريع والمفاتيح والمعرّفات | مجمّد، عدا `databaseURL` |
+| [ADR-007](ADR-007-projects-and-keys.md) | المشاريع والمفاتيح والمعرّفات | مجمّد. و`databaseURL` في ADR-018 |
 | [ADR-008](ADR-008-single-entry.md) | المدخل الواحد | معتمد |
 | [ADR-009](ADR-009-data-tooling.md) | أدوات البيانات | معتمد |
 | [ADR-010](ADR-010-secure-defaults.md) | الافتراضيات الآمنة | معتمد |
@@ -18,6 +18,8 @@
 | [ADR-015](ADR-015-services-layout.md) | تخطيط الخدمات وحدودها، وتجميد الـ migrations | معتمد (المرحلة 2) |
 | [ADR-016](ADR-016-verification-libraries.md) | لغات مكتبة التحقق: Node وGo | معتمد |
 | [ADR-017](ADR-017-postgres-rls.md) | العزل داخل Postgres (RLS): مؤجّل | معتمد (تأجيل) |
+| [ADR-018](ADR-018-rtdb-database-url.md) | رابط Realtime Database ونطاقه وشهادته | معتمد (RTDB، R0) |
+| [ADR-019](ADR-019-rtdb-storage-and-ordering.md) | تخزين Realtime Database وترتيب الكتابة وحدودها | معتمد (RTDB، R0) |
 
 ## الصيغة
 

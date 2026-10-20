@@ -1,0 +1,83 @@
+{"Model":"m1","Op":"(i) size at load","N":0,"MedianMs":0,"P95Ms":0,"Rows":0,"Bytes":0,"Extra":"{\"nodes.heap\":69140480,\"nodes.total\":112443392}"}
+{"Model":"m1","Op":"(a) write 1 leaf","N":300,"MedianMs":0.265,"P95Ms":0.437,"Rows":1,"Bytes":0}
+{"Model":"m1","Op":"(b) multi-path 10 leaves 1 tx","N":200,"MedianMs":0.395,"P95Ms":1.045,"Rows":10,"Bytes":0}
+{"Model":"m1","Op":"(d) read one message","N":300,"MedianMs":0.067,"P95Ms":0.085,"Rows":3,"Bytes":125}
+{"Model":"m1","Op":"(e) read room r1 (2000 msgs)","N":30,"MedianMs":4.392,"P95Ms":7.136,"Rows":6000,"Bytes":293310}
+{"Model":"m1","Op":"(f) read all users (50k)","N":7,"MedianMs":106.541,"P95Ms":136.613,"Rows":150000,"Bytes":4981748}
+{"Model":"m1","Op":"(q3) read rooms/r1/messages (unindexed query)","N":30,"MedianMs":3.788,"P95Ms":4.74,"Rows":6000,"Bytes":293297}
+{"Model":"m1","Op":"(c) write new message (3 leaves)","N":300,"MedianMs":0.12,"P95Ms":0.433,"Rows":3,"Bytes":0}
+{"Model":"m1","Op":"(g) delete room subtree (2000 msgs)","N":8,"MedianMs":2.474,"P95Ms":2.684,"Rows":6000,"Bytes":0}
+{"Model":"m1","Op":"(h) single-writer N=1 sync=true","N":36452,"MedianMs":0.114,"P95Ms":0.357,"Rows":36452,"Bytes":0,"Extra":"writes/s=6066 txn/s=6066"}
+{"Model":"m1","Op":"(h) single-writer N=16 sync=true","N":16308,"MedianMs":0.223,"P95Ms":0.8,"Rows":260928,"Bytes":0,"Extra":"writes/s=43487 txn/s=2718"}
+{"Model":"m1","Op":"(h) single-writer N=128 sync=true","N":4905,"MedianMs":1.118,"P95Ms":1.625,"Rows":627840,"Bytes":0,"Extra":"writes/s=104630 txn/s=817"}
+{"Model":"m1","Op":"(h) single-writer N=1 sync=false","N":104695,"MedianMs":0.042,"P95Ms":0.11,"Rows":104695,"Bytes":0,"Extra":"writes/s=17449 txn/s=17449"}
+{"Model":"m1","Op":"(h) single-writer N=16 sync=false","N":37546,"MedianMs":0.128,"P95Ms":0.236,"Rows":600736,"Bytes":0,"Extra":"writes/s=100121 txn/s=6258"}
+{"Model":"m1","Op":"(h) single-writer N=128 sync=false","N":6603,"MedianMs":0.781,"P95Ms":1.134,"Rows":845184,"Bytes":0,"Extra":"writes/s=140820 txn/s=1100"}
+{"Model":"m1","Op":"full-semantics (a) write 1 leaf","N":300,"MedianMs":0.167,"P95Ms":0.288,"Rows":1,"Bytes":0}
+{"Model":"m1","Op":"full-semantics (b) multi-path 10 leaves 1 tx","N":200,"MedianMs":0.559,"P95Ms":1.129,"Rows":10,"Bytes":0}
+{"Model":"m1","Op":"(h) FULL-semantics N=1 sync=true","N":34409,"MedianMs":0.145,"P95Ms":0.21,"Rows":34409,"Bytes":0,"Extra":"writes/s=5735 txn/s=5735"}
+{"Model":"m1","Op":"(h) FULL-semantics N=1 sync=false","N":58406,"MedianMs":0.083,"P95Ms":0.165,"Rows":58406,"Bytes":0,"Extra":"writes/s=9734 txn/s=9734"}
+{"Model":"m1","Op":"(h) FULL-semantics N=16 sync=true","N":5808,"MedianMs":0.902,"P95Ms":1.496,"Rows":92928,"Bytes":0,"Extra":"writes/s=15486 txn/s=968"}
+{"Model":"m1","Op":"(h) FULL-semantics N=16 sync=false","N":6677,"MedianMs":0.796,"P95Ms":1.185,"Rows":106832,"Bytes":0,"Extra":"writes/s=17804 txn/s=1113"}
+{"Model":"m1","Op":"(h) FULL-semantics N=128 sync=true","N":902,"MedianMs":6.248,"P95Ms":8.504,"Rows":115456,"Bytes":0,"Extra":"writes/s=19233 txn/s=150"}
+{"Model":"m1","Op":"(h) FULL-semantics N=128 sync=false","N":926,"MedianMs":5.714,"P95Ms":8.681,"Rows":118528,"Bytes":0,"Extra":"writes/s=19748 txn/s=154"}
+{"Model":"m1","Op":"(i) size after benchmark (bloat incl.)","N":0,"MedianMs":0,"P95Ms":0,"Rows":0,"Bytes":0,"Extra":"{\"nodes.heap\":79831040,\"nodes.total\":130498560}"}
+{"Model":"q3","Op":"unindexed: send 2000 children + client sort/limit 50","N":30,"MedianMs":7.558,"P95Ms":8.249,"Rows":6915,"Bytes":330202}
+{"Model":"q3","Op":"baseline write new message (no index)","N":300,"MedianMs":0.154,"P95Ms":0.405,"Rows":3,"Bytes":0}
+{"Model":"q3","Op":"expr-index build","N":0,"MedianMs":565,"P95Ms":0,"Rows":0,"Bytes":0,"Extra":"CREATE INDEX nodes_at_expr (partial, regexp_replace + numeric cast)"}
+{"Model":"q3","Op":"expr-index size","N":0,"MedianMs":0,"P95Ms":0,"Rows":0,"Bytes":0,"Extra":"{\"nodes_at_expr.heap\":8929280,\"nodes_at_expr.total\":8929280}"}
+{"Model":"q3","Op":"expr-index: orderByChild(at) limitToLast(50)","N":100,"MedianMs":0.252,"P95Ms":0.309,"Rows":150,"Bytes":6051}
+{"Model":"q3","Op":"expr-index: write new message (index maintained)","N":300,"MedianMs":0.123,"P95Ms":0.376,"Rows":3,"Bytes":0}
+{"Model":"q3","Op":"idx-table build","N":0,"MedianMs":1497,"P95Ms":0,"Rows":0,"Bytes":0}
+{"Model":"q3","Op":"idx-table size","N":0,"MedianMs":0,"P95Ms":0,"Rows":0,"Bytes":0,"Extra":"{\"idx.heap\":14073856,\"idx.total\":27140096}"}
+{"Model":"q3","Op":"idx-table: orderByChild(at) limitToLast(50)","N":100,"MedianMs":0.206,"P95Ms":0.361,"Rows":150,"Bytes":6051}
+{"Model":"q3","Op":"idx-table: write new message (+idx row, 1 tx)","N":300,"MedianMs":0.142,"P95Ms":0.267,"Rows":4,"Bytes":0}
+{"Model":"m3d2","Op":"(i) size at load","N":0,"MedianMs":0,"P95Ms":0,"Rows":0,"Bytes":0,"Extra":"{\"docs.heap\":7864320,\"docs.total\":19308544}"}
+{"Model":"m3d2","Op":"(a) write 1 leaf","N":300,"MedianMs":1.52,"P95Ms":2.847,"Rows":1,"Bytes":0}
+{"Model":"m3d2","Op":"(b) multi-path 10 leaves 1 tx","N":200,"MedianMs":8.606,"P95Ms":19.418,"Rows":10,"Bytes":0}
+{"Model":"m3d2","Op":"(d) read one message","N":300,"MedianMs":0.468,"P95Ms":0.527,"Rows":1,"Bytes":130}
+{"Model":"m3d2","Op":"(e) read room r1 (2000 msgs)","N":30,"MedianMs":1.179,"P95Ms":1.231,"Rows":1,"Bytes":307310}
+{"Model":"m3d2","Op":"(f) read all users (50k)","N":7,"MedianMs":23.249,"P95Ms":56.907,"Rows":50000,"Bytes":5231748}
+{"Model":"m3d2","Op":"(q3) read rooms/r1/messages (unindexed query)","N":30,"MedianMs":1.138,"P95Ms":2.577,"Rows":1,"Bytes":307296}
+{"Model":"m3d2","Op":"(c) write new message (3 leaves)","N":300,"MedianMs":5.476,"P95Ms":7.909,"Rows":3,"Bytes":0}
+{"Model":"m3d2","Op":"(g) delete room subtree (2000 msgs)","N":8,"MedianMs":0.195,"P95Ms":0.21,"Rows":6000,"Bytes":0}
+{"Model":"m3d2","Op":"(h) single-writer N=1 sync=true","N":4311,"MedianMs":1.221,"P95Ms":2.177,"Rows":4311,"Bytes":0,"Extra":"writes/s=718 txn/s=718"}
+{"Model":"m3d2","Op":"(h) single-writer N=16 sync=true","N":276,"MedianMs":18.597,"P95Ms":40.328,"Rows":4416,"Bytes":0,"Extra":"writes/s=736 txn/s=46"}
+{"Model":"m3d2","Op":"(h) single-writer N=128 sync=true","N":41,"MedianMs":130.397,"P95Ms":240.129,"Rows":5248,"Bytes":0,"Extra":"writes/s=870 txn/s=7"}
+{"Model":"m3d2","Op":"(h) single-writer N=1 sync=false","N":5503,"MedianMs":0.926,"P95Ms":1.629,"Rows":5503,"Bytes":0,"Extra":"writes/s=917 txn/s=917"}
+{"Model":"m3d2","Op":"(h) single-writer N=16 sync=false","N":365,"MedianMs":14.097,"P95Ms":29.282,"Rows":5840,"Bytes":0,"Extra":"writes/s=970 txn/s=61"}
+{"Model":"m3d2","Op":"(h) single-writer N=128 sync=false","N":45,"MedianMs":123.771,"P95Ms":221.084,"Rows":5760,"Bytes":0,"Extra":"writes/s=955 txn/s=7"}
+{"Model":"m3d2","Op":"(i) size after benchmark (bloat incl.)","N":0,"MedianMs":0,"P95Ms":0,"Rows":0,"Bytes":0,"Extra":"{\"docs.heap\":7864320,\"docs.total\":468525056}"}
+{"Model":"m3d1","Op":"(i) size at load","N":0,"MedianMs":0,"P95Ms":0,"Rows":0,"Bytes":0,"Extra":"{\"docs.heap\":8192,\"docs.total\":8962048}"}
+{"Model":"m3d1","Op":"(a) write 1 leaf","N":15,"MedianMs":510.524,"P95Ms":605.623,"Rows":1,"Bytes":0}
+{"Model":"m3d1","Op":"(b) multi-path 10 leaves 1 tx","N":15,"MedianMs":1304.925,"P95Ms":1684.937,"Rows":10,"Bytes":0}
+{"Model":"m3d1","Op":"(d) read one message","N":15,"MedianMs":30.433,"P95Ms":31.003,"Rows":1,"Bytes":121}
+{"Model":"m3d1","Op":"(e) read room r1 (2000 msgs)","N":8,"MedianMs":35.483,"P95Ms":49.732,"Rows":1,"Bytes":307310}
+{"Model":"m3d1","Op":"(f) read all users (50k)","N":4,"MedianMs":33.106,"P95Ms":34.828,"Rows":1,"Bytes":5331747}
+{"Model":"m3d1","Op":"(q3) read rooms/r1/messages (unindexed query)","N":8,"MedianMs":34.255,"P95Ms":37.118,"Rows":1,"Bytes":307296}
+{"Model":"m3d1","Op":"(c) write new message (3 leaves)","N":15,"MedianMs":556.547,"P95Ms":699.041,"Rows":3,"Bytes":0}
+{"Model":"m3d1","Op":"(g) delete room subtree (2000 msgs)","N":5,"MedianMs":624.88,"P95Ms":652.853,"Rows":6000,"Bytes":0}
+{"Model":"m3d1","Op":"(h) single-writer N=1 sync=true","N":9,"MedianMs":603.888,"P95Ms":646.419,"Rows":9,"Bytes":0,"Extra":"writes/s=2 txn/s=2"}
+{"Model":"m3d1","Op":"(h) single-writer N=1 sync=false","N":9,"MedianMs":555.815,"P95Ms":641.062,"Rows":9,"Bytes":0,"Extra":"writes/s=2 txn/s=2"}
+{"Model":"m3d1","Op":"(i) size after benchmark (bloat incl.)","N":0,"MedianMs":0,"P95Ms":0,"Rows":0,"Bytes":0,"Extra":"{\"docs.heap\":8192,\"docs.total\":612302848}"}
+{"Model":"m5","Op":"(i) size at load","N":0,"MedianMs":0,"P95Ms":0,"Rows":0,"Bytes":0,"Extra":"{\"log.heap\":74448896,\"log.total\":88014848}"}
+{"Model":"m5","Op":"(a) write 1 leaf","N":300,"MedianMs":0.104,"P95Ms":0.124,"Rows":1,"Bytes":0}
+{"Model":"m5","Op":"(b) multi-path 10 leaves 1 tx","N":200,"MedianMs":0.126,"P95Ms":0.524,"Rows":10,"Bytes":0}
+{"Model":"m5","Op":"(d) read one message","N":300,"MedianMs":0,"P95Ms":0.001,"Rows":0,"Bytes":125}
+{"Model":"m5","Op":"(e) read room r1 (2000 msgs)","N":30,"MedianMs":1.022,"P95Ms":3.581,"Rows":0,"Bytes":293310}
+{"Model":"m5","Op":"(f) read all users (50k)","N":7,"MedianMs":31.315,"P95Ms":39.237,"Rows":0,"Bytes":4981748}
+{"Model":"m5","Op":"(q3) read rooms/r1/messages (unindexed query)","N":30,"MedianMs":0.957,"P95Ms":3.98,"Rows":0,"Bytes":293297}
+{"Model":"m5","Op":"(c) write new message (3 leaves)","N":300,"MedianMs":0.161,"P95Ms":0.277,"Rows":3,"Bytes":0}
+{"Model":"m5","Op":"(g) delete room subtree (2000 msgs)","N":8,"MedianMs":0.169,"P95Ms":0.187,"Rows":6000,"Bytes":0}
+{"Model":"m5","Op":"(h) single-writer N=1 sync=true","N":37102,"MedianMs":0.106,"P95Ms":0.295,"Rows":37102,"Bytes":0,"Extra":"writes/s=6184 txn/s=6184"}
+{"Model":"m5","Op":"(h) single-writer N=16 sync=true","N":19556,"MedianMs":0.163,"P95Ms":0.735,"Rows":312896,"Bytes":0,"Extra":"writes/s=52149 txn/s=3259"}
+{"Model":"m5","Op":"(h) single-writer N=128 sync=true","N":6220,"MedianMs":0.77,"P95Ms":1.386,"Rows":796160,"Bytes":0,"Extra":"writes/s=132673 txn/s=1037"}
+{"Model":"m5","Op":"(h) single-writer N=1 sync=false","N":136834,"MedianMs":0.036,"P95Ms":0.073,"Rows":136834,"Bytes":0,"Extra":"writes/s=22806 txn/s=22806"}
+{"Model":"m5","Op":"(h) single-writer N=16 sync=false","N":44443,"MedianMs":0.07,"P95Ms":0.289,"Rows":711088,"Bytes":0,"Extra":"writes/s=118514 txn/s=7407"}
+{"Model":"m5","Op":"(h) single-writer N=128 sync=false","N":8721,"MedianMs":0.466,"P95Ms":1.034,"Rows":1116288,"Bytes":0,"Extra":"writes/s=186041 txn/s=1453"}
+{"Model":"m5","Op":"cold-start replay of log","N":0,"MedianMs":8515,"P95Ms":0,"Rows":3771801,"Bytes":0,"Extra":"\u003cnil\u003e"}
+{"Model":"m5","Op":"(i) size after benchmark (bloat incl.)","N":0,"MedianMs":0,"P95Ms":0,"Rows":0,"Bytes":0,"Extra":"{\"log.heap\":421756928,\"log.total\":506642432}"}
+{"Model":"m5","Op":"memory map-children","N":0,"MedianMs":0,"P95Ms":0,"Rows":600609,"Bytes":110344600,"Extra":"leaves=600609 inner=201206 nodes=801815 bytes/leaf=184 bytes/node=138 raw_value_bytes=16955668"}
+{"Model":"m5","Op":"memory sorted-slice-children","N":0,"MedianMs":0,"P95Ms":0,"Rows":600609,"Bytes":26674648,"Extra":"bytes/leaf=44 bytes/node=33"}
+{"Model":"m5","Op":"memory variant A","N":0,"MedianMs":0,"P95Ms":0,"Rows":600609,"Bytes":110344600,"Extra":"leaves=600609 inner=201206 nodes=801815 live_heap_delta=110344600 total_alloc_delta=118942376 objects_delta=1981297 bytes/leaf=184 bytes/node=138 raw_value_bytes=16955668"}
+{"Model":"m5","Op":"memory variant B","N":0,"MedianMs":0,"P95Ms":0,"Rows":600609,"Bytes":100701480,"Extra":"leaves=600609 inner=201206 nodes=801815 live_heap_delta=100701480 total_alloc_delta=123922248 objects_delta=1778955 bytes/leaf=168 bytes/node=126 raw_value_bytes=16955668"}
