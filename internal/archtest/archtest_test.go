@@ -29,6 +29,8 @@ var allowed = map[string][]string{
 	"internal/services/*": {"internal/tenancy", "internal/store", "internal/events", "internal/platform", "internal/config"},
 	// The rules language stands alone: core feeds it data through an interface it defines.
 	"internal/services/rtdb/rules": {},
+	// So does the wire protocol, tested on frames recorded from the emulator (rtdb-layout.md).
+	"internal/services/rtdb/wire": {},
 	// The console mounts the services' routes through platform/consolemount; only app wires them.
 	"internal/admin":  {"internal/tenancy", "internal/configgen", "internal/events", "internal/store", "internal/platform", "internal/config"},
 	"internal/server": {"internal/admin", "internal/services/", "internal/tenancy", "internal/platform", "internal/config", "internal/store"},
@@ -49,10 +51,6 @@ var denied = map[string][]string{
 	// one core serves its API, its console screens and any later protocol. net/http itself
 	// stays allowed: core maps errors to status codes and calls Google and Apple.
 	"internal/services/*/core": {"internal/services/*/api", "internal/services/*/console", "internal/platform/httpx"},
-	// The Realtime Database protocol and rules language stand alone, tested on recorded frames
-	// and recorded cases: the standard library only (rtdb-layout.md).
-	"internal/services/rtdb/wire":  {"internal"},
-	"internal/services/rtdb/rules": {"internal"},
 }
 
 func TestDependencyRules(t *testing.T) {
@@ -185,7 +183,6 @@ func TestRulesThemselves(t *testing.T) {
 		{"internal/services/rtdb/core", "internal/services/rtdb/wire", true},
 		{"internal/services/rtdb/wire", "internal/services/rtdb/core", false},
 		{"internal/services/rtdb/wire", "internal/platform/log", false},
-		{"internal/services/rtdb/rules", "internal/services/rtdb/core", false},
 		// Only app wires services into the console and the admin APIs.
 		{"internal/admin/console", "internal/services/auth/core", false},
 		{"internal/admin/console", "internal/services/auth/console", false},
