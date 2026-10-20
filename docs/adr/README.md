@@ -16,6 +16,8 @@
 | [ADR-013](ADR-013-one-line.md) | تعريف «السطر الواحد» | معتمد (المرحلة 2) |
 | [ADR-014](ADR-014-auth-endpoints.md) | استضافة نقاط Auth وCORS | معتمد (المرحلة 2) |
 | [ADR-015](ADR-015-services-layout.md) | تخطيط الخدمات وحدودها، وتجميد الـ migrations | معتمد (المرحلة 2) |
+| [ADR-016](ADR-016-verification-libraries.md) | لغات مكتبة التحقق: Node وGo | معتمد |
+| [ADR-017](ADR-017-postgres-rls.md) | العزل داخل Postgres (RLS): مؤجّل | معتمد (تأجيل) |
 
 ## الصيغة
 
