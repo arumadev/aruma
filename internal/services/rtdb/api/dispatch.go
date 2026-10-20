@@ -110,7 +110,11 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 		var b wire.ListenBody
 		if s.decode(req, &b) {
 			sl := s.reserve(req.ID)
-			s.core.Unlisten(b.Path, querySpec(b.Query), func(err error) { s.fill(sl, result(req.ID, err)) })
+			var tag int64
+			if b.Tag != nil {
+				tag = *b.Tag
+			}
+			s.core.Unlisten(b.Path, querySpec(b.Query), tag, func(err error) { s.fill(sl, result(req.ID, err)) })
 		}
 
 	case wire.ActionOnDisconnPut, wire.ActionOnDisconnMerge:

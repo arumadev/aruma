@@ -135,13 +135,13 @@ func (s *Session) Listen(path string, spec *QuerySpec, tag int64, hash string, d
 	if q.IsDefault() {
 		spec, tag = nil, 0
 	}
-	l := &listen{sess: s, path: p, query: q, spec: spec, tag: tag}
+	l := &listen{sess: s, path: p, query: q, spec: spec, tag: tag, id: tag}
 	s.db.submit(&command{listen: &listenCmd{l: l, hash: hash}, done: func(r Result) { done(r.Warnings, r.Err) }})
 }
 
-// Unlisten stops the listen at path with the query (nil for the default listen). Stopping a
-// listen that does not exist is not an error.
-func (s *Session) Unlisten(path string, spec *QuerySpec, done func(error)) {
+// Unlisten stops the listen at path with the query (nil for the default listen) and the tag
+// it was started with. Stopping a listen that does not exist is not an error.
+func (s *Session) Unlisten(path string, spec *QuerySpec, tag int64, done func(error)) {
 	p, err := ParsePath(path)
 	if err != nil {
 		done(err)
@@ -154,7 +154,10 @@ func (s *Session) Unlisten(path string, spec *QuerySpec, done func(error)) {
 			return
 		}
 	}
-	s.db.submit(&command{unlisten: &unlistenCmd{sess: s, key: listenKey(p, q)}, done: func(Result) { done(nil) }})
+	if q.IsDefault() {
+		tag = 0
+	}
+	s.db.submit(&command{unlisten: &unlistenCmd{sess: s, key: listenKey(p, q, tag)}, done: func(Result) { done(nil) }})
 }
 
 // RevokeListens cancels, with a c push each, the listens the session may no longer read,

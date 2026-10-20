@@ -167,7 +167,7 @@ func TestListenTaggedWindow(t *testing.T) {
 	// After unlisten nothing comes.
 	done := make(chan error, 1)
 	q := spec(t, `{"l":2,"vf":"r"}`)
-	b.Unlisten("/q", &q, func(err error) { done <- err })
+	b.Unlisten("/q", &q, 1, func(err error) { done <- err })
 	<-done
 	set(a, "/q/y", `1`, nil)
 	want(t, "after unlisten", rec.take())

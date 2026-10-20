@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"strconv"
 )
 
 // Push is a message the server sends a session without being asked: data (d), a merge (m) or
@@ -39,6 +40,10 @@ type listen struct {
 	query Query
 	// spec is the query as the client sent it, nil for a default listen.
 	spec *QuerySpec
+	// id is the tag the client sent, 0 for none. Two listens with the same query and
+	// different tags are two listens, each ended by its own unlisten, as on the emulator
+	// (golden query_two_listens.json).
+	id int64
 	// tag is set when the server filters the listen and tags its pushes: a non-default query
 	// in key or priority order, or one whose index the rules declare (ADR-020 §1). An
 	// untagged listen gets everything at its path, as written.
@@ -47,10 +52,12 @@ type listen struct {
 	window *Node
 }
 
-// key identifies a listen among its session's: the path and the query.
-func (l *listen) key() string { return listenKey(l.path, l.query) }
+// key identifies a listen among its session's: the path, the query and the client's tag.
+func (l *listen) key() string { return listenKey(l.path, l.query, l.id) }
 
-func listenKey(p Path, q Query) string { return p.String() + "\x00" + q.ID() }
+func listenKey(p Path, q Query, id int64) string {
+	return p.String() + "\x00" + q.ID() + "\x00" + strconv.FormatInt(id, 10)
+}
 
 // listeners are a database's listens, in a trie by path, owned by its writer goroutine:
 // registration, removal and fan-out all happen there, in the database's order.
