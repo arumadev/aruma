@@ -14,6 +14,8 @@ import (
 	"io/fs"
 	"net/url"
 	"os"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -29,6 +31,18 @@ const DefaultAdminURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=dis
 
 // lockKey serialises template creation across concurrently running test binaries.
 const lockKey = 0x41_72_75_6d_61 // "Aruma"
+
+// prefix starts the name of every database the tests create: ARUMA_TEST_DB_PREFIX, so that
+// test runs side by side on one Postgres (several worktrees) keep to their own databases and
+// templates, else "aruma_".
+func prefix() string {
+	if p := os.Getenv("ARUMA_TEST_DB_PREFIX"); validPrefix.MatchString(p) {
+		return p
+	}
+	return "aruma_"
+}
+
+var validPrefix = regexp.MustCompile(`^[a-z][a-z0-9_]{0,30}_$`)
 
 // AdminURL returns the URL of a database the tests may use to create others.
 func AdminURL() string {
@@ -78,7 +92,7 @@ func newDB(t testing.TB, migrated bool) string {
 	}
 	defer admin.Close(context.Background())
 
-	name := "aruma_t_" + randomHex(6)
+	name := prefix() + "t_" + randomHex(6)
 	create := "CREATE DATABASE " + name
 	if migrated {
 		tmpl, err := ensureTemplate(ctx, admin)
@@ -108,7 +122,7 @@ func newDB(t testing.TB, migrated bool) string {
 
 // ensureTemplate creates the migrated template for the current migration set if needed.
 func ensureTemplate(ctx context.Context, admin *pgx.Conn) (string, error) {
-	tmpl := "aruma_tmpl_" + migrationsHash()
+	tmpl := prefix() + "tmpl_" + migrationsHash()
 	if _, err := admin.Exec(ctx, "SELECT pg_advisory_lock($1)", lockKey); err != nil {
 		return "", err
 	}
@@ -122,7 +136,7 @@ func ensureTemplate(ctx context.Context, admin *pgx.Conn) (string, error) {
 		return tmpl, nil
 	}
 	// Templates of earlier migration sets are stale once a new one is needed.
-	rows, err := admin.Query(ctx, "SELECT datname FROM pg_database WHERE datname LIKE 'aruma\\_tmpl\\_%'")
+	rows, err := admin.Query(ctx, "SELECT datname FROM pg_database WHERE datname LIKE $1", strings.ReplaceAll(prefix(), "_", `\_`)+`tmpl\_%`)
 	if err != nil {
 		return "", err
 	}
