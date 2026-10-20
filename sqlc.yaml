@@ -79,3 +79,26 @@ sql:
               pointer: true
           - db_type: jsonb
             go_type: encoding/json.RawMessage
+  - engine: postgresql
+    schema:
+      - internal/store/migrations/rtdb
+    queries: internal/services/rtdb/queries
+    gen:
+      go:
+        package: queries
+        out: internal/services/rtdb/queries
+        sql_package: pgx/v5
+        emit_empty_slices: true
+        emit_pointers_for_null_types: true
+        output_db_file_name: db.gen.go
+        output_models_file_name: models.gen.go
+        output_files_suffix: .gen
+        overrides:
+          - db_type: timestamptz
+            go_type: time.Time
+          # A nil RawMessage is SQL NULL: a leaf's value is NULL on an object's priority row.
+          - db_type: jsonb
+            go_type: encoding/json.RawMessage
+          - db_type: jsonb
+            nullable: true
+            go_type: encoding/json.RawMessage
