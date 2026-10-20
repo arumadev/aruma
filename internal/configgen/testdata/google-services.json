@@ -1,7 +1,7 @@
 {
   "project_info": {
     "project_number": "482915736204",
-    "firebase_url": "https://aruma.example.com/?ns=chat-app-default-rtdb",
+    "firebase_url": "https://chat-app-default-rtdb.rtdb.aruma.example.com",
     "project_id": "chat-app",
     "storage_bucket": "chat-app.aruma.example.com"
   },

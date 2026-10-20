@@ -27,6 +27,6 @@
 	<key>GOOGLE_APP_ID</key>
 	<string>1:482915736204:ios:1a2b3c4d5e6f7081</string>
 	<key>DATABASE_URL</key>
-	<string>https://aruma.example.com/?ns=chat-app-default-rtdb</string>
+	<string>https://chat-app-default-rtdb.rtdb.aruma.example.com</string>
 </dict>
 </plist>

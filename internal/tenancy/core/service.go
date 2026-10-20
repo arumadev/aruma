@@ -29,6 +29,9 @@ type Options struct {
 	PublicURL string
 	// ProjectDomain is the base domain for auth domains, buckets and service account emails.
 	ProjectDomain string
+	// RTDBDomain is rtdb.domain: the parent of the Realtime Database hosts (ADR-018). Empty,
+	// databaseURL takes the development form on PublicURL.
+	RTDBDomain string
 }
 
 // Service is the control plane.

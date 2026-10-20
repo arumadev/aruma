@@ -47,9 +47,20 @@ func (s *Service) toProject(p queries.ControlProject) Project {
 		State: p.State, ETag: p.Etag, AuthDomain: p.AuthDomain, CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt,
 		DeleteTime: p.DeleteTime, ExpireTime: p.ExpireTime,
 		StorageBucket: p.ProjectID + "." + s.opts.ProjectDomain,
-		DatabaseURL:   s.opts.PublicURL + "/?ns=" + p.ProjectID + "-default-rtdb",
+		DatabaseURL:   s.DatabaseURL(p.ProjectID),
 		HostingSite:   p.ProjectID,
 	}
+}
+
+// DatabaseURL is the databaseURL of a project's default Realtime Database (ADR-018):
+// https://<project_id>-default-rtdb.<rtdb.domain>, or without rtdb.domain the development form
+// <public_url>/?ns=<project_id>-default-rtdb, which only suits loopback addresses.
+func (s *Service) DatabaseURL(projectID string) string {
+	ns := projectID + "-default-rtdb"
+	if s.opts.RTDBDomain != "" {
+		return "https://" + ns + "." + s.opts.RTDBDomain
+	}
+	return s.opts.PublicURL + "/?ns=" + ns
 }
 
 // resolveProject is the ownership gate every project-scoped operation passes through. ref is

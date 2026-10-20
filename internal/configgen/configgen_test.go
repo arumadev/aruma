@@ -21,7 +21,7 @@ var update = flag.Bool("update", false, "rewrite golden files")
 var (
 	project = Project{
 		Number: 482915736204, ID: "chat-app", AuthDomain: "aruma.example.com",
-		StorageBucket: "chat-app.aruma.example.com", DatabaseURL: "https://aruma.example.com/?ns=chat-app-default-rtdb",
+		StorageBucket: "chat-app.aruma.example.com", DatabaseURL: "https://chat-app-default-rtdb.rtdb.aruma.example.com",
 	}
 	web      = App{ID: "1:482915736204:web:3f9a1c7e2b4d8a60", APIKey: "AruQ7mX2kLp9Vt4nRb8sWc1yZd6fHg3jKe5aN0o"}
 	android  = App{ID: "1:482915736204:android:0a1b2c3d4e5f6071", PackageName: "com.ahmad.chat", APIKey: "AruP2mX2kLp9Vt4nRb8sWc1yZd6fHg3jKe5aN0o"}

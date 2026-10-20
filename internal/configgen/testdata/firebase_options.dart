@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '482915736204',
     projectId: 'chat-app',
     authDomain: 'aruma.example.com',
-    databaseURL: 'https://aruma.example.com/?ns=chat-app-default-rtdb',
+    databaseURL: 'https://chat-app-default-rtdb.rtdb.aruma.example.com',
     storageBucket: 'chat-app.aruma.example.com',
   );
 
@@ -61,7 +61,7 @@ class DefaultFirebaseOptions {
     appId: '1:482915736204:android:0a1b2c3d4e5f6071',
     messagingSenderId: '482915736204',
     projectId: 'chat-app',
-    databaseURL: 'https://aruma.example.com/?ns=chat-app-default-rtdb',
+    databaseURL: 'https://chat-app-default-rtdb.rtdb.aruma.example.com',
     storageBucket: 'chat-app.aruma.example.com',
   );
 
@@ -70,7 +70,7 @@ class DefaultFirebaseOptions {
     appId: '1:482915736204:ios:1a2b3c4d5e6f7081',
     messagingSenderId: '482915736204',
     projectId: 'chat-app',
-    databaseURL: 'https://aruma.example.com/?ns=chat-app-default-rtdb',
+    databaseURL: 'https://chat-app-default-rtdb.rtdb.aruma.example.com',
     storageBucket: 'chat-app.aruma.example.com',
     iosBundleId: 'com.ahmad.chat',
   );

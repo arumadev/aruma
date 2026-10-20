@@ -61,16 +61,20 @@ func TestAdminSDKAcceptsKeyFile(t *testing.T) {
 	}
 }
 
-// TestDatabaseURLForms records how the Go SDK reads databaseURL, an input to the Phase 3
-// decision (ADR-007): any non-https URL is taken for an emulator "host:port" and refused when it
-// contains "//"; an https URL is used verbatim as the base that paths are appended to.
+// TestDatabaseURLForms records how the Go SDK reads databaseURL, the evidence behind ADR-018:
+// any non-https URL is taken for an emulator "host:port" and refused when it contains "//"; an
+// https URL is used verbatim as the base that paths are appended to. The generated configs carry
+// https://<ns>.<rtdb.domain>, or without rtdb.domain the development form on public_url, which
+// this SDK takes only as localhost:<port>?ns=<ns> (no scheme).
 func TestDatabaseURLForms(t *testing.T) {
 	ctx := context.Background()
 	keyFile := filepath.Join(dir(), "service-account.json")
 	for url, ok := range map[string]bool{
-		"http://127.0.0.1:8080/?ns=smoke-app-default-rtdb":     false,
-		"https://aruma.example.com/?ns=smoke-app-default-rtdb": true,
-		"https://smoke-app-default-rtdb.aruma.example.com":     true,
+		"http://127.0.0.1:8080/?ns=smoke-app-default-rtdb":      false,
+		"localhost:8080?ns=smoke-app-default-rtdb":              true,
+		"https://aruma.example.com/?ns=smoke-app-default-rtdb":  true,
+		"https://smoke-app-default-rtdb.aruma.example.com":      true,
+		"https://smoke-app-default-rtdb.rtdb.aruma.example.com": true,
 	} {
 		app, err := firebase.NewApp(ctx, &firebase.Config{DatabaseURL: url}, option.WithCredentialsFile(keyFile))
 		if err != nil {

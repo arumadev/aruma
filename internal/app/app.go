@@ -88,6 +88,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		AbsoluteTimeout: cfg.Session.AbsoluteTimeout,
 		PublicURL:       strings.TrimSuffix(cfg.PublicBaseURL().String(), "/"),
 		ProjectDomain:   cfg.ProjectDomain,
+		RTDBDomain:      cfg.RTDB.Domain,
 	}, logger)
 
 	auth := &authn.Authenticator{
