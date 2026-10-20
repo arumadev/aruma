@@ -24,6 +24,8 @@ import (
 	authapi "github.com/osama300/aurma-project/internal/services/auth/api"
 	authconsole "github.com/osama300/aurma-project/internal/services/auth/console"
 	identity "github.com/osama300/aurma-project/internal/services/auth/core"
+	rtdbapi "github.com/osama300/aurma-project/internal/services/rtdb/api"
+	rtdb "github.com/osama300/aurma-project/internal/services/rtdb/core"
 	"github.com/osama300/aurma-project/internal/store"
 	"github.com/osama300/aurma-project/internal/tenancy/core"
 )
@@ -33,6 +35,7 @@ type App struct {
 	Config  *config.Config
 	Service *core.Service
 	Auth    *identity.Service
+	RTDB    *rtdb.Service // nil while Realtime Database is disabled
 	Server  *server.Server
 	Console *console.API
 	Mgmt    *mgmt.API
@@ -101,14 +104,37 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		return nil, fmt.Errorf("dashboard: %w", err)
 	}
 
-	srv := server.New(cfg, logger, pool, metrics.New(version), server.Handlers{
+	handlers := server.Handlers{
 		Console: consoleAPI.Handler(),
 		Mgmt:    mgmtAPI.Handler(),
 		OAuth:   oauth.New(svc, logger).Handler(),
 		Auth:    authapi.New(authSvc, auth, logger).Handler(),
 		Static:  dashboard,
-	})
-	return &App{Config: cfg, Service: svc, Auth: authSvc, Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
+	}
+	var rtdbSvc *rtdb.Service
+	if cfg.RTDB.Enabled {
+		l := cfg.RTDB.Limits
+		rtdbSvc = rtdb.New(rtdb.NewPGStore(pool), svc, rtdb.Options{
+			Limits: rtdb.Limits{
+				MessageBytes: l.MessageBytes, RESTWriteBytes: l.RESTWriteBytes, StringBytes: l.StringBytes,
+				WriteBytesPerMinute: l.WriteBytesPerMinute, ConnectionsPerProject: l.ConnectionsPerProject,
+				OutboxBytes: l.OutboxBytes,
+			},
+			DevOpenRules: cfg.RTDB.DevOpenRules,
+		}, logger)
+		handlers.RTDB = rtdbapi.New(rtdbSvc, rtdbapi.Options{
+			Domain:      cfg.RTDB.Domain,
+			Credentials: svc,
+			Projects:    svc,
+			// Pages on the project's authorised domains (Auth's list) may connect.
+			AllowedOrigins: func(ctx context.Context, project int64) ([]string, error) {
+				return authSvc.AuthorizedDomains(ctx, identity.Project{Number: project})
+			},
+		}, logger)
+	}
+
+	srv := server.New(cfg, logger, pool, metrics.New(version), handlers)
+	return &App{Config: cfg, Service: svc, Auth: authSvc, RTDB: rtdbSvc, Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
 }
 
 // AnnounceSetup prints the one-time setup code when the instance has no account yet.
@@ -137,6 +163,13 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 	if !cfg.SecureCookies() {
 		logger.Warn("public_url is plain http on a non-loopback host: console cookies will not be Secure; put the server behind https")
 	}
+	if cfg.RTDB.Enabled && cfg.RTDB.Domain == "" && cfg.PublicBaseURL().Scheme == "https" {
+		// ADR-018: ?ns= on the main host breaks the iOS, Admin Go and Admin Python SDKs.
+		logger.Warn("rtdb.domain is not set: databases are reached with ?ns= on public_url, which suits local development only; set rtdb.domain")
+	}
+	if cfg.RTDB.DevOpenRules {
+		logger.Warn("rtdb.dev_open_rules is on: every client may read and write every Realtime Database")
+	}
 	a, err := New(cfg, logger, version, pool)
 	if err != nil {
 		return err
@@ -147,8 +180,18 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 	go a.housekeeping(ctx)
 	go a.Auth.RunMailer(ctx)
 	logger.Info("starting aruma", "version", version, "public_url", cfg.PublicBaseURL().String())
-	if err := a.Server.Run(ctx); err != nil {
-		return fmt.Errorf("serve: %w", err)
+	runErr := a.Server.Run(ctx)
+	if a.RTDB != nil {
+		// The connections are closed and their onDisconnect writes queued; let the writers
+		// finish them.
+		stop, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		if err := a.RTDB.Close(stop); err != nil {
+			logger.Warn("rtdb: shutdown", "error", err)
+		}
+	}
+	if runErr != nil {
+		return fmt.Errorf("serve: %w", runErr)
 	}
 	return nil
 }
