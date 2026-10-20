@@ -12,6 +12,10 @@
 #
 #   test/compat/firebase-js/run.sh [js-node|js-browser|js-webdriver|admin ...]   (default: all)
 #
+# The Realtime Database suites have their own runner, rtdb/run.sh (see rtdb/README.md):
+#
+#   test/compat/firebase-js/run.sh rtdb --target emulator|aruma --mode emulator|production
+#
 # The upstream code is cloned at fixed tags into $ARUMA_CACHE_DIR/upstream and run from there;
 # none of it enters this repository. Every download (git, npm, yarn, the chromedriver that
 # matches the local Chrome) happens in the prepare step. The tests themselves run with every
@@ -33,6 +37,8 @@
 # It needs Go, Node 24.12 or newer, git, openssl, psql and Chrome, and network access the first
 # time. It is heavy (a yarn install of the whole firebase-js-sdk monorepo) and is not part of CI.
 set -euo pipefail
+
+[[ ${1:-} == rtdb ]] && exec "$(dirname "$0")/rtdb/run.sh" "$@"
 
 JS_SDK_TAG=firebase@13.0.0
 ADMIN_NODE_TAG=v14.5.0
