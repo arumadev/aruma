@@ -229,3 +229,16 @@ Each event followed by a blank line. No `auth_revoked`/`cancel` event was trigge
 - WS single-frame close 1002 at ~64-100 KB; 120 s idle close; generic `ClientId[n]:ErrorId[m]: Error on incoming message` control frames with no `r` reply; 10 MB write cap with a generic message (production has documented limits of 16 MB REST / 256 MB SDK writes, unverified here).
 - Rules not re-evaluated on existing listens; production behaviour not verified.
 - Process left clean: emulator (PID started on 127.0.0.1:9400) stopped; no listeners remain on 9400-9420.
+
+## Addendum 2026-10-20: queries without an index, default order and `get` (script `q2.mjs`)
+Same emulator (4.11.2), rules `{".read":true,".write":true}`, data `/m = {a:{s:3},b:{s:1},c:{s:2},d:{s:0}}`.
+| Request | Observed |
+|---|---|
+| listen `q:{l:2,vf:"r"}` (default priority order), no index | tagged and filtered push `{"p":"m","d":{"c":..,"d":..},"t":1}`, ack `ok` with `d:{}` (no warning) |
+| listen `q:{i:".key",l:2,vf:"r"}`, no index | tagged and filtered, ack `ok` |
+| `g` with `q:{i:"s",l:2,vf:"l"}`, no index | `{"s":"no_index","d":"Index not defined, add \".indexOn\": \"s\", for path \"/m\", to the rules"}` |
+| `g` with `q:{i:".key",l:2,vf:"l"}`, no index | `ok`, filtered `{a,b}` |
+| `g` with `q:{}` | `ok`, whole node |
+| `g` with `q:{i:"s",l:2,vf:"l"}` after adding `.indexOn:["s"]` | `ok`, filtered `{b,d}` |
+| REST `orderBy="$key"&limitToLast=2`, no index | 200 `{"c":..,"d":..}` |
+Conclusion: key and priority order are always served (filtered and tagged) by the server; child and value order are served only with `.indexOn`; without it a listen gets everything plus `no_index`, while `get` and REST fail.
