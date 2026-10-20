@@ -408,3 +408,32 @@ func TestAuthAdminEmailActionLinks(t *testing.T) {
 	authErr(t, p.admin(p.sa, "accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "nobody@example.com", "returnOobLink": true}), "EMAIL_NOT_FOUND")
 	authErr(t, p.admin(p.sa, "accounts:sendOobCode", map[string]any{"requestType": "EMAIL_SIGNIN", "email": "sara@example.com", "returnOobLink": true}), "OPERATION_NOT_ALLOWED")
 }
+
+// createUser and updateUser take a password without an email, as Firebase does:
+// firebase-admin's own listUsers integration test creates {uid, password} users
+// (docs/compat/firebase-js-suites.md). The password provider appears with the email.
+func TestAuthAdminPasswordWithoutEmail(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.adminProject("chat-app")
+
+	ok(t, p.admin(p.sa, "accounts", map[string]any{"localId": "u-1", "password": "secret1"}))
+	u := p.lookup("u-1")
+	if u["passwordHash"] == nil || u["providerUserInfo"] != nil || u["email"] != nil {
+		t.Fatalf("a password without an email: %v", u)
+	}
+	ok(t, p.admin(p.sa, "accounts", map[string]any{"localId": "u-2"}))
+	ok(t, p.admin(p.sa, "accounts:update", map[string]any{"localId": "u-2", "password": "secret2"}))
+	if p.lookup("u-2")["passwordHash"] == nil {
+		t.Fatal("updateUser did not set the password")
+	}
+	authErr(t, p.admin(p.sa, "accounts", map[string]any{"localId": "u-3", "password": "1"}), "WEAK_PASSWORD")
+
+	// Once the user has an email, the password signs in with it.
+	ok(t, p.admin(p.sa, "accounts:update", map[string]any{"localId": "u-1", "email": "one@example.com"}))
+	providers := p.lookup("u-1")["providerUserInfo"].([]any)
+	if len(providers) != 1 || providers[0].(map[string]any)["providerId"] != "password" {
+		t.Fatalf("providers after the email: %v", providers)
+	}
+	in := ok(t, p.call(itk+"accounts:signInWithPassword", map[string]any{"email": "one@example.com", "password": "secret1", "returnSecureToken": true}))
+	assertEqual(t, "localId", in.str("localId"), "u-1")
+}
