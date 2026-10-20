@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/osama300/aurma-project/internal/services/rtdb/rules"
 	"github.com/osama300/aurma-project/internal/store/storetest"
 )
 
@@ -197,5 +198,27 @@ func TestPGStore(t *testing.T) {
 	}
 	if _, err := pool.Exec(ctx, `INSERT INTO rtdb.databases (project_number, name) VALUES (1, 'Bad_Name')`); err == nil {
 		t.Error("accepted an invalid database name")
+	}
+
+	// A new database starts locked (ADR-020), in a document the rules engine reads; admins
+	// pass anyway.
+	var doc string
+	if err := pool.QueryRow(ctx, `SELECT rules FROM rtdb.databases WHERE id = $1`, db.ID).Scan(&doc); err != nil {
+		t.Fatal(err)
+	}
+	rs, err := rules.Parse([]byte(doc))
+	if err != nil {
+		t.Fatalf("default rules %s: %v", doc, err)
+	}
+	src, _ := rules.NewMemorySource(map[string]any{"a": 1})
+	for _, c := range []struct {
+		auth rules.Auth
+		want bool
+	}{{rules.Unauthenticated(), false}, {rules.Admin(), true}} {
+		env := rules.Env{Auth: c.auth, Data: src}
+		read, err := rs.CanRead(ctx, env, []string{"a"}, rules.PlainListen)
+		if err != nil || read != c.want {
+			t.Errorf("default rules, admin %v: read %v %v", c.auth.IsAdmin(), read, err)
+		}
 	}
 }

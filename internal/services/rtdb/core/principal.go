@@ -9,9 +9,10 @@ type Auth struct {
 	Account string
 }
 
-// canRead and canWrite decide access until the rules engine lands (R4). Every database keeps
-// the locked rules it starts with (ADR-020), so only admins pass, unless the instance runs
-// with dev_open_rules, which acts as the test-mode rules {".read": true, ".write": true}.
+// canRead and canWrite decide access until R4 wires package rules to the document stored in
+// rtdb.databases. Every database keeps the locked rules it starts with (ADR-020), so only
+// admins pass, unless the instance runs with dev_open_rules, which acts as the test-mode
+// rules {".read": true, ".write": true}.
 func (s *Session) canRead(Path) error  { return s.allowed() }
 func (s *Session) canWrite(Path) error { return s.allowed() }
 
