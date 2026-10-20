@@ -37,6 +37,44 @@ func TestClientIP(t *testing.T) {
 	}
 }
 
+func TestHost(t *testing.T) {
+	trusted := []netip.Prefix{netip.MustParsePrefix("10.0.0.0/8")}
+	cases := []struct {
+		peer, host, forwarded, want string
+	}{
+		{"192.0.2.1:1", "db.example.com", "", "db.example.com"},
+		{"192.0.2.1:1", "db.example.com:8443", "", "db.example.com:8443"},
+		{"192.0.2.1:1", "db.example.com.", "", "db.example.com"},
+		{"192.0.2.1:1", "db.example.com.:443", "", "db.example.com:443"},
+		// Only a trusted proxy's X-Forwarded-Host counts; the first of a chain is the client's.
+		{"10.0.0.7:1", "backend:8080", "db.example.com", "db.example.com"},
+		{"10.0.0.7:1", "backend:8080", "db.example.com:443, proxy2", "db.example.com:443"},
+		{"10.0.0.7:1", "backend:8080", "", "backend:8080"},
+		{"192.0.2.1:1", "db.example.com", "evil.example.com", "db.example.com"},
+	}
+	for _, c := range cases {
+		r := httptest.NewRequest("GET", "/", nil)
+		r.RemoteAddr, r.Host = c.peer, c.host
+		if c.forwarded != "" {
+			r.Header.Set("X-Forwarded-Host", c.forwarded)
+		}
+		if got := Host(r, trusted); got != c.want {
+			t.Errorf("peer %s host %s fwd %q: %q, want %q", c.peer, c.host, c.forwarded, got, c.want)
+		}
+	}
+}
+
+func TestPeerIsLoopback(t *testing.T) {
+	for peer, want := range map[string]bool{"127.0.0.1:5": true, "[::1]:5": true, "192.0.2.1:5": false, "[::ffff:127.0.0.1]:5": true} {
+		r := httptest.NewRequest("GET", "/", nil)
+		r.RemoteAddr = peer
+		r.Header.Set("X-Forwarded-For", "127.0.0.1") // never believed here
+		if got := PeerIsLoopback(r); got != want {
+			t.Errorf("%s: %v", peer, got)
+		}
+	}
+}
+
 func TestDecodeJSON(t *testing.T) {
 	var v struct{ Name string }
 	r := httptest.NewRequest("POST", "/", strings.NewReader(`{"name":"x","extra":1}`))

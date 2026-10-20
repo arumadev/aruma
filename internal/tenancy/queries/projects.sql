@@ -51,6 +51,12 @@ SET state = 'ACTIVE', delete_time = NULL, expire_time = NULL, etag = @new_etag, 
 WHERE project_number = @project_number AND state = 'DELETED' AND expire_time > now()
 RETURNING *;
 
+-- name: ListExpiredProjectNumbers :many
+-- scope: global — the purge job looks across all projects for expired deletions; the data
+-- services purge theirs at every run.
+SELECT project_number FROM control.projects
+WHERE state = 'DELETED' AND expire_time <= now();
+
 -- name: ListExpiredProjects :many
 -- scope: global — the purge job looks across all projects for expired deletions.
 SELECT project_number FROM control.projects

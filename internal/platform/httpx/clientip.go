@@ -30,6 +30,32 @@ func ClientIP(r *http.Request, trusted []netip.Prefix) netip.Addr {
 	return peer
 }
 
+// Host returns the host the client asked for, as it wrote it (port included, a trailing dot
+// removed): X-Forwarded-Host when the connection comes from a trusted proxy and carries one,
+// else the request's Host. A proxy in front of Aruma must keep Host or send
+// X-Forwarded-Host, since some APIs are named by host (ADR-018).
+func Host(r *http.Request, trusted []netip.Prefix) string {
+	host := r.Host
+	if peer := remoteAddr(r); peer.IsValid() && contains(trusted, peer) {
+		if fwd := r.Header.Get("X-Forwarded-Host"); fwd != "" {
+			// A chain of proxies appends; the first value is what the client sent.
+			first, _, _ := strings.Cut(fwd, ",")
+			host = strings.TrimSpace(first)
+		}
+	}
+	if h, port, err := net.SplitHostPort(host); err == nil {
+		return net.JoinHostPort(strings.TrimSuffix(h, "."), port)
+	}
+	return strings.TrimSuffix(host, ".")
+}
+
+// PeerIsLoopback reports whether the connection itself comes from this machine. Forwarded
+// headers play no part: a proxy on this machine makes every client look local.
+func PeerIsLoopback(r *http.Request) bool {
+	peer := remoteAddr(r)
+	return peer.IsValid() && peer.IsLoopback()
+}
+
 func remoteAddr(r *http.Request) netip.Addr {
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {

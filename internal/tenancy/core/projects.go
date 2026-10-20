@@ -368,11 +368,30 @@ func (s *Service) RestoreProject(ctx context.Context, p *authn.Principal, ref st
 // and long-expired service account tokens. Project rows stay, so their ids remain reserved
 // forever.
 func (s *Service) PurgeExpired(ctx context.Context) (int, error) {
+	// The data services purge their own data of every expired project, at each run: their
+	// purges are idempotent, and the control plane cannot see whether they hold data.
+	failed := map[int64]bool{}
+	if len(s.purgeHooks) > 0 {
+		expired, err := s.q.ListExpiredProjectNumbers(ctx)
+		if err != nil {
+			return 0, internal(err)
+		}
+		for _, n := range expired {
+			if err := s.purgeServices(ctx, n); err != nil {
+				// The project's control rows stay too, so nothing points at orphaned data.
+				s.log.Error("purging an expired project's service data", "project_number", n, "error", err)
+				failed[n] = true
+			}
+		}
+	}
 	numbers, err := s.q.ListExpiredProjects(ctx)
 	if err != nil {
 		return 0, internal(err)
 	}
 	for _, n := range numbers {
+		if failed[n] {
+			continue
+		}
 		err := s.tx(ctx, func(q *queries.Queries, _ pgx.Tx) error {
 			if err := q.PurgeProjectApps(ctx, n); err != nil {
 				return err
@@ -398,6 +417,21 @@ func (s *Service) PurgeExpired(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	return len(numbers), nil
+}
+
+// OnProjectPurged registers a data service's purge, run for each project whose deletion has
+// expired. The control plane knows no service; internal/app wires them (ADR-015).
+func (s *Service) OnProjectPurged(fn func(ctx context.Context, project int64) error) {
+	s.purgeHooks = append(s.purgeHooks, fn)
+}
+
+func (s *Service) purgeServices(ctx context.Context, project int64) error {
+	for _, purge := range s.purgeHooks {
+		if err := purge(ctx, project); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func validDisplayName(raw string, required bool) (string, error) {

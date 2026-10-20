@@ -240,6 +240,33 @@ func (q *Queries) ListAudit(ctx context.Context, arg ListAuditParams) ([]Control
 	return items, nil
 }
 
+const listExpiredProjectNumbers = `-- name: ListExpiredProjectNumbers :many
+SELECT project_number FROM control.projects
+WHERE state = 'DELETED' AND expire_time <= now()
+`
+
+// scope: global — the purge job looks across all projects for expired deletions; the data
+// services purge theirs at every run.
+func (q *Queries) ListExpiredProjectNumbers(ctx context.Context) ([]int64, error) {
+	rows, err := q.db.Query(ctx, listExpiredProjectNumbers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []int64{}
+	for rows.Next() {
+		var project_number int64
+		if err := rows.Scan(&project_number); err != nil {
+			return nil, err
+		}
+		items = append(items, project_number)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listExpiredProjects = `-- name: ListExpiredProjects :many
 SELECT project_number FROM control.projects
 WHERE state = 'DELETED' AND expire_time <= now()

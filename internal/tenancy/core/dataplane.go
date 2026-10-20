@@ -99,9 +99,15 @@ func (s *Service) ProjectID(ctx context.Context, number int64) (string, error) {
 
 // ProjectNumber returns the number of an active project by id, for the public token discovery
 // endpoints, which name the project as their issuer does.
+//
+// A missing or inactive project is NOT_FOUND; a database failure is INTERNAL, so callers do
+// not mistake an outage for a missing project.
 func (s *Service) ProjectNumber(ctx context.Context, id string) (int64, error) {
 	p, err := s.q.GetProjectByID(ctx, id)
-	if err != nil || p.State != "ACTIVE" {
+	switch {
+	case err != nil && !notFound(err):
+		return 0, internal(err)
+	case err != nil || p.State != "ACTIVE":
 		return 0, errNotFound()
 	}
 	return p.ProjectNumber, nil

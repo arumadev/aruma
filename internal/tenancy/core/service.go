@@ -42,6 +42,10 @@ type Service struct {
 
 	setupMu   sync.Mutex
 	setupHash []byte // HMAC of the one-time setup code; nil once used or when not needed
+
+	// purgeHooks remove the data services' data of a purged project (OnProjectPurged). Set
+	// while wiring, before the server runs.
+	purgeHooks []func(ctx context.Context, project int64) error
 }
 
 // New returns the service.

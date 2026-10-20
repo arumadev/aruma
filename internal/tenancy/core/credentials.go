@@ -56,7 +56,11 @@ func (s *Service) VerifyAccessToken(ctx context.Context, token string) (*authn.P
 	if t.LastUsedAt == nil || time.Since(*t.LastUsedAt) > touchEvery {
 		_ = s.q.TouchAccessToken(ctx, t.ID)
 	}
-	return &authn.Principal{Kind: authn.KindAccount, Method: authn.MethodAccessToken, AccountID: t.AccountID}, nil
+	p := &authn.Principal{Kind: authn.KindAccount, Method: authn.MethodAccessToken, AccountID: t.AccountID}
+	if t.ExpiresAt != nil {
+		p.ExpiresAt = *t.ExpiresAt
+	}
+	return p, nil
 }
 
 // Session is an active console session as listed to its owner.

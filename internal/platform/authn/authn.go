@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -56,6 +57,10 @@ type Principal struct {
 	ProjectNumber    int64     // KindServiceAccount: the only project it may touch
 
 	Email string
+
+	// ExpiresAt is when the credential stops being valid; zero when it does not expire.
+	// Long-lived connections that authenticated once use it to drop the principal in time.
+	ExpiresAt time.Time
 }
 
 // ActorType names the principal kind for the audit log.

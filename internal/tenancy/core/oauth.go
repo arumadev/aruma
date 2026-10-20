@@ -201,7 +201,7 @@ func (s *Service) verifyServiceToken(ctx context.Context, token string) (*authn.
 	}
 	return &authn.Principal{
 		Kind: authn.KindServiceAccount, Method: authn.MethodServiceToken,
-		ServiceAccountID: row.PrincipalID, ProjectNumber: row.ProjectNumber, Email: row.Email,
+		ServiceAccountID: row.PrincipalID, ProjectNumber: row.ProjectNumber, Email: row.Email, ExpiresAt: row.ExpiresAt,
 	}, nil
 }
 
