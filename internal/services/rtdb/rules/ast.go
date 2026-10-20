@@ -35,9 +35,8 @@ type (
 		name string // the property, or the key when it is a string literal
 		key  expr   // a computed key that is not a string literal; nil otherwise
 		// set by the checker:
-		method  method // the method this member names, when it is called
-		recv    typ    // the static type of obj
-		literal bool   // obj[key] with a literal key
+		method method // the method this member names, when it is called
+		recv   typ    // the static type of obj
 	}
 	call struct {
 		pos    int

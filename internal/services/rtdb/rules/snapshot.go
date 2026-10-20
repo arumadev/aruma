@@ -177,6 +177,12 @@ type world struct {
 	cache    map[string]Node // stored data by path
 	newCache map[string]Node // newData by path
 	changes  []change
+	// written indexes changes by path, and under lists, for each ancestor of a change, the
+	// child keys that lead to changes, so newData costs the depth of a path, not the number
+	// of changes.
+	written map[string]int
+	under   map[string][]string
+	leads   map[string]bool // paths in under, as keys
 	// err is the first Source failure. The check that meets one returns it instead of a
 	// verdict: a database that cannot be read is not a denial.
 	err error
@@ -188,6 +194,21 @@ type change struct {
 }
 
 func pathKey(path []string) string { return strings.Join(path, "/") }
+
+func (w *world) addChange(path []string, value any) {
+	if w.written == nil {
+		w.written, w.under, w.leads = map[string]int{}, map[string][]string{}, map[string]bool{}
+	}
+	w.written[pathKey(path)] = len(w.changes)
+	w.changes = append(w.changes, change{path: path, value: value})
+	for i := 0; i < len(path); i++ {
+		if child := pathKey(path[:i+1]); !w.leads[child] {
+			w.leads[child] = true
+			key := pathKey(path[:i])
+			w.under[key] = append(w.under[key], path[i])
+		}
+	}
+}
 
 // old reads the stored data at path.
 func (w *world) old(path []string) Node {
@@ -224,17 +245,12 @@ func (w *world) fresh(path []string) Node {
 }
 
 func (w *world) overlay(path []string) Node {
-	var below []string // the keys under path that lead to changes
-	for _, c := range w.changes {
-		if hasPrefix(path, c.path) {
-			return nodeOf(lookup(c.value, path[len(c.path):]))
-		}
-		if hasPrefix(c.path, path) {
-			if k := c.path[len(path)]; !contains(below, k) {
-				below = append(below, k)
-			}
+	for i := len(path); i >= 0; i-- {
+		if j, ok := w.written[pathKey(path[:i])]; ok {
+			return nodeOf(lookup(w.changes[j].value, path[i:]))
 		}
 	}
+	below := w.under[pathKey(path)] // the keys under path that lead to changes
 	if below == nil {
 		return w.old(path)
 	}
@@ -256,8 +272,9 @@ func (w *world) overlay(path []string) Node {
 		if w.err != nil {
 			return Node{}
 		}
-		sort.Strings(below)
-		other, err := w.src.HasChildExcept(w.ctx, path, below)
+		keys := append([]string(nil), below...)
+		sort.Strings(keys)
+		other, err := w.src.HasChildExcept(w.ctx, path, keys)
 		if err != nil {
 			w.err = err
 			return Node{}
@@ -265,17 +282,4 @@ func (w *world) overlay(path []string) Node {
 		return Node{HasChildren: other}
 	}
 	return Node{}
-}
-
-// hasPrefix reports whether prefix is path or one of its ancestors.
-func hasPrefix(path, prefix []string) bool {
-	if len(prefix) > len(path) {
-		return false
-	}
-	for i, k := range prefix {
-		if path[i] != k {
-			return false
-		}
-	}
-	return true
 }

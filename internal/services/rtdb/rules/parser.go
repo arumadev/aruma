@@ -160,7 +160,7 @@ func (p *parser) expression(minBP int) (expr, *exprError) {
 			if err := p.expect("]"); err != nil {
 				return nil, err
 			}
-			m := &member{pos: left.at(), obj: left, literal: true}
+			m := &member{pos: left.at(), obj: left}
 			if s, ok := key.(*literal); ok {
 				if str, ok := s.val.(string); ok {
 					m.name = str

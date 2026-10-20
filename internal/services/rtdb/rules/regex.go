@@ -100,7 +100,7 @@ func (t *reTranslator) alternation(start bool) (string, error) {
 	if len(branches) > 1 {
 		for _, b := range branches {
 			if b == "" {
-				return "", fmt.Errorf("expected ')' at position %d", t.pos)
+				return "", fmt.Errorf("expected ')' at position %d", t.pos+1)
 			}
 		}
 	}
@@ -122,9 +122,9 @@ func (t *reTranslator) sequence(start bool) (string, error) {
 			atom = regexp.QuoteMeta(string(c))
 			t.pos++
 		case strings.IndexByte("*+?", c) >= 0:
-			return "", fmt.Errorf("nothing to repeat at position %d", t.pos)
+			return "", fmt.Errorf("nothing to repeat at position %d", t.pos+1)
 		case c == '{':
-			return "", fmt.Errorf("nothing to repeat at position %d", t.pos)
+			return "", fmt.Errorf("nothing to repeat at position %d", t.pos+1)
 		default:
 			a, err := t.atom()
 			if err != nil {
@@ -163,7 +163,7 @@ func (t *reTranslator) atom() (string, error) {
 			return "", err
 		}
 		if t.pos >= len(t.src) || t.src[t.pos] != ')' {
-			return "", fmt.Errorf("expected ')' at position %d", t.pos)
+			return "", fmt.Errorf("expected ')' at position %d", t.pos+1)
 		}
 		t.pos++
 		return "(" + inner + ")", nil

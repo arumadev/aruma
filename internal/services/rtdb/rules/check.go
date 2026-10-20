@@ -157,7 +157,7 @@ func (rs *Ruleset) canWrite(ctx context.Context, env Env, trace tracer, changes 
 		if err != nil {
 			return false, err
 		}
-		w.changes = append(w.changes, change{path: c.Path, value: v})
+		w.addChange(c.Path, v)
 	}
 	ev := newEvaluator(w, env, trace)
 	ev.query = &Query{} // a write has no query: every field is false or null (emulator 4.11.2)

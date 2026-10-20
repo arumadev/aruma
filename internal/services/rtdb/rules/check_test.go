@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -269,6 +270,32 @@ func TestSourceIsAskedLittle(t *testing.T) {
 	}
 	if src.gets > 4 {
 		t.Fatalf("Get asked %d times", src.gets)
+	}
+}
+
+// A large update stays cheap: newData is found through an index of the changes, not by
+// scanning them for every node a rule reads.
+func TestLargeUpdate(t *testing.T) {
+	rs, err := Parse([]byte(`{"rules":{".write":true,"list":{".validate":"newData.hasChildren()","$k":{".validate":"newData.isNumber() && newData.parent().exists() && root.child('list').exists()"}}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	stored := map[string]any{}
+	values := map[string]any{}
+	for i := 0; i < 20000; i++ {
+		k := fmt.Sprintf("k%05d", i)
+		stored[k] = 1.0
+		values[k] = float64(i)
+	}
+	values["k00000"] = nil
+	src, _ := NewMemorySource(map[string]any{"list": stored})
+	start := time.Now()
+	ok, err := rs.CanWrite(context.Background(), Env{Data: src}, Update([]string{"list"}, values)...)
+	if err != nil || !ok {
+		t.Fatalf("%v %v", ok, err)
+	}
+	if d := time.Since(start); d > 2*time.Second {
+		t.Fatalf("20000 changes took %v", d)
 	}
 }
 
