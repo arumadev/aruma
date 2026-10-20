@@ -10,7 +10,9 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -65,9 +67,27 @@ func (s *syncBuffer) String() string {
 // newEnv starts a server. env overrides ARUMA_* settings; opts adjust the wiring.
 func newEnv(t *testing.T, env map[string]string, opts ...app.Option) *Env {
 	t.Helper()
+	return newEnvWithPool(t, 0, env, opts...)
+}
+
+// newEnvWithPool is newEnv with the server's database pool capped at maxConns connections, as
+// pool_max_conns in ARUMA_DATABASE_URL caps it; 0 keeps pgx's default.
+func newEnvWithPool(t *testing.T, maxConns int, env map[string]string, opts ...app.Option) *Env {
+	t.Helper()
 	dbURL := storetest.NewDB(t)
 	ctx := context.Background()
-	pool, err := store.Open(ctx, dbURL)
+	poolURL := dbURL
+	if maxConns > 0 {
+		u, err := url.Parse(dbURL)
+		if err != nil {
+			t.Fatal(err)
+		}
+		q := u.Query()
+		q.Set("pool_max_conns", strconv.Itoa(maxConns))
+		u.RawQuery = q.Encode()
+		poolURL = u.String()
+	}
+	pool, err := store.Open(ctx, poolURL)
 	if err != nil {
 		t.Fatal(err)
 	}
