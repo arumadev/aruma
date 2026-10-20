@@ -554,9 +554,12 @@ func TestAuthIdPLinkingAndTakeover(t *testing.T) {
 	ok(t, x.direct("google.com", x.google.idToken(googleClient, googleClaims("g-kept", "kept@gmail.com", true)), "", ""))
 	ok(t, x.call(itk+"accounts:signInWithPassword", map[string]any{"email": "kept@gmail.com", "password": "secret12"}))
 
-	// Linking: a password user adds Google (linkViaPopup passes the user's idToken).
+	// Linking: a password user adds Google (linkViaPopup passes the user's idToken). The Google
+	// account is a Workspace account of example.com, so it vouches for the address.
 	linker := ok(t, x.call(itk+"accounts:signUp", map[string]any{"email": "nour@example.com", "password": "secret12", "returnSecureToken": true}))
-	ev = x.flow("google.com", "linkViaPopup", googleClaims("g-nour", "nour@example.com", true))
+	workspace := googleClaims("g-nour", "nour@example.com", true)
+	workspace["hd"] = "example.com"
+	ev = x.flow("google.com", "linkViaPopup", workspace)
 	linked := ok(t, x.signIn(ev, linker.str("idToken")))
 	assertEqual(t, "uid kept", linked.str("localId"), linker.str("localId"))
 	user = ok(t, x.call(itk+"accounts:lookup", map[string]any{"idToken": linked.str("idToken")})).list("users")[0]

@@ -133,6 +133,7 @@ type providerClaims struct {
 	Nonce         string   `json:"nonce"`
 	Email         string   `json:"email"`
 	EmailVerified flexBool `json:"email_verified"`
+	HostedDomain  string   `json:"hd"` // Google: the Workspace domain of the account, if any
 	Name          string   `json:"name"`
 	GivenName     string   `json:"given_name"`
 	FamilyName    string   `json:"family_name"`
