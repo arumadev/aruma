@@ -23,7 +23,10 @@ func rtdbEnv(t *testing.T, locked bool, extra map[string]string) *Env {
 	t.Helper()
 	env := map[string]string{"ARUMA_RTDB_ENABLED": "true"}
 	if !locked {
+		// Open rules need a loopback listener; the test server's real listener is
+		// 127.0.0.1 anyway.
 		env["ARUMA_RTDB_DEV_OPEN_RULES"] = "true"
+		env["ARUMA_LISTEN"] = "127.0.0.1:8080"
 	}
 	for k, v := range extra {
 		env[k] = v
@@ -48,6 +51,8 @@ type dialOpts struct {
 	host   string // the URL's host; the connection still goes to the test server
 	origin string
 	query  string // replaces ?v=5&ns=...
+	// forwardedHost is sent as X-Forwarded-Host, as a proxy in front would.
+	forwardedHost string
 }
 
 // dial opens /.ws on the test server for namespace ns and reads the handshake.
@@ -77,6 +82,9 @@ func (e *Env) tryDial(ns string, o dialOpts) (*wsClient, *http.Response, error) 
 	header := http.Header{}
 	if o.origin != "" {
 		header.Set("Origin", o.origin)
+	}
+	if o.forwardedHost != "" {
+		header.Set("X-Forwarded-Host", o.forwardedHost)
 	}
 	client := &http.Client{Transport: &http.Transport{
 		DialContext: func(ctx context.Context, network, _ string) (net.Conn, error) {

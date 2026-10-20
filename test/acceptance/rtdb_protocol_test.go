@@ -307,16 +307,27 @@ func TestRTDBNamespacesIsolated(t *testing.T) {
 }
 
 func TestRTDBOrigin(t *testing.T) {
+	// Firebase checks no Origin; by default neither does Aruma (lead decision): credentials
+	// travel inside the messages, never in cookies.
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("chat-app")
-	self := e.URL
+	for _, origin := range []string{"", e.URL, "https://any-app.example", "null"} {
+		if _, _, err := e.tryDial(ns, dialOpts{origin: origin}); err != nil {
+			t.Errorf("origin %q refused: %v", origin, err)
+		}
+	}
+
+	// rtdb.allowed_origins narrows it for operators who want that.
+	f := rtdbEnv(t, false, map[string]string{"ARUMA_RTDB_ALLOWED_ORIGINS": "app.example.com"})
+	ns = f.owner().projectNS("chat-app")
 	for origin, ok := range map[string]bool{
-		"":                      true, // Android, iOS and the Admin SDKs send none
-		self:                    true, // a page on the database's own host
-		"http://localhost:3000": true, // an authorised domain (Auth's default list)
-		"https://evil.example":  false,
-		"null":                  false,
+		"":                        true, // Android, iOS and the Admin SDKs send none
+		f.URL:                     true, // a page on the database's own host
+		"https://app.example.com": true,
+		"https://evil.example":    false,
+		"null":                    false,
 	} {
+		e := f
 		_, resp, err := e.tryDial(ns, dialOpts{origin: origin})
 		switch {
 		case ok && err != nil:
@@ -475,5 +486,81 @@ func TestRTDBUnsupportedAndMalformed(t *testing.T) {
 		if env.D.R != want {
 			t.Errorf("reply %d, want %d", env.D.R, want)
 		}
+	}
+}
+
+// Behind a trusted proxy, the database and the hello's h come from X-Forwarded-Host, so the
+// client reconnects to the public host it used (review #11).
+func TestRTDBBehindProxy(t *testing.T) {
+	e := rtdbEnv(t, false, map[string]string{"ARUMA_RTDB_DOMAIN": "rtdb.aruma.test", "ARUMA_TRUSTED_PROXIES": "127.0.0.1/32"})
+	e.owner().project("chat-app")
+	public := "chat-app-default-rtdb.rtdb.aruma.test"
+	c := e.dial("", dialOpts{query: "v=5", forwardedHost: public})
+	if c.hello.Host != public {
+		t.Errorf("h = %q, want %q", c.hello.Host, public)
+	}
+	c.put("/x", 1)
+	if got := e.dial("chat-app-default-rtdb", dialOpts{}).get("/x"); got != "1" {
+		t.Errorf("the forwarded host named another database: %s", got)
+	}
+}
+
+// Anonymous clients cannot exhaust the server (review #3): they may send only small
+// messages, and they take none of the project's connection slots.
+func TestRTDBAnonymousClientsAreBounded(t *testing.T) {
+	e := rtdbEnv(t, true, map[string]string{"ARUMA_RTDB_CONNECTIONS_PER_PROJECT": "1"})
+	owner := e.owner()
+	ns := owner.projectNS("chat-app")
+	_, key := owner.serviceAccountKey("chat-app", "backend")
+	sat, _, err := exchange(t, key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var anons []*wsClient
+	for range 3 {
+		c := e.dial(ns, dialOpts{})
+		if r := c.call("p", map[string]any{"p": "/a", "d": 1}); r.Status != "permission_denied" {
+			t.Fatalf("anonymous write: %+v", r)
+		}
+		anons = append(anons, c)
+	}
+	// 2 MB before signing in: dropped with the error frame, past the 1 MiB default.
+	anons[0].request("p", map[string]any{"p": "/a", "d": strings.Repeat("z", 2<<20)})
+	if m := anons[0].next(); m != `{"t":"c","d":{"t":"e","d":"Error on incoming message"}}` {
+		t.Errorf("large anonymous message: %.80s", m)
+	}
+	// The one slot is still free for the admin.
+	admin := e.dial(ns, dialOpts{})
+	if r := admin.call("gauth", map[string]any{"cred": sat}); r.Status != "ok" {
+		t.Fatalf("admin at the limit: %+v", r)
+	}
+	admin.put("/a", strings.Repeat("z", 2<<20)) // signed in: the full limit
+	second := e.dial(ns, dialOpts{})
+	if r := second.call("gauth", map[string]any{"cred": sat}); r.Status != "unavailable" {
+		t.Errorf("second admin past the limit: %+v", r)
+	}
+}
+
+// A purged project's databases go with it (review #17).
+func TestRTDBPurgedProjectLosesItsData(t *testing.T) {
+	e := rtdbEnv(t, false, nil)
+	c := e.owner()
+	ns := c.projectNS("chat-app")
+	e.dial(ns, dialOpts{}).put("/x", 1)
+	keep := e.owner2().projectNS("other-app")
+	e.dial(keep, dialOpts{}).put("/y", 1)
+	c.mustOK(c.do("POST", "/console/v1/projects/chat-app:delete", map[string]any{"confirmProjectId": "chat-app"}))
+	ctx := t.Context()
+	if _, err := e.Pool.Exec(ctx, "UPDATE control.projects SET expire_time = now() - interval '1 second' WHERE project_id = 'chat-app'"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.App.Service.PurgeExpired(ctx); err != nil {
+		t.Fatal(err)
+	}
+	var dbs, nodes int
+	e.Pool.QueryRow(ctx, "SELECT count(*) FROM rtdb.databases WHERE name = $1", ns).Scan(&dbs)
+	e.Pool.QueryRow(ctx, "SELECT count(*) FROM rtdb.nodes").Scan(&nodes)
+	if dbs != 0 || nodes != 1 {
+		t.Errorf("after purge: %d databases of the project, %d nodes in all (want 0 and the other project's 1)", dbs, nodes)
 	}
 }
