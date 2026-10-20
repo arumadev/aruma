@@ -53,7 +53,7 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 			s.core.Set(b.Path, b.Data, b.Hash, func(n *core.Node, err error) {
 				switch {
 				case err != nil:
-					s.fill(sl, encodeError(req.ID, err))
+					s.fill(sl, result(req.ID, err))
 				case b.Hash != nil:
 					// A conditional put is acked with the data written (emulator 4.11.2).
 					s.fill(sl, wire.EncodeResponse(req.ID, wire.OKWith(json.RawMessage(n.ExportJSON()))))
@@ -83,7 +83,7 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 		sl := s.reserve()
 		s.core.Get(b.Path, func(n *core.Node, err error) {
 			if err != nil {
-				s.fill(sl, encodeError(req.ID, err))
+				s.fill(sl, result(req.ID, err))
 				return
 			}
 			s.fill(sl, wire.EncodeResponse(req.ID, wire.OKWith(json.RawMessage(n.ExportJSON()))))
@@ -152,9 +152,8 @@ func replyOf(err error) wire.Reply {
 	return wire.OK()
 }
 
+// result encodes the reply to request id: ok, or err's status and message.
 func result(id int64, err error) []byte { return wire.EncodeResponse(id, replyOf(err)) }
-
-func encodeError(id int64, err error) []byte { return result(id, err) }
 
 // authExpiry is the expiry the auth reply announces for an admin credential, in the shape
 // the emulator uses ({"auth":null,"expires":<seconds>}).
