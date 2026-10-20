@@ -48,6 +48,12 @@
 ### المفاتيح ومشروع الطلب
 
 - مفتاح API يحدد المشروع، عبر `LookupAPIKey` من المرحلة 1.
+- **قيود المفتاح تُطبَّق كما تطبّقها Google** على كل نقطة عميل، وعلى التجديد، وعلى صفحات `/__/auth/action` و`handler` و`iframe`. الدالة واحدة: `Restrictions.Check` في `internal/tenancy/core/keycheck.go`، لتستعملها خدمات البيانات اللاحقة كما هي.
+  - **قيود الواجهات (`apiTargets`):** نقاط العميل هي `identitytoolkit.googleapis.com` (ومنها مسارات v3)، والتجديد هو `securetoken.googleapis.com`. فمفتاح يذكر الأولى وحدها لا يجدّد الرمز، كما في Google. مفتاح بلا `apiTargets` يُقبل لكل واجهة.
+  - **قيد واحد من قيود التطبيقات:** المواقع تُطابَق مع ترويسة `Referer` وحدها، بقواعد Google: `*.` في أول المضيف لأي نطاق فرعي (لا النطاق نفسه)، و`*` في آخر المسار، والمنفذ إن ذُكر، والمخطط إن ذُكر. موقع بلا مسار يطابق الجذر وحده، ولذلك توثّق Google سطرين: `example.com` و`example.com/*`. وعناوين IP (`serverKeyRestrictions.allowedIps`، عنوان أو نطاق CIDR، IPv4 أو IPv6) تُطابَق مع عنوان العميل الذي يحسبه الخادم عبر `trusted_proxies` وحدها. وAndroid يُطابَق مع `X-Android-Package` و`X-Android-Cert` (بصمة SHA-1) معًا، وiOS مع `X-Ios-Bundle-Identifier`.
+  - **الرفض بجواب Google:** ‏403 و`PERMISSION_DENIED`، والرسالة كما ترسلها Google (`Requests from referer <empty> are blocked.` مثلًا)، و`errors[].reason` هو `forbidden`، وتفصيل `google.rpc.ErrorInfo` فيه السبب (`API_KEY_HTTP_REFERRER_BLOCKED`، `API_KEY_IP_ADDRESS_BLOCKED`، `API_KEY_ANDROID_APP_BLOCKED`، `API_KEY_IOS_APP_BLOCKED`، `API_KEY_SERVICE_BLOCKED`) و`consumer` و`service`.
+  - **الصفحات:** صفحات Google المستضافة تستدعي الواجهة من المتصفح، فيرى قيد المواقع عنوان الصفحة نفسها، ولذلك تطلب Google إضافة `firebaseapp.com`. صفحات Aruma تفحص المفتاح بعنوانها هي، فيجب أن يذكر قيد المواقع مضيف Aruma أو `authDomain`. أما قيود Android وiOS فلا يحققها متصفح، فلا تُفحص في الصفحات، وتبقى على الاستدعاءات التي تصدر الرموز (`signInWithIdp` والتجديد). والصفحة المرفوضة لا تسلّم شيئًا.
+  - **ما لم يُنفَّذ:** `apiTargets[].methods` (يُرفض الحقل عند الحفظ). ورسالة `API_KEY_SERVICE_BLOCKED` في Google تذكر اسم الطريقة أيضًا، ورسالة Aruma تذكر الواجهة وحدها.
 - رمز الدخول أو رمز التجديد يجب أن يكون من **المشروع نفسه**، وإلا يُرفض بالرسالة نفسها لرمز غير صالح.
 
 ## البدائل المرفوضة

@@ -47,7 +47,11 @@ export function KeyDialog({ projectId, apiKey, onSaved, onClose }: { projectId: 
   }
 
   const update = (patch: Partial<RestrictionDraft>) => setDraft((d) => ({ ...d, ...patch }));
-  const kinds: RestrictionKind[] = ['none', 'browser', 'android', 'ios'];
+  const kinds: RestrictionKind[] = ['none', 'browser', 'ip', 'android', 'ios'];
+  const listLabel = { browser: t('referrers'), ip: t('ips'), ios: t('bundleIds') };
+  const placeholder = { browser: 'https://example.com/*', ip: '198.51.100.0/24', ios: 'com.example.app' };
+  const lineProblems = { empty: t('needOne'), referrer: t('badReferrer'), ip: t('badIp'), bundleId: t('badBundleId') };
+  const lineProblem = problem && problem in lineProblems ? lineProblems[problem as keyof typeof lineProblems] : undefined;
 
   return (
     <Dialog
@@ -82,17 +86,17 @@ export function KeyDialog({ projectId, apiKey, onSaved, onClose }: { projectId: 
         options={kinds.map((k) => ({ id: k, label: t(`kind.${k}`) }))}
         description={t(`kindHint.${draft.kind}`)}
       />
-      {(draft.kind === 'browser' || draft.kind === 'ios') && (
+      {(draft.kind === 'browser' || draft.kind === 'ip' || draft.kind === 'ios') && (
         <TextField
-          label={draft.kind === 'browser' ? t('referrers') : t('bundleIds')}
+          label={listLabel[draft.kind]}
           multiline
           rows={4}
           ltr
           value={draft.lines}
           onChange={(lines) => update({ lines })}
-          placeholder={draft.kind === 'browser' ? 'https://example.com/*' : 'com.example.app'}
-          description={t('onePerLine')}
-          errorMessage={problem === 'empty' ? t('needOne') : problem === 'bundleId' ? t('badBundleId') : undefined}
+          placeholder={placeholder[draft.kind]}
+          description={draft.kind === 'browser' ? t('referrersHint') : t('onePerLine')}
+          errorMessage={lineProblem}
         />
       )}
       {draft.kind === 'android' && (
@@ -122,7 +126,7 @@ export function KeyDialog({ projectId, apiKey, onSaved, onClose }: { projectId: 
               />
             </div>
           ))}
-          {problem && problem !== 'bundleId' && (
+          {(problem === 'empty' || problem === 'packageName' || problem === 'sha1') && (
             <p className={styles.problem} role="alert">
               {t(`problem.${problem}`)}
             </p>

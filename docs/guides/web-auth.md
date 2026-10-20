@@ -88,6 +88,17 @@ connectAuthEmulator(auth, "https://aruma.example.com", { disableWarnings: true }
 - **reCAPTCHA:** يُعلن مطفأً، وتحمي حدود المعدل في الخادم من الإغراق.
 - **CORS:** مفتوح لمسارات العميل وحدها، دون cookies. فالهوية هي مفتاح API والرمز، لا أصل الصفحة.
 
+## تقييد مفتاح API
+
+المفتاح ليس سرًا، لكن يمكنك أن تحد من أين يُقبل، من شاشة «مفاتيح API» في اللوحة. وAruma يطبّق القيود كما تطبّقها Google:
+
+- **المواقع:** سطر لكل موقع، مثل `example.com/*` و`*.example.com/*`. لا تقوم `*` إلا مقام نطاق فرعي في أول المضيف، أو في آخر المسار. والمتصفح يرسل غالبًا أصل الصفحة وحده (`https://example.com/`) في الطلبات العابرة للمواقع، فقيد بمسار صفحة بعينها قد لا يطابق.
+- **أضف مضيف Aruma أيضًا** (أو `authDomain`)، مثل `aruma.example.com/*`. فصفحات روابط البريد ونافذة الدخول بـ Google وApple تفحص المفتاح بعنوانها، كما تطلب Google إضافة `firebaseapp.com`.
+- **عناوين IP:** للخوادم وحدها. إن كان أمام Aruma وكيل عكسي فاذكره في `trusted_proxies`، وإلا رأى Aruma عنوان الوكيل.
+- **قيود الواجهات:** إن قيّدت المفتاح بواجهات (عبر واجهة اللوحة البرمجية) فاذكر `identitytoolkit.googleapis.com` و`securetoken.googleapis.com` معًا، وإلا فشل تجديد الرمز.
+
+الطلب المرفوض يعود بـ 403، وتظهر في مكتبة الويب رسالة مثل `auth/requests-from-referer-https://other.example/-are-blocked.`.
+
 ## ما لا يعمل بعد
 
 | الميزة | الحالة |
@@ -121,6 +132,8 @@ connectAuthEmulator(auth, "https://aruma.example.com", { disableWarnings: true }
 Use your server's `public_url`. Enable the sign-in methods you need in the dashboard (email/password is on by default, anonymous is off as in Firebase), and add your app's domain to the authorised domains for email links and Google/Apple sign-in.
 
 `connectAuthEmulator` is the only documented way to point the web Auth SDK at another server: the Google hosts are fixed in its code. Aruma serves the paths that mode calls (ADR-014) and enforces everything server-side: per-project RS256 keys, never `alg:none` or `Bearer owner`, reCAPTCHA reported off with server rate limits instead, and CORS open on client routes only, without cookies.
+
+API key restrictions set on the dashboard's API keys screen are enforced as Google enforces them. Websites match the `Referer` header with Google's wildcard rules (`example.com/*`, `*.example.com/*`; a `*` only for a subdomain or at the end of the path); also list Aruma's host or `authDomain`, since the email action and sign-in pages check the key from their own URL, as Google requires `firebaseapp.com`. IP addresses match the client address resolved through `trusted_proxies` only. A key restricted to APIs must list both `identitytoolkit.googleapis.com` and `securetoken.googleapis.com`, or token refresh fails. A refused call gets 403 `PERMISSION_DENIED`, which the web SDK reports as e.g. `auth/requests-from-referer-https://other.example/-are-blocked.`.
 
 Not yet supported: phone, MFA and email-link sign-in answer `auth/operation-not-allowed` (v1.x); Google/Apple popup and redirect load one script from `apis.google.com` (declared exception in ADR-013); tenants are refused with `auth/invalid-tenant-id`. `signInWithRedirect` from an app on a different site than Aruma returns `null` from `getRedirectResult` in browsers that partition third-party storage (Chrome), the limitation Firebase documents too: serve Aruma or the custom `authDomain` on the app's site, or use `signInWithPopup`. Playwright tests that drive `signInWithPopup` should launch with `channel: 'chromium'` (or Chrome), not the default headless shell, which sometimes freezes the cross-site relay iframe when the popup opens (`docs/research/phase2-idp.md`).
 

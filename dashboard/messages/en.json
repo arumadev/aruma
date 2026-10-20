@@ -63,7 +63,7 @@
       "packageName": "A package name looks like com.example.app.",
       "password": "Use 8 to 1024 characters.",
       "projectId": "Use 6–30 lowercase letters, digits or hyphens. Start with a letter; don't end with a hyphen.",
-      "restrictions": "Check the restrictions: use one kind, with at most 100 entries.",
+      "restrictions": "Check the restrictions: one kind, at most 100 entries, each in its expected format.",
       "shaHash": "Enter a SHA-1 (40 hex digits) or SHA-256 (64 hex digits) fingerprint."
     }
   },
@@ -350,26 +350,33 @@
     "kind": {
       "none": "None",
       "browser": "Websites (HTTP referrers)",
+      "ip": "IP addresses",
       "android": "Android apps",
       "ios": "iOS apps"
     },
     "kindHint": {
       "none": "The key is accepted from anywhere.",
-      "browser": "Accept the key only from these websites.",
+      "browser": "Accept the key only from these websites (the Referer header browsers send).",
+      "ip": "Accept the key only from these server addresses. Behind a reverse proxy, list the proxy in trusted_proxies so the client's address is known.",
       "android": "Accept the key only from these Android apps.",
       "ios": "Accept the key only from these iOS apps."
     },
     "summary": {
       "none": "None",
       "browser": "{count, plural, one {# website} other {# websites}}",
+      "ip": "{count, plural, one {# IP address} other {# IP addresses}}",
       "android": "{count, plural, one {# Android app} other {# Android apps}}",
       "ios": "{count, plural, one {# iOS app} other {# iOS apps}}"
     },
     "referrers": "Allowed websites",
+    "referrersHint": "One per line, such as example.com/* and *.example.com/*. A * may only stand for a subdomain or end the path. Also list the host that serves Aruma's sign-in and email action pages.",
+    "ips": "Allowed IP addresses",
     "bundleIds": "Allowed bundle IDs",
     "onePerLine": "One per line.",
     "needOne": "Add at least one entry, or choose no restriction.",
     "badBundleId": "Each bundle ID must look like com.example.app.",
+    "badReferrer": "A website looks like example.com, *.example.com/* or https://example.com:8080/path; a * may only stand for a subdomain or end the path.",
+    "badIp": "Each entry must be an IPv4 or IPv6 address or a CIDR range such as 198.51.100.0/24.",
     "androidApps": "Allowed Android apps",
     "packageName": "Package name",
     "sha1": "SHA-1 fingerprint",
@@ -380,7 +387,7 @@
       "packageName": "Each package name must look like com.example.app.",
       "sha1": "Each app needs a SHA-1 fingerprint (40 hex digits)."
     },
-    "apiTargets": "Also limited to these APIs (set through the Management API):"
+    "apiTargets": "Also limited to these APIs (set through the console API):"
   },
   "serviceAccounts": {
     "title": "Service accounts",

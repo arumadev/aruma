@@ -104,12 +104,15 @@ Every path below starts with `/projects/{project}`. Keys are not secrets. Each p
 
 `Key` = `{name, uid, keyString, displayName, restrictions, state: "ACTIVE"|"DISABLED", platform?, rotatedFrom?, etag, createTime, updateTime}`.
 
-`restrictions` contains at most one of the following:
-- `browserKeyRestrictions.allowedReferrers[]`
+`restrictions` contains at most one of the following, at most 100 entries each:
+- `browserKeyRestrictions.allowedReferrers[]`: websites in Google's forms (`example.com`, `example.com/*`, `*.example.com/*`, `https://example.com:8080/path`). A `*` may only start the host (`*.`) or end the path; anything else is `INVALID_ARGUMENT`.
+- `serverKeyRestrictions.allowedIps[]`: IPv4 or IPv6 addresses or CIDR ranges.
 - `androidKeyRestrictions.allowedApplications[{sha1Fingerprint, packageName}]`
 - `iosKeyRestrictions.allowedBundleIds[]`
 
-It may also carry `apiTargets[{service}]`.
+It may also carry `apiTargets[{service}]`, each naming a service. `methods` is not supported and is rejected.
+
+Auth enforces them on every client call, the token refresh and its pages (ADR-014): a refused caller gets 403 `PERMISSION_DENIED` with a `google.rpc.ErrorInfo` detail whose reason is `API_KEY_HTTP_REFERRER_BLOCKED`, `API_KEY_IP_ADDRESS_BLOCKED`, `API_KEY_ANDROID_APP_BLOCKED`, `API_KEY_IOS_APP_BLOCKED` or `API_KEY_SERVICE_BLOCKED`. Client calls are `identitytoolkit.googleapis.com`; the refresh is `securetoken.googleapis.com`.
 
 ## Service accounts
 

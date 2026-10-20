@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -61,11 +63,21 @@ func (s *Service) Issuer(p Project) string { return s.publicURL + "/issuers/" + 
 // SessionIssuer is the session cookie issuer of a project.
 func (s *Service) SessionIssuer(p Project) string { return s.publicURL + "/session-issuers/" + p.ID }
 
-// ProjectForKey resolves a client API key.
-func (s *Service) ProjectForKey(ctx context.Context, key string) (Project, error) {
+// ProjectForKey resolves a client API key and checks the key's restrictions against the
+// caller. A refused caller gets Google's answer: 403 PERMISSION_DENIED with the reason in an
+// ErrorInfo detail.
+func (s *Service) ProjectForKey(ctx context.Context, key string, caller tcore.KeyCaller) (Project, error) {
 	kp, err := s.control.ProjectForKey(ctx, key)
 	if err != nil {
 		return Project{}, ErrInvalidAPIKey
+	}
+	if blocked := kp.Key.Restrictions.Check(caller); blocked != nil {
+		md := map[string]string{"consumer": "projects/" + strconv.FormatInt(kp.Number, 10), "service": caller.Service}
+		for k, v := range blocked.Metadata {
+			md[k] = v
+		}
+		return Project{}, &Error{Code: blocked.Message, Status: http.StatusForbidden,
+			Info: &ErrorInfo{Reason: blocked.Reason, Domain: "googleapis.com", Metadata: md}}
 	}
 	return Project{Number: kp.Number, ID: kp.ID}, nil
 }
