@@ -110,6 +110,9 @@ func (row errRow) run(t *testing.T, f *errFixture, protection bool) {
 
 func obj(m map[string]any) func(*errFixture) any { return func(*errFixture) any { return m } }
 
+// tooLongPhotoURL passes Aruma's 2048-byte bound, the only check on a photo URL.
+var tooLongPhotoURL = "https://example.com/" + strings.Repeat("p", 2048)
+
 var errTables = map[string][]errRow{
 	"accounts:signUp": {
 		{name: "empty body is anonymous, disabled by default", path: itk + "accounts:signUp", body: obj(map[string]any{}), on: "OPERATION_NOT_ALLOWED", off: "OPERATION_NOT_ALLOWED"},
@@ -198,10 +201,10 @@ var errTables = map[string][]errRow{
 			return map[string]any{"idToken": f.taken.str("idToken"), "email": "off@example.com"}
 		}, on: "OPERATION_NOT_ALLOWED", off: "EMAIL_EXISTS"},
 		{name: "weak password beats a bad photo URL", path: itk + "accounts:update", body: func(f *errFixture) any {
-			return map[string]any{"idToken": f.taken.str("idToken"), "password": "1", "photoUrl": "ftp://x"}
+			return map[string]any{"idToken": f.taken.str("idToken"), "password": "1", "photoUrl": tooLongPhotoURL}
 		}, on: "WEAK_PASSWORD", off: "WEAK_PASSWORD"},
-		{name: "bad photo URL", path: itk + "accounts:update", body: func(f *errFixture) any {
-			return map[string]any{"idToken": f.taken.str("idToken"), "photoUrl": "ftp://x"}
+		{name: "photo URL over 2048 bytes", path: itk + "accounts:update", body: func(f *errFixture) any {
+			return map[string]any{"idToken": f.taken.str("idToken"), "photoUrl": tooLongPhotoURL}
 		}, on: "INVALID_PHOTO_URL", off: "INVALID_PHOTO_URL"},
 		{name: "unknown deleteAttribute", path: itk + "accounts:update", body: func(f *errFixture) any {
 			return map[string]any{"idToken": f.taken.str("idToken"), "deleteAttribute": []string{"EMAIL"}}

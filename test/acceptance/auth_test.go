@@ -519,3 +519,22 @@ func TestAuthPasswordChangeRightAfterSignIn(t *testing.T) {
 	ok(t, p.refresh(upd.str("refreshToken")))
 	authErr(t, p.refresh(in.str("refreshToken")), "TOKEN_EXPIRED")
 }
+
+// A photo URL is any string the app sends, as in Identity Toolkit: the web SDK's own
+// integration tests (email.test.ts, docs/compat/firebase-js-suites.md) set "photo-url" and read
+// it back after a reload. Aruma refused anything but http(s) with a code Firebase does not have.
+func TestAuthPhotoURLIsAnyString(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.adminProject("chat-app")
+	up := p.signUp("sara@example.com", "secret1")
+
+	upd := ok(t, p.call(itk+"accounts:update", map[string]any{"idToken": up.str("idToken"), "photoUrl": "photo-url", "returnSecureToken": true}))
+	assertEqual(t, "photoUrl", upd.str("photoUrl"), "photo-url")
+	assertEqual(t, "stored", p.lookup(up.str("localId"))["photoUrl"], "photo-url")
+	refreshed := ok(t, p.refresh(up.str("refreshToken")))
+	assertEqual(t, "picture", claims(t, refreshed.str("id_token"))["picture"], "photo-url")
+
+	created := ok(t, p.admin(p.sa, "accounts", map[string]any{"localId": "u-2", "photoUrl": "avatars/2.png"}))
+	assertEqual(t, "admin photoUrl", p.lookup(created.str("localId"))["photoUrl"], "avatars/2.png")
+	authErr(t, p.admin(p.sa, "accounts:update", map[string]any{"localId": "u-2", "photoUrl": tooLongPhotoURL}), "INVALID_PHOTO_URL")
+}
