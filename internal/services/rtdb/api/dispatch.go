@@ -143,7 +143,7 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 			// with c before the reply, as the emulator does when a client signs in as
 			// someone else (golden auth_change.json).
 			sl := s.reserve(req.ID)
-			r := s.authenticate(ctx, b)
+			r := s.authenticate(ctx, b, req.Action == wire.ActionGAuth)
 			s.core.RevokeListens(func() { s.fill(sl, wire.EncodeResponse(req.ID, r)) })
 		}
 
