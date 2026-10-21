@@ -167,10 +167,20 @@ func ParseLPSegments(q url.Values) ([]LPSegment, error) {
 type LPReceiver struct {
 	// Max caps one message, in bytes once decoded. It may change between messages.
 	Max int
+	// Budget, when set, is charged for the segments held until their message is complete,
+	// as the Assembler's is for frames: a segment the budget cannot hold is dropped, and its
+	// message with it, as too big.
+	Budget Budget
 
 	next int64 // the first segment of the next message
-	segs map[int64]LPSegment
+	segs map[int64]lpHeld
 	held int // base64 bytes held
+}
+
+// lpHeld is a segment waiting for the rest of its message.
+type lpHeld struct {
+	LPSegment
+	lost bool // the budget could not hold its data, which is dropped
 }
 
 // lpWindow is how far ahead of the next expected segment a segment may be. The SDK has at
@@ -193,36 +203,43 @@ func (r *LPReceiver) Add(s LPSegment) error {
 		return ErrBadSegment
 	}
 	if r.segs == nil {
-		r.segs = map[int64]LPSegment{}
+		r.segs = map[int64]lpHeld{}
 	}
-	r.segs[s.Num] = s
-	r.held += len(s.Data)
+	h := lpHeld{LPSegment: s}
+	if r.Budget != nil && !r.Budget.Take(len(s.Data)) {
+		h.Data, h.lost = "", true
+	}
+	r.segs[s.Num] = h
+	r.held += len(h.Data)
 	return nil
 }
 
 // Next returns the next complete message, or nil when it has not all arrived. A message
-// that is not base64 is ErrMalformed and one over Max is ErrMessageTooBig; either is skipped,
-// so the caller answers it as it would on a WebSocket and calls Next again.
+// that is not base64 is ErrMalformed, and one over Max, or that the budget could not hold,
+// ErrMessageTooBig; either is skipped, so the caller answers it as it would on a WebSocket
+// and calls Next again.
 func (r *LPReceiver) Next() ([]byte, error) {
 	first, ok := r.segs[r.next]
 	if !ok {
 		return nil, nil
 	}
 	var b strings.Builder
+	lost := false
 	for i := int64(0); i < first.Total; i++ {
 		s, ok := r.segs[r.next+i]
 		if !ok {
 			return nil, nil
 		}
 		b.WriteString(s.Data)
+		lost = lost || s.lost
 	}
 	for i := int64(0); i < first.Total; i++ {
-		r.held -= len(r.segs[r.next+i].Data)
+		r.release(r.segs[r.next+i])
 		delete(r.segs, r.next+i)
 	}
 	r.next += first.Total
 	enc := b.String()
-	if base64.URLEncoding.DecodedLen(len(enc)) > r.Max+3 {
+	if lost || base64.URLEncoding.DecodedLen(len(enc)) > r.Max+3 {
 		return nil, ErrMessageTooBig
 	}
 	msg, err := base64.URLEncoding.DecodeString(strings.ReplaceAll(enc, ".", "="))
@@ -233,4 +250,20 @@ func (r *LPReceiver) Next() ([]byte, error) {
 		return nil, ErrMessageTooBig
 	}
 	return msg, nil
+}
+
+// Reset drops the segments held and returns their bytes to the budget, for a connection that
+// ends.
+func (r *LPReceiver) Reset() {
+	for n, s := range r.segs {
+		r.release(s)
+		delete(r.segs, n)
+	}
+}
+
+func (r *LPReceiver) release(s lpHeld) {
+	r.held -= len(s.Data)
+	if r.Budget != nil && !s.lost {
+		r.Budget.Give(len(s.Data))
+	}
 }

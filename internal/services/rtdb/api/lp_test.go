@@ -412,6 +412,41 @@ func TestLPStaysOnItsDatabase(t *testing.T) {
 	}
 }
 
+// The segments a long poll holds count against the global budget for messages in transit, as
+// WebSocket frames do (TestMessageLimits): a message the budget cannot hold gets the error
+// frame and the connection stays; what a connection held comes back when it ends.
+func TestLPInflightBudget(t *testing.T) {
+	lim := core.DefaultLimits
+	lim.InflightBytes = 4 << 10
+	a, _, _ := newTestAPI(t, Options{}, core.Options{Limits: lim})
+	ts := httptest.NewServer(a)
+	t.Cleanup(ts.Close)
+	left := func() int64 {
+		a.inflight.mu.Lock()
+		defer a.inflight.mu.Unlock()
+		return a.inflight.left
+	}
+	c := startLP(t, ts.URL)
+	c.call(1, "auth", map[string]any{"cred": sat})
+	big, _ := json.Marshal(map[string]any{"t": "d", "d": map[string]any{"r": 2, "a": "p", "b": map[string]any{"p": "/m", "d": strings.Repeat("x", 8<<10)}}})
+	c.poll(c.segments(string(big)))
+	c.await(func(m string) bool { return m == string(wire.EncodeError(errorFrame)) })
+	if r := c.call(3, "p", map[string]any{"p": "/m", "d": 1}); !strings.Contains(r, `"s":"ok"`) {
+		t.Errorf("after the dropped message: %s", r)
+	}
+	if n := left(); n != lim.InflightBytes {
+		t.Errorf("budget after: %d of %d", n, lim.InflightBytes)
+	}
+	// The first of two segments, then the connection ends.
+	q := c.segments(`{"t":"d","d":{"r":4,"a":"p","b":{"p":"/m","d":"` + strings.Repeat("y", 1500) + `"}}}`)
+	held := make(chan struct{})
+	go func() { c.poll(q[:strings.Index(q, "&seg1=")]); close(held) }()
+	waitFor(t, func() bool { return left() < lim.InflightBytes })
+	c.get("disconn=t&id=" + c.id + "&pw=" + c.pw + "&ns=" + lpNS)
+	<-held
+	waitFor(t, func() bool { return left() == lim.InflightBytes })
+}
+
 func TestLPAbandoned(t *testing.T) {
 	defer func(d time.Duration) { lpAbandon = d }(lpAbandon)
 	lpAbandon = 300 * time.Millisecond

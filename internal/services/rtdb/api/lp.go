@@ -76,6 +76,7 @@ type lpConn struct {
 	switched bool     // n arrived: the client sends over the WebSocket now
 	backlog  [][]byte // what the WebSocket brought before n
 	waiting  int      // its bytes, bounded like the outbox
+	ended    bool     // the connection finished: its receiver is empty and takes nothing more
 
 	mu        sync.Mutex
 	state     lpState
@@ -158,6 +159,8 @@ func (a *API) lpStart(w http.ResponseWriter, r *http.Request, target core.Target
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	c := &lpConn{api: a, sess: sess, pw: lpPassword(), ip: ip, ctx: ctx, cancel: cancel, batch: 1, handover: make(chan struct{})}
+	// Segments of messages in transit count against the same budget as WebSocket frames.
+	c.rcv.Budget = a.inflight
 	if !a.lpAdd(c) {
 		c.finish(true)
 		writeError(w, http.StatusServiceUnavailable, "The server is shutting down.")
@@ -199,6 +202,9 @@ func (a *API) lpPoll(w http.ResponseWriter, r *http.Request, target core.Target,
 func (c *lpConn) receive(segs []wire.LPSegment) error {
 	c.in.Lock()
 	defer c.in.Unlock()
+	if c.ended {
+		return nil
+	}
 	for _, s := range segs {
 		if err := c.rcv.Add(s); err != nil {
 			return err
@@ -412,6 +418,10 @@ func (c *lpConn) finish(endSession bool) {
 	}
 	c.mu.Unlock()
 	c.api.lpRemove(c)
+	c.in.Lock()
+	c.rcv.Reset()
+	c.ended = true
+	c.in.Unlock()
 	c.cancel()
 	if endSession {
 		c.sess.close()

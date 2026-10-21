@@ -197,6 +197,47 @@ func TestLPReceiver(t *testing.T) {
 	}
 }
 
+// The segments a long poll holds count against the budget for messages in transit that the
+// WebSocket's frames share (TestAssemblerBudget): a message the budget cannot hold is dropped
+// as too big, what it held is given back, and a receiver that is reset returns everything.
+func TestLPReceiverBudget(t *testing.T) {
+	enc := func(s string) string {
+		return strings.ReplaceAll(base64.URLEncoding.EncodeToString([]byte(s)), "=", ".")
+	}
+	b := &budget{left: 20}
+	r := &LPReceiver{Max: 100, Budget: b}
+	small := enc(`{"a":1}`) // 12 characters
+	r.Add(LPSegment{Num: 0, Total: 2, Data: small[:6]})
+	r.Add(LPSegment{Num: 1, Total: 2, Data: small[6:]})
+	if b.held != 12 {
+		t.Errorf("held %d, want 12", b.held)
+	}
+	if m, err := r.Next(); string(m) != `{"a":1}` || err != nil || b.held != 0 {
+		t.Fatalf("within the budget: %s %v, %d held", m, err, b.held)
+	}
+	// 24 characters in transit are more than the budget: the message is dropped.
+	big := enc(`{"a":"0123456789"}`)
+	for i := range 3 {
+		r.Add(LPSegment{Num: 2 + int64(i), Total: 3, Data: big[i*8 : (i+1)*8]})
+	}
+	if _, err := r.Next(); !errors.Is(err, ErrMessageTooBig) || b.held != 0 {
+		t.Fatalf("over the budget: %v, %d held", err, b.held)
+	}
+	if m, err := r.Next(); m != nil || err != nil {
+		t.Fatalf("after the dropped message: %s %v", m, err)
+	}
+	// A connection that ends mid-message returns its bytes.
+	r.Add(LPSegment{Num: 5, Total: 2, Data: small[:6]})
+	r.Add(LPSegment{Num: 9, Total: 1, Data: small})
+	if b.held != 18 {
+		t.Fatalf("held %d, want 18", b.held)
+	}
+	r.Reset()
+	if b.held != 0 || b.left != 20 {
+		t.Fatalf("after reset: %d held, %d left", b.held, b.left)
+	}
+}
+
 func TestLPEncoding(t *testing.T) {
 	if got := string(EncodeLPBatch(3, [][]byte{[]byte(`"a` + " " + `b"`), []byte(`1`)})); got != `pRTLPCB(3,["a b",1]);`+"\n" {
 		t.Errorf("batch: %q", got)
