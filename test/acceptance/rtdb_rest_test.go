@@ -197,3 +197,53 @@ func TestRTDBRESTRulesDryRunAndStrict(t *testing.T) {
 		t.Errorf("without a credential: %d %s", r.status, r.body)
 	}
 }
+
+// firebase-tools finds a project's database through the management API before any database
+// command or deploy: the project's realtimeDatabaseInstance, then that instance's databaseUrl
+// (management/database.ts). Another instance, another account's project and a server without
+// the Realtime Database find nothing.
+func TestRTDBManagementInstances(t *testing.T) {
+	e := rtdbEnv(t, false, map[string]string{"ARUMA_RTDB_DOMAIN": "rtdb.aruma.test"})
+	owner := e.owner()
+	owner.project("chat-app")
+	cli := e.withBearer(owner.pat())
+	p := cli.mustOK(cli.do("GET", "/v1beta1/projects/chat-app", nil))
+	if got := p.str("resources", "realtimeDatabaseInstance"); got != "chat-app-default-rtdb" {
+		t.Errorf("realtimeDatabaseInstance %q: %s", got, p.Body)
+	}
+	inst := cli.mustOK(cli.do("GET", "/v1beta/projects/chat-app/locations/-/instances/chat-app-default-rtdb", nil))
+	want := "projects/" + p.str("projectNumber") + "/locations/us-central1/instances/chat-app-default-rtdb"
+	if inst.str("name") != want || inst.str("databaseUrl") != "https://chat-app-default-rtdb.rtdb.aruma.test" ||
+		inst.str("type") != "DEFAULT_DATABASE" || inst.str("state") != "ACTIVE" {
+		t.Errorf("instance: %s", inst.Body)
+	}
+	if l := cli.mustOK(cli.do("GET", "/v1beta/projects/chat-app/locations/-/instances", nil)).list("instances"); len(l) != 1 {
+		t.Errorf("instances: %v", l)
+	}
+	for _, path := range []string{
+		"/v1beta/projects/chat-app/locations/-/instances/other-default-rtdb",
+		"/v1beta/projects/chat-app/locations/europe-west1/instances/chat-app-default-rtdb",
+	} {
+		if resp := cli.do("GET", path, nil); resp.Status != 404 {
+			t.Errorf("%s: %d", path, resp.Status)
+		}
+	}
+	other := e.withBearer(e.owner2().pat())
+	if resp := other.do("GET", "/v1beta/projects/chat-app/locations/-/instances/chat-app-default-rtdb", nil); resp.Status != 404 {
+		t.Errorf("another account's project: %d", resp.Status)
+	}
+	if resp := e.client().do("GET", "/v1beta/projects/chat-app/locations/-/instances/chat-app-default-rtdb", nil); resp.Status != 401 {
+		t.Errorf("no credential: %d", resp.Status)
+	}
+
+	off := newEnv(t, nil)
+	offOwner := off.owner()
+	offOwner.project("chat-app")
+	offCLI := off.withBearer(offOwner.pat())
+	if body := offCLI.mustOK(offCLI.do("GET", "/v1beta1/projects/chat-app", nil)).Body; strings.Contains(string(body), "realtimeDatabaseInstance") {
+		t.Errorf("RTDB off, the project names a database: %s", body)
+	}
+	if resp := offCLI.do("GET", "/v1beta/projects/chat-app/locations/-/instances/chat-app-default-rtdb", nil); resp.Status != 404 {
+		t.Errorf("RTDB off: %d", resp.Status)
+	}
+}

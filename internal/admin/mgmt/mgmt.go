@@ -1,5 +1,7 @@
 // Package mgmt is the subset of the Firebase Management REST API (v1beta1) that the firebase
-// CLI, the FlutterFire CLI and the Admin SDKs need (M-01..M-18), mounted at /v1beta1/.
+// CLI, the FlutterFire CLI and the Admin SDKs need (M-01..M-18), mounted at /v1beta1/, and with
+// the Realtime Database on, the part of its management API (v1beta) that firebase-tools reads
+// (rtdb.go), mounted at /v1beta/.
 //
 // Callers authenticate with a personal CLI token or a service account access token; a
 // service account sees only its own project. Errors are google.rpc.Status.
@@ -24,14 +26,22 @@ type API struct {
 	svc    *core.Service
 	auth   *authn.Authenticator
 	log    *slog.Logger
+	opts   Options
 	router *httpx.Router
+}
+
+// Options configure the API.
+type Options struct {
+	// RTDB is set when the Realtime Database is served: projects then name their default
+	// database, and its management API answers.
+	RTDB bool
 }
 
 var policy = authn.Policy{AccessToken: true, ServiceToken: true}
 
 // New returns the Management API.
-func New(svc *core.Service, auth *authn.Authenticator, logger *slog.Logger) *API {
-	a := &API{svc: svc, auth: auth, log: logger}
+func New(svc *core.Service, auth *authn.Authenticator, logger *slog.Logger, opts Options) *API {
+	a := &API{svc: svc, auth: auth, log: logger, opts: opts}
 	a.router = a.routes()
 	return a
 }
@@ -76,6 +86,12 @@ func (a *API) routes() *httpx.Router {
 	h("GET", c, a.listSha)               // M-15
 	h("POST", c, a.createSha)            // M-15
 	h("DELETE", c+"/{sha}", a.deleteSha) // M-15
+
+	if a.opts.RTDB {
+		c := "/v1beta/projects/{project}/locations/{location}/instances"
+		r.Handle("GET", c, a.auth.Require(policy, http.HandlerFunc(a.listDatabaseInstances)))
+		r.Handle("GET", c+"/{instance}", a.auth.Require(policy, http.HandlerFunc(a.getDatabaseInstance)))
+	}
 	return r
 }
 

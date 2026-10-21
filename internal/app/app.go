@@ -128,7 +128,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 			rtdbconsole.Routes(rtdbSvc, rtdbconsole.Options{DatabaseURL: svc.DatabaseURL, DevOpenRules: cfg.RTDB.DevOpenRules}),
 		},
 	})
-	mgmtAPI := mgmt.New(svc, auth, logger)
+	mgmtAPI := mgmt.New(svc, auth, logger, mgmt.Options{RTDB: rtdbSvc != nil})
 	dashboard, err := web.New(web.Embedded())
 	if err != nil {
 		return nil, fmt.Errorf("dashboard: %w", err)

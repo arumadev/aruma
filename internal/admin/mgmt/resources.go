@@ -25,15 +25,22 @@ type firebaseProject struct {
 type defaultResources struct {
 	HostingSite   string `json:"hostingSite"`
 	StorageBucket string `json:"storageBucket"`
+	// RealtimeDatabaseInstance names the project's default database when the Realtime
+	// Database is served: firebase-tools takes it as the instance to deploy rules to.
+	RealtimeDatabaseInstance string `json:"realtimeDatabaseInstance,omitempty"`
 }
 
-func toProject(p core.Project) firebaseProject {
-	return firebaseProject{
+func (a *API) toProject(p core.Project) firebaseProject {
+	out := firebaseProject{
 		Name: "projects/" + p.ID, ProjectID: p.ID, ProjectNumber: strconv.FormatInt(p.Number, 10),
 		DisplayName: p.DisplayName, State: p.State, ETag: p.ETag,
 		// hostingSite is always set so the firebase CLI never calls the Hosting API.
 		Resources: defaultResources{HostingSite: p.HostingSite, StorageBucket: p.StorageBucket},
 	}
+	if a.opts.RTDB {
+		out.Resources.RealtimeDatabaseInstance = p.ID + rtdbSuffix
+	}
+	return out
 }
 
 type projectInfo struct {

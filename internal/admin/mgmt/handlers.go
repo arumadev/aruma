@@ -27,7 +27,7 @@ func (a *API) listProjects(w http.ResponseWriter, r *http.Request) {
 	}
 	out := make([]firebaseProject, 0, len(page.Items))
 	for _, p := range page.Items {
-		out = append(out, toProject(p))
+		out = append(out, a.toProject(p))
 	}
 	body := map[string]any{"results": out}
 	if page.NextPageToken != "" {
@@ -46,7 +46,7 @@ func (a *API) getProject(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, toProject(p))
+	httpx.WriteJSON(w, http.StatusOK, a.toProject(p))
 }
 
 // M-03
@@ -73,7 +73,7 @@ func (a *API) patchProject(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, toProject(p))
+	httpx.WriteJSON(w, http.StatusOK, a.toProject(p))
 }
 
 // M-04: every project of the caller, for project pickers.

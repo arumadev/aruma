@@ -75,6 +75,8 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/console/v1/", s.metrics.Instrument("console", apiOnly(s.handlers.Console)))
 	mux.Handle("/v1beta1/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
+	// The Realtime Database's management API (internal/admin/mgmt/rtdb.go).
+	mux.Handle("/v1beta/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
 	mux.Handle("/oauth2/", s.metrics.Instrument("oauth", apiOnly(s.handlers.OAuth)))
 	for _, prefix := range AuthPrefixes {
 		mux.Handle(prefix, s.metrics.Instrument("auth", apiOnly(s.handlers.Auth)))
