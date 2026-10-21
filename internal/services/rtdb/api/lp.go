@@ -105,13 +105,16 @@ func (a *API) serveLP(w http.ResponseWriter, r *http.Request, target core.Target
 			u.Set("ns", ns)
 		}
 		// The app's page frames it, from another origin: the server's defaults forbid both
-		// framing and inline scripts, so this page sets its own.
+		// framing and inline scripts, so this page sets its own policy, which lets its one
+		// script run, by the script's hash, and nothing else: no other script, base URL or
+		// form target.
+		page, script := wire.EncodeLPDisconnectFrame("/.lp?" + u.Encode())
 		h := w.Header()
 		h.Del("X-Frame-Options")
-		h.Set("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline'; connect-src 'self'")
+		h.Set("Content-Security-Policy", "default-src 'none'; script-src "+script+"; connect-src 'self'; base-uri 'none'; form-action 'none'")
 		h.Set("Cross-Origin-Resource-Policy", "cross-origin")
 		h.Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write(wire.EncodeLPDisconnectFrame("/.lp?" + u.Encode()))
+		_, _ = w.Write(page)
 	case q.Get(wire.LPDisconnect) == "t":
 		if c := a.lpFind(target, q.Get(wire.LPID), q.Get(wire.LPPassword)); c != nil {
 			c.close()

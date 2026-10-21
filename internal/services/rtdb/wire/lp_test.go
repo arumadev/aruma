@@ -52,7 +52,8 @@ func TestGoldenLPAnswers(t *testing.T) {
 				ours = string(EncodeLPStart(q.Get(LPCallback), m[1], m[2], []byte(m[3])))
 				checked["start"]++
 			case q.Get(LPDisconnectFrame) == "t":
-				ours = string(EncodeLPDisconnectFrame(goldenPing.FindStringSubmatch(f.Text)[1]))
+				page, _ := EncodeLPDisconnectFrame(goldenPing.FindStringSubmatch(f.Text)[1])
+				ours = string(page)
 				checked["dframe"]++
 			default:
 				for _, line := range strings.SplitAfter(f.Text, "\n") {
@@ -239,8 +240,28 @@ func TestLPReceiverBudget(t *testing.T) {
 }
 
 func TestLPEncoding(t *testing.T) {
-	if got := string(EncodeLPBatch(3, [][]byte{[]byte(`"a` + " " + `b"`), []byte(`1`)})); got != `pRTLPCB(3,["a b",1]);`+"\n" {
+	// Stored strings cannot close the script or open a comment in it: <, > and & are escaped
+	// in the batch, and so are the line separators U+2028 and U+2029, which end a line in
+	// older engines; the batch still reads back as the same values. Before, only the line
+	// separators were meant to be escaped, and the replacement left them as they were.
+	value := "</script><script>alert(1)</script><!--&" + string(rune(0x2028)) + string(rune(0x2029))
+	stored := []byte(`{"d":"` + value + `"}`) // valid JSON as it is, the way core writes it
+	got := string(EncodeLPBatch(3, [][]byte{stored, []byte(`1`)}))
+	if strings.ContainsAny(got, "<>&"+string(rune(0x2028))+string(rune(0x2029))) {
 		t.Errorf("batch: %q", got)
+	}
+	inner, ok := strings.CutPrefix(got, "pRTLPCB(3,")
+	inner, ok2 := strings.CutSuffix(inner, ");\n")
+	var back []any
+	if err := json.Unmarshal([]byte(inner), &back); !ok || !ok2 || err != nil || len(back) != 2 || back[0].(map[string]any)["d"] != value || back[1] != 1.0 {
+		t.Errorf("the batch %q reads back as %v %v", got, back, err)
+	}
+	// The dframe page's script is the one its hash names.
+	page, hash := EncodeLPDisconnectFrame("/.lp?disconn=t&id=1&pw=x")
+	script := strings.TrimSuffix(strings.TrimPrefix(string(page), "<html><body><script>"), "</script></body></html>")
+	sum := sha256.Sum256([]byte(script))
+	if hash != "'sha256-"+base64.StdEncoding.EncodeToString(sum[:])+"'" || !strings.Contains(script, `EnvSendPing("/.lp?disconn=t&id=1&pw=x")`) {
+		t.Errorf("dframe: %s %q", hash, page)
 	}
 	if got := string(EncodeLPStart("", "1", "pw", []byte(`{}`))); got != "pLPCommand('start','1','pw');\npRTLPCB(0,[{}]);\n" {
 		t.Errorf("start without cb: %q", got)

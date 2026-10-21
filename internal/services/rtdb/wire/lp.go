@@ -2,7 +2,9 @@ package wire
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"net/url"
 	"strconv"
@@ -77,8 +79,11 @@ func EncodeLPStart(cb, id, pw string, hello []byte) []byte {
 	return b.Bytes()
 }
 
-// EncodeLPBatch is pRTLPCB(n,[msgs...]);. The messages are JSON, which is a JavaScript
-// expression once U+2028 and U+2029 are escaped (older engines end a line on them).
+// EncodeLPBatch is pRTLPCB(n,[msgs...]);. The messages are JSON, a JavaScript expression,
+// with <, >, & and U+2028, U+2029 inside their strings escaped as \u003c and so on
+// (json.HTMLEscape): the same values to the SDK, but stored data can never write </script>
+// or <!-- into the script, and older engines, which end a line on U+2028 and U+2029, read it
+// whole. The emulator sends them raw.
 func EncodeLPBatch(n int64, msgs [][]byte) []byte {
 	var b bytes.Buffer
 	b.WriteString("pRTLPCB(" + strconv.FormatInt(n, 10) + ",[")
@@ -86,18 +91,10 @@ func EncodeLPBatch(n int64, msgs [][]byte) []byte {
 		if i > 0 {
 			b.WriteByte(',')
 		}
-		b.Write(escapeLineSeparators(m))
+		json.HTMLEscape(&b, m)
 	}
 	b.WriteString("]);\n")
 	return b.Bytes()
-}
-
-func escapeLineSeparators(m []byte) []byte {
-	if !bytes.Contains(m, []byte(" ")) && !bytes.Contains(m, []byte(" ")) {
-		return m
-	}
-	m = bytes.ReplaceAll(m, []byte(" "), []byte(` `))
-	return bytes.ReplaceAll(m, []byte(" "), []byte(` `))
 }
 
 // EncodeLPClose tells the client to stop polling once it has processed batch after, or at
@@ -112,8 +109,18 @@ func EncodeLPClose(after int64) []byte {
 
 // EncodeLPDisconnectFrame is the dframe page. On unload it fetches disconnURL synchronously,
 // so the server learns at once that the page is gone and runs the onDisconnect writes.
-func EncodeLPDisconnectFrame(disconnURL string) []byte {
-	return []byte("<html><body><script>\n" +
+// disconnURL goes into the script as it is: the caller builds it from a fixed path and
+// percent-encoded parameters. scriptHash is the page's script as a Content-Security-Policy
+// source, 'sha256-...', which lets that script and no other run.
+func EncodeLPDisconnectFrame(disconnURL string) (page []byte, scriptHash string) {
+	script := lpDisconnectScript(disconnURL)
+	sum := sha256.Sum256([]byte(script))
+	return []byte("<html><body><script>" + script + "</script></body></html>"),
+		"'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'"
+}
+
+func lpDisconnectScript(disconnURL string) string {
+	return "\n" +
 		"function EnvSendPing(destURL) {\n" +
 		"try{\n" +
 		"var xhr=new XMLHttpRequest();\n" +
@@ -127,8 +134,7 @@ func EncodeLPDisconnectFrame(disconnURL string) []byte {
 		"if(window.addEventListener)\n" +
 		"window.addEventListener('unload',EnvDisconnect,false);\n" +
 		"else if(window.attachEvent)\n" +
-		"window.attachEvent('onunload',EnvDisconnect);\n" +
-		"</script></body></html>")
+		"window.attachEvent('onunload',EnvDisconnect);\n"
 }
 
 // LPSegment is one piece of a client message: segment Num of the session's sequence, one of

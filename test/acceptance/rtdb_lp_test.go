@@ -2,6 +2,7 @@ package acceptance
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"io"
@@ -217,10 +218,13 @@ func TestRTDBLongPollHandshake(t *testing.T) {
 	if !strings.Contains(string(b), `EnvSendPing("/.lp?disconn=t&id=`+m[1]+`&ns=`+ns+`&pw=`+m[2]+`");`) {
 		t.Errorf("dframe page: %s", b)
 	}
-	// It is framed by the app's page and runs an inline script.
-	if h := resp.Header; h.Get("X-Frame-Options") != "" || !strings.Contains(h.Get("Content-Security-Policy"), "script-src 'unsafe-inline'") ||
-		strings.Contains(h.Get("Content-Security-Policy"), "frame-ancestors") {
-		t.Errorf("dframe headers: %v", h)
+	// It is framed by the app's page and runs its one inline script, which the policy names
+	// by its hash; no other script, base URL or form target is allowed.
+	script := strings.TrimSuffix(strings.TrimPrefix(string(b), "<html><body><script>"), "</script></body></html>")
+	sum := sha256.Sum256([]byte(script))
+	wantCSP := "default-src 'none'; script-src 'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'; connect-src 'self'; base-uri 'none'; form-action 'none'"
+	if h := resp.Header; h.Get("X-Frame-Options") != "" || h.Get("Content-Security-Policy") != wantCSP {
+		t.Errorf("dframe headers: %v, want Content-Security-Policy %q", h, wantCSP)
 	}
 	// A poll for no session: back to the host to start again.
 	if _, body := c.get("id=1&pw=nope&ser=1&ns=" + ns); body != `pRTLPCB(0,[{"t":"c","d":{"t":"r","d":"`+host+`"}}]);`+"\npLPCommand('close');\n" {
