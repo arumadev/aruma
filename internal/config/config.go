@@ -80,7 +80,7 @@ type RTDB struct {
 	// DevOpenRules lets clients on this machine read and write every database, as Firebase's
 	// test-mode rules {".read": true, ".write": true} do. Off, every database keeps the locked
 	// rules a new database starts with, and only admin and service credentials reach the data
-	// (ADR-020). Until the rules engine lands there is nothing in between, so the setting is
+	// (ADR-020). It is meant for development only, so the setting is
 	// accepted only when public_url and listen are loopback addresses, and it applies only to
 	// connections whose peer is a loopback address.
 	DevOpenRules bool `yaml:"dev_open_rules"`
