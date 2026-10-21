@@ -66,6 +66,10 @@ test('3. two clients: writes reach the other\'s listeners in order, with the ser
     }, room);
   }
 
+  // The SDK estimates the server's clock from the handshake: the same machine's, give or take.
+  const offset = await value(a, (e) => new Promise((resolve) => e.dbSdk.onValue(e.dbSdk.ref(e.db, '.info/serverTimeOffset'), (s) => resolve(s.val()), { onlyOnce: true })));
+  expect(Math.abs(offset)).toBeLessThan(1000);
+
   const t0 = Date.now();
   const push = (page, from, text) => value(page, (e, a) => e.dbSdk.push(e.dbSdk.ref(e.db, a.room), { from: a.from, text: a.text, ts: e.dbSdk.serverTimestamp() }).then((r) => r.key), { room, from, text });
   const keys = [];
@@ -143,6 +147,13 @@ test('4. queries: orderByChild with .indexOn, limitToLast, a new child entering 
     return k;
   }), board);
   expect(low).toEqual(['p9', 'p5']);
+
+  // A child without .indexOn: the server sends every child with a no_index warning, as Firebase
+  // does, and the SDK orders and limits them itself.
+  expect((await admin('PATCH', board, { 'p0/tier': 'b', 'p3/tier': 'a', 'p5/tier': 'c' })).status).toBe(200);
+  await value(a, (e, board) => e.listen('tier', board, { query: [['orderByChild', 'tier'], ['limitToLast', 2]] }), board);
+  await expect.poll(async () => (await events(a, 'tier')).at(-1)?.keys).toEqual(['p0', 'p5']);
+  expect(a.warnings.some((m) => m.includes('Using an unspecified index'))).toBe(true);
 });
 
 test('5. transactions: concurrent increments from two clients and the admin add up exactly', async ({ client, firebaseMajor }) => {
@@ -183,11 +194,24 @@ test('6. onDisconnect presence: the other client sees offline on goOffline and w
   await value(b, (e, uid) => e.listen('status', `status/${uid}`), ua);
   await goOnline();
   await expect.poll(state).toBe('online');
+  // More of the API on the user's own data: an update (om) that runs, and a remove that is
+  // cancelled (oc) and so does not.
+  await value(a, async (e, uid) => {
+    const user = e.dbSdk.ref(e.db, `users/${uid}`);
+    await e.dbSdk.set(user, { typing: true });
+    await e.dbSdk.onDisconnect(user).update({ lastSeen: e.dbSdk.serverTimestamp() });
+    const typing = e.dbSdk.onDisconnect(e.dbSdk.child(user, 'typing'));
+    await typing.remove();
+    await typing.cancel();
+  }, ua);
 
   // A disconnects cleanly.
   await value(a, (e) => e.dbSdk.goOffline(e.db));
   await expect.poll(state, { timeout: 10_000 }).toBe('offline');
   expect(typeof (await events(b, 'status')).at(-1).val.at).toBe('number');
+  const user = (await admin('GET', `users/${ua}`)).body;
+  expect(user.typing).toBe(true);
+  expect(typeof user.lastSeen).toBe('number');
 
   // Back online, then the tab dies: its socket closes with it.
   await value(a, (e) => e.dbSdk.goOnline(e.db));

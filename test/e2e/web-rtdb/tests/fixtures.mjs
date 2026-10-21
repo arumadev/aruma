@@ -76,6 +76,9 @@ export const test = base.extend({
       if (setup) await setup(context);
       const page = await context.newPage();
       page.on('pageerror', (e) => console.log(`page error: ${e}`));
+      // The SDKs' warnings (console.warn), for the tests to check.
+      page.warnings = [];
+      page.on('console', (m) => m.type() === 'warning' && page.warnings.push(m.text()));
       await page.goto(`/?v=${firebaseMajor}`);
       await expect(page.locator('#status')).toHaveText(new RegExp(`^ready ${firebaseMajor}\\.`));
       return page;
