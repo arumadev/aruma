@@ -339,23 +339,20 @@ var restKnownDifferences = map[string]string{
 	"errors / disableTriggers=true": "Aruma runs no triggers: the parameter is accepted and changes nothing",
 	"errors / callback (JSONP)":     "JSONP is not served: no SDK sends it, and it would let any page read data",
 	"errors / download":             "download= is not served; the body is the same",
-	"rules and auth / user token without a uid": "the emulator accepts unsigned tokens; Aruma verifies ID tokens, " +
-		"and production refuses one that does not verify",
-	"rules and auth / admin via auth= is not admin": "the same refusal, 401, with the text of a token that does not parse",
 	"rules and auth / admin with override a string": "an override that is not an object is a bad request (400), not " +
 		"an inactive database (503)",
 	"rules and auth / admin with override a number": "as above",
 	"rules and auth / admin with override an array": "as above",
 	"rules and auth / admin with override not JSON": "as above",
-	"rules and auth / auth=garbage on a public path": "the emulator ignores a credential it cannot parse; production " +
-		"and Aruma refuse it with 401",
-	"rules and auth / auth=garbage on a protected path":         "as above",
-	"rules and auth / access_token=garbage on a protected path": "the emulator takes any access token for its owner",
-	"rules and auth / Bearer garbage on a protected path":       "as above",
-	"rules and auth / Bearer garbage on a public path":          "as above",
-	"rules and auth / Bearer with a user token on another user": "the emulator takes any bearer for its owner; Aruma " +
-		"verifies the user's ID token and applies the rules",
+	"rules and auth / access_token=garbage on a protected path": "the emulator takes any access token for its owner; " +
+		"production and Aruma refuse anything but an admin credential there: 401 Unauthorized request. (wire golden " +
+		"production/rest_auth.json)",
+	"rules and auth / Bearer garbage on a protected path":             "as above",
+	"rules and auth / Bearer garbage on a public path":                "as above",
+	"rules and auth / Bearer with a user token on another user":       "as above: a user's ID token is no bearer",
 	"rules and auth / access_token with a user token on another user": "as above",
+	"rules and auth / user via bearer reads own path":                 "as above",
+	"rules and auth / user via access_token= reads own path":          "as above",
 	"rules endpoint / PUT without the rules key":                      "the rules parser names the token it expected, not the property",
 	"rules endpoint / DELETE the rules":                               "only GET and PUT exist: 405, not the emulator's 404",
 	"rules endpoint / POST the rules":                                 "only GET and PUT exist: 405, not the emulator's 400",

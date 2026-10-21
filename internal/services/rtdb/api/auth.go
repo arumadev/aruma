@@ -114,7 +114,7 @@ func (s *session) signInUser(ctx context.Context, token string) wire.Reply {
 		var ce *core.Error
 		switch status := idtoken.Status(err); {
 		case status == wire.StatusExpiredToken:
-			return wire.Fail(status, "Auth token is expired.")
+			return wire.Fail(status, "Auth token is expired")
 		case status != "":
 			return wire.Fail(status, refusalText(token))
 		case errors.As(err, &ce):
