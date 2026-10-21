@@ -1,0 +1,296 @@
+{
+  "scenario": "ondisconnect_rules",
+  "description": "onDisconnect writes are checked again when they run. A (u1) registers o /users/u1/a and o /open/a, the rules then deny writing users, A closes: only /open/a is written. C (u1) registers o /users/u1/c, signs out, closes: nothing. E (u1) registers om / {users/u1/e, open/e} and o /users/u1/ts (a timestamp), the rules then make users/$uid/e fail .validate, E closes: the other two are written. R reads after each.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-21",
+  "script": "capture_r4.mjs",
+  "namespace": "r4-od-rules",
+  "setup": [
+    {
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r4-od-rules",
+      "body": {
+        "rules": {
+          ".read": true,
+          "users": {
+            "$uid": {
+              ".write": "auth != null && auth.uid == $uid",
+              "ts": {
+                ".validate": "newData.isNumber()"
+              }
+            }
+          },
+          "open": {
+            ".write": true
+          }
+        }
+      },
+      "status": 200,
+      "response": "{\"status\":\"ok\"}"
+    },
+    {
+      "method": "PUT",
+      "path": "/.json?ns=r4-od-rules",
+      "body": {
+        "users": {
+          "u1": {
+            "name": "one"
+          }
+        },
+        "open": {
+          "x": 1
+        }
+      },
+      "status": 200
+    }
+  ],
+  "connections": {
+    "R": "/.ws?v=5&ns=r4-od-rules",
+    "A": "/.ws?v=5&ns=r4-od-rules",
+    "C": "/.ws?v=5&ns=r4-od-rules",
+    "E": "/.ws?v=5&ns=r4-od-rules"
+  },
+  "frames": [
+    {
+      "conn": "R",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792534125821,\"v\":\"5\",\"h\":\"127.0.0.1:9420\",\"s\":\"k0bYiWCPuXGTGd8L2N1tOGByFXwaxv6O\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792534125824,\"v\":\"5\",\"h\":\"127.0.0.1:9420\",\"s\":\"L22RJjXhKtyswrtS069fOHhetoCwtKrO\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MSIsInVzZXJfaWQiOiJ1MSIsImlhdCI6MTc5MjUzNDEyNSwiZXhwIjoxNzkyNTM3NzI1fQ.\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"u1\",\"token\":{\"sub\":\"u1\",\"user_id\":\"u1\",\"iat\":1792534125,\"exp\":1792537725},\"provider\":\"anonymous\",\"user_id\":\"u1\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"o\",\"b\":{\"p\":\"/users/u1/a\",\"d\":\"A-set\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"o\",\"b\":{\"p\":\"/open/a\",\"d\":\"A-open\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r4-od-rules",
+      "status": 200,
+      "response": "{\"status\":\"ok\"}",
+      "body": {
+        "rules": {
+          ".read": true,
+          "users": {
+            "$uid": {
+              ".write": false
+            }
+          },
+          "open": {
+            ".write": true
+          }
+        }
+      }
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "R",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"g\",\"b\":{\"p\":\"/\",\"q\":{}}}}"
+    },
+    {
+      "conn": "R",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"open\":{\"a\":\"A-open\",\"x\":1},\"users\":{\"u1\":{\"name\":\"one\"}}}}}}"
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r4-od-rules",
+      "status": 200,
+      "response": "{\"status\":\"ok\"}",
+      "body": {
+        "rules": {
+          ".read": true,
+          "users": {
+            "$uid": {
+              ".write": "auth != null && auth.uid == $uid",
+              "ts": {
+                ".validate": "newData.isNumber()"
+              }
+            }
+          },
+          "open": {
+            ".write": true
+          }
+        }
+      }
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792534129382,\"v\":\"5\",\"h\":\"127.0.0.1:9420\",\"s\":\"2eXcQqTfLjnyShrGzQRFqBYSVhhmkPF0\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MSIsInVzZXJfaWQiOiJ1MSIsImlhdCI6MTc5MjUzNDEyOSwiZXhwIjoxNzkyNTM3NzI5fQ.\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"u1\",\"token\":{\"sub\":\"u1\",\"user_id\":\"u1\",\"iat\":1792534129,\"exp\":1792537729},\"provider\":\"anonymous\",\"user_id\":\"u1\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"o\",\"b\":{\"p\":\"/users/u1/c\",\"d\":\"C-set\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"unauth\",\"b\":{}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":\"unauthenticated\"}}}"
+    },
+    {
+      "conn": "C",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "R",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"g\",\"b\":{\"p\":\"/\",\"q\":{}}}}"
+    },
+    {
+      "conn": "R",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{\"open\":{\"a\":\"A-open\",\"x\":1},\"users\":{\"u1\":{\"name\":\"one\"}}}}}}"
+    },
+    {
+      "conn": "E",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792534131916,\"v\":\"5\",\"h\":\"127.0.0.1:9420\",\"s\":\"O1jQQScf91dSqlfqFxuLno2XmwRSFo8U\"}}}"
+    },
+    {
+      "conn": "E",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MSIsInVzZXJfaWQiOiJ1MSIsImlhdCI6MTc5MjUzNDEzMSwiZXhwIjoxNzkyNTM3NzMxfQ.\"}}}"
+    },
+    {
+      "conn": "E",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"u1\",\"token\":{\"sub\":\"u1\",\"user_id\":\"u1\",\"iat\":1792534131,\"exp\":1792537731},\"provider\":\"anonymous\",\"user_id\":\"u1\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "E",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"om\",\"b\":{\"p\":\"/\",\"d\":{\"users/u1/e\":\"E-merge\",\"open/e\":\"E-open\"}}}}"
+    },
+    {
+      "conn": "E",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "E",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"o\",\"b\":{\"p\":\"/users/u1/ts\",\"d\":{\".sv\":\"timestamp\"}}}}"
+    },
+    {
+      "conn": "E",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r4-od-rules",
+      "status": 200,
+      "response": "{\"status\":\"ok\"}",
+      "body": {
+        "rules": {
+          ".read": true,
+          "users": {
+            "$uid": {
+              ".write": "auth != null",
+              "e": {
+                ".validate": false
+              },
+              "ts": {
+                ".validate": "newData.isNumber()"
+              }
+            }
+          },
+          "open": {
+            ".write": true
+          }
+        }
+      }
+    },
+    {
+      "conn": "E",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    },
+    {
+      "conn": "R",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"g\",\"b\":{\"p\":\"/\",\"q\":{}}}}"
+    },
+    {
+      "conn": "R",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":{\"open\":{\"a\":\"A-open\",\"e\":\"E-open\",\"x\":1},\"users\":{\"u1\":{\"name\":\"one\",\"ts\":1792534133960}}}}}}"
+    },
+    {
+      "conn": "R",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "R is never signed in: the rules let everyone read. The timestamp in the last read differs on every run.",
+    "WebSocket close initiated by the client (close frame with code 1000) on: R, A, C, E; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ]
+}

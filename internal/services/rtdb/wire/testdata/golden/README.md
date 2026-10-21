@@ -13,4 +13,6 @@ node capture.mjs 127.0.0.1:9400
 
 `SHA256SUMS` pins every `*.json` file and `capture.mjs` (check with `shasum -a 256 -c SHA256SUMS`).
 
+`capture_r4.mjs` records the phase R4 scenarios, security rules and user sign-in, on 2026-10-21: the reply to `auth` for each sign-in provider (`auth_user`), `permission_denied` on every operation (`rules_denied`), the `c` pushes when a client signs in as someone else (`auth_change`) and when the rules change (`rules_change`), and onDisconnect writes checked again when they run (`ondisconnect_rules`). Users sign in with unsigned `alg:none` ID tokens, which the emulator accepts; a REST call made between frames, such as a rules change, is recorded in place as a `rest` frame. Regenerate with `node capture_r4.mjs 127.0.0.1:9400`. `listen_errors.json` was recorded by `capture_r3.mjs` on 2026-10-20 and committed in R4.
+
 `capture_r3.mjs` records the phase R3 scenarios the same way (listens, server-side queries, listen revocation and, as `lp_*.json`, long polling over `/.lp`). Each scenario runs in its own namespace, whose rules and data it resets through REST first and lists under `setup`; long-poll HTTP exchanges are recorded as `http_req`/`http_resp`/`http_abort` frames. Regenerate with `node capture_r3.mjs 127.0.0.1:9400`, or `SCENARIOS=query_get,lp_upgrade node capture_r3.mjs 127.0.0.1:9400` for some of them.

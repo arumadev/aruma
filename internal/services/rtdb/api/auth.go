@@ -8,6 +8,7 @@ import (
 
 	"github.com/osama300/aurma-project/internal/platform/apierr"
 	"github.com/osama300/aurma-project/internal/platform/authn"
+	"github.com/osama300/aurma-project/internal/platform/idtoken"
 	"github.com/osama300/aurma-project/internal/services/rtdb/core"
 	"github.com/osama300/aurma-project/internal/services/rtdb/wire"
 )
@@ -32,22 +33,30 @@ func (a *adminState) stop() {
 	a.token, a.expires, a.timer = "", time.Time{}, nil
 }
 
-// authenticate handles auth and gauth. Until R4 only admin credentials mean anything: a
-// service account's access token for this project (what the Admin SDKs send, from Aruma's
-// OAuth endpoint), or a personal CLI token of the project's owner. They bypass rules, as
-// admin credentials do in Firebase, until they expire or stop verifying (checked every
-// revalidateEvery), when the session is told with ac and becomes unauthenticated.
+// authenticate handles auth and gauth; the caller re-checks the listens before the reply
+// goes out. Two kinds of credential sign a session in:
 //
-// An Admin SDK that sends an auth variable override (authvar) or noauth asks to act as that
-// client, not as an admin: its credential must verify, and the session then acts as the
-// override, which R4's rules will see; until then the locked rules deny it. Any other
-// credential, such as a user's ID token, signs the session out and is answered ok, so web
-// and mobile clients keep their connection while the locked rules deny them (ADR-020).
+//   - An Aruma Auth user's ID token, which idtoken.Verifier checks (core.Session.SignIn). The
+//     session then acts as that user, auth = {provider, uid, token}, until the token expires
+//     or is revoked, when the client is told with ac and the session becomes
+//     unauthenticated (core's revoke.go). The reply carries the auth variable and the token's
+//     expiry, as Firebase's does.
+//   - An admin credential: a service account's access token for this project (what the Admin
+//     SDKs send, from Aruma's OAuth endpoint), or a personal CLI token of the project's owner.
+//     It bypasses rules, as admin credentials do in Firebase, until it expires or stops
+//     verifying (checked every revalidateEvery), when the client is told with ac and the
+//     session becomes unauthenticated. An Admin SDK that also sends an auth variable override
+//     (authvar) or noauth asks to act as that client instead: its credential must verify, and
+//     the rules then see the override, or null.
+//
+// A credential that does not verify signs the session out: it acts as nobody until one does.
+// A token refused as such is answered with its status (idtoken.Status); a failure to check it
+// at all, such as the database being down, is answered unavailable, since it says nothing
+// about the token.
 func (s *session) authenticate(ctx context.Context, b wire.AuthBody) wire.Reply {
 	token := strings.TrimSpace(b.Credential)
 	if !strings.HasPrefix(token, authn.ServiceTokenPrefix) && !strings.HasPrefix(token, authn.AccessTokenPrefix) {
-		s.signOut()
-		return wire.OKWith(map[string]any{"auth": nil, "expires": nil})
+		return s.signInUser(ctx, token)
 	}
 	p, err := s.api.verifyAdmin(ctx, s.target, token)
 	if err != nil {
@@ -65,7 +74,10 @@ func (s *session) authenticate(ctx context.Context, b wire.AuthBody) wire.Reply 
 		if hasAuthVar(b) {
 			auth.Variable = b.AuthVar
 		}
-		_ = s.core.SetAuth(auth) // not an admin: nothing to admit
+		if err := s.core.SetAuth(auth); err != nil {
+			e := core.AsError(err)
+			return wire.Fail(e.Status, e.Message)
+		}
 		return wire.OKWith(map[string]any{"auth": nil, "expires": expires})
 	}
 	if err := s.core.SetAuth(core.Auth{Admin: true, Account: p.Email}); err != nil {
@@ -78,6 +90,29 @@ func (s *session) authenticate(ctx context.Context, b wire.AuthBody) wire.Reply 
 	s.scheduleCheck()
 	s.mu.Unlock()
 	return wire.OKWith(map[string]any{"auth": nil, "expires": expires})
+}
+
+// signInUser signs the session in with a user's ID token.
+func (s *session) signInUser(ctx context.Context, token string) wire.Reply {
+	s.mu.Lock()
+	s.admin.stop()
+	s.mu.Unlock()
+	if err := s.core.SignIn(ctx, token); err != nil {
+		_ = s.core.SetAuth(core.Auth{})
+		var ce *core.Error
+		switch status := idtoken.Status(err); {
+		case status == wire.StatusExpiredToken:
+			return wire.Fail(status, "Auth token is expired.")
+		case status != "":
+			return wire.Fail(status, "Invalid token.")
+		case errors.As(err, &ce):
+			return wire.Fail(ce.Status, ce.Message)
+		}
+		s.api.log.Warn("rtdb: verifying an ID token", "database", s.target.Name, "error", err)
+		e := core.ErrUnavailable
+		return wire.Fail(e.Status, e.Message)
+	}
+	return wire.OKWith(map[string]any{"auth": s.core.AuthVariable(), "expires": s.core.Auth().User.Expires.Unix()})
 }
 
 func hasAuthVar(b wire.AuthBody) bool {
@@ -134,18 +169,21 @@ func (s *session) checkAdmin(gen uint64) {
 	}
 
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	if s.closed || s.admin.gen != gen {
+		s.mu.Unlock()
 		return
 	}
 	if status == "" {
 		s.admin.expires = expires
 		s.scheduleCheck()
+		s.mu.Unlock()
 		return
 	}
 	s.admin.stop()
-	_ = s.core.SetAuth(core.Auth{})
-	s.out.push(wire.EncodeAuthRevoked(status, reason))
+	// Revoke queues on the writer, so not under s.mu. A sign-in that slips in between is
+	// a new credential, which Revoke would wrongly end: core ends the admin's sign-in only.
+	s.mu.Unlock()
+	s.core.RevokeIf(func(a core.Auth) bool { return a.Admin }, status, reason)
 }
 
 // refused reports whether a verification error means the credential is no good, rather than

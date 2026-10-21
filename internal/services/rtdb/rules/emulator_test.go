@@ -269,8 +269,6 @@ func TestEmulatorApps(t *testing.T) {
 
 // knownLoadDifferences are rules documents Aruma loads differently from the emulator.
 var knownLoadDifferences = map[string]string{
-	".read: auth.provider == 'x'":                "auth.provider is refused (decision Q4)",
-	".read: auth['provider'] == 'x'":             "auth.provider is refused (decision Q4)",
 	".read: data.getPriority() == null":          "getPriority() is refused (decision Q4)",
 	".read: auth.token.email.matches(/a\\sb/)":   "\\s is in the reference; the emulator refuses it",
 	".read: auth.token.email.matches(/a||b/)":    "an empty alternative is refused; the emulator loads it and never matches",

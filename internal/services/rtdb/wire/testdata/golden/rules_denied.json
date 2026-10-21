@@ -1,0 +1,247 @@
+{
+  "scenario": "rules_denied",
+  "description": "permission_denied on every operation: unauthenticated q (untagged and tagged), g, p, m, o, om, and oc (allowed). Then signed in as u1: m and om reaching u2, p, m and o failing .validate, a p that passes, and its own listen and get.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-21",
+  "script": "capture_r4.mjs",
+  "namespace": "r4-denied",
+  "setup": [
+    {
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r4-denied",
+      "body": {
+        "rules": {
+          "users": {
+            "$uid": {
+              ".read": "auth != null && auth.uid == $uid",
+              ".write": "auth != null && auth.uid == $uid",
+              "age": {
+                ".validate": "newData.isNumber()"
+              }
+            }
+          },
+          "open": {
+            ".read": true,
+            ".write": true
+          }
+        }
+      },
+      "status": 200,
+      "response": "{\"status\":\"ok\"}"
+    },
+    {
+      "method": "PUT",
+      "path": "/.json?ns=r4-denied",
+      "body": {
+        "users": {
+          "u1": {
+            "name": "one"
+          },
+          "u2": {
+            "name": "two"
+          }
+        },
+        "open": {
+          "x": 1
+        }
+      },
+      "status": 200
+    }
+  ],
+  "connections": {
+    "A": "/.ws?v=5&ns=r4-denied"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792534108913,\"v\":\"5\",\"h\":\"127.0.0.1:9420\",\"s\":\"BLrUxtYIechfHcUJshhlHfv7kZChdD0g\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"q\",\"b\":{\"p\":\"/users/u1\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"q\",\"b\":{\"p\":\"/users/u1\",\"q\":{\"l\":1,\"vf\":\"l\"},\"t\":1,\"h\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"g\",\"b\":{\"p\":\"/users/u1\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"p\",\"b\":{\"p\":\"/users/u1/name\",\"d\":\"x\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"m\",\"b\":{\"p\":\"/users/u1\",\"d\":{\"name\":\"x\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"a\":\"o\",\"b\":{\"p\":\"/users/u1/name\",\"d\":\"x\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"a\":\"om\",\"b\":{\"p\":\"/users/u1\",\"d\":{\"name\":\"x\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"a\":\"oc\",\"b\":{\"p\":\"/users/u1\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":9,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MSIsInVzZXJfaWQiOiJ1MSIsImlhdCI6MTc5MjUzNDExMiwiZXhwIjoxNzkyNTM3NzEyfQ.\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":9,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"u1\",\"token\":{\"sub\":\"u1\",\"user_id\":\"u1\",\"iat\":1792534112,\"exp\":1792537712},\"provider\":\"anonymous\",\"user_id\":\"u1\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":10,\"a\":\"m\",\"b\":{\"p\":\"/users\",\"d\":{\"u1/name\":\"a\",\"u2/name\":\"b\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":10,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":11,\"a\":\"om\",\"b\":{\"p\":\"/users\",\"d\":{\"u1/name\":\"a\",\"u2/name\":\"b\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":11,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":12,\"a\":\"p\",\"b\":{\"p\":\"/users/u1/age\",\"d\":\"old\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":12,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":13,\"a\":\"m\",\"b\":{\"p\":\"/users/u1\",\"d\":{\"age\":\"old\"}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":13,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":14,\"a\":\"o\",\"b\":{\"p\":\"/users/u1/age\",\"d\":\"old\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":14,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":15,\"a\":\"p\",\"b\":{\"p\":\"/users/u1/age\",\"d\":5}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":15,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":16,\"a\":\"q\",\"b\":{\"p\":\"/users/u1\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"users/u1\",\"d\":{\"age\":5,\"name\":\"one\"}},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":16,\"b\":{\"s\":\"ok\",\"d\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":17,\"a\":\"g\",\"b\":{\"p\":\"/users/u2\",\"q\":{}}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":17,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "Rules: users/$uid .read and .write auth.uid == $uid, users/$uid/age .validate newData.isNumber(); open is open.",
+    "WebSocket close initiated by the client (close frame with code 1000) on: A; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "scenario": "rules_change",
+  "description": "B, signed in as u1, listens /users/u1 (untagged and tagged) and /open; the rules then change (PUT /.settings/rules.json) to deny reading users: both listens on /users/u1 are cancelled with c, /open stays. Then data change through REST.",
+  "source": "emulator",
+  "emulator": "firebase-database-emulator-v4.11.2",
+  "captured": "2026-10-21",
+  "script": "capture_r4.mjs",
+  "namespace": "r4-rules-change",
+  "setup": [
+    {
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r4-rules-change",
+      "body": {
+        "rules": {
+          "users": {
+            "$uid": {
+              ".read": "auth != null && auth.uid == $uid",
+              ".write": "auth != null && auth.uid == $uid",
+              "age": {
+                ".validate": "newData.isNumber()"
+              }
+            }
+          },
+          "open": {
+            ".read": true,
+            ".write": true
+          }
+        }
+      },
+      "status": 200,
+      "response": "{\"status\":\"ok\"}"
+    },
+    {
+      "method": "PUT",
+      "path": "/.json?ns=r4-rules-change",
+      "body": {
+        "users": {
+          "u1": {
+            "name": "one"
+          }
+        },
+        "open": {
+          "x": 1
+        }
+      },
+      "status": 200
+    }
+  ],
+  "connections": {
+    "B": "/.ws?v=5&ns=r4-rules-change"
+  },
+  "frames": [
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792534121714,\"v\":\"5\",\"h\":\"127.0.0.1:9420\",\"s\":\"qtdNnIIWoHBjLK2eUFnJNw0bzxLX9iV9\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"auth\",\"b\":{\"cred\":\"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MSIsInVzZXJfaWQiOiJ1MSIsImlhdCI6MTc5MjUzNDEyMSwiZXhwIjoxNzkyNTM3NzIxfQ.\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"uid\":\"u1\",\"token\":{\"sub\":\"u1\",\"user_id\":\"u1\",\"iat\":1792534121,\"exp\":1792537721},\"provider\":\"anonymous\",\"user_id\":\"u1\"},\"expires\":null}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"q\",\"b\":{\"p\":\"/users/u1\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"users/u1\",\"d\":{\"name\":\"one\"}},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"q\",\"b\":{\"p\":\"/users/u1\",\"q\":{\"l\":1,\"vf\":\"l\"},\"t\":3,\"h\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"users/u1\",\"d\":{\"name\":\"one\"},\"t\":3},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":{}}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"q\",\"b\":{\"p\":\"/open\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"open\",\"d\":{\"x\":1}},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":{}}}}"
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/.settings/rules.json?ns=r4-rules-change",
+      "status": 200,
+      "response": "{\"status\":\"ok\"}",
+      "body": {
+        "rules": {
+          "users": {
+            "$uid": {
+              ".read": false,
+              ".write": "auth != null"
+            }
+          },
+          "open": {
+            ".read": true,
+            ".write": true
+          }
+        }
+      }
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"users/u1\",\"q\":[{\"sin\":true,\"ein\":true,\"l\":1,\"vf\":\"l\"}]},\"a\":\"c\"}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"users/u1\",\"q\":null},\"a\":\"c\"}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"open/x\",\"d\":2},\"a\":\"d\"}}"
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/open/x.json?ns=r4-rules-change",
+      "status": 200,
+      "response": "2",
+      "body": 2
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/users/u1/name.json?ns=r4-rules-change",
+      "status": 200,
+      "response": "\"after\"",
+      "body": "after"
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"q\",\"b\":{\"p\":\"/users/u1\",\"h\":\"\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}"
+    },
+    {
+      "conn": "B",
+      "dir": "close",
+      "code": 1005,
+      "reason": ""
+    }
+  ],
+  "notes": [
+    "WebSocket close initiated by the client (close frame with code 1000) on: B; the code recorded is what the client saw in the emulator's closing reply (1005 = the reply carried no status code)."
+  ]
+}

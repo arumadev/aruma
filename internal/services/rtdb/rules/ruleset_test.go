@@ -22,7 +22,6 @@ func TestParseErrorsArePositioned(t *testing.T) {
 		{"a regex", `{"rules":{".read":"auth.uid.matches(/a{/)"}}`, 1, 37, "rules/.read", "Illegal regular expression, integer expected at position 3"},
 		{"a document error", `{"rules":{".read":1}}`, 1, 19, "rules/.read", "Invalid rule expression.  Expected 'true', 'false', or an expression string."},
 		{"unsupported getPriority", `{"rules":{"$k":{".validate":"newData.getPriority() != null"}}}`, 1, 30, "rules/$k/.validate", "getPriority() is not supported."},
-		{"unsupported auth.provider", `{"rules":{".read":"auth != null && auth.provider == 'password'"}}`, 1, 36, "rules/.read", "auth.provider is not supported; use auth.token.firebase.sign_in_provider."},
 		{"newData in .read", `{"rules":{"a":{"b":{".read":"newData.exists()"}}}}`, 1, 30, "rules/a/b/.read", "newData is invalid in .read expressions."},
 		{"a comment before", "// my rules\n{\"rules\":{\".read\":\"nope\"}}", 2, 20, "rules/.read", "Unknown variable 'nope'."},
 	}

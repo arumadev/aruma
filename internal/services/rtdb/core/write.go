@@ -18,6 +18,10 @@ type Write struct {
 	Hash *string
 	// Size is the write's size as received, counted against the per-minute write limit.
 	Size int64
+	// Separately makes rules check each child of an update as a write of its own against
+	// the data before it, dropping the children they deny, as onDisconnect writes run when
+	// the session closes (emulator 4.11.2, golden ondisconnect_rules.json).
+	Separately bool
 }
 
 // Child is one path of an update, relative to the update's path.
@@ -121,10 +125,11 @@ type Change struct {
 	Merge []Child // an update; nil for a set
 }
 
-// apply runs w in tx at server time now, in milliseconds. A conditional write whose hash no
-// longer matches returns ErrDataStale and writes nothing. Validation is complete before the
-// first row changes, so an error other than a storage error leaves tx untouched.
-func (w *Write) apply(ctx context.Context, tx StoreTx, now int64) (Change, error) {
+// resolve prepares w in tx at server time now, in milliseconds, writing nothing: a
+// conditional write whose hash no longer matches returns ErrDataStale, and the server values
+// are filled in, every child of an update against the state before it. The rules check the
+// change resolve returns, as Firebase's see resolved values, before store writes it.
+func (w *Write) resolve(ctx context.Context, tx StoreTx, now int64) (Change, error) {
 	if w.Hash != nil {
 		cur, err := tx.Read(ctx, w.Path)
 		if err != nil {
@@ -139,12 +144,8 @@ func (w *Write) apply(ctx context.Context, tx StoreTx, now int64) (Change, error
 		if err != nil {
 			return Change{}, err
 		}
-		if err := tx.Write(ctx, w.Path, v); err != nil {
-			return Change{}, err
-		}
 		return Change{Path: w.Path, Value: v}, nil
 	}
-	// Resolve every child against the state before the update, then write them all.
 	merge := make([]Child, len(w.Update))
 	for i, c := range w.Update {
 		v, err := resolveAt(ctx, tx, w.Path.Join(c.Path), c.Value, now)
@@ -153,12 +154,33 @@ func (w *Write) apply(ctx context.Context, tx StoreTx, now int64) (Change, error
 		}
 		merge[i] = Child{Path: c.Path, Value: v}
 	}
-	for _, c := range merge {
-		if err := tx.Write(ctx, w.Path.Join(c.Path), c.Value); err != nil {
-			return Change{}, err
+	return Change{Path: w.Path, Merge: merge}, nil
+}
+
+// parts splits a change into the writes rules check one by one when they check an update's
+// children separately: a set is one part, an update one per child.
+func (ch Change) parts() []Change {
+	if ch.Merge == nil {
+		return []Change{ch}
+	}
+	out := make([]Change, len(ch.Merge))
+	for i, c := range ch.Merge {
+		out[i] = Change{Path: ch.Path, Merge: []Child{c}}
+	}
+	return out
+}
+
+// store writes a resolved change in tx.
+func (ch Change) store(ctx context.Context, tx StoreTx) error {
+	if ch.Merge == nil {
+		return tx.Write(ctx, ch.Path, ch.Value)
+	}
+	for _, c := range ch.Merge {
+		if err := tx.Write(ctx, ch.Path.Join(c.Path), c.Value); err != nil {
+			return err
 		}
 	}
-	return Change{Path: w.Path, Merge: merge}, nil
+	return nil
 }
 
 // resolveAt fills in the server values of v, written at p, reading only the locations its

@@ -213,9 +213,6 @@ func (c *checker) binary(e *binary) (typ, *exprError) {
 }
 
 func (c *checker) member(e *member) (typ, *exprError) {
-	if id, ok := e.obj.(*ident); ok && id.name == "auth" && e.key == nil && e.name == "provider" {
-		return 0, errAt(e.pos, "auth.provider is not supported; use auth.token.firebase.sign_in_provider.")
-	}
 	recv, err := c.typeOf(e.obj)
 	if err != nil {
 		return 0, err

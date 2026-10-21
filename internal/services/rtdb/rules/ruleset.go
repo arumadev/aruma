@@ -8,8 +8,9 @@
 // data through the Source interface in snapshot.go, which core backs with Postgres.
 //
 // What Aruma does not support is refused when the rules are loaded, never denied silently at run
-// time: getPriority() and auth.provider (docs/research/rtdb-decisions.md, Q4), and regular
-// expressions Go's regexp cannot run with Firebase's meaning (see regex.go).
+// time: getPriority() (docs/research/rtdb-decisions.md, Q4), and regular expressions Go's regexp
+// cannot run with Firebase's meaning (see regex.go). auth.provider, refused until R4, is
+// supported since the verified ID tokens give it its value (auth.go).
 package rules
 
 import (

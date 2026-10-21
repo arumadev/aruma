@@ -195,7 +195,7 @@ start_aruma() {
   export ARUMA_DATABASE_URL=$db_url ARUMA_PUBLIC_URL=$base_url ARUMA_LISTEN=127.0.0.1:$port \
     ARUMA_MASTER_KEY=$(openssl rand -base64 32) ARUMA_METRICS_LISTEN=- ARUMA_RTDB_DOMAIN=rtdb.aruma.test \
     ARUMA_TRUSTED_PROXIES=127.0.0.1/32 ARUMA_MAIL_DEV_MAILBOX=true ARUMA_LOG_LEVEL=warn \
-    ARUMA_RTDB_ENABLED=true ARUMA_RTDB_DEV_OPEN_RULES=true
+    ARUMA_RTDB_ENABLED=true
   "$work/aruma" migrate up >/dev/null || fail "aruma migrate up"
   printf '%s\n' "$password" | "$work/aruma" accounts create --email owner@compat.test >/dev/null
   log "starting Aruma on $base_url (database $db)"

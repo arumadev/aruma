@@ -23,6 +23,8 @@ const (
 	statusInvalidParameters = "invalid_parameters"
 	statusTooBig            = "too_big"
 	statusUnavailable       = "unavailable"
+	statusInvalidToken      = "invalid_token"
+	statusExpiredToken      = "expired_token"
 )
 
 var (
@@ -55,8 +57,11 @@ var (
 	// ErrUnsupported is a request this version does not serve yet.
 	ErrUnsupported = &Error{statusUnavailable, "Not supported by this server yet.", http.StatusNotImplemented}
 
-	// ErrInvalidQuery is a query object the SDKs would not send.
+	// ErrInvalidQuery is a query object the SDKs would not send. The emulator 4.11.2 names
+	// two cases (golden listen_errors.json): a negative limit, ErrInvalidLimit, and an index
+	// that is not a valid path, ErrInvalidPath.
 	ErrInvalidQuery = &Error{statusInvalidParameters, "Invalid query.", http.StatusBadRequest}
+	ErrInvalidLimit = &Error{statusInvalidParameters, "Invalid query limit", http.StatusBadRequest}
 
 	// ErrNoDatabase is a namespace that names no database: not <project>-default-rtdb, or a
 	// project that does not exist.

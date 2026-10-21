@@ -22,6 +22,9 @@ func (r *recorder) Push(p Push) {
 }
 
 func describePush(p Push) string {
+	if p.Action == PushAuthRevoked {
+		return p.Action + " " + p.Status + " " + p.Reason
+	}
 	s := p.Action + " " + p.Path.String()
 	if p.Tag != 0 {
 		s += " t" + strconv.FormatInt(p.Tag, 10)
@@ -116,7 +119,13 @@ func TestListenDefault(t *testing.T) {
 	set(a, "/other", `3`, nil)
 	update(a, "/", `{"l/k":2,"other":4}`)
 	set(a, "/l", `null`, nil)
-	want(t, "pushes", rec.take(),
+	got := rec.take()
+	// One write above two listens pushes to each; in which order is not defined (the
+	// listeners' trie is a map), so the test fixes it.
+	if len(got) > 4 && got[3] == `d empty null` {
+		got[3], got[4] = got[4], got[3]
+	}
+	want(t, "pushes", got,
 		`d l/a 5`,
 		`d l/b/c 3`,
 		`m l {"a":null,"x":1,"y/z":2}`,
@@ -253,7 +262,9 @@ func TestRevokeAndClose(t *testing.T) {
 	// A closing session's listens go before its onDisconnect writes run.
 	c, recC := listenWith(t, s, "chat-app-default-rtdb", admin)
 	listenSync(t, c, recC, "/od", "", 0, "")
-	c.OnDisconnectSet("/od/me", json.RawMessage(`"gone"`))
+	if err := onDisconnectSet(c, "/od/me", `"gone"`); err != nil {
+		t.Fatal(err)
+	}
 	recC.take()
 	c.Close()
 	want(t, "own onDisconnect", recC.take())

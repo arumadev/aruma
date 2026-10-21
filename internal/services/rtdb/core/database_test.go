@@ -80,6 +80,18 @@ func get(s *Session, path string) (string, error) {
 	return string(r.Node.ExportJSON()), r.Err
 }
 
+func onDisconnectSet(s *Session, path, data string) error {
+	ch := make(chan error, 1)
+	s.OnDisconnectSet(path, json.RawMessage(data), func(err error) { ch <- err })
+	return <-ch
+}
+
+func onDisconnectUpdate(s *Session, path, data string) error {
+	ch := make(chan error, 1)
+	s.OnDisconnectUpdate(path, json.RawMessage(data), func(err error) { ch <- err })
+	return <-ch
+}
+
 var admin = Auth{Admin: true}
 
 func TestSessionReadsAndWrites(t *testing.T) {
@@ -156,7 +168,8 @@ func TestSessionReadsAndWrites(t *testing.T) {
 	}
 }
 
-func TestLockedRulesUntilR4(t *testing.T) {
+// A new database is locked (ADR-020): only admins reach its data, until rules say otherwise.
+func TestLockedRules(t *testing.T) {
 	s := newTestService(t, newMemStore(), Options{})
 	client := open(t, s, "chat-app-default-rtdb", Auth{})
 	if _, err := set(client, "/a", `1`, nil); !errors.Is(err, ErrPermissionDenied) {
@@ -165,24 +178,27 @@ func TestLockedRulesUntilR4(t *testing.T) {
 	if _, err := get(client, "/a"); !errors.Is(err, ErrPermissionDenied) {
 		t.Errorf("client read: %v", err)
 	}
-	if err := client.OnDisconnectSet("/a", json.RawMessage(`1`)); !errors.Is(err, ErrPermissionDenied) {
+	if err := onDisconnectSet(client, "/a", `1`); !errors.Is(err, ErrPermissionDenied) {
 		t.Errorf("client onDisconnect: %v", err)
 	}
-	// Permission comes before the payload is parsed (review #3): a locked client's broken or
-	// huge data is never read.
-	if _, err := set(client, "/a", `{"bad.key":`+strings.Repeat(`"x",`, 1000), nil); !errors.Is(err, ErrPermissionDenied) {
-		t.Errorf("client write of unparsable data: %v", err)
+	if err := update(client, "/a", `{"b":1}`); !errors.Is(err, ErrPermissionDenied) {
+		t.Errorf("client update: %v", err)
 	}
-	if err := update(client, "/a", `not json`); !errors.Is(err, ErrPermissionDenied) {
+	// Malformed data is refused as such before the rules are asked; an unauthenticated
+	// client's messages are small (UnauthenticatedMessageBytes), so parsing them is cheap.
+	if err := update(client, "/a", `not json`); !errors.Is(err, ErrInvalidData) {
 		t.Errorf("client update of unparsable data: %v", err)
 	}
 	if client.Authenticated() {
 		t.Error("a client without credentials is authenticated")
 	}
-	// An auth variable override is no admin (review #4).
+	// An auth variable override is no admin (review #4): the locked rules deny it too.
 	client.SetAuth(Auth{Variable: json.RawMessage(`{"uid":"x"}`)})
 	if _, err := set(client, "/a", `1`, nil); !errors.Is(err, ErrPermissionDenied) {
 		t.Errorf("authvar write: %v", err)
+	}
+	if err := client.SetAuth(Auth{Variable: json.RawMessage(`[1]`)}); !errors.Is(err, ErrInvalidAuthVariable) {
+		t.Errorf("authvar that is not an object: %v", err)
 	}
 	// Signing in with an admin credential opens the data.
 	client.SetAuth(admin)
@@ -253,11 +269,11 @@ func TestOnDisconnectRunsOnClose(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	must(a.OnDisconnectSet("/od/put", json.RawMessage(`"gone"`)))
-	must(a.OnDisconnectUpdate("/od", json.RawMessage(`{"m1":1,"m2":{".sv":"timestamp"}}`)))
-	must(a.OnDisconnectSet("/od/cancelme", json.RawMessage(`"x"`)))
+	must(onDisconnectSet(a, "/od/put", `"gone"`))
+	must(onDisconnectUpdate(a, "/od", `{"m1":1,"m2":{".sv":"timestamp"}}`))
+	must(onDisconnectSet(a, "/od/cancelme", `"x"`))
 	must(a.OnDisconnectCancel("/od/cancelme"))
-	must(a.OnDisconnectSet("/od/inc", json.RawMessage(`{".sv":{"increment":1}}`)))
+	must(onDisconnectSet(a, "/od/inc", `{".sv":{"increment":1}}`))
 	if got, _ := get(b, "/od"); got != "null" {
 		t.Fatalf("applied before close: %s", got)
 	}
@@ -452,7 +468,7 @@ func TestOnDisconnectCountsTowardTheWriteRate(t *testing.T) {
 	tg, _ := s.Resolve(context.Background(), "chat-app-default-rtdb")
 	a, _ := s.Open(tg, admin, OpenOptions{})
 	big := `"` + strings.Repeat("x", 600<<10) + `"`
-	if err := a.OnDisconnectSet("/gone", json.RawMessage(big)); err != nil {
+	if err := onDisconnectSet(a, "/gone", big); err != nil {
 		t.Fatal(err)
 	}
 	a.Close()

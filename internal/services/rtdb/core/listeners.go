@@ -18,6 +18,9 @@ type Push struct {
 	// Query is the query of a cancelled listen, as the client sent it; nil for a default
 	// listen.
 	Query *QuerySpec
+	// Status and Reason say why an ac push ended the session's sign-in: invalid_token or
+	// expired_token, and a message for people.
+	Status, Reason string
 }
 
 // Push actions.
@@ -25,10 +28,14 @@ const (
 	PushData   = "d"
 	PushMerge  = "m"
 	PushCancel = "c"
+	// PushAuthRevoked tells the client its credential stopped being valid (ac). It goes to
+	// the sink at once, not in the writer's order.
+	PushAuthRevoked = "ac"
 )
 
-// Sink receives a session's pushes, on the writer goroutine, in the database's order. It
-// must not block: the transport queues them (a byte-bounded outbox).
+// Sink receives a session's pushes, on the writer goroutine, in the database's order, and
+// the ac push from whichever goroutine ends the sign-in. It must not block: the transport
+// queues them (a byte-bounded outbox).
 type Sink interface {
 	Push(p Push)
 }

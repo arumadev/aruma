@@ -1,0 +1,9 @@
+{
+  "name": "aruma-experiment-rtdb-rules",
+  "private": true,
+  "type": "module",
+  "description": "The official web SDK with Aruma Auth against rules-protected Realtime Database data: per-user reads and writes, then the user disabled by the admin. Driven by ../rtdb-rules.sh.",
+  "dependencies": {
+    "firebase": "13.0.0"
+  }
+}
