@@ -67,6 +67,7 @@
 | `principal.go` | متغير `auth` في القواعد: المستخدم (`provider` و`uid` و`token`)، أو المسؤول، أو المجهول، و`auth_variable_override` | R4 |
 | `access.go` | **(لم يكن في المسودة)** القواعد على كل عملية: مصدر البيانات `rules.Source` على معاملة الكاتب، وفحص القراءة والاستماع والكتابة وonDisconnect، و`query` من الاستعلام، والقواعد المفتوحة لـ `dev_open_rules` | R4 |
 | `revoke.go` | قطع البث: اشتراك واحد في `idtoken.Revocations` لكل مشروع فيه جلسات مستخدمين. عند تعطيل المستخدم أو إلغاء رموزه يُرسل `ac` وتُلغى الاستماعات بـ `c`، وعند `ErrOverflow` يُعاد التحقق من كل رمز. وانتهاء الرمز يُرسل `ac expired_token` (في `session.go`) | R4 |
+| `pushid.go` | **(لم يكن في المسودة)** معرّفات push التي يولّدها `POST` في REST، بخوارزمية المكتبات (`nextPushId`) | R5 |
 | `limits.go` | `Limits`: العمق، والمفتاح، وحجم الكتابة، والاتصالات والمستمعون لكل مشروع، والكتابة في الدقيقة، وحجم طابور الخروج بالبايت | R2 |
 | `errors.go` | أخطاء الخدمة، وتحويلها إلى حالات البروتوكول وأكواد REST | R2 |
 | `store.go` | واجهة التخزين التي يستعملها الكاتب: قراءة شجرة فرعية، وتطبيق دفعة كتابات في معاملة، وقراءة القواعد وحفظها. ومنذ R4 `Peek` و`HasChildExcept`، اللتان تقرأ بهما القواعد ما تحتاجه دون قراءة الشجرة الفرعية | R2 ثم R4 |
@@ -105,8 +106,8 @@
 | `conn.go` | حلقة القراءة وحلقة الكتابة، وطابور خروج محدود بالبايت يُغلق المتباطئ، ومهلة خمول 120 ثانية، وإرسال `s` قبل الإيقاف | R1 |
 | `dispatch.go` | كل أمر إلى استدعاء في `core`، وكل نتيجة إلى رد بالحالة الصحيحة | R1 إلى R3 |
 | `auth.go` | `auth` و`gauth` و`unauth`: رمز المستخدم عبر `core.Session.SignIn` (أي `idtoken.Verifier`)، ورمز حساب الخدمة (Admin) عبر `authn.Verifier`، و`authvar` و`noauth`. و`appcheck` يُقبل ويُتجاهل | R4 |
-| `rest.go` | `GET` و`PUT /.settings/rules.json` موجودان منذ R3. والباقي في R5: `GET` و`PUT` و`POST` و`PATCH` و`DELETE` على `.json`، و`print` و`shallow` و`format=export`، وETag و`if-match` (412)، وأخطاء JSON بصيغة Firebase. وحتى R5 يرجع `.json` الرمز 501 | R3 ثم R5 |
-| `rest_query.go` | `orderBy` و`limitToFirst` و`limitToLast` و`startAt` و`endAt` و`equalTo`، و400 «Index not defined» | R5 |
+| `rest.go` | `GET` و`PUT /.settings/rules.json` موجودان منذ R3، ومعهما في R5 `dryRun` و`format=strict`. والباقي في R5: `GET` و`PUT` و`POST` و`PATCH` و`DELETE` على `.json`، و`print` و`shallow` و`format=export` و`timeout`، وETag و`if-match` (412) و`if-none-match` (304)، وأخطاء JSON بصيغة Firebase. و`testdata/emulator/rest.golden.json` إجابات المحاكي التي تعيد تشغيلها `test/acceptance` | R3 ثم R5 |
+| `rest_query.go` | `orderBy` و`limitToFirst` و`limitToLast` و`startAt` و`startAfter` و`endAt` و`endBefore` و`equalTo`، و400 «Index not defined» | R5 |
 | `rest_auth.go` | `auth=` و`access_token=` و`Authorization: Bearer`، و`auth_variable_override` لمكتبات Admin | R5 |
 | `tlsask.go` | نقطة `ask` لشهادات Caddy عند الطلب: 200 إن كان الاسم مشروعًا موجودًا. **تُخدم على العنوان الخاص فقط** | R6 |
 
