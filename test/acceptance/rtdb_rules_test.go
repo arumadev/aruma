@@ -245,7 +245,7 @@ func TestRTDBDisabledUserIsCutOff(t *testing.T) {
 	}
 	want := []string{
 		`{"t":"d","d":{"a":"ac","b":{"s":"invalid_token","d":"Auth token is no longer valid."}}}`,
-		`{"t":"d","d":{"a":"c","b":{"p":"users/u1","q":[{"l":1,"vf":"l"}]}}}`,
+		`{"t":"d","d":{"a":"c","b":{"p":"users/u1","q":[{"sin":true,"ein":true,"l":1,"vf":"l"}]}}}`,
 		`{"t":"d","d":{"a":"c","b":{"p":"users/u1","q":null}}}`,
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
