@@ -3,7 +3,7 @@ package core
 import (
 	"context"
 
-	"github.com/osama300/aurma-project/internal/tenancy/queries"
+	"github.com/arumadev/aruma/internal/tenancy/queries"
 )
 
 // ProjectProfile is what Auth's emails and action links show of a project.

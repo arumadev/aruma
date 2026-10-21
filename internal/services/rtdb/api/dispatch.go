@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/osama300/aurma-project/internal/services/rtdb/core"
-	"github.com/osama300/aurma-project/internal/services/rtdb/wire"
+	"github.com/arumadev/aruma/internal/services/rtdb/core"
+	"github.com/arumadev/aruma/internal/services/rtdb/wire"
 )
 
 // errorFrame is the emulator's answer to a message it cannot act on: an unknown action, a

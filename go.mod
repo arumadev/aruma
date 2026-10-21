@@ -1,4 +1,4 @@
-module github.com/osama300/aurma-project
+module github.com/arumadev/aruma
 
 go 1.26.0
 

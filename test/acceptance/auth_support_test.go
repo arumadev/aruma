@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	identity "github.com/osama300/aurma-project/internal/services/auth/core"
-	"github.com/osama300/aurma-project/internal/services/auth/queries"
-	"github.com/osama300/aurma-project/internal/services/auth/tokens"
+	identity "github.com/arumadev/aruma/internal/services/auth/core"
+	"github.com/arumadev/aruma/internal/services/auth/queries"
+	"github.com/arumadev/aruma/internal/services/auth/tokens"
 )
 
 // Helpers shared by the Phase 2 error, parity and tamper suites.

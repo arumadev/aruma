@@ -15,9 +15,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/crypto"
-	"github.com/osama300/aurma-project/internal/tenancy/queries"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/tenancy/queries"
 )
 
 // Options configure the service.

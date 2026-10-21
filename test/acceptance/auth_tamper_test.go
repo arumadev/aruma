@@ -16,9 +16,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/platform/crypto"
-	identity "github.com/osama300/aurma-project/internal/services/auth/core"
-	"github.com/osama300/aurma-project/internal/services/auth/tokens"
+	"github.com/arumadev/aruma/internal/platform/crypto"
+	identity "github.com/arumadev/aruma/internal/services/auth/core"
+	"github.com/arumadev/aruma/internal/services/auth/tokens"
 )
 
 // T24, X-2, X-3: the 22 Phase 2 tamper scenarios, one named subtest each, indexed in

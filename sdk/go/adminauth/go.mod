@@ -1,4 +1,4 @@
-module github.com/osama300/aurma-project/sdk/go/adminauth
+module github.com/arumadev/aruma/sdk/go/adminauth
 
 go 1.26.0
 

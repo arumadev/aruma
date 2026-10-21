@@ -9,10 +9,10 @@ Pod::Spec.new do |s|
     A URLProtocol that rewrites the Firebase Auth endpoints (identitytoolkit, securetoken and the
     v3 relyingparty paths) to the Aruma server named by ArumaURL in Info.plist. Other hosts are untouched.
   DESC
-  s.homepage     = 'https://github.com/osama300/aurma-project/tree/main/sdk/ios/ArumaRedirect'
+  s.homepage     = 'https://github.com/arumadev/aruma/tree/main/sdk/ios/ArumaRedirect'
   s.license      = { :type => 'Apache-2.0', :file => 'LICENSE' }
   s.author       = { 'The Aruma Authors' => 'noreply@aruma.dev' }
-  s.source       = { :git => 'https://github.com/osama300/aurma-project.git', :tag => "ios-redirect-#{s.version}" }
+  s.source       = { :git => 'https://github.com/arumadev/aruma.git', :tag => "ios-redirect-#{s.version}" }
 
   s.ios.deployment_target  = '13.0'
   s.osx.deployment_target  = '10.15'

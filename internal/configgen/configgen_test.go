@@ -13,7 +13,7 @@ import (
 
 	"github.com/santhosh-tekuri/jsonschema/v6"
 
-	"github.com/osama300/aurma-project/internal/configgen/schema"
+	"github.com/arumadev/aruma/internal/configgen/schema"
 )
 
 var update = flag.Bool("update", false, "rewrite golden files")

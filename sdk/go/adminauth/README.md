@@ -25,7 +25,7 @@ token, err := client.VerifyIDTokenAndCheckRevoked(ctx, idToken)
 for custom tokens: `client.CustomToken` calls the official implementation unchanged.
 
 ```sh
-go get github.com/osama300/aurma-project/sdk/go/adminauth
+go get github.com/arumadev/aruma/sdk/go/adminauth
 ```
 
 ## Configuration

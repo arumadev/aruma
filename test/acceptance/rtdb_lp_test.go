@@ -15,7 +15,7 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/osama300/aurma-project/internal/services/rtdb/wire"
+	"github.com/arumadev/aruma/internal/services/rtdb/wire"
 )
 
 // lpClient is a raw long-poll client, speaking /.lp as BrowserPollConnection does: the

@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"strings"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/apierr"
 )
 
 // The data services (Auth from Phase 2 on) reach the control plane through these calls. They

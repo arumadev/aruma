@@ -12,7 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/osama300/aurma-project/internal/store/storetest"
+	"github.com/arumadev/aruma/internal/store/storetest"
 )
 
 func TestSpreadAddrCyclesThroughThePool(t *testing.T) {

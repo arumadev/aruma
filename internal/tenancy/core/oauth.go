@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/platform/authn"
-	acrypto "github.com/osama300/aurma-project/internal/platform/crypto"
-	"github.com/osama300/aurma-project/internal/tenancy/queries"
+	"github.com/arumadev/aruma/internal/platform/authn"
+	acrypto "github.com/arumadev/aruma/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/tenancy/queries"
 )
 
 // Service account tokens follow RFC 7523 (JWT bearer grant) as Google's libraries speak it.

@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/osama300/aurma-project/internal/app"
+	"github.com/arumadev/aruma/internal/app"
 )
 
 // AC-A18: every P0 endpoint answers its v3 relyingparty alias (iOS) exactly as its v1 name.

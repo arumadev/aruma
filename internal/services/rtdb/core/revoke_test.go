@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/platform/idtoken"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
 )
 
 // tokens stands in for Auth's verifier: token -> claims, or the error it fails with.

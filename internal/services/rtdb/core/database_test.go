@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/apierr"
 )
 
 var discard = slog.New(slog.NewTextHandler(io.Discard, nil))

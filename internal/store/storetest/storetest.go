@@ -22,8 +22,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/osama300/aurma-project/internal/store"
-	"github.com/osama300/aurma-project/internal/store/migrations"
+	"github.com/arumadev/aruma/internal/store"
+	"github.com/arumadev/aruma/internal/store/migrations"
 )
 
 // DefaultAdminURL is used when ARUMA_TEST_DATABASE_URL is unset.

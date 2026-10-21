@@ -44,13 +44,13 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/osama300/aurma-project/internal/app"
-	"github.com/osama300/aurma-project/internal/config"
-	"github.com/osama300/aurma-project/internal/platform/authn"
-	"github.com/osama300/aurma-project/internal/platform/crypto"
-	"github.com/osama300/aurma-project/internal/store"
-	"github.com/osama300/aurma-project/internal/store/storetest"
-	"github.com/osama300/aurma-project/internal/tenancy/core"
+	"github.com/arumadev/aruma/internal/app"
+	"github.com/arumadev/aruma/internal/config"
+	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/store"
+	"github.com/arumadev/aruma/internal/store/storetest"
+	"github.com/arumadev/aruma/internal/tenancy/core"
 )
 
 // Identifiers the platform projects are built around.

@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/services/auth/tokens"
+	"github.com/arumadev/aruma/internal/services/auth/tokens"
 )
 
 func TestCacheTTL(t *testing.T) {

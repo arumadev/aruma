@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/services/auth/queries"
+	"github.com/arumadev/aruma/internal/services/auth/queries"
 )
 
 // The published keys Verify checks against, cached per project and purpose.

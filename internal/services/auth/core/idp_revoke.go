@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/osama300/aurma-project/internal/services/auth/queries"
+	"github.com/arumadev/aruma/internal/services/auth/queries"
 )
 
 // Apple tokens are revoked at Apple when the app asks (accounts:revokeToken, which the web

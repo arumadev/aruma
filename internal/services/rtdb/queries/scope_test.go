@@ -3,7 +3,7 @@ package queries
 import (
 	"testing"
 
-	"github.com/osama300/aurma-project/internal/store/scopecheck"
+	"github.com/arumadev/aruma/internal/store/scopecheck"
 )
 
 // TestQueriesAreProjectScoped applies the isolation guard to the rtdb schema. Node rows are

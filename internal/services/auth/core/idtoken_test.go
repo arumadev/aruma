@@ -19,12 +19,12 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/osama300/aurma-project/internal/platform/crypto"
-	"github.com/osama300/aurma-project/internal/platform/idtoken"
-	"github.com/osama300/aurma-project/internal/services/auth/queries"
-	"github.com/osama300/aurma-project/internal/services/auth/tokens"
-	"github.com/osama300/aurma-project/internal/store/storetest"
-	tcore "github.com/osama300/aurma-project/internal/tenancy/core"
+	"github.com/arumadev/aruma/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
+	"github.com/arumadev/aruma/internal/services/auth/queries"
+	"github.com/arumadev/aruma/internal/services/auth/tokens"
+	"github.com/arumadev/aruma/internal/store/storetest"
+	tcore "github.com/arumadev/aruma/internal/tenancy/core"
 )
 
 // idEnv is an Auth service on a fresh database with two projects.

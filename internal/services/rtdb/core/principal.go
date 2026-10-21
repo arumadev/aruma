@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/osama300/aurma-project/internal/platform/idtoken"
-	"github.com/osama300/aurma-project/internal/services/rtdb/rules"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
+	"github.com/arumadev/aruma/internal/services/rtdb/rules"
 )
 
 // Auth is who a session acts as, and so what its rules' auth variable holds: an admin, a user

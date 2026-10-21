@@ -7,9 +7,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/osama300/aurma-project/internal/events"
-	"github.com/osama300/aurma-project/internal/store"
-	"github.com/osama300/aurma-project/internal/store/storetest"
+	"github.com/arumadev/aruma/internal/events"
+	"github.com/arumadev/aruma/internal/store"
+	"github.com/arumadev/aruma/internal/store/storetest"
 )
 
 // AC-30: an event appended in a transaction that fails leaves no trace; one in a committed

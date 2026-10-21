@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/osama300/aurma-project/internal/platform/authn"
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/tenancy/queries"
+	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/tenancy/queries"
 )
 
 // audit records an administrative action on a project within the caller's transaction, so the

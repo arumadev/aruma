@@ -14,12 +14,12 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/authn"
-	"github.com/osama300/aurma-project/internal/platform/consolemount"
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/services/rtdb/core"
-	"github.com/osama300/aurma-project/internal/store/storetest"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/consolemount"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/services/rtdb/core"
+	"github.com/arumadev/aruma/internal/store/storetest"
 )
 
 var discard = slog.New(slog.NewTextHandler(io.Discard, nil))

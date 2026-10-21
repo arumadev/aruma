@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/services/rtdb/core"
+	"github.com/arumadev/aruma/internal/services/rtdb/core"
 )
 
 func TestPretty(t *testing.T) {

@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/services/rtdb/core"
-	"github.com/osama300/aurma-project/internal/services/rtdb/wire"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/services/rtdb/core"
+	"github.com/arumadev/aruma/internal/services/rtdb/wire"
 )
 
 // Long polling at /.lp is the transport of a browser whose WebSocket failed once: the JS SDK

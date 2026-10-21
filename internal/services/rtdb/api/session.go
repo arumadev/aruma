@@ -5,10 +5,10 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/osama300/aurma-project/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/platform/httpx"
 
-	"github.com/osama300/aurma-project/internal/services/rtdb/core"
-	"github.com/osama300/aurma-project/internal/services/rtdb/wire"
+	"github.com/arumadev/aruma/internal/services/rtdb/core"
+	"github.com/arumadev/aruma/internal/services/rtdb/wire"
 )
 
 // session is the protocol side of one client, apart from any socket: it turns requests into

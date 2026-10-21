@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/platform/idtoken"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
 )
 
 // userAuth is a user's sign-in, as a verified ID token gives it.

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/osama300/aurma-project/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/platform/crypto"
 )
 
 // BenchmarkArgon2Verify times one password check at the production cost, the floor under the

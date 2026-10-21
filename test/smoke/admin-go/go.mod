@@ -1,4 +1,4 @@
-module github.com/osama300/aurma-project/test/smoke/admin-go
+module github.com/arumadev/aruma/test/smoke/admin-go
 
 go 1.26.0
 

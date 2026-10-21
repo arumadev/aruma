@@ -16,8 +16,8 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/osama300/aurma-project/internal/services/rtdb/core"
-	"github.com/osama300/aurma-project/internal/services/rtdb/wire"
+	"github.com/arumadev/aruma/internal/services/rtdb/core"
+	"github.com/arumadev/aruma/internal/services/rtdb/wire"
 )
 
 const lpNS = "chat-app-default-rtdb"

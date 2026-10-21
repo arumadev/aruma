@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/osama300/aurma-project/internal/store/storetest"
+	"github.com/arumadev/aruma/internal/store/storetest"
 )
 
 // storeTree writes v at p in one transaction.

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/platform/idtoken"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
 )
 
 // The ID token contract as Realtime Database will use it (R4): a token from a real sign-in

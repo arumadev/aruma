@@ -13,10 +13,10 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/osama300/aurma-project/internal/config"
-	"github.com/osama300/aurma-project/internal/platform/metrics"
-	"github.com/osama300/aurma-project/internal/store"
-	"github.com/osama300/aurma-project/internal/store/storetest"
+	"github.com/arumadev/aruma/internal/config"
+	"github.com/arumadev/aruma/internal/platform/metrics"
+	"github.com/arumadev/aruma/internal/store"
+	"github.com/arumadev/aruma/internal/store/storetest"
 )
 
 func testConfig(t *testing.T, publicURL string) *config.Config {

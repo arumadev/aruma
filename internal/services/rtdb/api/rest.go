@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/services/rtdb/core"
-	"github.com/osama300/aurma-project/internal/services/rtdb/rules"
+	"github.com/arumadev/aruma/internal/services/rtdb/core"
+	"github.com/arumadev/aruma/internal/services/rtdb/rules"
 )
 
 // The REST API on /<path>.json (ADR-020 §3), as the Go and Python Admin SDKs and firebase-tools

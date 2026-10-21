@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/tenancy/core"
+	"github.com/arumadev/aruma/internal/tenancy/core"
 )
 
 // Resource shapes of firebase.googleapis.com/v1beta1 (docs/research/management-api.md).

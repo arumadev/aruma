@@ -9,9 +9,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/services/rtdb/core"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/services/rtdb/core"
 )
 
 // dataRoutes registers the data browser's routes. Every one takes the node's path in ?path=,

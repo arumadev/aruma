@@ -13,8 +13,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/crypto"
 )
 
 type fakeVerifier struct{ session, pat, sat string }

@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/osama300/aurma-project/internal/services/rtdb/core"
+	"github.com/arumadev/aruma/internal/services/rtdb/core"
 )
 
 // REST queries: orderBy names the index as a JSON string ("$key", "$value", "$priority" or a

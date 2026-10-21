@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/platform/ratelimit"
-	"github.com/osama300/aurma-project/internal/services/auth/core"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/platform/ratelimit"
+	"github.com/arumadev/aruma/internal/services/auth/core"
 )
 
 // The action page, /__/auth/action, is where the links in Auth emails land (research §6). It

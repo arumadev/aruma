@@ -3,9 +3,9 @@ package core
 import (
 	"context"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/authn"
-	"github.com/osama300/aurma-project/internal/tenancy/queries"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/tenancy/queries"
 )
 
 // KeyedApp is an app together with the API key its config file carries.

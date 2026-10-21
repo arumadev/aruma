@@ -10,12 +10,12 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/osama300/aurma-project/internal/admin/render"
-	"github.com/osama300/aurma-project/internal/configgen"
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/authn"
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/tenancy/core"
+	"github.com/arumadev/aruma/internal/admin/render"
+	"github.com/arumadev/aruma/internal/configgen"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/tenancy/core"
 )
 
 func (a *API) appRoutes(with func(authn.Policy, string, string, http.HandlerFunc)) {

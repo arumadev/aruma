@@ -3,7 +3,7 @@ package queries
 import (
 	"testing"
 
-	"github.com/osama300/aurma-project/internal/store/scopecheck"
+	"github.com/arumadev/aruma/internal/store/scopecheck"
 )
 
 // TestQueriesAreProjectScoped is the Phase 1 isolation guard for the control plane.

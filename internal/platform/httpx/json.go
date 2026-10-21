@@ -9,7 +9,7 @@ import (
 	"mime"
 	"net/http"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/apierr"
 )
 
 // MaxBodyBytes caps request bodies on every API (ADR-008).

@@ -18,10 +18,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/osama300/aurma-project/internal/platform/authn"
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/services/rtdb/core"
-	tcore "github.com/osama300/aurma-project/internal/tenancy/core"
+	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/services/rtdb/core"
+	tcore "github.com/arumadev/aruma/internal/tenancy/core"
 )
 
 // Projects lets an admin credential prove it may act on a project: the control plane's

@@ -8,10 +8,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/authn"
-	"github.com/osama300/aurma-project/internal/platform/consolemount"
-	"github.com/osama300/aurma-project/internal/services/auth/core"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/consolemount"
+	"github.com/arumadev/aruma/internal/services/auth/core"
 )
 
 // anyCred accepts the owner's session or a CLI token, like the console's other project routes.

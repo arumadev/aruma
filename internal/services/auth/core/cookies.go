@@ -10,8 +10,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/osama300/aurma-project/internal/services/auth/queries"
-	"github.com/osama300/aurma-project/internal/services/auth/tokens"
+	"github.com/arumadev/aruma/internal/services/auth/queries"
+	"github.com/arumadev/aruma/internal/services/auth/tokens"
 )
 
 // Session cookies (createSessionCookie) carry the claims of the ID token they were made from,

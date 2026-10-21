@@ -7,7 +7,7 @@ package consolemount
 import (
 	"net/http"
 
-	"github.com/osama300/aurma-project/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/authn"
 )
 
 // ProjectRef is the project a console request acts on.

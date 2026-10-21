@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/services/auth/core"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/services/auth/core"
 )
 
 // idpRoutes registers sign-in with Google and Apple: the REST calls, and the handler and

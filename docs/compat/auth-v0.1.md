@@ -68,7 +68,7 @@
 
 ### إعداد Codemagic (مرة واحدة)
 
-1. ادخل [codemagic.io](https://codemagic.io) بحساب GitHub، ثم Add application، واختر المستودع `osama300/aurma-project`. المستودع خاص، فامنح تطبيق Codemagic في GitHub الوصول إليه.
+1. ادخل [codemagic.io](https://codemagic.io) بحساب GitHub، ثم Add application، واختر المستودع `arumadev/aruma`. المستودع خاص، فامنح تطبيق Codemagic في GitHub الوصول إليه.
 2. اختر الإعداد بملف `codemagic.yaml` (لا Workflow Editor). يقرأ Codemagic الملف من الفرع الذي يبني منه.
 3. **الجدول:** الجداول تُحفظ في واجهة Codemagic لا في الملف. في إعدادات التطبيق، Scheduled builds:
    - أضف جدولًا لسير العمل `ios-auth` على `main`، يومين في الأسبوع، مثلًا الاثنين والخميس.

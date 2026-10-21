@@ -11,10 +11,10 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/osama300/aurma-project/internal/platform/idtoken"
-	"github.com/osama300/aurma-project/internal/services/auth/queries"
-	"github.com/osama300/aurma-project/internal/services/auth/tokens"
-	"github.com/osama300/aurma-project/internal/store"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
+	"github.com/arumadev/aruma/internal/services/auth/queries"
+	"github.com/arumadev/aruma/internal/services/auth/tokens"
+	"github.com/arumadev/aruma/internal/store"
 )
 
 // IdPInput is accounts:signInWithIdp: the provider's answer as the SDK relays it. A redirect

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/osama300/aurma-project/internal/services/auth/queries"
+	"github.com/arumadev/aruma/internal/services/auth/queries"
 )
 
 func TestCheckConfigDomains(t *testing.T) {

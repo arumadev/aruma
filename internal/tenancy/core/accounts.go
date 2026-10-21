@@ -11,11 +11,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/authn"
-	"github.com/osama300/aurma-project/internal/platform/crypto"
-	"github.com/osama300/aurma-project/internal/store"
-	"github.com/osama300/aurma-project/internal/tenancy/queries"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/store"
+	"github.com/arumadev/aruma/internal/tenancy/queries"
 )
 
 // Account is a project owner as the APIs show it.

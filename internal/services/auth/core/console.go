@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/services/auth/queries"
-	"github.com/osama300/aurma-project/internal/services/auth/tokens"
+	"github.com/arumadev/aruma/internal/services/auth/queries"
+	"github.com/arumadev/aruma/internal/services/auth/tokens"
 )
 
 // The operations below serve only the console: searching users and managing the signing keys.

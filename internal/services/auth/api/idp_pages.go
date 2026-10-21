@@ -12,9 +12,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/platform/ratelimit"
-	"github.com/osama300/aurma-project/internal/services/auth/core"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/platform/ratelimit"
+	"github.com/arumadev/aruma/internal/services/auth/core"
 )
 
 // The pages the web SDK opens for signInWithPopup and signInWithRedirect, at

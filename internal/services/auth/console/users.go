@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/services/auth/api"
-	"github.com/osama300/aurma-project/internal/services/auth/core"
-	"github.com/osama300/aurma-project/internal/services/auth/queries"
-	"github.com/osama300/aurma-project/internal/services/auth/tokens"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/services/auth/api"
+	"github.com/arumadev/aruma/internal/services/auth/core"
+	"github.com/arumadev/aruma/internal/services/auth/queries"
+	"github.com/arumadev/aruma/internal/services/auth/tokens"
 )
 
 // authRoutes registers the Users, Sign-in methods and Settings routes.

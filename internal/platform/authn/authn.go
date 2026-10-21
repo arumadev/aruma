@@ -16,9 +16,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/crypto"
-	"github.com/osama300/aurma-project/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/platform/httpx"
 )
 
 // Token prefixes make every credential recognisable on sight and in secret scanners.

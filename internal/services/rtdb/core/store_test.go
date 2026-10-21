@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/services/rtdb/rules"
-	"github.com/osama300/aurma-project/internal/store/storetest"
+	"github.com/arumadev/aruma/internal/services/rtdb/rules"
+	"github.com/arumadev/aruma/internal/store/storetest"
 )
 
 // memStore is a Store on an in-memory tree, built on Node.Set: a second, independent

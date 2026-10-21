@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/platform/idtoken"
-	"github.com/osama300/aurma-project/internal/services/rtdb/rules"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
+	"github.com/arumadev/aruma/internal/services/rtdb/rules"
 )
 
 // Session is one client's state on one database, apart from any socket: who it acts as and

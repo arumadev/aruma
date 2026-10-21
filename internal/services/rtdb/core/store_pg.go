@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/osama300/aurma-project/internal/services/rtdb/queries"
+	"github.com/arumadev/aruma/internal/services/rtdb/queries"
 )
 
 // PGStore is the Store on Postgres, schema rtdb (ADR-019).

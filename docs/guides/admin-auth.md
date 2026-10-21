@@ -16,7 +16,7 @@ line ADR-013 allows for a developer's server.
   const decoded = await getAuth().verifyIdToken(idToken, true);
 ```
 
-**Go** (`github.com/osama300/aurma-project/sdk/go/adminauth`):
+**Go** (`github.com/arumadev/aruma/sdk/go/adminauth`):
 
 ```diff
 - client, err := app.Auth(ctx)

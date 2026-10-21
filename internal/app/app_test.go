@@ -13,7 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/osama300/aurma-project/internal/config"
+	"github.com/arumadev/aruma/internal/config"
 )
 
 var update = flag.Bool("update", false, "rewrite golden files")

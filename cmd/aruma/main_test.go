@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/osama300/aurma-project/internal/store"
-	"github.com/osama300/aurma-project/internal/store/storetest"
+	"github.com/arumadev/aruma/internal/store"
+	"github.com/arumadev/aruma/internal/store/storetest"
 )
 
 func aruma(t *testing.T, stdin string, args ...string) (string, error) {

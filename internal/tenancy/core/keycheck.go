@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/platform/ids"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/platform/ids"
 )
 
 // The services a data plane names when it checks a key's API restrictions, as Google names them.

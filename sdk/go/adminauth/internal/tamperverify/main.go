@@ -19,7 +19,7 @@ import (
 	firebase "firebase.google.com/go/v4"
 	"google.golang.org/api/option"
 
-	"github.com/osama300/aurma-project/sdk/go/adminauth"
+	"github.com/arumadev/aruma/sdk/go/adminauth"
 )
 
 type request struct {

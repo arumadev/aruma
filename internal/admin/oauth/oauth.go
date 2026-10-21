@@ -14,11 +14,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/osama300/aurma-project/internal/configgen"
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/platform/ratelimit"
-	"github.com/osama300/aurma-project/internal/tenancy/core"
+	"github.com/arumadev/aruma/internal/configgen"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/platform/ratelimit"
+	"github.com/arumadev/aruma/internal/tenancy/core"
 )
 
 const jwtBearer = "urn:ietf:params:oauth:grant-type:jwt-bearer"

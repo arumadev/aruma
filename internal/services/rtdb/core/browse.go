@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/osama300/aurma-project/internal/services/rtdb/queries"
+	"github.com/arumadev/aruma/internal/services/rtdb/queries"
 )
 
 // The console's data browser reads the stored rows directly instead of loading subtrees

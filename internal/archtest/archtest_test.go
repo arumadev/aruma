@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-const module = "github.com/osama300/aurma-project/"
+const module = "github.com/arumadev/aruma/"
 
 // allowed maps a package prefix to the internal prefixes it may import. The longest matching
 // key wins. Imports inside the same prefix are always allowed. A * in a key stands for one path

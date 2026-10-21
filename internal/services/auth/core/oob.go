@@ -13,11 +13,11 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/osama300/aurma-project/internal/platform/crypto"
-	"github.com/osama300/aurma-project/internal/platform/idtoken"
-	"github.com/osama300/aurma-project/internal/services/auth/queries"
-	"github.com/osama300/aurma-project/internal/store"
-	tcore "github.com/osama300/aurma-project/internal/tenancy/core"
+	"github.com/arumadev/aruma/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
+	"github.com/arumadev/aruma/internal/services/auth/queries"
+	"github.com/arumadev/aruma/internal/store"
+	tcore "github.com/arumadev/aruma/internal/tenancy/core"
 )
 
 // Email action codes (research §3.5, §3.7, §3.8, §6). A code is 256 random bits that exists

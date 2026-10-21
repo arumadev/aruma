@@ -12,9 +12,9 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/services/rtdb/core"
-	"github.com/osama300/aurma-project/internal/services/rtdb/wire"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/services/rtdb/core"
+	"github.com/arumadev/aruma/internal/services/rtdb/wire"
 )
 
 // serveWS upgrades /.ws to the WebSocket protocol (A-protocol-sdks.md §1) and serves the

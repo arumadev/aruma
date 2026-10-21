@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/services/rtdb/rules"
+	"github.com/arumadev/aruma/internal/services/rtdb/rules"
 )
 
 // Database is the single writer of one database (ADR-019): a goroutine that owns an inbox

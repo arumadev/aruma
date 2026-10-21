@@ -14,11 +14,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/authn"
-	"github.com/osama300/aurma-project/internal/platform/ids"
-	"github.com/osama300/aurma-project/internal/store"
-	"github.com/osama300/aurma-project/internal/tenancy/queries"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/ids"
+	"github.com/arumadev/aruma/internal/store"
+	"github.com/arumadev/aruma/internal/tenancy/queries"
 )
 
 // MaxServiceAccountKeys caps keys per service account (proposed in the Phase 1 plan).

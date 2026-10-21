@@ -11,12 +11,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/authn"
-	"github.com/osama300/aurma-project/internal/platform/consolemount"
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/platform/ratelimit"
-	"github.com/osama300/aurma-project/internal/tenancy/core"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/consolemount"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/platform/ratelimit"
+	"github.com/arumadev/aruma/internal/tenancy/core"
 )
 
 // Options configure the console API.

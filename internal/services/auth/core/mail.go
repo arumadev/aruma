@@ -17,9 +17,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/osama300/aurma-project/internal/platform/ratelimit"
-	"github.com/osama300/aurma-project/internal/services/auth/queries"
-	tcore "github.com/osama300/aurma-project/internal/tenancy/core"
+	"github.com/arumadev/aruma/internal/platform/ratelimit"
+	"github.com/arumadev/aruma/internal/services/auth/queries"
+	tcore "github.com/arumadev/aruma/internal/tenancy/core"
 )
 
 // Auth email goes through auth.email_outbox: a message is written in the same transaction as

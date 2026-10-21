@@ -16,8 +16,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/services/auth/queries"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/services/auth/queries"
 )
 
 // Sign-in with Google and Apple (T15, T20): per-project provider settings and where the

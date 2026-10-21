@@ -25,14 +25,14 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/osama300/aurma-project/internal/app"
-	"github.com/osama300/aurma-project/internal/config"
-	"github.com/osama300/aurma-project/internal/platform/authn"
-	acrypto "github.com/osama300/aurma-project/internal/platform/crypto"
-	alog "github.com/osama300/aurma-project/internal/platform/log"
-	"github.com/osama300/aurma-project/internal/store"
-	"github.com/osama300/aurma-project/internal/store/storetest"
-	"github.com/osama300/aurma-project/internal/tenancy/core"
+	"github.com/arumadev/aruma/internal/app"
+	"github.com/arumadev/aruma/internal/config"
+	"github.com/arumadev/aruma/internal/platform/authn"
+	acrypto "github.com/arumadev/aruma/internal/platform/crypto"
+	alog "github.com/arumadev/aruma/internal/platform/log"
+	"github.com/arumadev/aruma/internal/store"
+	"github.com/arumadev/aruma/internal/store/storetest"
+	"github.com/arumadev/aruma/internal/tenancy/core"
 )
 
 // Target is a running Aruma and the credentials to call it.

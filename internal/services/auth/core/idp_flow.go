@@ -20,8 +20,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/osama300/aurma-project/internal/platform/crypto"
-	"github.com/osama300/aurma-project/internal/services/auth/queries"
+	"github.com/arumadev/aruma/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/services/auth/queries"
 )
 
 // The redirect flow. A sign-in session starts on Aruma's handler page (or createAuthUri): it

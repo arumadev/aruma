@@ -19,7 +19,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/platform/crypto"
 )
 
 // SMTP time limits. Connecting and the server's greeting are bounded tightly, so a port that

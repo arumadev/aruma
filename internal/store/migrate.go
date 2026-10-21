@@ -13,7 +13,7 @@ import (
 	"github.com/pressly/goose/v3"
 	"github.com/pressly/goose/v3/database"
 
-	"github.com/osama300/aurma-project/internal/store/migrations"
+	"github.com/arumadev/aruma/internal/store/migrations"
 )
 
 // SchemaStatus is the migration state of one schema.

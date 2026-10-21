@@ -16,7 +16,7 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	"github.com/osama300/aurma-project/internal/platform/log"
+	"github.com/arumadev/aruma/internal/platform/log"
 )
 
 // Config is the validated server configuration.

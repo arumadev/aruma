@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/services/rtdb/rules"
+	"github.com/arumadev/aruma/internal/services/rtdb/rules"
 )
 
 // Security rules govern every operation of a session that is not an admin (ADR-020 §2). The

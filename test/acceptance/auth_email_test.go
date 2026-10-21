@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/osama300/aurma-project/internal/platform/smtptest"
+	"github.com/arumadev/aruma/internal/platform/smtptest"
 )
 
 // Email actions: verification, password reset, email change and recovery, the action page,

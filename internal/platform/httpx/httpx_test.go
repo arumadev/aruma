@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/apierr"
 )
 
 func TestClientIP(t *testing.T) {

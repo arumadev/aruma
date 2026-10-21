@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/osama300/aurma-project/internal/tenancy/queries"
+	"github.com/arumadev/aruma/internal/tenancy/queries"
 )
 
 // Calls for the Auth pages served on a project's authDomain (/__/auth/*, /__/firebase/init.json).

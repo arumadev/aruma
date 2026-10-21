@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/platform/authn"
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/services/auth/core"
+	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/services/auth/core"
 )
 
 // The Admin API is what firebase-admin calls, at the paths and shapes both official SDKs use

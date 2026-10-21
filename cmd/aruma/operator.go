@@ -12,11 +12,11 @@ import (
 
 	"golang.org/x/term"
 
-	"github.com/osama300/aurma-project/internal/app"
-	"github.com/osama300/aurma-project/internal/config"
-	"github.com/osama300/aurma-project/internal/platform/log"
-	"github.com/osama300/aurma-project/internal/store"
-	"github.com/osama300/aurma-project/internal/tenancy/core"
+	"github.com/arumadev/aruma/internal/app"
+	"github.com/arumadev/aruma/internal/config"
+	"github.com/arumadev/aruma/internal/platform/log"
+	"github.com/arumadev/aruma/internal/store"
+	"github.com/arumadev/aruma/internal/tenancy/core"
 )
 
 // accounts manages project owner accounts from the server (U-19): create, disable, enable

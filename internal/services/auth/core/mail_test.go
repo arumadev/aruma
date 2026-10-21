@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/platform/smtptest"
-	"github.com/osama300/aurma-project/internal/services/auth/queries"
+	"github.com/arumadev/aruma/internal/platform/smtptest"
+	"github.com/arumadev/aruma/internal/services/auth/queries"
 )
 
 func TestRenderEscapesValues(t *testing.T) {

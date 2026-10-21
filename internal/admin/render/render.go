@@ -3,8 +3,8 @@
 package render
 
 import (
-	"github.com/osama300/aurma-project/internal/configgen"
-	"github.com/osama300/aurma-project/internal/tenancy/core"
+	"github.com/arumadev/aruma/internal/configgen"
+	"github.com/arumadev/aruma/internal/tenancy/core"
 )
 
 // Project converts a project to configgen input.

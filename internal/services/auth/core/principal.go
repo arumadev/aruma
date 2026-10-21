@@ -3,8 +3,8 @@ package core
 import (
 	"context"
 
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/authn"
 )
 
 // ErrNoPermission answers an Admin API call on a project the caller may not act on. It is the

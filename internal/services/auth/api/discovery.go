@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/osama300/aurma-project/internal/platform/httpx"
-	"github.com/osama300/aurma-project/internal/services/auth/core"
-	"github.com/osama300/aurma-project/internal/services/auth/tokens"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/services/auth/core"
+	"github.com/arumadev/aruma/internal/services/auth/tokens"
 )
 
 // discoveryRoutes publish each issuer's OpenID configuration and keys (ADR-004), so any OIDC

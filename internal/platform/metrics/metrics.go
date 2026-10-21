@@ -11,7 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/osama300/aurma-project/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/platform/httpx"
 )
 
 // Metrics is the server's registry and its shared collectors.

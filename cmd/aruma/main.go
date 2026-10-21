@@ -11,11 +11,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/osama300/aurma-project/internal/app"
-	"github.com/osama300/aurma-project/internal/config"
-	"github.com/osama300/aurma-project/internal/platform/apierr"
-	"github.com/osama300/aurma-project/internal/platform/log"
-	"github.com/osama300/aurma-project/internal/store"
+	"github.com/arumadev/aruma/internal/app"
+	"github.com/arumadev/aruma/internal/config"
+	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/log"
+	"github.com/arumadev/aruma/internal/store"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".

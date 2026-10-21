@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/store"
-	"github.com/osama300/aurma-project/internal/store/storetest"
+	"github.com/arumadev/aruma/internal/store"
+	"github.com/arumadev/aruma/internal/store/storetest"
 )
 
 func pgTools(t *testing.T) store.PGTools {

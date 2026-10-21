@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/osama300/aurma-project/internal/services/auth/core"
+	"github.com/arumadev/aruma/internal/services/auth/core"
 )
 
 // passwordHashPlaceholder stands in for the hash, which never leaves the server. The web SDK
