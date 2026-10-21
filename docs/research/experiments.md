@@ -275,3 +275,62 @@ deploy --only database [--dry-run]                   (exit 1)  the first message
    - `state`: `ACTIVE`
 
    Other ids and locations answer 404 as a `google.rpc.Status`. Authentication is the Management API's (CLI token, service-account token). `TestRTDBManagementInstances` covers both answers.
+
+## R7: the production path behind Caddy
+
+Run on 2026-10-21 by `test/experiments/rtdb-caddy.sh` (21 checks, all passing; about 4 minutes), with Caddy 2.11.7 from Homebrew, Node 24.21, Go 1.27.2 and Playwright's Chromium. It follows [the operator guide](../guides/rtdb-operator.md) as closely as one machine without a public address allows:
+
+| Guide | This run |
+|---|---|
+| a wildcard `A` record `*.rtdb.example.com` | nip.io's public wildcard: `*.rtdb.127.0.0.1.nip.io` resolves to 127.0.0.1 through the real DNS, with no hosts file and no resolver patching |
+| `rtdb.domain: rtdb.example.com` | `rtdb.127.0.0.1.nip.io`; `public_url` `https://aruma.127.0.0.1.nip.io:8843` |
+| Caddy, `tls { on_demand }`, ACME | the guide's Caddyfile with `tls internal { on_demand }` (Caddy's local CA) and `skip_install_trust`; `ask` at `metrics_listen` `/rtdb/tls-ask` |
+| port 443 | 8843 (and 8844 for http), so the clients use `https://<project>-default-rtdb.rtdb.127.0.0.1.nip.io:8843` |
+| `reverse_proxy` | to 127.0.0.1:8820 with `Host` left as it is, `dial_timeout 5s` and `stream_close_delay 5m`; `trusted_proxies` 127.0.0.1/32 |
+
+Each client trusts Caddy's root only in its own process: `NODE_EXTRA_CA_CERTS`, a Go `x509.CertPool`, `curl --cacert`, and Chromium's `--ignore-certificate-errors-spki-list` with the hashes of the root and intermediate keys. Nothing goes into the macOS keychain, and the CA's keys are deleted with the run's directory. Every Node process runs under the network guard. Its new `ARUMA_NETGUARD_LOOPBACK_NAMES` lets `*.127.0.0.1.nip.io` through only while the real DNS resolves it to loopback. The Go test checks the same in its dialer, and Chromium resolves nothing else.
+
+### Results
+
+| Check | Result |
+|---|---|
+| `tls-ask` | 200 for `caddy-test-default-rtdb.<domain>`; 404 for an unknown database, a name two labels deep and the main host; not served on the public port |
+| On-demand certificate | none before the first connection. The first `GET /.settings/rules.json` got a certificate from "Caddy Local Authority - ECC Intermediate" with `DNS:caddy-test-default-rtdb.rtdb.127.0.0.1.nip.io`, the handshake done in 0.37 to 0.65 s, then 403 from the database (no credential) |
+| Unknown names | `nope-default-rtdb.<domain>` and `a.caddy-test-default-rtdb.<domain>`: the handshake fails (`tlsv1 alert internal error`), and no certificate is stored. Caddy's debug log (TLS loggers only): `on-demand certificate issuance denied … certificate not allowed by permission module http://127.0.0.1:8821/rtdb/tls-ask - non-2xx status code 404` |
+| `Host` | straight to Aruma, `Host: <db host>:8843` alone reaches the database. The hello's `h` through Caddy is `caddy-test-default-rtdb.rtdb.127.0.0.1.nip.io:8843`, port included |
+| WebSocket, idle | protocol spoken by hand: a listen, then 90 s with no frame either way, then a REST write through Caddy reaches the socket and a `p` on it is answered. The socket stayed open |
+| Long polling, idle | the web SDK in Chromium with localStorage and WebSockets blocked: connected by long polling, 90 s with no data (5 polls held about 20 s each, one `start`, no disconnect), then a write from a WebSocket page arrives and the page's own write, sent as long-poll `send`s, reaches that page |
+| Restart | `rtdb-restart/client.cjs` through Caddy. Aruma stopped (SIGTERM; Caddy answered 502 meanwhile) and restarted 3 s later. The client reconnected after about 5.6 s and its queued write landed. No new certificate was obtained |
+| Google's suites | `run.sh rtdb --target external --mode production`: 332 passed, 0 failed, 18 skipped upstream; no regression against the emulator baseline. One `exp` test passed on its second try in one of two runs ("calls onValue only once after get request with a nested query") |
+| Admin Node | `test/smoke/admin-node` `test:rtdb` with `ARUMA_RTDB_DATABASE_URL`: 9 of 9 |
+| Admin Go | `test/smoke/admin-go/rtdb`: 7 of 7, token from the key's `token_uri` through Caddy |
+| Network | no `BLOCK` in any guard log |
+
+### `databaseURL` with this many labels, and with a port (source)
+
+The host `<ns>.rtdb.127.0.0.1.nip.io` has eight labels. Every SDK still takes the first one, and keeps the port:
+
+- **Web, Admin Node:** `parser.ts` splits the port off first. A host of more than two labels gives the first label as the namespace. A port keeps the URL secure for `https`.
+- **Android:** `Utilities.parseUrl`: `ns` parameter, else the first label of `Uri.getHost()` (no port). The port is appended to the host, and https stays secure.
+- **iOS:** `FUtilities.parseUrl` counts the labels of `urlComponents.host` (no port). Eight is not three, so it takes `ns` if present, else the first label. The port is appended to the host, and secure for https.
+- **Admin Go:** `BaseURL` is the URL as given, port included. The namespace comes from `Host`.
+- **Admin Python:** `base_url = https://{netloc}`, and netloc includes the port.
+
+The run exercised web (Node and Chromium), Admin Node and Admin Go. Android and iOS are covered by source only here.
+
+### What still differs from a real Let's Encrypt deployment
+
+- **No ACME.** Let's Encrypt validates by HTTP-01 or TLS-ALPN-01, which needs the name to resolve publicly to the proxy and ports 80 and 443 to be reachable from the internet. Neither was possible here. Issuance takes seconds instead of under one, and the rate limits (50 new certificates per registered domain per week) and failure backoffs were not exercised.
+- **Port 8843, not 443.** Aruma's own `databaseUrl` (dashboard, config files, management API) has no port. Here the clients added `:8843` by hand. On 443 they would take Aruma's URL as it is.
+- **Trust.** The CA was trusted per process. Real clients use their system roots, and so do Android and iOS devices, which this run did not include.
+- **Lifetimes.** The local CA issues 12-hour certificates. Renewal, and Let's Encrypt's 90 days with OCSP, never came up in a 4-minute run.
+- **One machine.** Caddy, Aruma and the clients shared loopback: no NAT, no IPv6, no CDN or load balancer in between, and nip.io's resolver stood in for your own wildcard record.
+- **Debug log.** The `log` block that shows the ask's refusals is an addition to the guide's Caddyfile. At the default level Caddy logs nothing for a refused name.
+
+### Changes to the guide from this run
+
+- Section 6 said 401 for `/.settings/rules.json` without a credential. It is 403.
+- `trusted_proxies` must list the proxy even when it keeps `Host`. Otherwise every client counts as the proxy's address for `connections_per_ip` and the per-address rate limits.
+- `databaseURL` has no port, so the front must use 443. The SDKs would accept a port, but Aruma would not generate it.
+- If `Host` is set by hand in Caddy, use `{hostport}`, not `{host}`.
+- Added the debug log for refusals, that restarts do not re-ask, and `stream_close_delay` for config reloads (that last point is from Caddy's documentation, not tested here).

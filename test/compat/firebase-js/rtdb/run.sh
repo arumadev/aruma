@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Runs Firebase's own Realtime Database test suites, unmodified, against a server: the official
-# emulator (the baseline) or a throwaway Aruma.
+# emulator (the baseline), a throwaway Aruma, or a server already running behind its own TLS
+# front (external).
 #
-#   test/compat/firebase-js/run.sh rtdb --target emulator|aruma --mode emulator|production
+#   test/compat/firebase-js/run.sh rtdb --target emulator|aruma|external --mode emulator|production
 #                                       [--suite all|compat|exp] [--update-baseline]
 #
 # The suites (firebase-js-sdk at $SDK_COMMIT, run from source in Node with mocha and ts-node, as
@@ -23,6 +24,14 @@
 #               the Node processes only, and tls-proxy.mjs terminates TLS in front of the target
 #               and keeps the Host header.
 #
+# The external target is production mode only, and nothing is started: RTDB_EXTERNAL_URL is
+# the databaseURL as a deployment gives it (https://<ns>.<rtdb.domain>[:port], the namespace its
+# first label), RTDB_EXTERNAL_CA the CA Node trusts for it (NODE_EXTRA_CA_CERTS; unset, the
+# system's), and RTDB_ADMIN_AUTH or RTDB_RULES_HOOK loads the rules. Its name must resolve, by
+# the real DNS, to this machine: the network guard lets that one name through only when every
+# address it resolves to is loopback (ARUMA_NETGUARD_LOOPBACK_NAMES). test/experiments/
+# rtdb-caddy.sh runs it behind Caddy.
+#
 # Before the tests, the target gets the suites' open rules (config/database.rules.json, as the
 # upstream emulator runner loads them) through PUT /.settings/rules.json with the target's admin
 # credential; then a WebSocket handshake checks that the target speaks RTDB at all. The results
@@ -40,7 +49,11 @@
 #   RTDB_EMULATOR_JAR        the emulator (default ~/.cache/firebase/emulators/
 #                            firebase-database-emulator-v4.11.2.jar, as firebase-tools stores it)
 #   RTDB_ADMIN_AUTH          Authorization header for the rules (default: "Bearer owner" for the
-#                            emulator; for Aruma a CLI token exchanged for an access token)
+#                            emulator; for Aruma a CLI token exchanged for an access token;
+#                            none for external)
+#   RTDB_EXTERNAL_URL        the external target's databaseURL
+#   RTDB_EXTERNAL_CA         the CA file Node trusts for the external target (optional)
+#   RTDB_EXTERNAL_VERSION    what the results record as the external target's version
 #   RTDB_RULES_HOOK          a command that loads the rules instead; it is called as
 #                            <hook> <rules-url> <rules-file>, with RTDB_ADMIN_AUTH and the Node
 #                            settings of the run in its environment. "none" skips the step.
@@ -61,7 +74,7 @@ here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/../../../.." && pwd)
 
 usage() {
-  echo "usage: test/compat/firebase-js/run.sh rtdb --target emulator|aruma --mode emulator|production [--suite all|compat|exp] [--update-baseline]" >&2
+  echo "usage: test/compat/firebase-js/run.sh rtdb --target emulator|aruma|external --mode emulator|production [--suite all|compat|exp] [--update-baseline]" >&2
   exit 2
 }
 [[ ${1:-} == rtdb ]] && shift
@@ -75,8 +88,13 @@ while [[ $# -gt 0 ]]; do
     *) usage ;;
   esac
 done
-[[ $target == emulator || $target == aruma ]] || usage
+[[ $target == emulator || $target == aruma || $target == external ]] || usage
 [[ $mode == emulator || $mode == production ]] || usage
+if [[ $target == external ]]; then
+  [[ $mode == production ]] || { echo "--target external runs in production mode only" >&2; exit 2; }
+  [[ ${RTDB_EXTERNAL_URL:-} == https://* ]] || { echo "--target external needs RTDB_EXTERNAL_URL=https://<ns>.<rtdb.domain>[:port]" >&2; exit 2; }
+  [[ -n ${RTDB_ADMIN_AUTH:-} || -n ${RTDB_RULES_HOOK:-} ]] || { echo "--target external needs RTDB_ADMIN_AUTH or RTDB_RULES_HOOK" >&2; exit 2; }
+fi
 [[ $suite == all || $suite == compat || $suite == exp ]] || usage
 [[ -z $update_baseline || ($target == emulator && $suite == all) ]] || {
   echo "--update-baseline records the emulator with every suite; it needs --target emulator and --suite all" >&2
@@ -225,6 +243,20 @@ start_aruma() {
   target_version="aruma $(git -C "$root" rev-parse --short HEAD)$(git -C "$root" diff --quiet HEAD || echo '+dirty')"
 }
 
+# start_external checks the external target's URL: https, no path or query, and the namespace
+# as the first label of a host of three labels or more (ADR-018).
+start_external() {
+  local hostport=${RTDB_EXTERNAL_URL#https://}
+  [[ $hostport != */* && $hostport != *\?* ]] || fail "RTDB_EXTERNAL_URL must have no path or query: $RTDB_EXTERNAL_URL"
+  external_host=${hostport%%:*}
+  [[ $external_host == *.*.* ]] || fail "the host of RTDB_EXTERNAL_URL needs three labels or more: $external_host"
+  ns=${external_host%%.*}
+  [[ -z ${RTDB_EXTERNAL_CA:-} || -f $RTDB_EXTERNAL_CA ]] || fail "no CA file at $RTDB_EXTERNAL_CA"
+  admin_auth=${RTDB_ADMIN_AUTH:-}
+  target_version="external ${RTDB_EXTERNAL_VERSION:-$RTDB_EXTERNAL_URL}"
+  log "external target $RTDB_EXTERNAL_URL (namespace $ns)"
+}
+
 # start_tls writes a CA and a certificate for $host that it signs, valid for a day, and puts the
 # TLS front on $tls_port before the target. The key files stay in $work, removed at exit.
 start_tls() {
@@ -264,6 +296,7 @@ mkdir -p "$results"
 case $target in
   emulator) start_emulator ;;
   aruma) start_aruma ;;
+  external) start_external ;;
 esac
 
 # Every Node process from here refuses connections off this machine (netguard.cjs). In
@@ -271,7 +304,14 @@ esac
 export ARUMA_NETGUARD_LOG=$results/netguard.log
 node_options="--no-strip-types --require $root/test/experiments/netguard.cjs"
 unset RTDB_EMULATOR_PORT RTDB_EMULATOR_NAMESPACE FIREBASE_DATABASE_EMULATOR_HOST NODE_EXTRA_CA_CERTS
-if [[ $mode == production ]]; then
+if [[ $target == external ]]; then
+  # The real DNS resolves the name, and the guard checks that it is this machine.
+  database_url=$RTDB_EXTERNAL_URL
+  export ARUMA_NETGUARD_LOOPBACK_NAMES=$external_host
+  [[ -z ${RTDB_EXTERNAL_CA:-} ]] || export NODE_EXTRA_CA_CERTS=$RTDB_EXTERNAL_CA
+  rules_url=$database_url/.settings/rules.json
+  printf '{"projectId": "%s", "databaseURL": "%s"}\n' "${ns%-default-rtdb}" "$database_url" >"$sdk/config/project.json"
+elif [[ $mode == production ]]; then
   start_tls
   database_url=https://$host
   node_options+=" --require $here/hosts.cjs"
