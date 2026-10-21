@@ -473,15 +473,18 @@ func writeLP(w http.ResponseWriter, body []byte) {
 func lpPassword() string { return sessionID()[:20] }
 
 // lpAdd registers a connection under a new id and its session id; false once shutdown has
-// begun.
+// begun. The id is random too (crypto/rand, as sessionID): the emulator numbers its
+// connections 1, 2, ..., which tells anyone how many there were, and the SDK only sends the
+// id back.
 func (a *API) lpAdd(c *lpConn) bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if a.shuttingDown {
 		return false
 	}
-	a.lpSeq++
-	c.id = strconv.FormatInt(a.lpSeq, 10)
+	for c.id == "" || a.lps[c.id] != nil {
+		c.id = sessionID()[:16]
+	}
 	a.lps[c.id] = c
 	a.lpSessions[c.sess.id] = c
 	a.conns[c] = struct{}{}

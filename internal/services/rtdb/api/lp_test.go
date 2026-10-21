@@ -208,7 +208,7 @@ func TestLPStart(t *testing.T) {
 	// The emulator's answer, with this server's id, password and hello (golden lp_handshake.json).
 	want := regexp.MustCompile(`^\nfunction pLPCommand\(c, a1, a2, a3, a4\) \{\nparent\.window\["pLPCommand17"\] && parent\.window\["pLPCommand17"\]\(c, a1, a2, a3, a4\);\n\}\n` +
 		`function pRTLPCB\(pN, data\) \{\nparent\.window\["pRTLPCB17"\] && parent\.window\["pRTLPCB17"\]\(pN, data\);\n\}\n` +
-		`         pLPCommand\('start','1','[A-Za-z0-9]{20}'\);\n` +
+		`         pLPCommand\('start','[A-Za-z0-9]{16}','[A-Za-z0-9]{20}'\);\n` +
 		`pRTLPCB\(0,\[\{"t":"c","d":\{"t":"h","d":\{"ts":\d+,"v":"5","h":"127\.0\.0\.1:\d+","s":"[A-Za-z0-9]{32}"\}\}\}\]\);\n$`)
 	if !want.MatchString(body) {
 		t.Errorf("start answer:\n%q", body)
@@ -217,17 +217,25 @@ func TestLPStart(t *testing.T) {
 	if len(c.msgs) != 1 {
 		t.Errorf("batch 0: %q", c.msgs)
 	}
+	first := lpStartLine.FindStringSubmatch(body)
 
 	// Without cb, the functions are called directly; a cb that is not a number is refused, as
-	// it would go into the script.
-	if _, body := c.get("start=t&ser=1&v=5&ns=" + lpNS); !strings.HasPrefix(body, "pLPCommand('start','2','") {
-		t.Errorf("without cb: %q", body)
+	// it would go into the script. Ids and passwords are random (crypto/rand), not counted
+	// as the emulator's ids are.
+	_, body = c.get("start=t&ser=1&v=5&ns=" + lpNS)
+	second := lpStartLine.FindStringSubmatch(body)
+	if !strings.HasPrefix(body, "pLPCommand('start','") || second == nil || second[1] == first[1] || second[2] == first[2] {
+		t.Errorf("without cb: %q, after %q", body, first)
 	}
 	if code, _ := c.get("start=t&ser=1&cb=1%22%5D(alert(1))&v=5&ns=" + lpNS); code != http.StatusBadRequest {
 		t.Errorf("script in cb: %d", code)
 	}
 	// An unknown session, or a wrong password, gets the emulator's reset to this host.
-	for _, q := range []string{"id=99&pw=x&ser=1", "id=1&pw=wrong&ser=1"} {
+	last := "x" // the password with its last character changed
+	if first[2][19] == 'x' {
+		last = "y"
+	}
+	for _, q := range []string{"id=99&pw=x&ser=1", "id=" + first[1] + "&pw=" + first[2][:19] + last + "&ser=1", "id=" + first[1] + "&pw=&ser=1"} {
 		if _, body := c.get(q + "&ns=" + lpNS); !regexp.MustCompile(`^pRTLPCB\(0,\[\{"t":"c","d":\{"t":"r","d":"127\.0\.0\.1:\d+"\}\}\]\);\npLPCommand\('close'\);\n$`).MatchString(body) {
 			t.Errorf("%s: %q", q, body)
 		}

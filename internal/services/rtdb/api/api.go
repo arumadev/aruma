@@ -65,7 +65,6 @@ type API struct {
 	// lps are the long-poll connections by id, lpSessions by session id (lp.go).
 	lps        map[string]*lpConn
 	lpSessions map[string]*lpConn
-	lpSeq      int64
 
 	// pushIDs makes the keys of REST POSTs.
 	pushIDs core.PushIDs

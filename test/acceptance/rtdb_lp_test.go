@@ -202,7 +202,7 @@ func TestRTDBLongPollHandshake(t *testing.T) {
 	host := strings.TrimPrefix(e.URL, "http://")
 	want := regexp.MustCompile(`^\nfunction pLPCommand\(c, a1, a2, a3, a4\) \{\nparent\.window\["pLPCommand4"\] && parent\.window\["pLPCommand4"\]\(c, a1, a2, a3, a4\);\n\}\n` +
 		`function pRTLPCB\(pN, data\) \{\nparent\.window\["pRTLPCB4"\] && parent\.window\["pRTLPCB4"\]\(pN, data\);\n\}\n` +
-		`         pLPCommand\('start','\d+','[A-Za-z0-9]+'\);\n` +
+		`         pLPCommand\('start','[A-Za-z0-9]{16}','[A-Za-z0-9]{20}'\);\n` +
 		`pRTLPCB\(0,\[\{"t":"c","d":\{"t":"h","d":\{"ts":\d+,"v":"5","h":"` + regexp.QuoteMeta(host) + `","s":"[A-Za-z0-9]{32}"\}\}\}\]\);\n$`)
 	if !want.Match(b) {
 		t.Errorf("start answer:\n%q", b)
