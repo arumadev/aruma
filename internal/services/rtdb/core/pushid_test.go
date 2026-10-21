@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 )
@@ -46,6 +47,41 @@ func TestPushIDs(t *testing.T) {
 	if next := g.Next(at); next[:8] != pushTime(at.UnixMilli()+1) {
 		t.Errorf("after the last id of a millisecond, %q does not move to the next", next)
 	}
+}
+
+// Within one millisecond the random part grows by a random step, not by one: the generator
+// is shared by every REST client, and an id one client got must not name the next client's.
+// The ids still sort in the order they were made, and keep the SDK's shape.
+func TestPushIDsStepIsRandom(t *testing.T) {
+	var g PushIDs
+	at := time.UnixMilli(1792554960783)
+	prev := g.Next(at)
+	steps := map[uint64]bool{}
+	for range 200 {
+		id := g.Next(at)
+		if len(id) != 20 || id[:8] != prev[:8] || id <= prev {
+			t.Fatalf("%q after %q: not a later id of the same millisecond", id, prev)
+		}
+		d := pushRand(id) - pushRand(prev)
+		if d < 1 || d > 1<<48 {
+			t.Errorf("step %d from %q to %q", d, prev, id)
+		}
+		steps[d] = true
+		prev = id
+	}
+	if len(steps) < 100 {
+		t.Errorf("only %d different steps in 200 ids: %v", len(steps), steps)
+	}
+}
+
+// pushRand reads the last 12 characters of a push id as a number: the low 64 bits are enough
+// to compare two ids of one millisecond whose steps are below 2^48.
+func pushRand(id string) uint64 {
+	var n uint64
+	for _, c := range id[8:] {
+		n = n*64 + uint64(strings.IndexRune(pushChars, c))
+	}
+	return n
 }
 
 func pushTime(ms int64) string {
