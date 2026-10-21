@@ -18,6 +18,10 @@
 // it serves https and wss for <ns>.<domain> with a certificate from a CA made for the run, writes
 // that CA to rtdb-ca.pem in -out, and prints its address as ARUMA_RTDB_TLS_ADDR. Clients then
 // resolve the database host to that address themselves.
+//
+// -switch <addr> serves an off switch for the server on addr, for the offline scenarios of the
+// Realtime Database end-to-end tests (switch.go): POST /down closes the listening socket and every
+// open connection, POST /up listens again. With -serve its URL is printed as ARUMA_SWITCH_URL.
 package main
 
 import (
@@ -92,6 +96,7 @@ func main() {
 	flag.BoolVar(&r.enabled, "rtdb", false, "serve Realtime Database")
 	flag.StringVar(&r.domain, "rtdb-domain", "", "rtdb.domain, e.g. rtdb.aruma.test (implies -rtdb)")
 	flag.StringVar(&r.tlsAddr, "rtdb-tls", "", "with -serve and -rtdb-domain: address of a TLS front for the database hosts")
+	switchAddr := flag.String("switch", "", "with -serve: address of the server's off switch (POST /down, POST /up)")
 	flag.Parse()
 	if r.domain != "" {
 		r.enabled = true
@@ -99,7 +104,10 @@ func main() {
 	if r.tlsAddr != "" && (r.domain == "" || !*serve) {
 		log.Fatal("-rtdb-tls needs -rtdb-domain and -serve")
 	}
-	if err := run(*out, *addr, *dbPrefix, *serve, *anonymous, r); err != nil {
+	if *switchAddr != "" && !*serve {
+		log.Fatal("-switch needs -serve")
+	}
+	if err := run(*out, *addr, *dbPrefix, *switchAddr, *serve, *anonymous, r); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -110,7 +118,7 @@ type rtdbOptions struct {
 	domain, tlsAddr string
 }
 
-func run(out, addr, dbPrefix string, serve, anonymous bool, rtdb rtdbOptions) error {
+func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtdbOptions) error {
 	ctx := context.Background()
 	// The name goes into CREATE DATABASE unquoted.
 	if !regexp.MustCompile(`^[a-z_][a-z0-9_]*$`).MatchString(dbPrefix) {
@@ -140,7 +148,14 @@ func run(out, addr, dbPrefix string, serve, anonymous bool, rtdb rtdbOptions) er
 	}
 	defer pool.Close()
 
-	ln, err := net.Listen("tcp", addr)
+	var ln net.Listener
+	var sw *switchListener
+	if switchAddr != "" {
+		sw, err = newSwitchListener(addr)
+		ln = sw
+	} else {
+		ln, err = net.Listen("tcp", addr)
+	}
 	if err != nil {
 		return err
 	}
@@ -282,6 +297,14 @@ func run(out, addr, dbPrefix string, serve, anonymous bool, rtdb rtdbOptions) er
 			}
 			defer front.Close()
 			fmt.Printf("export ARUMA_RTDB_TLS_ADDR=%s\n", front.Addr())
+		}
+		if sw != nil {
+			u, stop, err := serveSwitch(switchAddr, sw)
+			if err != nil {
+				return err
+			}
+			defer stop()
+			fmt.Printf("export ARUMA_SWITCH_URL=%s\n", u)
 		}
 		// Readers wait for this line: it comes last.
 		fmt.Printf("export ARUMA_CLI_TOKEN=%s\n", tok.Plaintext)
