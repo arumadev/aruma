@@ -1,7 +1,10 @@
 name: ci
 
+# Pushes to main and pull requests only: a push to any other branch runs nothing, which keeps
+# Actions minutes for what is about to land.
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
