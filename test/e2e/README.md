@@ -40,7 +40,7 @@ up again for the offline scenarios.
 | 5 | Transactions | concurrent `runTransaction` increments and the admin's ETag writes add up exactly |
 | 6 | Presence | `onDisconnect` runs on `goOffline`, when the tab closes (web) and when the process is killed (Android) |
 | 7 | Offline | with the server down a write is applied locally and lands when it is back; on the web also over long polling with WebSockets refused |
-| 8 | Revocation | disabling the user cancels its listens within seconds (measured: 0.5 to 3 s) |
+| 8 | Revocation | disabling the user cancels its listens within seconds (measured: 0.5 to 3.5 s) |
 | 9 | Network guard | as in the Auth suites, and nothing for `*.firebaseio.com` or `*.firebasedatabase.app` |
 
 Beyond the list: a persistent cache catching up after a reconnect (Android, iOS), a refreshed ID
