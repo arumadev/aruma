@@ -96,6 +96,20 @@ development URL of ADR-018.
   `compat-tests`. Realtime Database is enabled (`ARUMA_RTDB_ENABLED`) without
   `dev_open_rules`: as on Firebase, the suites get access through the rules the harness loads,
   which the rules engine evaluates on every operation, `.indexOn` included.
+- `external` (production mode only): a server that is already running behind a TLS front of its
+  own, such as Caddy. Nothing is started, and neither `hosts.cjs` nor `tls-proxy.mjs` is used:
+
+  ```sh
+  RTDB_EXTERNAL_URL=https://compat-tests-default-rtdb.rtdb.127.0.0.1.nip.io:8843 \
+  RTDB_EXTERNAL_CA=<the front's CA> RTDB_ADMIN_AUTH="Bearer <access token>" \
+    test/compat/firebase-js/run.sh rtdb --target external --mode production
+  ```
+
+  The namespace is the URL's first label. Node trusts `RTDB_EXTERNAL_CA` (or the system's roots
+  without it). The name is resolved by the real DNS, and the network guard lets it through only
+  when every address it resolves to is loopback (`ARUMA_NETGUARD_LOOPBACK_NAMES`, see
+  `test/experiments/netguard.cjs`). The run is still compared with the production baseline.
+  `test/experiments/rtdb-caddy.sh` runs it behind Caddy: 332 of 332 passed, no regression.
 
 ## Before the tests
 

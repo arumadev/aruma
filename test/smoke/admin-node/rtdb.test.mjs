@@ -5,7 +5,8 @@
 //
 // Run it through rtdb-run.mjs (npm run test:rtdb), which starts the server and preloads
 // test/experiments/netguard.cjs and test/compat/firebase-js/rtdb/hosts.cjs: every connection off
-// this machine fails, and *.aruma.test resolves to the TLS front inside this process only.
+// this machine fails, and *.aruma.test resolves to the TLS front inside this process only. Or,
+// with ARUMA_RTDB_DATABASE_URL, a server behind a front of its own, such as Caddy.
 //
 // onDisconnect is not covered: it is a client-session feature, and an Admin SDK process that
 // never goes away has no use for it; the client SDK suites exercise it.
@@ -29,7 +30,13 @@ assert.ok(dir, 'ARUMA_SMOKE_DIR is not set');
 const expected = JSON.parse(readFileSync(`${dir}/expected.json`, 'utf8'));
 const keyPath = `${dir}/service-account.json`;
 const databaseURL = expected.databaseURL;
-assert.equal(databaseURL, `https://${expected.projectId}-default-rtdb.rtdb.aruma.test`);
+if (process.env.ARUMA_RTDB_DATABASE_URL) {
+  // A server behind a front of its own (rtdb-run.mjs): any rtdb.domain, any port.
+  assert.equal(databaseURL, process.env.ARUMA_RTDB_DATABASE_URL);
+  assert.ok(databaseURL.startsWith(`https://${expected.projectId}-default-rtdb.`), databaseURL);
+} else {
+  assert.equal(databaseURL, `https://${expected.projectId}-default-rtdb.rtdb.aruma.test`);
+}
 
 const apps = [];
 function app(name, extra = {}) {
