@@ -107,7 +107,8 @@ func TestRTDBRulesIndexOn(t *testing.T) {
 		b, _ := io.ReadAll(resp.Body)
 		return resp.StatusCode, string(b)
 	}
-	if code, _ := do("GET", "", ""); code != http.StatusUnauthorized {
+	// Without a credential the emulator answers 403 (rest.golden.json, "rules endpoint").
+	if code, _ := do("GET", "", ""); code != http.StatusForbidden {
 		t.Errorf("GET without credential: %d", code)
 	}
 	if code, body := do("GET", sat, ""); code != 200 || !sameJSON(body, `{"rules":{".read":false,".write":false}}`) {
