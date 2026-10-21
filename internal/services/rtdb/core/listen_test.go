@@ -119,7 +119,13 @@ func TestListenDefault(t *testing.T) {
 	set(a, "/other", `3`, nil)
 	update(a, "/", `{"l/k":2,"other":4}`)
 	set(a, "/l", `null`, nil)
-	want(t, "pushes", rec.take(),
+	got := rec.take()
+	// One write above two listens pushes to each; in which order is not defined (the
+	// listeners' trie is a map), so the test fixes it.
+	if len(got) > 4 && got[3] == `d empty null` {
+		got[3], got[4] = got[4], got[3]
+	}
+	want(t, "pushes", got,
 		`d l/a 5`,
 		`d l/b/c 3`,
 		`m l {"a":null,"x":1,"y/z":2}`,
