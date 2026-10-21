@@ -1,8 +1,10 @@
 # Shared by the experiment scripts (source it, don't run it).
 #
-#   start_aruma <workdir>   builds test/smoke/genconfig, starts it with -serve and waits for its
-#                           exports; sets ARUMA_URL, ARUMA_CLI_TOKEN and ARUMA_GEN (the directory
-#                           with service-account.json, expected.json, ...).
+#   start_aruma <workdir> [genconfig flags...]
+#                           builds test/smoke/genconfig, starts it with -serve and the flags and
+#                           waits for its exports; sets ARUMA_URL, ARUMA_CLI_TOKEN and ARUMA_GEN
+#                           (the directory with service-account.json, expected.json, ...), and
+#                           with -rtdb-tls ARUMA_RTDB_TLS_ADDR.
 #   stop_aruma              sends SIGINT so genconfig drops its throwaway database, and waits.
 #
 # Needs the local Postgres (ARUMA_TEST_DATABASE_URL or the storetest default) and Go.
@@ -11,11 +13,12 @@ ARUMA_PID=""
 
 start_aruma() {
   local work=$1 root
+  shift
   root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
   ARUMA_GEN=$work/gen
   mkdir -p "$ARUMA_GEN"
   (cd "$root" && go build -o "$work/genconfig" ./test/smoke/genconfig)
-  "$work/genconfig" -out "$ARUMA_GEN" -serve >"$work/serve.out" 2>"$work/serve.err" &
+  "$work/genconfig" -out "$ARUMA_GEN" -serve "$@" >"$work/serve.out" 2>"$work/serve.err" &
   ARUMA_PID=$!
   local i
   for i in $(seq 1 120); do

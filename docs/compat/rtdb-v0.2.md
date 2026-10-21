@@ -106,6 +106,14 @@
 
 كلاهما في CI ضمن مهمة smoke.
 
+## firebase-tools
+
+- **التجربة:** `test/experiments/firebase-cli-rtdb.sh`، بـ firebase-tools 15.34.0 والقاعدة بعنوانها الإنتاجي خلف TLS: 39 فحصًا ناجحة، ولا اتصال خارج الجهاز. والتفاصيل في `docs/research/experiments.md` (R5).
+- **المجرَّب:** `database:set` و`get` (مع `--shallow` و`--pretty` و`--export` والاستعلامات) و`update` و`push` و`remove`، و`deploy --only database` مع `--dry-run` وبدونه.
+- **كيف تجد الأداة القاعدة:** من `resources.realtimeDatabaseInstance` في مشروع واجهة الإدارة، ثم `databaseUrl` من واجهة إدارة القاعدة (`GET /v1beta/projects/{p}/locations/-/instances/{id}`). يقدّمهما Aruma منذ R5 حين تعمل القاعدة.
+- **الإعداد:** `FIREBASE_API_URL` و`FIREBASE_TOKEN_URL` و`FIREBASE_RTDB_MANAGEMENT_URL` على عنوان Aruma، و`FIREBASE_TOKEN` رمز CLI. و`FIREBASE_SKIP_INFORMATIONAL_IAM=1` يمنع محاولة الأداة الاتصال بـ `cloudresourcemanager.googleapis.com`، وهي محاولة لا يتوقف عليها شيء.
+- **الشكل `?ns=` لا يصلح للأداة:** `database:get` و`database:remove` يرسلان مسار العنوان وحده، فيضيع `?ns=`. والنطاق الفرعي يصلح.
+
 ## ما لم يأت بعد
 
 - البث `text/event-stream` (ADR-020 §3).

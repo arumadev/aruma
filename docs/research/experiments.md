@@ -204,3 +204,74 @@ POST /oauth2/v3/token   Content-Type: application/x-www-form-urlencoded   (same 
 - **Impact today:** none visible, because on a 400 the CLI falls back to the raw token. The refresh grant itself never succeeds for the real CLI.
 - **Coverage:** `TestRefreshTokenGrantForFirebaseCLI` only posts urlencoded bodies.
 - **Reproduction:** `firebase-cli.sh` prints both cases.
+
+## R5: firebase-tools against the Realtime Database
+
+Run on 2026-10-21 with firebase-tools 15.34.0, by `test/experiments/firebase-cli-rtdb.sh` (39 checks). Aruma ran in production form: `genconfig -rtdb-domain rtdb.aruma.test -rtdb-tls ...`, so the database is `https://smoke-app-default-rtdb.rtdb.aruma.test` behind a TLS front, as behind Caddy. Inside the CLI's Node process, `hosts.cjs` resolves `*.aruma.test` to that front. The netguard and `sandbox-exec` setup is the same as T23. A second https front, [api-front.mjs](../../test/experiments/firebase-cli-rtdb/api-front.mjs), serves the management APIs and logs each request. The CLI ran with `DEBUG=true`, so its `firebase-debug.log` shows every request it sent.
+
+**Conclusion: every command works, and all 39 checks pass with no connection leaving loopback.** The first run found two management answers missing, without which the CLI cannot find the database (below); Aruma now gives both, and the run was repeated against it.
+
+### How firebase-tools finds the database (source, 15.34.0)
+
+1. Without `--instance`, `requireDatabaseInstance` reads `resources.realtimeDatabaseInstance` from `GET /v1beta1/projects/{p}` (`FIREBASE_API_URL`). `deploy --only database` always does this, because `deploy` has no `--instance` flag.
+2. Every command, with or without `--instance`, then calls `populateInstanceDetails`. That is `GET {FIREBASE_RTDB_MANAGEMENT_URL}/v1beta/projects/{p}/locations/-/instances/{instance}`, and its `databaseUrl` becomes the origin. Setting `FIREBASE_REALTIME_URL` overrides only the origin and does not skip this call. Only `FIREBASE_DATABASE_EMULATOR_HOST` makes a failure harmless, and it switches to emulator mode with `Bearer owner` over http.
+3. `getDatabaseUrl` keeps the host when the host already contains the instance name. Otherwise it adds a subdomain (for `firebaseio`/`firebasedatabase` hosts) or `?ns=`. `database:get` and `database:remove` send only the URL's path, so a `?ns=` would be lost. **The subdomain form is the one that works**, and it is the form Aruma's `databaseUrl` already has.
+
+### Configuration used
+
+```sh
+export FIREBASE_API_URL=https://<aruma>
+export FIREBASE_TOKEN_URL=https://<aruma>
+export FIREBASE_RTDB_MANAGEMENT_URL=https://<aruma>   # the instance lookup
+export FIREBASE_TOKEN=aruma_pat_...
+export FIREBASE_SKIP_INFORMATIONAL_IAM=1             # else testIamPermissions goes to cloudresourcemanager.googleapis.com
+export CI=true NO_UPDATE_NOTIFIER=1
+```
+
+No `FIREBASE_REALTIME_URL` is needed. Without `FIREBASE_SKIP_INFORMATIONAL_IAM`, each command tries `cloudresourcemanager.googleapis.com:443` (blocked in the run) and still succeeds, because the CLI ignores the result.
+
+### Results
+
+| Command | Request the CLI sent | Result |
+|---|---|---|
+| `database:set /smoke smoke.json --force` (default instance) | `PUT https://smoke-app-default-rtdb.rtdb.aruma.test/smoke.json` | stored, `.priority` included |
+| `database:set /smoke/flag --data true --instance smoke-app-default-rtdb --force` | `PUT …/smoke/flag.json` | stored |
+| `database:get /smoke` | `GET …/smoke.json` | the node, without priorities |
+| `database:get --shallow` | `?shallow=true` | every child `true`, leaves included (as the emulator does) |
+| `database:get --pretty` / `--export` | `?print=pretty` / `?format=export` | indented / `.priority` included |
+| `database:get /smoke/scores --order-by score --limit-to-first 2`, no index | `?limitToFirst=2&orderBy=%22score%22` | exit 1: `HTTP Error: 400, Index not defined, add ".indexOn": "score", for path "/smoke/scores", to the rules` |
+| `--order-by-key --limit-to-last 1`; after the deploy, `--order-by score --limit-to-first 2` and `--equal-to 30` | as given | `carol`; `bob,carol`; `alice` |
+| `deploy --only database --dry-run`, rules with a syntax error | `PUT …/.settings/rules.json?dryRun=true` → 400 | exit 1: `Syntax error in database rules: 1:29: Unexpected end of expression`; rules unchanged |
+| `deploy --only database --dry-run` | one `PUT ?dryRun=true` only | success; `GET /.settings/rules.json` unchanged |
+| `deploy --only database` | `PUT ?dryRun=true`, then `PUT` | success; `GET /.settings/rules.json` returns the file byte for byte, comment included; `?format=strict` has the index |
+| `database:update /smoke --data '{"n":2,"nested/y":"z"}' --force` | `PATCH …/smoke.json` | merged |
+| `database:push /smoke/list --data …` (twice) | `POST …/smoke/list.json` | push ids, stored in push order |
+| `database:remove /smoke --force` | `PATCH …/smoke.json?print=silent&writeSizeLimit=tiny&disableTriggers=false` (body `null`) | success; `/smoke` is null; rules kept |
+
+The guard log recorded only `ALLOW 127.0.0.1:<rtdb front>` (18) and `ALLOW 127.0.0.1:<api front>` (36).
+
+`database:remove` lists children (`GET ?shallow=true&limitToFirst=N`) only when the first PATCH fails with 400. Aruma accepts every `writeSizeLimit`, so the CLI never takes that path. The script sends that listing request directly, and it returns the first keys in order.
+
+### The two management answers (fixed in R5)
+
+Before Aruma gave them, the CLI stopped with:
+
+```text
+database:set /smoke … --project smoke-app            (exit 1)
+  It looks like you haven't created a Realtime Database instance in this project before.
+  Please run firebase init database to create your default Realtime Database instance.
+database:set /smoke/flag … --instance smoke-app-default-rtdb   (exit 2)
+  GET /v1beta/projects/smoke-app/locations/-/instances/smoke-app-default-rtdb → 503 text/html
+  Failed to get instance details for instance: smoke-app-default-rtdb.
+deploy --only database [--dry-run]                   (exit 1)  the first message
+```
+
+1. **`GET /v1beta1/projects/{p}`** now returns `resources.realtimeDatabaseInstance: "<project_id>-default-rtdb"` when RTDB is enabled (`internal/admin/mgmt/resources.go`).
+2. **`GET /v1beta/projects/{p}/locations/{loc}/instances/{id}`**, the Realtime Database Management API, is now served (`internal/admin/mgmt/rtdb.go`, with the list beside it). Before, `/v1beta/` fell through to the dashboard handler. The CLI needs a JSON body with:
+   - `name`: `projects/{number}/locations/{loc}/instances/{id}`, matching `projects/([^/]+?)/locations/([^/]+?)/instances/([^/]*)`
+   - `project`
+   - `databaseUrl`: the project's `DatabaseURL`
+   - `type`: `DEFAULT_DATABASE`
+   - `state`: `ACTIVE`
+
+   Other ids and locations answer 404 as a `google.rpc.Status`. Authentication is the Management API's (CLI token, service-account token). `TestRTDBManagementInstances` covers both answers.
