@@ -34,7 +34,9 @@ type Session struct {
 	// earlier sign-in does nothing.
 	signIn uint64
 	// expiry ends a user's sign-in when its ID token expires.
-	expiry     *time.Timer
+	expiry *time.Timer
+	// pending counts the revocations under way (revoke), which Close waits for.
+	pending    sync.WaitGroup
 	disconnect onDisconnect
 	closed     bool
 	// admitted is set once the session counts against its project's connection limit: on
@@ -153,6 +155,9 @@ func (s *Session) revoke(gen uint64, status, reason string) {
 		s.mu.Unlock()
 		return
 	}
+	// Close waits for this to have queued its commands, while it still holds the database.
+	s.pending.Add(1)
+	defer s.pending.Done()
 	s.mu.Unlock()
 	if s.sink != nil {
 		s.sink.Push(Push{Action: PushAuthRevoked, Status: status, Reason: reason})
@@ -358,6 +363,7 @@ func (s *Session) Close() {
 	release := s.releaseSlot
 	s.mu.Unlock()
 	s.svc.revocations.leave(s)
+	s.pending.Wait() // a revocation or an expiry under way, which queues on the writer
 
 	// The listens go first, so the session's own onDisconnect writes are not pushed to it.
 	// This also is a barrier: the writes and registrations this session queued before
