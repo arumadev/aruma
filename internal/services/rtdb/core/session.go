@@ -159,12 +159,15 @@ func (s *Session) revoke(gen uint64, status, reason string) {
 	s.pending.Add(1)
 	defer s.pending.Done()
 	s.mu.Unlock()
+	// The sign-in ends before the client hears of it: a request it sends on reading the ac
+	// must already run unauthenticated.
+	if ok, _ := s.setAuth(Auth{}, &gen); !ok {
+		return
+	}
 	if s.sink != nil {
 		s.sink.Push(Push{Action: PushAuthRevoked, Status: status, Reason: reason})
 	}
-	if ok, _ := s.setAuth(Auth{}, &gen); ok {
-		s.RevokeListens(func() {})
-	}
+	s.RevokeListens(func() {})
 }
 
 // Authenticated reports whether the session has signed in, or works under the open rules of
