@@ -3,7 +3,6 @@ package rules
 import (
 	"errors"
 	"math"
-	"regexp"
 	"strconv"
 )
 
@@ -19,7 +18,7 @@ func (e *evalError) Error() string { return e.msg }
 func fail(msg string) error { return &evalError{msg: msg} }
 
 // Values at run time are nil, bool, float64, string, map[string]any and []any (from auth),
-// branch, snap, *Query and *regexp.Regexp.
+// branch, snap, *Query and *ruleRegex.
 
 // branch is what val() returns for a node with children: "a special sentinel value"
 // (reference) that equals nothing, itself included, and supports no operator.
@@ -358,11 +357,11 @@ func stringArgs(args []any) ([]string, error) {
 
 func stringMethod(m method, s string, args []any) (any, error) {
 	if m == mMatches {
-		re, ok := args[0].(*regexp.Regexp)
+		re, ok := args[0].(*ruleRegex)
 		if !ok {
 			return nil, fail("matches() needs a regular expression")
 		}
-		return re.MatchString(s), nil
+		return re.match(s)
 	}
 	a, err := stringArgs(args)
 	if err != nil {

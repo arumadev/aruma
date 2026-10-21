@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"testing"
@@ -235,6 +236,44 @@ func TestRegexTranslation(t *testing.T) {
 		if _, err := translateRegex(bad); err == nil {
 			t.Errorf("%s: accepted", bad)
 		}
+	}
+}
+
+// matches() is bounded by maxMatchCost, the string's length times the pattern's program size:
+// past it the rule fails, which denies, instead of holding the writer. /[a-z]{1000}$/ on a
+// megabyte of "a" keeps a thousand threads alive at every byte: unbounded, the write was
+// allowed after 35 seconds on an Apple M1; bounded, it is denied at once. (Right at
+// the bound, 66908 bytes of "a", the match takes 0.9 s on the M1, which the race detector
+// makes 30 s, so the bound itself is checked on a string the pattern rejects early.)
+func TestMatchesIsBounded(t *testing.T) {
+	const pattern = `/[a-z]{1000}$/`
+	rs, err := Parse([]byte(`{"rules":{"s":{".write":"newData.isString() && newData.val().matches(` + pattern + `)"}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	src, _ := NewMemorySource(nil)
+	write := func(s string) (bool, time.Duration) {
+		t.Helper()
+		start := time.Now()
+		ok, err := rs.CanWrite(context.Background(), Env{Data: src}, Change{Path: []string{"s"}, Value: s})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return ok, time.Since(start)
+	}
+	if ok, took := write(strings.Repeat("a", 1<<20)); ok || took > time.Second {
+		t.Errorf("1 MB, past the bound: %v in %v, want denied at once", ok, took)
+	}
+	if ok, _ := write(strings.Repeat("a", 2000)); !ok {
+		t.Error("2000 bytes, within the bound: denied")
+	}
+	re, _ := compileRuleRegex(pattern)
+	fits := maxMatchCost / re.size
+	if ok, err := re.match(strings.Repeat("0", fits)); ok || err != nil {
+		t.Errorf("%d bytes, cost %d: %v %v, want a match that fails", fits, fits*re.size, ok, err)
+	}
+	if _, err := re.match(strings.Repeat("0", fits+1)); err == nil {
+		t.Errorf("%d bytes, past the bound: no error", fits+1)
 	}
 }
 

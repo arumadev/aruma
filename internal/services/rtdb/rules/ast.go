@@ -1,7 +1,5 @@
 package rules
 
-import "regexp"
-
 // expr is a node of a parsed rule expression. pos is the byte offset where the node starts,
 // which load-time errors report.
 type expr interface{ at() int }
@@ -16,7 +14,7 @@ type (
 	regexLit struct {
 		pos int
 		src string
-		re  *regexp.Regexp
+		re  *ruleRegex
 	}
 	// arrayLit is [a, b], valid only as the argument of hasChildren().
 	arrayLit struct {

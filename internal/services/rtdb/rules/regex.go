@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"regexp/syntax"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -64,6 +65,55 @@ func translateRegex(lit string) (*regexp.Regexp, error) {
 		return nil, fmt.Errorf("Illegal regular expression, %v", err)
 	}
 	return re, nil
+}
+
+// maxMatchCost bounds the work of one matches(): the string's length in bytes times the size
+// of the pattern's compiled program, in instructions. Go's regexp runs in time linear in that
+// product, whatever the pattern, so a bound on it bounds the time the writer, which every
+// client of the database waits on, spends in one call. Unbounded, a 10 MB string (the
+// default rtdb.limits.string_bytes) against a large pattern held the writer for 59 seconds,
+// and a megabyte against /[a-z]{1000}$/ (1003 instructions) for 35 on an Apple M1.
+//
+// 2^26 lets a 10 MB string through patterns of up to 6 instructions, such as /^[a-z]+$/ or
+// /^\d+$/; 5 MB through /^[^@]+@[^@]+\.[a-z]{2,}$/ (13); 64 KB through /[a-z]{1000}$/. At the
+// bound the worst of these took 0.9 s on the M1 (TestMatchesIsBounded). Past it, matches()
+// fails, which denies, as any rule failing at run time does.
+const maxMatchCost = 1 << 26
+
+// ruleRegex is a regular expression of a rule, with the size of its program.
+type ruleRegex struct {
+	re   *regexp.Regexp
+	size int
+}
+
+// compileRuleRegex translates and compiles a regular expression literal (translateRegex).
+func compileRuleRegex(lit string) (*ruleRegex, error) {
+	re, err := translateRegex(lit)
+	if err != nil {
+		return nil, err
+	}
+	return &ruleRegex{re: re, size: programSize(re)}, nil
+}
+
+// programSize is the number of instructions of re's program, compiled as regexp compiles it.
+func programSize(re *regexp.Regexp) int {
+	s, err := syntax.Parse(re.String(), syntax.Perl)
+	if err != nil {
+		return maxMatchCost // cannot happen: re compiled from the same text
+	}
+	prog, err := syntax.Compile(s.Simplify())
+	if err != nil {
+		return maxMatchCost
+	}
+	return len(prog.Inst)
+}
+
+// match runs the expression on s, or fails when that would cost more than maxMatchCost.
+func (r *ruleRegex) match(s string) (bool, error) {
+	if int64(len(s))*int64(r.size) > maxMatchCost {
+		return false, fail("matches() on a string this long with this pattern exceeds the cost limit")
+	}
+	return r.re.MatchString(s), nil
 }
 
 // escaped reports whether the byte at i is preceded by an odd number of backslashes.

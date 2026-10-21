@@ -85,7 +85,7 @@ func (c *checker) typeOf(e expr) (typ, *exprError) {
 			return tStr, nil
 		}
 	case *regexLit:
-		re, err := translateRegex(e.src)
+		re, err := compileRuleRegex(e.src)
 		if err != nil {
 			return 0, errAt(e.pos, err.Error())
 		}
