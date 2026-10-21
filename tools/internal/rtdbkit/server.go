@@ -22,6 +22,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -104,6 +105,9 @@ type Options struct {
 	Env map[string]string
 	// Log receives the server's output; nil discards it.
 	Log io.Writer
+	// PoolMax, when positive, sizes the server's database pool with pool_max_conns in its
+	// ARUMA_DATABASE_URL, the operator's knob; pgx's default is max(4, NumCPU).
+	PoolMax int
 }
 
 // Server is an Aruma process on its own database. Start, Kill and Term may be repeated; the
@@ -115,6 +119,8 @@ type Server struct {
 	adminConn *pgx.Conn
 	env       []string
 	URL       string // http://127.0.0.1:<port>
+
+	consoleCookie, consoleCSRF string
 
 	mu   sync.Mutex
 	cmd  *exec.Cmd
@@ -188,6 +194,15 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 	cmd := exec.Command(s.opts.Bin, "serve")
 	cmd.Env = s.env
+	if s.opts.PoolMax > 0 {
+		// Only serve gets it: migrate goes through database/sql, which would send it to
+		// Postgres as a runtime parameter.
+		u, _ := url.Parse(s.dbURL)
+		q := u.Query()
+		q.Set("pool_max_conns", strconv.Itoa(s.opts.PoolMax))
+		u.RawQuery = q.Encode()
+		cmd.Env = append(slices.Clone(s.env), "ARUMA_DATABASE_URL="+u.String())
+	}
 	w := s.opts.Log
 	if w == nil {
 		w = io.Discard
@@ -346,27 +361,27 @@ func (s *Server) Metrics(ctx context.Context) (map[string]float64, error) {
 	return out, sc.Err()
 }
 
-// Project creates a console account with the operator command, signs it in, and creates a
-// project through the console API, as the dashboard does. It returns the namespace of the
-// project's default database. The server must be running.
-func (s *Server) Project(ctx context.Context, id string) (string, error) {
+// signIn creates a console account with the operator command, once, and signs it in.
+func (s *Server) signIn(ctx context.Context) error {
+	if s.consoleCSRF != "" {
+		return nil
+	}
 	email := "owner-" + RandomHex(4) + "@rtdbkit.test"
 	password := RandomHex(16)
 	if err := s.run(ctx, strings.NewReader(password+"\n"), "accounts", "create", "--email", email); err != nil {
-		return "", err
+		return err
 	}
-	hc := &http.Client{Timeout: 30 * time.Second}
 	body, _ := json.Marshal(map[string]string{"email": email, "password": password})
 	req, _ := http.NewRequestWithContext(ctx, "POST", s.URL+"/console/v1/auth:login", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := hc.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", err
+		return err
 	}
 	b, _ := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("login: %s: %s", resp.Status, b)
+		return fmt.Errorf("login: %s: %s", resp.Status, b)
 	}
 	var login struct {
 		CSRF string `json:"csrfToken"`
@@ -376,21 +391,45 @@ func (s *Server) Project(ctx context.Context, id string) (string, error) {
 	for _, ck := range resp.Cookies() {
 		cookies = append(cookies, ck.Name+"="+ck.Value)
 	}
-	body, _ = json.Marshal(map[string]string{"projectId": id, "displayName": id})
-	req, _ = http.NewRequestWithContext(ctx, "POST", s.URL+"/console/v1/projects", bytes.NewReader(body))
+	s.consoleCookie, s.consoleCSRF = strings.Join(cookies, "; "), login.CSRF
+	return nil
+}
+
+// Console calls the console API as the dashboard does, signed in as the server's owner
+// account, which is created on first use.
+func (s *Server) Console(ctx context.Context, method, path string, body any) error {
+	if err := s.signIn(ctx); err != nil {
+		return err
+	}
+	b, _ := json.Marshal(body)
+	req, _ := http.NewRequestWithContext(ctx, method, s.URL+path, bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Cookie", strings.Join(cookies, "; "))
-	req.Header.Set("X-Aruma-CSRF", login.CSRF)
-	resp, err = hc.Do(req)
+	req.Header.Set("Cookie", s.consoleCookie)
+	req.Header.Set("X-Aruma-CSRF", s.consoleCSRF)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", err
+		return err
 	}
 	b, _ = io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if resp.StatusCode >= 300 {
-		return "", fmt.Errorf("create project: %s: %s", resp.Status, b)
+		return fmt.Errorf("%s %s: %s: %s", method, path, resp.Status, b)
+	}
+	return nil
+}
+
+// Project creates a project through the console API, as the dashboard does, and returns the
+// namespace of its default database. The server must be running.
+func (s *Server) Project(ctx context.Context, id string) (string, error) {
+	if err := s.Console(ctx, "POST", "/console/v1/projects", map[string]string{"projectId": id, "displayName": id}); err != nil {
+		return "", err
 	}
 	return id + "-default-rtdb", nil
+}
+
+// SetRules saves the rules of a project's database through the console API.
+func (s *Server) SetRules(ctx context.Context, project, doc string) error {
+	return s.Console(ctx, "PUT", "/console/v1/projects/"+project+"/database/rules", map[string]string{"rules": doc})
 }
 
 // FreePort reports whether a loopback port is free to listen on.
