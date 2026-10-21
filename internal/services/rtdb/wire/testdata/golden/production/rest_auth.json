@@ -1,0 +1,268 @@
+{
+  "scenario": "rest_auth",
+  "description": "REST credentials on a path anyone may read (public) and on one only the user may read (open): none, a valid ID token, \"garbage\", an unsigned token, as ?auth=, ?access_token= and Authorization: Bearer.",
+  "source": "production",
+  "project": "<redacted>",
+  "host": "<project>-default-rtdb.europe-west1.firebasedatabase.app",
+  "captured": "2026-10-21",
+  "script": "capture_production.mjs",
+  "run": "r7-20261021-adfc21",
+  "connections": {},
+  "frames": [
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-adfc21/public.json",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "4",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "null",
+      "ms": 262
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-adfc21/public.json?auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "4",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "null",
+      "ms": 536
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-adfc21/public.json?auth=garbage",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "4",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "null",
+      "ms": 783
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-adfc21/public.json?auth=<alg-none-token-for-the-same-uid>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "4",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "null",
+      "ms": 1021
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-adfc21/public.json?access_token=garbage",
+      "status": 401,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "40",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Unauthorized request.\"\n}\n",
+      "ms": 1273
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-adfc21/public.json",
+      "reqHeaders": {
+        "Authorization": "Bearer garbage"
+      },
+      "status": 401,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "40",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Unauthorized request.\"\n}\n",
+      "ms": 1552
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-adfc21/public.json",
+      "reqHeaders": {
+        "Authorization": "Bearer <id-token>"
+      },
+      "status": 401,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "40",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Unauthorized request.\"\n}\n",
+      "ms": 1795
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-adfc21/open.json",
+      "status": 401,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "36",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Permission denied\"\n}\n",
+      "ms": 2045
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-adfc21/open.json?auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "4",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "null",
+      "ms": 2285
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-adfc21/open.json?auth=garbage",
+      "status": 401,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "36",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Permission denied\"\n}\n",
+      "ms": 2523
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-adfc21/open.json?auth=<alg-none-token-for-the-same-uid>",
+      "status": 401,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "36",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Permission denied\"\n}\n",
+      "ms": 2784
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-adfc21/open.json?access_token=garbage",
+      "status": 401,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "40",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Unauthorized request.\"\n}\n",
+      "ms": 3081
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-adfc21/open.json",
+      "reqHeaders": {
+        "Authorization": "Bearer garbage"
+      },
+      "status": 401,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "40",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Unauthorized request.\"\n}\n",
+      "ms": 3390
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-adfc21/open.json",
+      "reqHeaders": {
+        "Authorization": "Bearer <id-token>"
+      },
+      "status": 401,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "40",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Unauthorized request.\"\n}\n",
+      "ms": 3657
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-adfc21/public.json?auth=garbage",
+      "body": "1",
+      "status": 401,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "36",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Permission denied\"\n}\n",
+      "ms": 3940
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-adfc21/open/ra.json?auth=garbage",
+      "body": "1",
+      "status": 401,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "36",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Permission denied\"\n}\n",
+      "ms": 4189
+    }
+  ],
+  "notes": []
+}

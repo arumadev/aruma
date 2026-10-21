@@ -25,8 +25,10 @@
 // The rules every target runs under (production: added beside the project's own rules):
 //   "aruma-ref": {"$run": {"open": {".read": "auth != null && auth.uid === '<uid>'",
 //                                   ".write": "auth != null && auth.uid === '<uid>'",
-//                                   "v": {".validate": "newData.isNumber()"}}}}
-// so the signed-in user reads and writes /aruma-ref/<run>/open and nothing else.
+//                                   "v": {".validate": "newData.isNumber()"}},
+//                          "public": {".read": true}}}
+// so the signed-in user reads and writes /aruma-ref/<run>/open and nothing else, and anyone
+// reads /aruma-ref/<run>/public (which stays empty).
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -40,6 +42,7 @@ const SETTLE = PROD ? 500 : 250;
 const ROOT = `/aruma-ref/${cfg.run}`;
 const OPEN = `${ROOT}/open`;
 const CLOSED = `${ROOT}/closed`;
+const PUBLIC = `${ROOT}/public`;
 const WSURL = `${cfg.tls ? 'wss' : 'ws'}://${cfg.host}/.ws?v=5&ns=${cfg.ns}`;
 const HTTP = `${cfg.tls ? 'https' : 'http'}://${cfg.host}`;
 
@@ -92,6 +95,7 @@ export const RULES = (uid) => ({
         '.write': `auth != null && auth.uid === '${uid}'`,
         v: { '.validate': 'newData.isNumber()' },
       },
+      public: { '.read': true },
     },
   },
 });
@@ -337,11 +341,9 @@ scenarios.auth_expired = async () => {
   await B.req('auth', { cred: EXPIRED });
   await B.req('g', { p: OPEN, q: {} });
   await sleep(1500);
-  const r = await rest(rec, 'GET', `${OPEN}.json`, { auth: false, record: false });
-  void r;
-  const params = cfg.restNs ? `&ns=${cfg.ns}` : '';
-  const x = await fetch(`${HTTP}${OPEN}.json?auth=${EXPIRED}${params}`);
-  rec.push({ conn: 'REST', dir: 'rest', method: 'GET', path: redact(`${OPEN}.json?auth=${EXPIRED}${params}`), status: x.status, response: redact(await x.text()) });
+  await rest(rec, 'GET', `${OPEN}.json?auth=${EXPIRED}`, { auth: false });
+  await rest(rec, 'GET', `${PUBLIC}.json?auth=${EXPIRED}`, { auth: false });
+  await rest(rec, 'GET', `${PUBLIC}.json`, { auth: false, headers: { Authorization: `Bearer ${EXPIRED}` } });
   await rec.finish();
 };
 
@@ -375,13 +377,17 @@ scenarios.denied = async () => {
 scenarios.cancel = async () => {
   const rec = new Recorder(
     'cancel',
-    'Three listens the rules grant only to the signed-in user (untagged, tagged query, untagged child), then unauth: the c pushes and the unauth reply, in arrival order. Then auth again, listen again, and auth with "garbage" while listening.',
+    'Listens the rules grant only to the signed-in user (untagged, a limit query, an untagged child, an index-only query, startAt+limit, endBefore by key, startAfter+endAt with names), then unauth: the c pushes (and the query object each carries) and the unauth reply, in arrival order. Then auth again, listen again, and auth with "garbage" while listening.',
   );
   const A = await signedIn(rec, 'A');
   await A.req('p', { p: `${OPEN}/c`, d: { a: { n: 1 }, b: { n: 2 } } });
   await A.req('q', lb(`${OPEN}/c`));
   await A.req('q', lb(`${OPEN}/c`, { l: 1, vf: 'l' }, 1));
   await A.req('q', lb(`${OPEN}/c/a`));
+  await A.req('q', lb(`${OPEN}/c`, { i: 'n' }, 3));
+  await A.req('q', lb(`${OPEN}/c`, { sp: 1, sin: true, l: 5, vf: 'l', i: 'n' }, 4));
+  await A.req('q', lb(`${OPEN}/c`, { ep: 'b', ein: false, i: '.key' }, 5));
+  await A.req('q', lb(`${OPEN}/c`, { sp: 'a', sn: 'a', sin: false, ep: 2, ein: true, i: 'n' }, 6));
   await A.req('unauth', {}, { settle: 2000 });
   await A.req('auth', { cred: USER.idToken });
   await A.req('q', lb(`${OPEN}/c`));
@@ -449,6 +455,26 @@ scenarios.oversize = async () => {
   await A.req('p', { p: `${OPEN}/nest`, d: null });
   await A.req('p', { p: `${OPEN}/keys`, d: null });
   rec.note('The 16 MB WebSocket write limit was not exercised against production (too heavy for a reference run).');
+  await rec.finish();
+};
+
+scenarios.rest_auth = async () => {
+  const rec = new Recorder(
+    'rest_auth',
+    'REST credentials on a path anyone may read (public) and on one only the user may read (open): none, a valid ID token, "garbage", an unsigned token, as ?auth=, ?access_token= and Authorization: Bearer.',
+  );
+  const forged = unsignedToken(USER.uid);
+  for (const p of [PUBLIC, OPEN]) {
+    await rest(rec, 'GET', `${p}.json`, { auth: false });
+    await rest(rec, 'GET', `${p}.json`);
+    await rest(rec, 'GET', `${p}.json?auth=garbage`, { auth: false });
+    await rest(rec, 'GET', `${p}.json?auth=${forged}`, { auth: false });
+    await rest(rec, 'GET', `${p}.json?access_token=garbage`, { auth: false });
+    await rest(rec, 'GET', `${p}.json`, { auth: false, headers: { Authorization: 'Bearer garbage' } });
+    await rest(rec, 'GET', `${p}.json`, { auth: false, headers: { Authorization: `Bearer ${USER.idToken}` } });
+  }
+  await rest(rec, 'PUT', `${PUBLIC}.json?auth=garbage`, { auth: false, body: 1 });
+  await rest(rec, 'PUT', `${OPEN}/ra.json?auth=garbage`, { auth: false, body: 1 });
   await rec.finish();
 };
 
@@ -609,7 +635,7 @@ if (cfg.rulesAuth) {
   });
   if (!r.ok) throw new Error(`rules: HTTP ${r.status} ${await r.text()}`);
 }
-const order = ['handshake', 'auth', 'auth_expired', 'denied', 'cancel', 'no_index', 'oversize', 'rest', 'numbers', 'lp', 'cleanup'];
+const order = ['handshake', 'auth', 'auth_expired', 'denied', 'cancel', 'no_index', 'oversize', 'rest_auth', 'rest', 'numbers', 'lp', 'cleanup'];
 const run = ONLY.length ? ONLY : order.filter((s) => s !== 'handshake');
 for (const s of run) {
   if (!scenarios[s]) throw new Error(`unknown scenario ${s}`);
