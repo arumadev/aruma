@@ -148,11 +148,12 @@ func TestRTDBUnauthRevokesListens(t *testing.T) {
 	c.call("q", map[string]any{"p": "/x", "h": ""}).mustOK(t)
 	c.call("q", map[string]any{"p": "/x", "h": "", "q": map[string]any{"l": 1, "vf": "l"}, "t": 1}).mustOK(t)
 	r := c.request("unauth", map[string]any{})
-	// A query comes back as a list of its query object, which JS turns into its query id
-	// (golden revoke_unauth.json).
+	// A query comes back as a list of its query object with sin and ein filled in, as
+	// production and the emulator send it (goldens revoke_unauth.json and
+	// production/cancel.json).
 	want := map[string]bool{
-		`{"t":"d","d":{"a":"c","b":{"p":"x","q":null}}}`:               true,
-		`{"t":"d","d":{"a":"c","b":{"p":"x","q":[{"l":1,"vf":"l"}]}}}`: true,
+		`{"t":"d","d":{"a":"c","b":{"p":"x","q":null}}}`:                                     true,
+		`{"t":"d","d":{"a":"c","b":{"p":"x","q":[{"sin":true,"ein":true,"l":1,"vf":"l"}]}}}`: true,
 	}
 	for range 2 {
 		if m := c.next(); !want[m] {

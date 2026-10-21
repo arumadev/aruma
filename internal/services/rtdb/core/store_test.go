@@ -33,6 +33,8 @@ type memStore struct {
 	slow time.Duration
 	// peekErr fails every read the rules make, as a database that is down.
 	peekErr error
+	// reads counts the subtree reads by path.
+	reads map[string]int
 }
 
 type memDB struct {
@@ -121,7 +123,15 @@ type memTx struct {
 	seq  int64
 }
 
-func (t *memTx) Read(_ context.Context, p Path) (*Node, error) { return t.root.Get(p), nil }
+func (t *memTx) Read(_ context.Context, p Path) (*Node, error) {
+	t.s.mu.Lock()
+	if t.s.reads == nil {
+		t.s.reads = map[string]int{}
+	}
+	t.s.reads[p.String()]++
+	t.s.mu.Unlock()
+	return t.root.Get(p), nil
+}
 func (t *memTx) CountRows(_ context.Context, p Path, limit int64) (int64, error) {
 	if p.IsPriority() {
 		p = p.Parent()
@@ -194,13 +204,13 @@ var storeCases = []struct {
 	{"object", []struct{ path, value string }{{"a", `{"b":{"c":true},"d":"s"}`}}, "a/b", `{"c":true}`},
 	{"overwrite", []struct{ path, value string }{{"a", `{"b":1,"c":2}`}, {"a", `{"d":3}`}}, "", `{"a":{"d":3}}`},
 	{"set below a leaf", []struct{ path, value string }{{"a", `1`}, {"a/b", `2`}}, "", `{"a":{"b":2}}`},
-	{"leaf priority kept on the object", []struct{ path, value string }{{"a", `{".value":1,".priority":5}`}, {"a/b", `2`}}, "", `{"a":{".priority":5,"b":2}}`},
+	{"leaf priority kept on the object", []struct{ path, value string }{{"a", `{".value":1,".priority":5}`}, {"a/b", `2`}}, "", `{"a":{".priority":5.0,"b":2}}`},
 	{"delete below a leaf", []struct{ path, value string }{{"a", `1`}, {"a/b", `null`}}, "", `{"a":1}`},
 	{"delete", []struct{ path, value string }{{"a", `{"b":1,"c":2}`}, {"a/b", `null`}}, "", `{"a":{"c":2}}`},
 	{"delete with {}", []struct{ path, value string }{{"a", `{"b":1}`}, {"a", `{}`}}, "", `null`},
 	{"last child gone", []struct{ path, value string }{{"a", `{".priority":3,"b":{"c":1}}`}, {"a/b/c", `null`}}, "", `null`},
-	{"sibling stays", []struct{ path, value string }{{"a", `{".priority":3,"b":{"c":1},"d":1}`}, {"a/b/c", `null`}}, "", `{"a":{".priority":3,"d":1}}`},
-	{"priorities", []struct{ path, value string }{{"p", `{"j":{".priority":2,"a":1},"k":{".value":1,".priority":"abc"}}`}}, "p", `{"j":{".priority":2,"a":1},"k":{".value":1,".priority":"abc"}}`},
+	{"sibling stays", []struct{ path, value string }{{"a", `{".priority":3,"b":{"c":1},"d":1}`}, {"a/b/c", `null`}}, "", `{"a":{".priority":3.0,"d":1}}`},
+	{"priorities", []struct{ path, value string }{{"p", `{"j":{".priority":2,"a":1},"k":{".value":1,".priority":"abc"}}`}}, "p", `{"j":{".priority":2.0,"a":1},"k":{".value":1,".priority":"abc"}}`},
 	{"set priority on a leaf", []struct{ path, value string }{{"a", `1`}, {"a/.priority", `9`}}, "a", `{".value":1,".priority":9}`},
 	{"set priority on an object", []struct{ path, value string }{{"a", `{"b":1}`}, {"a/.priority", `"z"`}}, "a", `{".priority":"z","b":1}`},
 	{"clear priority", []struct{ path, value string }{{"a", `{".value":1,".priority":9}`}, {"a/.priority", `null`}}, "a", `1`},
@@ -208,7 +218,7 @@ var storeCases = []struct {
 	{"root delete", []struct{ path, value string }{{"a", `1`}, {"b", `2`}, {"", `null`}}, "", `null`},
 	{"similar names", []struct{ path, value string }{{"a", `1`}, {"a-b", `2`}, {"ab", `3`}, {"a/b", `4`}}, "a", `{"b":4}`},
 	{"unicode", []struct{ path, value string }{{"مرحبا/😀", `"日本"`}}, "مرحبا", `{"😀":"日本"}`},
-	{"numbers", []struct{ path, value string }{{"n", `{"a":1.5,"b":-2,"c":1e21,"d":5e-324,"e":12345678901234567890}`}}, "n", `{"a":1.5,"b":-2,"c":1e+21,"d":5e-324,"e":12345678901234567000}`},
+	{"numbers", []struct{ path, value string }{{"n", `{"a":1.5,"b":-2,"c":1e21,"d":5e-324,"e":12345678901234567890,"f":1.0,"g":1e10,"h":9007199254740993,"i":-9223372036854775808}`}}, "n", `{"a":1.5,"b":-2,"c":1.0E21,"d":5.0E-324,"e":1.2345678901234567E19,"f":1.0,"g":1.0E10,"h":9007199254740993,"i":-9223372036854775808}`},
 	{"read missing", []struct{ path, value string }{{"a", `1`}}, "b", `null`},
 	{"read through a leaf", []struct{ path, value string }{{"a", `1`}}, "a/b", `null`},
 }

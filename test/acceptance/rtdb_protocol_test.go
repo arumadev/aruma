@@ -108,7 +108,7 @@ func TestRTDBPutGet(t *testing.T) {
 		t.Errorf("child: %s", got)
 	}
 	c.put("/golden/pg/pr", map[string]any{".value": "v", ".priority": 7})
-	if got := c.get("/golden/pg/pr"); got != `{".value":"v",".priority":7}` { // emulator: 7.0
+	if got := c.get("/golden/pg/pr"); got != `{".value":"v",".priority":7.0}` { // a priority is a double, as in production
 		t.Errorf("priority: %s", got)
 	}
 	c.put("/golden/pg/arr", []int{1, 2})
@@ -122,7 +122,7 @@ func TestRTDBPutGet(t *testing.T) {
 	}
 	c.put("/golden/pg/arr", nil)
 	c.put("/golden/pg/n", map[string]any{})
-	if got := c.get("/golden/pg"); got != `{"a":1,"b":"hi","pr":{".value":"v",".priority":7}}` {
+	if got := c.get("/golden/pg"); got != `{"a":1,"b":"hi","pr":{".value":"v",".priority":7.0}}` {
 		t.Errorf("after deletes: %s", got)
 	}
 	// Data survives the connection.

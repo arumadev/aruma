@@ -13,6 +13,13 @@
 //	ARUMA_SMOKE_ADDR       Aruma's listen address (default 127.0.0.1:0: any free port)
 //	ARUMA_SMOKE_TLS_ADDR   the TLS front's address (default 127.0.0.1:0)
 //	ARUMA_SMOKE_DB_PREFIX  prefix of the throwaway database (default aruma_smoke_)
+//
+// ARUMA_SMOKE_DIR with ARUMA_RTDB_DATABASE_URL uses a server behind a front of its own, such as
+// Caddy (test/experiments/rtdb-caddy.sh), and starts nothing: ARUMA_SMOKE_DIR holds the
+// project's service-account.json and an expected.json with projectId and that databaseURL, and
+// ARUMA_RTDB_CA is the one CA to trust (unset: the system's). The database host and the key
+// file's token_uri host are then resolved by the real DNS, and dialled only when every address
+// they resolve to is loopback.
 package rtdb
 
 import (
@@ -27,6 +34,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -49,6 +57,7 @@ const domain = "rtdb.aruma.test"
 
 var live struct {
 	dir, tlsAddr string
+	external     bool // behind a front of its own, at ARUMA_RTDB_DATABASE_URL
 	expected     struct {
 		ProjectID   string `json:"projectId"`
 		DatabaseURL string `json:"databaseURL"`
@@ -81,23 +90,57 @@ func TestMain(m *testing.M) {
 }
 
 // routeToFront makes http.DefaultTransport reach <name>.rtdb.aruma.test:443 at the TLS front,
-// as DNS and Caddy would, and nothing else beyond loopback.
+// as DNS and Caddy would, and nothing else beyond loopback. For an external server it trusts
+// ARUMA_RTDB_CA and resolves the database and token hosts by the real DNS instead.
 func routeToFront() error {
-	ca, err := os.ReadFile(filepath.Join(live.dir, "rtdb-ca.pem"))
-	if err != nil {
-		return err
+	caFile := filepath.Join(live.dir, "rtdb-ca.pem")
+	if live.external {
+		caFile = os.Getenv("ARUMA_RTDB_CA")
 	}
-	pool := x509.NewCertPool()
-	if !pool.AppendCertsFromPEM(ca) {
-		return errors.New("rtdb-ca.pem holds no certificate")
+	var pool *x509.CertPool // nil: the system's roots
+	if caFile != "" {
+		ca, err := os.ReadFile(caFile)
+		if err != nil {
+			return err
+		}
+		pool = x509.NewCertPool()
+		if !pool.AppendCertsFromPEM(ca) {
+			return fmt.Errorf("%s holds no certificate", caFile)
+		}
+	}
+	names := map[string]bool{}
+	if live.external {
+		var err error
+		if names, err = externalHosts(); err != nil {
+			return err
+		}
 	}
 	t := http.DefaultTransport.(*http.Transport)
 	t.TLSClientConfig = &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}
 	dial := (&net.Dialer{Timeout: 10 * time.Second}).DialContext
 	t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 		host, port, _ := net.SplitHostPort(addr)
-		if strings.HasSuffix(strings.ToLower(host), "."+domain) && port == "443" {
+		if !live.external && strings.HasSuffix(strings.ToLower(host), "."+domain) && port == "443" {
 			return dial(ctx, network, live.tlsAddr)
+		}
+		if names[strings.ToLower(host)] {
+			// The real DNS answers; only this machine is dialled.
+			ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
+			if err != nil {
+				return nil, err
+			}
+			for _, ip := range ips {
+				if !ip.IP.IsLoopback() {
+					dialMu.Lock()
+					remotes = append(remotes, addr+" ("+ip.String()+")")
+					dialMu.Unlock()
+					return nil, errors.New("network access beyond loopback blocked by the test")
+				}
+			}
+			if len(ips) == 0 {
+				return nil, fmt.Errorf("%s resolves to no address", host)
+			}
+			return dial(ctx, network, net.JoinHostPort(ips[0].IP.String(), port))
 		}
 		if ip := net.ParseIP(host); host != "localhost" && (ip == nil || !ip.IsLoopback()) {
 			dialMu.Lock()
@@ -110,10 +153,35 @@ func routeToFront() error {
 	return nil
 }
 
+// externalHosts are the names an external server is reached by: the database host and the
+// host of the key file's token_uri.
+func externalHosts() (map[string]bool, error) {
+	var key struct {
+		TokenURI string `json:"token_uri"`
+	}
+	b, err := os.ReadFile(keyFile())
+	if err == nil {
+		err = json.Unmarshal(b, &key)
+	}
+	if err != nil {
+		return nil, err
+	}
+	names := map[string]bool{}
+	for _, raw := range []string{live.expected.DatabaseURL, key.TokenURI} {
+		u, err := url.Parse(raw)
+		if err != nil || u.Hostname() == "" {
+			return nil, fmt.Errorf("no host in %q", raw)
+		}
+		names[strings.ToLower(u.Hostname())] = true
+	}
+	return names, nil
+}
+
 func startAruma() (func(), error) {
 	live.dir, live.tlsAddr = os.Getenv("ARUMA_SMOKE_DIR"), os.Getenv("ARUMA_RTDB_TLS_ADDR")
+	live.external = live.dir != "" && os.Getenv("ARUMA_RTDB_DATABASE_URL") != ""
 	stop := func() {}
-	if live.dir == "" || live.tlsAddr == "" {
+	if !live.external && (live.dir == "" || live.tlsAddr == "") {
 		root, err := filepath.Abs("../../../..")
 		if err != nil {
 			return nil, err
@@ -163,7 +231,14 @@ func startAruma() (func(), error) {
 	if err == nil {
 		err = json.Unmarshal(b, &live.expected)
 	}
-	if err == nil && live.expected.DatabaseURL != "https://"+live.expected.ProjectID+"-default-rtdb."+domain {
+	switch {
+	case err != nil:
+	case live.external:
+		// Any rtdb.domain and port, the namespace still the first label.
+		if u := live.expected.DatabaseURL; u != os.Getenv("ARUMA_RTDB_DATABASE_URL") || !strings.HasPrefix(u, "https://"+live.expected.ProjectID+"-default-rtdb.") {
+			err = fmt.Errorf("databaseURL %q is not ARUMA_RTDB_DATABASE_URL in the production form", u)
+		}
+	case live.expected.DatabaseURL != "https://"+live.expected.ProjectID+"-default-rtdb."+domain:
 		err = fmt.Errorf("databaseURL %q is not the production form", live.expected.DatabaseURL)
 	}
 	if err != nil {

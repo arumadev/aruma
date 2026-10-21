@@ -107,7 +107,7 @@ func TestReadREST(t *testing.T) {
 		{"POST", "/a.json", map[string]string{"If-Match": "x"}, "The 'if-match' header is not supported with GET, PATCH or POST requests", nil},
 		{"DELETE", "/a.json", map[string]string{"If-None-Match": "x"}, "The 'if-none-match' header is not supported with PUT, POST, PATCH or DELETE requests", nil},
 		{"PUT", "/a.json?print=silent", map[string]string{"If-Match": "x"}, "Mixing 'shallow', querying parameters or 'print=silent' and if-match or if-none-match requests is not supported", nil},
-		{"PUT", "/a.json?writeSizeLimit=huge", nil, "writeSizeLimit should be one of {medium, tiny, large, unlimited, small}", nil},
+		{"PUT", "/a.json?writeSizeLimit=huge", nil, "writeSizeLimit should be one of {tiny, large, small, medium, unlimited}", nil}, // production's order; the emulator's is {medium, tiny, large, unlimited, small}
 		{"GET", "/a.json?timeout=1h", nil, "timeout must contain length and unit (s/seconds/min/minutes), such as 1s, 2seconds, or 3min", nil},
 		{"GET", "/a.json", map[string]string{"Accept": "text/event-stream"}, errStreaming.msg, nil},
 		{"PUT", "/a.json", map[string]string{"If-Match": "", "X-Firebase-ETag": "TRUE"}, "", func(r *restRequest) bool { return r.ifMatch != nil && *r.ifMatch == "" && r.etag }},
@@ -132,9 +132,9 @@ func TestReadREST(t *testing.T) {
 
 func TestEchoUpdate(t *testing.T) {
 	merge := []core.Child{
-		{Path: core.Path{"a", "b"}, Value: core.Number(1)},
+		{Path: core.Path{"a", "b"}, Value: core.Int(1)},
 		{Path: core.Path{"a", "c"}, Value: nil},
-		{Path: core.Path{"t"}, Value: core.Number(5)},
+		{Path: core.Path{"t"}, Value: core.Int(5)},
 	}
 	if got, want := string(echoUpdate(merge)), `{"a":{"b":1,"c":null},"t":5}`; got != want {
 		t.Errorf("echo %s, want %s", got, want)
@@ -151,7 +151,7 @@ func TestRESTLockedAndOpen(t *testing.T) {
 		return rec
 	}
 	if rec := do("PUT", "/x.json?ns=chat-app-default-rtdb", "1"); rec.Code != http.StatusUnauthorized ||
-		rec.Body.String() != "{\n  \"error\" : \"Permission denied\"\n}" || rec.Header().Get("Access-Control-Allow-Origin") != "*" {
+		rec.Body.String() != "{\n  \"error\" : \"Permission denied\"\n}\n" || rec.Header().Get("Access-Control-Allow-Origin") != "*" {
 		t.Errorf("locked: %d %q %v", rec.Code, rec.Body, rec.Header())
 	}
 	if rec := do("OPTIONS", "/x.json?ns=chat-app-default-rtdb", ""); rec.Code != 200 || rec.Header().Get("Allow") != restMethods {
@@ -172,7 +172,7 @@ func TestRulesRefuseAnOverride(t *testing.T) {
 		a.ServeHTTP(rec, req)
 		return rec
 	}
-	const denied = "{\n  \"error\" : \"Permission denied\"\n}"
+	const denied = "{\n  \"error\" : \"Permission denied\"\n}\n"
 	for _, q := range []string{`&auth_variable_override={"uid":"u1"}`, "&auth_variable_override=null", "&auth_variable_override="} {
 		q = strings.ReplaceAll(strings.ReplaceAll(q, `"`, "%22"), "{", "%7B")
 		q = strings.ReplaceAll(q, "}", "%7D")
@@ -213,7 +213,7 @@ func TestReadRowsLimit(t *testing.T) {
 		return rec
 	}
 	if rec := do("/big.json?ns=chat-app-default-rtdb"); rec.Code != http.StatusBadRequest ||
-		rec.Body.String() != "{\n  \"error\" : \"Data requested exceeds the maximum size that can be accessed with a single request.\"\n}" {
+		rec.Body.String() != "{\n  \"error\" : \"Data requested exceeds the maximum size that can be accessed with a single request.\"\n}\n" {
 		t.Errorf("REST: %d %q", rec.Code, rec.Body)
 	}
 }

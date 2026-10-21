@@ -32,7 +32,9 @@ const (
 type Node struct {
 	kind     Kind
 	b        bool
-	n        float64
+	n        float64 // a number's value; for an integer, float64(i)
+	i        int64
+	isInt    bool // the number is a 64-bit integer, not a double
 	s        string
 	sv       *ServerValue
 	children map[string]*Node
@@ -42,13 +44,31 @@ type Node struct {
 // Bool returns a boolean leaf.
 func Bool(b bool) *Node { return &Node{kind: KindBool, b: b} }
 
-// Number returns a number leaf. Numbers are IEEE-754 doubles, as in JavaScript; -0 becomes 0,
-// which is what JSON.stringify sends for it.
+// Number returns a double leaf; -0 becomes 0, which is what JSON.stringify sends for it.
+//
+// Firebase keeps a number as it was written: a 64-bit integer, or a double. Production and
+// the emulator 4.11.2 both store 1.0 as a double and send it back as 1.0, keep
+// 9007199254740993 exact, and send a double in Java's notation (1.0E300, 1.5E-7)
+// (testdata/golden/production/numbers.json in the wire package). The JS SDK reads either as a
+// JavaScript number; Android and iOS read 1 as a Long and 1.0 as a Double, and keep 64-bit
+// integers whole. Production also keeps -0.0, which Aruma cannot: its jsonb storage has no
+// negative zero.
 func Number(f float64) *Node {
 	if f == 0 {
 		f = 0
 	}
 	return &Node{kind: KindNumber, n: f}
+}
+
+// Int returns a 64-bit integer leaf.
+func Int(i int64) *Node { return &Node{kind: KindNumber, n: float64(i), i: i, isInt: true} }
+
+// IntValue returns an integer leaf's value, and whether n is one.
+func (n *Node) IntValue() (int64, bool) {
+	if n == nil || n.kind != KindNumber || !n.isInt {
+		return 0, false
+	}
+	return n.i, true
 }
 
 // String returns a string leaf.
@@ -207,6 +227,9 @@ func Equal(a, b *Node) bool {
 	case KindBool:
 		return a.b == b.b
 	case KindNumber:
+		if a.isInt || b.isInt {
+			return a.isInt == b.isInt && a.i == b.i
+		}
 		return a.n == b.n
 	case KindString:
 		return a.s == b.s
@@ -365,7 +388,10 @@ func (n *Node) appendLeaf(b []byte) []byte {
 	case KindBool:
 		return strconv.AppendBool(b, n.b)
 	case KindNumber:
-		return appendNumber(b, n.n)
+		if n.isInt {
+			return strconv.AppendInt(b, n.i, 10)
+		}
+		return appendDouble(b, n.n)
 	case KindString:
 		return appendJSONString(b, n.s)
 	case kindServerValue:
@@ -396,12 +422,14 @@ func ParseData(data []byte, at Path, maxString int) (*Node, error) {
 
 // jv is parsed JSON before the export format is interpreted.
 type jv struct {
-	kind Kind
-	b    bool
-	n    float64
-	s    string
-	keys []string // object keys in order, without duplicates
-	vals map[string]*jv
+	kind  Kind
+	b     bool
+	n     float64
+	i     int64
+	isInt bool
+	s     string
+	keys  []string // object keys in order, without duplicates
+	vals  map[string]*jv
 }
 
 type parser struct {
@@ -447,6 +475,13 @@ func (p *parser) value(depth, pathBytes int) (*jv, error) {
 	case bool:
 		return &jv{kind: KindBool, b: t}, nil
 	case json.Number:
+		// An integer literal that fits 64 bits is an integer; anything else is a double, as
+		// the server parses JSON (12345678901234567890 and 1E2 are doubles).
+		if !strings.ContainsAny(string(t), ".eE") {
+			if i, err := strconv.ParseInt(string(t), 10, 64); err == nil {
+				return &jv{kind: KindNumber, n: float64(i), i: i, isInt: true}, nil
+			}
+		}
 		f, err := strconv.ParseFloat(string(t), 64)
 		if err != nil || math.IsInf(f, 0) {
 			return nil, ErrInvalidData
@@ -504,6 +539,9 @@ func (v *jv) node() (*Node, error) {
 	case KindBool:
 		return Bool(v.b), nil
 	case KindNumber:
+		if v.isInt {
+			return Int(v.i), nil
+		}
 		return Number(v.n), nil
 	case KindString:
 		return String(v.s), nil
@@ -567,7 +605,10 @@ func (v *jv) priority() (*Node, error) {
 	switch p.kind {
 	case KindNull:
 		return nil, nil
-	case KindNumber, KindString:
+	case KindNumber:
+		// A priority is always a double: production answers ".priority": 5 with 5.0.
+		return Number(p.n), nil
+	case KindString:
 		return p.node()
 	case KindObject:
 		if sv, ok := p.vals[".sv"]; ok && len(p.keys) == 1 {
@@ -581,22 +622,39 @@ func (v *jv) priority() (*Node, error) {
 	return nil, ErrInvalidPriority
 }
 
-// appendNumber formats f as JavaScript's Number.prototype.toString does, so numbers read back
-// exactly as an SDK wrote them: integers without a fraction, exponents from 1e21 and below
-// 1e-6 (the same rule encoding/json follows).
-func appendNumber(b []byte, f float64) []byte {
-	abs := math.Abs(f)
-	format := byte('f')
-	if abs != 0 && (abs < 1e-6 || abs >= 1e21) {
-		format = 'e'
-	}
-	b = strconv.AppendFloat(b, f, format, -1, 64)
-	if format == 'e' {
-		// 1e-07 becomes 1e-7.
-		if n := len(b); n >= 4 && b[n-4] == 'e' && b[n-3] == '-' && b[n-2] == '0' {
-			b[n-2] = b[n-1]
-			b = b[:n-1]
+// appendDouble formats a double as Java's Double.toString does, which is how production and
+// the emulator send one: the shortest digits that read back as f, plain from 10^-3 up to
+// 10^7 with at least one fractional digit (1.0, 0.001, 1234567.5), in scientific notation
+// otherwise (1.0E7, 1.5E-7, 1.2345678901234567E19).
+func appendDouble(b []byte, f float64) []byte {
+	if abs := math.Abs(f); f == 0 || abs >= 1e-3 && abs < 1e7 {
+		start := len(b)
+		b = strconv.AppendFloat(b, f, 'f', -1, 64)
+		if bytes.IndexByte(b[start:], '.') < 0 {
+			b = append(b, ".0"...)
 		}
+		return b
+	}
+	mant, exp, _ := strings.Cut(strconv.FormatFloat(f, 'e', -1, 64), "e")
+	b = append(b, mant...)
+	if !strings.Contains(mant, ".") {
+		b = append(b, ".0"...)
+	}
+	b = append(b, 'E')
+	if exp[0] == '-' {
+		b = append(b, '-')
+	}
+	return append(b, strings.TrimLeft(exp[1:], "0")...)
+}
+
+// appendStoredDouble formats a double for a jsonb column: plain digits with a fractional
+// part, which jsonb's numeric keeps as written (1.0E10 would come back as 10000000000, an
+// integer).
+func appendStoredDouble(b []byte, f float64) []byte {
+	start := len(b)
+	b = strconv.AppendFloat(b, f, 'f', -1, 64)
+	if bytes.IndexByte(b[start:], '.') < 0 {
+		b = append(b, ".0"...)
 	}
 	return b
 }

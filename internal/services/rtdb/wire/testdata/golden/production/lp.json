@@ -1,0 +1,122 @@
+{
+  "scenario": "lp",
+  "description": "Long-poll handshake (start with cb), the dframe page, a send of a get, a held poll answered with its reply, and disconnect.",
+  "source": "production",
+  "project": "<redacted>",
+  "host": "<project>-default-rtdb.europe-west1.firebasedatabase.app",
+  "captured": "2026-10-21",
+  "script": "capture_production.mjs",
+  "run": "r7-20261021-c1add4",
+  "connections": {},
+  "frames": [
+    {
+      "conn": "LP",
+      "dir": "http_req",
+      "text": "GET /.lp?start=t&ser=31415926&cb=1&v=5&ns=<project>-default-rtdb",
+      "ms": 0
+    },
+    {
+      "conn": "LP",
+      "dir": "http_resp",
+      "status": 200,
+      "headers": {
+        "content-length": "444",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-response": "0"
+      },
+      "text": "\nfunction pLPCommand(c, a1, a2, a3, a4) {\nparent.window[\"pLPCommand1\"] && parent.window[\"pLPCommand1\"](c, a1, a2, a3, a4);\n}\nfunction pRTLPCB(pN, data) {\nparent.window[\"pRTLPCB1\"] && parent.window[\"pRTLPCB1\"](pN, data);\n}\n         pLPCommand('start','1666008','C038ULijfh');\npRTLPCB(0,[{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792572143247,\"v\":\"5\",\"h\":\"s-gke-euw1-nssi2-3.europe-west1.firebasedatabase.app\",\"s\":\"ON56JccTMEyX3ccLwVFEK4kcswHdSI1d\"}}}]);\n",
+      "ms": 239
+    },
+    {
+      "conn": "LP",
+      "dir": "http_req",
+      "text": "GET /.lp?dframe=t&id=1666008&pw=C038ULijfh&ns=<project>-default-rtdb",
+      "ms": 240
+    },
+    {
+      "conn": "LP",
+      "dir": "http_resp",
+      "status": 200,
+      "headers": {
+        "content-length": "420",
+        "content-type": "text/html; charset=utf-8"
+      },
+      "text": "<html><body><script>\nfunction EnvSendPing(destURL) {\ntry{\nvar xhr=new XMLHttpRequest();\nxhr.open(\"GET\", destURL, false);\nxhr.send(null);\n} catch (e) { }\n}\nfunction EnvDisconnect() {\nEnvSendPing(\"/.lp?disconn=t&id=1666008&pw=C038ULijfh\");\n}\nif(window.addEventListener)\nwindow.addEventListener('unload',EnvDisconnect,false);\nelse if(window.attachEvent)\nwindow.attachEvent('onunload',EnvDisconnect);\n</script></body></html>",
+      "ms": 953
+    },
+    {
+      "conn": "LP",
+      "dir": "http_req",
+      "text": "GET /.lp?id=1666008&pw=C038ULijfh&ser=27182819&ns=<project>-default-rtdb",
+      "ms": 953
+    },
+    {
+      "conn": "LP",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"g\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open\",\"q\":{}}}}",
+      "ms": 1954
+    },
+    {
+      "conn": "LP",
+      "dir": "http_req",
+      "text": "GET /.lp?id=1666008&pw=C038ULijfh&ser=27182820&seg0=0&ts0=1&d0=eyJ0IjoiZCIsImQiOnsiciI6MSwiYSI6ImciLCJiIjp7InAiOiIvYXJ1bWEtcmVmL3I3LTIwMjYxMDIxLWMxYWRkNC9vcGVuIiwicSI6e319fX0.&ns=<project>-default-rtdb",
+      "ms": 1955
+    },
+    {
+      "conn": "LP",
+      "dir": "http_resp",
+      "status": 200,
+      "headers": {
+        "content-length": "15",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-response": "1"
+      },
+      "text": "pRTLPCB(1,[]);\n",
+      "ms": 2202
+    },
+    {
+      "conn": "LP",
+      "dir": "http_resp",
+      "status": 200,
+      "headers": {
+        "content-length": "90",
+        "content-type": "application/javascript; charset=utf-8",
+        "x-firebase-response": "2"
+      },
+      "text": "pRTLPCB(2,[{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"permission_denied\",\"d\":\"Permission denied\"}}}]);\n",
+      "ms": 2216
+    },
+    {
+      "conn": "LP",
+      "dir": "http_req",
+      "text": "GET /.lp?id=1666008&pw=C038ULijfh&ser=27182821&ns=<project>-default-rtdb",
+      "ms": 2216
+    },
+    {
+      "conn": "LP",
+      "dir": "http_abort",
+      "text": "AbortError",
+      "ms": 7222
+    },
+    {
+      "conn": "LP",
+      "dir": "http_req",
+      "text": "GET /.lp?disconn=t&id=1666008&pw=C038ULijfh&ns=<project>-default-rtdb",
+      "ms": 7222
+    },
+    {
+      "conn": "LP",
+      "dir": "http_resp",
+      "status": 200,
+      "headers": {
+        "content-length": "8",
+        "content-type": "application/javascript; charset=utf-8"
+      },
+      "text": "<!-- -->",
+      "ms": 8255
+    }
+  ],
+  "notes": [
+    "Sends use the SDK encoding: base64 with -, _ and . for +, / and = (BrowserPollConnection addLongPollTag_, segments seg/ts/d)."
+  ]
+}

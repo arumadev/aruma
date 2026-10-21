@@ -83,16 +83,50 @@ func (d *Database) fanout(ctx context.Context, tx StoreTx, ch Change, b *batchSt
 			}
 		})
 	}
+	views := &views{nodes: map[string]*Node{}, windows: map[string]*Node{}}
 	for _, l := range concerned {
 		if l.tag == 0 {
 			untaggedPushes(l, ch, b)
 			continue
 		}
-		if err := taggedPushes(ctx, tx, l, targets, b); err != nil {
+		if err := taggedPushes(ctx, tx, l, targets, b, views); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// views shares among the tagged listens one change concerns what they all compute alike:
+// the node at a path, read once, and a query's window over it, filtered once. Without it,
+// every listen at a path reads its whole node again and sorts it, so ten clients on one
+// leaderboard made each write under it ten times as slow (the bench's query scenario,
+// docs/performance/baseline-rtdb.md). Nodes are immutable, so listens may hold the same one.
+type views struct {
+	nodes   map[string]*Node // by path
+	windows map[string]*Node // by path and query
+}
+
+func (v *views) node(ctx context.Context, tx StoreTx, p Path) (*Node, error) {
+	key := p.String()
+	if n, ok := v.nodes[key]; ok {
+		return n, nil
+	}
+	n, err := tx.Read(ctx, p)
+	if err != nil {
+		return nil, err
+	}
+	v.nodes[key] = n
+	return n, nil
+}
+
+func (v *views) window(l *listen, node *Node) *Node {
+	key := l.path.String() + "\x00" + l.query.ID()
+	if w, ok := v.windows[key]; ok {
+		return w
+	}
+	w := l.query.Filter(node)
+	v.windows[key] = w
+	return w
 }
 
 func untaggedPushes(l *listen, ch Change, b *batchState) {
@@ -131,12 +165,12 @@ func mergeJSON(children []Child) json.RawMessage {
 	return append(out, '}')
 }
 
-func taggedPushes(ctx context.Context, tx StoreTx, l *listen, targets []Path, b *batchState) error {
-	node, err := tx.Read(ctx, l.path)
+func taggedPushes(ctx context.Context, tx StoreTx, l *listen, targets []Path, b *batchState, v *views) error {
+	node, err := v.node(ctx, tx, l.path)
 	if err != nil {
 		return err
 	}
-	old, neu := l.window, l.query.Filter(node)
+	old, neu := l.window, v.window(l, node)
 	if Equal(old, neu) {
 		return nil
 	}

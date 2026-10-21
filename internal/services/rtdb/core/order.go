@@ -119,6 +119,9 @@ func CompareValues(a, b *Node) int {
 	}
 	switch a.Kind() {
 	case KindNumber:
+		if a.isInt && b.isInt {
+			return cmp.Compare(a.i, b.i)
+		}
 		return cmp.Compare(a.n, b.n)
 	case KindString:
 		return compareUTF16(a.s, b.s)

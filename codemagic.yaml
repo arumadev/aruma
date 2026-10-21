@@ -3,7 +3,11 @@
 #   ios-smoke  FirebaseCore/Installations on iOS and Flutter's native initialisation. Nightly.
 #   ios-auth   Auth end to end: the official FirebaseAuth in production mode through ArumaRedirect,
 #              against a real server, with a network guard (test/e2e/ios-auth). Twice a week.
-# The free tier has 500 macOS minutes a month; max_build_duration caps an ios-auth run at 30.
+#   ios-rtdb   Realtime Database end to end: the official FirebaseDatabase in production mode on the
+#              generated database URL, under real rules, with a network guard (test/e2e/ios-rtdb).
+#              By hand only, not scheduled.
+# The free tier has 500 macOS minutes a month; max_build_duration caps an ios-auth or ios-rtdb run
+# at 30.
 workflows:
   ios-smoke:
     name: iOS smoke (nightly)
@@ -76,3 +80,36 @@ workflows:
     #     notify:
     #       success: false
     #       failure: true
+
+  ios-rtdb:
+    name: iOS Realtime Database e2e (by hand)
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      xcode: latest
+      vars:
+        ARUMA_TEST_DATABASE_URL: postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable
+        HOMEBREW_NO_AUTO_UPDATE: 1
+    # The same Swift package checkouts as ios-auth (FirebaseDatabase comes from the same package).
+    cache:
+      cache_paths:
+        - $CM_BUILD_DIR/.cache/xcode/spm
+        - $HOME/Library/Caches/go-build
+        - $HOME/go/pkg/mod
+    scripts:
+      - name: Go
+        script: |
+          brew install go
+          go version
+      - name: PostgreSQL 18
+        script: |
+          brew install postgresql@18
+          PG=$(brew --prefix postgresql@18)/bin
+          $PG/initdb -D "$CM_BUILD_DIR/.pgdata" -U postgres --auth=trust >/dev/null
+          $PG/pg_ctl -D "$CM_BUILD_DIR/.pgdata" -l "$CM_BUILD_DIR/pg.log" -o "-p 5432" -w start
+      - name: iOS Realtime Database e2e
+        script: test/e2e/ios-rtdb/run.sh
+    artifacts:
+      - test/e2e/ios-rtdb/.generated/xcodebuild.log
+      - test/e2e/ios-rtdb/.generated/server.log
+      - test/e2e/ios-rtdb/.generated/sockets.unique.txt

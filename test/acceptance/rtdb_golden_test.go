@@ -361,12 +361,6 @@ var knownDifferences = map[string]string{
 	// A query on a leaf selects nothing: the emulator answers null for a limit and {} for a
 	// key range; Aruma answers null for both, which the SDKs read as the same empty node.
 	"query_get A g r=18": "empty query result on a leaf: null instead of {}",
-	// The emulator echoes a cancelled query listen with sin and ein added ({"sin":true,
-	// "ein":true,"l":1,"vf":"l"}). The JS SDK finds the listen to cancel by the query's
-	// identifier, which those keys change, so it would never drop it (onListenRevoked_);
-	// Aruma echoes the query as the client sent it.
-	"revoke_unauth A pushes": cancelledQuery,
-	"rules_change B pushes":  cancelledQuery,
 	// listen_errors: D's query without a tag makes the emulator fail with internal_error and
 	// then reset every connection (a "r" control message); Aruma serves the query, untagged.
 	"listen_errors D q r=1":  "a query without a tag: served instead of internal_error",
@@ -377,10 +371,7 @@ var knownDifferences = map[string]string{
 	"listen_errors B pushes": "two identical listens on one connection: the emulator counts them, so one n leaves the listen; Aruma's second replaces the first, so one n ends it (no SDK sends the same listen twice)",
 }
 
-const (
-	cancelledQuery = "a cancelled query listen: echoed as the client sent it, without the emulator's added sin and ein"
-	emulatorReset  = "the emulator reset every connection after D's internal_error"
-)
+const emulatorReset = "the emulator reset every connection after D's internal_error"
 
 const windowPushes = "a child changed inside a query window: pushed whole instead of as written"
 

@@ -24,8 +24,8 @@ import (
 // a run's log is the comparison itself.
 //
 // What varies by nature is masked on both sides before comparing: push ids, timestamps
-// (numbers within a few years of now), and the ETags of bodies that hold either. The emulator
-// prints 1.0 where Aruma prints 1, as JavaScript would; numbers are compared as numbers.
+// (numbers within a few years of now), and the ETags of bodies that hold either. Numbers are
+// compared as numbers.
 //
 // Each group runs on a project of its own, with the group's rules (the emulator's open default
 // when it set none) and data. The emulator's admin is "Bearer owner"; here it is the owner's
@@ -328,37 +328,31 @@ var restKnownDifferences = map[string]string{
 	"methods / missing .json suffix at the root": "as above",
 	"methods / /.inspect.json":                   "the emulator's own endpoints are not served; every dot path is an invalid path",
 	"methods / /.settings.json":                  "as above",
-	"shallow / shallow on an object": "the emulator lists the node's .priority as a child; Aruma lists the children, " +
-		"read from the stored rows",
-	"shallow / shallow with limitToFirst":  "as above: the emulator's first key is .priority",
-	"shallow / shallow with format=export": "as above",
-	"shallow / shallow with print=pretty":  "as above",
 	"queries without an index / orderBy empty string": "\"\" names no child: Aruma refuses it as an invalid path, the " +
 		"emulator asks for an index on it",
 	"etag / If-None-Match matching":                      "Go's HTTP server drops Content-Type from a 304, which has no body",
 	"etag / If-None-Match matching with X-Firebase-ETag": "as above",
 	"errors / key making the path 769 bytes": "over the protocol the emulator counts a path's bytes without separators " +
 		"(wire golden limits.json), over REST with them; Aruma counts one way for both, the protocol's",
+	"errors / writeSizeLimit=bogus": "the same error; the set of values in production's order, {tiny, large, small, " +
+		"medium, unlimited} (wire golden production/oversize.json)",
 	"errors / disableTriggers=true": "Aruma runs no triggers: the parameter is accepted and changes nothing",
 	"errors / callback (JSONP)":     "JSONP is not served: no SDK sends it, and it would let any page read data",
 	"errors / download":             "download= is not served; the body is the same",
-	"rules and auth / user token without a uid": "the emulator accepts unsigned tokens; Aruma verifies ID tokens, " +
-		"and production refuses one that does not verify",
-	"rules and auth / admin via auth= is not admin": "the same refusal, 401, with the text of a token that does not parse",
 	"rules and auth / admin with override a string": "an override that is not an object is a bad request (400), not " +
 		"an inactive database (503)",
 	"rules and auth / admin with override a number": "as above",
 	"rules and auth / admin with override an array": "as above",
 	"rules and auth / admin with override not JSON": "as above",
-	"rules and auth / auth=garbage on a public path": "the emulator ignores a credential it cannot parse; production " +
-		"and Aruma refuse it with 401",
-	"rules and auth / auth=garbage on a protected path":         "as above",
-	"rules and auth / access_token=garbage on a protected path": "the emulator takes any access token for its owner",
-	"rules and auth / Bearer garbage on a protected path":       "as above",
-	"rules and auth / Bearer garbage on a public path":          "as above",
-	"rules and auth / Bearer with a user token on another user": "the emulator takes any bearer for its owner; Aruma " +
-		"verifies the user's ID token and applies the rules",
+	"rules and auth / access_token=garbage on a protected path": "the emulator takes any access token for its owner; " +
+		"production and Aruma refuse anything but an admin credential there: 401 Unauthorized request. (wire golden " +
+		"production/rest_auth.json)",
+	"rules and auth / Bearer garbage on a protected path":             "as above",
+	"rules and auth / Bearer garbage on a public path":                "as above",
+	"rules and auth / Bearer with a user token on another user":       "as above: a user's ID token is no bearer",
 	"rules and auth / access_token with a user token on another user": "as above",
+	"rules and auth / user via bearer reads own path":                 "as above",
+	"rules and auth / user via access_token= reads own path":          "as above",
 	"rules endpoint / PUT without the rules key":                      "the rules parser names the token it expected, not the property",
 	"rules endpoint / DELETE the rules":                               "only GET and PUT exist: 405, not the emulator's 404",
 	"rules endpoint / POST the rules":                                 "only GET and PUT exist: 405, not the emulator's 400",

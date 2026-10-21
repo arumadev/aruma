@@ -1,0 +1,65 @@
+{
+  "scenario": "cleanup",
+  "description": "Removes everything under the run root that the user can write, then reads it back.",
+  "source": "production",
+  "project": "<redacted>",
+  "host": "<project>-default-rtdb.europe-west1.firebasedatabase.app",
+  "captured": "2026-10-21",
+  "script": "capture_production.mjs",
+  "run": "r7-20261021-c1add4",
+  "connections": {
+    "A": "/.ws?v=5&ns=<project>-default-rtdb"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792572178787,\"v\":\"5\",\"h\":\"s-gke-euw1-nssi2-3.europe-west1.firebasedatabase.app\",\"s\":\"xQZr9E4uqHkYFmfhOmMeb6DLFH0ihowW\"}}}",
+      "ms": 833
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"auth\",\"b\":{\"cred\":\"<id-token>\"}}}",
+      "ms": 834
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"name\":\"<name>\",\"email_verified\":false,\"provider\":\"password\",\"email\":\"<email>\",\"user_id\":\"<uid>\",\"token\":{\"name\":\"<name>\",\"email_verified\":false,\"email\":\"<email>\",\"exp\":1792574760,\"user_id\":\"<uid>\",\"iat\":1792571160,\"sub\":\"<uid>\",\"aud\":\"<project>\",\"auth_time\":1792571160,\"iss\":\"https://securetoken.google.com/<project>\",\"firebase\":{\"identities\":{\"email\":[\"<email>\"]},\"sign_in_provider\":\"password\"}},\"uid\":\"<uid>\"},\"expires\":1792574760}}}}",
+      "ms": 1068
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"p\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open\",\"d\":null}}}",
+      "ms": 1569
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}",
+      "ms": 1808
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"g\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open\",\"q\":{}}}}",
+      "ms": 2308
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":null}}}",
+      "ms": 2550
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": "",
+      "ms": 3288
+    }
+  ],
+  "notes": []
+}

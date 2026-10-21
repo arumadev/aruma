@@ -2,6 +2,7 @@
 
 - **الحالة:** بدأ في R4، 2026-10-21، بقرارات القواعد. وأضاف R5 واجهة REST ومكتبات Admin. يكتمل في R7 بنتائج الأجهزة والمراجعة الأمنية.
 - **المرجع السلوكي:** المحاكي الرسمي 4.11.2، بإطارات مسجّلة في `internal/services/rtdb/wire/testdata/golden` (`capture_r4.mjs`)، تعيد تشغيلها `TestRTDBMatchesEmulator` على Aruma. وحيث يختلف الإنتاج عن المحاكي نتبع الإنتاج ونقول ذلك.
+- **الإنتاج:** في R7 سُجّلت السيناريوهات نفسها من Firebase الحقيقي (2026-10-21، بإذن المالك) في `golden/production`، وتقارنها `TestProductionGoldenServerFrames` و`TestProductionCancelledQueries` و`TestRTDBRESTMatchesProduction`. النتائج في «الإنتاج والمحاكي» أدناه.
 
 ## اختبارات Firebase الرسمية
 
@@ -31,23 +32,22 @@
    - إن فشل الفحص بخطأ قاعدة البيانات تبقى الاستماعات: لا كتابة تمر أثناء العطل، فلا جديد يصلها.
    - القواعد الجديدة تحل محل القديمة في ترتيب الكاتب، و`.indexOn` منها في اللحظة نفسها.
 6. **تغيير الهوية يعيد فحص الاستماعات قبل الرد**: `auth` بمستخدم آخر، و`unauth`، والإلغاء، وانتهاء الرمز. ويُلغى بـ `c` ما لم يعد مسموحًا.
-7. **ترتيب دفعات `c`** في المحاكي لا يتبع قاعدة يعتمد عليها عميل. عندنا بالمسار ثم بالاستعلام.
+7. **ترتيب دفعات `c`** في المحاكي والإنتاج لا يتبع قاعدة يعتمد عليها عميل. عندنا بالمسار ثم بالاستعلام.
 8. **كلفة `matches()` محدودة** (R7). الكلفة طول النص بالبايت مضروبًا في عدد تعليمات النمط المترجَم، وحدها 2^26 (`maxMatchCost` في `rules/regex.go`). فوقها تفشل الدالة، فتُرفض العملية كأي قاعدة تفشل أثناء التنفيذ. بلا حد، أمسك نص بميغابايت مع `/[a-z]{1000}$/` الكاتبَ 35 ثانية. والحد يمرر نصًا بـ 10 ميغابايت مع `/^[a-z]+$/`، و64 كيلوبايت مع `/[a-z]{1000}$/`.
 9. **الكتابة المشروطة قراءة أيضًا** (R7). `p` مع `h`، و`If-Match` في REST: تُفحص صلاحية القراءة على المسار أولًا، ثم البصمة، ثم قواعد الكتابة، وهو ترتيب المحاكي 4.11.2 كما سُئل عبر البروتوكول وREST. فمن لا يقرأ يأخذ `permission_denied` أيًا كانت البصمة، ومن يقرأ ولا يكتب يأخذ `datastale` لبصمة خاطئة و`permission_denied` للصحيحة.
 
 ## الدخول برموز Aruma
 
-- `auth` و`gauth` برمز ID من Aruma Auth يمر عبر `idtoken.Verifier`، والجلسة تعمل بـ `auth = {provider, uid, token}`، و`user_id` كما يضيفه المحاكي.
+- `auth` برمز ID من Aruma Auth يمر عبر `idtoken.Verifier`، والجلسة تعمل بـ `auth = {provider, uid, token}`، و`user_id` كما يضيفه المحاكي. و`gauth` لرموز المسؤول وحدها: رمز ID عليه `permission_denied` «Permission denied» كما يرد الإنتاج (المحاكي يقبله مسؤولًا).
 - الرد يحمل متغير `auth` و`expires`، وهو `exp` الرمز. المحاكي يرد `expires: null` لأنه لا يتحقق من الرموز.
 - **`auth.provider` مدعوم** خلافًا لـ ADR-020 (الذي أجّله): قيمته `firebase.sign_in_provider` بلا `.com`، و`anonymous` إن لم يذكر الرمز شيئًا، كما يرد المحاكي (`auth_user.json`).
-- الرمز المرفوض يرد حالته (`invalid_token` أو `expired_token`)، والعطل يرد `unavailable` لأنه لا يقول شيئًا عن الرمز.
-- **فرق مقصود:** الرمز المرفوض يُخرج الجلسة إلى المجهول، والمحاكي يبقيها على هويتها السابقة. والمكتبات تغلق الاتصال عند أي رفض على أي حال (`onAuthRevoked_`).
+- الرمز المرفوض يرد حالته (`invalid_token` أو `expired_token`) بنص الإنتاج: «Could not parse auth token.» لما ليس JWT، و«Unsupported jwt algorithm: none» للرمز غير الموقّع، و«Auth token is expired» (بلا نقطة) للمنتهي. والرمز الموقّع الذي لا يتحقق نصه في الإنتاج غير معروف: «Invalid token.». والعطل يرد `unavailable` لأنه لا يقول شيئًا عن الرمز.
+- **فرق مقصود:** الرمز المرفوض يُخرج الجلسة إلى المجهول، والإنتاج والمحاكي يبقيانها على هويتها السابقة (`production/auth.json`). والمكتبات تغلق الاتصال عند أي رفض على أي حال (`onAuthRevoked_`)، فلا يراه إلا عميل خام.
 - **الانتهاء:** عند `exp` تصل `ac expired_token`، فتجدد المكتبة رمزها.
 - **الإلغاء:** تعطيل المستخدم أو حذفه أو إلغاء جلساته أو تغيير كلمة مروره يصل عبر `idtoken.Revocations`. الجلسة المطابقة تتلقى `ac invalid_token` خلال ثانية، ثم `c` لكل استماع لم يعد مسموحًا. وإن فات المشترك شيء (`ErrOverflow`) يُعاد التحقق من رمز كل جلسة.
 
 ## اختلافات أخرى عن المحاكي
 
-- **دفعة `c` لاستماع باستعلام:** المحاكي يعيد الاستعلام مضافًا إليه `sin` و`ein`، فلا تجد مكتبة JS الاستماع الذي تلغيه (تبحث بمعرّف الاستعلام). نعيده كما أرسله العميل.
 - **سكربتات الاستطلاع الطويل** (R7): الرسائل في `pRTLPCB` تُهرَّب فيها `<` و`>` و`&` وفاصلا الأسطر U+2028 وU+2029 بصيغة `\u003c` وأخواتها (`json.HTMLEscape`)، والمحاكي يرسلها كما هي. القيم عند المكتبة واحدة، ولا تستطيع بيانات مخزنة أن تكتب `</script>` في السكربت. وصفحة `dframe` تسمح بسكربتها وحده ببصمته (`'sha256-…'`) بدل `'unsafe-inline'`، مع `base-uri 'none'` و`form-action 'none'`.
 - **حجم القراءة الواحدة** (R7): `rtdb.limits.read_rows` (`ARUMA_RTDB_READ_ROWS`، افتراضيًا مليون صف) يحد الصفوف المخزنة التي تحمّلها قراءة واحدة على كاتب القاعدة: `g` باستعلام أو بدونه، والبيانات الأولى للاستماع، والقيمة التي تقارن الكتابة المشروطة بصمتها. تُعدّ الصفوف قبل تحميلها، وما تجاوز الحد يرد `too_big` بنص Firebase «Data requested exceeds the maximum size that can be accessed with a single request.»، وفي REST يرد 400 بالنص نفسه. و`shallow=true` يقرأ المفاتيح صفحةً صفحة، فلا يُرفض.
   - **ما لا يحده:** الاستماع باستعلام يعيد قراءة عقدته كاملة مع كل كتابة تحتها ليحسب نافذته (`taggedPushes`)، وهذه القراءات لا يحدها `read_rows`. يُفحص الحجم عند بدء الاستماع وحده، فإن كبرت العقدة بعده كلّف كل كتابة تحتها قراءتها كلها.
@@ -66,7 +66,7 @@
   - `PATCH` تحديث متعدد المسارات ذري، يرد الأبناء كما كُتبت مع `null`. و`PATCH null` يحذف، كما في المحاكي.
 - **المعاملات:**
   - `print=pretty` بتنسيق المحاكي (`"key" : value`)، و`print=silent` يرد 204.
-  - `shallow=true`: كل ابن `true`، والورقة قيمتها. ويُقرأ من الصفوف المخزنة صفحةً صفحة دون تحميل ما تحتها. ومع `limitToFirst` أو `limitToLast` بلا `orderBy` يحد المفاتيح بالترتيب المعجمي، كما يستعمله `firebase database:remove`.
+  - `shallow=true`: كل ابن `true`، والورقة قيمتها، و`".priority": true` أولًا للكائن ذي الأولوية كما يرد الإنتاج والمحاكي (ومع الحدود يُعد أول المفاتيح كما يعده المحاكي). ويُقرأ من الصفوف المخزنة صفحةً صفحة دون تحميل ما تحتها. ومع `limitToFirst` أو `limitToLast` بلا `orderBy` يحد المفاتيح بالترتيب المعجمي، كما يستعمله `firebase database:remove`.
   - `format=export` بالأولويات.
   - `timeout` حتى 15 دقيقة، و`writeSizeLimit` يُقبل ولا يوقف شيئًا (الحد عندنا `rest_write_bytes`)، و`disableTriggers` يُقبل ولا أثر له: لا مشغّلات في Aruma.
 - **الاستعلامات:** `orderBy` (`"$key"` و`"$value"` و`"$priority"` ومسار ابن) مع `limitToFirst` و`limitToLast` و`startAt` و`startAfter` و`endAt` و`endBefore` و`equalTo`، بنصوص أخطاء المحاكي. والترتيب بابن أو بالقيمة بلا `.indexOn` يرد 400 «Index not defined…» (ADR-020 §1). والاستعلام الذي لا يختار شيئًا يرد `{}`، أو `null` إن كان له حد.
@@ -76,9 +76,9 @@
   - `if-none-match` على `GET`: 304 عند التطابق. وعلى `PUT`: يكتب إلا إن تطابق، كما في المحاكي.
   - الكتابة المشروطة والفحص ذريان في الكاتب. وقراءة القيمة لرد 412 تخضع لقواعد القراءة: من لا يقرأ العقدة يتلقى 401 لا بياناتها.
 - **الصلاحية:**
-  - الرمز في `Authorization: Bearer` أو `?access_token=` أو `?auth=`، بهذا الترتيب.
-  - **رمز حساب الخدمة أو رمز CLI** (`aruma_sat_` و`aruma_pat_`) يتجاوز القواعد كما في Firebase. ومعه `auth_variable_override=<JSON>` يعمل بذلك المتغير، و`null` يجعله مجهولًا، كما ترسله مكتبتا Go وPython. والتجاوز بلا رمز مسؤول يُتجاهل، كما في المحاكي.
-  - **غير ذلك رمز ID لمستخدم Aruma Auth**، يُتحقق منه للمشروع.
+  - الرمز في `Authorization: Bearer` أو `?access_token=` أو `?auth=`، بهذا الترتيب، ويُؤخذ كما يأخذه الإنتاج (`production/rest_auth.json`):
+  - **`Bearer` و`access_token` لرمز المسؤول وحده:** رمز حساب الخدمة أو رمز CLI (`aruma_sat_` و`aruma_pat_`) يتجاوز القواعد كما في Firebase. ومعه `auth_variable_override=<JSON>` يعمل بذلك المتغير، و`null` يجعله مجهولًا، كما ترسله مكتبتا Go وPython. والتجاوز بلا رمز مسؤول يُتجاهل، كما في المحاكي. وغير ذلك هناك، ورمز ID المستخدم منه، 401 «Unauthorized request.».
+  - **`?auth=` رمز ID لمستخدم Aruma Auth**، يُتحقق منه للمشروع. والرمز الذي لا يتحقق، منتهيًا أو مزوّرًا أو غير رمز، يُتجاهل ويعمل الطلب مجهولًا: المسار العام يُقرأ، والمحمي «Permission denied».
   - القراءة بلا استعلام تراها القواعد `PlainREST` (مرتبة بالمفتاح)، وبالاستعلام متغير `query` منه. و`.validate` المرفوضة 401 «Permission denied»، كالرفض.
 - **أخطاء JSON** بصيغة `{"error" : "…"}`، بنصوص المحاكي حيث له نص. و`Access-Control-Allow-Origin: *` على كل رد، كما يرد المحاكي.
 - **`/.settings/rules.json`:** `GET` يرد المستند كما حُفظ بتعليقاته، و`?format=strict` بلا تعليقات (`getRulesJSON` في Admin Node)، و`PUT ?dryRun=true` يفحص ولا يحفظ (`firebase deploy --dry-run`). وأخطاء الصياغة `السطر:العمود: الرسالة\n` بلا مسار القاعدة، كما يكتبها Firebase. بلا رمز 403، وبرمز مستخدم 401.
@@ -92,14 +92,40 @@
 
 ### اختلافات مقصودة عن المحاكي
 
-- **الرموز:** المحاكي يأخذ أي `Bearer` أو `access_token` على أنه المالك، ويتجاهل `?auth=` الذي لا يُقرأ، ويقبل الرمز المنتهي. Aruma يتحقق من كل رمز ويرد 401: «Unauthorized request.» لرمز مسؤول مرفوض، و«Could not parse auth token.» لرمز ID مرفوض، و«Auth token is expired.» للمنتهي. وهذا سلوك الإنتاج.
+- **الرموز:** المحاكي يأخذ أي `Bearer` أو `access_token` على أنه المالك. Aruma يأخذهما كما يأخذهما الإنتاج: رمز مسؤول يتحقق، وإلا 401 «Unauthorized request.». و`?auth=` الذي لا يتحقق يتجاهله الثلاثة.
 - **`auth_variable_override` ليس كائنًا:** 400 «Invalid auth variable override.» بدل 503 «Firebase database instance is inactive».
-- **`shallow`:** المحاكي يعد `.priority` ابنًا (`".priority": true`). Aruma يعد الأبناء وحدهم.
 - **طول المسار:** في REST يعد المحاكي الفواصل ضمن 768 بايت، وفي البروتوكول لا يعدها (`limits.json`). نعد بطريقة البروتوكول في الحالتين.
 - **مسارات النقطة** (`/.inspect.json` و`/.settings.json`): مسار غير صالح 400. و`DELETE` و`POST` على `rules.json` 405.
 - **HEAD** بلا جسم، و304 بلا `Content-Type`: كما يفرض HTTP وخادم Go.
-- **الأرقام:** المحاكي يكتب `1.0` و`1.2345678901234567E19` بصيغة Java. Aruma يكتبها كما تكتبها JavaScript. والقيمة واحدة.
 - **المضيف الرئيسي:** بلا `.json` يذهب الطلب إلى اللوحة. ومضيف القاعدة يرد «Append .json to your URL…» كالمحاكي.
+
+## الإنتاج والمحاكي (R7)
+
+سُجّلت في 2026-10-21 من قاعدة Firebase حقيقية (`europe-west1`، بإذن المالك) بعميل خام (WebSocket وREST وطلبات `/.lp`) وبمكتبة JS الرسمية 13.0.0 في Node، ثم من المحاكي 4.11.2 ومن Aruma بالسكربت نفسه (`golden/production/capture_production.mjs` و`sdk_production.mjs`). كُتب كل شيء تحت `/aruma-ref/<run>/` وحُذف بعده، والقواعد أُضيف إليها ذلك المسار وحده مدة التشغيل ثم أُعيدت كما كانت حرفًا بحرف.
+
+| الموضوع | الإنتاج | المحاكي 4.11.2 | Aruma بعد R7 |
+|---|---|---|---|
+| المصافحة `h` | `ts` و`v:"5"` و`h` مضيف شظية (`s-gke-…firebasedatabase.app`) و`s` من 32 حرفًا. `p` يُرد بـ `o`، و`"0"` بلا رد، والاتصال الساكن 75 ثانية بلا keepalive لا يُغلق | مثله، و`h` مضيفه | مثله، و`h` مضيفه |
+| رد `auth` الناجح | `auth` فيه `provider` و`uid` و`user_id` و`token`، ونسخة من مطالبات الرمز غير المحجوزة (`email` و`email_verified` و`name`)، و`expires` هو `exp` | الشكل نفسه، و`expires: null` | بلا نسخ المطالبات في أعلى `auth`. **ملاحظة فقط:** المكتبات لا تقرأ بيانات الرد |
+| رمز مرفوض | «Could not parse auth token.»، و«Unsupported jwt algorithm: none»، و`expired_token` «Auth token is expired»، وتبقى الهوية السابقة | يقبل غير الموقّع والمنتهي، ويبقي الهوية | **طابق** النصوص. ويُخرج الجلسة إلى المجهول (فرق مقصود أعلاه) |
+| `gauth` برمز ID | `permission_denied` | يقبله مسؤولًا (`auth: null`) | **طابق** الإنتاج |
+| `unauth` | `ok` «unauthenticated» | مثله | مثله |
+| الرفض على `q` و`g` و`p` و`m` و`o` و`om` و`.validate` | `permission_denied` «Permission denied»، و`oc` مقبول | مثله | مثله |
+| دفعات `c` بعد `unauth` | كلها قبل الرد. الاستعلام يعود مضافًا إليه `sin`/`ein` بقيمة `true` حيث غابا، والاستعلام بلا حدود ولا نهايات `null`، فلا تجد مكتبة JS استماع حدٍّ بلا نهايات ولا تلغيه. ترتيبها غير ثابت | مثله | **طابق** (كان يعيد الاستعلام كما أُرسل) |
+| استعلام بلا فهرس | رد `q` فيه `{"w":["no_index"]}`، و`g` باستعلام `no_index` «Index not defined…»، وأخطاء REST `orderBy` بالنصوص نفسها | مثله | مثله |
+| حجم الكتابة | `writeSizeLimit=tiny` لا يرفض 305 KB. والقيمة المجهولة «{tiny, large, small, medium, unlimited}». ومفتاح أطول من 768 بايت داخل البيانات يُرد بإطار خطأ `t:"e"` بلا رد. والمسار فوق 768 بايت والعمق فوق 32 بنصوصهما | الترتيب «{medium, tiny, large, unlimited, small}»، والباقي مثله | **طابق** الترتيب. ويرد على المفتاح الطويل بـ `invalid_parameters` (فرق قديم، المكتبات تتحقق قبل الإرسال). ولم يُجرَّب حد 16 MB على الإنتاج |
+| ETag و`If-Match` | 28 حرفًا base64 لـ SHA-1، و`null_etag` للغائب، و412 بالقيمة والـ ETag، و`if-match: null_etag` يكتب على الغائب | مثله | مثله |
+| `print=silent` و`print=pretty` | 204 لكل الطرق. والأجسام المنسقة والأخطاء تنتهي بسطر جديد | مثله | **طابق** السطر الأخير |
+| `shallow` | `".priority": true` للكائن ذي الأولوية | مثله | **طابق** (كان يعد الأبناء وحدهم) |
+| قاعدة المصفوفات | مفاتيح أعداد صحيحة تملأ أكثر من نصف المدى تُرد مصفوفة، `{"0":"a","3":"d"}` مصفوفة، و`{"5":"x"}` و`{"00":…}` و`{"-1":…}` كائنات | مثله | مثله |
+| قيم الخادم | `timestamp` عدد صحيح، و`increment` صحيح+صحيح صحيح، ومع عشري عشري، وقيمة `.sv` مجهولة «Invalid data…» | مثله | مثله، والزيادة الآن تحفظ الصحيح |
+| الأرقام | تبقى كما كُتبت: صحيح 64 بت أو عشري، تُرد بصيغة Java (`1.0` و`1.0E300` و`1.5E-7` و`1.2345678901234567E19`)، و`9007199254740993` دقيق، و`-0.0` يبقى، والأولوية عشري دائمًا (`5.0`) | مثله | **طابق**، إلا `-0.0` يعود `0.0`: jsonb بلا صفر سالب. مرئي في Android وiOS (Long وDouble) ومكتبات Admin |
+| REST والرموز | `?auth=` الذي لا يتحقق يُتجاهل (العام 200، والمحمي «Permission denied»). و`Bearer`/`access_token` لغير المسؤول، ورمز ID منه، 401 «Unauthorized request.» | يتجاهل `?auth=` الرديء، ويأخذ أي `Bearer` مالكًا | **طابق** الإنتاج (كان يرد 401 على `?auth=` ويقبل رمز ID في `Bearer`) |
+| الاستطلاع الطويل `/.lp` | الأمر `start` بمعرّف عددي كبير وكلمة سر من 10 أحرف، وصفحة `dframe` نفسها، و`pRTLPCB` بالترتيب، وترويسة `x-firebase-response` | الشكل نفسه | الشكل نفسه، وكلمة السر 20 حرفًا ورابط القطع فيه `ns=` |
+| مسار بلا `.json` | 200 صفحة دخول Google | 400 «Append .json…» | مضيف القاعدة كالمحاكي، والرئيسي للوحة |
+| مكتبة JS في Node | 28 حالة: قيم ورموز أخطاء ونصوص وتحذيرات `Using an unspecified index…` | — | مطابقة للإنتاج في الحالات كلها |
+
+ما لم يُختبر على الإنتاج: حد 16 MB للكتابة عبر WebSocket (ثقيل على مشروع حقيقي)، ونص رفض الرمز الموقّع الذي لا يتحقق، ونص `ac` عند انتهاء الرمز أثناء الاتصال، وما يفعله `shallow` بالأولوية مع الحدود (اتبعنا المحاكي).
 
 ## مكتبات Admin
 
@@ -107,9 +133,29 @@
 |---|---|---|---|
 | Node (`firebase-admin` 14) | WebSocket، والقواعد عبر REST | `test/smoke/admin-node/rtdb.test.mjs` (`run.sh admin-node-rtdb`) بـ `databaseURL` الإنتاجي وTLS | 9 من 9: get وset وupdate وpush وremove وtransaction، والقواعد ذهابًا وإيابًا، و`orderByChild` مع `.indexOn`، و`databaseAuthVariableOverride` تحت القواعد. وonDisconnect لا يخص المسؤول |
 | Go (`firebase-admin-go` v4) | REST | `test/smoke/admin-go/rtdb` (`run.sh admin-go-rtdb`) بـ `databaseURL` الإنتاجي وTLS | ناجحة: Get وSet وUpdate وPush وDelete وTransaction بـ ETag، و`GetWithETag` و`SetIfUnchanged` و`GetIfChanged` و`GetShallow`، والاستعلامات، و`AuthOverride` |
-| Python (`firebase-admin` 7.7) | REST | لم يُضف إلى الاختبارات | لا يعمل بعد مع Aruma لسببين خارج REST: (1) `google-auth` يوقّع الطلب بـ `aud=https://oauth2.googleapis.com/token` ثابتًا، ونقطة الرموز في Aruma ترفضه (`invalid_grant`). (2) بعد كل تجديد يرسل `google-auth` 2.62 رمز Aruma إلى `iamcredentials.googleapis.com`، ما لم يكن `universe_domain` في ملف المفتاح غير `googleapis.com`. وبعد تجاوز الأول تجريبيًا نجحت get وset وupdate وpush وdelete وtransaction، وبقي اتصال `iamcredentials` محجوبًا. و`listen()` غير مدعوم (البث مؤجَّل) |
+| Python (`firebase-admin` 7.7) | REST | لا اختبار: **غير مدعوم في 0.2** | المشكلة في الدخول لا في REST، والتفصيل في القسم التالي. وبعد تجاوز الدخول تجريبيًا نجحت get وset وupdate وpush وdelete وtransaction. و`listen()` غير مدعوم (البث مؤجَّل) |
 
-كلاهما في CI ضمن مهمة smoke.
+كلاهما في CI ضمن مهمة smoke. وفي R7 نجحا كذلك خلف Caddy الحقيقي (`test/experiments/rtdb-caddy.sh`).
+
+### Admin Python: غير مدعوم، ولماذا
+
+فُحص في R7 في مصدر `google-auth` 2.62.0 مع `firebase-admin` 7.7.0، وبتجربة على الجهاز وكل الاتصالات محجوبة. مشكلتان، كلتاهما في `google-auth` لا في Aruma:
+
+1. **`aud` ثابت على Google.** `service_account.Credentials._make_authorization_grant_assertion` يضع `aud` دائمًا `https://oauth2.googleapis.com/token` (`_GOOGLE_OAUTH2_TOKEN_ENDPOINT`)، ثم يرسل الطلب إلى `token_uri` الذي في ملف المفتاح، أي إلى Aruma. وAruma يشترط أن يكون `aud` عنوان نقطة رموزه هو (`ExchangeAssertion`)، فيرد `invalid_grant`.
+2. **الحد الإقليمي (Regional Access Boundary).** كل طلب موثّق يمر بـ `CredentialsWithRegionalAccessBoundary.before_request`، فإن كان `universe_domain` هو الافتراضي `googleapis.com` (وهو ما في مفاتيح Aruma) ولم تكن عنده بيانات حديثة ولا فترة انتظار، أطلق خيطًا في الخلفية يطلب `GET https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/<email>/allowedLocations` **ومعه رمز الدخول الذي أصدره Aruma** في `Authorization`.
+   - **متى:** عند أول طلب للقاعدة في العملية، قبل الطلب نفسه، ثم بعد كل فترة انتظار عند الفشل (15 دقيقة تتضاعف حتى 6 ساعات) أو كل نحو 5 ساعات عند النجاح. وفي التجربة: أول `db.reference('/x').get()` حاول الخيط الوصول إلى `iamcredentials.googleapis.com:443` أربع مرات.
+   - **مسار القاعدة يمر به:** `firebase_admin.db` يستعمل `AuthorizedSession`، أي `before_request` نفسه.
+   - **لا يوقف التطبيق** (الخطأ يُبتلع في الخيط)، لكنه يرسل رمز Aruma صالحًا لساعة إلى طرف ثالث.
+   - **لا يُتجنّب بلا تغيير في كود التطبيق:** الاستثناءات الوحيدة `universe_domain` غير الافتراضي، أو عنوان `*.rep.googleapis.com`، أو `subject` (التفويض على مستوى النطاق).
+   - **وتغيير `universe_domain` في ملف المفتاح من جهة Aruma لا يصلح:** يجعل `google-auth` يترك نقطة الرموز كليًا ويرسل إلى القاعدة JWT موقّعًا ذاتيًا (`iss=sub=email` و`scope` بلا `aud`) رمزًا لكل طلب، وAruma لا يقبل هذا النوع، وقبوله نوع دخول جديد كامل. ويغيّر الحقل نفسه سلوك Admin Go (`golang.org/x/oauth2`) مع الملف نفسه.
+
+**القرار: لا تغيير في الكود.** قبول `aud` الخاص بـ Google ليس آمنًا، والمشكلة الثانية تبقى معه:
+
+- `aud` هو ما يربط التوقيع بمستقبله. Admin Node (`cert()` عبر `gtoken`) يرسل توقيعات مفاتيح Aruma إلى `oauth2.googleapis.com` نفسه، بـ `aud` هو عنوان Google. وهي اليوم بلا قيمة عند Aruma. ولو قبلها Aruma لصار كل توقيع وصل إلى Google، أو إلى وسيط يفك TLS في شبكة الشركة، قابلًا للإعادة على Aruma ساعة كاملة: لا `jti` ولا منع للإعادة.
+- صحيح أن التوقيع يبقى بمفتاح من Aruma، فلا يقبل Aruma مفتاحًا غريبًا. لكنه لم يعد مربوطًا بـ Aruma إلا بالمفتاح، وهذا ما وُجد `aud` ليمنعه.
+- وحتى مع قبوله، يرسل `google-auth` رمز Aruma إلى `iamcredentials.googleapis.com`. فلا يصير الدعم نظيفًا إلا بكود في التطبيق.
+
+**ما يلزم ليعمل مستقبلًا:** اعتماد (credential) لبايثون يوقّع بـ `aud` = `token_uri` ويطلب الرمز منه، كما يفعل `aruma-credential.mjs` لـ Node، وتمرَّر إلى `firebase_admin.initialize_app`. هذا تغيير في كود التطبيق، فلا يُعد دعمًا للمكتبة كما هي.
 
 ## firebase-tools
 
@@ -118,6 +164,23 @@
 - **كيف تجد الأداة القاعدة:** من `resources.realtimeDatabaseInstance` في مشروع واجهة الإدارة، ثم `databaseUrl` من واجهة إدارة القاعدة (`GET /v1beta/projects/{p}/locations/-/instances/{id}`). يقدّمهما Aruma منذ R5 حين تعمل القاعدة.
 - **الإعداد:** `FIREBASE_API_URL` و`FIREBASE_TOKEN_URL` و`FIREBASE_RTDB_MANAGEMENT_URL` على عنوان Aruma، و`FIREBASE_TOKEN` رمز CLI. و`FIREBASE_SKIP_INFORMATIONAL_IAM=1` يمنع محاولة الأداة الاتصال بـ `cloudresourcemanager.googleapis.com`، وهي محاولة لا يتوقف عليها شيء.
 - **الشكل `?ns=` لا يصلح للأداة:** `database:get` و`database:remove` يرسلان مسار العنوان وحده، فيضيع `?ns=`. والنطاق الفرعي يصلح.
+
+## الأجهزة (R7)
+
+- **الاختبارات:** `test/e2e/web-rtdb` و`android-rtdb` و`ios-rtdb`، والسيناريوهات وحراسها في `test/e2e/README.md`.
+- **الإعداد:** المكتبات الرسمية في وضع الإنتاج، تعرف القاعدة من ملف الإعداد المولّد وحده (`databaseURL` بصيغة التطوير `?ns=`)، ولا تستدعي أي دالة محاكي. والقواعد حقيقية (`test/e2e/rtdb-rules.json`)، بلا `dev_open_rules`.
+- **الطرف الآخر:** عميل ثانٍ بالمكتبة نفسها حيث تسمح المنصة، وواجهة REST برمز مسؤول في كل منصة.
+
+| المنصة | المكتبة | الاختبارات | التشغيلات المحلية |
+|---|---|---|---|
+| الويب (Chromium) | `firebase` 11 و12 و13 | 10 لكل إصدار، ثم فخ الاستطلاع الطويل (13 فحصًا) | 4 من 4 (2 على الشكل الأخير: 60 من 60 و26 من 26) |
+| Android (`aruma-a34`، API 33) | `firebase-database` من BoM 35 | 10 | 4 من 4 (2 على الشكل الأخير: 20 من 20) |
+| iOS (محاكي iOS 18.5) | `FirebaseDatabase` 12.19 | 10 | 4 من 4 (2 على الشكل الأخير: 20 من 20) |
+
+- **الإلغاء عند تعطيل المستخدم:** تُلغى الاستماعات بعد 0.5 إلى 3.5 ثانية.
+  - المكتبات الثلاث تغلق الاتصال عند `ac` قبل أن تقرأ دفعات `c` التي تليه.
+  - فالإلغاء يصلها بعد إعادة الاتصال: تطلب رمزًا جديدًا فيُرفض، فيخرج Auth المستخدم، ثم تُرفض الاستماعات المعادة بـ `permission_denied`.
+- **التضمين في CI:** الويب في `ci.yml`، وAndroid أسبوعيًا في `devices.yml`، وiOS يدويًا في `codemagic.yaml` (`ios-rtdb`).
 
 ## ما لم يأت بعد
 

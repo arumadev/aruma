@@ -126,6 +126,41 @@ jobs:
             test/e2e/web-auth/playwright-report
             test/e2e/web-auth/.generated/server.log
 
+  web-rtdb:
+    name: Web Realtime Database e2e (firebase 11, 12, 13; production mode, real rules)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            test/e2e/web-rtdb/package-lock.json
+            test/experiments/rtdb-lp-browser/package-lock.json
+      # Then the long-poll trap of test/experiments/rtdb-lp-browser.sh, which needs psql (on the runner).
+      - name: Official SDK against a real server, no request to Google
+        run: test/e2e/web-rtdb/run.sh
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: web-rtdb-report
+          path: |
+            test/e2e/web-rtdb/playwright-report
+            test/e2e/web-rtdb/.generated/server.log
+            test/e2e/web-rtdb/.generated/lp-browser.json
+
   dashboard:
     name: Dashboard (lint, unit, build, e2e in both directions)
     runs-on: ubuntu-latest

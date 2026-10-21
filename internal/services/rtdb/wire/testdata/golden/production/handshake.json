@@ -1,0 +1,103 @@
+{
+  "scenario": "handshake",
+  "description": "Hello frame, the stats request the SDK sends first, a control ping, a keepalive \"0\" as the JS SDK sends every 45 s, then a second connection to the host the hello names, and one connection left idle for 75 s without keepalives.",
+  "source": "production",
+  "project": "<redacted>",
+  "host": "<project>-default-rtdb.europe-west1.firebasedatabase.app",
+  "captured": "2026-10-21",
+  "script": "capture_production.mjs",
+  "run": "r7-20261021-c1add4",
+  "connections": {
+    "A": "/.ws?v=5&ns=<project>-default-rtdb",
+    "K": "/.ws?v=5&ns=<project>-default-rtdb",
+    "B": "/.ws?v=5&ns=<project>-default-rtdb&ls=6kJsYYMjHmAsKDfkzD6Mp4RQMAFg0D8Z"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792571624491,\"v\":\"5\",\"h\":\"s-gke-euw1-nssi2-3.europe-west1.firebasedatabase.app\",\"s\":\"6kJsYYMjHmAsKDfkzD6Mp4RQMAFg0D8Z\"}}}",
+      "ms": 1137
+    },
+    {
+      "conn": "K",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792571625227,\"v\":\"5\",\"h\":\"s-gke-euw1-nssi2-3.europe-west1.firebasedatabase.app\",\"s\":\"bMzwINIUrfZDWvFcl3yA9VismromD302\"}}}",
+      "ms": 1868
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"s\",\"b\":{\"c\":{\"sdk.js.11-0-0\":1}}}}",
+      "ms": 1869
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}",
+      "ms": 2094
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"p\",\"d\":{}}}",
+      "ms": 2596
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"o\",\"d\":null}}",
+      "ms": 2849
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "0",
+      "ms": 4098
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792571631893,\"v\":\"5\",\"h\":\"s-gke-euw1-nssi2-3.europe-west1.firebasedatabase.app\",\"s\":\"bn7NY8LdflIxTKOgfmlDtusc3CzwmISL\"}}}",
+      "ms": 8530
+    },
+    {
+      "conn": "B",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"s\",\"b\":{\"c\":{\"sdk.js.11-0-0\":1}}}}",
+      "ms": 8530
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": "",
+      "ms": 8531
+    },
+    {
+      "conn": "B",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}",
+      "ms": 8799
+    },
+    {
+      "conn": "K",
+      "dir": "close",
+      "code": 1005,
+      "reason": "",
+      "ms": 85980
+    },
+    {
+      "conn": "B",
+      "dir": "close",
+      "code": 1005,
+      "reason": "",
+      "ms": 88438
+    }
+  ],
+  "notes": [
+    "B: connection attempt 1 failed before the hello; connected again",
+    "B connects to the host the hello named (d.h), with ls=<A session id>, as the SDK does on its next connection (PersistentConnection lastSessionId).",
+    "K stayed idle (no keepalive) for 75 s; the server did not close it nor send anything."
+  ]
+}

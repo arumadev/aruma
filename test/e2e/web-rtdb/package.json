@@ -1,0 +1,19 @@
+{
+  "name": "aruma-e2e-web-rtdb",
+  "private": true,
+  "type": "module",
+  "description": "A minimal Vite app on the official firebase package (Auth and Realtime Database in production mode), driven by Playwright against a real Aruma server with real rules.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "firebase-11": "npm:firebase@^11",
+    "firebase-12": "npm:firebase@^12",
+    "firebase-13": "npm:firebase@^13"
+  },
+  "devDependencies": {
+    "@aruma/web": "file:../../../sdk/web/aruma-web",
+    "@playwright/test": "1.64.1",
+    "vite": "^8"
+  }
+}

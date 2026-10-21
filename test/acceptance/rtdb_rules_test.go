@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -191,6 +192,31 @@ func (c *wsClient) readUntil(timeout time.Duration, match func(string) bool) []s
 	}
 }
 
+// Refused credentials are answered as production answers them (wire golden
+// production/auth.json): gauth takes admin credentials only, and a user's ID token on it is
+// permission_denied; a token that is not a JWT "Could not parse auth token."; an unsigned one
+// "Unsupported jwt algorithm: none".
+func TestRTDBAuthRefusalsAsProduction(t *testing.T) {
+	e := rtdbEnv(t, true, nil)
+	ns, users, _, _ := rulesSetUp(t, e)
+	users.create("chat-app", "u1")
+	tok := users.signIn("chat-app", "u1").str("idToken")
+	unsigned := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"none","typ":"JWT"}`)) + "." +
+		base64.RawURLEncoding.EncodeToString([]byte(`{"sub":"u1","user_id":"u1"}`)) + "."
+	c := e.dial(ns, dialOpts{})
+	for _, k := range []struct{ action, cred, status, text string }{
+		{"gauth", tok, "permission_denied", "Permission denied"},
+		{"auth", "garbage", "invalid_token", "Could not parse auth token."},
+		{"auth", unsigned, "invalid_token", "Unsupported jwt algorithm: none"},
+		{"auth", tok, "ok", ""},
+	} {
+		r := c.call(k.action, map[string]any{"cred": k.cred})
+		if r.Status != k.status || k.text != "" && string(r.Data) != strconv.Quote(k.text) {
+			t.Errorf("%s %.10s: %s %s, want %s %q", k.action, k.cred, r.Status, r.Data, k.status, k.text)
+		}
+	}
+}
+
 // A user disabled in the console or through the Admin API is cut off within a second: ac
 // invalid_token, then c for each listen it may no longer read, and its writes are denied.
 // Enabled again, the client refreshes its token, as the SDKs do after ac, and signs in anew.
@@ -219,7 +245,7 @@ func TestRTDBDisabledUserIsCutOff(t *testing.T) {
 	}
 	want := []string{
 		`{"t":"d","d":{"a":"ac","b":{"s":"invalid_token","d":"Auth token is no longer valid."}}}`,
-		`{"t":"d","d":{"a":"c","b":{"p":"users/u1","q":[{"l":1,"vf":"l"}]}}}`,
+		`{"t":"d","d":{"a":"c","b":{"p":"users/u1","q":[{"sin":true,"ein":true,"l":1,"vf":"l"}]}}}`,
 		`{"t":"d","d":{"a":"c","b":{"p":"users/u1","q":null}}}`,
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {

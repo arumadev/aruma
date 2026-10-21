@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
@@ -50,13 +52,23 @@ func (a *adminState) stop() {
 //     the rules then see the override, or null. The credential is checked again as an
 //     admin's is, and when it fails the session is told with ac and acts as nobody.
 //
+// gauth is for admin credentials only: production answers gauth with a user's ID token
+// permission_denied (testdata/golden/production/auth.json in the wire package), where the
+// emulator signs in as admin and Aruma used to sign the user in.
+//
 // A credential that does not verify signs the session out: it acts as nobody until one does.
-// A token refused as such is answered with its status (idtoken.Status); a failure to check it
-// at all, such as the database being down, is answered unavailable, since it says nothing
-// about the token.
-func (s *session) authenticate(ctx context.Context, b wire.AuthBody) wire.Reply {
+// (Production keeps the session's previous sign-in instead, as the emulator does; the SDKs
+// close the connection on any refusal, PersistentConnection.onAuthRevoked_, so only a raw
+// client could tell.) A token refused as such is answered with its status (idtoken.Status)
+// and production's text where it is known; a failure to check it at all, such as the
+// database being down, is answered unavailable, since it says nothing about the token.
+func (s *session) authenticate(ctx context.Context, b wire.AuthBody, gauth bool) wire.Reply {
 	token := strings.TrimSpace(b.Credential)
 	if !strings.HasPrefix(token, authn.ServiceTokenPrefix) && !strings.HasPrefix(token, authn.AccessTokenPrefix) {
+		if gauth {
+			s.signOut()
+			return wire.Fail(wire.StatusPermissionDenied, "Permission denied")
+		}
 		return s.signInUser(ctx, token)
 	}
 	p, err := s.api.verifyAdmin(ctx, s.target, token)
@@ -101,9 +113,9 @@ func (s *session) signInUser(ctx context.Context, token string) wire.Reply {
 		var ce *core.Error
 		switch status := idtoken.Status(err); {
 		case status == wire.StatusExpiredToken:
-			return wire.Fail(status, "Auth token is expired.")
+			return wire.Fail(status, "Auth token is expired")
 		case status != "":
-			return wire.Fail(status, "Invalid token.")
+			return wire.Fail(status, refusalText(token))
 		case errors.As(err, &ce):
 			return wire.Fail(ce.Status, ce.Message)
 		}
@@ -112,6 +124,25 @@ func (s *session) signInUser(ctx context.Context, token string) wire.Reply {
 		return wire.Fail(e.Status, e.Message)
 	}
 	return wire.OKWith(map[string]any{"auth": s.core.AuthVariable(), "expires": s.core.Auth().User.Expires.Unix()})
+}
+
+// refusalText is the text of an invalid_token reply, as production words it
+// (production/auth.json): "Could not parse auth token." for what is not a JWT, "Unsupported
+// jwt algorithm: none" for an unsigned one. Production's text for a signed token that does not
+// verify is not known; Aruma says "Invalid token.".
+func refusalText(token string) string {
+	head, _, ok := strings.Cut(token, ".")
+	raw, err := base64.RawURLEncoding.DecodeString(strings.TrimRight(head, "="))
+	var h struct {
+		Alg string `json:"alg"`
+	}
+	if !ok || err != nil || json.Unmarshal(raw, &h) != nil {
+		return "Could not parse auth token."
+	}
+	if h.Alg == "none" {
+		return "Unsupported jwt algorithm: none"
+	}
+	return "Invalid token."
 }
 
 func hasAuthVar(b wire.AuthBody) bool {

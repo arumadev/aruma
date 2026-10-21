@@ -61,9 +61,11 @@ func TestRTDBRESTWritesReachListeners(t *testing.T) {
 	}
 }
 
-// The credentials of REST under rules: a service account's access token and the owner's CLI
-// token bypass them, auth_variable_override beside them acts as that auth variable, and an
-// Aruma user's ID token, in ?auth= or as a bearer, is held to them.
+// The credentials of REST under rules, as production takes them (wire golden
+// production/rest_auth.json): a service account's access token and the owner's CLI token, as
+// a bearer or ?access_token=, bypass them, auth_variable_override beside them acts as that
+// auth variable, and an Aruma user's ID token in ?auth= is held to them. A user's ID token as
+// a bearer is refused; a ?auth= that does not verify is ignored.
 func TestRTDBRESTCredentials(t *testing.T) {
 	e := rtdbEnv(t, true, nil)
 	ns, users, pat, _ := rulesSetUp(t, e)
@@ -104,16 +106,23 @@ func TestRTDBRESTCredentials(t *testing.T) {
 	if r := restAs(t, e, "GET", "/users/amal.json?ns="+ns+"&auth="+idToken, "", "", nil); r.status != 200 || r.body != `{"age":30}` {
 		t.Errorf("own profile with ?auth=: %d %s", r.status, r.body)
 	}
-	if r := restAs(t, e, "PATCH", "/users/amal.json?ns="+ns, `{"age":"old"}`, idToken, nil); r.status != 401 {
+	if r := restAs(t, e, "PATCH", "/users/amal.json?ns="+ns+"&auth="+idToken, `{"age":"old"}`, "", nil); r.status != 401 {
 		t.Errorf(".validate over REST: %d %s", r.status, r.body)
 	}
-	if r := restAs(t, e, "PUT", "/users/badr.json?ns="+ns, `{"age":1}`, idToken, nil); r.status != 401 || !strings.Contains(r.body, "Permission denied") {
+	if r := restAs(t, e, "PUT", "/users/badr.json?ns="+ns+"&auth="+idToken, `{"age":1}`, "", nil); r.status != 401 || !strings.Contains(r.body, "Permission denied") {
 		t.Errorf("another's profile: %d %s", r.status, r.body)
 	}
-	// A credential that does not verify is refused, whatever the rules.
-	for _, q := range []string{"&auth=garbage", "&access_token=aruma_sat_nope"} {
-		if r := restAs(t, e, "GET", "/users/amal.json?ns="+ns+q, "", "", nil); r.status != 401 {
-			t.Errorf("%s: %d %s", q, r.status, r.body)
+	// A bearer or access_token that is not an admin credential is refused, a user's ID token
+	// included; a ?auth= that does not verify acts as nobody, which these rules deny.
+	for _, c := range []struct{ query, bearer, want string }{
+		{"", idToken, "Unauthorized request."},
+		{"&access_token=" + idToken, "", "Unauthorized request."},
+		{"&access_token=aruma_sat_nope", "", "Unauthorized request."},
+		{"&auth=garbage", "", "Permission denied"},
+		{"&auth=" + pat, "", "Permission denied"},
+	} {
+		if r := restAs(t, e, "GET", "/users/amal.json?ns="+ns+c.query, "", c.bearer, nil); r.status != 401 || !strings.Contains(r.body, c.want) {
+			t.Errorf("%.30s %.10s: %d %s", c.query, c.bearer, r.status, r.body)
 		}
 	}
 }

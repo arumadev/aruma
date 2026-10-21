@@ -1,0 +1,50 @@
+// The Realtime Database rules every *-rtdb end-to-end suite runs under (web, Android, iOS). The
+// runner deploys them with put_rtdb_rules (server.sh) before the tests; nothing runs under
+// dev_open_rules. The admin writer (the CLI token, as a service account) bypasses them.
+{
+  "rules": {
+    // A user's own data, and no one else's.
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    // A room both parties write to. Every message carries the server's time.
+    "rooms": {
+      "$room": {
+        ".read": "auth != null",
+        "messages": {
+          ".indexOn": ["ts"],
+          "$id": {
+            ".write": "auth != null",
+            ".validate": "newData.hasChildren(['from', 'text', 'ts']) && newData.child('ts').isNumber() && newData.child('ts').val() <= now"
+          }
+        }
+      }
+    },
+    // Leaderboards, queried by score.
+    "boards": {
+      "$board": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".indexOn": ["score"]
+      }
+    },
+    // Counters the client and the admin increment at the same time.
+    "counters": {
+      "$counter": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.isNumber()"
+      }
+    },
+    // Presence: everyone signed in sees it, only its user writes it.
+    "status": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    }
+  }
+}

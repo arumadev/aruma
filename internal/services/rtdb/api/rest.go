@@ -169,7 +169,8 @@ func readREST(r *http.Request) (*restRequest, error) {
 			// Aruma's writes are bounded by rest_write_bytes instead, so every limit is
 			// accepted and none aborts.
 		default:
-			return nil, restErr(400, "writeSizeLimit should be one of {medium, tiny, large, unlimited, small}")
+			// The set in production's order (production/oversize.json).
+			return nil, restErr(400, "writeSizeLimit should be one of {tiny, large, small, medium, unlimited}")
 		}
 	}
 	if req.shallow && !q.Has("orderBy") {
@@ -338,11 +339,15 @@ func (a *API) restGet(ctx context.Context, w http.ResponseWriter, s *core.Sessio
 }
 
 // shallow renders the node at path with every child as true, a leaf as itself (emulator
-// 4.11.2; the REST reference). It reads the keys from the stored rows a page at a time,
-// without loading what lies below them; GetREST checked the rules first.
+// 4.11.2; the REST reference), and ".priority": true first when the object has a priority,
+// as production and the emulator both answer (production/rest.json); a leaf's priority does
+// not show. Under limitToFirst or limitToLast the emulator counts .priority as the first key.
+// It reads the keys from the stored rows a page at a time, without loading what lies below
+// them; GetREST checked the rules first.
 func (a *API) shallow(ctx context.Context, t core.Target, path string, limit int64) ([]byte, error) {
 	var keys []string
 	after := ""
+	priority := false
 	for {
 		page, err := a.svc.Shallow(ctx, t, path, after, core.MaxShallowPage)
 		if err != nil {
@@ -351,6 +356,7 @@ func (a *API) shallow(ctx context.Context, t core.Target, path string, limit int
 		if page.Value != nil {
 			return page.Value.JSON(), nil
 		}
+		priority = priority || page.Priority != nil
 		for _, c := range page.Children {
 			keys = append(keys, c.Key)
 		}
@@ -365,6 +371,11 @@ func (a *API) shallow(ctx context.Context, t core.Target, path string, limit int
 	if limit != 0 {
 		// Pages come in byte order, but a node held in one page comes in key order.
 		slices.Sort(keys)
+	}
+	if priority {
+		keys = append([]string{core.PriorityKey}, keys...)
+	}
+	if limit != 0 {
 		if limit > 0 {
 			keys = keys[:min(int(limit), len(keys))]
 		} else {
@@ -628,7 +639,8 @@ func writeRESTBody(w http.ResponseWriter, status int, body []byte, req *restRequ
 		return
 	}
 	if req.pretty {
-		body = pretty(body)
+		// Production and the emulator end a pretty body with a newline.
+		body = append(pretty(body), '\n')
 	}
 	w.WriteHeader(status)
 	_, _ = w.Write(body)
@@ -655,13 +667,13 @@ func writeRESTError(w http.ResponseWriter, err error) {
 	writeError(w, e.HTTP, e.Message)
 }
 
-// writeError answers in Firebase's REST error shape, {"error" : "..."}, pretty-printed as the
-// emulator and production print it.
+// writeError answers in Firebase's REST error shape, {"error" : "..."}, pretty-printed and
+// ending in a newline as the emulator and production print it.
 func writeError(w http.ResponseWriter, status int, msg string) {
 	setRESTHeaders(w)
 	w.WriteHeader(status)
 	b, _ := json.Marshal(map[string]string{"error": msg})
-	_, _ = w.Write(pretty(b))
+	_, _ = w.Write(append(pretty(b), '\n'))
 }
 
 // pretty indents compact JSON as print=pretty does, in the style of the emulator's Jackson
