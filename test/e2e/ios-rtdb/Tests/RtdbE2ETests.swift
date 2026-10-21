@@ -306,6 +306,47 @@ final class RtdbE2ETests: XCTestCase {
     XCTAssertNotNil(stored["at"] as? NSNumber)
   }
 
+  /// With disk persistence, as many apps run: the SDK re-listens after a reconnect with the hash of
+  /// its cache, and for a cache over 1 KB a compound hash of ranges (ch). Whatever the server makes
+  /// of them, the client must end up with exactly the server's data.
+  func testPersistentCacheCatchesUpAfterReconnect() async throws {
+    if FirebaseApp.app(name: "persist") == nil, let options = FirebaseApp.app()?.options {
+      FirebaseApp.configure(name: "persist", options: options)
+      Database.database(app: FirebaseApp.app(name: "persist")!).isPersistenceEnabled = true
+    }
+    let app = try XCTUnwrap(FirebaseApp.app(name: "persist"))
+    let cached = Database.database(app: app)
+    _ = try await Auth.auth(app: app).signInAnonymously()
+
+    let board = "boards/ios-persist-\(Self.run)"
+    let seed = (0..<60).map { String(format: #""p%02d":{"score":%d,"name":"player number %d"}"#, $0, $0, $0) }.joined(separator: ",")
+    let put = try await rest("PUT", board, "{\(seed)}")
+    XCTAssertEqual(put.status, 200)
+    let ref = cached.reference(withPath: board)
+    ref.keepSynced(true)
+    let all = listen(ref)
+    let top = listen(ref.queryOrdered(byChild: "score").queryLimited(toLast: 5))
+    try await eventually("the board") { all.events.last?.keys.count == 60 }
+
+    cached.goOffline()
+    // Changes the client does not see while it is away: some children change, some go, some
+    // arrive, above the query's window.
+    var patch: [String] = []
+    for i in 0..<5 {
+      patch.append(String(format: #""p%02d/score":%d"#, i, 100 + i))
+      patch.append(String(format: #""p%02d":null"#, 10 + i))
+      patch.append(String(format: #""n%02d":{"score":%d,"name":"new"}"#, i, 200 + i))
+    }
+    let patched = try await rest("PATCH", board, "{\(patch.joined(separator: ","))}")
+    cached.goOnline()
+    XCTAssertEqual(patched.status, 200)
+
+    let response = try await rest("GET", board)
+    let stored = try XCTUnwrap(response.json as? NSDictionary)
+    try await eventually("the server's board", timeout: 15) { (all.events.last?.value as? NSDictionary) == stored }
+    try await eventually("the server's top five", timeout: 15) { top.events.last?.keys == ["n00", "n01", "n02", "n03", "n04"] }
+  }
+
   // MARK: 8. Revocation: an admin disables the user; its listens are cancelled within seconds.
 
   func testDisablingTheUserCancelsItsListens() async throws {

@@ -393,6 +393,83 @@ public class RtdbE2ETest {
         assertTrue(stored.get("at") instanceof Number);
     }
 
+    /**
+     * With disk persistence, as many apps run: the SDK re-listens after a reconnect with the hash
+     * of its cache, and for a cache over 1 KB a compound hash of ranges (ch). Whatever the server
+     * makes of them, the client must end up with exactly the server's data.
+     */
+    @Test
+    public void persistentCacheCatchesUpAfterReconnect() throws Exception {
+        Context ctx = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        FirebaseApp app;
+        try {
+            app = FirebaseApp.getInstance("persist");
+        } catch (IllegalStateException e) {
+            app = FirebaseApp.initializeApp(ctx, FirebaseApp.getInstance().getOptions(), "persist");
+        }
+        FirebaseDatabase cached = FirebaseDatabase.getInstance(app);
+        try {
+            cached.setPersistenceEnabled(true);
+        } catch (Exception alreadyInUse) {
+            // a second run in the same process
+        }
+        await(FirebaseAuth.getInstance(app).signInAnonymously());
+
+        String board = "boards/android-persist-" + run;
+        StringBuilder seed = new StringBuilder("{");
+        for (int i = 0; i < 60; i++) {
+            seed.append(i == 0 ? "" : ",").append(String.format("\"p%02d\":{\"score\":%d,\"name\":\"player number %d\"}", i, i, i));
+        }
+        assertEquals(200, rest("PUT", board, seed.append('}').toString()).status);
+        DatabaseReference ref = cached.getReference(board);
+        ref.keepSynced(true);
+        Recorder all = listen(ref);
+        Recorder top = listen(ref.orderByChild("score").limitToLast(5));
+        all.await("the board", 10_000, e -> !e.isEmpty() && e.get(e.size() - 1).keys.size() == 60);
+
+        cached.goOffline();
+        try {
+            // Changes the client does not see while it is away: some children change, some go,
+            // some arrive, one above the query's window.
+            StringBuilder patch = new StringBuilder("{");
+            for (int i = 0; i < 5; i++) {
+                patch.append(String.format("\"p%02d/score\":%d,", i, 100 + i));
+                patch.append(String.format("\"p%02d\":null,", 10 + i));
+                patch.append(String.format("\"n%02d\":{\"score\":%d,\"name\":\"new\"},", i, 200 + i));
+            }
+            patch.setCharAt(patch.length() - 1, '}');
+            assertEquals(200, rest("PATCH", board, patch.toString()).status);
+        } finally {
+            cached.goOnline();
+        }
+
+        JSONObject stored = (JSONObject) rest("GET", board, null).json();
+        all.await("the server's board", 15_000, e -> {
+            Recorder.Event last = e.get(e.size() - 1);
+            return last.keys.size() == stored.length() && same(stored, last.value);
+        });
+        top.await("the server's top five", 15_000, e -> e.get(e.size() - 1).keys.equals(Arrays.asList("n00", "n01", "n02", "n03", "n04")));
+    }
+
+    /** Whether a snapshot's value equals JSON from REST (numbers as longs). */
+    private static boolean same(JSONObject json, Object value) {
+        if (!(value instanceof Map)) {
+            return false;
+        }
+        Map<?, ?> m = (Map<?, ?>) value;
+        if (m.size() != json.length()) {
+            return false;
+        }
+        for (Object k : m.keySet()) {
+            JSONObject child = json.optJSONObject((String) k);
+            Map<?, ?> v = (Map<?, ?>) m.get(k);
+            if (child == null || ((Number) v.get("score")).longValue() != child.optLong("score") || !String.valueOf(v.get("name")).equals(child.optString("name"))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // 8. Revocation: an admin disables the user; the client's listens are cancelled within seconds.
 
     @Test
