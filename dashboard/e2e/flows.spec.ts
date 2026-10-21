@@ -92,9 +92,13 @@ test.describe('projects', () => {
     const appId = page.getByRole('link', { name: /Chat Android/ }).getByText('1:123456789012:android:6b7fd59bb891c192');
     await expect(appId).toHaveAttribute('dir', 'ltr');
     await expect(page.locator('html')).toHaveAttribute('dir', l('rtl', 'ltr'));
-    // Authentication is available; the four other services are still to come.
-    await expect(page.getByText(l('قريبًا', 'Coming soon'))).toHaveCount(4);
+    // Authentication and Realtime Database are available; the three other services are still to come.
+    await expect(page.getByText(l('قريبًا', 'Coming soon'))).toHaveCount(3);
     await expect(page.getByRole('link', { name: l('المصادقة', 'Authentication') }).last()).toHaveAttribute('href', '/project/auth/?id=chat-app');
+    await expect(page.getByRole('link', { name: l('قاعدة البيانات اللحظية', 'Realtime Database') }).last()).toHaveAttribute(
+      'href',
+      '/project/database/?id=chat-app',
+    );
   });
 });
 

@@ -15,6 +15,7 @@ import type {
   Token,
 } from '../src/lib/api/types';
 import { MockAuth } from './mock-auth';
+import { MockDatabase } from './mock-database';
 
 // A deterministic, in-memory stand-in for /console/v1 (docs/api/console.md), installed with
 // page.route. Each test gets a fresh copy, so writes are visible within a test only.
@@ -238,6 +239,7 @@ const PROJECT_ID = /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/;
 export class MockApi {
   readonly store: Store;
   readonly auth = new MockAuth();
+  readonly database = new MockDatabase();
   readonly calls: { method: string; path: string; body: unknown; csrf: string | null }[] = [];
 
   constructor(locale: Locale) {
@@ -377,6 +379,7 @@ export class MockApi {
     }
     const [kind, idWithVerb, child, childId] = sub;
     if (kind === 'auth') return this.auth.dispatch(p.projectId, method, sub.slice(1), q, body);
+    if (kind === 'database') return this.database.dispatch(p.projectId, method, sub.slice(1), q, body);
     if (kind === 'auditLog') return ok({ entries: s.audit[p.projectId] ?? [], nextPageToken: '' });
     if (kind === 'flutterOptions') return download('firebase_options.dart', 'text/x-dart; charset=utf-8', '// firebase_options.dart\n');
 

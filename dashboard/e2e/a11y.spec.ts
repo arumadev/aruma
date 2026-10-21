@@ -18,6 +18,8 @@ const PAGES: [string, string, [string, string]][] = [
   ['auth templates', '/project/auth/templates/?id=chat-app', ['المصادقة', 'Authentication']],
   ['auth mailbox', '/project/auth/mailbox/?id=chat-app', ['المصادقة', 'Authentication']],
   ['auth settings', '/project/auth/settings/?id=chat-app', ['المصادقة', 'Authentication']],
+  ['database data', '/project/database/?id=chat-app', ['قاعدة البيانات اللحظية', 'Realtime Database']],
+  ['database rules', '/project/database/rules/?id=chat-app', ['قاعدة البيانات اللحظية', 'Realtime Database']],
   ['account', '/account/', ['الحساب', 'Account']],
   ['limits', '/limits/', ['حدود الإصدار 1', 'v1 limits']],
 ];
