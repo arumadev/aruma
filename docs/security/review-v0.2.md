@@ -102,7 +102,7 @@
 - **المعالجة:**
   - كل رسالة تمر بـ `json.HTMLEscape`: تُكتب `<` و`>` و`&` وU+2028 وU+2029 داخل النصوص مهرَّبة. القيم عند المكتبة واحدة.
   - CSP الصفحة تسمّي سكربتها الوحيد ببصمة sha256 تُحسب لكل رد، لأن السكربت يحمل عنوان `disconn` للجلسة، ومعها `base-uri 'none'` و`form-action 'none'`.
-- **المتصفح:** `rtdb-lp-browser.sh` نجح بفحوصه الـ 13 كلها في Chromium 156 بالسياسة الجديدة: العودة بالاستطلاع الطويل بعد إعادة تشغيل الخادم، والترقية إلى WebSocket، والاستطلاع وحده مع حجب التخزين والـ WebSocket. وفي Chromium نفسه، يعمل سكربت الصفحة بلا مخالفة، ويُحجب سكربت مضمَّن ثانٍ.
+- **المتصفح:** `rtdb-lp-browser.sh` نجح بفحوصه كلها في Chromium 156 بالسياسة الجديدة: العودة بالاستطلاع الطويل بعد إعادة تشغيل الخادم، والترقية إلى WebSocket، والاستطلاع وحده مع حجب التخزين والـ WebSocket. وفي Chromium نفسه، يعمل سكربت الصفحة بلا مخالفة، ويُحجب سكربت مضمَّن ثانٍ.
 
 ## ملاحظة إضافية
 
@@ -135,3 +135,11 @@
 - اختبارات الحزم بجانب الكود في `internal/services/rtdb/...` و`internal/config`، واختبارات الخادم في `test/acceptance/rtdb_*_test.go`، ومنها `rtdb_review_test.go`. تعمل كلها مع `make test`.
 - المتصفح: `test/experiments/rtdb-lp-browser.sh` (يحتاج `npm ci` في `test/experiments/rtdb-lp-browser`).
 - أجنحة Google: `test/compat/firebase-js/run.sh rtdb --target aruma --mode production|emulator`.
+
+### النتائج على الفرع بعد دمج `main` (`8c9e3da`)
+
+- `make lint` و`make sqlc-check` نظيفان، و`make test` ناجح في 35 حزمة.
+- أجنحة Google: الإنتاج 331 من 332، والمحاكي 336 من 336. لا انحدار غير مصنّف. الفاشل الوحيد `resolves timestamps locally`، المصنّف توقيتًا، ويظهر مرة في وضع ومرة في الآخر.
+- `test/smoke/run.sh admin-node-rtdb admin-go-rtdb`: Node 9 من 9، وGo ناجحة.
+- `test/experiments/firebase-cli-rtdb.sh`: 39 فحصًا ناجحة، ولا اتصال خارج الجهاز.
+- `test/experiments/rtdb-lp-browser.sh` في Chromium 156: 14 فحصًا ناجحة.
