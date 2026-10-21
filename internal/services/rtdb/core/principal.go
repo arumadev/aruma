@@ -24,6 +24,10 @@ type Auth struct {
 	// (databaseAuthVariableOverride, sent as authvar), kept as sent. Such a session is not an
 	// admin: the rules see exactly this value as auth.
 	Variable json.RawMessage
+	// Override marks the auth of an Admin SDK that asked to act as a client, as Variable or as
+	// nobody (noauth). Its admin credential vouches for it, so it ends with that credential,
+	// as an admin's sign-in does.
+	Override bool
 }
 
 // ErrInvalidAuthVariable is an auth variable override that is not a JSON object.

@@ -47,7 +47,8 @@ func (a *adminState) stop() {
 //     verifying (checked every revalidateEvery), when the client is told with ac and the
 //     session becomes unauthenticated. An Admin SDK that also sends an auth variable override
 //     (authvar) or noauth asks to act as that client instead: its credential must verify, and
-//     the rules then see the override, or null.
+//     the rules then see the override, or null. The credential is checked again as an
+//     admin's is, and when it fails the session is told with ac and acts as nobody.
 //
 // A credential that does not verify signs the session out: it acts as nobody until one does.
 // A token refused as such is answered with its status (idtoken.Status); a failure to check it
@@ -68,22 +69,20 @@ func (s *session) authenticate(ctx context.Context, b wire.AuthBody) wire.Reply 
 	if !p.ExpiresAt.IsZero() {
 		expires = p.ExpiresAt.Unix()
 	}
+	auth := core.Auth{Admin: true, Account: p.Email}
 	if b.NoAuth || hasAuthVar(b) {
 		s.signOut()
-		auth := core.Auth{}
+		auth = core.Auth{Override: true}
 		if hasAuthVar(b) {
 			auth.Variable = b.AuthVar
 		}
-		if err := s.core.SetAuth(auth); err != nil {
-			e := core.AsError(err)
-			return wire.Fail(e.Status, e.Message)
-		}
-		return wire.OKWith(map[string]any{"auth": nil, "expires": expires})
 	}
-	if err := s.core.SetAuth(core.Auth{Admin: true, Account: p.Email}); err != nil {
+	if err := s.core.SetAuth(auth); err != nil {
 		e := core.AsError(err)
 		return wire.Fail(e.Status, e.Message)
 	}
+	// The credential is checked again while the session uses it, as itself or as the client
+	// it asked to act as.
 	s.mu.Lock()
 	s.admin.stop()
 	s.admin.token, s.admin.expires = token, p.ExpiresAt
@@ -181,9 +180,10 @@ func (s *session) checkAdmin(gen uint64) {
 	}
 	s.admin.stop()
 	// Revoke queues on the writer, so not under s.mu. A sign-in that slips in between is
-	// a new credential, which Revoke would wrongly end: core ends the admin's sign-in only.
+	// a new credential, which Revoke would wrongly end: core ends only a sign-in an admin
+	// credential vouched for, the admin's own or the client's it acted as.
 	s.mu.Unlock()
-	s.core.RevokeIf(func(a core.Auth) bool { return a.Admin }, status, reason)
+	s.core.RevokeIf(func(a core.Auth) bool { return a.Admin || a.Override }, status, reason)
 }
 
 // refused reports whether a verification error means the credential is no good, rather than

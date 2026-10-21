@@ -593,4 +593,56 @@ func TestAdminCredentialRevalidated(t *testing.T) {
 	}
 }
 
+// An Admin SDK acting as a client (authvar, noauth) is signed in by its admin credential, so
+// the session's access ends when that credential expires or stops verifying, as an admin's
+// does: ac, then the session acts as nobody. Before, such a session kept the override for good.
+func TestAuthVariableOverrideRevalidated(t *testing.T) {
+	old := revalidateEvery
+	revalidateEvery = 30 * time.Millisecond
+	defer func() { revalidateEvery = old }()
+	a, store, v := newTestAPI(t, Options{}, core.Options{})
+	store.SetRules(context.Background(), 0, "chat-app-default-rtdb", `{"rules": {"a": {".read": "auth != null", ".write": "auth.uid == 'u1'"}}}`)
+	url := serve(t, a)
+
+	expiring := authn.ServiceTokenPrefix + "expiring"
+	exp := time.Now().Add(150 * time.Millisecond)
+	v.mu.Lock()
+	v.tokens[expiring] = exp
+	v.mu.Unlock()
+	c := dial(t, url)
+	if s, d := c.call("gauth", map[string]any{"cred": expiring, "authvar": map[string]any{"uid": "u1"}}); s != "ok" || !strings.Contains(d, `"expires":`+itoa(exp.Unix())) {
+		t.Fatalf("gauth: %s %s", s, d)
+	}
+	if s, _ := c.call("p", map[string]any{"p": "/a", "d": 1}); s != "ok" {
+		t.Fatalf("write as u1: %s", s)
+	}
+	if m := c.read(); m != string(wire.EncodeAuthRevoked(wire.StatusExpiredToken, "Auth token is expired.")) {
+		t.Errorf("at expiry: %s", m)
+	}
+	if s, _ := c.call("p", map[string]any{"p": "/a", "d": 2}); s != "permission_denied" {
+		t.Errorf("write after expiry: %s", s)
+	}
+
+	// A revoked credential ends an override, and noauth too.
+	for _, body := range []map[string]any{
+		{"cred": sat, "authvar": map[string]any{"uid": "u1"}},
+		{"cred": sat, "noauth": true},
+	} {
+		v.mu.Lock()
+		v.tokens[sat] = time.Time{}
+		v.mu.Unlock()
+		d := dial(t, url)
+		if s, _ := d.call("gauth", body); s != "ok" {
+			t.Fatal(s)
+		}
+		v.revoke(sat)
+		if m := d.read(); m != string(wire.EncodeAuthRevoked(wire.StatusInvalidToken, "Auth token is no longer valid.")) {
+			t.Errorf("%v after revocation: %s", body, m)
+		}
+		if s, _ := d.call("p", map[string]any{"p": "/a", "d": 3}); s != "permission_denied" {
+			t.Errorf("%v: write after revocation: %s", body, s)
+		}
+	}
+}
+
 func itoa(n int64) string { b, _ := json.Marshal(n); return string(b) }
