@@ -354,7 +354,12 @@ func TestRTDBLongPollUpgrade(t *testing.T) {
 	if m := read(); m != `{"t":"c","d":{"t":"a","d":null}}` {
 		t.Fatalf("greeting: %s", m)
 	}
-	go c.poll()
+	// A poll held open across the switch, as the SDK keeps one; it ends when the session moves.
+	held := make(chan struct{})
+	go func() {
+		defer close(held)
+		c.poll()
+	}()
 	for range 2 {
 		write(`{"t":"c","d":{"t":"p","d":{}}}`)
 		if m := read(); m != `{"t":"c","d":{"t":"o","d":null}}` {
@@ -363,9 +368,18 @@ func TestRTDBLongPollUpgrade(t *testing.T) {
 	}
 	write(`{"t":"c","d":{"t":"a","d":{}}}`)
 	c.poll(`{"t":"c","d":{"t":"n","d":{}}}`)
-	for !c.closed {
+	for {
+		c.mu.Lock()
+		closed := c.closed
+		c.mu.Unlock()
+		if closed {
+			break
+		}
 		c.poll()
 	}
+	// The held poll may carry batches that come before the close: the messages are complete,
+	// and in order, only once it is back.
+	<-held
 	if last := c.msgs[len(c.msgs)-1]; last != `{"t":"c","d":{"t":"n","d":null}}` {
 		t.Fatalf("the long poll ended with %s", last)
 	}

@@ -33,6 +33,8 @@ type memStore struct {
 	slow time.Duration
 	// peekErr fails every read the rules make, as a database that is down.
 	peekErr error
+	// reads counts the subtree reads by path.
+	reads map[string]int
 }
 
 type memDB struct {
@@ -121,7 +123,15 @@ type memTx struct {
 	seq  int64
 }
 
-func (t *memTx) Read(_ context.Context, p Path) (*Node, error) { return t.root.Get(p), nil }
+func (t *memTx) Read(_ context.Context, p Path) (*Node, error) {
+	t.s.mu.Lock()
+	if t.s.reads == nil {
+		t.s.reads = map[string]int{}
+	}
+	t.s.reads[p.String()]++
+	t.s.mu.Unlock()
+	return t.root.Get(p), nil
+}
 func (t *memTx) Peek(_ context.Context, p Path) (*Node, bool, error) {
 	t.s.mu.Lock()
 	err := t.s.peekErr

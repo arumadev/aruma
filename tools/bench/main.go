@@ -62,6 +62,8 @@ type options struct {
 	note                        string
 	poolMax                     int
 	authUsers                   int
+	rtdb                        string
+	rtdbOpts                    rtdbOptions
 }
 
 func main() {
@@ -85,7 +87,28 @@ func main() {
 	flag.IntVar(&o.authUsers, "auth-users", 256, "email/password users to seed for the auth-* scenarios")
 	flag.Uint64Var(&clientAddrs, "client-addrs", clientAddrs, "client addresses the rate-limited scenarios cycle through (0: a new one per request)")
 	flag.StringVar(&o.note, "note", "", "free text stored in the JSON, e.g. the machine's state")
+	flag.StringVar(&o.rtdb, "rtdb", "", "run the Realtime Database scenarios instead (all, or a list of: conns,fanout,writes,query,lp) against the aruma binary in a process of its own")
+	flag.StringVar(&o.rtdbOpts.bin, "rtdb-bin", "", "with -rtdb: the aruma binary (default: build ./cmd/aruma)")
+	flag.IntVar(&o.rtdbOpts.port, "rtdb-port", 8785, "with -rtdb: the server's loopback port")
+	flag.IntVar(&o.rtdbOpts.metricsPort, "rtdb-metrics-port", 8786, "with -rtdb: the server's metrics port, read for its heap and goroutines")
+	flag.IntVar(&o.rtdbOpts.conns, "rtdb-conns", 10_000, "with -rtdb conns: connections to ramp to")
+	flag.IntVar(&o.rtdbOpts.connStep, "rtdb-conn-step", 1000, "with -rtdb conns: connections added between samples")
+	fanout := flag.String("rtdb-fanout", "1,100,1000", "with -rtdb fanout: listener counts")
+	flag.Float64Var(&o.rtdbOpts.fanoutRate, "rtdb-fanout-rate", 20, "with -rtdb fanout: writes per second")
+	flag.IntVar(&o.rtdbOpts.fanoutWrites, "rtdb-fanout-writes", 200, "with -rtdb fanout: writes per listener count, the first tenth unrecorded")
+	writers := flag.String("rtdb-writers", "1,8,32,128", "with -rtdb writes: concurrent writer counts")
+	sizes := flag.String("rtdb-query-sizes", "10000,100000", "with -rtdb query: children of the queried nodes")
 	flag.Parse()
+	var err error
+	if o.rtdbOpts.fanout, err = parseInts(*fanout); err == nil {
+		if o.rtdbOpts.writers, err = parseInts(*writers); err == nil {
+			o.rtdbOpts.querySizes, err = parseInts(*sizes)
+		}
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "bench:", err)
+		os.Exit(2)
+	}
 	if *loginC > 0 {
 		for i := range Scenarios {
 			if Scenarios[i].Argon2 {
@@ -114,12 +137,15 @@ func run(o options) error {
 	if o.concurrency < 1 || o.projects < 1 || o.authUsers < 1 {
 		return errors.New("-c, -projects and -auth-users must be at least 1")
 	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if o.rtdb != "" {
+		return runRTDB(ctx, o)
+	}
 	selected, err := selectScenarios(o.scenarios)
 	if err != nil {
 		return err
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 
 	maxConc := o.concurrency
 	for _, s := range selected {

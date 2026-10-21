@@ -1,0 +1,290 @@
+{
+  "meta": {
+    "time": "2026-10-21T09:00:48.946076Z",
+    "mode": "subprocess",
+    "commit": "b4e5daadc84dbf622b2db17c658f7dcbcb45b950+dirty",
+    "goVersion": "go1.27.2",
+    "os": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M1",
+    "numCpu": 8,
+    "gomaxprocs": 8,
+    "maxRssMiB": 23.78125,
+    "args": [
+      "-rtdb",
+      "query",
+      "-rtdb-query-sizes",
+      "10000",
+      "-duration",
+      "5s",
+      "-rtdb-bin",
+      "/Volumes/Work/aurma-project/.cache/tmp/r7/aruma",
+      "-json",
+      "/Volumes/Work/aurma-project/.cache/tmp/r7/query-after.json"
+    ]
+  },
+  "postgres": {
+    "fsync": "on",
+    "max_connections": "100",
+    "shared_buffers": "128MB",
+    "synchronous_commit": "on",
+    "version": "PostgreSQL 18.1 (Postgres.app) on aarch64-apple-darwin25.1.0, compiled by Apple clang version 17.0.0 (clang-1700.4.4.1), 64-bit",
+    "wal_sync_method": "open_datasync",
+    "work_mem": "4MB"
+  },
+  "limits": {
+    "hw.memsize": "8589934592",
+    "kern.ipc.somaxconn": "128",
+    "kern.maxfiles": "30720",
+    "kern.maxfilesperproc": "10240",
+    "kern.num_files": "5419",
+    "net.inet.ip.portrange.first": "49152",
+    "net.inet.ip.portrange.last": "65535",
+    "ulimit -n": "1048576"
+  },
+  "results": [
+    {
+      "scenario": "query",
+      "case": "listen n=10000 orderByKey().limitToLast(50)",
+      "params": {
+        "children": 10000,
+        "indexOn": false,
+        "query": {
+          "i": ".key",
+          "l": 50,
+          "vf": "r"
+        }
+      },
+      "ok": 122,
+      "latencyMs": {
+        "min": 33.342166,
+        "mean": 40.673407,
+        "p50": 39.321599,
+        "p90": 47.185919,
+        "p99": 55.050239,
+        "p99_9": 60.029917,
+        "max": 60.029917
+      },
+      "values": {
+        "pushBytesPerListen": 2908
+      }
+    },
+    {
+      "scenario": "query",
+      "case": "write under the listen n=10000 orderByKey().limitToLast(50)",
+      "params": {
+        "children": 10000,
+        "indexOn": false,
+        "query": {
+          "i": ".key",
+          "l": 50,
+          "vf": "r"
+        }
+      },
+      "ok": 105,
+      "okPerSecond": 20.919833453492107,
+      "latencyMs": {
+        "min": 37.457458,
+        "mean": 47.800109,
+        "p50": 44.040191,
+        "p90": 61.865983,
+        "p99": 79.691775,
+        "p99_9": 99.28225,
+        "max": 99.28225
+      }
+    },
+    {
+      "scenario": "query",
+      "case": "write under 10 such listens n=10000 orderByKey().limitToLast(50)",
+      "params": {
+        "children": 10000,
+        "indexOn": false,
+        "query": {
+          "i": ".key",
+          "l": 50,
+          "vf": "r"
+        }
+      },
+      "ok": 95,
+      "okPerSecond": 18.909017684399437,
+      "latencyMs": {
+        "min": 40.905583,
+        "mean": 52.883272,
+        "p50": 48.234495,
+        "p90": 66.584575,
+        "p99": 133.174958,
+        "p99_9": 133.174958,
+        "max": 133.174958
+      }
+    },
+    {
+      "scenario": "query",
+      "case": "listen n=10000 orderByChild(score).limitToLast(50), no .indexOn",
+      "params": {
+        "children": 10000,
+        "indexOn": false,
+        "query": {
+          "i": "score",
+          "l": 50,
+          "vf": "r"
+        }
+      },
+      "ok": 57,
+      "latencyMs": {
+        "min": 72.066584,
+        "mean": 87.240913,
+        "p50": 85.983231,
+        "p90": 100.663295,
+        "p99": 121.865917,
+        "p99_9": 121.865917,
+        "max": 121.865917
+      },
+      "values": {
+        "pushBytesPerListen": 580511
+      },
+      "notes": [
+        "reply data: {\"w\":[\"no_index\"]}"
+      ]
+    },
+    {
+      "scenario": "query",
+      "case": "write under the listen n=10000 orderByChild(score).limitToLast(50), no .indexOn",
+      "params": {
+        "children": 10000,
+        "indexOn": false,
+        "query": {
+          "i": "score",
+          "l": 50,
+          "vf": "r"
+        }
+      },
+      "ok": 806,
+      "okPerSecond": 161.133658565723,
+      "latencyMs": {
+        "min": 3.1905,
+        "mean": 6.204748,
+        "p50": 5.505023,
+        "p90": 8.650751,
+        "p99": 19.660799,
+        "p99_9": 44.060917,
+        "max": 44.060917
+      }
+    },
+    {
+      "scenario": "query",
+      "case": "write under 10 such listens n=10000 orderByChild(score).limitToLast(50), no .indexOn",
+      "params": {
+        "children": 10000,
+        "indexOn": false,
+        "query": {
+          "i": "score",
+          "l": 50,
+          "vf": "r"
+        }
+      },
+      "ok": 2000,
+      "okPerSecond": 878.7628556826985,
+      "latencyMs": {
+        "min": 0.42675,
+        "mean": 1.137376,
+        "p50": 0.802815,
+        "p90": 1.818623,
+        "p99": 6.488063,
+        "p99_9": 16.777215,
+        "max": 19.169917
+      }
+    },
+    {
+      "scenario": "query",
+      "case": "listen n=10000 orderByChild(score).limitToLast(50), .indexOn",
+      "params": {
+        "children": 10000,
+        "indexOn": true,
+        "query": {
+          "i": "score",
+          "l": 50,
+          "vf": "r"
+        }
+      },
+      "ok": 82,
+      "latencyMs": {
+        "min": 50.517208,
+        "mean": 61.230223,
+        "p50": 57.671679,
+        "p90": 72.351743,
+        "p99": 127.554542,
+        "p99_9": 127.554542,
+        "max": 127.554542
+      },
+      "values": {
+        "pushBytesPerListen": 2889
+      }
+    },
+    {
+      "scenario": "query",
+      "case": "write under the listen n=10000 orderByChild(score).limitToLast(50), .indexOn",
+      "params": {
+        "children": 10000,
+        "indexOn": true,
+        "query": {
+          "i": "score",
+          "l": 50,
+          "vf": "r"
+        }
+      },
+      "ok": 77,
+      "okPerSecond": 15.26822163415087,
+      "latencyMs": {
+        "min": 48.806083,
+        "mean": 65.493967,
+        "p50": 63.963135,
+        "p90": 84.934655,
+        "p99": 108.811917,
+        "p99_9": 108.811917,
+        "max": 108.811917
+      }
+    },
+    {
+      "scenario": "query",
+      "case": "write under 10 such listens n=10000 orderByChild(score).limitToLast(50), .indexOn",
+      "params": {
+        "children": 10000,
+        "indexOn": true,
+        "query": {
+          "i": "score",
+          "l": 50,
+          "vf": "r"
+        }
+      },
+      "ok": 97,
+      "okPerSecond": 19.39859699647223,
+      "latencyMs": {
+        "min": 41.130541,
+        "mean": 51.54896,
+        "p50": 51.904511,
+        "p90": 61.865983,
+        "p99": 74.240959,
+        "p99_9": 74.240959,
+        "max": 74.240959
+      }
+    },
+    {
+      "scenario": "query",
+      "case": "write, no listen n=10000",
+      "params": {
+        "children": 10000
+      },
+      "ok": 2000,
+      "okPerSecond": 2231.6769895898583,
+      "latencyMs": {
+        "min": 0.320792,
+        "mean": 0.447826,
+        "p50": 0.393215,
+        "p90": 0.647167,
+        "p99": 1.015807,
+        "p99_9": 1.327103,
+        "max": 1.434375
+      }
+    }
+  ]
+}
