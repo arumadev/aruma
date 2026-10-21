@@ -22,6 +22,9 @@
 // -switch <addr> serves an off switch for the server on addr, for the offline scenarios of the
 // Realtime Database end-to-end tests (switch.go): POST /down closes the listening socket and every
 // open connection, POST /up listens again. With -serve its URL is printed as ARUMA_SWITCH_URL.
+//
+// -log <level> writes the server's own log to stderr from that level up; without it the log is
+// dropped.
 package main
 
 import (
@@ -97,6 +100,7 @@ func main() {
 	flag.StringVar(&r.domain, "rtdb-domain", "", "rtdb.domain, e.g. rtdb.aruma.test (implies -rtdb)")
 	flag.StringVar(&r.tlsAddr, "rtdb-tls", "", "with -serve and -rtdb-domain: address of a TLS front for the database hosts")
 	switchAddr := flag.String("switch", "", "with -serve: address of the server's off switch (POST /down, POST /up)")
+	logLevel := flag.String("log", "", "the server's log on stderr from this level up: debug, info, warn or error (default: none)")
 	flag.Parse()
 	if r.domain != "" {
 		r.enabled = true
@@ -107,7 +111,15 @@ func main() {
 	if *switchAddr != "" && !*serve {
 		log.Fatal("-switch needs -serve")
 	}
-	if err := run(*out, *addr, *dbPrefix, *switchAddr, *serve, *anonymous, r); err != nil {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	if *logLevel != "" {
+		var level slog.Level
+		if err := level.UnmarshalText([]byte(*logLevel)); err != nil {
+			log.Fatalf("-log %q: %v", *logLevel, err)
+		}
+		logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level}))
+	}
+	if err := run(*out, *addr, *dbPrefix, *switchAddr, *serve, *anonymous, r, logger); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -118,7 +130,7 @@ type rtdbOptions struct {
 	domain, tlsAddr string
 }
 
-func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtdbOptions) error {
+func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtdbOptions, logger *slog.Logger) error {
 	ctx := context.Background()
 	// The name goes into CREATE DATABASE unquoted.
 	if !regexp.MustCompile(`^[a-z_][a-z0-9_]*$`).MatchString(dbPrefix) {
@@ -173,7 +185,7 @@ func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtd
 	if err != nil {
 		return err
 	}
-	a, err := app.New(cfg, slog.New(slog.NewTextHandler(io.Discard, nil)), "smoke", pool)
+	a, err := app.New(cfg, logger, "smoke", pool)
 	if err != nil {
 		return err
 	}

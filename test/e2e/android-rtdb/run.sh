@@ -64,7 +64,7 @@ cleanup() {
 trap cleanup EXIT
 
 log "starting Aruma with the database and its rules, and generating google-services.json"
-start_server "$gen" -rtdb -switch "${ARUMA_E2E_SWITCH_ADDR:-127.0.0.1:0}"
+start_server "$gen" -rtdb -switch "${ARUMA_E2E_SWITCH_ADDR:-127.0.0.1:0}" -log warn
 put_rtdb_rules "$root/test/e2e/rtdb-rules.json"
 port=${ARUMA_URL##*:}
 switch_port=${ARUMA_SWITCH_URL##*:}

@@ -74,7 +74,7 @@ sim=$(simulator)
 [[ -n "$sim" ]] || { echo "no iPhone simulator available" >&2; exit 1; }
 
 log "starting Aruma with the database and its rules, and generating GoogleService-Info.plist"
-start_server "$gen" -rtdb -switch "${ARUMA_E2E_SWITCH_ADDR:-127.0.0.1:0}"
+start_server "$gen" -rtdb -switch "${ARUMA_E2E_SWITCH_ADDR:-127.0.0.1:0}" -log warn
 put_rtdb_rules "$root/test/e2e/rtdb-rules.json"
 echo "Aruma at $ARUMA_URL, project $ARUMA_PROJECT_ID"
 

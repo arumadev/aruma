@@ -48,8 +48,16 @@ test('2. rules: the own data is readable and writable, another user\'s is denied
   await expect.poll(() => events(a, 'other')).toEqual([{ cancel: 'PERMISSION_DENIED' }]);
   expect((await admin('GET', `users/${ub}`)).body).toEqual({ note: 'theirs' });
 
-  // Signed out, not even the own data.
+  // A fresh ID token goes to the open connection; the listen on the own data stays and is told
+  // the admin's write.
+  await value(a, (e, uid) => e.listen('own', `users/${uid}`), ua);
+  await value(a, (e) => e.auth.currentUser.getIdToken(true));
+  expect((await admin('PATCH', `users/${ua}`, { fromAdmin: 1 })).status).toBe(200);
+  await expect.poll(async () => (await events(a, 'own')).at(-1)?.val).toEqual({ note: 'mine', fromAdmin: 1 });
+
+  // Signed out, not even the own data: the open listen is cancelled, a new read denied.
   await value(a, (e) => e.authSdk.signOut(e.auth));
+  await expect.poll(async () => (await events(a, 'own')).at(-1)).toEqual({ cancel: 'PERMISSION_DENIED' });
   expect(await call(a, (e, uid) => e.dbSdk.get(e.dbSdk.ref(e.db, `users/${uid}`)).then((s) => s.val()), ua)).toEqual({ code: 'Error: Permission denied' });
 });
 

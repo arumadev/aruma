@@ -32,7 +32,7 @@ log() { printf '\n==> %s\n' "$*"; }
 # start runs a fresh Aruma server with the database, deploys the rules and writes the web config
 # the Management API serves.
 start() {
-  start_server "$gen" -rtdb -switch "${ARUMA_E2E_SWITCH_ADDR:-127.0.0.1:0}"
+  start_server "$gen" -rtdb -switch "${ARUMA_E2E_SWITCH_ADDR:-127.0.0.1:0}" -log warn
   put_rtdb_rules "$root/test/e2e/rtdb-rules.json"
   local app_id
   app_id=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["web"]["appId"])' "$gen/expected.json")
