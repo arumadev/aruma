@@ -1,0 +1,481 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		14C5A978FA67B317392A33E6 /* RtdbE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59A88D43479831B08A1F49C /* RtdbE2ETests.swift */; };
+		2EF5AA76173851B9187C17AA /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = ED73B56511A50C48D6908CDC /* GoogleService-Info.plist */; };
+		55C7DE6C487B72FC3B2FEE5C /* ArumaRedirect in Frameworks */ = {isa = PBXBuildFile; productRef = 7F027EA7ED5E2842AE02EA87 /* ArumaRedirect */; };
+		7BBAFC38192FE5FA1D1CE1D8 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = FA3EC2B6E3E4824BB06A5D1D /* FirebaseDatabase */; };
+		824B34263D2E9AAF357D365C /* LoopbackGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FCC1CBDED0426D53366E447 /* LoopbackGuard.swift */; };
+		87B689038907DC88434E15A2 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = F1697FD5157F1AA47CFFA4DE /* FirebaseAuth */; };
+		EC58809BE94F8D6ADB7057A3 /* HostApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E70BF821977086625C339E8 /* HostApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		DAE8E63302699CE4F5A4AD6A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 175C55161DAFE458CB713198 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 67E519369AC893A40D64502F;
+			remoteInfo = RtdbE2EHost;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		09049AF49F492BEE208CA9FE /* RtdbE2ETests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = RtdbE2ETests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3E70BF821977086625C339E8 /* HostApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostApp.swift; sourceTree = "<group>"; };
+		4D8CF6CFA29E55A33D52FF18 /* ArumaRedirect */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ArumaRedirect; path = ../../../sdk/ios/ArumaRedirect; sourceTree = SOURCE_ROOT; };
+		7FCC1CBDED0426D53366E447 /* LoopbackGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoopbackGuard.swift; sourceTree = "<group>"; };
+		A59A88D43479831B08A1F49C /* RtdbE2ETests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RtdbE2ETests.swift; sourceTree = "<group>"; };
+		ED73B56511A50C48D6908CDC /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		F3544CF409698D84D214BAE0 /* RtdbE2EHost.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = RtdbE2EHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		048B9627F5BF24D8C8891827 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				87B689038907DC88434E15A2 /* FirebaseAuth in Frameworks */,
+				7BBAFC38192FE5FA1D1CE1D8 /* FirebaseDatabase in Frameworks */,
+				55C7DE6C487B72FC3B2FEE5C /* ArumaRedirect in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		5820C08AE033EC8820EB6C52 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				7FCC1CBDED0426D53366E447 /* LoopbackGuard.swift */,
+				A59A88D43479831B08A1F49C /* RtdbE2ETests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		697B87F628BCA31C7C0A0CA4 = {
+			isa = PBXGroup;
+			children = (
+				B0B40C360BE3D40A71EBA57B /* .generated */,
+				7413246A6EAAF62A0BFE59BB /* App */,
+				6BB0A2A3781BEE99786B503A /* Packages */,
+				5820C08AE033EC8820EB6C52 /* Tests */,
+				94532AF405FCA6A2D57E00A4 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6BB0A2A3781BEE99786B503A /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				4D8CF6CFA29E55A33D52FF18 /* ArumaRedirect */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		7413246A6EAAF62A0BFE59BB /* App */ = {
+			isa = PBXGroup;
+			children = (
+				3E70BF821977086625C339E8 /* HostApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		94532AF405FCA6A2D57E00A4 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F3544CF409698D84D214BAE0 /* RtdbE2EHost.app */,
+				09049AF49F492BEE208CA9FE /* RtdbE2ETests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B0B40C360BE3D40A71EBA57B /* .generated */ = {
+			isa = PBXGroup;
+			children = (
+				ED73B56511A50C48D6908CDC /* GoogleService-Info.plist */,
+			);
+			path = .generated;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		159ECFB3DCF5188E9672BD5A /* RtdbE2ETests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5657F4686D67E935CDDE9113 /* Build configuration list for PBXNativeTarget "RtdbE2ETests" */;
+			buildPhases = (
+				A9CC475E4C14B7F7E0610FA2 /* Sources */,
+				048B9627F5BF24D8C8891827 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2A11BF42A299F46C889213B9 /* PBXTargetDependency */,
+			);
+			name = RtdbE2ETests;
+			packageProductDependencies = (
+				F1697FD5157F1AA47CFFA4DE /* FirebaseAuth */,
+				FA3EC2B6E3E4824BB06A5D1D /* FirebaseDatabase */,
+				7F027EA7ED5E2842AE02EA87 /* ArumaRedirect */,
+			);
+			productName = RtdbE2ETests;
+			productReference = 09049AF49F492BEE208CA9FE /* RtdbE2ETests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		67E519369AC893A40D64502F /* RtdbE2EHost */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 35BC60C43E32C3CCD0F29FD2 /* Build configuration list for PBXNativeTarget "RtdbE2EHost" */;
+			buildPhases = (
+				083B748481D0375D9F12A9C0 /* Sources */,
+				C13957726429545E75093575 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RtdbE2EHost;
+			packageProductDependencies = (
+			);
+			productName = RtdbE2EHost;
+			productReference = F3544CF409698D84D214BAE0 /* RtdbE2EHost.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		175C55161DAFE458CB713198 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = A01E8E5C85C07C082DF446CA /* Build configuration list for PBXProject "RtdbE2E" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 697B87F628BCA31C7C0A0CA4;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				350E9BF4B21DBCD91C3B39DD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				9999404A9199AD08C5CA0725 /* XCLocalSwiftPackageReference "../../../sdk/ios/ArumaRedirect" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 94532AF405FCA6A2D57E00A4 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				67E519369AC893A40D64502F /* RtdbE2EHost */,
+				159ECFB3DCF5188E9672BD5A /* RtdbE2ETests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C13957726429545E75093575 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2EF5AA76173851B9187C17AA /* GoogleService-Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		083B748481D0375D9F12A9C0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EC58809BE94F8D6ADB7057A3 /* HostApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A9CC475E4C14B7F7E0610FA2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				824B34263D2E9AAF357D365C /* LoopbackGuard.swift in Sources */,
+				14C5A978FA67B317392A33E6 /* RtdbE2ETests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2A11BF42A299F46C889213B9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 67E519369AC893A40D64502F /* RtdbE2EHost */;
+			targetProxy = DAE8E63302699CE4F5A4AD6A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		24132188EDC6D86504D46043 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.aruma.smoke.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RtdbE2EHost.app/RtdbE2EHost";
+			};
+			name = Release;
+		};
+		4CD75FF34F3C67E9DA6041FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.aruma.smoke.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RtdbE2EHost.app/RtdbE2EHost";
+			};
+			name = Debug;
+		};
+		692F47EEC2E8B3439BBD73CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.aruma.smoke;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		72CC092F082BFB82FBF708EF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.aruma.smoke;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B293D1B28A3254D25397B838 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARUMA_URL = "";
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		BDADECD2ED6C7515C9068A73 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARUMA_URL = "";
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		35BC60C43E32C3CCD0F29FD2 /* Build configuration list for PBXNativeTarget "RtdbE2EHost" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				692F47EEC2E8B3439BBD73CD /* Debug */,
+				72CC092F082BFB82FBF708EF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5657F4686D67E935CDDE9113 /* Build configuration list for PBXNativeTarget "RtdbE2ETests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4CD75FF34F3C67E9DA6041FC /* Debug */,
+				24132188EDC6D86504D46043 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A01E8E5C85C07C082DF446CA /* Build configuration list for PBXProject "RtdbE2E" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BDADECD2ED6C7515C9068A73 /* Debug */,
+				B293D1B28A3254D25397B838 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		9999404A9199AD08C5CA0725 /* XCLocalSwiftPackageReference "../../../sdk/ios/ArumaRedirect" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../sdk/ios/ArumaRedirect;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		350E9BF4B21DBCD91C3B39DD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		7F027EA7ED5E2842AE02EA87 /* ArumaRedirect */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ArumaRedirect;
+		};
+		F1697FD5157F1AA47CFFA4DE /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 350E9BF4B21DBCD91C3B39DD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		FA3EC2B6E3E4824BB06A5D1D /* FirebaseDatabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 350E9BF4B21DBCD91C3B39DD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseDatabase;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 175C55161DAFE458CB713198 /* Project object */;
+}
