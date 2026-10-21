@@ -279,14 +279,25 @@ func (s *Session) RevokeListens(done func()) {
 }
 
 // Set writes data, in export format, at path. With hash it applies only while the value at
-// path still hashes to *hash. done receives the value written, server values resolved.
+// path still hashes to *hash, and only for a client that may read path as well as write it.
+// done receives the value written, server values resolved.
 func (s *Session) Set(path string, data json.RawMessage, hash *string, done func(*Node, error)) {
+	s.set(path, data, hash, false, done)
+}
+
+// SetREST writes as a REST PUT does: as Set, except that rules see the read of a conditional
+// write as a plain REST read (GetREST).
+func (s *Session) SetREST(path string, data json.RawMessage, hash *string, done func(*Node, error)) {
+	s.set(path, data, hash, true, done)
+}
+
+func (s *Session) set(path string, data json.RawMessage, hash *string, rest bool, done func(*Node, error)) {
 	w, err := s.parseSet(path, data, hash)
 	if err != nil {
 		done(nil, err)
 		return
 	}
-	s.db.submit(&command{acc: s.access(), write: w, done: func(r Result) { done(r.Node, r.Err) }})
+	s.db.submit(&command{acc: s.access(), write: w, rest: rest, done: func(r Result) { done(r.Node, r.Err) }})
 }
 
 // Update writes each child of data, an object keyed by paths relative to path, at once.

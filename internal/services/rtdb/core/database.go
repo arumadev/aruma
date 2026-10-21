@@ -70,8 +70,9 @@ type command struct {
 	write *Write
 	read  Path
 	query *Query
-	// rest makes a read REST's: without a query, rules see a plain REST read
-	// (rules.PlainREST). probe checks the rules of the read and reads nothing.
+	// rest makes a read, or the read of a conditional write, REST's: without a query, rules
+	// see a plain REST read (rules.PlainREST). probe checks the rules of the read and reads
+	// nothing.
 	rest, probe bool
 	listen      *listenCmd
 	unlisten    *unlistenCmd
@@ -326,6 +327,32 @@ func (d *Database) apply(ctx context.Context, batch []*command, state *batchStat
 			}
 			continue
 		}
+		if c.write.Hash != nil {
+			// A conditional write tells its client whether the data changed since it read
+			// them, so it is a read as well: the client must be allowed to read the path
+			// before the hash is compared, and one that may not gets permission_denied
+			// whatever hash it sends. The write rules come after the hash, as on the emulator
+			// 4.11.2 (probe of 2026-10-21, over the protocol and REST alike: with .read true
+			// and .write false, a wrong hash gets datastale and the right one
+			// permission_denied). The hash then tells the client nothing it could not read.
+			at := c.write.Path
+			if at.IsPriority() {
+				at = at.Parent()
+			}
+			if err := d.mayRead(ctx, tx, c.acc, at, c.readRules(), now); failed(i, err) {
+				return nil, Commit{}, nil, err
+			} else if err != nil {
+				continue
+			}
+			stale, err := c.write.stale(ctx, tx)
+			if err != nil {
+				return nil, Commit{}, nil, err
+			}
+			if stale {
+				results[i].Err = ErrDataStale
+				continue
+			}
+		}
 		ch, err := c.write.resolve(ctx, tx, now.UnixMilli())
 		if failed(i, err) {
 			return nil, Commit{}, nil, err
@@ -375,6 +402,18 @@ func (d *Database) apply(ctx context.Context, batch []*command, state *batchStat
 	return tx, commit, results, nil
 }
 
+// readRules is the query a command's read shows to rules: its own, else a listen's default
+// one, or for REST a plain REST read (rules.PlainREST).
+func (c *command) readRules() rules.Query {
+	switch {
+	case c.query != nil:
+		return c.query.rules()
+	case c.rest:
+		return rules.PlainREST
+	}
+	return DefaultQuery.rules()
+}
+
 // indexed reports whether the rules declare the index a query at p needs. Key and priority
 // order need none.
 func (d *Database) indexed(p Path, q Query) bool {
@@ -391,14 +430,7 @@ func (d *Database) indexed(p Path, q Query) bool {
 // REST answers 400 with the same text. The rules come first.
 func (d *Database) read(ctx context.Context, tx StoreTx, c *command, now time.Time) (Result, error) {
 	a, p, q := c.acc, c.read, c.query
-	rq := DefaultQuery.rules()
-	switch {
-	case q != nil:
-		rq = q.rules()
-	case c.rest:
-		rq = rules.PlainREST
-	}
-	if err := d.mayRead(ctx, tx, a, p, rq, now); err != nil {
+	if err := d.mayRead(ctx, tx, a, p, c.readRules(), now); err != nil {
 		var e *Error
 		if errors.As(err, &e) {
 			return Result{Err: err}, nil

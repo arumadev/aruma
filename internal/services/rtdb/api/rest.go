@@ -427,7 +427,7 @@ func (a *API) restSet(ctx context.Context, w http.ResponseWriter, r *http.Reques
 		h := core.Hash(cur)
 		hash = &h
 	}
-	n, err := await(ctx, func(done func(*core.Node, error)) { s.Set(req.path, data, hash, done) })
+	n, err := await(ctx, func(done func(*core.Node, error)) { s.SetREST(req.path, data, hash, done) })
 	if errors.Is(err, core.ErrDataStale) {
 		a.restStale(ctx, w, s, req)
 		return

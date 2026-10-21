@@ -118,6 +118,58 @@ func TestRulesGovernClients(t *testing.T) {
 	allowed("onDisconnect cancel", anon.OnDisconnectCancel("/users/u2"))
 }
 
+// A conditional write is a read as well as a write. A client that may not read the path gets
+// permission_denied whatever hash it sends, and so learns nothing of the data's hash; one
+// that may read gets datastale for a wrong hash, then the write rules decide. Before, the
+// hash came first: datastale told a client that may not read that its guess was wrong. The
+// order is the emulator 4.11.2's (probe of 2026-10-21, over the protocol and REST: .read
+// false gets permission_denied for any hash; .read true and .write false gets datastale for a
+// wrong hash and permission_denied for the right one).
+func TestConditionalWriteChecksReadBeforeTheHash(t *testing.T) {
+	s, _ := rulesService(t, `{"rules": {
+		"rw": {".read": true, ".write": true},
+		"wo": {".read": false, ".write": true},
+		"ro": {".read": true, ".write": false},
+		"rest": {".read": "query.orderByKey == true", ".write": true}
+	}}`)
+	adm := open(t, s, "chat-app-default-rtdb", admin)
+	set(adm, "/", `{"rw":1,"wo":1,"ro":1,"rest":1}`, nil)
+	c := open(t, s, "chat-app-default-rtdb", Auth{})
+	right, wrong := Hash(Number(1)), "wrong"
+	for _, tc := range []struct {
+		path string
+		hash string
+		want error
+	}{
+		{"/rw", wrong, ErrDataStale},
+		{"/wo", wrong, ErrPermissionDenied},
+		{"/wo", right, ErrPermissionDenied},
+		{"/wo/.priority", wrong, ErrPermissionDenied},
+		{"/ro", wrong, ErrDataStale},
+		{"/ro", right, ErrPermissionDenied},
+		// Over the protocol the read is a listen's, ordered by priority.
+		{"/rest", right, ErrPermissionDenied},
+		{"/rw", right, nil},
+	} {
+		if _, err := set(c, tc.path, `2`, &tc.hash); !errors.Is(err, tc.want) {
+			t.Errorf("%s with hash %q: %v, want %v", tc.path, tc.hash, err, tc.want)
+		}
+	}
+	// Over REST (if-match) the read is a plain REST read, ordered by key.
+	ch := make(chan error, 1)
+	c.SetREST("/rest", json.RawMessage(`2`), &wrong, func(_ *Node, err error) { ch <- err })
+	if err := <-ch; !errors.Is(err, ErrDataStale) {
+		t.Errorf("REST, readable by key: %v", err)
+	}
+	c.SetREST("/rest", json.RawMessage(`2`), &right, func(_ *Node, err error) { ch <- err })
+	if err := <-ch; err != nil {
+		t.Errorf("REST, readable by key, matching hash: %v", err)
+	}
+	if got, _ := get(adm, "/"); got != `{"rest":2,"ro":1,"rw":2,"wo":1}` {
+		t.Errorf("data after: %s", got)
+	}
+}
+
 // Rules read the data as the writer has it when the command runs: after the writes queued
 // before it, in the same transaction.
 func TestRulesSeeTheWritersView(t *testing.T) {
