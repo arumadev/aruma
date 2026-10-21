@@ -27,6 +27,9 @@ type Shallow struct {
 	Children []ShallowChild
 	// Next is the key the next page starts after; empty on the last page.
 	Next string
+	// Priority is an object's priority, set on the first page (after is empty); nil when it
+	// has none.
+	Priority *Node
 }
 
 // ShallowChild is one child in a Shallow page.
@@ -165,6 +168,11 @@ func (s *PGStore) shallow(ctx context.Context, db DatabaseInfo, p Path, after st
 			return Shallow{}, err
 		}
 		return out, nil
+	}
+	if len(own) == 1 && own[0].Priority != nil && after == "" {
+		if out.Priority, err = leafOf(own[0].Priority); err != nil {
+			return Shallow{}, err
+		}
 	}
 
 	var keys []string
