@@ -739,6 +739,29 @@ func (b *rtdbBench) query(ctx context.Context) ([]RTDBResult, error) {
 			wres.Case = fmt.Sprintf("write under the listen n=%d %s", size, v.name)
 			wres.Params = res.Params
 			out = append(out, wres)
+			if size == b.o.querySizes[0] {
+				// Ten clients with the same query, as ten users viewing one leaderboard.
+				first := tag
+				for range 9 {
+					tag++
+					if r, err := l.Call(ctx, "q", rtdbkit.ListenQuery(path, v.q, tag)); err != nil || !r.OK() {
+						return out, fmt.Errorf("listen: %v %v", r, err)
+					}
+				}
+				wres := b.writeUnder(ctx, c, path, size, rng)
+				wres.Case = fmt.Sprintf("write under 10 such listens n=%d %s", size, v.name)
+				wres.Params = res.Params
+				out = append(out, wres)
+				for t := first + 1; t <= tag; t++ {
+					if _, err := l.Call(ctx, "n", rtdbkit.ListenQuery(path, v.q, t)); err != nil {
+						return out, err
+					}
+				}
+				if _, err := l.Call(ctx, "n", rtdbkit.ListenQuery(path, v.q, first)); err != nil {
+					return out, err
+				}
+				continue
+			}
 			if _, err := l.Call(ctx, "n", rtdbkit.ListenQuery(path, v.q, tag)); err != nil {
 				return out, err
 			}

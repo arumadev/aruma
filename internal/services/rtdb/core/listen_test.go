@@ -182,6 +182,41 @@ func TestListenTaggedWindow(t *testing.T) {
 	want(t, "after unlisten", rec.take())
 }
 
+// A write under many tagged listens at one path reads that path once and filters each query
+// once, whatever the number of listens: each listen reading the whole node again made a
+// write under ten clients' limitToLast(50) on 10,000 children take 300 ms instead of 35
+// (docs/performance/baseline-rtdb.md). Every listen still gets its push.
+func TestTaggedListensShareOneRead(t *testing.T) {
+	store := newMemStore()
+	s := newTestService(t, store, Options{})
+	a, _ := listenWith(t, s, "chat-app-default-rtdb", admin)
+	set(a, "/q", `{"a":1,"b":2,"c":3,"d":4}`, nil)
+	var recs []*recorder
+	for i := range 10 {
+		b, rec := listenWith(t, s, "chat-app-default-rtdb", admin)
+		q := `{"l":2,"vf":"r"}`
+		if i%2 == 1 {
+			q = `{"l":3,"vf":"r"}`
+		}
+		if _, err := listenSync(t, b, rec, "/q", q, int64(i+1), ""); err != nil {
+			t.Fatal(err)
+		}
+		rec.take()
+		recs = append(recs, rec)
+	}
+	store.set(func() { store.reads = nil })
+	set(a, "/q/e", `5`, nil)
+	store.mu.Lock()
+	reads := store.reads["q"]
+	store.mu.Unlock()
+	if reads != 1 {
+		t.Errorf("the write read /q %d times under 10 listens, want 1", reads)
+	}
+	for i, rec := range recs {
+		want(t, "listen "+strconv.Itoa(i), rec.take(), `d q/e t`+strconv.Itoa(i+1)+` 5`)
+	}
+}
+
 func TestListenChildOrderNeedsIndex(t *testing.T) {
 	store := newMemStore()
 	store.rules = map[string]string{"chat-app-default-rtdb": `{"rules":{".read":false,".write":false,"q":{".indexOn":["s"]}}}`}
