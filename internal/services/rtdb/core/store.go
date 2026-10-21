@@ -97,6 +97,9 @@ func storedLeaf(n *Node) json.RawMessage {
 	if n.kind == KindString && strings.IndexByte(n.s, 0) >= 0 {
 		return json.RawMessage(`["` + base64.StdEncoding.EncodeToString([]byte(n.s)) + `"]`)
 	}
+	if n.kind == KindNumber && !n.isInt {
+		return appendStoredDouble(nil, n.n)
+	}
 	return n.appendLeaf(nil)
 }
 

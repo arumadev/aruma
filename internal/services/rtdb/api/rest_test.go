@@ -132,9 +132,9 @@ func TestReadREST(t *testing.T) {
 
 func TestEchoUpdate(t *testing.T) {
 	merge := []core.Child{
-		{Path: core.Path{"a", "b"}, Value: core.Number(1)},
+		{Path: core.Path{"a", "b"}, Value: core.Int(1)},
 		{Path: core.Path{"a", "c"}, Value: nil},
-		{Path: core.Path{"t"}, Value: core.Number(5)},
+		{Path: core.Path{"t"}, Value: core.Int(5)},
 	}
 	if got, want := string(echoUpdate(merge)), `{"a":{"b":1,"c":null},"t":5}`; got != want {
 		t.Errorf("echo %s, want %s", got, want)

@@ -439,7 +439,7 @@ func TestIncrementSaturates(t *testing.T) {
 	set(a, "/i", `{".sv":{"increment":1e308}}`, nil)
 	set(a, "/j", `-1e308`, nil)
 	set(a, "/j", `{".sv":{"increment":-1e308}}`, nil)
-	if got, _ := get(a, "/"); got != `{"i":1.7976931348623157e+308,"j":-1.7976931348623157e+308}` {
+	if got, _ := get(a, "/"); got != `{"i":1.7976931348623157E308,"j":-1.7976931348623157E308}` {
 		t.Errorf("overflow: %s", got)
 	}
 }

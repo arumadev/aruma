@@ -24,12 +24,25 @@ func TestParseData(t *testing.T) {
 		{`{"a":null}`, `null`},
 		{`true`, `true`},
 		{`1`, `1`},
-		{`1.0`, `1`},
+		// Numbers as production keeps and prints them (testdata/golden/production/numbers.json
+		// in the wire package): integers stay integers, everything else is a double in
+		// Java's notation.
+		{`1.0`, `1.0`},
 		{`-0`, `0`},
-		{`1e3`, `1000`},
-		{`1e21`, `1e+21`},
-		{`0.0000001`, `1e-7`},
-		{`12345678901234567890`, `12345678901234567000`},
+		{`-0.0`, `0.0`}, // production keeps -0.0; jsonb cannot
+		{`1e3`, `1000.0`},
+		{`1E2`, `100.0`},
+		{`1e21`, `1.0E21`},
+		{`1e7`, `1.0E7`},
+		{`9999999.5`, `9999999.5`},
+		{`0.001`, `0.001`},
+		{`0.0000001`, `1.0E-7`},
+		{`1.5e-7`, `1.5E-7`},
+		{`1e300`, `1.0E300`},
+		{`9007199254740993`, `9007199254740993`},
+		{`-9223372036854775808`, `-9223372036854775808`},
+		{`9223372036854775808`, `9.223372036854776E18`},
+		{`12345678901234567890`, `1.2345678901234567E19`},
 		{`"<a&b>\u0001\"\\"`, `"<a&b>\u0001\"\\"`},
 		{`"مرحبا 😀"`, `"مرحبا 😀"`},
 		{`{"b":2,"a":1,"10":0,"9":0}`, `{"9":0,"10":0,"a":1,"b":2}`},
@@ -37,10 +50,10 @@ func TestParseData(t *testing.T) {
 		{`["a",null,"c"]`, `{"0":"a","2":"c"}`},
 		{`{"a":{"b":null}}`, `null`},
 		{`{"a":1,"a":2}`, `{"a":2}`},
-		{`{".value":"v",".priority":7}`, `{".value":"v",".priority":7}`},
+		{`{".value":"v",".priority":7}`, `{".value":"v",".priority":7.0}`}, // priorities are doubles
 		{`{".value":{"x":1},".priority":"p"}`, `{".priority":"p","x":1}`},
 		{`{".value":null,".priority":1}`, `null`},
-		{`{".priority":2,"a":1}`, `{".priority":2,"a":1}`},
+		{`{".priority":2,"a":1}`, `{".priority":2.0,"a":1}`},
 		{`{".priority":null,"a":1}`, `{"a":1}`},
 		{`{".priority":1}`, `null`}, // an empty object has no priority
 		{`{".sv":"timestamp"}`, `{".sv":"timestamp"}`},
@@ -109,7 +122,7 @@ func TestNodeSet(t *testing.T) {
 		{`null`, "a/b", `1`, `{"a":{"b":1}}`},
 		{`{"a":1}`, "a/b", `2`, `{"a":{"b":2}}`},
 		// A leaf that gains a child keeps its priority (LeafNode.updateImmediateChild).
-		{`{"a":{".value":1,".priority":5}}`, "a/b", `2`, `{"a":{".priority":5,"b":2}}`},
+		{`{"a":{".value":1,".priority":5}}`, "a/b", `2`, `{"a":{".priority":5.0,"b":2}}`},
 		// Deleting below a leaf changes nothing.
 		{`{"a":1}`, "a/b", `null`, `{"a":1}`},
 		// An object that loses its last child is gone, priority and all.

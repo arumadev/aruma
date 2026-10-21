@@ -85,8 +85,8 @@ func TestEchoJSON(t *testing.T) {
 		// The emulator echoes a PUT with arrays as arrays and priorities kept (rest.golden.json).
 		{`["a","b","c"]`, `["a","b","c"]`},
 		{`{"0":"a","2":"c"}`, `["a",null,"c"]`},
-		{`{"x":{".priority":1,"y":2},"z":{".value":true,".priority":"a"}}`, `{"x":{".priority":1,"y":2},"z":{".value":true,".priority":"a"}}`},
-		{`{".priority":1,"0":"a"}`, `{".priority":1,"0":"a"}`},
+		{`{"x":{".priority":1,"y":2},"z":{".value":true,".priority":"a"}}`, `{"x":{".priority":1.0,"y":2},"z":{".value":true,".priority":"a"}}`},
+		{`{".priority":1,"0":"a"}`, `{".priority":1.0,"0":"a"}`},
 		{`{"5":"a"}`, `{"5":"a"}`},
 	} {
 		n, err := ParseData([]byte(c.in), nil, 1<<20)

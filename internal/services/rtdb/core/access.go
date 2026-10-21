@@ -156,7 +156,7 @@ func (n *Node) plain() any {
 	case KindBool:
 		return n.b
 	case KindNumber:
-		return n.n
+		return n.n // the rules engine reads every number as a double
 	case KindString:
 		return n.s
 	case KindObject:

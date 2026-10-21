@@ -7,7 +7,7 @@ import "math"
 // value arrives.
 type ServerValue struct {
 	Timestamp bool
-	Increment float64
+	Increment *Node // a number: an integer or a double
 }
 
 // parseServerValue reads the content of ".sv". Anything but the two known forms is an error;
@@ -20,7 +20,8 @@ func parseServerValue(v *jv) (*ServerValue, error) {
 		}
 	case KindObject:
 		if inc, ok := v.vals["increment"]; ok && len(v.keys) == 1 && inc.kind == KindNumber {
-			return &ServerValue{Increment: inc.n}, nil
+			n, _ := inc.node()
+			return &ServerValue{Increment: n}, nil
 		}
 	}
 	return nil, ErrInvalidServerValue
@@ -31,7 +32,7 @@ func (sv *ServerValue) appendJSON(b []byte) []byte {
 		return append(b, `{".sv":"timestamp"}`...)
 	}
 	b = append(b, `{".sv":{"increment":`...)
-	return append(appendNumber(b, sv.Increment), "}}"...)
+	return append(sv.Increment.appendLeaf(b), "}}"...)
 }
 
 // String is the server value as JSON.
@@ -90,7 +91,8 @@ func (n *Node) resolve(at Path, now int64, existing map[string]*Node) *Node {
 	}
 	out := *n
 	if n.priority.Kind() == kindServerValue {
-		out.priority = n.priority.sv.resolve(at.Child(PriorityKey), now, existing)
+		// A priority is a double, whatever the server value gives.
+		out.priority = Number(n.priority.sv.resolve(at.Child(PriorityKey), now, existing).n)
 	}
 	if n.kind == kindServerValue {
 		v := n.sv.resolve(at, now, existing)
@@ -108,12 +110,23 @@ func (n *Node) resolve(at Path, now int64, existing map[string]*Node) *Node {
 
 func (sv *ServerValue) resolve(at Path, now int64, existing map[string]*Node) *Node {
 	if sv.Timestamp {
-		return Number(float64(now))
+		return Int(now)
 	}
 	if cur := existing[at.String()]; cur.Kind() == KindNumber {
-		return Number(saturate(cur.n + sv.Increment))
+		return add(cur, sv.Increment)
 	}
-	return Number(sv.Increment)
+	return sv.Increment.WithPriority(nil)
+}
+
+// add is an increment's result: an integer when both numbers are integers and the sum fits 64
+// bits, a double otherwise (ServerValues.resolveScalarDeferredValue in the Android SDK).
+func add(a, b *Node) *Node {
+	if a.isInt && b.isInt {
+		if s := a.i + b.i; (a.i^s)&(b.i^s) >= 0 {
+			return Int(s)
+		}
+	}
+	return Number(saturate(a.n + b.n))
 }
 
 // saturate keeps an increment's result finite: past the largest double it stays at the
