@@ -114,7 +114,21 @@ and must pass WebSocket upgrades (`Upgrade` and `Connection` headers).
   120 seconds or more.
 - Aruma's own 60-second request timeout and 1 MB body cap do not apply to database connections.
 
-## 6. Check it
+## 6. Capacity: descriptors and the database pool
+
+Measured in [baseline-rtdb.md](../performance/baseline-rtdb.md):
+
+- **Each connection holds one file descriptor** and about 40-45 KiB of memory (two goroutines, their
+  stacks, and the session), plus about 5 KiB per listen. The process's descriptor limit therefore
+  caps the connections: raise it (`LimitNOFILE=` in a systemd unit, `ulimit -n`, `--ulimit nofile` in
+  Docker). On stock macOS `kern.maxfilesperproc` stops one process at about 10,200 connections.
+- **Each busy database holds a Postgres connection** while its writer commits a batch. When more
+  databases write at once than the pool has connections, they queue for one: ten busy databases on
+  the default pool (max(4, CPUs)) wrote about 40% less than with `pool_max_conns=32`. Size the pool
+  above the number of databases that write at the same time, in `database_url`:
+  `postgres://…/aruma?pool_max_conns=32`, within Postgres's `max_connections`.
+
+## 7. Check it
 
 ```sh
 curl -s -o /dev/null -w '%{http_code}\n' 'http://127.0.0.1:9464/rtdb/tls-ask?domain=chat-app-default-rtdb.rtdb.example.com'  # 200
@@ -218,7 +232,20 @@ aruma.example.com {
   أو أكثر.
 - مهلة الطلب في Aruma (60 ثانية) وحد الجسم (1 MB) لا ينطبقان على اتصالات قاعدة البيانات.
 
-## 6. التحقق
+## 6. السعة: واصفات الملفات ومجمّع اتصالات Postgres
+
+من القياسات في [baseline-rtdb.md](../performance/baseline-rtdb.md):
+
+- **كل اتصال يشغل واصف ملف واحدًا** ونحو 40-45 KiB من الذاكرة (goroutine اثنتان ومكدّساهما والجلسة)،
+  ونحو 5 KiB لكل استماع. فحدّ الواصفات في العملية يحدّ عدد الاتصالات: ارفعه (`LimitNOFILE=` في وحدة
+  systemd، أو `ulimit -n`، أو `--ulimit nofile` في Docker). في macOS بإعداداته الافتراضية يوقف
+  `kern.maxfilesperproc` العملية الواحدة عند نحو 10,200 اتصال.
+- **كل قاعدة تكتب تشغل اتصال Postgres** طوال حفظ الدفعة. فإذا كتبت قواعد أكثر من اتصالات المجمّع انتظرت
+  دورها: عشر قواعد مشغولة على المجمّع الافتراضي (max(4, عدد المعالجات)) كتبت أقل بنحو 40% منها مع
+  `pool_max_conns=32`. اجعل المجمّع أكبر من عدد القواعد التي تكتب في وقت واحد، في `database_url`:
+  `postgres://…/aruma?pool_max_conns=32`، ضمن `max_connections` في Postgres.
+
+## 7. التحقق
 
 ```sh
 curl -s -o /dev/null -w '%{http_code}\n' 'http://127.0.0.1:9464/rtdb/tls-ask?domain=chat-app-default-rtdb.rtdb.example.com'  # 200
