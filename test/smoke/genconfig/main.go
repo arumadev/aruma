@@ -10,6 +10,14 @@
 // and drops the database. -anonymous turns on anonymous sign-in for the project. -addr picks the
 // listen address (a device test maps that port into an emulator) and -db-prefix the name of the
 // throwaway database.
+//
+// -rtdb serves Realtime Database, reached on the main host with ?ns= (the development form of
+// ADR-018). -rtdb-domain <domain> implies it and sets rtdb.domain, so the configs carry
+// https://smoke-app-default-rtdb.<domain>, and trusts 127.0.0.1 as a proxy. With -serve,
+// -rtdb-tls <addr> also puts a TLS front on addr, as Caddy would stand before Aruma (tlsfront.go):
+// it serves https and wss for <ns>.<domain> with a certificate from a CA made for the run, writes
+// that CA to rtdb-ca.pem in -out, and prints its address as ARUMA_RTDB_TLS_ADDR. Clients then
+// resolve the database host to that address themselves.
 package main
 
 import (
@@ -80,13 +88,29 @@ func main() {
 	anonymous := flag.Bool("anonymous", false, "enable anonymous sign-in for the project")
 	addr := flag.String("addr", "127.0.0.1:0", "address to listen on (port 0: any free port)")
 	dbPrefix := flag.String("db-prefix", "aruma_smoke_", "prefix of the throwaway database's name")
+	var r rtdbOptions
+	flag.BoolVar(&r.enabled, "rtdb", false, "serve Realtime Database")
+	flag.StringVar(&r.domain, "rtdb-domain", "", "rtdb.domain, e.g. rtdb.aruma.test (implies -rtdb)")
+	flag.StringVar(&r.tlsAddr, "rtdb-tls", "", "with -serve and -rtdb-domain: address of a TLS front for the database hosts")
 	flag.Parse()
-	if err := run(*out, *addr, *dbPrefix, *serve, *anonymous); err != nil {
+	if r.domain != "" {
+		r.enabled = true
+	}
+	if r.tlsAddr != "" && (r.domain == "" || !*serve) {
+		log.Fatal("-rtdb-tls needs -rtdb-domain and -serve")
+	}
+	if err := run(*out, *addr, *dbPrefix, *serve, *anonymous, r); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(out, addr, dbPrefix string, serve, anonymous bool) error {
+// rtdbOptions are the Realtime Database flags.
+type rtdbOptions struct {
+	enabled         bool
+	domain, tlsAddr string
+}
+
+func run(out, addr, dbPrefix string, serve, anonymous bool, rtdb rtdbOptions) error {
 	ctx := context.Background()
 	// The name goes into CREATE DATABASE unquoted.
 	if !regexp.MustCompile(`^[a-z_][a-z0-9_]*$`).MatchString(dbPrefix) {
@@ -122,6 +146,14 @@ func run(out, addr, dbPrefix string, serve, anonymous bool) error {
 	}
 	base := "http://" + ln.Addr().String()
 	vars := map[string]string{"ARUMA_DATABASE_URL": dbURL, "ARUMA_PUBLIC_URL": base, "ARUMA_MASTER_KEY": randomBase64Key()}
+	if rtdb.enabled {
+		vars["ARUMA_RTDB_ENABLED"] = "true"
+	}
+	if rtdb.domain != "" {
+		// The TLS front, like Caddy, connects from 127.0.0.1 and sets X-Forwarded-*.
+		vars["ARUMA_RTDB_DOMAIN"] = rtdb.domain
+		vars["ARUMA_TRUSTED_PROXIES"] = "127.0.0.1/32"
+	}
 	cfg, err := config.Load("", func(k string) string { return vars[k] })
 	if err != nil {
 		return err
@@ -242,7 +274,17 @@ func run(out, addr, dbPrefix string, serve, anonymous bool) error {
 	fmt.Fprintf(os.Stderr, "wrote config files to %s\n", out)
 
 	if serve {
-		fmt.Printf("export ARUMA_URL=%s\nexport ARUMA_CLI_TOKEN=%s\n", base, tok.Plaintext)
+		fmt.Printf("export ARUMA_URL=%s\n", base)
+		if rtdb.tlsAddr != "" {
+			front, err := startTLSFront(rtdb.tlsAddr, rtdb.domain, base, filepath.Join(out, "rtdb-ca.pem"))
+			if err != nil {
+				return err
+			}
+			defer front.Close()
+			fmt.Printf("export ARUMA_RTDB_TLS_ADDR=%s\n", front.Addr())
+		}
+		// Readers wait for this line: it comes last.
+		fmt.Printf("export ARUMA_CLI_TOKEN=%s\n", tok.Plaintext)
 		sig := make(chan os.Signal, 1)
 		signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 		<-sig

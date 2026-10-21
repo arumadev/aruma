@@ -2,11 +2,20 @@
 # Runs the Phase 1 smoke tests (AC-22..26): official SDKs load the configuration files a real
 # Aruma server generates, with all network access blocked.
 #
-#   test/smoke/run.sh [web|admin-node|admin-go|admin-auth-node|admin-auth-go|tamper-libs|android|ios|flutter|flutter-ios ...]
+#   test/smoke/run.sh [web|admin-node|admin-go|admin-auth-node|admin-auth-go|tamper-libs|android|ios|flutter|flutter-ios
+#                      |admin-node-rtdb|admin-go-rtdb ...]
 #
 # admin-auth-node and admin-auth-go run the Aruma verification libraries' suites (sdk/), which
 # start their own live server and use the official firebase-admin beside them (AC-A5, AC-A10..14,
 # AC-A20). tamper-libs puts the tamper suite's forged ID tokens to both libraries too (T24).
+#
+# The -rtdb targets use the Admin SDKs' Realtime Database against a live Aruma in production
+# form: each starts genconfig -serve -rtdb-domain rtdb.aruma.test with its TLS front, so
+# databaseURL is https://smoke-app-default-rtdb.rtdb.aruma.test, and refuses every connection
+# beyond loopback. firebase-admin (Node) speaks the WebSocket protocol, firebase-admin-go REST.
+# ARUMA_SMOKE_ADDR and ARUMA_SMOKE_TLS_ADDR set the server's and the front's addresses (default:
+# any free loopback port), ARUMA_SMOKE_DB_PREFIX the throwaway database's prefix. The Python
+# Admin SDK is not covered: see docs/compat/rtdb-v0.2.md.
 #
 # Without arguments it runs every target this machine can run. It needs the local Postgres
 # (ARUMA_TEST_DATABASE_URL), Node, Go and, per target, a JDK 17+ and the Android SDK, Xcode with an
@@ -38,7 +47,17 @@ run_admin_node() {
 
 run_admin_go() {
   log "admin-go: firebase-admin-go"
-  (cd "$smoke/admin-go" && go test -count=1 ./...)
+  (cd "$smoke/admin-go" && go test -count=1 .)
+}
+
+run_admin_node_rtdb() {
+  log "admin-node-rtdb: firebase-admin Realtime Database (WebSocket) through TLS"
+  (cd "$smoke/admin-node" && npm ci --no-audit --no-fund --silent && npm run --silent test:rtdb)
+}
+
+run_admin_go_rtdb() {
+  log "admin-go-rtdb: firebase-admin-go Realtime Database (REST) through TLS"
+  (cd "$smoke/admin-go" && go test -count=1 ./rtdb/)
 }
 
 run_admin_auth_node() {
@@ -126,14 +145,20 @@ run_flutter_ios() {
 
 targets=("$@")
 if [[ ${#targets[@]} -eq 0 ]]; then
-  targets=(web admin-node admin-go admin-auth-node admin-auth-go tamper-libs)
+  targets=(web admin-node admin-go admin-auth-node admin-auth-go tamper-libs admin-node-rtdb admin-go-rtdb)
   command -v java >/dev/null && [[ -d "${ANDROID_HOME:-$HOME/Library/Android/sdk}" ]] && targets+=(android)
   command -v xcodebuild >/dev/null && targets+=(ios)
   command -v flutter >/dev/null && targets+=(flutter)
   command -v flutter >/dev/null && command -v xcodebuild >/dev/null && targets+=(flutter-ios)
 fi
 
-generate
+# The -rtdb targets start servers of their own.
+for t in "${targets[@]}"; do
+  if [[ $t != *-rtdb ]]; then
+    generate
+    break
+  fi
+done
 for t in "${targets[@]}"; do
   "run_${t//-/_}"
 done
