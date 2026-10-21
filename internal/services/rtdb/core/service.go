@@ -8,6 +8,7 @@ package core
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -164,17 +165,51 @@ func (s *Service) Rules(ctx context.Context, t Target) (string, error) {
 	return info.Rules, nil
 }
 
+// CheckRules checks a rules document as SetRules would, and saves nothing (dryRun).
+func (s *Service) CheckRules(doc string) error {
+	_, err := parseRules(doc)
+	return err
+}
+
+func parseRules(doc string) (*rules.Ruleset, error) {
+	if len(doc) > maxRulesBytes {
+		return nil, ErrTooBig
+	}
+	rs, err := rules.Parse([]byte(doc))
+	if err != nil {
+		return nil, &Error{statusInvalidParameters, rulesErrorText(err), http.StatusBadRequest}
+	}
+	return rs, nil
+}
+
+// rulesErrorText is a rules load error as Firebase prints it: each error "line:col: message"
+// on a line of its own, without the rule's path (emulator 4.11.2, golden rest.golden.json).
+// The console shows the paths; it parses the document itself.
+func rulesErrorText(err error) string {
+	var es rules.Errors
+	var e *rules.Error
+	switch {
+	case errors.As(err, &es):
+	case errors.As(err, &e):
+		es = rules.Errors{e}
+	default:
+		return err.Error()
+	}
+	var b strings.Builder
+	for _, e := range es {
+		fmt.Fprintf(&b, "%d:%d: %s\n", e.Line, e.Column, e.Msg)
+	}
+	return b.String()
+}
+
 // SetRules replaces a database's rules document, once it parses. The database's writer takes
 // the new rules in its order: commands queued before see the old ones, and every listen open
 // then is checked against the new ones and cancelled with c if they no longer permit it
 // (Database.recheckListens). Their .indexOn takes effect at once too.
 func (s *Service) SetRules(ctx context.Context, t Target, doc string) error {
-	if len(doc) > maxRulesBytes {
-		return ErrTooBig
-	}
-	rs, err := rules.Parse([]byte(doc))
+	rs, err := parseRules(doc)
 	if err != nil {
-		return &Error{statusInvalidParameters, err.Error(), http.StatusBadRequest}
+		return err
 	}
 	if _, err := s.store.OpenDatabase(ctx, t.Project, t.Name); err != nil {
 		s.log.Error("rtdb: save rules", "database", t.Name, "error", err)

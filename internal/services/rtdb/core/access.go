@@ -58,8 +58,9 @@ func env(a *access, tx StoreTx, now time.Time) rules.Env {
 	return rules.Env{Auth: a.auth, Now: now, Data: rulesSource{tx}}
 }
 
-// readable reports whether a may read p with query q, without admitting anyone.
-func (d *Database) readable(ctx context.Context, tx StoreTx, a *access, p Path, q Query, now time.Time) (bool, error) {
+// readable reports whether a may read p with the query q shows to rules, without admitting
+// anyone.
+func (d *Database) readable(ctx context.Context, tx StoreTx, a *access, p Path, q rules.Query, now time.Time) (bool, error) {
 	if a == nil || a.auth.IsAdmin() {
 		return true, nil
 	}
@@ -67,12 +68,12 @@ func (d *Database) readable(ctx context.Context, tx StoreTx, a *access, p Path, 
 	if rs == nil {
 		return false, nil
 	}
-	return rs.CanRead(ctx, env(a, tx, now), p, q.rules())
+	return rs.CanRead(ctx, env(a, tx, now), p, q)
 }
 
 // mayRead checks a read or a listen: nil, ErrPermissionDenied, ErrTooManyConnections, or a
 // storage error.
-func (d *Database) mayRead(ctx context.Context, tx StoreTx, a *access, p Path, q Query, now time.Time) error {
+func (d *Database) mayRead(ctx context.Context, tx StoreTx, a *access, p Path, q rules.Query, now time.Time) error {
 	ok, err := d.readable(ctx, tx, a, p, q, now)
 	switch {
 	case err != nil:

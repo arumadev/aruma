@@ -205,6 +205,23 @@ func (s *Session) Get(path string, spec *QuerySpec, done func(*Node, error)) {
 	s.db.submit(c)
 }
 
+// GetREST reads as a REST GET does: as Get, except that rules see a read without a query as a
+// plain REST read, ordered by key (rules.PlainREST, emulator 4.11.2). With probe it only checks
+// the read, rules and index, and done receives no data: a shallow read takes the rows itself
+// (Service.Shallow).
+func (s *Session) GetREST(path string, spec *QuerySpec, probe bool, done func(*Node, error)) {
+	p, q, err := parseRead(path, spec)
+	if err != nil {
+		done(nil, err)
+		return
+	}
+	c := &command{acc: s.access(), read: p, rest: true, probe: probe, done: func(r Result) { done(r.Node, r.Err) }}
+	if spec != nil {
+		c.query = &q
+	}
+	s.db.submit(c)
+}
+
 func parseRead(path string, spec *QuerySpec) (Path, Query, error) {
 	p, err := ParsePath(path)
 	if err != nil {
@@ -259,7 +276,7 @@ func (s *Session) RevokeListens(done func()) {
 }
 
 // Set writes data, in export format, at path. With hash it applies only while the value at
-// path still hashes to *hash; done then receives the value written.
+// path still hashes to *hash. done receives the value written, server values resolved.
 func (s *Session) Set(path string, data json.RawMessage, hash *string, done func(*Node, error)) {
 	w, err := s.parseSet(path, data, hash)
 	if err != nil {
@@ -271,12 +288,18 @@ func (s *Session) Set(path string, data json.RawMessage, hash *string, done func
 
 // Update writes each child of data, an object keyed by paths relative to path, at once.
 func (s *Session) Update(path string, data json.RawMessage, done func(error)) {
+	s.UpdateWritten(path, data, func(_ []Child, err error) { done(err) })
+}
+
+// UpdateWritten is Update, whose done also receives the children as written, in key order,
+// server values resolved and null ones kept: what REST echoes.
+func (s *Session) UpdateWritten(path string, data json.RawMessage, done func([]Child, error)) {
 	w, err := s.parseUpdate(path, data)
 	if err != nil {
-		done(err)
+		done(nil, err)
 		return
 	}
-	s.db.submit(&command{acc: s.access(), write: w, done: func(r Result) { done(r.Err) }})
+	s.db.submit(&command{acc: s.access(), write: w, done: func(r Result) { done(r.Merge, r.Err) }})
 }
 
 func (s *Session) parseSet(path string, data json.RawMessage, hash *string) (*Write, error) {

@@ -317,7 +317,7 @@ func TestRoutes(t *testing.T) {
 		{"/.ws?ns=outage-default-rtdb", http.StatusServiceUnavailable},
 		{"/.ws", http.StatusBadRequest},
 		{"/.lp?ns=chat-app-default-rtdb&start=t", http.StatusOK},
-		{"/x.json?ns=chat-app-default-rtdb", http.StatusNotImplemented},
+		{"/x.json?ns=chat-app-default-rtdb", http.StatusUnauthorized}, // locked rules
 		{"/x?ns=chat-app-default-rtdb", http.StatusBadRequest},
 		{"/.ws?ns=chat-app-default-rtdb", http.StatusUpgradeRequired}, // not an upgrade
 	} {

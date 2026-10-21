@@ -1,0 +1,7830 @@
+{
+ "provenance": {
+  "source": "Firebase Realtime Database emulator, run locally; no Firebase project was contacted",
+  "jar": "firebase-database-emulator-v4.11.2.jar",
+  "jarSha256": "b70d99344caf17c98b6f910fa8f6edf32a7c016cb1035e8915f70d38901eb97f",
+  "java": "Temurin 19.0.2",
+  "captured": "2026-10-21",
+  "script": "capture_rest.mjs",
+  "cases": "rest_cases.mjs",
+  "notes": "Streaming is not in this file. GET with Accept: text/event-stream on a readable path answers 200, Content-Type: text/event-stream; charset=utf-8, Connection: close, and first the event \"event: put\\ndata: {\\\"path\\\":\\\"/\\\",\\\"data\\\":<value>}\\n\\n\" (also with orderBy/limitToFirst, where the first event carried the whole unfiltered value); on a path the rules deny it answers 401 text/plain \"Permission denied\" with no stream. HEAD responses carry a body, so the capture reads each response from its own connection."
+ },
+ "groups": [
+  {
+   "name": "methods",
+   "rules": null,
+   "data": {
+    "a": {
+     "b": 1,
+     "c": "x"
+    },
+    "list": {
+     "k1": 1
+    }
+   },
+   "cases": [
+    {
+     "name": "GET an existing node",
+     "request": {
+      "method": "GET",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":1,\"c\":\"x\"}"
+     }
+    },
+    {
+     "name": "GET a missing node is null",
+     "request": {
+      "method": "GET",
+      "path": "/missing.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "GET the root",
+     "request": {
+      "method": "GET",
+      "path": "/.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":{\"b\":1,\"c\":\"x\"},\"list\":{\"k1\":1}}"
+     }
+    },
+    {
+     "name": "PUT an object, keys out of order",
+     "request": {
+      "method": "PUT",
+      "path": "/p/obj.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"z\":1,\"a\":2,\"m\":{\"y\":true,\"b\":false}}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":2,\"m\":{\"b\":false,\"y\":true},\"z\":1}"
+     }
+    },
+    {
+     "name": "GET the object written with keys out of order",
+     "request": {
+      "method": "GET",
+      "path": "/p/obj.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":2,\"m\":{\"b\":false,\"y\":true},\"z\":1}"
+     }
+    },
+    {
+     "name": "PUT a leaf",
+     "request": {
+      "method": "PUT",
+      "path": "/p/leaf.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "\"hello\""
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "\"hello\""
+     }
+    },
+    {
+     "name": "PUT null deletes",
+     "request": {
+      "method": "PUT",
+      "path": "/p/leaf.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "null"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "GET after PUT null",
+     "request": {
+      "method": "GET",
+      "path": "/p/leaf.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "PUT {} deletes",
+     "request": {
+      "method": "PUT",
+      "path": "/p/obj.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "GET the parent after PUT {}",
+     "request": {
+      "method": "GET",
+      "path": "/p.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "POST under an existing parent",
+     "request": {
+      "method": "POST",
+      "path": "/list.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"v\":1}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"name\":\"-P4Rd4cODjmf9pEr6_dc\"}"
+     }
+    },
+    {
+     "name": "POST under a missing parent",
+     "request": {
+      "method": "POST",
+      "path": "/newparent.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "\"x\""
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"name\":\"-P4Rd4cQqtdIHOskLylY\"}"
+     }
+    },
+    {
+     "name": "POST first of two",
+     "request": {
+      "method": "POST",
+      "path": "/pushes.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"name\":\"-P4Rd4cRpM3DoV6iYV2u\"}"
+     }
+    },
+    {
+     "name": "POST second of two",
+     "request": {
+      "method": "POST",
+      "path": "/pushes.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "2"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"name\":\"-P4Rd4cS34hnuGJUVhn_\"}"
+     }
+    },
+    {
+     "name": "GET two pushes, ids ascending",
+     "request": {
+      "method": "GET",
+      "path": "/pushes.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"-P4Rd4cRpM3DoV6iYV2u\":1,\"-P4Rd4cS34hnuGJUVhn_\":2}"
+     }
+    },
+    {
+     "name": "PATCH multi-path and nested",
+     "request": {
+      "method": "PATCH",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"b2/c\":1,\"d\":{\"e\":2}}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b2\":{\"c\":1},\"d\":{\"e\":2}}"
+     }
+    },
+    {
+     "name": "GET after PATCH multi-path",
+     "request": {
+      "method": "GET",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":1,\"b2\":{\"c\":1},\"c\":\"x\",\"d\":{\"e\":2}}"
+     }
+    },
+    {
+     "name": "PATCH a null child deletes it",
+     "request": {
+      "method": "PATCH",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"c\":null}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"c\":null}"
+     }
+    },
+    {
+     "name": "GET after PATCH with a null child",
+     "request": {
+      "method": "GET",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":1,\"b2\":{\"c\":1},\"d\":{\"e\":2}}"
+     }
+    },
+    {
+     "name": "PATCH a deep path",
+     "request": {
+      "method": "PATCH",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"x/y/z\":true}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"x\":{\"y\":{\"z\":true}}}"
+     }
+    },
+    {
+     "name": "GET after PATCH of a deep path",
+     "request": {
+      "method": "GET",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":1,\"b2\":{\"c\":1},\"d\":{\"e\":2},\"x\":{\"y\":{\"z\":true}}}"
+     }
+    },
+    {
+     "name": "PATCH at the root",
+     "request": {
+      "method": "PATCH",
+      "path": "/.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"r/one\":1,\"r/two\":2}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"r\":{\"one\":1,\"two\":2}}"
+     }
+    },
+    {
+     "name": "DELETE an existing node",
+     "request": {
+      "method": "DELETE",
+      "path": "/a/d.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "DELETE a missing node",
+     "request": {
+      "method": "DELETE",
+      "path": "/nope.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "GET with print=silent",
+     "request": {
+      "method": "GET",
+      "path": "/a.json",
+      "query": "print=silent",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 204,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": ""
+     }
+    },
+    {
+     "name": "PUT with print=silent",
+     "request": {
+      "method": "PUT",
+      "path": "/s.json",
+      "query": "print=silent",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"v\":1}"
+     },
+     "response": {
+      "status": 204,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": ""
+     }
+    },
+    {
+     "name": "POST with print=silent",
+     "request": {
+      "method": "POST",
+      "path": "/s.json",
+      "query": "print=silent",
+      "headers": {},
+      "auth": "none",
+      "body": "2"
+     },
+     "response": {
+      "status": 204,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": ""
+     }
+    },
+    {
+     "name": "PATCH with print=silent",
+     "request": {
+      "method": "PATCH",
+      "path": "/s.json",
+      "query": "print=silent",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"w\":3}"
+     },
+     "response": {
+      "status": 204,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": ""
+     }
+    },
+    {
+     "name": "DELETE with print=silent",
+     "request": {
+      "method": "DELETE",
+      "path": "/s.json",
+      "query": "print=silent",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 204,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": ""
+     }
+    },
+    {
+     "name": "GET with print=pretty",
+     "request": {
+      "method": "GET",
+      "path": "/a.json",
+      "query": "print=pretty",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"b\" : 1,\n  \"b2\" : {\n    \"c\" : 1\n  },\n  \"x\" : {\n    \"y\" : {\n      \"z\" : true\n    }\n  }\n}\n"
+     }
+    },
+    {
+     "name": "error with print=pretty",
+     "request": {
+      "method": "PUT",
+      "path": "/e.json",
+      "query": "print=pretty",
+      "headers": {},
+      "auth": "none",
+      "body": "{bad"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    },
+    {
+     "name": "GET with print=bogus",
+     "request": {
+      "method": "GET",
+      "path": "/a.json",
+      "query": "print=bogus",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":1,\"b2\":{\"c\":1},\"x\":{\"y\":{\"z\":true}}}"
+     }
+    },
+    {
+     "name": "X-HTTP-Method-Override POST as PUT",
+     "request": {
+      "method": "POST",
+      "path": "/o.json",
+      "query": "",
+      "headers": {
+       "X-HTTP-Method-Override": "PUT"
+      },
+      "auth": "none",
+      "body": "{\"m\":\"put\"}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"m\":\"put\"}"
+     }
+    },
+    {
+     "name": "GET after the PUT override",
+     "request": {
+      "method": "GET",
+      "path": "/o.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"m\":\"put\"}"
+     }
+    },
+    {
+     "name": "X-HTTP-Method-Override POST as PATCH",
+     "request": {
+      "method": "POST",
+      "path": "/o.json",
+      "query": "",
+      "headers": {
+       "X-HTTP-Method-Override": "PATCH"
+      },
+      "auth": "none",
+      "body": "{\"n\":\"patch\"}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"n\":\"patch\"}"
+     }
+    },
+    {
+     "name": "GET after the PATCH override",
+     "request": {
+      "method": "GET",
+      "path": "/o.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"m\":\"put\",\"n\":\"patch\"}"
+     }
+    },
+    {
+     "name": "X-HTTP-Method-Override POST as DELETE",
+     "request": {
+      "method": "POST",
+      "path": "/o.json",
+      "query": "",
+      "headers": {
+       "X-HTTP-Method-Override": "DELETE"
+      },
+      "auth": "none",
+      "body": "null"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "GET after the DELETE override",
+     "request": {
+      "method": "GET",
+      "path": "/o.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "restore /o",
+     "request": {
+      "method": "PUT",
+      "path": "/o.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"k\":1}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"k\":1}"
+     }
+    },
+    {
+     "name": "X-HTTP-Method-Override GET as DELETE",
+     "request": {
+      "method": "GET",
+      "path": "/o.json",
+      "query": "",
+      "headers": {
+       "X-HTTP-Method-Override": "DELETE"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "GET after the GET-as-DELETE override",
+     "request": {
+      "method": "GET",
+      "path": "/o.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "X-HTTP-Method-Override BOGUS",
+     "request": {
+      "method": "POST",
+      "path": "/o.json",
+      "query": "",
+      "headers": {
+       "X-HTTP-Method-Override": "BOGUS"
+      },
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 405,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Unsupported request type\"\n}\n"
+     }
+    },
+    {
+     "name": "x-http-method-override query param POST as PUT",
+     "request": {
+      "method": "POST",
+      "path": "/oq.json",
+      "query": "x-http-method-override=PUT",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"m\":\"q\"}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"m\":\"q\"}"
+     }
+    },
+    {
+     "name": "GET after the query param override",
+     "request": {
+      "method": "GET",
+      "path": "/oq.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"m\":\"q\"}"
+     }
+    },
+    {
+     "name": "OPTIONS",
+     "request": {
+      "method": "OPTIONS",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "allow": "OPTIONS,GET,POST,PUT,DELETE,PATCH"
+      },
+      "body": ""
+     }
+    },
+    {
+     "name": "HEAD",
+     "request": {
+      "method": "HEAD",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 405,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Unsupported request type\"\n}\n"
+     }
+    },
+    {
+     "name": "unknown method",
+     "request": {
+      "method": "BREW",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 405,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Unsupported request type\"\n}\n"
+     }
+    },
+    {
+     "name": "missing .json suffix",
+     "request": {
+      "method": "GET",
+      "path": "/a",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "text/plain"
+      },
+      "body": "Append .json to your URL to use the REST API."
+     }
+    },
+    {
+     "name": "missing .json suffix at the root",
+     "request": {
+      "method": "GET",
+      "path": "/",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "text/plain"
+      },
+      "body": "Append .json to your URL to use the REST API."
+     }
+    },
+    {
+     "name": "/.info.json",
+     "request": {
+      "method": "GET",
+      "path": "/.info.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid path: Invalid token in path\"\n}\n"
+     }
+    },
+    {
+     "name": "/.info/connected.json",
+     "request": {
+      "method": "GET",
+      "path": "/.info/connected.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid path: Invalid token in path\"\n}\n"
+     }
+    },
+    {
+     "name": "/.info/serverTimeOffset.json",
+     "request": {
+      "method": "GET",
+      "path": "/.info/serverTimeOffset.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid path: Invalid token in path\"\n}\n"
+     }
+    },
+    {
+     "name": "/.inspect.json",
+     "request": {
+      "method": "GET",
+      "path": "/.inspect.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 404,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"404 Not Found\"\n}\n"
+     }
+    },
+    {
+     "name": "/.settings.json",
+     "request": {
+      "method": "GET",
+      "path": "/.settings.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 403,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied.\"\n}\n"
+     }
+    },
+    {
+     "name": "GET below a leaf is null",
+     "request": {
+      "method": "GET",
+      "path": "/a/b/deeper.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "PUT below a leaf replaces the leaf",
+     "request": {
+      "method": "PUT",
+      "path": "/list/k1/sub.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "2"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "2"
+     }
+    },
+    {
+     "name": "GET after PUT below a leaf",
+     "request": {
+      "method": "GET",
+      "path": "/list.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"-P4Rd4cODjmf9pEr6_dc\":{\"v\":1},\"k1\":{\"sub\":2}}"
+     }
+    },
+    {
+     "name": "GET with a trailing slash before .json",
+     "request": {
+      "method": "GET",
+      "path": "/a/.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":1,\"b2\":{\"c\":1},\"x\":{\"y\":{\"z\":true}}}"
+     }
+    },
+    {
+     "name": "GET with a double slash",
+     "request": {
+      "method": "GET",
+      "path": "/a//b.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1"
+     }
+    },
+    {
+     "name": "GET with an encoded space",
+     "request": {
+      "method": "GET",
+      "path": "/sp%20ace.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    }
+   ]
+  },
+  {
+   "name": "data shapes",
+   "rules": null,
+   "data": null,
+   "cases": [
+    {
+     "name": "PUT an array",
+     "request": {
+      "method": "PUT",
+      "path": "/arr1.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "[\"a\",\"b\",\"c\"]"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[\"a\",\"b\",\"c\"]"
+     }
+    },
+    {
+     "name": "GET an array",
+     "request": {
+      "method": "GET",
+      "path": "/arr1.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[\"a\",\"b\",\"c\"]"
+     }
+    },
+    {
+     "name": "GET one array element",
+     "request": {
+      "method": "GET",
+      "path": "/arr1/1.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "\"b\""
+     }
+    },
+    {
+     "name": "PUT an array holding null",
+     "request": {
+      "method": "PUT",
+      "path": "/arr0.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "[\"a\",null,\"c\"]"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[\"a\",null,\"c\"]"
+     }
+    },
+    {
+     "name": "PUT {\"0\",\"2\"}",
+     "request": {
+      "method": "PUT",
+      "path": "/arr2.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"0\":\"a\",\"2\":\"c\"}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[\"a\",null,\"c\"]"
+     }
+    },
+    {
+     "name": "GET {\"0\",\"2\"} renders as an array",
+     "request": {
+      "method": "GET",
+      "path": "/arr2.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[\"a\",null,\"c\"]"
+     }
+    },
+    {
+     "name": "PUT {\"0\",\"1\"}",
+     "request": {
+      "method": "PUT",
+      "path": "/arr3.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"0\":\"a\",\"1\":\"b\"}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[\"a\",\"b\"]"
+     }
+    },
+    {
+     "name": "GET {\"0\",\"1\"}",
+     "request": {
+      "method": "GET",
+      "path": "/arr3.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[\"a\",\"b\"]"
+     }
+    },
+    {
+     "name": "PUT sparse {\"0\",\"5\"}",
+     "request": {
+      "method": "PUT",
+      "path": "/arr4.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"0\":\"a\",\"5\":\"b\"}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"0\":\"a\",\"5\":\"b\"}"
+     }
+    },
+    {
+     "name": "GET sparse {\"0\",\"5\"} stays an object",
+     "request": {
+      "method": "GET",
+      "path": "/arr4.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"0\":\"a\",\"5\":\"b\"}"
+     }
+    },
+    {
+     "name": "PUT {\"1\"} only",
+     "request": {
+      "method": "PUT",
+      "path": "/arr5.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"1\":\"a\"}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[null,\"a\"]"
+     }
+    },
+    {
+     "name": "GET {\"1\"} only",
+     "request": {
+      "method": "GET",
+      "path": "/arr5.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[null,\"a\"]"
+     }
+    },
+    {
+     "name": "PUT keys \"0\",\"1\",\"x\"",
+     "request": {
+      "method": "PUT",
+      "path": "/arr6.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"0\":\"a\",\"1\":\"b\",\"x\":\"c\"}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"0\":\"a\",\"1\":\"b\",\"x\":\"c\"}"
+     }
+    },
+    {
+     "name": "PUT keys \"00\",\"01\"",
+     "request": {
+      "method": "PUT",
+      "path": "/arr7.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"00\":\"a\",\"01\":\"b\"}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"00\":\"a\",\"01\":\"b\"}"
+     }
+    },
+    {
+     "name": "PUT keys \"-1\",\"0\"",
+     "request": {
+      "method": "PUT",
+      "path": "/arr8.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"0\":\"b\",\"-1\":\"a\"}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"-1\":\"a\",\"0\":\"b\"}"
+     }
+    },
+    {
+     "name": "PATCH an array element",
+     "request": {
+      "method": "PATCH",
+      "path": "/arr1.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"3\":\"d\"}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"3\":\"d\"}"
+     }
+    },
+    {
+     "name": "GET the array after PATCH",
+     "request": {
+      "method": "GET",
+      "path": "/arr1.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[\"a\",\"b\",\"c\",\"d\"]"
+     }
+    },
+    {
+     "name": "PUT integer 1",
+     "request": {
+      "method": "PUT",
+      "path": "/n/i.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1"
+     }
+    },
+    {
+     "name": "PUT 1.0",
+     "request": {
+      "method": "PUT",
+      "path": "/n/f.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1.0"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1.0"
+     }
+    },
+    {
+     "name": "PUT 1e3",
+     "request": {
+      "method": "PUT",
+      "path": "/n/e.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1e3"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1000.0"
+     }
+    },
+    {
+     "name": "PUT -0.0",
+     "request": {
+      "method": "PUT",
+      "path": "/n/z.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "-0.0"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "-0.0"
+     }
+    },
+    {
+     "name": "PUT 1.5",
+     "request": {
+      "method": "PUT",
+      "path": "/n/h.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1.5"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1.5"
+     }
+    },
+    {
+     "name": "PUT a 20-digit integer",
+     "request": {
+      "method": "PUT",
+      "path": "/n/big.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "12345678901234567890"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1.2345678901234567E19"
+     }
+    },
+    {
+     "name": "PUT -5",
+     "request": {
+      "method": "PUT",
+      "path": "/n/neg.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "-5"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "-5"
+     }
+    },
+    {
+     "name": "PUT 2^53+1",
+     "request": {
+      "method": "PUT",
+      "path": "/n/s53.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "9007199254740993"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "9007199254740993"
+     }
+    },
+    {
+     "name": "GET all the numbers",
+     "request": {
+      "method": "GET",
+      "path": "/n.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"big\":1.2345678901234567E19,\"e\":1000.0,\"f\":1.0,\"h\":1.5,\"i\":1,\"neg\":-5,\"s53\":9007199254740993,\"z\":-0.0}"
+     }
+    },
+    {
+     "name": "PUT true",
+     "request": {
+      "method": "PUT",
+      "path": "/b/t.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "true"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "true"
+     }
+    },
+    {
+     "name": "PUT false",
+     "request": {
+      "method": "PUT",
+      "path": "/b/f.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "false"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "false"
+     }
+    },
+    {
+     "name": "GET the booleans",
+     "request": {
+      "method": "GET",
+      "path": "/b.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"f\":false,\"t\":true}"
+     }
+    },
+    {
+     "name": "PUT a unicode string",
+     "request": {
+      "method": "PUT",
+      "path": "/u/s.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "\"héllo ✓ 😀\""
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "\"héllo ✓ 😀\""
+     }
+    },
+    {
+     "name": "PUT a string with escapes",
+     "request": {
+      "method": "PUT",
+      "path": "/u/e.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "\"\\u00e9\\ud83d\\ude00\\n\\t\\\"q\\\" \\/\""
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "\"é😀\\n\\t\\\"q\\\" /\""
+     }
+    },
+    {
+     "name": "GET the strings",
+     "request": {
+      "method": "GET",
+      "path": "/u.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"e\":\"é😀\\n\\t\\\"q\\\" /\",\"s\":\"héllo ✓ 😀\"}"
+     }
+    },
+    {
+     "name": "PUT a unicode key",
+     "request": {
+      "method": "PUT",
+      "path": "/u/k.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"clé\":1,\"😀\":2}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"clé\":1,\"\\uD83D\\uDE00\":2}"
+     }
+    },
+    {
+     "name": "GET a unicode path",
+     "request": {
+      "method": "GET",
+      "path": "/u/k/cl%C3%A9.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1"
+     }
+    },
+    {
+     "name": "PUT .value and .priority",
+     "request": {
+      "method": "PUT",
+      "path": "/pr/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\".value\":\"x\",\".priority\":5}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\".value\":\"x\",\".priority\":5.0}"
+     }
+    },
+    {
+     "name": "GET a leaf with a priority",
+     "request": {
+      "method": "GET",
+      "path": "/pr/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "\"x\""
+     }
+    },
+    {
+     "name": "GET a leaf with a priority, format=export",
+     "request": {
+      "method": "GET",
+      "path": "/pr/a.json",
+      "query": "format=export",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\".value\":\"x\",\".priority\":5.0}"
+     }
+    },
+    {
+     "name": "PUT an object with a string .priority",
+     "request": {
+      "method": "PUT",
+      "path": "/pr/b.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"c\":1,\".priority\":\"str\"}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\".priority\":\"str\",\"c\":1}"
+     }
+    },
+    {
+     "name": "GET an object with a priority",
+     "request": {
+      "method": "GET",
+      "path": "/pr/b.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"c\":1}"
+     }
+    },
+    {
+     "name": "PUT a float priority",
+     "request": {
+      "method": "PUT",
+      "path": "/pr/c.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\".value\":true,\".priority\":1.5}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\".value\":true,\".priority\":1.5}"
+     }
+    },
+    {
+     "name": "GET the parent",
+     "request": {
+      "method": "GET",
+      "path": "/pr.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":\"x\",\"b\":{\"c\":1},\"c\":true}"
+     }
+    },
+    {
+     "name": "GET the parent, format=export",
+     "request": {
+      "method": "GET",
+      "path": "/pr.json",
+      "query": "format=export",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":{\".value\":\"x\",\".priority\":5.0},\"b\":{\".priority\":\"str\",\"c\":1},\"c\":{\".value\":true,\".priority\":1.5}}"
+     }
+    },
+    {
+     "name": "GET /x/.priority.json of a number priority",
+     "request": {
+      "method": "GET",
+      "path": "/pr/a/.priority.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "5.0"
+     }
+    },
+    {
+     "name": "GET /x/.priority.json of a string priority",
+     "request": {
+      "method": "GET",
+      "path": "/pr/b/.priority.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "\"str\""
+     }
+    },
+    {
+     "name": "GET /x/.priority.json with none",
+     "request": {
+      "method": "GET",
+      "path": "/n/i/.priority.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "PUT /x/.priority.json",
+     "request": {
+      "method": "PUT",
+      "path": "/pr/b/.priority.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "7"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "7"
+     }
+    },
+    {
+     "name": "GET after PUT of .priority, format=export",
+     "request": {
+      "method": "GET",
+      "path": "/pr/b.json",
+      "query": "format=export",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\".priority\":7,\"c\":1}"
+     }
+    },
+    {
+     "name": "PUT .value alone",
+     "request": {
+      "method": "PUT",
+      "path": "/pr/d.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\".value\":3}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "3"
+     }
+    },
+    {
+     "name": "PUT .priority null with .value",
+     "request": {
+      "method": "PUT",
+      "path": "/pr/e.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\".value\":3,\".priority\":null}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "3"
+     }
+    },
+    {
+     "name": "PUT .value next to a child",
+     "request": {
+      "method": "PUT",
+      "path": "/pr/f.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\".value\":1,\"a\":2}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    },
+    {
+     "name": "PUT a boolean priority",
+     "request": {
+      "method": "PUT",
+      "path": "/pr/g.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\".value\":1,\".priority\":true}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    },
+    {
+     "name": "format=bogus",
+     "request": {
+      "method": "GET",
+      "path": "/pr.json",
+      "query": "format=bogus",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Export format must be export if present\"\n}\n"
+     }
+    },
+    {
+     "name": "format=export on a missing node",
+     "request": {
+      "method": "GET",
+      "path": "/nothing.json",
+      "query": "format=export",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    }
+   ]
+  },
+  {
+   "name": "server values",
+   "rules": null,
+   "data": {
+    "cnt": 5,
+    "str": "s",
+    "obj": {
+     "k": 1
+    }
+   },
+   "cases": [
+    {
+     "name": "PUT a timestamp",
+     "request": {
+      "method": "PUT",
+      "path": "/ts.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\".sv\":\"timestamp\"}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1792555637385"
+     }
+    },
+    {
+     "name": "PUT a nested timestamp",
+     "request": {
+      "method": "PUT",
+      "path": "/tsn.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"a\":{\".sv\":\"timestamp\"},\"b\":1}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":1792555637386,\"b\":1}"
+     }
+    },
+    {
+     "name": "PATCH a timestamp",
+     "request": {
+      "method": "PATCH",
+      "path": "/obj.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"t\":{\".sv\":\"timestamp\"}}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"t\":1792555637388}"
+     }
+    },
+    {
+     "name": "POST a timestamp",
+     "request": {
+      "method": "POST",
+      "path": "/log.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"at\":{\".sv\":\"timestamp\"}}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"name\":\"-P4Rd4eCuN8J8oAOZbvR\"}"
+     }
+    },
+    {
+     "name": "PUT increment on an existing number",
+     "request": {
+      "method": "PUT",
+      "path": "/cnt.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\".sv\":{\"increment\":2}}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "7"
+     }
+    },
+    {
+     "name": "GET the incremented number",
+     "request": {
+      "method": "GET",
+      "path": "/cnt.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "7"
+     }
+    },
+    {
+     "name": "PUT increment on a missing node",
+     "request": {
+      "method": "PUT",
+      "path": "/missingcnt.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\".sv\":{\"increment\":3}}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "3"
+     }
+    },
+    {
+     "name": "PUT increment on a string",
+     "request": {
+      "method": "PUT",
+      "path": "/str.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\".sv\":{\"increment\":1}}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1"
+     }
+    },
+    {
+     "name": "PATCH a float increment",
+     "request": {
+      "method": "PATCH",
+      "path": "/.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"cnt\":{\".sv\":{\"increment\":-1.5}}}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"cnt\":5.5}"
+     }
+    },
+    {
+     "name": "GET after the float increment",
+     "request": {
+      "method": "GET",
+      "path": "/cnt.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "5.5"
+     }
+    },
+    {
+     "name": "PUT increment of a non-number",
+     "request": {
+      "method": "PUT",
+      "path": "/inc2.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\".sv\":{\"increment\":\"x\"}}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    },
+    {
+     "name": "PUT unknown server value",
+     "request": {
+      "method": "PUT",
+      "path": "/bad.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\".sv\":\"bogus\"}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    },
+    {
+     "name": "PUT unknown server value object",
+     "request": {
+      "method": "PUT",
+      "path": "/bad.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\".sv\":{\"bogus\":1}}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    },
+    {
+     "name": "PUT .sv next to another key",
+     "request": {
+      "method": "PUT",
+      "path": "/bad.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\".sv\":\"timestamp\",\"a\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    }
+   ]
+  },
+  {
+   "name": "shallow",
+   "rules": null,
+   "data": {
+    "o": {
+     "a": 1,
+     "b": {
+      "c": 2
+     },
+     "d": "s",
+     ".priority": 4
+    },
+    "leaf": "v"
+   },
+   "cases": [
+    {
+     "name": "shallow on an object",
+     "request": {
+      "method": "GET",
+      "path": "/o.json",
+      "query": "shallow=true",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\".priority\":true,\"a\":true,\"b\":true,\"d\":true}"
+     }
+    },
+    {
+     "name": "shallow on a leaf",
+     "request": {
+      "method": "GET",
+      "path": "/leaf.json",
+      "query": "shallow=true",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "\"v\""
+     }
+    },
+    {
+     "name": "shallow on a missing node",
+     "request": {
+      "method": "GET",
+      "path": "/missing.json",
+      "query": "shallow=true",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "shallow at the root",
+     "request": {
+      "method": "GET",
+      "path": "/.json",
+      "query": "shallow=true",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"leaf\":true,\"o\":true}"
+     }
+    },
+    {
+     "name": "shallow=false",
+     "request": {
+      "method": "GET",
+      "path": "/o.json",
+      "query": "shallow=false",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":1,\"b\":{\"c\":2},\"d\":\"s\"}"
+     }
+    },
+    {
+     "name": "shallow=bogus",
+     "request": {
+      "method": "GET",
+      "path": "/o.json",
+      "query": "shallow=bogus",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":1,\"b\":{\"c\":2},\"d\":\"s\"}"
+     }
+    },
+    {
+     "name": "shallow with orderBy",
+     "request": {
+      "method": "GET",
+      "path": "/o.json",
+      "query": "shallow=true&orderBy=%22%24key%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"orderBy not supported for with shallow GET, keys are returned in lexicographical order\"\n}\n"
+     }
+    },
+    {
+     "name": "shallow with limitToFirst",
+     "request": {
+      "method": "GET",
+      "path": "/o.json",
+      "query": "shallow=true&limitToFirst=1",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\".priority\":true}"
+     }
+    },
+    {
+     "name": "shallow with format=export",
+     "request": {
+      "method": "GET",
+      "path": "/o.json",
+      "query": "shallow=true&format=export",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\".priority\":true,\"a\":true,\"b\":true,\"d\":true}"
+     }
+    },
+    {
+     "name": "shallow with print=pretty",
+     "request": {
+      "method": "GET",
+      "path": "/o.json",
+      "query": "shallow=true&print=pretty",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \".priority\" : true,\n  \"a\" : true,\n  \"b\" : true,\n  \"d\" : true\n}\n"
+     }
+    },
+    {
+     "name": "shallow on PUT",
+     "request": {
+      "method": "PUT",
+      "path": "/o2.json",
+      "query": "shallow=true",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"a\":1}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":1}"
+     }
+    }
+   ]
+  },
+  {
+   "name": "queries without an index",
+   "rules": null,
+   "data": {
+    "items": {
+     "c": {
+      "s": "m",
+      "n": 3,
+      "d": {
+       "b": 30
+      },
+      ".priority": 2
+     },
+     "a": {
+      "s": "z",
+      "n": 1,
+      "d": {
+       "b": 10
+      },
+      ".priority": 3
+     },
+     "b": {
+      "s": "a",
+      "n": 2,
+      "d": {
+       "b": 20
+      },
+      ".priority": 1
+     },
+     "d": {
+      "s": "k",
+      "n": 4,
+      "d": {
+       "b": 5
+      }
+     }
+    },
+    "vals": {
+     "x": 3,
+     "y": 1,
+     "z": 2,
+     "w": "str"
+    },
+    "arr": {
+     "0": {
+      "n": 3
+     },
+     "1": {
+      "n": 1
+     },
+     "2": {
+      "n": 2
+     }
+    },
+    "leaf": 5
+   },
+   "cases": [
+    {
+     "name": "orderBy $key alone",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":{\"d\":{\"b\":10},\"n\":1,\"s\":\"z\"},\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"},\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"},\"d\":{\"d\":{\"b\":5},\"n\":4,\"s\":\"k\"}}"
+     }
+    },
+    {
+     "name": "orderBy $key limitToFirst",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":{\"d\":{\"b\":10},\"n\":1,\"s\":\"z\"},\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"}}"
+     }
+    },
+    {
+     "name": "orderBy $key limitToLast",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&limitToLast=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"},\"d\":{\"d\":{\"b\":5},\"n\":4,\"s\":\"k\"}}"
+     }
+    },
+    {
+     "name": "orderBy $key startAt",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&startAt=%22b%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"},\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"},\"d\":{\"d\":{\"b\":5},\"n\":4,\"s\":\"k\"}}"
+     }
+    },
+    {
+     "name": "orderBy $key endAt",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&endAt=%22b%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":{\"d\":{\"b\":10},\"n\":1,\"s\":\"z\"},\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"}}"
+     }
+    },
+    {
+     "name": "orderBy $key equalTo",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&equalTo=%22b%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"}}"
+     }
+    },
+    {
+     "name": "orderBy $key startAt endAt limitToFirst",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&startAt=%22b%22&endAt=%22d%22&limitToFirst=1",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"}}"
+     }
+    },
+    {
+     "name": "orderBy $key startAt endAt limitToLast",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&startAt=%22a%22&endAt=%22c%22&limitToLast=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"},\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"}}"
+     }
+    },
+    {
+     "name": "orderBy $key limitToFirst larger than the children",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=100",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":{\"d\":{\"b\":10},\"n\":1,\"s\":\"z\"},\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"},\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"},\"d\":{\"d\":{\"b\":5},\"n\":4,\"s\":\"k\"}}"
+     }
+    },
+    {
+     "name": "orderBy $priority limitToFirst",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24priority%22&limitToFirst=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"},\"d\":{\"d\":{\"b\":5},\"n\":4,\"s\":\"k\"}}"
+     }
+    },
+    {
+     "name": "orderBy $priority startAt a number",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24priority%22&startAt=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"},\"a\":{\"d\":{\"b\":10},\"n\":1,\"s\":\"z\"}}"
+     }
+    },
+    {
+     "name": "orderBy $priority equalTo",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24priority%22&equalTo=1",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"}}"
+     }
+    },
+    {
+     "name": "orderBy $value without an index",
+     "request": {
+      "method": "GET",
+      "path": "/vals.json",
+      "query": "orderBy=%22%24value%22&limitToFirst=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Index not defined, add \\\".indexOn\\\": \\\".value\\\", for path \\\"/vals\\\", to the rules\"\n}\n"
+     }
+    },
+    {
+     "name": "orderBy a child without an index",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22s%22&limitToFirst=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Index not defined, add \\\".indexOn\\\": \\\"s\\\", for path \\\"/items\\\", to the rules\"\n}\n"
+     }
+    },
+    {
+     "name": "orderBy a deep child without an index",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22d%2Fb%22&limitToFirst=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Index not defined, add \\\".indexOn\\\": \\\"d/b\\\", for path \\\"/items\\\", to the rules\"\n}\n"
+     }
+    },
+    {
+     "name": "orderBy a child without an index or a limit",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22s%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Index not defined, add \\\".indexOn\\\": \\\"s\\\", for path \\\"/items\\\", to the rules\"\n}\n"
+     }
+    },
+    {
+     "name": "orderBy unquoted",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=s",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"orderBy must be a valid JSON encoded path\"\n}\n"
+     }
+    },
+    {
+     "name": "orderBy $bogus",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24bogus%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"orderBy must be a valid JSON encoded path\"\n}\n"
+     }
+    },
+    {
+     "name": "orderBy not a string",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=5",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"orderBy must be a valid JSON encoded path\"\n}\n"
+     }
+    },
+    {
+     "name": "orderBy empty string",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Index not defined, add \\\".indexOn\\\": \\\"\\\", for path \\\"/items\\\", to the rules\"\n}\n"
+     }
+    },
+    {
+     "name": "limitToFirst negative",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=-1",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"limitToFirst must be positive\"\n}\n"
+     }
+    },
+    {
+     "name": "limitToFirst not an integer",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=1.5",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"limitToFirst must be an integer\"\n}\n"
+     }
+    },
+    {
+     "name": "limitToFirst zero",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=0",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"limitToFirst must be positive\"\n}\n"
+     }
+    },
+    {
+     "name": "limitToFirst not a number",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=abc",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"limitToFirst must be an integer\"\n}\n"
+     }
+    },
+    {
+     "name": "limitToLast negative",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&limitToLast=-2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"limitToLast must be positive\"\n}\n"
+     }
+    },
+    {
+     "name": "both limits",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=1&limitToLast=1",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Only one of limitToFirst and limitToLast may be specified\"\n}\n"
+     }
+    },
+    {
+     "name": "equalTo with startAt",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&equalTo=%22b%22&startAt=%22a%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"equalTo cannot be specified in addition to startAfter, startAt, endAt, or endBefore\"\n}\n"
+     }
+    },
+    {
+     "name": "equalTo with endAt",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&equalTo=%22b%22&endAt=%22c%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"equalTo cannot be specified in addition to startAfter, startAt, endAt, or endBefore\"\n}\n"
+     }
+    },
+    {
+     "name": "limitToFirst without orderBy",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "limitToFirst=1",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"orderBy must be defined when other query parameters are defined\"\n}\n"
+     }
+    },
+    {
+     "name": "startAt without orderBy",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "startAt=%22a%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"orderBy must be defined when other query parameters are defined\"\n}\n"
+     }
+    },
+    {
+     "name": "equalTo without orderBy",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "equalTo=%22a%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"orderBy must be defined when other query parameters are defined\"\n}\n"
+     }
+    },
+    {
+     "name": "startAt a number on $key",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&startAt=1",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Provided key index type is invalid, must be string\"\n}\n"
+     }
+    },
+    {
+     "name": "startAt unquoted on $key",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&startAt=b",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Constraint key field must be a valid key name\"\n}\n"
+     }
+    },
+    {
+     "name": "startAt invalid JSON",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24priority%22&startAt=%7Bx",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Constraint index field must be a JSON primitive\"\n}\n"
+     }
+    },
+    {
+     "name": "startAfter on $key",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&startAfter=%22b%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"},\"d\":{\"d\":{\"b\":5},\"n\":4,\"s\":\"k\"}}"
+     }
+    },
+    {
+     "name": "endBefore on $key",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&endBefore=%22c%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":{\"d\":{\"b\":10},\"n\":1,\"s\":\"z\"},\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"}}"
+     }
+    },
+    {
+     "name": "query on a leaf",
+     "request": {
+      "method": "GET",
+      "path": "/leaf.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=1",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "query on a missing node",
+     "request": {
+      "method": "GET",
+      "path": "/nothing.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=1",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "query with X-Firebase-ETag",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=1",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Mixing querying parameters and ETag requests is not supported\"\n}\n"
+     }
+    },
+    {
+     "name": "query with If-None-Match",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=1",
+      "headers": {
+       "If-None-Match": "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Mixing 'shallow', querying parameters or 'print=silent' and if-match or if-none-match requests is not supported\"\n}\n"
+     }
+    },
+    {
+     "name": "query params on PUT",
+     "request": {
+      "method": "PUT",
+      "path": "/qp.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=1",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Querying related parameters not supported on this request type\"\n}\n"
+     }
+    },
+    {
+     "name": "query params on DELETE",
+     "request": {
+      "method": "DELETE",
+      "path": "/qp.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=1",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Unsupported operation\"\n}\n"
+     }
+    },
+    {
+     "name": "query params on PATCH",
+     "request": {
+      "method": "PATCH",
+      "path": "/qp.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=1",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"a\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Querying related parameters not supported on this request type\"\n}\n"
+     }
+    },
+    {
+     "name": "query with format=export",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=2&format=export",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":{\".priority\":3.0,\"d\":{\"b\":10},\"n\":1,\"s\":\"z\"},\"b\":{\".priority\":1.0,\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"}}"
+     }
+    },
+    {
+     "name": "query with print=pretty",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=2&print=pretty",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"a\" : {\n    \"d\" : {\n      \"b\" : 10\n    },\n    \"n\" : 1,\n    \"s\" : \"z\"\n  },\n  \"b\" : {\n    \"d\" : {\n      \"b\" : 20\n    },\n    \"n\" : 2,\n    \"s\" : \"a\"\n  }\n}\n"
+     }
+    },
+    {
+     "name": "query with shallow",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=2&shallow=true",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"orderBy not supported for with shallow GET, keys are returned in lexicographical order\"\n}\n"
+     }
+    },
+    {
+     "name": "orderBy $key on array-like keys",
+     "request": {
+      "method": "GET",
+      "path": "/arr.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[{\"n\":3},{\"n\":1}]"
+     }
+    },
+    {
+     "name": "orderBy $key limitToLast on array-like keys",
+     "request": {
+      "method": "GET",
+      "path": "/arr.json",
+      "query": "orderBy=%22%24key%22&limitToLast=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[null,{\"n\":1},{\"n\":2}]"
+     }
+    }
+   ]
+  },
+  {
+   "name": "queries with an index",
+   "rules": {
+    "rules": {
+     ".read": true,
+     ".write": true,
+     "items": {
+      ".indexOn": [
+       "s",
+       "d/b"
+      ]
+     },
+     "vals": {
+      ".indexOn": ".value"
+     },
+     "arr": {
+      ".indexOn": "n"
+     }
+    }
+   },
+   "data": {
+    "items": {
+     "c": {
+      "s": "m",
+      "n": 3,
+      "d": {
+       "b": 30
+      },
+      ".priority": 2
+     },
+     "a": {
+      "s": "z",
+      "n": 1,
+      "d": {
+       "b": 10
+      },
+      ".priority": 3
+     },
+     "b": {
+      "s": "a",
+      "n": 2,
+      "d": {
+       "b": 20
+      },
+      ".priority": 1
+     },
+     "d": {
+      "s": "k",
+      "n": 4,
+      "d": {
+       "b": 5
+      }
+     }
+    },
+    "vals": {
+     "x": 3,
+     "y": 1,
+     "z": 2,
+     "w": "str"
+    },
+    "arr": {
+     "0": {
+      "n": 3
+     },
+     "1": {
+      "n": 1
+     },
+     "2": {
+      "n": 2
+     }
+    },
+    "leaf": 5
+   },
+   "cases": [
+    {
+     "name": "orderBy a child limitToFirst",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22s%22&limitToFirst=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"},\"d\":{\"d\":{\"b\":5},\"n\":4,\"s\":\"k\"}}"
+     }
+    },
+    {
+     "name": "orderBy a child limitToLast",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22s%22&limitToLast=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":{\"d\":{\"b\":10},\"n\":1,\"s\":\"z\"},\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"}}"
+     }
+    },
+    {
+     "name": "orderBy a child alone",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22s%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":{\"d\":{\"b\":10},\"n\":1,\"s\":\"z\"},\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"},\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"},\"d\":{\"d\":{\"b\":5},\"n\":4,\"s\":\"k\"}}"
+     }
+    },
+    {
+     "name": "orderBy a child startAt",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22s%22&startAt=%22k%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"d\":{\"d\":{\"b\":5},\"n\":4,\"s\":\"k\"},\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"},\"a\":{\"d\":{\"b\":10},\"n\":1,\"s\":\"z\"}}"
+     }
+    },
+    {
+     "name": "orderBy a child endAt",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22s%22&endAt=%22m%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"},\"d\":{\"d\":{\"b\":5},\"n\":4,\"s\":\"k\"},\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"}}"
+     }
+    },
+    {
+     "name": "orderBy a child equalTo",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22s%22&equalTo=%22z%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":{\"d\":{\"b\":10},\"n\":1,\"s\":\"z\"}}"
+     }
+    },
+    {
+     "name": "orderBy a child equalTo no match",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22s%22&equalTo=%22q%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{}"
+     }
+    },
+    {
+     "name": "orderBy a child startAt a number",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22s%22&startAt=1",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"},\"d\":{\"d\":{\"b\":5},\"n\":4,\"s\":\"k\"},\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"},\"a\":{\"d\":{\"b\":10},\"n\":1,\"s\":\"z\"}}"
+     }
+    },
+    {
+     "name": "orderBy a child startAt endAt limitToFirst",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22s%22&startAt=%22b%22&endAt=%22z%22&limitToFirst=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"},\"d\":{\"d\":{\"b\":5},\"n\":4,\"s\":\"k\"}}"
+     }
+    },
+    {
+     "name": "orderBy a deep child limitToLast",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22d%2Fb%22&limitToLast=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"},\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"}}"
+     }
+    },
+    {
+     "name": "orderBy a deep child startAt",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22d%2Fb%22&startAt=10",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":{\"d\":{\"b\":10},\"n\":1,\"s\":\"z\"},\"b\":{\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"},\"c\":{\"d\":{\"b\":30},\"n\":3,\"s\":\"m\"}}"
+     }
+    },
+    {
+     "name": "orderBy a child not in .indexOn",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22n%22&limitToFirst=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Index not defined, add \\\".indexOn\\\": \\\"n\\\", for path \\\"/items\\\", to the rules\"\n}\n"
+     }
+    },
+    {
+     "name": "orderBy $value limitToFirst",
+     "request": {
+      "method": "GET",
+      "path": "/vals.json",
+      "query": "orderBy=%22%24value%22&limitToFirst=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"y\":1,\"z\":2}"
+     }
+    },
+    {
+     "name": "orderBy $value startAt",
+     "request": {
+      "method": "GET",
+      "path": "/vals.json",
+      "query": "orderBy=%22%24value%22&startAt=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"z\":2,\"x\":3,\"w\":\"str\"}"
+     }
+    },
+    {
+     "name": "orderBy $value endAt a string",
+     "request": {
+      "method": "GET",
+      "path": "/vals.json",
+      "query": "orderBy=%22%24value%22&endAt=%22str%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"y\":1,\"z\":2,\"x\":3,\"w\":\"str\"}"
+     }
+    },
+    {
+     "name": "orderBy $value limitToLast",
+     "request": {
+      "method": "GET",
+      "path": "/vals.json",
+      "query": "orderBy=%22%24value%22&limitToLast=1",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"w\":\"str\"}"
+     }
+    },
+    {
+     "name": "orderBy a child on array-like keys",
+     "request": {
+      "method": "GET",
+      "path": "/arr.json",
+      "query": "orderBy=%22n%22&limitToFirst=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[null,{\"n\":1},{\"n\":2}]"
+     }
+    },
+    {
+     "name": "orderBy a child on array-like keys, all",
+     "request": {
+      "method": "GET",
+      "path": "/arr.json",
+      "query": "orderBy=%22n%22",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[{\"n\":3},{\"n\":1},{\"n\":2}]"
+     }
+    },
+    {
+     "name": "orderBy a child on array-like keys, last",
+     "request": {
+      "method": "GET",
+      "path": "/arr.json",
+      "query": "orderBy=%22n%22&limitToLast=2",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "[{\"n\":3},null,{\"n\":2}]"
+     }
+    },
+    {
+     "name": "orderBy a child with format=export",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22s%22&limitToFirst=2&format=export",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"b\":{\".priority\":1.0,\"d\":{\"b\":20},\"n\":2,\"s\":\"a\"},\"d\":{\"d\":{\"b\":5},\"n\":4,\"s\":\"k\"}}"
+     }
+    },
+    {
+     "name": "orderBy a child with print=pretty",
+     "request": {
+      "method": "GET",
+      "path": "/items.json",
+      "query": "orderBy=%22s%22&limitToFirst=2&print=pretty",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"b\" : {\n    \"d\" : {\n      \"b\" : 20\n    },\n    \"n\" : 2,\n    \"s\" : \"a\"\n  },\n  \"d\" : {\n    \"d\" : {\n      \"b\" : 5\n    },\n    \"n\" : 4,\n    \"s\" : \"k\"\n  }\n}\n"
+     }
+    }
+   ]
+  },
+  {
+   "name": "etag",
+   "rules": null,
+   "data": {
+    "e": {
+     "v": 1
+    },
+    "keep": 1
+   },
+   "cases": [
+    {
+     "name": "X-Firebase-ETag on a missing node",
+     "request": {
+      "method": "GET",
+      "path": "/missing.json",
+      "query": "",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "null_etag",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "X-Firebase-ETag false",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "X-Firebase-ETag": "false"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"v\":1}"
+     }
+    },
+    {
+     "name": "PUT with X-Firebase-ETag",
+     "request": {
+      "method": "PUT",
+      "path": "/e2.json",
+      "query": "",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": "{\"a\":1}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "gIphxiFGusLh2VwSNVKSvNu90m4=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"a\":1}"
+     }
+    },
+    {
+     "name": "POST with X-Firebase-ETag",
+     "request": {
+      "method": "POST",
+      "path": "/e3.json",
+      "query": "",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "YPVfR2bXt/lcDjiQZ8pOkAd3qkQ=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"name\":\"-P4Rd4fpoHL2hXpgOor9\"}"
+     }
+    },
+    {
+     "name": "DELETE with X-Firebase-ETag",
+     "request": {
+      "method": "DELETE",
+      "path": "/e2.json",
+      "query": "",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "null_etag",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "PATCH with X-Firebase-ETag",
+     "request": {
+      "method": "PATCH",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": "{\"w\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"The 'X-Firebase-ETag' header is not supported with PATCH requests\"\n}\n"
+     }
+    },
+    {
+     "name": "X-Firebase-ETag on an existing node",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "LjeXjzTaaVqwN8qlkUuwnS01bqc=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":1}"
+     }
+    },
+    {
+     "name": "If-None-Match matching",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-None-Match": "{{etag}}"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 304,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": ""
+     }
+    },
+    {
+     "name": "If-None-Match matching with X-Firebase-ETag",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-None-Match": "{{etag}}",
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 304,
+      "headers": {
+       "etag": "LjeXjzTaaVqwN8qlkUuwnS01bqc=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": ""
+     }
+    },
+    {
+     "name": "If-None-Match not matching",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-None-Match": "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "LjeXjzTaaVqwN8qlkUuwnS01bqc=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":1}"
+     }
+    },
+    {
+     "name": "If-None-Match not matching with X-Firebase-ETag",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-None-Match": "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "LjeXjzTaaVqwN8qlkUuwnS01bqc=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":1}"
+     }
+    },
+    {
+     "name": "If-None-Match with shallow",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "shallow=true",
+      "headers": {
+       "If-None-Match": "{{etag}}"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Mixing 'shallow', querying parameters or 'print=silent' and if-match or if-none-match requests is not supported\"\n}\n"
+     }
+    },
+    {
+     "name": "If-None-Match matching on PUT",
+     "request": {
+      "method": "PUT",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-None-Match": "{{etag}}"
+      },
+      "auth": "none",
+      "body": "{\"v\":9}"
+     },
+     "response": {
+      "status": 412,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"v\":1}"
+     }
+    },
+    {
+     "name": "If-None-Match not matching on PUT",
+     "request": {
+      "method": "PUT",
+      "path": "/inm.json",
+      "query": "",
+      "headers": {
+       "If-None-Match": "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      },
+      "auth": "none",
+      "body": "{\"v\":9}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "rJ2j9m9jnxCSNGq54u3d0ChxdPs=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":9}"
+     }
+    },
+    {
+     "name": "If-None-Match on DELETE",
+     "request": {
+      "method": "DELETE",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-None-Match": "{{etag}}"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"The 'if-none-match' header is not supported with PUT, POST, PATCH or DELETE requests\"\n}\n"
+     }
+    },
+    {
+     "name": "If-Match on GET",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": "{{etag}}"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"The 'if-match' header is not supported with GET, PATCH or POST requests\"\n}\n"
+     }
+    },
+    {
+     "name": "If-Match on PATCH",
+     "request": {
+      "method": "PATCH",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": "{{etag}}"
+      },
+      "auth": "none",
+      "body": "{\"w\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"The 'if-match' header is not supported with GET, PATCH or POST requests\"\n}\n"
+     }
+    },
+    {
+     "name": "If-Match on POST",
+     "request": {
+      "method": "POST",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": "{{etag}}"
+      },
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"The 'if-match' header is not supported with GET, PATCH or POST requests\"\n}\n"
+     }
+    },
+    {
+     "name": "If-Match with print=silent",
+     "request": {
+      "method": "PUT",
+      "path": "/e.json",
+      "query": "print=silent",
+      "headers": {
+       "If-Match": "{{etag}}"
+      },
+      "auth": "none",
+      "body": "{\"v\":9}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Mixing 'shallow', querying parameters or 'print=silent' and if-match or if-none-match requests is not supported\"\n}\n"
+     }
+    },
+    {
+     "name": "GET the unchanged node with X-Firebase-ETag",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "LjeXjzTaaVqwN8qlkUuwnS01bqc=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":1}"
+     }
+    },
+    {
+     "name": "If-Match correct",
+     "request": {
+      "method": "PUT",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": "{{etag}}"
+      },
+      "auth": "none",
+      "body": "{\"v\":2}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"v\":2}"
+     }
+    },
+    {
+     "name": "GET with X-Firebase-ETag after the conditional PUT",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "I7WNVTes9gPDwZP5pc73o/cxj9w=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":2}"
+     }
+    },
+    {
+     "name": "PUT without a condition, making the ETag stale",
+     "request": {
+      "method": "PUT",
+      "path": "/e.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"v\":3}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"v\":3}"
+     }
+    },
+    {
+     "name": "If-Match stale",
+     "request": {
+      "method": "PUT",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": "{{etag}}"
+      },
+      "auth": "none",
+      "body": "{\"v\":4}"
+     },
+     "response": {
+      "status": 412,
+      "headers": {
+       "etag": "nzbxhzICMxYn2V6AXLwTpQEXElk=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":3}"
+     }
+    },
+    {
+     "name": "If-Match correct with X-Firebase-ETag",
+     "request": {
+      "method": "PUT",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": "{{etag}}",
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": "{\"v\":5}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "U2QuQauPHgpmQinmmYohNOmwwPw=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":5}"
+     }
+    },
+    {
+     "name": "If-Match wrong",
+     "request": {
+      "method": "PUT",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      },
+      "auth": "none",
+      "body": "{\"v\":6}"
+     },
+     "response": {
+      "status": 412,
+      "headers": {
+       "etag": "U2QuQauPHgpmQinmmYohNOmwwPw=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":5}"
+     }
+    },
+    {
+     "name": "If-Match null_etag on a missing node",
+     "request": {
+      "method": "PUT",
+      "path": "/fresh.json",
+      "query": "",
+      "headers": {
+       "If-Match": "null_etag"
+      },
+      "auth": "none",
+      "body": "\"new\""
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "\"new\""
+     }
+    },
+    {
+     "name": "If-Match null_etag on an existing node",
+     "request": {
+      "method": "PUT",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": "null_etag"
+      },
+      "auth": "none",
+      "body": "{\"v\":7}"
+     },
+     "response": {
+      "status": 412,
+      "headers": {
+       "etag": "U2QuQauPHgpmQinmmYohNOmwwPw=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":5}"
+     }
+    },
+    {
+     "name": "If-Match quoted",
+     "request": {
+      "method": "PUT",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": "\"{{etag}}\""
+      },
+      "auth": "none",
+      "body": "{\"v\":8}"
+     },
+     "response": {
+      "status": 412,
+      "headers": {
+       "etag": "U2QuQauPHgpmQinmmYohNOmwwPw=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":5}"
+     }
+    },
+    {
+     "name": "If-Match empty",
+     "request": {
+      "method": "PUT",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": ""
+      },
+      "auth": "none",
+      "body": "{\"v\":8}"
+     },
+     "response": {
+      "status": 412,
+      "headers": {
+       "etag": "U2QuQauPHgpmQinmmYohNOmwwPw=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":5}"
+     }
+    },
+    {
+     "name": "If-Match *",
+     "request": {
+      "method": "PUT",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": "*"
+      },
+      "auth": "none",
+      "body": "{\"v\":8}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"v\":8}"
+     }
+    },
+    {
+     "name": "If-Match with a server value",
+     "request": {
+      "method": "PUT",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      },
+      "auth": "none",
+      "body": "{\"v\":{\".sv\":\"timestamp\"}}"
+     },
+     "response": {
+      "status": 412,
+      "headers": {
+       "etag": "CSjBy62JhgpZrIUVmPI6zTUJaLA=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":8}"
+     }
+    },
+    {
+     "name": "If-Match wrong on DELETE",
+     "request": {
+      "method": "DELETE",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 412,
+      "headers": {
+       "etag": "CSjBy62JhgpZrIUVmPI6zTUJaLA=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":8}"
+     }
+    },
+    {
+     "name": "GET with X-Firebase-ETag before the conditional DELETE",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "CSjBy62JhgpZrIUVmPI6zTUJaLA=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":8}"
+     }
+    },
+    {
+     "name": "If-Match correct on DELETE",
+     "request": {
+      "method": "DELETE",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": "{{etag}}"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "GET after the conditional DELETE",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "null_etag",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "If-Match null_etag on the deleted node",
+     "request": {
+      "method": "PUT",
+      "path": "/e.json",
+      "query": "",
+      "headers": {
+       "If-Match": "{{etag}}"
+      },
+      "auth": "none",
+      "body": "{\"v\":10}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"v\":10}"
+     }
+    },
+    {
+     "name": "X-Firebase-ETag at the root",
+     "request": {
+      "method": "GET",
+      "path": "/.json",
+      "query": "",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "oFjBluVvz0amV6me0/9gg1xnnpw=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"e\":{\"v\":10},\"e3\":{\"-P4Rd4fpoHL2hXpgOor9\":1},\"fresh\":\"new\",\"inm\":{\"v\":9},\"keep\":1}"
+     }
+    },
+    {
+     "name": "X-Firebase-ETag with print=pretty",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "print=pretty",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "LXZa9D7WVaW/M7k5/U/LtOCdIfs=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\n  \"v\" : 10\n}\n"
+     }
+    },
+    {
+     "name": "X-Firebase-ETag with format=export",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "format=export",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "etag": "LXZa9D7WVaW/M7k5/U/LtOCdIfs=",
+       "content-type": "application/json; charset=utf-8",
+       "access-control-expose-headers": "ETag"
+      },
+      "body": "{\"v\":10}"
+     }
+    },
+    {
+     "name": "X-Firebase-ETag with shallow",
+     "request": {
+      "method": "GET",
+      "path": "/e.json",
+      "query": "shallow=true",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Mixing 'shallow' and etag requests is not supported\"\n}\n"
+     }
+    }
+   ]
+  },
+  {
+   "name": "errors",
+   "rules": null,
+   "data": {
+    "x": {
+     "y": 1
+    }
+   },
+   "cases": [
+    {
+     "name": "invalid JSON body",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{bad"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    },
+    {
+     "name": "trailing garbage after JSON",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"a\":1} x"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    },
+    {
+     "name": "empty body on PUT",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": ""
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"No data supplied.\"\n}\n"
+     }
+    },
+    {
+     "name": "no body on PUT",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"No data supplied.\"\n}\n"
+     }
+    },
+    {
+     "name": "whitespace body on PUT",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "  "
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    },
+    {
+     "name": "empty body on POST",
+     "request": {
+      "method": "POST",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": ""
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"No data supplied.\"\n}\n"
+     }
+    },
+    {
+     "name": "empty body on PATCH",
+     "request": {
+      "method": "PATCH",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": ""
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"No data supplied.\"\n}\n"
+     }
+    },
+    {
+     "name": "NaN body",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "NaN"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    },
+    {
+     "name": "duplicate keys",
+     "request": {
+      "method": "PUT",
+      "path": "/dup.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"a\":1,\"a\":2}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"a\":2}"
+     }
+    },
+    {
+     "name": "key with .",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"a.b\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse key beginning at 1:2. Key value can't be empty or contain $ # [ ] / or .\"\n}\n"
+     }
+    },
+    {
+     "name": "key with #",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"a#b\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse key beginning at 1:2. Key value can't be empty or contain $ # [ ] / or .\"\n}\n"
+     }
+    },
+    {
+     "name": "key with $",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"a$b\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse key beginning at 1:2. Key value can't be empty or contain $ # [ ] / or .\"\n}\n"
+     }
+    },
+    {
+     "name": "key with [",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"a[b\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse key beginning at 1:2. Key value can't be empty or contain $ # [ ] / or .\"\n}\n"
+     }
+    },
+    {
+     "name": "key with ]",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"a]b\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse key beginning at 1:2. Key value can't be empty or contain $ # [ ] / or .\"\n}\n"
+     }
+    },
+    {
+     "name": "key with /",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"a/b\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse key beginning at 1:2. Key value can't be empty or contain $ # [ ] / or .\"\n}\n"
+     }
+    },
+    {
+     "name": "empty key",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse key beginning at 1:2. Key value can't be empty or contain $ # [ ] / or .\"\n}\n"
+     }
+    },
+    {
+     "name": "nested bad key",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"ok\":{\"b.c\":1}}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse key beginning at 1:8. Key value can't be empty or contain $ # [ ] / or .\"\n}\n"
+     }
+    },
+    {
+     "name": "control character key",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"a\\u0001b\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse key beginning at 1:2. Key value can't be empty or contain $ # [ ] / or .\"\n}\n"
+     }
+    },
+    {
+     "name": "DEL character key",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"a\\u007fb\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse key beginning at 1:2. Key value can't be empty or contain $ # [ ] / or .\"\n}\n"
+     }
+    },
+    {
+     "name": "key making the path 768 bytes",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\":1}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\":1}"
+     }
+    },
+    {
+     "name": "key making the path 769 bytes",
+     "request": {
+      "method": "PUT",
+      "path": "/a.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    },
+    {
+     "name": "path of 768 bytes",
+     "request": {
+      "method": "PUT",
+      "path": "/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1"
+     }
+    },
+    {
+     "name": "path of 769 bytes",
+     "request": {
+      "method": "PUT",
+      "path": "/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid path: Path specified exceeds the maximum length that can be written (768 bytes).\"\n}\n"
+     }
+    },
+    {
+     "name": ". in the path",
+     "request": {
+      "method": "PUT",
+      "path": "/a.b.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid path: Invalid token in path\"\n}\n"
+     }
+    },
+    {
+     "name": "$ in the path, encoded",
+     "request": {
+      "method": "PUT",
+      "path": "/a%24b.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid path: Invalid token in path\"\n}\n"
+     }
+    },
+    {
+     "name": "$ in the path",
+     "request": {
+      "method": "PUT",
+      "path": "/a$b.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid path: Invalid token in path\"\n}\n"
+     }
+    },
+    {
+     "name": "# in the path, encoded",
+     "request": {
+      "method": "PUT",
+      "path": "/a%23b.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid path: Invalid token in path\"\n}\n"
+     }
+    },
+    {
+     "name": "[ in the path, encoded",
+     "request": {
+      "method": "PUT",
+      "path": "/a%5Bb.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid path: Invalid token in path\"\n}\n"
+     }
+    },
+    {
+     "name": "] in the path, encoded",
+     "request": {
+      "method": "PUT",
+      "path": "/a%5Db.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid path: Invalid token in path\"\n}\n"
+     }
+    },
+    {
+     "name": "control character in the path",
+     "request": {
+      "method": "PUT",
+      "path": "/a%01b.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid path: Invalid token in path\"\n}\n"
+     }
+    },
+    {
+     "name": ". in a GET path",
+     "request": {
+      "method": "GET",
+      "path": "/a.b.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid path: Invalid token in path\"\n}\n"
+     }
+    },
+    {
+     "name": "encoded slash in the path",
+     "request": {
+      "method": "PUT",
+      "path": "/x%2Fz.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1"
+     }
+    },
+    {
+     "name": "GET after the encoded slash",
+     "request": {
+      "method": "GET",
+      "path": "/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"y\":1,\"z\":1}"
+     }
+    },
+    {
+     "name": "path 31 segments deep",
+     "request": {
+      "method": "PUT",
+      "path": "/s0/s1/s2/s3/s4/s5/s6/s7/s8/s9/s10/s11/s12/s13/s14/s15/s16/s17/s18/s19/s20/s21/s22/s23/s24/s25/s26/s27/s28/s29/s30.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1"
+     }
+    },
+    {
+     "name": "path 32 segments deep",
+     "request": {
+      "method": "PUT",
+      "path": "/s0/s1/s2/s3/s4/s5/s6/s7/s8/s9/s10/s11/s12/s13/s14/s15/s16/s17/s18/s19/s20/s21/s22/s23/s24/s25/s26/s27/s28/s29/s30/s31.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1"
+     }
+    },
+    {
+     "name": "GET a path 32 segments deep",
+     "request": {
+      "method": "GET",
+      "path": "/s0/s1/s2/s3/s4/s5/s6/s7/s8/s9/s10/s11/s12/s13/s14/s15/s16/s17/s18/s19/s20/s21/s22/s23/s24/s25/s26/s27/s28/s29/s30/s31.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1"
+     }
+    },
+    {
+     "name": "path 33 segments deep",
+     "request": {
+      "method": "PUT",
+      "path": "/s0/s1/s2/s3/s4/s5/s6/s7/s8/s9/s10/s11/s12/s13/s14/s15/s16/s17/s18/s19/s20/s21/s22/s23/s24/s25/s26/s27/s28/s29/s30/s31/s32.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid path: Path specified exceeds the maximum depth that can be written (32).\"\n}\n"
+     }
+    },
+    {
+     "name": "GET a path 33 segments deep",
+     "request": {
+      "method": "GET",
+      "path": "/s0/s1/s2/s3/s4/s5/s6/s7/s8/s9/s10/s11/s12/s13/s14/s15/s16/s17/s18/s19/s20/s21/s22/s23/s24/s25/s26/s27/s28/s29/s30/s31/s32.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid path: Path specified exceeds the maximum depth that can be written (32).\"\n}\n"
+     }
+    },
+    {
+     "name": "object at a path 32 segments deep",
+     "request": {
+      "method": "PUT",
+      "path": "/s0/s1/s2/s3/s4/s5/s6/s7/s8/s9/s10/s11/s12/s13/s14/s15/s16/s17/s18/s19/s20/s21/s22/s23/s24/s25/s26/s27/s28/s29/s30/s31.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"a\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    },
+    {
+     "name": "data 31 levels deep",
+     "request": {
+      "method": "PUT",
+      "path": "/deep31.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+     }
+    },
+    {
+     "name": "data 32 levels deep",
+     "request": {
+      "method": "PUT",
+      "path": "/deep32.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    },
+    {
+     "name": "data 30 levels deep at depth 2",
+     "request": {
+      "method": "PUT",
+      "path": "/d2/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+     }
+    },
+    {
+     "name": "data 31 levels deep at depth 2",
+     "request": {
+      "method": "PUT",
+      "path": "/d3/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":{\"k\":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n"
+     }
+    },
+    {
+     "name": "PATCH a number",
+     "request": {
+      "method": "PATCH",
+      "path": "/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "5"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object. Are you sending a JSON object with valid key names?\"\n}\n"
+     }
+    },
+    {
+     "name": "PATCH a string",
+     "request": {
+      "method": "PATCH",
+      "path": "/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "\"s\""
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object. Are you sending a JSON object with valid key names?\"\n}\n"
+     }
+    },
+    {
+     "name": "PATCH an array",
+     "request": {
+      "method": "PATCH",
+      "path": "/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "[1,2]"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object. Are you sending a JSON object with valid key names?\"\n}\n"
+     }
+    },
+    {
+     "name": "PATCH null",
+     "request": {
+      "method": "PATCH",
+      "path": "/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "null"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "PATCH {}",
+     "request": {
+      "method": "PATCH",
+      "path": "/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{}"
+     }
+    },
+    {
+     "name": "PATCH overlapping paths",
+     "request": {
+      "method": "PATCH",
+      "path": "/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"x/y\":5,\"x\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object. Are you sending a JSON object with valid key names?\"\n}\n"
+     }
+    },
+    {
+     "name": "PATCH overlapping paths, parent first",
+     "request": {
+      "method": "PATCH",
+      "path": "/.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"x\":1,\"x/y\":5}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object. Are you sending a JSON object with valid key names?\"\n}\n"
+     }
+    },
+    {
+     "name": "PATCH a slash key",
+     "request": {
+      "method": "PATCH",
+      "path": "/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"y/z\":5}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"y\":{\"z\":5}}"
+     }
+    },
+    {
+     "name": "GET after PATCH of a slash key",
+     "request": {
+      "method": "GET",
+      "path": "/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"y\":{\"z\":5}}"
+     }
+    },
+    {
+     "name": "PATCH an empty key",
+     "request": {
+      "method": "PATCH",
+      "path": "/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object. Are you sending a JSON object with valid key names?\"\n}\n"
+     }
+    },
+    {
+     "name": "PATCH a key with a leading slash",
+     "request": {
+      "method": "PATCH",
+      "path": "/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"/q\":1}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"q\":1}"
+     }
+    },
+    {
+     "name": "PATCH a key with a double slash",
+     "request": {
+      "method": "PATCH",
+      "path": "/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"q//r\":1}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"q\":{\"r\":1}}"
+     }
+    },
+    {
+     "name": "PATCH a key with .",
+     "request": {
+      "method": "PATCH",
+      "path": "/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"q.r\":1}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object. Are you sending a JSON object with valid key names?\"\n}\n"
+     }
+    },
+    {
+     "name": "PATCH with a bad key inside a value",
+     "request": {
+      "method": "PATCH",
+      "path": "/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"q\":{\"a$b\":1}}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object. Are you sending a JSON object with valid key names?\"\n}\n"
+     }
+    },
+    {
+     "name": "timeout=3s",
+     "request": {
+      "method": "GET",
+      "path": "/x.json",
+      "query": "timeout=3s",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"q\":{\"r\":1},\"y\":{\"z\":5}}"
+     }
+    },
+    {
+     "name": "timeout=500ms",
+     "request": {
+      "method": "GET",
+      "path": "/x.json",
+      "query": "timeout=500ms",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"q\":{\"r\":1},\"y\":{\"z\":5}}"
+     }
+    },
+    {
+     "name": "timeout=15min",
+     "request": {
+      "method": "GET",
+      "path": "/x.json",
+      "query": "timeout=15min",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"q\":{\"r\":1},\"y\":{\"z\":5}}"
+     }
+    },
+    {
+     "name": "timeout=20min",
+     "request": {
+      "method": "GET",
+      "path": "/x.json",
+      "query": "timeout=20min",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"timeout must not be longer than 15 minutes\"\n}\n"
+     }
+    },
+    {
+     "name": "timeout=bogus",
+     "request": {
+      "method": "GET",
+      "path": "/x.json",
+      "query": "timeout=bogus",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"timeout must contain length and unit (s/seconds/min/minutes), such as 1s, 2seconds, or 3min\"\n}\n"
+     }
+    },
+    {
+     "name": "timeout on PUT",
+     "request": {
+      "method": "PUT",
+      "path": "/t.json",
+      "query": "timeout=3s",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1"
+     }
+    },
+    {
+     "name": "writeSizeLimit=tiny",
+     "request": {
+      "method": "PUT",
+      "path": "/w.json",
+      "query": "writeSizeLimit=tiny",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1"
+     }
+    },
+    {
+     "name": "writeSizeLimit=small",
+     "request": {
+      "method": "PUT",
+      "path": "/w.json",
+      "query": "writeSizeLimit=small",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1"
+     }
+    },
+    {
+     "name": "writeSizeLimit=unlimited",
+     "request": {
+      "method": "PUT",
+      "path": "/w.json",
+      "query": "writeSizeLimit=unlimited",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "1"
+     }
+    },
+    {
+     "name": "writeSizeLimit=bogus",
+     "request": {
+      "method": "PUT",
+      "path": "/w.json",
+      "query": "writeSizeLimit=bogus",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"writeSizeLimit should be one of {medium, tiny, large, unlimited, small}\"\n}\n"
+     }
+    },
+    {
+     "name": "writeSizeLimit=tiny on DELETE",
+     "request": {
+      "method": "DELETE",
+      "path": "/w.json",
+      "query": "writeSizeLimit=tiny",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "null"
+     }
+    },
+    {
+     "name": "unknown query parameter",
+     "request": {
+      "method": "GET",
+      "path": "/x.json",
+      "query": "foo=bar",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"q\":{\"r\":1},\"y\":{\"z\":5}}"
+     }
+    },
+    {
+     "name": "disableTriggers=true",
+     "request": {
+      "method": "PUT",
+      "path": "/dt.json",
+      "query": "disableTriggers=true",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Only users with firebasedatabase.instances.update permissions are allowed to specify disableTriggers\"\n}\n"
+     }
+    },
+    {
+     "name": "callback (JSONP)",
+     "request": {
+      "method": "GET",
+      "path": "/x.json",
+      "query": "callback=cb",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/javascript; charset=utf-8"
+      },
+      "body": "/**/ cb({\"q\":{\"r\":1},\"y\":{\"z\":5}});"
+     }
+    },
+    {
+     "name": "download",
+     "request": {
+      "method": "GET",
+      "path": "/x.json",
+      "query": "download=file.json",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/octet-stream; charset=utf-8"
+      },
+      "body": "{\"q\":{\"r\":1},\"y\":{\"z\":5}}"
+     }
+    }
+   ]
+  },
+  {
+   "name": "rules and auth",
+   "rules": {
+    "rules": {
+     "u": {
+      "$uid": {
+       ".read": "auth != null && auth.uid == $uid",
+       ".write": "auth != null && auth.uid == $uid"
+      }
+     },
+     "pub": {
+      ".read": true,
+      ".write": "auth != null"
+     },
+     "v": {
+      ".write": true,
+      ".validate": "newData.isString()"
+     },
+     "adm": {
+      ".read": "auth != null && auth.token.admin == true"
+     }
+    }
+   },
+   "data": {
+    "u": {
+     "u1": {
+      "n": 1
+     },
+     "u2": {
+      "n": 2
+     }
+    },
+    "pub": {
+     "p": 1
+    },
+    "v": "ok",
+    "adm": {
+     "secret": 1
+    }
+   },
+   "cases": [
+    {
+     "name": "unauthenticated GET denied",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "unauthenticated PUT denied",
+     "request": {
+      "method": "PUT",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"n\":9}"
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "unauthenticated POST denied",
+     "request": {
+      "method": "POST",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "unauthenticated PATCH denied",
+     "request": {
+      "method": "PATCH",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"n\":9}"
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "unauthenticated DELETE denied",
+     "request": {
+      "method": "DELETE",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "unauthenticated root read denied",
+     "request": {
+      "method": "GET",
+      "path": "/.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "unauthenticated shallow denied",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "shallow=true",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "unauthenticated query denied",
+     "request": {
+      "method": "GET",
+      "path": "/u.json",
+      "query": "orderBy=%22%24key%22&limitToFirst=1",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "unauthenticated If-None-Match denied",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {
+       "If-None-Match": "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "unauthenticated X-Firebase-ETag denied",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {
+       "X-Firebase-ETag": "true"
+      },
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "unauthenticated If-Match stale on a denied path",
+     "request": {
+      "method": "PUT",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {
+       "If-Match": "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      },
+      "auth": "none",
+      "body": "{\"n\":9}"
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "unauthenticated PUT denied with print=silent",
+     "request": {
+      "method": "PUT",
+      "path": "/u/u1.json",
+      "query": "print=silent",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"n\":9}"
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "unauthenticated read of a public path",
+     "request": {
+      "method": "GET",
+      "path": "/pub.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"p\":1}"
+     }
+    },
+    {
+     "name": "unauthenticated write to a public path denied",
+     "request": {
+      "method": "PUT",
+      "path": "/pub/x.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "1"
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "user via auth= reads own path",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1"
+      },
+      "authVia": "auth",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"n\":1}"
+     }
+    },
+    {
+     "name": "user via access_token= reads own path",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1"
+      },
+      "authVia": "access_token",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"n\":1}"
+     }
+    },
+    {
+     "name": "user via bearer reads own path",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1"
+      },
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"n\":1}"
+     }
+    },
+    {
+     "name": "user denied on another user",
+     "request": {
+      "method": "GET",
+      "path": "/u/u2.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1"
+      },
+      "authVia": "auth",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "user writes own path",
+     "request": {
+      "method": "PUT",
+      "path": "/u/u1/n.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1"
+      },
+      "authVia": "auth",
+      "body": "11"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "11"
+     }
+    },
+    {
+     "name": "user write to another user denied",
+     "request": {
+      "method": "PUT",
+      "path": "/u/u2/n.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1"
+      },
+      "authVia": "auth",
+      "body": "11"
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "user writes a public path",
+     "request": {
+      "method": "PUT",
+      "path": "/pub/x.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1"
+      },
+      "authVia": "auth",
+      "body": "\"hi\""
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "\"hi\""
+     }
+    },
+    {
+     "name": "user pushes to a public path",
+     "request": {
+      "method": "POST",
+      "path": "/pub/list.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1"
+      },
+      "authVia": "auth",
+      "body": "\"p\""
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"name\":\"-P4Rd4hcwSeWtZ312Ron\"}"
+     }
+    },
+    {
+     "name": "user multi-path PATCH all allowed",
+     "request": {
+      "method": "PATCH",
+      "path": "/.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1"
+      },
+      "authVia": "auth",
+      "body": "{\"u/u1/m\":1,\"pub/q\":1}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"u\":{\"u1\":{\"m\":1}},\"pub\":{\"q\":1}}"
+     }
+    },
+    {
+     "name": "user multi-path PATCH partly denied",
+     "request": {
+      "method": "PATCH",
+      "path": "/.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1"
+      },
+      "authVia": "auth",
+      "body": "{\"u/u1/m\":2,\"u/u2/m\":2}"
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "user with a custom claim reads a claim-gated path",
+     "request": {
+      "method": "GET",
+      "path": "/adm.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u3",
+       "claims": {
+        "admin": true
+       }
+      },
+      "authVia": "auth",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"secret\":1}"
+     }
+    },
+    {
+     "name": "user without the claim denied",
+     "request": {
+      "method": "GET",
+      "path": "/adm.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1"
+      },
+      "authVia": "auth",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "expired user token",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1",
+       "claims": {
+        "exp": 1
+       }
+      },
+      "authVia": "auth",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"m\":1,\"n\":11}"
+     }
+    },
+    {
+     "name": "user token without a uid",
+     "request": {
+      "method": "GET",
+      "path": "/pub.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpYXQiOjF9."
+      },
+      "authVia": "auth",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"list\":{\"-P4Rd4hcwSeWtZ312Ron\":\"p\"},\"p\":1,\"q\":1,\"x\":\"hi\"}"
+     }
+    },
+    {
+     "name": "admin via bearer",
+     "request": {
+      "method": "GET",
+      "path": "/u/u2.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"n\":2}"
+     }
+    },
+    {
+     "name": "admin via access_token",
+     "request": {
+      "method": "GET",
+      "path": "/u/u2.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "access_token",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"n\":2}"
+     }
+    },
+    {
+     "name": "admin via auth= is not admin",
+     "request": {
+      "method": "GET",
+      "path": "/u/u2.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "auth",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "admin reads the root",
+     "request": {
+      "method": "GET",
+      "path": "/.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"adm\":{\"secret\":1},\"pub\":{\"list\":{\"-P4Rd4hcwSeWtZ312Ron\":\"p\"},\"p\":1,\"q\":1,\"x\":\"hi\"},\"u\":{\"u1\":{\"m\":1,\"n\":11},\"u2\":{\"n\":2}},\"v\":\"ok\"}"
+     }
+    },
+    {
+     "name": "admin with override uid u1 on u1",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "authVariableOverride": {
+       "uid": "u1"
+      },
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"m\":1,\"n\":11}"
+     }
+    },
+    {
+     "name": "admin with override uid u1 on u2",
+     "request": {
+      "method": "GET",
+      "path": "/u/u2.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "authVariableOverride": {
+       "uid": "u1"
+      },
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "admin with override uid u1 writes u2",
+     "request": {
+      "method": "PUT",
+      "path": "/u/u2/n.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "authVariableOverride": {
+       "uid": "u1"
+      },
+      "body": "3"
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "admin with override null on a public path",
+     "request": {
+      "method": "GET",
+      "path": "/pub.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "authVariableOverride": null,
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"list\":{\"-P4Rd4hcwSeWtZ312Ron\":\"p\"},\"p\":1,\"q\":1,\"x\":\"hi\"}"
+     }
+    },
+    {
+     "name": "admin with override null on a user path",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "authVariableOverride": null,
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "admin with override a string",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "authVariableOverride": "u1",
+      "body": null
+     },
+     "response": {
+      "status": 503,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Firebase database instance is inactive\"\n}\n"
+     }
+    },
+    {
+     "name": "admin with override a number",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "authVariableOverride": 5,
+      "body": null
+     },
+     "response": {
+      "status": 503,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Firebase database instance is inactive\"\n}\n"
+     }
+    },
+    {
+     "name": "admin with override an array",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "authVariableOverride": [
+       "u1"
+      ],
+      "body": null
+     },
+     "response": {
+      "status": 503,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Firebase database instance is inactive\"\n}\n"
+     }
+    },
+    {
+     "name": "admin with override {}",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "authVariableOverride": {},
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "admin with override carrying a claim",
+     "request": {
+      "method": "GET",
+      "path": "/adm.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "authVariableOverride": {
+       "uid": "x",
+       "token": {
+        "admin": true
+       }
+      },
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"secret\":1}"
+     }
+    },
+    {
+     "name": "admin with override not JSON",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "auth_variable_override=bogus",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 503,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Firebase database instance is inactive\"\n}\n"
+     }
+    },
+    {
+     "name": "admin via access_token with override",
+     "request": {
+      "method": "GET",
+      "path": "/u/u2.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "access_token",
+      "authVariableOverride": {
+       "uid": "u1"
+      },
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "override without a credential",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "authVariableOverride": {
+       "uid": "u1"
+      },
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "override with a user credential",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u2"
+      },
+      "authVia": "auth",
+      "authVariableOverride": {
+       "uid": "u1"
+      },
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "auth=garbage on a public path",
+     "request": {
+      "method": "GET",
+      "path": "/pub.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "token": "garbage"
+      },
+      "authVia": "auth",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"list\":{\"-P4Rd4hcwSeWtZ312Ron\":\"p\"},\"p\":1,\"q\":1,\"x\":\"hi\"}"
+     }
+    },
+    {
+     "name": "auth=garbage on a protected path",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "token": "garbage"
+      },
+      "authVia": "auth",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "access_token=garbage on a protected path",
+     "request": {
+      "method": "GET",
+      "path": "/u/u1.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "token": "garbage"
+      },
+      "authVia": "access_token",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"m\":1,\"n\":11}"
+     }
+    },
+    {
+     "name": "Bearer garbage on a protected path",
+     "request": {
+      "method": "GET",
+      "path": "/u/u2.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "token": "garbage"
+      },
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"n\":2}"
+     }
+    },
+    {
+     "name": "Bearer garbage on a public path",
+     "request": {
+      "method": "GET",
+      "path": "/pub.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "token": "garbage"
+      },
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"list\":{\"-P4Rd4hcwSeWtZ312Ron\":\"p\"},\"p\":1,\"q\":1,\"x\":\"hi\"}"
+     }
+    },
+    {
+     "name": "Authorization without a scheme",
+     "request": {
+      "method": "GET",
+      "path": "/u/u2.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "token": "garbage"
+      },
+      "authVia": "header",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "Authorization: owner without a scheme",
+     "request": {
+      "method": "GET",
+      "path": "/u/u2.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "token": "owner"
+      },
+      "authVia": "header",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "Bearer with a user token on another user",
+     "request": {
+      "method": "GET",
+      "path": "/u/u2.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1"
+      },
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"n\":2}"
+     }
+    },
+    {
+     "name": "access_token with a user token on another user",
+     "request": {
+      "method": "GET",
+      "path": "/u/u2.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1"
+      },
+      "authVia": "access_token",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"n\":2}"
+     }
+    },
+    {
+     "name": ".validate failure",
+     "request": {
+      "method": "PUT",
+      "path": "/v.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "5"
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": ".validate pass",
+     "request": {
+      "method": "PUT",
+      "path": "/v.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "\"str\""
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "\"str\""
+     }
+    },
+    {
+     "name": ".validate failure as admin",
+     "request": {
+      "method": "PUT",
+      "path": "/v.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": "5"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "5"
+     }
+    },
+    {
+     "name": "GET .validate path, no read rule",
+     "request": {
+      "method": "GET",
+      "path": "/v.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    }
+   ]
+  },
+  {
+   "name": "rules endpoint",
+   "rules": null,
+   "data": null,
+   "cases": [
+    {
+     "name": "GET the default rules",
+     "request": {
+      "method": "GET",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n    \"rules\": {\n        \".read\": true,\n        \".write\": true\n    }\n}"
+     }
+    },
+    {
+     "name": "PUT valid rules",
+     "request": {
+      "method": "PUT",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": "{\"rules\":{\".read\":true,\".write\":true,\"a\":{\".indexOn\":\"x\"}}}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"status\":\"ok\"}"
+     }
+    },
+    {
+     "name": "GET after PUT",
+     "request": {
+      "method": "GET",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"rules\":{\".read\":true,\".write\":true,\"a\":{\".indexOn\":\"x\"}}}"
+     }
+    },
+    {
+     "name": "PUT rules with comments",
+     "request": {
+      "method": "PUT",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": "{\n  // a comment\n  \"rules\": {\n    \".read\": true, /* inline */\n    \".write\": true\n  }\n}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"status\":\"ok\"}"
+     }
+    },
+    {
+     "name": "GET keeps or drops the comments",
+     "request": {
+      "method": "GET",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  // a comment\n  \"rules\": {\n    \".read\": true, /* inline */\n    \".write\": true\n  }\n}"
+     }
+    },
+    {
+     "name": "GET format=strict",
+     "request": {
+      "method": "GET",
+      "path": "/.settings/rules.json",
+      "query": "format=strict",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"rules\" : {\n    \".read\" : true,\n    \".write\" : true\n  }\n}"
+     }
+    },
+    {
+     "name": "PUT dryRun valid",
+     "request": {
+      "method": "PUT",
+      "path": "/.settings/rules.json",
+      "query": "dryRun=true",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": "{\"rules\":{\".read\":false}}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"status\":\"ok\"}"
+     }
+    },
+    {
+     "name": "GET after dryRun shows the old rules",
+     "request": {
+      "method": "GET",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  // a comment\n  \"rules\": {\n    \".read\": true, /* inline */\n    \".write\": true\n  }\n}"
+     }
+    },
+    {
+     "name": "PUT dryRun invalid",
+     "request": {
+      "method": "PUT",
+      "path": "/.settings/rules.json",
+      "query": "dryRun=true",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": "{\"rules\":{\".read\":\"auth.uid ==\"}}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"1:31: Unexpected end of expression\\n\"\n}\n"
+     }
+    },
+    {
+     "name": "PUT invalid expression",
+     "request": {
+      "method": "PUT",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": "{\"rules\":{\".read\":\"auth.uid ==\"}}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"1:31: Unexpected end of expression\\n\"\n}\n"
+     }
+    },
+    {
+     "name": "PUT non-boolean expression",
+     "request": {
+      "method": "PUT",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": "{\"rules\":{\".read\":\"auth.uid\"}}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"1:20: Expression must evaluate to a boolean.\\n\"\n}\n"
+     }
+    },
+    {
+     "name": "PUT unknown rule key",
+     "request": {
+      "method": "PUT",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": "{\"rules\":{\".bogus\":true}}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"1:20: Expected '{'.\\n\"\n}\n"
+     }
+    },
+    {
+     "name": "PUT invalid JSON",
+     "request": {
+      "method": "PUT",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": "{\"rules\":"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"1:10: Unexpected EOF.\\n\"\n}\n"
+     }
+    },
+    {
+     "name": "PUT without the rules key",
+     "request": {
+      "method": "PUT",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": "{\".read\":true}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"1:2: Expected 'rules' property.\\n\"\n}\n"
+     }
+    },
+    {
+     "name": "PUT empty rules",
+     "request": {
+      "method": "PUT",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": "{\"rules\":{}}"
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"status\":\"ok\"}"
+     }
+    },
+    {
+     "name": "GET after the empty rules",
+     "request": {
+      "method": "GET",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"rules\":{}}"
+     }
+    },
+    {
+     "name": "GET without a credential",
+     "request": {
+      "method": "GET",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": null
+     },
+     "response": {
+      "status": 403,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied.\"\n}\n"
+     }
+    },
+    {
+     "name": "PUT without a credential",
+     "request": {
+      "method": "PUT",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "none",
+      "body": "{\"rules\":{}}"
+     },
+     "response": {
+      "status": 403,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied.\"\n}\n"
+     }
+    },
+    {
+     "name": "GET with a user credential",
+     "request": {
+      "method": "GET",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": {
+       "uid": "u1"
+      },
+      "authVia": "auth",
+      "body": null
+     },
+     "response": {
+      "status": 401,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Permission denied\"\n}\n"
+     }
+    },
+    {
+     "name": "GET with access_token=owner",
+     "request": {
+      "method": "GET",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "access_token",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"rules\":{}}"
+     }
+    },
+    {
+     "name": "DELETE the rules",
+     "request": {
+      "method": "DELETE",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 404,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"404 Not Found\"\n}\n"
+     }
+    },
+    {
+     "name": "POST the rules",
+     "request": {
+      "method": "POST",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": "{\"rules\":{}}"
+     },
+     "response": {
+      "status": 400,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Failed to parse payload {\\\"rules\\\":{}}\"\n}\n"
+     }
+    },
+    {
+     "name": "PATCH the rules",
+     "request": {
+      "method": "PATCH",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": "{\"rules\":{}}"
+     },
+     "response": {
+      "status": 405,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\n  \"error\" : \"Unsupported request type\"\n}\n"
+     }
+    },
+    {
+     "name": "GET the rules last",
+     "request": {
+      "method": "GET",
+      "path": "/.settings/rules.json",
+      "query": "",
+      "headers": {},
+      "auth": "admin",
+      "authVia": "bearer",
+      "body": null
+     },
+     "response": {
+      "status": 200,
+      "headers": {
+       "content-type": "application/json; charset=utf-8"
+      },
+      "body": "{\"rules\":{}}"
+     }
+    }
+   ]
+  }
+ ]
+}

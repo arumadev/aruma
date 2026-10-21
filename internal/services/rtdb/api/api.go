@@ -1,6 +1,6 @@
 // Package api serves Aruma's Realtime Database to the Firebase SDKs: the WebSocket protocol
-// at /.ws (ws.go, conn.go, dispatch.go), long polling at /.lp (lp.go), and later REST at
-// /<path>.json. A request names its database by host, https://<ns>.<rtdb.domain>, or on the
+// at /.ws (ws.go, conn.go, dispatch.go), long polling at /.lp (lp.go), and REST at
+// /<path>.json (rest.go). A request names its database by host, https://<ns>.<rtdb.domain>, or on the
 // main host by ?ns=<ns> (ADR-018).
 //
 // The protocol session (session.go) is separate from its transport: it decodes requests,
@@ -10,7 +10,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"net"
@@ -67,6 +66,9 @@ type API struct {
 	lps        map[string]*lpConn
 	lpSessions map[string]*lpConn
 	lpSeq      int64
+
+	// pushIDs makes the keys of REST POSTs.
+	pushIDs core.PushIDs
 }
 
 // transport is an open connection that Shutdown closes.
@@ -107,9 +109,13 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveLP(w, r, target)
 	case r.URL.Path == "/.settings/rules.json":
 		a.serveRules(w, r, target)
+	case strings.HasPrefix(r.URL.Path, "/.") && !strings.HasSuffix(r.URL.Path, ".json"):
+		// The emulator's answer to the dot paths it does not serve (/.info, /.inspect, ...).
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte("not found"))
 	case strings.HasSuffix(r.URL.Path, ".json"):
-		// REST comes in R5.
-		writeError(w, http.StatusNotImplemented, "The REST API is not supported by this server yet.")
+		a.serveREST(w, r, target)
 	default:
 		// The emulator's answer to a path without .json.
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -159,15 +165,6 @@ func (a *API) hostNamespace(host string) string {
 		return ""
 	}
 	return label
-}
-
-// writeError answers in Firebase's REST error shape.
-func writeError(w http.ResponseWriter, status int, msg string) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.WriteHeader(status)
-	b, _ := json.Marshal(map[string]string{"error": msg})
-	_, _ = w.Write(b)
 }
 
 // budget is the shared byte budget of partly received messages (wire.Budget).

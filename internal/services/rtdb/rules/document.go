@@ -1,7 +1,9 @@
 package rules
 
 import (
+	"encoding/json"
 	"strconv"
+	"strings"
 	"unicode/utf16"
 	"unicode/utf8"
 )
@@ -364,4 +366,57 @@ func position(src []byte, off int) (line, col int) {
 		i += size
 	}
 	return line, col
+}
+
+// StrictJSON returns a rules document as plain JSON, comments and trailing commas dropped and
+// every value as written: what GET /.settings/rules.json?format=strict answers, and what the
+// Admin SDKs' getRulesJSON parses (firebase-admin-node database.ts getRulesJSON).
+func StrictJSON(src []byte) ([]byte, error) {
+	v, err := readDocument(src)
+	if err != nil {
+		return nil, err
+	}
+	return v.appendJSON(nil, src), nil
+}
+
+func (v *jsonValue) appendJSON(b []byte, src []byte) []byte {
+	switch v.kind {
+	case jsonObject:
+		b = append(b, '{')
+		for i, m := range v.members {
+			if i > 0 {
+				b = append(b, ',')
+			}
+			b = appendJSONString(b, m.key)
+			b = append(b, ':')
+			b = m.val.appendJSON(b, src)
+		}
+		return append(b, '}')
+	case jsonArray:
+		b = append(b, '[')
+		for i, el := range v.elems {
+			if i > 0 {
+				b = append(b, ',')
+			}
+			b = el.appendJSON(b, src)
+		}
+		return append(b, ']')
+	case jsonString:
+		return appendJSONString(b, v.str)
+	case jsonNumber:
+		end := v.off
+		for end < len(src) && strings.IndexByte("0123456789.eE+-", src[end]) >= 0 {
+			end++
+		}
+		return append(b, src[v.off:end]...)
+	case jsonBool:
+		return strconv.AppendBool(b, v.boolean)
+	}
+	return append(b, "null"...)
+}
+
+// appendJSONString appends s as a JSON string.
+func appendJSONString(b []byte, s string) []byte {
+	q, _ := json.Marshal(s)
+	return append(b, q...)
 }

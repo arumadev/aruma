@@ -52,10 +52,12 @@ type Commit struct {
 	Changes []Change
 }
 
-// Result is a command's outcome. Node is the value read, or for a conditional write the value
-// written: the emulator acks such a write with the data. Warnings are a listen's (no_index).
+// Result is a command's outcome. Node is the value read, or for a set the value written,
+// server values resolved: the emulator acks a conditional write with the data, and REST echoes
+// every set. Merge is an update's children as written. Warnings are a listen's (no_index).
 type Result struct {
 	Node     *Node
+	Merge    []Child
 	Err      error
 	Warnings []string
 }
@@ -64,12 +66,15 @@ type Result struct {
 // and rules is set, or none for a read of read (with query when not nil), or a barrier.
 type command struct {
 	// acc is who the command acts for, checked against the rules; nil checks nothing.
-	acc      *access
-	write    *Write
-	read     Path
-	query    *Query
-	listen   *listenCmd
-	unlisten *unlistenCmd
+	acc   *access
+	write *Write
+	read  Path
+	query *Query
+	// rest makes a read REST's: without a query, rules see a plain REST read
+	// (rules.PlainREST). probe checks the rules of the read and reads nothing.
+	rest, probe bool
+	listen      *listenCmd
+	unlisten    *unlistenCmd
 	// register checks an onDisconnect write when it is registered, without applying it.
 	register *Write
 	// revoke re-checks a session's listens and cancels those no longer permitted.
@@ -316,7 +321,7 @@ func (d *Database) apply(ctx context.Context, batch []*command, state *batchStat
 			}
 			continue
 		case c.write == nil:
-			if results[i], err = d.read(ctx, tx, c.acc, c.read, c.query, now); err != nil {
+			if results[i], err = d.read(ctx, tx, c, now); err != nil {
 				return nil, Commit{}, nil, err
 			}
 			continue
@@ -355,9 +360,7 @@ func (d *Database) apply(ctx context.Context, batch []*command, state *batchStat
 		if err := ch.store(ctx, tx); err != nil {
 			return nil, Commit{}, nil, err
 		}
-		if c.write.Hash != nil {
-			results[i].Node = ch.Value
-		}
+		results[i].Node, results[i].Merge = ch.Value, ch.Merge
 		changes = append(changes, ch)
 		if err := d.fanout(ctx, tx, ch, state); err != nil {
 			return nil, Commit{}, nil, err
@@ -382,16 +385,20 @@ func (d *Database) indexed(p Path, q Query) bool {
 	return d.rules != nil && slices.Contains(d.rules.IndexOn(p), key)
 }
 
-// read runs a get: the value at p, or the part of it a query selects. A query ordered by a
-// child or by value needs its .indexOn, as in Firebase (ADR-020 §1), even with no range or
-// limit: the emulator answers {"i":"s"} alone with no_index (golden query_get.json, r=12).
-// The rules come first.
-func (d *Database) read(ctx context.Context, tx StoreTx, a *access, p Path, q *Query, now time.Time) (Result, error) {
-	query := DefaultQuery
-	if q != nil {
-		query = *q
+// read runs a get: the value at c.read, or the part of it a query selects. A query ordered by
+// a child or by value needs its .indexOn, as in Firebase (ADR-020 §1), even with no range or
+// limit: the emulator answers {"i":"s"} alone with no_index (golden query_get.json, r=12), and
+// REST answers 400 with the same text. The rules come first.
+func (d *Database) read(ctx context.Context, tx StoreTx, c *command, now time.Time) (Result, error) {
+	a, p, q := c.acc, c.read, c.query
+	rq := DefaultQuery.rules()
+	switch {
+	case q != nil:
+		rq = q.rules()
+	case c.rest:
+		rq = rules.PlainREST
 	}
-	if err := d.mayRead(ctx, tx, a, p, query, now); err != nil {
+	if err := d.mayRead(ctx, tx, a, p, rq, now); err != nil {
 		var e *Error
 		if errors.As(err, &e) {
 			return Result{Err: err}, nil
@@ -400,6 +407,9 @@ func (d *Database) read(ctx context.Context, tx StoreTx, a *access, p Path, q *Q
 	}
 	if q != nil && !d.indexed(p, *q) {
 		return Result{Err: NoIndexError(q.IndexKey(), p)}, nil
+	}
+	if c.probe {
+		return Result{}, nil
 	}
 	n, err := tx.Read(ctx, p)
 	if err != nil {
@@ -416,7 +426,7 @@ func (d *Database) read(ctx context.Context, tx StoreTx, a *access, p Path, q *Q
 // query the rules cannot index is served whole and untagged, with the no_index warning.
 func (d *Database) startListen(ctx context.Context, tx StoreTx, a *access, c *listenCmd, state *batchState, now time.Time) (Result, error) {
 	l := c.l
-	if err := d.mayRead(ctx, tx, a, l.path, l.query, now); err != nil {
+	if err := d.mayRead(ctx, tx, a, l.path, l.query.rules(), now); err != nil {
 		var e *Error
 		if errors.As(err, &e) {
 			return Result{Err: err}, nil
@@ -467,7 +477,7 @@ func (d *Database) revokeListens(ctx context.Context, tx StoreTx, s *Session, st
 	})
 	a := s.access()
 	for _, l := range ls {
-		ok, err := d.readable(ctx, tx, a, l.path, l.query, now)
+		ok, err := d.readable(ctx, tx, a, l.path, l.query.rules(), now)
 		if err != nil {
 			return err
 		}

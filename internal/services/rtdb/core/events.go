@@ -126,7 +126,7 @@ func mergeJSON(children []Child) json.RawMessage {
 		}
 		out = appendJSONString(out, c.Path.String())
 		out = append(out, ':')
-		out = c.Value.appendJSON(out, true)
+		out = c.Value.appendJSON(out, jsonExport)
 	}
 	return append(out, '}')
 }

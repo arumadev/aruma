@@ -8,6 +8,7 @@ import (
 	"math"
 	"slices"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -250,14 +251,29 @@ func (n *Node) leaves(at Path, fn func(p Path, n *Node, leaf bool) error) error 
 // ExportJSON encodes n in the SDKs' export format: priorities as ".priority", a leaf with a
 // priority as {".value":v,".priority":p}, objects always as objects. The WebSocket protocol
 // carries this format (val(true) in the SDKs); null encodes as null.
-func (n *Node) ExportJSON() []byte { return n.appendJSON(nil, true) }
+func (n *Node) ExportJSON() []byte { return n.appendJSON(nil, jsonExport) }
 
 // JSON encodes n as REST answers without format=export: no priorities, and an object whose
 // keys are all array indexes, dense enough, becomes an array (ChildrenNode.val: every key
 // matches ^(0|[1-9]\d*)$ and the largest is below twice the count).
-func (n *Node) JSON() []byte { return n.appendJSON(nil, false) }
+func (n *Node) JSON() []byte { return n.appendJSON(nil, jsonPlain) }
 
-func (n *Node) appendJSON(b []byte, export bool) []byte {
+// EchoJSON encodes n as REST echoes a value it wrote: priorities as in the export format, and
+// an object without a priority whose keys make an array as an array (emulator 4.11.2, golden
+// rest.golden.json "data shapes").
+func (n *Node) EchoJSON() []byte { return n.appendJSON(nil, jsonEcho) }
+
+// The encodings of a node.
+type jsonMode uint8
+
+const (
+	jsonPlain jsonMode = iota
+	jsonExport
+	jsonEcho
+)
+
+func (n *Node) appendJSON(b []byte, mode jsonMode) []byte {
+	export := mode != jsonPlain
 	if n == nil {
 		return append(b, "null"...)
 	}
@@ -272,7 +288,7 @@ func (n *Node) appendJSON(b []byte, export bool) []byte {
 		return n.appendLeaf(b)
 	}
 	keys := n.Keys()
-	if !export {
+	if !export || mode == jsonEcho && n.priority == nil {
 		if size, ok := arrayLen(keys); ok {
 			b = append(b, '[')
 			i := 0
@@ -281,7 +297,7 @@ func (n *Node) appendJSON(b []byte, export bool) []byte {
 					b = append(b, ',')
 				}
 				if i < len(keys) && keys[i] == strconv.Itoa(idx) {
-					b = n.children[keys[i]].appendJSON(b, export)
+					b = n.children[keys[i]].appendJSON(b, mode)
 					i++
 				} else {
 					b = append(b, "null"...)
@@ -304,7 +320,7 @@ func (n *Node) appendJSON(b []byte, export bool) []byte {
 		first = false
 		b = appendJSONString(b, k)
 		b = append(b, ':')
-		b = n.children[k].appendJSON(b, export)
+		b = n.children[k].appendJSON(b, mode)
 	}
 	return append(b, '}')
 }
@@ -367,7 +383,7 @@ func (n *Node) appendLeaf(b []byte) []byte {
 func ParseData(data []byte, at Path, maxString int) (*Node, error) {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.UseNumber()
-	p := parser{dec: dec, maxString: maxString}
+	p := parser{dec: dec, data: data, maxString: maxString}
 	v, err := p.value(len(at), at.byteLen())
 	if err != nil {
 		return nil, err
@@ -390,7 +406,33 @@ type jv struct {
 
 type parser struct {
 	dec       *json.Decoder
+	data      []byte
 	maxString int
+}
+
+// KeyError is ErrInvalidKey at a place in the data: the line and column, from 1, of the key's
+// opening quote, which REST names as the emulator does ("couldn't parse key beginning at
+// 1:2"). It unwraps to ErrInvalidKey.
+type KeyError struct{ Line, Column int }
+
+func (e *KeyError) Error() string { return ErrInvalidKey.Error() }
+func (e *KeyError) Unwrap() error { return ErrInvalidKey }
+
+// keyError locates the key the decoder reads next, which starts after off.
+func (p *parser) keyError(off int64) error {
+	i := int(off)
+	for i < len(p.data) && strings.IndexByte(" \t\r\n,", p.data[i]) >= 0 {
+		i++
+	}
+	line, col := 1, 1
+	for _, r := range string(p.data[:min(i, len(p.data))]) {
+		if r == '\n' {
+			line, col = line+1, 1
+		} else {
+			col++
+		}
+	}
+	return &KeyError{Line: line, Column: col}
 }
 
 // value reads one JSON value whose location has depth keys and pathBytes bytes.
@@ -420,11 +462,15 @@ func (p *parser) value(depth, pathBytes int) (*jv, error) {
 		for i := 0; p.dec.More(); i++ {
 			key := strconv.Itoa(i)
 			if t == '{' {
+				off := p.dec.InputOffset()
 				k, err := p.dec.Token()
 				if err != nil {
 					return nil, ErrInvalidData
 				}
 				key = k.(string)
+				if key != ".value" && key != ".priority" && key != ".sv" && !ValidKey(key) {
+					return nil, p.keyError(off)
+				}
 			}
 			childBytes := pathBytes + len(key)
 			if depth+1 > MaxDepth {
