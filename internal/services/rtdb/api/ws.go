@@ -54,7 +54,7 @@ func (a *API) serveWS(w http.ResponseWriter, r *http.Request, target core.Target
 	}
 	ws.SetReadLimit(maxFrameBytes)
 	if s := r.URL.Query().Get("s"); s != "" {
-		a.joinLP(ws, s, host)
+		a.joinLP(ws, target, s, host)
 		return
 	}
 	// The open rules of development reach clients on this machine only, judged by the
@@ -79,9 +79,10 @@ func (a *API) serveWS(w http.ResponseWriter, r *http.Request, target core.Target
 
 // joinLP serves a WebSocket that comes to take over the long-poll session s, the session id
 // of its hello (lp.go). The emulator answers an unknown session with a reset to the host and
-// drops the socket (golden lp_upgrade.json); so does Aruma.
-func (a *API) joinLP(ws *websocket.Conn, s, host string) {
-	lp := a.lpOfSession(s)
+// drops the socket (golden lp_upgrade.json); so does Aruma, also for a session of another
+// database than the one the WebSocket names.
+func (a *API) joinLP(ws *websocket.Conn, target core.Target, s, host string) {
+	lp := a.lpOfSession(target, s)
 	var c *wsConn
 	if lp != nil {
 		c = newWSConn(a, ws, lp.sess)

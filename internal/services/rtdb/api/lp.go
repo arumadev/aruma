@@ -112,14 +112,14 @@ func (a *API) serveLP(w http.ResponseWriter, r *http.Request, target core.Target
 		h.Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write(wire.EncodeLPDisconnectFrame("/.lp?" + u.Encode()))
 	case q.Get(wire.LPDisconnect) == "t":
-		if c := a.lpFind(q.Get(wire.LPID), q.Get(wire.LPPassword)); c != nil {
+		if c := a.lpFind(target, q.Get(wire.LPID), q.Get(wire.LPPassword)); c != nil {
 			c.close()
 		}
 		// What the emulator answers (golden lp_disconnect.json); the page is unloading.
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write([]byte("<!-- -->"))
 	default:
-		a.lpPoll(w, r, q)
+		a.lpPoll(w, r, target, q)
 	}
 }
 
@@ -172,8 +172,8 @@ func (a *API) lpStart(w http.ResponseWriter, r *http.Request, target core.Target
 
 // lpPoll serves a request of a started connection: it takes the messages in the URL, then
 // holds the request until there is something to send.
-func (a *API) lpPoll(w http.ResponseWriter, r *http.Request, q url.Values) {
-	c := a.lpFind(q.Get(wire.LPID), q.Get(wire.LPPassword))
+func (a *API) lpPoll(w http.ResponseWriter, r *http.Request, target core.Target, q url.Values) {
+	c := a.lpFind(target, q.Get(wire.LPID), q.Get(wire.LPPassword))
 	if c == nil {
 		// An unknown or finished connection: the emulator sends the client back to the host
 		// to start again (golden lp_upgrade.json).
@@ -487,20 +487,26 @@ func (a *API) lpRemove(c *lpConn) {
 	delete(a.conns, c)
 }
 
-// lpFind returns the connection with id whose password is pw, or nil.
-func (a *API) lpFind(id, pw string) *lpConn {
+// lpFind returns the connection with id whose password is pw, or nil. The connection must be
+// on the database the request names (by host or ?ns=): a request that reaches it through
+// another database's address is answered as for an unknown connection.
+func (a *API) lpFind(t core.Target, id, pw string) *lpConn {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	c := a.lps[id]
-	if c == nil || subtle.ConstantTimeCompare([]byte(c.pw), []byte(pw)) != 1 {
+	if c == nil || subtle.ConstantTimeCompare([]byte(c.pw), []byte(pw)) != 1 || c.sess.target.Name != t.Name {
 		return nil
 	}
 	return c
 }
 
-// lpOfSession returns the long-poll connection carrying session id, or nil.
-func (a *API) lpOfSession(id string) *lpConn {
+// lpOfSession returns the long-poll connection carrying session id on the database t, or nil.
+func (a *API) lpOfSession(t core.Target, id string) *lpConn {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	return a.lpSessions[id]
+	c := a.lpSessions[id]
+	if c == nil || c.sess.target.Name != t.Name {
+		return nil
+	}
+	return c
 }

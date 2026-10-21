@@ -364,6 +364,54 @@ func TestLPDisconnect(t *testing.T) {
 	}
 }
 
+// A long-poll connection belongs to the database it was started on. Its id and password, or
+// its session id, sent with another database's ns are an unknown connection there: the poll
+// gets the reset and its messages are not handled, disconn ends nothing, and a WebSocket
+// that comes to take the session over is reset and dropped.
+func TestLPStaysOnItsDatabase(t *testing.T) {
+	_, store, base := lpServer(t)
+	const other = "other-app-default-rtdb"
+	c := startLP(t, base)
+	c.call(1, "auth", map[string]any{"cred": sat})
+	seg := c.seg
+	write, _ := json.Marshal(map[string]any{"t": "d", "d": map[string]any{"r": 2, "a": "p", "b": map[string]any{"p": "/x", "d": 1}}})
+	if code, body := c.get("id=" + c.id + "&pw=" + c.pw + "&ser=2000&ns=" + other + c.segments(string(write))); code != 200 || !strings.Contains(body, `"t":"r"`) {
+		t.Errorf("poll through another database: %d %q", code, body)
+	}
+	if code, body := c.get("disconn=t&id=" + c.id + "&pw=" + c.pw + "&ns=" + other); code != 200 || body != "<!-- -->" {
+		t.Errorf("disconn through another database: %d %q", code, body)
+	}
+
+	var hello struct {
+		D struct {
+			D wire.Hello `json:"d"`
+		} `json:"d"`
+	}
+	json.Unmarshal([]byte(c.hello), &hello)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	sec, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(base, "http")+"/.ws?v=5&ns="+other+"&s="+hello.D.D.Session, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sec.CloseNow()
+	if _, m, err := sec.Read(ctx); err != nil || !strings.Contains(string(m), `"t":"r"`) {
+		t.Errorf("upgrade through another database: %q %v", m, err)
+	}
+	if _, _, err := sec.Read(ctx); err == nil {
+		t.Error("the WebSocket stays open")
+	}
+
+	// The connection carries on on its own database, which the message did not reach.
+	c.seg = seg
+	if r := c.call(3, "g", map[string]any{"p": "/x", "q": map[string]any{}}); !strings.Contains(r, `"d":null`) {
+		t.Errorf("read on its own database: %s", r)
+	}
+	if v := store.value(other); v != nil {
+		t.Errorf("data on the other database: %s", v.ExportJSON())
+	}
+}
+
 func TestLPAbandoned(t *testing.T) {
 	defer func(d time.Duration) { lpAbandon = d }(lpAbandon)
 	lpAbandon = 300 * time.Millisecond
