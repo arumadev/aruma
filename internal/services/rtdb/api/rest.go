@@ -750,9 +750,15 @@ const maxRulesBody = 256 << 10
 // document and saves nothing (firebase deploy --dry-run, rtdb.ts:47).
 func (a *API) serveRules(w http.ResponseWriter, r *http.Request, t core.Target) {
 	// Only an admin credential may read or change rules. The emulator answers a request
-	// without a credential with 403, and one with a user's with 401.
+	// without a credential with 403, and one with a user's with 401. An admin credential that
+	// asks to act as a client, auth_variable_override, is no admin here: it gets the 401 the
+	// emulator 4.11.2 gives it (probe of 2026-10-21), whatever the override holds. No Admin
+	// SDK sends one to this path.
 	token, _ := restCredential(r)
 	switch {
+	case r.URL.Query().Has("auth_variable_override"):
+		writeError(w, http.StatusUnauthorized, "Permission denied")
+		return
 	case token == "":
 		writeError(w, http.StatusForbidden, "Permission denied.")
 		return

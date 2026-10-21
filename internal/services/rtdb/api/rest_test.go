@@ -159,6 +159,38 @@ func TestRESTLockedAndOpen(t *testing.T) {
 	}
 }
 
+// The rules document takes an admin credential as itself only: with auth_variable_override,
+// which would make it act as a client, it is refused with 401 and Firebase's error shape, as
+// on the emulator 4.11.2, for GET and PUT alike. Before, the override was ignored and the
+// admin read and replaced the rules.
+func TestRulesRefuseAnOverride(t *testing.T) {
+	a, store, _ := newTestAPI(t, Options{}, core.Options{})
+	do := func(method, query, body string) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(method, "/.settings/rules.json?ns=chat-app-default-rtdb"+query, strings.NewReader(body))
+		req.Header.Set("Authorization", "Bearer "+sat)
+		a.ServeHTTP(rec, req)
+		return rec
+	}
+	const denied = "{\n  \"error\" : \"Permission denied\"\n}"
+	for _, q := range []string{`&auth_variable_override={"uid":"u1"}`, "&auth_variable_override=null", "&auth_variable_override="} {
+		q = strings.ReplaceAll(strings.ReplaceAll(q, `"`, "%22"), "{", "%7B")
+		q = strings.ReplaceAll(q, "}", "%7D")
+		for _, method := range []string{"GET", "PUT"} {
+			if rec := do(method, q, `{"rules":{".read":true}}`); rec.Code != http.StatusUnauthorized || rec.Body.String() != denied ||
+				rec.Header().Get("Content-Type") != "application/json; charset=utf-8" {
+				t.Errorf("%s %s: %d %q", method, q, rec.Code, rec.Body)
+			}
+		}
+	}
+	if rules := store.rules["chat-app-default-rtdb"]; rules != "" {
+		t.Errorf("rules changed: %s", rules)
+	}
+	if rec := do("GET", "", ""); rec.Code != 200 {
+		t.Errorf("without an override: %d %q", rec.Code, rec.Body)
+	}
+}
+
 // A read over rtdb.limits.read_rows answers too_big over the protocol, and 400 with
 // Firebase's text over REST.
 func TestReadRowsLimit(t *testing.T) {
