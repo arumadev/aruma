@@ -1,0 +1,197 @@
+{
+  "scenario": "cancel",
+  "description": "Three listens the rules grant only to the signed-in user (untagged, tagged query, untagged child), then unauth: the c pushes and the unauth reply, in arrival order. Then auth again, listen again, and auth with \"garbage\" while listening.",
+  "source": "production",
+  "project": "<redacted>",
+  "host": "<project>-default-rtdb.europe-west1.firebasedatabase.app",
+  "captured": "2026-10-21",
+  "script": "capture_production.mjs",
+  "run": "r7-20261021-c1add4",
+  "connections": {
+    "A": "/.ws?v=5&ns=<project>-default-rtdb"
+  },
+  "frames": [
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792571298302,\"v\":\"5\",\"h\":\"s-gke-euw1-nssi2-3.europe-west1.firebasedatabase.app\",\"s\":\"OHQd4CjfjAnfhb90FYMomM53S9N1eYRp\"}}}",
+      "ms": 723
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"auth\",\"b\":{\"cred\":\"<id-token>\"}}}",
+      "ms": 723
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"name\":\"<name>\",\"email_verified\":false,\"provider\":\"password\",\"email\":\"<email>\",\"user_id\":\"<uid>\",\"token\":{\"name\":\"<name>\",\"email_verified\":false,\"email\":\"<email>\",\"exp\":1792574760,\"user_id\":\"<uid>\",\"iat\":1792571160,\"sub\":\"<uid>\",\"aud\":\"<project>\",\"auth_time\":1792571160,\"iss\":\"https://securetoken.google.com/<project>\",\"firebase\":{\"identities\":{\"email\":[\"<email>\"]},\"sign_in_provider\":\"password\"}},\"uid\":\"<uid>\"},\"expires\":1792574760}}}}",
+      "ms": 968
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"p\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open/c\",\"d\":{\"a\":{\"n\":1},\"b\":{\"n\":2}}}}}",
+      "ms": 1469
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}",
+      "ms": 1721
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"q\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open/c\",\"h\":\"\"}}}",
+      "ms": 2221
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"aruma-ref/r7-20261021-c1add4/open/c\",\"d\":{\"a\":{\"n\":1},\"b\":{\"n\":2}}},\"a\":\"d\"}}",
+      "ms": 2457
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":{}}}}",
+      "ms": 2457
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"q\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open/c\",\"q\":{\"l\":1,\"vf\":\"l\"},\"t\":1,\"h\":\"\"}}}",
+      "ms": 2958
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"aruma-ref/r7-20261021-c1add4/open/c\",\"d\":{\"a\":{\"n\":1}},\"t\":1},\"a\":\"d\"}}",
+      "ms": 3200
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":{}}}}",
+      "ms": 3200
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"q\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open/c/a\",\"h\":\"\"}}}",
+      "ms": 3701
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"aruma-ref/r7-20261021-c1add4/open/c/a\",\"d\":{\"n\":1}},\"a\":\"d\"}}",
+      "ms": 3933
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"ok\",\"d\":{}}}}",
+      "ms": 3933
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"a\":\"unauth\",\"b\":{}}}",
+      "ms": 4435
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"aruma-ref/r7-20261021-c1add4/open/c/a\",\"q\":null},\"a\":\"c\"}}",
+      "ms": 4670
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"aruma-ref/r7-20261021-c1add4/open/c\",\"q\":null},\"a\":\"c\"}}",
+      "ms": 4670
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"aruma-ref/r7-20261021-c1add4/open/c\",\"q\":[{\"sin\":true,\"ein\":true,\"l\":1,\"vf\":\"l\"}]},\"a\":\"c\"}}",
+      "ms": 4670
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"b\":{\"s\":\"ok\",\"d\":\"unauthenticated\"}}}",
+      "ms": 4670
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"a\":\"auth\",\"b\":{\"cred\":\"<id-token>\"}}}",
+      "ms": 6671
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"name\":\"<name>\",\"email_verified\":false,\"provider\":\"password\",\"email\":\"<email>\",\"user_id\":\"<uid>\",\"token\":{\"name\":\"<name>\",\"email_verified\":false,\"email\":\"<email>\",\"exp\":1792574760,\"user_id\":\"<uid>\",\"iat\":1792571160,\"sub\":\"<uid>\",\"aud\":\"<project>\",\"auth_time\":1792571160,\"iss\":\"https://securetoken.google.com/<project>\",\"firebase\":{\"identities\":{\"email\":[\"<email>\"]},\"sign_in_provider\":\"password\"}},\"uid\":\"<uid>\"},\"expires\":1792574760}}}}",
+      "ms": 6915
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"a\":\"q\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open/c\",\"h\":\"\"}}}",
+      "ms": 7416
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"aruma-ref/r7-20261021-c1add4/open/c\",\"d\":{\"a\":{\"n\":1},\"b\":{\"n\":2}}},\"a\":\"d\"}}",
+      "ms": 7678
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":8,\"b\":{\"s\":\"ok\",\"d\":{}}}}",
+      "ms": 7678
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":9,\"a\":\"q\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open/c/b\",\"q\":{\"l\":1,\"vf\":\"r\"},\"t\":2,\"h\":\"\"}}}",
+      "ms": 8180
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"aruma-ref/r7-20261021-c1add4/open/c/b\",\"d\":{\"n\":2},\"t\":2},\"a\":\"d\"}}",
+      "ms": 8426
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":9,\"b\":{\"s\":\"ok\",\"d\":{}}}}",
+      "ms": 8426
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":10,\"a\":\"auth\",\"b\":{\"cred\":\"garbage\"}}}",
+      "ms": 8927
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":10,\"b\":{\"s\":\"invalid_token\",\"d\":\"Could not parse auth token.\"}}}",
+      "ms": 9182
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": "",
+      "ms": 11437
+    }
+  ],
+  "notes": []
+}

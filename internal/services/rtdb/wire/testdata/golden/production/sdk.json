@@ -1,0 +1,218 @@
+{
+  "source": "production",
+  "project": "<redacted>",
+  "sdk": "firebase 13.0.0 (Node, WebSocket)",
+  "captured": "2026-10-21",
+  "script": "sdk_production.mjs",
+  "uid": "<uid>",
+  "results": [
+    {
+      "op": "set open/sdk",
+      "ok": true,
+      "value": null
+    },
+    {
+      "op": "get open/sdk",
+      "ok": true,
+      "value": {
+        "a": {
+          "x": 2
+        },
+        "b": {
+          "x": 1
+        },
+        "c": {
+          "x": 3
+        }
+      }
+    },
+    {
+      "op": "get orderByChild(x) limitToFirst(1) without index",
+      "ok": false,
+      "code": null,
+      "message": "Index not defined, add \".indexOn\": \"x\", for path \"/aruma-ref/<run>/open/sdk\", to the rules"
+    },
+    {
+      "op": "onValue orderByChild(x) without index",
+      "ok": true,
+      "value": {
+        "a": {
+          "x": 2
+        },
+        "b": {
+          "x": 1
+        }
+      }
+    },
+    {
+      "op": "onValue orderByValue without index",
+      "ok": true,
+      "value": {
+        "a": {
+          "x": 2
+        }
+      }
+    },
+    {
+      "op": "set closed",
+      "ok": false,
+      "code": "PERMISSION_DENIED",
+      "message": "PERMISSION_DENIED: Permission denied"
+    },
+    {
+      "op": "get closed",
+      "ok": false,
+      "code": null,
+      "message": "Permission denied"
+    },
+    {
+      "op": "onValue closed",
+      "ok": false,
+      "code": "PERMISSION_DENIED",
+      "message": "permission_denied at /aruma-ref/<run>/closed/x: Client doesn't have permission to access the desired data."
+    },
+    {
+      "op": "update closed",
+      "ok": false,
+      "code": "PERMISSION_DENIED",
+      "message": "PERMISSION_DENIED: Permission denied"
+    },
+    {
+      "op": "update mixed",
+      "ok": false,
+      "code": "PERMISSION_DENIED",
+      "message": "PERMISSION_DENIED: Permission denied"
+    },
+    {
+      "op": "push closed",
+      "ok": false,
+      "code": "PERMISSION_DENIED",
+      "message": "PERMISSION_DENIED: Permission denied"
+    },
+    {
+      "op": "remove closed",
+      "ok": false,
+      "code": "PERMISSION_DENIED",
+      "message": "PERMISSION_DENIED: Permission denied"
+    },
+    {
+      "op": "onDisconnect.set closed",
+      "ok": false,
+      "code": "PERMISSION_DENIED",
+      "message": "PERMISSION_DENIED: Permission denied"
+    },
+    {
+      "op": "onDisconnect.update closed",
+      "ok": false,
+      "code": "PERMISSION_DENIED",
+      "message": "PERMISSION_DENIED: Permission denied"
+    },
+    {
+      "op": "onDisconnect.cancel closed",
+      "ok": true,
+      "value": null
+    },
+    {
+      "op": "set open/v string (fails .validate)",
+      "ok": false,
+      "code": "PERMISSION_DENIED",
+      "message": "PERMISSION_DENIED: Permission denied"
+    },
+    {
+      "op": "transaction closed",
+      "ok": false,
+      "code": null,
+      "message": "permission_denied"
+    },
+    {
+      "op": "transaction open",
+      "ok": true,
+      "value": {
+        "committed": true,
+        "value": 1
+      }
+    },
+    {
+      "op": "set server values",
+      "ok": true,
+      "value": null
+    },
+    {
+      "op": "get server values (types)",
+      "ok": true,
+      "value": {
+        "t": "number",
+        "i": 4
+      }
+    },
+    {
+      "op": "set numbers",
+      "ok": true,
+      "value": null
+    },
+    {
+      "op": "get numbers",
+      "ok": true,
+      "value": {
+        "a": 1,
+        "b": 0,
+        "c": 12345678901234567000,
+        "d": 0.1,
+        "e": 9007199254740994,
+        "bIsNegativeZero": false
+      }
+    },
+    {
+      "op": "set array",
+      "ok": true,
+      "value": null
+    },
+    {
+      "op": "get array",
+      "ok": true,
+      "value": [
+        "a",
+        null,
+        "c"
+      ]
+    },
+    {
+      "op": "set {0,2} object",
+      "ok": true,
+      "value": null
+    },
+    {
+      "op": "get {0,2} object",
+      "ok": true,
+      "value": [
+        "a",
+        null,
+        "c"
+      ]
+    },
+    {
+      "op": "listen cancelled after signOut",
+      "ok": true,
+      "value": {
+        "code": "PERMISSION_DENIED",
+        "message": "permission_denied at /aruma-ref/<run>/open/sdk/a: Client doesn't have permission to access the desired data."
+      }
+    },
+    {
+      "op": "remove open",
+      "ok": true,
+      "value": null
+    }
+  ],
+  "logs": [
+    "[2026-10-21T08:32:57.215Z]  @firebase/database: FIREBASE WARNING: Using an unspecified index. Your data will be downloaded and filtered on the client. Consider adding \".indexOn\": \"x\" at /aruma-ref/<run>/open/sdk to your security rules for better performance. ",
+    "[2026-10-21T08:32:57.471Z]  @firebase/database: FIREBASE WARNING: Using an unspecified index. Your data will be downloaded and filtered on the client. Consider adding \".indexOn\": \".value\" at /aruma-ref/<run>/open/sdk to your security rules for better performance. ",
+    "[2026-10-21T08:32:57.707Z]  @firebase/database: FIREBASE WARNING: set at /aruma-ref/<run>/closed/x failed: permission_denied ",
+    "[2026-10-21T08:32:58.630Z]  @firebase/database: FIREBASE WARNING: update at /aruma-ref/<run>/closed/x failed: permission_denied ",
+    "[2026-10-21T08:32:58.877Z]  @firebase/database: FIREBASE WARNING: update at /aruma-ref/<run> failed: permission_denied ",
+    "[2026-10-21T08:32:59.241Z]  @firebase/database: FIREBASE WARNING: set at /aruma-ref/<run>/closed/list/-P4S_tirIz5TMs8SeObx failed: permission_denied ",
+    "[2026-10-21T08:32:59.488Z]  @firebase/database: FIREBASE WARNING: set at /aruma-ref/<run>/closed/x failed: permission_denied ",
+    "[2026-10-21T08:33:00.455Z]  @firebase/database: FIREBASE WARNING: set at /aruma-ref/<run>/open/v failed: permission_denied ",
+    "[2026-10-21T08:33:00.713Z]  @firebase/database: FIREBASE WARNING: transaction at /aruma-ref/<run>/closed/t failed: permission_denied "
+  ]
+}

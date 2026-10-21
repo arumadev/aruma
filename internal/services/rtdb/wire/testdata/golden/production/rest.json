@@ -1,0 +1,697 @@
+{
+  "scenario": "rest",
+  "description": "REST: ETag on PUT and GET (present and absent node), if-match 412 and success, print=silent on each method, shallow with .priority, format=export, the arrays rule, server values, and errors.",
+  "source": "production",
+  "project": "<redacted>",
+  "host": "<project>-default-rtdb.europe-west1.firebasedatabase.app",
+  "captured": "2026-10-21",
+  "script": "capture_production.mjs",
+  "run": "r7-20261021-c1add4",
+  "connections": {},
+  "frames": [
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/e.json?auth=<id-token>",
+      "reqHeaders": {
+        "X-Firebase-ETag": "true"
+      },
+      "body": "{\"a\":1}",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "ETag",
+        "cache-control": "no-cache",
+        "content-length": "7",
+        "content-type": "application/json; charset=utf-8",
+        "etag": "gIphxiFGusLh2VwSNVKSvNu90m4="
+      },
+      "response": "{\"a\":1}",
+      "ms": 254
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/e.json?auth=<id-token>",
+      "reqHeaders": {
+        "X-Firebase-ETag": "true"
+      },
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "ETag",
+        "cache-control": "no-cache",
+        "content-length": "7",
+        "content-type": "application/json; charset=utf-8",
+        "etag": "gIphxiFGusLh2VwSNVKSvNu90m4="
+      },
+      "response": "{\"a\":1}",
+      "ms": 495
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/absent.json?auth=<id-token>",
+      "reqHeaders": {
+        "X-Firebase-ETag": "true"
+      },
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "ETag",
+        "cache-control": "no-cache",
+        "content-length": "1",
+        "content-type": "application/json; charset=utf-8",
+        "etag": "YPVfR2bXt/lcDjiQZ8pOkAd3qkQ="
+      },
+      "response": "1",
+      "ms": 746
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/e.json?auth=<id-token>",
+      "reqHeaders": {
+        "if-match": "wrong-etag"
+      },
+      "body": "{\"a\":2}",
+      "status": 412,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "ETag",
+        "cache-control": "no-cache",
+        "content-length": "7",
+        "content-type": "application/json; charset=utf-8",
+        "etag": "gIphxiFGusLh2VwSNVKSvNu90m4="
+      },
+      "response": "{\"a\":1}",
+      "ms": 1018
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/e.json?auth=<id-token>",
+      "reqHeaders": {
+        "if-match": "gIphxiFGusLh2VwSNVKSvNu90m4="
+      },
+      "body": "{\"a\":3}",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "7",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\"a\":3}",
+      "ms": 1255
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "DELETE",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/e.json?auth=<id-token>",
+      "reqHeaders": {
+        "if-match": "wrong-etag"
+      },
+      "status": 412,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "ETag",
+        "cache-control": "no-cache",
+        "content-length": "7",
+        "content-type": "application/json; charset=utf-8",
+        "etag": "Lk336PH8s6HBVSd/4Tg5vnMiMgk="
+      },
+      "response": "{\"a\":3}",
+      "ms": 1498
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/absent.json?auth=<id-token>",
+      "reqHeaders": {
+        "if-match": "null_etag"
+      },
+      "body": "1",
+      "status": 412,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "ETag",
+        "cache-control": "no-cache",
+        "content-length": "1",
+        "content-type": "application/json; charset=utf-8",
+        "etag": "YPVfR2bXt/lcDjiQZ8pOkAd3qkQ="
+      },
+      "response": "1",
+      "ms": 1747
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/e.json?auth=<id-token>",
+      "reqHeaders": {
+        "if-none-match": "gIphxiFGusLh2VwSNVKSvNu90m4="
+      },
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "ETag",
+        "cache-control": "no-cache",
+        "content-length": "7",
+        "content-type": "application/json; charset=utf-8",
+        "etag": "Lk336PH8s6HBVSd/4Tg5vnMiMgk="
+      },
+      "response": "{\"a\":3}",
+      "ms": 1993
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/silent.json?print=silent&auth=<id-token>",
+      "body": "{\"a\":1}",
+      "status": 204,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "",
+      "ms": 2243
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/silent.json?print=silent&auth=<id-token>",
+      "status": 204,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "",
+      "ms": 2483
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PATCH",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/silent.json?print=silent&auth=<id-token>",
+      "body": "{\"b\":2}",
+      "status": 204,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "",
+      "ms": 2745
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "POST",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/silent.json?print=silent&auth=<id-token>",
+      "body": "3",
+      "status": 204,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "",
+      "ms": 2984
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "DELETE",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/silent.json?print=silent&auth=<id-token>",
+      "status": 204,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "",
+      "ms": 3251
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/silent.json?print=pretty&auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "5",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "null\n",
+      "ms": 3488
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/s.json?auth=<id-token>",
+      "body": "{\"a\":1,\"b\":{\"c\":2},\".priority\":5}",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "35",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\".priority\":5.0,\"a\":1,\"b\":{\"c\":2}}",
+      "ms": 3724
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/s.json?shallow=true&auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "36",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\".priority\":true,\"a\":true,\"b\":true}",
+      "ms": 3981
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/s/a.json?shallow=true&auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "1",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "1",
+      "ms": 4248
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/s.json?format=export&auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "35",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\".priority\":5.0,\"a\":1,\"b\":{\"c\":2}}",
+      "ms": 4482
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/s.json?auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "19",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\"a\":1,\"b\":{\"c\":2}}",
+      "ms": 4727
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/s/b.json?auth=<id-token>",
+      "body": "{\"c\":2,\".priority\":\"p\"}",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "23",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\".priority\":\"p\",\"c\":2}",
+      "ms": 4965
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/s.json?shallow=true&auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "36",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\".priority\":true,\"a\":true,\"b\":true}",
+      "ms": 5222
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/sp.json?auth=<id-token>",
+      "body": "{\".value\":7,\".priority\":1}",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "28",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\".value\":7,\".priority\":1.0}",
+      "ms": 5456
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/sp.json?shallow=true&auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "1",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "7",
+      "ms": 6230
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/sp.json?format=export&auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "28",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\".value\":7,\".priority\":1.0}",
+      "ms": 6496
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/arr.json?auth=<id-token>",
+      "body": "{\"a1\":{\"0\":\"a\",\"1\":\"b\",\"2\":\"c\"},\"a2\":{\"0\":\"a\",\"2\":\"c\"},\"a3\":{\"0\":\"a\",\"3\":\"d\"},\"a4\":{\"1\":\"b\",\"2\":\"c\"},\"a5\":{\"5\":\"x\"},\"a6\":{\"0\":\"a\",\"1\":\"b\",\"4\":\"e\"},\"a7\":{\"0\":\"a\",\"1\":\"b\",\"x\":\"c\"},\"a8\":{\"1\":\"b\",\"00\":\"a\"},\"a9\":[\"a\",null,\"c\"],\"a10\":{\"0\":\"b\",\"-1\":\"a\"}}",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "229",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\"a1\":[\"a\",\"b\",\"c\"],\"a10\":{\"-1\":\"a\",\"0\":\"b\"},\"a2\":[\"a\",null,\"c\"],\"a3\":[\"a\",null,null,\"d\"],\"a4\":[null,\"b\",\"c\"],\"a5\":{\"5\":\"x\"},\"a6\":[\"a\",\"b\",null,null,\"e\"],\"a7\":{\"0\":\"a\",\"1\":\"b\",\"x\":\"c\"},\"a8\":{\"00\":\"a\",\"1\":\"b\"},\"a9\":[\"a\",null,\"c\"]}",
+      "ms": 6786
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/arr.json?auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "229",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\"a1\":[\"a\",\"b\",\"c\"],\"a10\":{\"-1\":\"a\",\"0\":\"b\"},\"a2\":[\"a\",null,\"c\"],\"a3\":[\"a\",null,null,\"d\"],\"a4\":[null,\"b\",\"c\"],\"a5\":{\"5\":\"x\"},\"a6\":[\"a\",\"b\",null,null,\"e\"],\"a7\":{\"0\":\"a\",\"1\":\"b\",\"x\":\"c\"},\"a8\":{\"00\":\"a\",\"1\":\"b\"},\"a9\":[\"a\",null,\"c\"]}",
+      "ms": 7056
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/arr.json?shallow=true&auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "102",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\"a6\":true,\"a5\":true,\"a4\":true,\"a9\":true,\"a10\":true,\"a3\":true,\"a8\":true,\"a1\":true,\"a7\":true,\"a2\":true}",
+      "ms": 7322
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/arr/a2.json?auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "14",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "[\"a\",null,\"c\"]",
+      "ms": 7561
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/sv.json?auth=<id-token>",
+      "body": "{\"t\":{\".sv\":\"timestamp\"},\"i\":{\".sv\":{\"increment\":2}},\"n\":1}",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "31",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\"i\":4,\"n\":1,\"t\":1792572122862}",
+      "ms": 7849
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PATCH",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/sv.json?auth=<id-token>",
+      "body": "{\"n\":{\".sv\":{\"increment\":1.5}},\"m\":{\".sv\":{\"increment\":1}}}",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "15",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\"n\":2.5,\"m\":1}",
+      "ms": 8121
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "POST",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/sv.json?auth=<id-token>",
+      "body": "{\".sv\":\"timestamp\"}",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "31",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\"name\":\"-P4SbycbkjEyQ-gSTS3l\"}",
+      "ms": 8673
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/sv/bad.json?auth=<id-token>",
+      "body": "{\".sv\":\"bogus\"}",
+      "status": 400,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "77",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n",
+      "ms": 8914
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/sv/bad.json?auth=<id-token>",
+      "body": "{\".sv\":{\"increment\":\"x\"}}",
+      "status": 400,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "77",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n",
+      "ms": 9163
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/sv/bad.json?auth=<id-token>",
+      "body": "{\".sv\":{\"other\":1}}",
+      "status": 400,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "77",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n",
+      "ms": 9418
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/sv/bad.json?auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "4",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "null",
+      "ms": 9663
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/bad.json?auth=<id-token>",
+      "body": "{\"a\":",
+      "status": 400,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "77",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Invalid data; couldn't parse JSON object, array, or value.\"\n}\n",
+      "ms": 9909
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/bad.json?auth=<id-token>",
+      "body": "{\"a.b\":1}",
+      "status": 400,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "120",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Invalid data; couldn't parse key beginning at 1:2. Key value can't be empty or contain $ # [ ] / or .\"\n}\n",
+      "ms": 10163
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/bad.json?shallow=true&orderBy=%22%24key%22&auth=<id-token>",
+      "status": 400,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "105",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"orderBy not supported for with shallow GET, keys are returned in lexicographical order\"\n}\n",
+      "ms": 10428
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/e.json",
+      "status": 401,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "36",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Permission denied\"\n}\n",
+      "ms": 10764
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/e.json?auth=garbage",
+      "status": 401,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "36",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Permission denied\"\n}\n",
+      "ms": 11568
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/e?auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "accept-ch": "Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Model, Sec-CH-UA-WoW64, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+        "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+        "content-encoding": "gzip",
+        "content-security-policy": "script-src 'report-sample' 'nonce-kNCV_qoZax_wyse_4x9Q3w' 'unsafe-inline';object-src 'none';base-uri 'self';report-uri /v3/signin/_/AccountsSignInUi/cspreport;worker-src 'self', require-trusted-types-for 'script';report-uri /v3/signin/_/AccountsSignInUi/cspreport",
+        "content-type": "text/html; charset=utf-8",
+        "cross-origin-opener-policy-report-only": "same-origin; report-to=\"AccountsSignInUi\"",
+        "cross-origin-resource-policy": "same-site",
+        "expires": "Mon, 01 Jan 1990 00:00:00 GMT",
+        "permissions-policy": "ch-ua-arch=*, ch-ua-bitness=*, ch-ua-full-version=*, ch-ua-full-version-list=*, ch-ua-model=*, ch-ua-wow64=*, ch-ua-form-factors=*, ch-ua-platform=*, ch-ua-platform-version=*",
+        "pragma": "no-cache",
+        "report-to": "{\"group\":\"AccountsSignInUi\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/AccountsSignInUi\"}]}",
+        "reporting-endpoints": "default=\"/v3/signin/_/AccountsSignInUi/web-reports?context=eJwNw2tIk2EYBmB78b0JsxqdPAQRRqCFOsUTGImJjZybzm_f1M25JtMmhNM5jSy0MhXUH0JYYoYVRYmWhH-k0izUlHArXbZDIeaBRMuSlCSJngsuvzZ-zC_YRxYa7DMY8px1HXrB-qnd5GZf6Mk-N0unswoPC1J6WCh11XuY_bWH1cd4WcU9L5MlzrFk_TxLpb69CyxKtci2OhbZTf8l1k7r3HZ-gz5JcfCBTAe33Xfwa7SRtlHz2Q_8PI06PMmTqDXQya_QsAQnD6dD6U5eo_vIh8NcfIyaLS6-VuXikksunrLh4jI6kuzmncc9_Fy1lx_weHkwHXd-5hP0QX4avsnkWKGtnXLUvJOjlq7PyLFJJT_kyFiT49FUOsIiFAinG-UK-NoUWK5XYpV2tyrRSyc9GfD9noGRT5kYp5UxKsSqVUih03dVsLxSoZza51WYpPE9WXAPZcG8kIWf-wX8ppJAAfvorzgB6zTthAAlXTAKWKJ_6BbdWyAggDp7BDzdFFBqUMNGLZfVmHmoRtKoGtlHRVQWizhSJWK5ScQqFXtFPBsQET4oouytiAraOCGi1iEickCDq7SONtMWeovepsYpDTQHs6GlmdXZUNP4oBwk0oDUHATTU905OE2LGnKhH82FkZr-5iL_jBbNF7Rooe2PtbhD595oodToMKbToa1Phw66IyQPu6nf9TzsosMreZho0ONfkx6BL_Xoeq8H25kP51Bs0B7_7V_XZ6ch6W-0d2wLiSywlBmKTYUltmLbxSKrpcRWWGIyVtjMFcXlhdbKQqshWhodFyWNSoiQxhtKpf8By6wUeQ\"",
+        "set-cookie": "__Host-GAPS=1:P08IFkNSKdbhkuvNQi65ntYIaC1DxQ:CtADOOOrlCJv08N6; Expires=Fri, 20-Oct-2028 08:42:10 GMT; Path=/; Secure; HttpOnly; Priority=HIGH",
+        "transfer-encoding": "chunked",
+        "x-auto-login": "realm=com.google&args=continue%3Dhttps://console.firebase.google.com/project/<project>/database/<project>-default-rtdb/data/aruma-ref/r7-20261021-c1add4/open/e",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "x-ua-compatible": "IE=edge",
+        "x-xss-protection": "0"
+      },
+      "response": "<!doctype html><html lang=\"en-US\" dir=\"ltr\"><head><base href=\"https://accounts.google.com/v3/signin/\"><link rel=\"preconnect\" href=\"//www.gstatic.com\"><meta name=\"referrer\" content=\"origin\"><style data-href=\"https://www.gstatic.com/_/mss/boq-identity/_/ss/k=boq-identity.AccountsSignInUi.YHQF-9c-WpU.L.X.O/am=ASQJAQAAwDjCSwADkAPgfwMACCgABMIAIBAAQAEAAAAAAAAAAEQAANggABE/d=1/ed=1/rs=AOaEmlEvCy42zj0ZcmHCLTriTdpsBcj7zQ/m=identifierview,_b,_tp\" nonce=\"SsNyL1pVDYYgcpdv8kkF2g\">.VfPpkd-dgl2Hf-ppHlrf-sM5MNb{display:inline}.GY1Nfe{display:-webkit-inline-box;display:-webkit-inline-flex;display:inline-flex;place-content:center;place-items:center}html[dir=rtl] .giSqbe{-webkit-transform:scaleX(-1);-ms-transform:scaleX(-1);transform:scaleX(-1)}.EfWJr{font-variation-settings:\"FILL\" var(--gm2-symbols-icon-fill,0),\"ROND\" var(--gm2-symbols-icon-round,50),\"wght\" var(--gm2-symbols-icon-weight,400),\"GRAD\" var(--gm2-symbols-icon-grade,0),\"opsz\" var(--gm2-symbols-icon-optical-size,24)}.MMvswb,.MMvswb:after,.MMvswb:before,.OLCwg{border-radius:inherit;inset:0;position:absolute;pointer-events:none}.OLCwg{-webkit-transition:opacity 75ms linear;transition:opacity 75ms linear;background-color:var(--nnZJCc,transparent);opacity:calc(clamp(0, var(--yXuigc, 0), .05) + clamp(0, var(--yXuigc, 0) - 1, .03) + clamp(0, var(--yXuigc, 0) - 2, .03) + clamp(0, var(--yXuigc, 0) - 3, .01) + clamp(0, var(--yXuigc, 0) - 4, .02))}.MMvswb:after,.MMvswb:before{-webkit-transition:-webkit-box-shadow 75ms linear;transition:-webkit-box-shadow 75ms linear;transition:box-shadow 75ms linear;transition:box-shadow 75ms linear,-webkit-box-shadow 75ms linear;content:\"\"}.MMvswb:before{-webkit-box-shadow:0 calc(1px*(clamp(0, var(--yXuigc, 0), 1) + clamp(0, var(--yXuigc, 0) - 3, 1) + clamp(0, var(--yXuigc, 0) - 4, 1)*2)) calc(1px*(2*clamp(0, var(--yXuigc, 0), 1) + clamp(0, var(--yXuigc, 0) - 2, 1) + clamp(0, var(--yXuigc, 0) - 4, 1))) 0 var(--Fe5l0b,transparent);box-shadow:0 calc(1px*(clamp(0, var(--yXuigc, 0), 1) + clamp(0, var(--y...(946979 chars)",
+      "ms": 16484
+    }
+  ],
+  "notes": []
+}

@@ -1,0 +1,366 @@
+{
+  "scenario": "numbers",
+  "description": "How numbers are stored: REST PUT of 1.0, a huge integer, -0, 1e300, 2^53+1, 0.1 and 1E2 as raw JSON, read back over REST and WebSocket; the same values sent as raw WebSocket text.",
+  "source": "production",
+  "project": "<redacted>",
+  "host": "<project>-default-rtdb.europe-west1.firebasedatabase.app",
+  "captured": "2026-10-21",
+  "script": "capture_production.mjs",
+  "run": "r7-20261021-c1add4",
+  "connections": {
+    "A": "/.ws?v=5&ns=<project>-default-rtdb"
+  },
+  "frames": [
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/num/n1.json?auth=<id-token>",
+      "body": "1.0",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "3",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "1.0",
+      "ms": 710
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/num/n2.json?auth=<id-token>",
+      "body": "12345678901234567890",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "21",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "1.2345678901234567E19",
+      "ms": 1448
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/num/n3.json?auth=<id-token>",
+      "body": "-0",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "1",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "0",
+      "ms": 1707
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/num/n4.json?auth=<id-token>",
+      "body": "1e300",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "7",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "1.0E300",
+      "ms": 1966
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/num/n5.json?auth=<id-token>",
+      "body": "9007199254740993",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "16",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "9007199254740993",
+      "ms": 2242
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/num/n6.json?auth=<id-token>",
+      "body": "0.1",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "3",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "0.1",
+      "ms": 2478
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/num/n7.json?auth=<id-token>",
+      "body": "1E2",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "5",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "100.0",
+      "ms": 2731
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/num/n8.json?auth=<id-token>",
+      "body": "-0.0",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "4",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "-0.0",
+      "ms": 2971
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/num/n9.json?auth=<id-token>",
+      "body": "100",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "3",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "100",
+      "ms": 3216
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "PUT",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/num/n10.json?auth=<id-token>",
+      "body": "1.5e-7",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "6",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "1.5E-7",
+      "ms": 3453
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/num.json?auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "131",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\"n1\":1.0,\"n10\":1.5E-7,\"n2\":1.2345678901234567E19,\"n3\":0,\"n4\":1.0E300,\"n5\":9007199254740993,\"n6\":0.1,\"n7\":100.0,\"n8\":-0.0,\"n9\":100}",
+      "ms": 3696
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/num/n1.json?auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "3",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "1.0",
+      "ms": 3948
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/num.json?orderBy=%22%24value%22&limitToFirst=3&auth=<id-token>",
+      "status": 400,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "133",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\n  \"error\" : \"Index not defined, add \\\".indexOn\\\": \\\".value\\\", for path \\\"/aruma-ref/r7-20261021-c1add4/open/num\\\", to the rules\"\n}\n",
+      "ms": 4201
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"c\",\"d\":{\"t\":\"h\",\"d\":{\"ts\":1792572135952,\"v\":\"5\",\"h\":\"s-gke-euw1-nssi2-3.europe-west1.firebasedatabase.app\",\"s\":\"T9ljcXcaFbBZSeIHWmoG3dAHaCNzPFyI\"}}}",
+      "ms": 4451
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"a\":\"auth\",\"b\":{\"cred\":\"<id-token>\"}}}",
+      "ms": 4451
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":1,\"b\":{\"s\":\"ok\",\"d\":{\"auth\":{\"name\":\"<name>\",\"email_verified\":false,\"provider\":\"password\",\"email\":\"<email>\",\"user_id\":\"<uid>\",\"token\":{\"name\":\"<name>\",\"email_verified\":false,\"email\":\"<email>\",\"exp\":1792574760,\"user_id\":\"<uid>\",\"iat\":1792571160,\"sub\":\"<uid>\",\"aud\":\"<project>\",\"auth_time\":1792571160,\"iss\":\"https://securetoken.google.com/<project>\",\"firebase\":{\"identities\":{\"email\":[\"<email>\"]},\"sign_in_provider\":\"password\"}},\"uid\":\"<uid>\"},\"expires\":1792574760}}}}",
+      "ms": 4700
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"a\":\"g\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open/num\",\"q\":{}}}}",
+      "ms": 5202
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":2,\"b\":{\"s\":\"ok\",\"d\":{\"n1\":1.0,\"n10\":1.5E-7,\"n2\":1.2345678901234567E19,\"n3\":0,\"n4\":1.0E300,\"n5\":9007199254740993,\"n6\":0.1,\"n7\":100.0,\"n8\":-0.0,\"n9\":100}}}}",
+      "ms": 5466
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"a\":\"p\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open/wnum\",\"d\":{\"n1\":1.0,\"n2\":12345678901234567890,\"n3\":-0,\"n4\":1e300,\"n5\":9007199254740993,\"n6\":0.1,\"n7\":1E2,\"n8\":-0.0,\"n9\":100,\"n10\":1.5e-7}}}}",
+      "ms": 5968
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":3,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}",
+      "ms": 6227
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"a\":\"g\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open/wnum\",\"q\":{}}}}",
+      "ms": 6728
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":4,\"b\":{\"s\":\"ok\",\"d\":{\"n1\":1.0,\"n10\":1.5E-7,\"n2\":1.2345678901234567E19,\"n3\":0,\"n4\":1.0E300,\"n5\":9007199254740993,\"n6\":0.1,\"n7\":100.0,\"n8\":-0.0,\"n9\":100}}}}",
+      "ms": 7279
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/wnum.json?auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "131",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\"n1\":1.0,\"n10\":1.5E-7,\"n2\":1.2345678901234567E19,\"n3\":0,\"n4\":1.0E300,\"n5\":9007199254740993,\"n6\":0.1,\"n7\":100.0,\"n8\":-0.0,\"n9\":100}",
+      "ms": 8034
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"a\":\"q\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open/wnum\",\"h\":\"\"}}}",
+      "ms": 8034
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"aruma-ref/r7-20261021-c1add4/open/wnum\",\"d\":{\"n1\":1.0,\"n10\":1.5E-7,\"n2\":1.2345678901234567E19,\"n3\":0,\"n4\":1.0E300,\"n5\":9007199254740993,\"n6\":0.1,\"n7\":100.0,\"n8\":-0.0,\"n9\":100}},\"a\":\"d\"}}",
+      "ms": 9011
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":5,\"b\":{\"s\":\"ok\",\"d\":{}}}}",
+      "ms": 9011
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"a\":\"p\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open/wnum/n1\",\"d\":2.0}}}",
+      "ms": 9512
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"aruma-ref/r7-20261021-c1add4/open/wnum/n1\",\"d\":2.0},\"a\":\"d\"}}",
+      "ms": 9750
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":6,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}",
+      "ms": 9750
+    },
+    {
+      "conn": "A",
+      "dir": "send",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"a\":\"p\",\"b\":{\"p\":\"/aruma-ref/r7-20261021-c1add4/open/wnum/n11\",\"d\":{\".sv\":{\"increment\":1}}}}}",
+      "ms": 10252
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"b\":{\"p\":\"aruma-ref/r7-20261021-c1add4/open/wnum/n11\",\"d\":1},\"a\":\"d\"}}",
+      "ms": 10507
+    },
+    {
+      "conn": "A",
+      "dir": "recv",
+      "text": "{\"t\":\"d\",\"d\":{\"r\":7,\"b\":{\"s\":\"ok\",\"d\":\"\"}}}",
+      "ms": 10507
+    },
+    {
+      "conn": "REST",
+      "dir": "rest",
+      "method": "GET",
+      "path": "/aruma-ref/r7-20261021-c1add4/open/wnum.json?auth=<id-token>",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "content-length": "139",
+        "content-type": "application/json; charset=utf-8"
+      },
+      "response": "{\"n1\":2.0,\"n10\":1.5E-7,\"n11\":1,\"n2\":1.2345678901234567E19,\"n3\":0,\"n4\":1.0E300,\"n5\":9007199254740993,\"n6\":0.1,\"n7\":100.0,\"n8\":-0.0,\"n9\":100}",
+      "ms": 11248
+    },
+    {
+      "conn": "A",
+      "dir": "close",
+      "code": 1005,
+      "reason": "",
+      "ms": 11504
+    }
+  ],
+  "notes": []
+}
