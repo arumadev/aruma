@@ -53,4 +53,4 @@
 - **أول اتصال بكل اسم** ينتظر ثواني حتى تصدر الشهادة، ومهلة المكتبات 30 ثانية.
 - **حدود Let's Encrypt** تنطبق: 50 شهادة جديدة لكل نطاق مسجّل في 7 أيام.
 - **ملفات الإعداد المولّدة** تتغير صيغة `databaseURL` فيها. ولا تطبيق يعتمد عليها قبل 0.2.
-- **Admin Go محليًا:** يحتاج `localhost:<port>?ns=<ns>` بلا `http://`، أو `FIREBASE_DATABASE_EMULATOR_HOST`. يُكتب في الدليل.
+- **Admin Go محليًا:** (تحديث R7) صيغة `?ns=` أو `FIREBASE_DATABASE_EMULATOR_HOST` تضع Admin Go وAdmin Node في وضع المحاكي فيرسلان الرمز `owner`، وAruma لا يقبله. فمكتبات Admin تحتاج الرابط الإنتاجي على https، ومحليًا خلف Caddy (`test/experiments/rtdb-caddy.sh`). انظر `docs/guides/rtdb.md`.
