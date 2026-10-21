@@ -1,7 +1,8 @@
 // The client of rtdb-restart.sh: after a graceful server restart the JS SDK must reconnect,
 // and a write queued while the server was down must land.
 //
-//   node client.cjs <base url> <namespace>
+//   node client.cjs <base url> <namespace>    the development form, <base url>?ns=<namespace>
+//   node client.cjs <databaseURL>             any other, such as https://<ns>.<rtdb.domain>
 //
 // It prints one JSON line per event; "step":"ready" tells the script to stop the server. It
 // exits 0 when the queued write landed, 2 when the client never reconnected, 3 when the
@@ -10,7 +11,9 @@ const { initializeApp } = require('@firebase/app');
 const { getDatabase, ref, set, get, onValue, goOnline } = require('@firebase/database');
 
 const [base, ns] = process.argv.slice(2);
-const app = initializeApp({ databaseURL: `${base}?ns=${ns}`, projectId: ns.replace(/-default-rtdb$/, '') });
+const databaseURL = ns ? `${base}?ns=${ns}` : base;
+const namespace = ns || new URL(base).hostname.split('.')[0];
+const app = initializeApp({ databaseURL, projectId: namespace.replace(/-default-rtdb$/, '') });
 const db = getDatabase(app);
 const say = (o) => console.log(JSON.stringify({ t: Date.now(), ...o }));
 

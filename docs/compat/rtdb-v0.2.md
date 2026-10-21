@@ -102,9 +102,29 @@
 |---|---|---|---|
 | Node (`firebase-admin` 14) | WebSocket، والقواعد عبر REST | `test/smoke/admin-node/rtdb.test.mjs` (`run.sh admin-node-rtdb`) بـ `databaseURL` الإنتاجي وTLS | 9 من 9: get وset وupdate وpush وremove وtransaction، والقواعد ذهابًا وإيابًا، و`orderByChild` مع `.indexOn`، و`databaseAuthVariableOverride` تحت القواعد. وonDisconnect لا يخص المسؤول |
 | Go (`firebase-admin-go` v4) | REST | `test/smoke/admin-go/rtdb` (`run.sh admin-go-rtdb`) بـ `databaseURL` الإنتاجي وTLS | ناجحة: Get وSet وUpdate وPush وDelete وTransaction بـ ETag، و`GetWithETag` و`SetIfUnchanged` و`GetIfChanged` و`GetShallow`، والاستعلامات، و`AuthOverride` |
-| Python (`firebase-admin` 7.7) | REST | لم يُضف إلى الاختبارات | لا يعمل بعد مع Aruma لسببين خارج REST: (1) `google-auth` يوقّع الطلب بـ `aud=https://oauth2.googleapis.com/token` ثابتًا، ونقطة الرموز في Aruma ترفضه (`invalid_grant`). (2) بعد كل تجديد يرسل `google-auth` 2.62 رمز Aruma إلى `iamcredentials.googleapis.com`، ما لم يكن `universe_domain` في ملف المفتاح غير `googleapis.com`. وبعد تجاوز الأول تجريبيًا نجحت get وset وupdate وpush وdelete وtransaction، وبقي اتصال `iamcredentials` محجوبًا. و`listen()` غير مدعوم (البث مؤجَّل) |
+| Python (`firebase-admin` 7.7) | REST | لا اختبار: **غير مدعوم في 0.2** | المشكلة في الدخول لا في REST، والتفصيل في القسم التالي. وبعد تجاوز الدخول تجريبيًا نجحت get وset وupdate وpush وdelete وtransaction. و`listen()` غير مدعوم (البث مؤجَّل) |
 
-كلاهما في CI ضمن مهمة smoke.
+كلاهما في CI ضمن مهمة smoke. وفي R7 نجحا كذلك خلف Caddy الحقيقي (`test/experiments/rtdb-caddy.sh`).
+
+### Admin Python: غير مدعوم، ولماذا
+
+فُحص في R7 في مصدر `google-auth` 2.62.0 مع `firebase-admin` 7.7.0، وبتجربة على الجهاز وكل الاتصالات محجوبة. مشكلتان، كلتاهما في `google-auth` لا في Aruma:
+
+1. **`aud` ثابت على Google.** `service_account.Credentials._make_authorization_grant_assertion` يضع `aud` دائمًا `https://oauth2.googleapis.com/token` (`_GOOGLE_OAUTH2_TOKEN_ENDPOINT`)، ثم يرسل الطلب إلى `token_uri` الذي في ملف المفتاح، أي إلى Aruma. وAruma يشترط أن يكون `aud` عنوان نقطة رموزه هو (`ExchangeAssertion`)، فيرد `invalid_grant`.
+2. **الحد الإقليمي (Regional Access Boundary).** كل طلب موثّق يمر بـ `CredentialsWithRegionalAccessBoundary.before_request`، فإن كان `universe_domain` هو الافتراضي `googleapis.com` (وهو ما في مفاتيح Aruma) ولم تكن عنده بيانات حديثة ولا فترة انتظار، أطلق خيطًا في الخلفية يطلب `GET https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/<email>/allowedLocations` **ومعه رمز الدخول الذي أصدره Aruma** في `Authorization`.
+   - **متى:** عند أول طلب للقاعدة في العملية، قبل الطلب نفسه، ثم بعد كل فترة انتظار عند الفشل (15 دقيقة تتضاعف حتى 6 ساعات) أو كل نحو 5 ساعات عند النجاح. وفي التجربة: أول `db.reference('/x').get()` حاول الخيط الوصول إلى `iamcredentials.googleapis.com:443` أربع مرات.
+   - **مسار القاعدة يمر به:** `firebase_admin.db` يستعمل `AuthorizedSession`، أي `before_request` نفسه.
+   - **لا يوقف التطبيق** (الخطأ يُبتلع في الخيط)، لكنه يرسل رمز Aruma صالحًا لساعة إلى طرف ثالث.
+   - **لا يُتجنّب بلا تغيير في كود التطبيق:** الاستثناءات الوحيدة `universe_domain` غير الافتراضي، أو عنوان `*.rep.googleapis.com`، أو `subject` (التفويض على مستوى النطاق).
+   - **وتغيير `universe_domain` في ملف المفتاح من جهة Aruma لا يصلح:** يجعل `google-auth` يترك نقطة الرموز كليًا ويرسل إلى القاعدة JWT موقّعًا ذاتيًا (`iss=sub=email` و`scope` بلا `aud`) رمزًا لكل طلب، وAruma لا يقبل هذا النوع، وقبوله نوع دخول جديد كامل. ويغيّر الحقل نفسه سلوك Admin Go (`golang.org/x/oauth2`) مع الملف نفسه.
+
+**القرار: لا تغيير في الكود.** قبول `aud` الخاص بـ Google ليس آمنًا، والمشكلة الثانية تبقى معه:
+
+- `aud` هو ما يربط التوقيع بمستقبله. Admin Node (`cert()` عبر `gtoken`) يرسل توقيعات مفاتيح Aruma إلى `oauth2.googleapis.com` نفسه، بـ `aud` هو عنوان Google. وهي اليوم بلا قيمة عند Aruma. ولو قبلها Aruma لصار كل توقيع وصل إلى Google، أو إلى وسيط يفك TLS في شبكة الشركة، قابلًا للإعادة على Aruma ساعة كاملة: لا `jti` ولا منع للإعادة.
+- صحيح أن التوقيع يبقى بمفتاح من Aruma، فلا يقبل Aruma مفتاحًا غريبًا. لكنه لم يعد مربوطًا بـ Aruma إلا بالمفتاح، وهذا ما وُجد `aud` ليمنعه.
+- وحتى مع قبوله، يرسل `google-auth` رمز Aruma إلى `iamcredentials.googleapis.com`. فلا يصير الدعم نظيفًا إلا بكود في التطبيق.
+
+**ما يلزم ليعمل مستقبلًا:** اعتماد (credential) لبايثون يوقّع بـ `aud` = `token_uri` ويطلب الرمز منه، كما يفعل `aruma-credential.mjs` لـ Node، وتمرَّر إلى `firebase_admin.initialize_app`. هذا تغيير في كود التطبيق، فلا يُعد دعمًا للمكتبة كما هي.
 
 ## firebase-tools
 
@@ -113,6 +133,23 @@
 - **كيف تجد الأداة القاعدة:** من `resources.realtimeDatabaseInstance` في مشروع واجهة الإدارة، ثم `databaseUrl` من واجهة إدارة القاعدة (`GET /v1beta/projects/{p}/locations/-/instances/{id}`). يقدّمهما Aruma منذ R5 حين تعمل القاعدة.
 - **الإعداد:** `FIREBASE_API_URL` و`FIREBASE_TOKEN_URL` و`FIREBASE_RTDB_MANAGEMENT_URL` على عنوان Aruma، و`FIREBASE_TOKEN` رمز CLI. و`FIREBASE_SKIP_INFORMATIONAL_IAM=1` يمنع محاولة الأداة الاتصال بـ `cloudresourcemanager.googleapis.com`، وهي محاولة لا يتوقف عليها شيء.
 - **الشكل `?ns=` لا يصلح للأداة:** `database:get` و`database:remove` يرسلان مسار العنوان وحده، فيضيع `?ns=`. والنطاق الفرعي يصلح.
+
+## الأجهزة (R7)
+
+- **الاختبارات:** `test/e2e/web-rtdb` و`android-rtdb` و`ios-rtdb`، والسيناريوهات وحراسها في `test/e2e/README.md`.
+- **الإعداد:** المكتبات الرسمية في وضع الإنتاج، تعرف القاعدة من ملف الإعداد المولّد وحده (`databaseURL` بصيغة التطوير `?ns=`)، ولا تستدعي أي دالة محاكي. والقواعد حقيقية (`test/e2e/rtdb-rules.json`)، بلا `dev_open_rules`.
+- **الطرف الآخر:** عميل ثانٍ بالمكتبة نفسها حيث تسمح المنصة، وواجهة REST برمز مسؤول في كل منصة.
+
+| المنصة | المكتبة | الاختبارات | التشغيلات المحلية |
+|---|---|---|---|
+| الويب (Chromium) | `firebase` 11 و12 و13 | 10 لكل إصدار، ثم فخ الاستطلاع الطويل (13 فحصًا) | 4 من 4 (2 على الشكل الأخير: 60 من 60 و26 من 26) |
+| Android (`aruma-a34`، API 33) | `firebase-database` من BoM 35 | 10 | 4 من 4 (2 على الشكل الأخير: 20 من 20) |
+| iOS (محاكي iOS 18.5) | `FirebaseDatabase` 12.19 | 10 | 4 من 4 (2 على الشكل الأخير: 20 من 20) |
+
+- **الإلغاء عند تعطيل المستخدم:** تُلغى الاستماعات بعد 0.5 إلى 3.5 ثانية.
+  - المكتبات الثلاث تغلق الاتصال عند `ac` قبل أن تقرأ دفعات `c` التي تليه.
+  - فالإلغاء يصلها بعد إعادة الاتصال: تطلب رمزًا جديدًا فيُرفض، فيخرج Auth المستخدم، ثم تُرفض الاستماعات المعادة بـ `permission_denied`.
+- **التضمين في CI:** الويب في `ci.yml`، وAndroid أسبوعيًا في `devices.yml`، وiOS يدويًا في `codemagic.yaml` (`ios-rtdb`).
 
 ## ما لم يأت بعد
 
