@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -43,6 +44,29 @@ func TestParsePath(t *testing.T) {
 		}
 		if err == nil && p.String() != c.want {
 			t.Errorf("ParsePath(%q) = %q, want %q", c.in, p, c.want)
+		}
+	}
+}
+
+// Parsing stops at the limits: a path of a million keys, or one long key, is refused after
+// at most MaxDepth keys or MaxPathBytes bytes, without splitting the rest. Before, every key
+// was kept first, some 16 MB for the million keys.
+func TestParsePathStopsAtTheLimits(t *testing.T) {
+	deep := strings.Repeat("a/", 1<<20)
+	long := strings.Repeat("a", 1<<20) + "/" + strings.Repeat("b/", 1<<20)
+	for _, c := range []struct {
+		in  string
+		err error
+	}{{deep, ErrPathTooDeep}, {long, ErrPathTooLong}} {
+		var before, after runtime.MemStats
+		runtime.ReadMemStats(&before)
+		_, err := ParsePath(c.in)
+		runtime.ReadMemStats(&after)
+		if !errors.Is(err, c.err) {
+			t.Errorf("%d bytes: %v, want %v", len(c.in), err, c.err)
+		}
+		if n := after.TotalAlloc - before.TotalAlloc; n > 16<<10 {
+			t.Errorf("%d bytes: %d bytes allocated", len(c.in), n)
 		}
 	}
 }

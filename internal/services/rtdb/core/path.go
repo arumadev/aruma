@@ -27,11 +27,14 @@ const PriorityKey = ".priority"
 
 // ParsePath parses a path as the SDKs send it: "/a/b" from the JS SDK, "a/b" from Android
 // and iOS, "/" or "" for the root. Empty segments are dropped, as the SDKs' Path does.
+// Parsing stops at the first key past MaxDepth or MaxPathBytes, so a long path costs no more
+// than the limits allow, whatever its length.
 func ParsePath(s string) (Path, error) {
 	if s == "" || s == "/" {
 		return Path{}, nil
 	}
 	var p Path
+	size := 0
 	for seg := range strings.SplitSeq(s, "/") {
 		if seg == "" {
 			continue
@@ -39,10 +42,13 @@ func ParsePath(s string) (Path, error) {
 		if !ValidKey(seg) {
 			return nil, ErrInvalidPath
 		}
+		if len(p) == MaxDepth {
+			return nil, ErrPathTooDeep
+		}
+		if size += len(seg); size > MaxPathBytes {
+			return nil, ErrPathTooLong
+		}
 		p = append(p, seg)
-	}
-	if err := p.checkSize(); err != nil {
-		return nil, err
 	}
 	return p, nil
 }
