@@ -158,3 +158,30 @@ func TestRESTLockedAndOpen(t *testing.T) {
 		t.Errorf("OPTIONS: %d %v", rec.Code, rec.Header())
 	}
 }
+
+// A read over rtdb.limits.read_rows answers too_big over the protocol, and 400 with
+// Firebase's text over REST.
+func TestReadRowsLimit(t *testing.T) {
+	lim := core.DefaultLimits
+	lim.ReadRows = 2
+	a, _, _ := newTestAPI(t, Options{}, core.Options{Limits: lim})
+	c := dial(t, serve(t, a))
+	c.call("gauth", map[string]any{"cred": sat})
+	if s, _ := c.call("p", map[string]any{"p": "/big", "d": map[string]any{"a": 1, "b": 2, "c": 3}}); s != "ok" {
+		t.Fatal(s)
+	}
+	if s, d := c.call("g", map[string]any{"p": "/big", "q": map[string]any{}}); s != "too_big" || d != `"Data requested exceeds the maximum size that can be accessed with a single request."` {
+		t.Errorf("g: %s %s", s, d)
+	}
+	do := func(target string) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", target, nil)
+		req.Header.Set("Authorization", "Bearer "+sat)
+		a.ServeHTTP(rec, req)
+		return rec
+	}
+	if rec := do("/big.json?ns=chat-app-default-rtdb"); rec.Code != http.StatusBadRequest ||
+		rec.Body.String() != "{\n  \"error\" : \"Data requested exceeds the maximum size that can be accessed with a single request.\"\n}" {
+		t.Errorf("REST: %d %q", rec.Code, rec.Body)
+	}
+}

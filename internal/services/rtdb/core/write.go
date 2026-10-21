@@ -128,7 +128,7 @@ type Change struct {
 // resolve prepares w in tx at server time now, in milliseconds, writing nothing: the server
 // values are filled in, every child of an update against the state before it. The rules check
 // the change resolve returns, as Firebase's see resolved values, before store writes it. The
-// hash of a conditional write is compared apart, once the rules allowed its read (stale).
+// writer compares the hash of a conditional write apart, once the rules allowed its read.
 func (w *Write) resolve(ctx context.Context, tx StoreTx, now int64) (Change, error) {
 	if !w.IsUpdate() {
 		v, err := resolveAt(ctx, tx, w.Path, w.Value, now)
@@ -146,15 +146,6 @@ func (w *Write) resolve(ctx context.Context, tx StoreTx, now int64) (Change, err
 		merge[i] = Child{Path: c.Path, Value: v}
 	}
 	return Change{Path: w.Path, Merge: merge}, nil
-}
-
-// stale reports whether a conditional write's hash no longer matches the value at its path.
-func (w *Write) stale(ctx context.Context, tx StoreTx) (bool, error) {
-	cur, err := tx.Read(ctx, w.Path)
-	if err != nil {
-		return false, err
-	}
-	return Hash(cur) != *w.Hash, nil
 }
 
 // parts splits a change into the writes rules check one by one when they check an update's

@@ -10,6 +10,59 @@ import (
 	"encoding/json"
 )
 
+const countAll = `-- name: CountAll :one
+SELECT count(*) FROM (
+    SELECT 1 FROM rtdb.nodes WHERE database_id = $1 LIMIT $2::bigint
+) AS everything
+`
+
+type CountAllParams struct {
+	DatabaseID int64
+	RowCap     int64
+}
+
+// Every row of a database, counted up to row_cap.
+// scope: global — database_id comes from EnsureDatabase, which filters on project_number.
+func (q *Queries) CountAll(ctx context.Context, arg CountAllParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countAll, arg.DatabaseID, arg.RowCap)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countSubtree = `-- name: CountSubtree :one
+SELECT count(*) FROM (
+    SELECT 1 FROM rtdb.nodes
+    WHERE database_id = $1
+      AND (path = $2::text OR (path >= $3::text AND path < $4::text))
+    LIMIT $5::bigint
+) AS subtree
+`
+
+type CountSubtreeParams struct {
+	DatabaseID int64
+	Path       string
+	Lo         string
+	Hi         string
+	RowCap     int64
+}
+
+// The rows of the subtree at path, counted up to row_cap: a read checks its size before it
+// loads the rows.
+// scope: global — database_id comes from EnsureDatabase, which filters on project_number.
+func (q *Queries) CountSubtree(ctx context.Context, arg CountSubtreeParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countSubtree,
+		arg.DatabaseID,
+		arg.Path,
+		arg.Lo,
+		arg.Hi,
+		arg.RowCap,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const deleteAll = `-- name: DeleteAll :exec
 DELETE FROM rtdb.nodes WHERE database_id = $1
 `

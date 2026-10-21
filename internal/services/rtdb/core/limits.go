@@ -26,6 +26,10 @@ type Limits struct {
 	ConnectionsPerProject int
 	// OutboxBytes caps the data waiting to be sent on one connection.
 	OutboxBytes int64
+	// ReadRows caps the stored rows (leaves, and priorities of objects) one read loads on
+	// the database's writer: a get, the first data of a listen, the value a conditional
+	// write compares. A larger read is refused with too_big, before it is loaded.
+	ReadRows int64
 }
 
 // DefaultLimits are Firebase's published limits where a developer sees them.
@@ -39,6 +43,7 @@ var DefaultLimits = Limits{
 	WriteBytesPerMinute:         64 << 20,
 	ConnectionsPerProject:       10_000,
 	OutboxBytes:                 64 << 20,
+	ReadRows:                    1_000_000,
 }
 
 // rateWindow counts bytes per minute in two fixed windows, weighting the previous one by how

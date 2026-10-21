@@ -177,7 +177,8 @@ func TestRTDBDefaultsOff(t *testing.T) {
 	if c.RTDB.Enabled || c.RTDB.DevOpenRules || c.RTDB.Domain != "" {
 		t.Errorf("RTDB must be off and locked by default: %+v", c.RTDB)
 	}
-	if c.RTDB.Limits.MessageBytes != 16<<20 || c.RTDB.Limits.OutboxBytes != 64<<20 || c.RTDB.Limits.ConnectionsPerProject != 10000 {
+	if c.RTDB.Limits.MessageBytes != 16<<20 || c.RTDB.Limits.OutboxBytes != 64<<20 || c.RTDB.Limits.ConnectionsPerProject != 10000 ||
+		c.RTDB.Limits.ReadRows != 1_000_000 {
 		t.Errorf("RTDB limits do not follow ADR-019: %+v", c.RTDB.Limits)
 	}
 }
@@ -195,6 +196,7 @@ func TestRTDBSettings(t *testing.T) {
 	m["ARUMA_RTDB_CONNECTIONS_PER_IP"] = "7"
 	m["ARUMA_RTDB_UNAUTHENTICATED_MESSAGE_BYTES"] = "4096"
 	m["ARUMA_RTDB_INFLIGHT_BYTES"] = "2097152"
+	m["ARUMA_RTDB_READ_ROWS"] = "5000"
 	c, err := Load("", env(m))
 	if err != nil {
 		t.Fatal(err)
@@ -202,7 +204,7 @@ func TestRTDBSettings(t *testing.T) {
 	l := c.RTDB.Limits
 	if !c.RTDB.Enabled || !c.RTDB.DevOpenRules || c.RTDB.Domain != "rtdb.example.com" ||
 		l.OutboxBytes != 2<<20 || l.ConnectionsPerProject != 5 || l.ConnectionsPerIP != 7 ||
-		l.UnauthenticatedMessageBytes != 4096 || l.InflightBytes != 2<<20 ||
+		l.UnauthenticatedMessageBytes != 4096 || l.InflightBytes != 2<<20 || l.ReadRows != 5000 ||
 		strings.Join(c.RTDB.AllowedOrigins, ",") != "app.example.com,localhost" {
 		t.Errorf("settings not applied: %+v", c.RTDB)
 	}
@@ -228,6 +230,7 @@ func TestRTDBRejectsBadValues(t *testing.T) {
 		{"ARUMA_RTDB_OUTBOX_BYTES": "x"},
 		{"ARUMA_RTDB_CONNECTIONS_PER_PROJECT": "0"},
 		{"ARUMA_RTDB_CONNECTIONS_PER_IP": "0"},
+		{"ARUMA_RTDB_READ_ROWS": "10"},
 		{"ARUMA_RTDB_UNAUTHENTICATED_MESSAGE_BYTES": "999999999"},
 	}
 	for _, c := range cases {

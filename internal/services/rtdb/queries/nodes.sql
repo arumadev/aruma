@@ -68,3 +68,21 @@ ON CONFLICT (database_id, path) DO UPDATE SET priority = EXCLUDED.priority;
 -- scope: global — database_id comes from EnsureDatabase, which filters on project_number.
 UPDATE rtdb.nodes SET value = @value, priority = @priority
 WHERE database_id = @database_id AND path = @path;
+
+-- name: CountSubtree :one
+-- The rows of the subtree at path, counted up to row_cap: a read checks its size before it
+-- loads the rows.
+-- scope: global — database_id comes from EnsureDatabase, which filters on project_number.
+SELECT count(*) FROM (
+    SELECT 1 FROM rtdb.nodes
+    WHERE database_id = @database_id
+      AND (path = @path::text OR (path >= @lo::text AND path < @hi::text))
+    LIMIT @row_cap::bigint
+) AS subtree;
+
+-- name: CountAll :one
+-- Every row of a database, counted up to row_cap.
+-- scope: global — database_id comes from EnsureDatabase, which filters on project_number.
+SELECT count(*) FROM (
+    SELECT 1 FROM rtdb.nodes WHERE database_id = @database_id LIMIT @row_cap::bigint
+) AS everything;

@@ -121,6 +121,13 @@ type RTDBLimits struct {
 	// OutboxBytes caps what may wait to be sent on one connection; a slower client is
 	// disconnected, and resynchronises when it reconnects.
 	OutboxBytes int64 `yaml:"outbox_bytes"`
+	// ReadRows caps the stored rows one read loads: a get, the first data of a listen, or
+	// the value a conditional write compares. A larger read is refused with too_big (400 over
+	// REST) before it is loaded, so one read cannot hold a database's writer and its memory.
+	// A million rows took about 1.2 s and 50 MB to build on an Apple M1, besides the rows
+	// themselves, and gives a reply of some 20 MB with short values, inside the default
+	// outbox_bytes.
+	ReadRows int64 `yaml:"read_rows"`
 }
 
 // Defaults returns a configuration with every optional field set.
@@ -143,6 +150,7 @@ func Defaults() Config {
 			ConnectionsPerProject:       10_000,
 			ConnectionsPerIP:            500,
 			OutboxBytes:                 64 << 20,
+			ReadRows:                    1_000_000,
 		}},
 	}
 }
@@ -256,6 +264,7 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	integer("ARUMA_RTDB_STRING_BYTES", &lim.StringBytes)
 	integer("ARUMA_RTDB_WRITE_BYTES_PER_MINUTE", &lim.WriteBytesPerMinute)
 	integer("ARUMA_RTDB_OUTBOX_BYTES", &lim.OutboxBytes)
+	integer("ARUMA_RTDB_READ_ROWS", &lim.ReadRows)
 	conns := int64(lim.ConnectionsPerProject)
 	integer("ARUMA_RTDB_CONNECTIONS_PER_PROJECT", &conns)
 	lim.ConnectionsPerProject = int(conns)
@@ -382,6 +391,9 @@ func (c *Config) validateRTDB() []error {
 		l.RESTWriteBytes < 1<<20 || l.StringBytes < 1<<10 || l.WriteBytesPerMinute < 1<<20 ||
 		l.ConnectionsPerProject < 1 || l.ConnectionsPerIP < 1 || l.OutboxBytes < 1<<20 {
 		errs = append(errs, errors.New("rtdb.limits: byte limits must be at least 1 MiB (string_bytes and unauthenticated_message_bytes 1 KiB) and connection limits at least 1"))
+	}
+	if l.ReadRows < 1000 {
+		errs = append(errs, errors.New("rtdb.limits.read_rows must be at least 1000"))
 	}
 	if l.StringBytes > l.MessageBytes {
 		errs = append(errs, errors.New("rtdb.limits.string_bytes must not exceed message_bytes"))

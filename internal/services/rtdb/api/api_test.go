@@ -84,6 +84,27 @@ type memTx struct {
 }
 
 func (t *memTx) Read(_ context.Context, p core.Path) (*core.Node, error) { return t.root.Get(p), nil }
+func (t *memTx) CountRows(_ context.Context, p core.Path, limit int64) (int64, error) {
+	if p.IsPriority() {
+		p = p.Parent()
+	}
+	// The leaves stand for the rows; priorities of objects are not counted here.
+	var leaves func(n *core.Node) int64
+	leaves = func(n *core.Node) int64 {
+		if n == nil {
+			return 0
+		}
+		if n.IsLeaf() {
+			return 1
+		}
+		var c int64
+		for _, k := range n.Keys() {
+			c += leaves(n.Get(core.Path{k}))
+		}
+		return c
+	}
+	return min(leaves(t.root.Get(p)), limit+1), nil
+}
 func (t *memTx) Peek(_ context.Context, p core.Path) (*core.Node, bool, error) {
 	n := t.root.Get(p)
 	if n.IsLeaf() {

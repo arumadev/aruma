@@ -34,7 +34,9 @@ type Database struct {
 	info   DatabaseInfo
 	opened bool
 	rate   rateWindow
-	rules  *rules.Ruleset // nil when the stored rules do not parse, which denies all
+	// readRows caps the rows one read loads (Limits.ReadRows); 0 caps nothing.
+	readRows int64
+	rules    *rules.Ruleset // nil when the stored rules do not parse, which denies all
 
 	listeners *listeners
 
@@ -114,6 +116,7 @@ func newDatabase(project int64, name string, store Store, now func() time.Time, 
 		project: project, name: name, store: store, now: now, log: log, onCommit: onCommit,
 		inbox:     make(chan *command, inboxSize),
 		rate:      rateWindow{limit: limits.WriteBytesPerMinute, start: now()},
+		readRows:  limits.ReadRows,
 		listeners: newListeners(),
 		done:      make(chan struct{}),
 	}
@@ -344,11 +347,13 @@ func (d *Database) apply(ctx context.Context, batch []*command, state *batchStat
 			} else if err != nil {
 				continue
 			}
-			stale, err := c.write.stale(ctx, tx)
-			if err != nil {
+			cur, err := d.load(ctx, tx, c.write.Path)
+			if failed(i, err) {
 				return nil, Commit{}, nil, err
+			} else if err != nil {
+				continue
 			}
-			if stale {
+			if Hash(cur) != *c.write.Hash {
 				results[i].Err = ErrDataStale
 				continue
 			}
@@ -443,14 +448,37 @@ func (d *Database) read(ctx context.Context, tx StoreTx, c *command, now time.Ti
 	if c.probe {
 		return Result{}, nil
 	}
-	n, err := tx.Read(ctx, p)
+	n, err := d.load(ctx, tx, p)
 	if err != nil {
+		var e *Error
+		if errors.As(err, &e) {
+			return Result{Err: err}, nil
+		}
 		return Result{}, err
 	}
 	if q != nil {
 		n = q.Filter(n)
 	}
 	return Result{Node: n}, nil
+}
+
+// load reads the value at p for a client: a get, the first data of a listen, or the value a
+// conditional write compares. A value of more rows than Limits.ReadRows is ErrReadTooBig,
+// found by counting the rows before any is loaded, so one read cannot hold the writer, and
+// every client of the database behind it, nor its memory. A query reads the whole node and
+// filters it, so the count is the node's. A query listen reads its node again on every write
+// below it (taggedPushes), which this does not bound (docs/compat/rtdb-v0.2.md).
+func (d *Database) load(ctx context.Context, tx StoreTx, p Path) (*Node, error) {
+	if d.readRows > 0 {
+		n, err := tx.CountRows(ctx, p, d.readRows)
+		if err != nil {
+			return nil, err
+		}
+		if n > d.readRows {
+			return nil, ErrReadTooBig
+		}
+	}
+	return tx.Read(ctx, p)
 }
 
 // startListen registers a listen and sends its data first, unless the client's hash shows it
@@ -465,8 +493,12 @@ func (d *Database) startListen(ctx context.Context, tx StoreTx, a *access, c *li
 		}
 		return Result{}, err
 	}
-	n, err := tx.Read(ctx, l.path)
+	n, err := d.load(ctx, tx, l.path)
 	if err != nil {
+		var e *Error
+		if errors.As(err, &e) {
+			return Result{Err: err}, nil
+		}
 		return Result{}, err
 	}
 	var res Result

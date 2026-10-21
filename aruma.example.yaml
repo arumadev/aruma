@@ -45,3 +45,5 @@ rtdb:
     connections_per_project: 10000 # counted once a connection signs in or is first allowed
     connections_per_ip: 500        # counted from the handshake
     outbox_bytes: 67108864         # unsent data per connection before it is dropped
+    read_rows: 1000000             # stored rows one read may load (a get, a listen's first
+                                   # data); more is refused with too_big before loading

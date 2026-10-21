@@ -112,7 +112,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 				MessageBytes: l.MessageBytes, UnauthenticatedMessageBytes: l.UnauthenticatedMessageBytes,
 				InflightBytes: l.InflightBytes, RESTWriteBytes: l.RESTWriteBytes, StringBytes: l.StringBytes,
 				WriteBytesPerMinute: l.WriteBytesPerMinute, ConnectionsPerProject: l.ConnectionsPerProject,
-				ConnectionsPerIP: l.ConnectionsPerIP, OutboxBytes: l.OutboxBytes,
+				ConnectionsPerIP: l.ConnectionsPerIP, OutboxBytes: l.OutboxBytes, ReadRows: l.ReadRows,
 			},
 			DevOpenRules: cfg.RTDB.DevOpenRules,
 			// Users sign in with Auth's ID tokens, and lose their sessions when Auth revokes

@@ -51,6 +51,9 @@ const LockedRules = `{"rules": {".read": false, ".write": false}}`
 type StoreTx interface {
 	// Read returns the value at p, or nil.
 	Read(ctx context.Context, p Path) (*Node, error)
+	// CountRows counts the rows Read(p) would load, up to limit: a count above limit is
+	// reported as limit+1, so a read too large is found without counting all of it.
+	CountRows(ctx context.Context, p Path, limit int64) (int64, error)
 	// Peek tells what is at p without reading below it: the leaf there, or whether p has
 	// children. Security rules read the data through it (rulesSource).
 	Peek(ctx context.Context, p Path) (leaf *Node, hasChildren bool, err error)

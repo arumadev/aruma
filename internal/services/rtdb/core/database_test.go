@@ -493,6 +493,52 @@ func TestWriteRateLimit(t *testing.T) {
 	}
 }
 
+// A read of more rows than Limits.ReadRows is refused with too_big before it is loaded: a get,
+// with or without a query, the first data of a listen, and the value a conditional write
+// compares. Smaller reads, writes, and a REST shallow read's probe are not affected.
+func TestReadRowsLimit(t *testing.T) {
+	lim := DefaultLimits
+	lim.ReadRows = 3
+	s := newTestService(t, newMemStore(), Options{Limits: lim})
+	a, rec := listenWith(t, s, "chat-app-default-rtdb", admin)
+	if _, err := set(a, "/big", `{"a":1,"b":2,"c":3,"d":{".value":4,".priority":1}}`, nil); err != nil {
+		t.Fatal(err)
+	}
+	set(a, "/small", `{"a":1,"b":2,"c":3}`, nil)
+	tooBig := func(what string, err error) {
+		t.Helper()
+		if !errors.Is(err, ErrReadTooBig) || AsError(err).Status != "too_big" {
+			t.Errorf("%s: %v, want too_big", what, err)
+		}
+	}
+	_, err := get(a, "/big")
+	tooBig("get", err)
+	_, err = get(a, "/")
+	tooBig("get of the root", err)
+	ch := make(chan error, 1)
+	sp := spec(t, `{"l":1,"vf":"l"}`)
+	a.Get("/big", &sp, func(_ *Node, err error) { ch <- err })
+	tooBig("get with a query", <-ch)
+	_, err = listenSync(t, a, rec, "/big", "", 0, "")
+	tooBig("listen", err)
+	h := Hash(Number(1))
+	_, err = set(a, "/big", `1`, &h)
+	tooBig("conditional write", err)
+	a.GetREST("/big", nil, true, func(_ *Node, err error) { ch <- err })
+	if err := <-ch; err != nil {
+		t.Errorf("probe: %v", err)
+	}
+	if got, err := get(a, "/small"); err != nil || got != `{"a":1,"b":2,"c":3}` {
+		t.Errorf("get at the limit: %s %v", got, err)
+	}
+	if _, err := set(a, "/big", `{"a":1}`, nil); err != nil {
+		t.Errorf("write over a large node: %v", err)
+	}
+	if got, err := get(a, "/big"); err != nil || got != `{"a":1}` {
+		t.Errorf("get once smaller: %s %v", got, err)
+	}
+}
+
 func TestRateWindow(t *testing.T) {
 	start := time.UnixMilli(0)
 	w := rateWindow{limit: 100, start: start}

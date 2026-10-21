@@ -122,6 +122,12 @@ type memTx struct {
 }
 
 func (t *memTx) Read(_ context.Context, p Path) (*Node, error) { return t.root.Get(p), nil }
+func (t *memTx) CountRows(_ context.Context, p Path, limit int64) (int64, error) {
+	if p.IsPriority() {
+		p = p.Parent()
+	}
+	return min(int64(len(rowsOf(p, t.root.Get(p)))), limit+1), nil
+}
 func (t *memTx) Peek(_ context.Context, p Path) (*Node, bool, error) {
 	t.s.mu.Lock()
 	err := t.s.peekErr
@@ -265,6 +271,13 @@ func runStoreCases(t *testing.T, store Store) {
 				}
 				if has != (n != nil && !n.IsLeaf()) || !Equal(leaf.WithPriority(nil), wantLeaf) {
 					t.Errorf("peek %q: %v %v, read %s", at, leaf, has, n.ExportJSON())
+				}
+				// CountRows counts the rows Read loads, up to one past its limit.
+				rows := int64(len(rowsOf(at, n)))
+				for _, limit := range []int64{0, 1, 100} {
+					if got, err := tx.CountRows(ctx, at, limit); err != nil || got != min(rows, limit+1) {
+						t.Errorf("CountRows(%q, %d) = %d %v, want %d", at, limit, got, err, min(rows, limit+1))
+					}
 				}
 				keys := n.Keys()
 				for i := range len(keys) + 1 {

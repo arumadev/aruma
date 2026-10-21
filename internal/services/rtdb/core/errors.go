@@ -49,6 +49,9 @@ var (
 		"Invalid data; an update may not write a path and one of its descendants.", http.StatusBadRequest}
 	// ErrTooBig is a write or string over the size limits.
 	ErrTooBig = &Error{statusTooBig, "Data to write exceeds the maximum size that can be modified with a single request.", http.StatusRequestEntityTooLarge}
+	// ErrReadTooBig is a read of more rows than Limits.ReadRows, in Firebase's words for a
+	// read too large to answer, with the status the SDKs know for it. REST answers 400.
+	ErrReadTooBig = &Error{statusTooBig, "Data requested exceeds the maximum size that can be accessed with a single request.", http.StatusBadRequest}
 
 	// ErrWriteRate is a database over its bytes-per-minute write limit.
 	ErrWriteRate = &Error{statusUnavailable, "Write rate limit exceeded; retry later.", http.StatusTooManyRequests}

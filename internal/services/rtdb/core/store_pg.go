@@ -109,6 +109,17 @@ func (t *pgTx) Read(ctx context.Context, p Path) (*Node, error) {
 	return treeOf(p, rows)
 }
 
+func (t *pgTx) CountRows(ctx context.Context, p Path, limit int64) (int64, error) {
+	if p.IsPriority() {
+		p = p.Parent() // Read loads the node to take its priority
+	}
+	if p.IsRoot() {
+		return t.q.CountAll(ctx, queries.CountAllParams{DatabaseID: t.db.ID, RowCap: limit + 1})
+	}
+	lo, hi := bounds(p)
+	return t.q.CountSubtree(ctx, queries.CountSubtreeParams{DatabaseID: t.db.ID, Path: p.String(), Lo: lo, Hi: hi, RowCap: limit + 1})
+}
+
 func (t *pgTx) Peek(ctx context.Context, p Path) (*Node, bool, error) {
 	rs, err := t.q.ReadRows(ctx, queries.ReadRowsParams{DatabaseID: t.db.ID, Paths: []string{p.String()}})
 	if err != nil {
