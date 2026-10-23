@@ -207,6 +207,10 @@ type Case struct {
 	// Higher is what a source of higher authority recorded for the same case, when the case is
 	// a comparison (emulator/<topic>.json): the Test API's result.
 	Higher *Expected
+	// HigherExcluded is why the higher source's case does not count, when it does not: its
+	// verdict is then an artefact (no lookup limit, debug() missing), and allowing what the
+	// case's own source denied is permissive whatever it says.
+	HigherExcluded string
 
 	Skip     string // why the source did not run the case (emulator/<topic>.json)
 	Note     string
@@ -619,6 +623,7 @@ func readComparisonFile(root, path string, byID map[string]*Case) ([]*Case, *Fil
 			higher = rc.Production.expected()
 		}
 		c.Higher = &higher
+		c.HigherExcluded = Exclusion(base)
 		cases = append(cases, &c)
 	}
 	return cases, f, nil

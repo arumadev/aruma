@@ -14,6 +14,7 @@ import (
 type Got struct {
 	Compiled bool
 	Issues   rules.Issues
+	Tried    bool // Compile was called
 	Ran      bool // Evaluate was called and returned
 	Decision rules.Decision
 	Err      error  // Evaluate's error: an outage, never a verdict
@@ -47,15 +48,20 @@ type Result struct {
 	// fails the acceptance whatever the ratio.
 	Permissive bool
 	Why        string // what differs, when Agree or Finer is false
+	// NotExpressible is why the binding could not give the case to the engine as its source
+	// saw it. Such a case fails Accept unless Exclusion already excludes it.
+	NotExpressible string
 }
 
 // Stub reports whether the result met one of the contract's stubs (a panic "S1-…: …").
-func (r Result) Stub() bool { return strings.HasPrefix(r.Got.Panic, "S1-") }
+func (r Result) Stub() bool { return strings.HasPrefix(r.Got.Panic, StubPrefix) }
 
 // Runner runs cases through the engine, compiling each distinct rules file once.
 type Runner struct {
 	Limits   rules.Limits
 	Inflight *rules.Inflight
+	// CompileFunc is the engine's Compile; tests replace it with a fake engine.
+	CompileFunc func(rules.Service, rules.File, rules.Limits) (*rules.Ruleset, rules.Issues)
 
 	mu    sync.Mutex
 	cache map[compileKey]compiled
@@ -76,7 +82,7 @@ type compiled struct {
 // NewRunner returns a Runner with the default limits.
 func NewRunner() *Runner {
 	lim := rules.DefaultLimits()
-	return &Runner{Limits: lim, Inflight: rules.NewInflight(lim.InflightBytes), cache: map[compileKey]compiled{}}
+	return &Runner{Limits: lim, Inflight: rules.NewInflight(lim.InflightBytes), CompileFunc: rules.Compile, cache: map[compileKey]compiled{}}
 }
 
 // Compile compiles a file for a service, once per distinct file. A panic is returned, not
@@ -95,7 +101,7 @@ func (r *Runner) Compile(svc rules.Service, f rules.File) (*rules.Ruleset, rules
 				c = compiled{panic: fmt.Sprint(p)}
 			}
 		}()
-		c.rs, c.issues = rules.Compile(svc, f, r.Limits)
+		c.rs, c.issues = r.CompileFunc(svc, f, r.Limits)
 	}()
 	r.mu.Lock()
 	r.cache[k] = c
@@ -141,13 +147,14 @@ func (r *Runner) Run(ctx context.Context, c *Case) Result {
 		res.Why = "binding: " + berr.Error()
 		return res
 	}
-	if ne != nil && res.Excluded == "" {
-		res.Excluded = "not expressible: " + ne.Reason
+	if ne != nil {
+		res.NotExpressible = ne.Reason
 	}
 
 	g := &res.Got
 	var rs *rules.Ruleset
 	rs, g.Issues, g.Panic = r.Compile(c.Service, file)
+	g.Tried = true
 	g.Compiled = rs != nil
 	if g.Panic == "" && rs != nil && req != nil {
 		g.Decision, g.Panic, g.Err = Evaluate(ctx, rs, req)
@@ -157,7 +164,31 @@ func (r *Runner) Run(ctx context.Context, c *Case) Result {
 		}
 	}
 	res.compare()
+	if res.NotExpressible != "" && res.Excluded == "" {
+		res.Agree, res.Finer = false, false
+		res.Why = "not expressible, and excluded for no listed reason: " + res.NotExpressible
+	}
 	return res
+}
+
+// probe is the file Probe compiles.
+var probe = rules.File{Name: "firestore.rules", Content: "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c/{doc} {\n      allow get: if true;\n    }\n  }\n}\n"}
+
+// StubPrefix begins the panics of the contract's stubs ("S1-C: Compile").
+const StubPrefix = "S1-"
+
+// Probe compiles a plain rules file. It returns the stub's message when Compile is the
+// contract's stub, "" when Compile is built, and an error when Compile panics otherwise: a bug,
+// which must fail rather than switch the oracle tests into reporting.
+func (r *Runner) Probe() (stub string, err error) {
+	_, _, p := r.Compile(rules.Firestore, probe)
+	switch {
+	case p == "":
+		return "", nil
+	case strings.HasPrefix(p, StubPrefix):
+		return p, nil
+	}
+	return "", fmt.Errorf("rulestest: Compile panicked on a plain rules file: %s", p)
 }
 
 func (res *Result) compare() {
@@ -173,7 +204,8 @@ func (res *Result) compare() {
 	allowed := g.Ran && g.Decision.Allow
 	// An excluded case's verdict is not production's (debug() missing, a mock without id), so
 	// allowing what it denied is not more permissive than production.
-	res.Permissive = res.Excluded == "" && allowed && !exp.Allows() && (c.Higher == nil || !c.Higher.Allows())
+	higherAllows := c.Higher != nil && c.HigherExcluded == "" && c.Higher.Allows()
+	res.Permissive = res.Excluded == "" && allowed && !exp.Allows() && !higherAllows
 
 	if exp.Compile() || exp.SourceTooLarge() {
 		if g.Compiled {

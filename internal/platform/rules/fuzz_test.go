@@ -29,9 +29,14 @@ const fuzzBudget = 2 * time.Second
 // shape, and would slow every run of the seed corpus.
 const maxSeed = 16 << 10
 
+// skipIfStub skips while Compile is the contract's stub, and fails when it panics otherwise.
 func skipIfStub(f *testing.F) {
-	if s := stub(); s != "" {
-		f.Skip("Compile is the contract's stub: " + s)
+	stub, err := rulestest.NewRunner().Probe()
+	if err != nil {
+		f.Fatal(err)
+	}
+	if stub != "" {
+		f.Skip("Compile is the contract's stub: " + stub)
 	}
 }
 

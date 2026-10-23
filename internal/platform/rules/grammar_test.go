@@ -108,21 +108,11 @@ func TestGrammar(t *testing.T) {
 	set := loadOracle(t)
 	cases := compileCases(set)
 	sort.SliceStable(cases, func(i, j int) bool { return cases[i].ids[0] < cases[j].ids[0] })
-	if s := stub(); s != "" {
-		fails := 0
-		for _, cc := range cases {
-			if cc.fails {
-				fails++
-			}
-		}
-		t.Logf("%d distinct rules files, %d of which do not compile: 0%% (Compile is the stub %q)", len(cases), fails, s)
-		reportOnly(t)
-		return
-	}
-
 	runner := rulestest.NewRunner()
 	var counted, agree, messages, withMessage, swapped, swappedAgree, conflicts int
 	var diffs []string
+	// compiles records each compile's panic, for the gate: the stub only when every one is it.
+	var compiles rulestest.Report
 	for _, cc := range cases {
 		if cc.conflict {
 			conflicts++
@@ -130,6 +120,10 @@ func TestGrammar(t *testing.T) {
 		}
 		counted++
 		rs, issues, panicked := runner.Compile(cc.svc, rules.File{Name: cc.name, Content: cc.src})
+		compiles.Add(rulestest.Result{Got: rulestest.Got{Tried: true, Panic: panicked}})
+		if panicked != "" && !strings.HasPrefix(panicked, rulestest.StubPrefix) {
+			t.Errorf("%s: Compile panicked: %s", cc.ids[0], panicked)
+		}
 		first, _ := firstError(issues)
 		ok := false
 		switch {
@@ -188,6 +182,12 @@ func TestGrammar(t *testing.T) {
 	t.Logf("%d distinct rules files: %d agree on compiling and the first error's position (%.1f%%); "+
 		"messages %d of %d; the other service %d of %d; %d skipped as conflicting",
 		counted, agree, pct(agree, counted), messages, withMessage, swappedAgree, swapped, conflicts)
+	if compiles.Stub() != "" {
+		diffs = nil // every one is the stub's panic
+	}
+	if counted != grammarFiles || conflicts != 0 {
+		t.Errorf("%d rules files counted and %d conflicting, pinned at %d and 0", counted, conflicts, grammarFiles)
+	}
 	for i, d := range diffs {
 		if i == 60 {
 			t.Logf("… and %d more", len(diffs)-i)
@@ -195,8 +195,11 @@ func TestGrammar(t *testing.T) {
 		}
 		t.Log(d)
 	}
-	if reportOnly(t) {
+	if gate(t, &compiles) {
 		return
+	}
+	if counted == 0 || swapped == 0 {
+		t.Fatalf("nothing to compare: %d files, %d for the other service", counted, swapped)
 	}
 	if pct(agree, counted) < oracleThreshold {
 		t.Errorf("%d of %d rules files agree (%.1f%%), below %.0f%%", agree, counted, pct(agree, counted), oracleThreshold)
@@ -206,9 +209,13 @@ func TestGrammar(t *testing.T) {
 	}
 }
 
+// grammarFiles pins the distinct rules files TestGrammar counts (see oracleCounts).
+const grammarFiles = 1936
+
+// pct is n of of in percent, and 0 when there is nothing: no case is not 100%.
 func pct(n, of int) float64 {
 	if of == 0 {
-		return 100
+		return 0
 	}
 	return 100 * float64(n) / float64(of)
 }

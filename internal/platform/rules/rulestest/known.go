@@ -54,6 +54,8 @@ var known = map[Provenance]map[string]string{
 		"aruma/storage/read_list":            "emulator binding: the Storage emulator matches a list against the children of the path",
 		"aruma/storage/method_list":          "emulator binding: the Storage emulator matches a list against the children of the path",
 		"aruma/storage-paths/list_on_folder": "emulator binding: the Storage emulator matches a list against the children of the path",
+		"aruma/storage/fs_lookups_3":         "emulator artefact: the Storage emulator applies no lookup limit; deployed Storage denies the third document",
+		"aruma/storage/fs_lookups_11":        "emulator artefact: the Storage emulator applies no lookup limit; deployed Storage denies the third document",
 	},
 }
 

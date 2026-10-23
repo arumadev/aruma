@@ -199,14 +199,20 @@ func (r *Report) ExcludedList() string {
 	return b.String()
 }
 
-// Stub returns the panic of a contract stub that some result met, or "".
+// Stub returns the stub's message when every result that reached Compile met one of the
+// contract's stubs, and "" otherwise: an engine that works on some cases is not the stub.
 func (r *Report) Stub() string {
+	msg := ""
 	for _, res := range r.Results {
-		if res.Stub() {
-			return res.Got.Panic
+		if !res.Got.Tried {
+			continue
 		}
+		if !res.Stub() {
+			return ""
+		}
+		msg = res.Got.Panic
 	}
-	return ""
+	return msg
 }
 
 // Line formats one result for a list of disagreements.

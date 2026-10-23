@@ -2,12 +2,10 @@ package rules_test
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"sync"
 	"testing"
 
-	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/platform/rules/rulestest"
 )
 
@@ -49,29 +47,28 @@ func loadOracle(tb testing.TB) *rulestest.Set {
 	return oracleSet
 }
 
-// stub returns the panic of the contract's Compile stub, or "" once Compile is built.
-func stub() (msg string) {
-	defer func() {
-		if p := recover(); p != nil {
-			msg = fmt.Sprint(p)
-		}
-	}()
-	rules.Compile(rules.Firestore, rules.File{Name: "firestore.rules", Content: "service cloud.firestore {}"}, rules.DefaultLimits())
-	return ""
+// oracleCounts pins how many cases of each provenance count and how many are excluded, so that
+// a change to the oracle, the reader or the binding that stops counting cases fails here. A
+// change of the oracle (S0-A) updates them, with the reason in its commit.
+var oracleCounts = map[rulestest.Provenance]rulestest.Count{
+	rulestest.Deployed: {Counted: 0, Excluded: 274}, // no request to replay yet: S2 binds Storage
+	rulestest.TestAPI:  {Counted: 3629, Excluded: 54},
+	rulestest.Emulator: {Counted: 1985, Excluded: 49},
 }
 
-// reportOnly says whether the oracle tests only report: while Compile is a stub, or when asked.
-func reportOnly(t *testing.T) bool {
+// gate decides whether an oracle test only reports, and fails it when the probe or the results
+// say the engine is broken rather than the contract's stub (rulestest.Gate).
+func gate(t *testing.T, rep *rulestest.Report) bool {
 	t.Helper()
-	if s := stub(); s != "" {
-		t.Logf("Compile is the contract's stub (%q): reporting only", s)
-		return true
+	stub, err := rulestest.NewRunner().Probe()
+	only, why, err := rulestest.Gate(stub, err, rep, os.Getenv("ARUMA_RULES_ORACLE") == "report")
+	if err != nil {
+		t.Fatal(err)
 	}
-	if os.Getenv("ARUMA_RULES_ORACLE") == "report" {
-		t.Log("ARUMA_RULES_ORACLE=report: reporting only")
-		return true
+	if only {
+		t.Logf("%s: reporting only", why)
 	}
-	return false
+	return only
 }
 
 func TestOracle(t *testing.T) {
@@ -81,6 +78,10 @@ func TestOracle(t *testing.T) {
 	ctx := context.Background()
 	for _, c := range set.Cases {
 		rep.Add(runner.Run(ctx, c))
+	}
+	var anchors []rulestest.Result
+	for _, c := range rulestest.Anchors() {
+		anchors = append(anchors, runner.Run(ctx, c))
 	}
 
 	t.Logf("agreement with the development oracle, %d cases from %d files (ratio = agree / counted):\n%s",
@@ -105,17 +106,17 @@ func TestOracle(t *testing.T) {
 		}
 	}
 
-	if reportOnly(t) {
+	// What fails in every mode: the counts, panics other than the stub's, binding faults.
+	for _, f := range rulestest.Counts(&rep, oracleCounts) {
+		t.Error(f)
+	}
+	for _, f := range rulestest.Faults(&rep) {
+		t.Error(f)
+	}
+	if gate(t, &rep) {
 		return
 	}
-	for p, tally := range rep.ByProvenance() {
-		if tally.Counted > 0 && tally.Ratio() < oracleThreshold {
-			t.Errorf("%s: %d of %d counted cases agree (%.1f%%), below %.0f%%", p, tally.Agree, tally.Counted, tally.Ratio(), oracleThreshold)
-		}
-	}
-	for _, res := range rep.Results {
-		if res.Permissive {
-			t.Errorf("more permissive than the oracle: %s", res.Line())
-		}
+	for _, f := range rulestest.Accept(&rep, anchors, oracleThreshold, rulestest.TestAPI, rulestest.Emulator) {
+		t.Error(f)
 	}
 }
