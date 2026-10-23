@@ -33,6 +33,11 @@ import (
 // meter's work: a value shared within itself (let a = [b, b] thirty times) is small in memory
 // but vast to walk.
 
+// visitWork is the work charged for each value a comparison or a hash visits: about what four
+// steps of a pattern's program cost, so a whole evaluation's work of visits takes about as long
+// as its work of matching (some 0.5 s on an M1).
+const visitWork = 4
+
 // relation is one of the four equality relations.
 type relation uint8
 
@@ -54,9 +59,9 @@ func equalTop(m *meter, a, b Value) (bool, error) {
 	return equal(m, relTop, a, b)
 }
 
-// equal compares a and b by rel, charging one unit of work for each pair of values it visits.
+// equal compares a and b by rel, charging work for each pair of values it visits.
 func equal(m *meter, rel relation, a, b Value) (bool, error) {
-	if err := m.work(1); err != nil {
+	if err := m.work(visitWork); err != nil {
 		return false, err
 	}
 	if a.isNumber() && b.isNumber() {
@@ -261,10 +266,10 @@ func distinct(m *meter, items []Value) ([]Value, error) {
 
 var hashSeed = maphash.MakeSeed()
 
-// hashValue hashes v so that values equal by rel hash alike, charging a unit of work for each
-// value it visits.
+// hashValue hashes v so that values equal by rel hash alike, charging work for each value it
+// visits.
 func hashValue(m *meter, rel relation, v Value) (uint64, error) {
-	if err := m.work(1); err != nil {
+	if err := m.work(visitWork); err != nil {
 		return 0, err
 	}
 	inner := relContainer

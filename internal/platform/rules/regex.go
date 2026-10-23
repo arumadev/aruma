@@ -135,7 +135,7 @@ func compilePattern(text string, limit int) (*compiledRegex, *evalError) {
 	if err != nil {
 		return nil, errRegex(text)
 	}
-	if estimateInsts(re, limit) > limit {
+	if estimateInsts(re, limit)+2 > limit { // and the program's fail and match
 		return nil, errTooComplex(text, limit+1, limit)
 	}
 	prog, err := syntax.Compile(re.Simplify())
@@ -188,10 +188,11 @@ func estimateInsts(re *syntax.Regexp, limit int) int {
 		return n
 	case syntax.OpRepeat:
 		s := sub(0)
+		// x{n,} is n copies and a loop; x{n,m} n copies and m-n optional ones, each a split.
 		if re.Max == -1 {
 			return sat(mul(max(re.Min, 1), s) + 2)
 		}
-		return sat(mul(re.Max, s+1) + 1)
+		return sat(mul(re.Max, s) + re.Max - re.Min + 1)
 	}
 	return 1
 }
