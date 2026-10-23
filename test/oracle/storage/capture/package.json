@@ -1,0 +1,11 @@
+{
+  "name": "aruma-oracle-storage-capture",
+  "private": true,
+  "type": "module",
+  "description": "Records Cloud Storage for Firebase exchanges (client REST and GCS JSON) through a recording proxy, for test/oracle/storage. See ../README.md.",
+  "dependencies": {
+    "@google-cloud/storage": "8.4.0",
+    "firebase": "13.1.0",
+    "firebase-admin": "14.5.0"
+  }
+}

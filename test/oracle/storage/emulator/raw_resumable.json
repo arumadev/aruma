@@ -1,0 +1,942 @@
+{
+  "scenario": "raw_resumable",
+  "description": "The client resumable protocol by hand: start, query, upload with offsets (right, overlapping, gap), finalize, query and upload after final, cancel, and a size mismatch on finalize.",
+  "source": "emulator",
+  "version": "firebase-tools 15.34.0 Storage emulator (cloud-storage-rules-runtime-v1.1.3.jar, OpenJDK 21)",
+  "captured": "2026-10-23",
+  "script": "capture/capture.mjs",
+  "clients": {
+    "web": "firebase 13.1.0 (Node 24, fetch)",
+    "admin": "firebase-admin 14.5.0 + @google-cloud/storage 8.4.0"
+  },
+  "run": "s0c-20261023-emu",
+  "bucket": "demo-aruma-ref.appspot.com",
+  "steps": [
+    {
+      "step": "start",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "start",
+              "x-goog-upload-header-content-length": "20",
+              "x-goog-upload-header-content-type": "text/plain",
+              "content-type": "application/json; charset=utf-8",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "159"
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/raw/res.txt\",\"fullPath\":\"aruma-ref/s0c-20261023-emu/open/raw/res.txt\",\"contentType\":\"text/plain\",\"metadata\":{\"r\":\"1\"}}"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-chunk-granularity": "10000",
+              "x-goog-upload-control-url": "",
+              "x-goog-upload-status": "active",
+              "x-gupload-uploadid": "<upload-id-10>",
+              "x-goog-upload-url": "http://127.0.0.1:8865/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt&upload_id=<upload-id-10>&upload_protocol=resumable",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 3,
+          "ms": 5
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "query before any bytes",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt&upload_id=<upload-id-10>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "query",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "0"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-size-received": "0",
+              "x-goog-upload-status": "active",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 3,
+          "ms": 9
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "upload 0..10",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt&upload_id=<upload-id-10>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "upload",
+              "x-goog-upload-offset": "0",
+              "content-type": "text/plain;charset=UTF-8",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "10"
+            },
+            "body": {
+              "text": "0123456789"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "active",
+              "x-gupload-uploadid": "<upload-id-10>",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 12
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "query after 10",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt&upload_id=<upload-id-10>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "query",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "0"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-size-received": "10",
+              "x-goog-upload-status": "active",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 14
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "upload with a gap (offset 15)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt&upload_id=<upload-id-10>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "upload",
+              "x-goog-upload-offset": "15",
+              "content-type": "text/plain;charset=UTF-8",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "5"
+            },
+            "body": {
+              "text": "xxxxx"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "active",
+              "x-gupload-uploadid": "<upload-id-10>",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 2,
+          "ms": 21
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "upload overlapping (offset 5)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt&upload_id=<upload-id-10>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "upload",
+              "x-goog-upload-offset": "5",
+              "content-type": "text/plain;charset=UTF-8",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "5"
+            },
+            "body": {
+              "text": "56789"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "active",
+              "x-gupload-uploadid": "<upload-id-10>",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 4,
+          "ms": 27
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "query after the bad offsets",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt&upload_id=<upload-id-10>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "query",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "0"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-size-received": "20",
+              "x-goog-upload-status": "active",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 29
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "upload, finalize (rest)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt&upload_id=<upload-id-10>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "upload, finalize",
+              "x-goog-upload-offset": "10",
+              "content-type": "text/plain;charset=UTF-8",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "10"
+            },
+            "body": {
+              "text": "abcdefghij"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "final",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "517",
+              "etag": "W/\"205-GrT6BSs/t1fGGkotRgoi9Y+sr2o\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/raw/res.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788611973\",\"metageneration\":\"1\",\"contentType\":\"text/plain\",\"timeCreated\":\"2026-10-23T20:50:11.973Z\",\"updated\":\"2026-10-23T20:50:11.973Z\",\"storageClass\":\"STANDARD\",\"size\":\"30\",\"md5Hash\":\"IQkHgEhvp0lH8iUpdnb5qQ==\",\"crc32c\":\"1737128428\",\"etag\":\"TQjBMMQ+HMlpdMUeeh2o7mERY2Q\",\"downloadTokens\":\"<download-token-59>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{\"r\":\"1\"}}"
+            }
+          },
+          "elapsedMs": 7,
+          "ms": 38
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "query after final",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt&upload_id=<upload-id-10>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "query",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "0"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-size-received": "30",
+              "x-goog-upload-status": "final",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 4,
+          "ms": 43
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "upload after final",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt&upload_id=<upload-id-10>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "upload",
+              "x-goog-upload-offset": "20",
+              "content-type": "text/plain;charset=UTF-8",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "1"
+            },
+            "body": {
+              "text": "z"
+            }
+          },
+          "response": {
+            "status": 400,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "11",
+              "etag": "W/\"b-EFiDB1U+dmqzx9Mo2UjcZ1SJPO8\""
+            },
+            "body": {
+              "text": "Bad Request"
+            }
+          },
+          "elapsedMs": 2,
+          "ms": 46
+        }
+      ],
+      "result": {
+        "status": 400
+      }
+    },
+    {
+      "step": "finalize again (empty)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt&upload_id=<upload-id-10>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "upload, finalize",
+              "x-goog-upload-offset": "20",
+              "content-type": "text/plain;charset=UTF-8",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "0"
+            }
+          },
+          "response": {
+            "status": 400,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "11",
+              "etag": "W/\"b-EFiDB1U+dmqzx9Mo2UjcZ1SJPO8\""
+            },
+            "body": {
+              "text": "Bad Request"
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 49
+        }
+      ],
+      "result": {
+        "status": 400
+      }
+    },
+    {
+      "step": "start (to cancel)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fcancel.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "start",
+              "x-goog-upload-header-content-length": "4",
+              "content-type": "application/json; charset=utf-8",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "57"
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/raw/cancel.txt\"}"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-chunk-granularity": "10000",
+              "x-goog-upload-control-url": "",
+              "x-goog-upload-status": "active",
+              "x-gupload-uploadid": "<upload-id-15>",
+              "x-goog-upload-url": "http://127.0.0.1:8865/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fcancel.txt&upload_id=<upload-id-15>&upload_protocol=resumable",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 51
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "cancel",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fcancel.txt&upload_id=<upload-id-15>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "cancel",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "0"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 53
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "query after cancel",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fcancel.txt&upload_id=<upload-id-15>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "query",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "0"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-size-received": "0",
+              "x-goog-upload-status": "cancelled",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 55
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "upload after cancel",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fcancel.txt&upload_id=<upload-id-15>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "upload, finalize",
+              "x-goog-upload-offset": "0",
+              "content-type": "text/plain;charset=UTF-8",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "4"
+            },
+            "body": {
+              "text": "abcd"
+            }
+          },
+          "response": {
+            "status": 400,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "11",
+              "etag": "W/\"b-EFiDB1U+dmqzx9Mo2UjcZ1SJPO8\""
+            },
+            "body": {
+              "text": "Bad Request"
+            }
+          },
+          "elapsedMs": 0,
+          "ms": 56
+        }
+      ],
+      "result": {
+        "status": 400
+      }
+    },
+    {
+      "step": "GET the cancelled object",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fcancel.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 404,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "9",
+              "etag": "W/\"9-0gXL1ngzMqISxa6S1zx3F4wtLyg\""
+            },
+            "body": {
+              "text": "Not Found"
+            }
+          },
+          "elapsedMs": 5,
+          "ms": 62
+        }
+      ],
+      "result": {
+        "status": 404
+      }
+    },
+    {
+      "step": "start (announce 10 bytes)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fshort.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "start",
+              "x-goog-upload-header-content-length": "10",
+              "content-type": "application/json; charset=utf-8",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "56"
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/raw/short.txt\"}"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-chunk-granularity": "10000",
+              "x-goog-upload-control-url": "",
+              "x-goog-upload-status": "active",
+              "x-gupload-uploadid": "<upload-id-17>",
+              "x-goog-upload-url": "http://127.0.0.1:8865/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fshort.txt&upload_id=<upload-id-17>&upload_protocol=resumable",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 2,
+          "ms": 66
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "upload, finalize with 4 bytes",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fshort.txt&upload_id=<upload-id-17>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "upload, finalize",
+              "x-goog-upload-offset": "0",
+              "content-type": "text/plain;charset=UTF-8",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "4"
+            },
+            "body": {
+              "text": "abcd"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "final",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "525",
+              "etag": "W/\"20d-ulPDSDv+87PuT4vjPiP1H4Q3Fl8\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/raw/short.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788612010\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:12.010Z\",\"updated\":\"2026-10-23T20:50:12.010Z\",\"storageClass\":\"STANDARD\",\"size\":\"4\",\"md5Hash\":\"4vxxTEcn7pOV8yTNLn8zHw==\",\"crc32c\":\"2462583345\",\"etag\":\"XS3hR0hkFogJCNlJ///mfQehgXg\",\"downloadTokens\":\"<download-token-60>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 7,
+          "ms": 74
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "start with an unknown command",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fx.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "bogus",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "0"
+            }
+          },
+          "response": {
+            "status": 400,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "11",
+              "etag": "W/\"b-EFiDB1U+dmqzx9Mo2UjcZ1SJPO8\""
+            },
+            "body": {
+              "text": "Bad Request"
+            }
+          },
+          "elapsedMs": 0,
+          "ms": 75
+        }
+      ],
+      "result": {
+        "status": 400
+      }
+    },
+    {
+      "step": "query with an unknown upload_id",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt&upload_id=nope&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "query",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "0"
+            }
+          },
+          "response": {
+            "status": 404,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "9",
+              "etag": "W/\"9-0gXL1ngzMqISxa6S1zx3F4wtLyg\""
+            },
+            "body": {
+              "text": "Not Found"
+            }
+          },
+          "elapsedMs": 0,
+          "ms": 76
+        }
+      ],
+      "result": {
+        "status": 404
+      }
+    }
+  ],
+  "notes": [
+    "upload URL shape: http://127.0.0.1:8865/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt&upload_id=<id>&upload_protocol=resumable"
+  ]
+}

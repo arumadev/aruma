@@ -1,0 +1,40 @@
+rules_version = '2';
+// The aruma-ref block of test/oracle/storage (README.md). The same block is meant to be
+// added beside a production project's own rules for a capture run.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /aruma-ref/{run} {
+      // Any signed-in user reads and writes under open/.
+      match /open/{path=**} {
+        allow read, write: if request.auth != null;
+      }
+      // Anyone reads public/; nobody but the admin writes it.
+      match /public/{path=**} {
+        allow read: if true;
+      }
+      // Writes are checked on size, content type and custom metadata.
+      match /limited/{name} {
+        allow read, delete: if request.auth != null;
+        allow create, update: if request.auth != null
+          && request.resource.size < 1024
+          && request.resource.contentType.matches('text/.*')
+          && request.resource.metadata.tag == 'ok';
+      }
+      // Each user only under their own uid.
+      match /users/{uid}/{path=**} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+      // get is allowed, list is not.
+      match /nolist/{name} {
+        allow get, write: if request.auth != null;
+        allow list: if false;
+      }
+      // Update and delete depend on the stored object's metadata.
+      match /guarded/{name} {
+        allow read, create: if request.auth != null;
+        allow update: if request.auth != null && resource.metadata.locked != 'yes';
+        allow delete: if request.auth != null && resource.metadata.deletable == 'yes';
+      }
+    }
+  }
+}

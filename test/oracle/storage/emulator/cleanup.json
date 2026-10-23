@@ -1,0 +1,843 @@
+{
+  "scenario": "cleanup",
+  "description": "Deletes everything under aruma-ref/<run>/ with the admin path and checks the prefix is empty.",
+  "source": "emulator",
+  "version": "firebase-tools 15.34.0 Storage emulator (cloud-storage-rules-runtime-v1.1.3.jar, OpenJDK 21)",
+  "captured": "2026-10-23",
+  "script": "capture/capture.mjs",
+  "clients": {
+    "web": "firebase 13.1.0 (Node 24, fetch)",
+    "admin": "firebase-admin 14.5.0 + @google-cloud/storage 8.4.0"
+  },
+  "run": "s0c-20261023-emu",
+  "bucket": "demo-aruma-ref.appspot.com",
+  "steps": [
+    {
+      "step": "deleteFiles",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/b/demo-aruma-ref.appspot.com/o?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/f230436d-bf0a-4098-9a87-021bfd794a85",
+              "x-goog-gcs-idempotency-token": "f230436d-bf0a-4098-9a87-021bfd794a85",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "29628",
+              "etag": "W/\"73bc-7p7piQdINCk/gFfgdfzLoIAxdTc\""
+            },
+            "body": {
+              "length": 29628,
+              "sha256": "9bfb56defc195f349243d0fc1747d21dbc9f2c568fbc74239e99d7acabe7a012",
+              "head": "{\"kind\":\"storage#objects\",\"items\":[{\"kind\":\"storage#object\",\"name\":\"aruma-ref/s0c-20261023-emu/guarded/g.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788611516\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"contentDisposition\":\"inline\",\"timeCreated\":\"2026-10-23T20:50:11.516Z\",\"updated\":\"2026-10-23T20:50:11.516Z\",\"storageClass\":\"STANDARD\",\"size\":\"5\",\"md5Hash\":\"WU+AOzgKQTlu1j3KOVA1Qg==\",\"etag\":\"h0YcrraKQkWgvaI8Q+zy9YPGzM0\",\"metadata\":{\"firebaseStorageDownloadTokens\":\"<download-token-37>\"},\"crc32c\":\"c69jFw==\",\"timeStorageClassUpdated\":\"2026-10-23T",
+              "tail": "ruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fusers%2F<uid-a>%2Fa.txt\",\"mediaLink\":\"http://127.0.0.1:8860/download/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fusers%2F<uid-a>%2Fa.txt?generation=1792788611005&alt=media\"}]}"
+            }
+          },
+          "elapsedMs": 2,
+          "ms": 5
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fguarded%2Fg.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/6f89d11d-7faa-4f88-a182-2db3ae497fec",
+              "x-goog-gcs-idempotency-token": "6f89d11d-7faa-4f88-a182-2db3ae497fec",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 11
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Flimited%2Fok.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/cd36c231-5217-4d74-8fc6-fe418271e923",
+              "x-goog-gcs-idempotency-token": "cd36c231-5217-4d74-8fc6-fe418271e923",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 2,
+          "ms": 12
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fnolist%2Fn.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/76e5d277-bc90-42df-9cb2-5298fb070c48",
+              "x-goog-gcs-idempotency-token": "76e5d277-bc90-42df-9cb2-5298fb070c48",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 2,
+          "ms": 13
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Flist%2Fb.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/bf9b3c29-c0ba-4f3b-9950-7aad4aa7a33c",
+              "x-goog-gcs-idempotency-token": "bf9b3c29-c0ba-4f3b-9950-7aad4aa7a33c",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 2,
+          "ms": 13
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Flist%2Fa.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/a389977d-a67d-46e6-9049-955bd7fa7964",
+              "x-goog-gcs-idempotency-token": "a389977d-a67d-46e6-9049-955bd7fa7964",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 2,
+          "ms": 13
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Flist%2Fc.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/c9221bc3-c673-4578-bb31-373dbd42512c",
+              "x-goog-gcs-idempotency-token": "c9221bc3-c673-4578-bb31-373dbd42512c",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 2,
+          "ms": 14
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fres.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/99851385-338e-4f81-89b3-7f98401d456f",
+              "x-goog-gcs-idempotency-token": "99851385-338e-4f81-89b3-7f98401d456f",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 15
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fmeta%2Fm.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/30f91b47-4e95-4711-8b3a-57881127dff2",
+              "x-goog-gcs-idempotency-token": "30f91b47-4e95-4711-8b3a-57881127dff2",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 3,
+          "ms": 16
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Flist%2Fd%2F1.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/1445db2b-7813-42e3-92e7-c4ee551e5ebd",
+              "x-goog-gcs-idempotency-token": "1445db2b-7813-42e3-92e7-c4ee551e5ebd",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 2,
+          "ms": 16
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Flist%2Fd%2F2.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/ec8b921b-dc1c-49a1-b267-e0c30613ac27",
+              "x-goog-gcs-idempotency-token": "ec8b921b-dc1c-49a1-b267-e0c30613ac27",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 2,
+          "ms": 17
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fraw%2Fshort.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/e2c67d9b-cc42-48ed-8263-99e8d3b2f449",
+              "x-goog-gcs-idempotency-token": "e2c67d9b-cc42-48ed-8263-99e8d3b2f449",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 3,
+          "ms": 19
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Frawup%2Fa.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/3ba7146e-0e8e-48d9-a183-b714a2d63061",
+              "x-goog-gcs-idempotency-token": "3ba7146e-0e8e-48d9-a183-b714a2d63061",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 4,
+          "ms": 20
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Frawup%2Fm.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/34e70614-38a0-4351-890e-8965e195f406",
+              "x-goog-gcs-idempotency-token": "34e70614-38a0-4351-890e-8965e195f406",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 4,
+          "ms": 20
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fb64.bin?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/fbacd4af-f7d9-4604-8cce-1c09da7e5e27",
+              "x-goog-gcs-idempotency-token": "fbacd4af-f7d9-4604-8cce-1c09da7e5e27",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 2,
+          "ms": 22
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Frawup%2Fp.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/42e199b2-f835-4d06-96b2-1bb778643e48",
+              "x-goog-gcs-idempotency-token": "42e199b2-f835-4d06-96b2-1bb778643e48",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 6,
+          "ms": 23
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fread%2Fr.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/9bd91e3e-e022-43eb-841d-b658ae29e494",
+              "x-goog-gcs-idempotency-token": "9bd91e3e-e022-43eb-841d-b658ae29e494",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 4,
+          "ms": 23
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Flist%2Fe%2Ff%2F3.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/c9e50122-ab2a-4117-b635-41dec49f04ec",
+              "x-goog-gcs-idempotency-token": "c9e50122-ab2a-4117-b635-41dec49f04ec",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 8,
+          "ms": 24
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fdata.png?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/a8f583f6-6034-4992-a2fd-7dcae9c08c66",
+              "x-goog-gcs-idempotency-token": "a8f583f6-6034-4992-a2fd-7dcae9c08c66",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 24
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Flist%2Fg%20h.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/01a5a334-a288-410e-bd0e-4fcd30fb53d7",
+              "x-goog-gcs-idempotency-token": "01a5a334-a288-410e-bd0e-4fcd30fb53d7",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 7,
+          "ms": 25
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Frawup%2Fq.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/f34fcb72-a476-4bad-9516-1f2c0ee08f0a",
+              "x-goog-gcs-idempotency-token": "f34fcb72-a476-4bad-9516-1f2c0ee08f0a",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 7,
+          "ms": 25
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Ftok%2Ft.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/c4a76dc9-dc6e-438f-b238-e77b9dc8a7b5",
+              "x-goog-gcs-idempotency-token": "c4a76dc9-dc6e-438f-b238-e77b9dc8a7b5",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 6,
+          "ms": 26
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fempty?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/34704cee-772d-463c-95b8-d56ed5498ff3",
+              "x-goog-gcs-idempotency-token": "34704cee-772d-463c-95b8-d56ed5498ff3",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 27
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fdir%20with%20space%2F%D9%85%D9%84%D9%81%20%231%3F.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/dd18effc-5a1a-48c9-96db-2eb4fbd1d40c",
+              "x-goog-gcs-idempotency-token": "dd18effc-5a1a-48c9-96db-2eb4fbd1d40c",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 9,
+          "ms": 32
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Flarge.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/3ddd29d5-292f-4d6e-95a9-ed4f194a2641",
+              "x-goog-gcs-idempotency-token": "3ddd29d5-292f-4d6e-95a9-ed4f194a2641",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 6,
+          "ms": 39
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fsmall-resumable.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/ec928abc-68a1-4e5a-9737-c224d6e940bb",
+              "x-goog-gcs-idempotency-token": "ec928abc-68a1-4e5a-9737-c224d6e940bb",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 2,
+          "ms": 42
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fmeta.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/181e148c-b0a3-4040-a597-804e3e5b7fb0",
+              "x-goog-gcs-idempotency-token": "181e148c-b0a3-4040-a597-804e3e5b7fb0",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 5,
+          "ms": 43
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fplain.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/11e2523e-9883-45f8-9f65-8d6d10e6fac8",
+              "x-goog-gcs-idempotency-token": "11e2523e-9883-45f8-9f65-8d6d10e6fac8",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 5,
+          "ms": 44
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fraw.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/93e8a8ab-6445-4f2a-958f-81b48187e77a",
+              "x-goog-gcs-idempotency-token": "93e8a8ab-6445-4f2a-958f-81b48187e77a",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 5,
+          "ms": 44
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fpublic%2Fseed.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/b97d294e-0f05-491d-97db-cc151dc2cbd9",
+              "x-goog-gcs-idempotency-token": "b97d294e-0f05-491d-97db-cc151dc2cbd9",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 3,
+          "ms": 45
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fusers%2F<uid-a>%2Fa.txt?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/a87b2e43-c484-477c-a216-4093d73452f4",
+              "x-goog-gcs-idempotency-token": "a87b2e43-c484-477c-a216-4093d73452f4",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 5,
+          "ms": 47
+        }
+      ]
+    },
+    {
+      "step": "list after",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/b/demo-aruma-ref.appspot.com/o?prefix=aruma-ref%2Fs0c-20261023-emu%2F",
+            "headers": {
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br",
+              "user-agent": "gcloud-node-storage/8.4.0",
+              "x-goog-api-client": "gl-node/24.21.0 gccl/8.4.0-CJS gccl-invocation-id/beccf147-20a3-43ed-adc4-b13f5bf1262b",
+              "x-goog-gcs-idempotency-token": "beccf147-20a3-43ed-adc4-b13f5bf1262b",
+              "host": "127.0.0.1:8865"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "26",
+              "etag": "W/\"1a-NgFGQjYEB8OvQgmEJIbVFqv2DV4\""
+            },
+            "body": {
+              "text": "{\"kind\":\"storage#objects\"}"
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 50
+        }
+      ],
+      "result": {
+        "remaining": 0
+      }
+    }
+  ],
+  "notes": []
+}

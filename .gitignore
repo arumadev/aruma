@@ -50,6 +50,8 @@ aruma.yaml
 /internal/admin/web/dist/*
 !/internal/admin/web/dist/.gitkeep
 /test/experiments/**/node_modules/
+/test/oracle/**/node_modules/
+/test/oracle/**/.firebase-emulator-data/
 
 # SDK packages
 /sdk/**/node_modules/

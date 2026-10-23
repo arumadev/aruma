@@ -1,0 +1,10 @@
+{
+  "target": "emulator",
+  "version": "firebase-tools 15.34.0 Storage emulator (cloud-storage-rules-runtime-v1.1.3.jar, OpenJDK 21)",
+  "upstream": "http://127.0.0.1:8860",
+  "proxyPort": 8865,
+  "bucket": "demo-aruma-ref.appspot.com",
+  "projectId": "demo-aruma-ref",
+  "authEmulator": "127.0.0.1:8861",
+  "run": "s0c-20261023-emu"
+}

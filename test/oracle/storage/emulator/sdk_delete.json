@@ -1,0 +1,203 @@
+{
+  "scenario": "sdk_delete",
+  "description": "deleteObject, then reading and deleting it again.",
+  "source": "emulator",
+  "version": "firebase-tools 15.34.0 Storage emulator (cloud-storage-rules-runtime-v1.1.3.jar, OpenJDK 21)",
+  "captured": "2026-10-23",
+  "script": "capture/capture.mjs",
+  "clients": {
+    "web": "firebase 13.1.0 (Node 24, fetch)",
+    "admin": "firebase-admin 14.5.0 + @google-cloud/storage 8.4.0"
+  },
+  "run": "s0c-20261023-emu",
+  "bucket": "demo-aruma-ref.appspot.com",
+  "steps": [
+    {
+      "step": "setup upload",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fdel%2Fx.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=490913647468642630014627094605289548",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "310"
+            },
+            "body": {
+              "text": "--490913647468642630014627094605289548\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/open/del/x.txt\",\"contentType\":\"application/octet-stream\"}\r\n--490913647468642630014627094605289548\r\nContent-Type: application/octet-stream\r\n\r\naa\r\n--490913647468642630014627094605289548--"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "521",
+              "etag": "W/\"209-mllnRWuX5REsE54RudwNDKlPbwk\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/del/x.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788610245\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:10.245Z\",\"updated\":\"2026-10-23T20:50:10.245Z\",\"storageClass\":\"STANDARD\",\"size\":\"2\",\"md5Hash\":\"QSS8CpM1wn8IbyS6IHpJEg==\",\"crc32c\":\"4059224770\",\"etag\":\"roe0eyrYKcYTrpQiFcH+oR+LGoU\",\"downloadTokens\":\"<download-token-30>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 9,
+          "ms": 12
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788610245",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/open/del/x.txt",
+          "name": "x.txt",
+          "size": 2,
+          "timeCreated": "2026-10-23T20:50:10.245Z",
+          "updated": "2026-10-23T20:50:10.245Z",
+          "md5Hash": "QSS8CpM1wn8IbyS6IHpJEg==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "application/octet-stream",
+          "customMetadata": {}
+        }
+      }
+    },
+    {
+      "step": "deleteObject",
+      "exchanges": [
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fdel%2Fx.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 10,
+          "ms": 27
+        }
+      ],
+      "result": {}
+    },
+    {
+      "step": "getMetadata after delete",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fdel%2Fx.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 404,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "9",
+              "etag": "W/\"9-0gXL1ngzMqISxa6S1zx3F4wtLyg\""
+            },
+            "body": {
+              "text": "Not Found"
+            }
+          },
+          "elapsedMs": 9,
+          "ms": 40
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/object-not-found",
+          "status": 0,
+          "message": "Firebase Storage: Object 'aruma-ref/s0c-20261023-emu/open/del/x.txt' does not exist. (storage/object-not-found)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "deleteObject again",
+      "exchanges": [
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fdel%2Fx.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 404,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "9",
+              "etag": "W/\"9-0gXL1ngzMqISxa6S1zx3F4wtLyg\""
+            },
+            "body": {
+              "text": "Not Found"
+            }
+          },
+          "elapsedMs": 6,
+          "ms": 101
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/object-not-found",
+          "status": 0,
+          "message": "Firebase Storage: Object 'aruma-ref/s0c-20261023-emu/open/del/x.txt' does not exist. (storage/object-not-found)",
+          "serverResponse": ""
+        }
+      }
+    }
+  ],
+  "notes": []
+}

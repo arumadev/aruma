@@ -1,0 +1,780 @@
+{
+  "scenario": "admin_go",
+  "description": "firebase-admin-go 4.22.0 with cloud.google.com/go/storage 1.62.1 (go-admin/main.go) and FIREBASE_STORAGE_EMULATOR_HOST: Writer with ChunkSize 0, 16 MiB and 4 MiB (resumable over 3 chunks), Attrs, Update, readers, Objects with a delimiter, CopierFrom, a DoesNotExist precondition, deletes, bucket Attrs.",
+  "source": "emulator",
+  "version": "firebase-tools 15.34.0 Storage emulator (cloud-storage-rules-runtime-v1.1.3.jar, OpenJDK 21)",
+  "captured": "2026-10-23",
+  "script": "capture/capture.mjs",
+  "clients": {
+    "admin": "firebase.google.com/go/v4 4.22.0 + cloud.google.com/go/storage 1.62.1 (Go 1.27.2)"
+  },
+  "run": "s0c-20261023-emu",
+  "bucket": "demo-aruma-ref.appspot.com",
+  "steps": [
+    {
+      "step": "Writer small, ChunkSize 0 (single request)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/upload/storage/v1/b/demo-aruma-ref.appspot.com/o?alt=json&name=aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt&prettyPrint=false&projection=full&uploadType=multipart",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "transfer-encoding": "chunked",
+              "content-type": "multipart/related; boundary=c04f37d2a2c7747e13430edfdc1b0f2ae44869da4826933baa1ff82a0b93",
+              "x-goog-api-client": "gl-go/1.27.2 gccl/1.62.1",
+              "accept-encoding": "gzip"
+            },
+            "body": {
+              "text": "--c04f37d2a2c7747e13430edfdc1b0f2ae44869da4826933baa1ff82a0b93\r\nContent-Type: application/json\r\n\r\n{\"bucket\":\"demo-aruma-ref.appspot.com\",\"contentType\":\"text/plain\",\"metadata\":{\"who\":\"go\"},\"name\":\"aruma-ref/s0c-20261023-emu/go/small.txt\"}\n\r\n--c04f37d2a2c7747e13430edfdc1b0f2ae44869da4826933baa1ff82a0b93\r\nContent-Type: text/plain\r\n\r\ngo small\r\n--c04f37d2a2c7747e13430edfdc1b0f2ae44869da4826933baa1ff82a0b93--\r\n"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "854",
+              "etag": "W/\"356-N0Gdd8ZHXZDDwqQSgJuN5lO7Fdc\""
+            },
+            "body": {
+              "text": "{\"kind\":\"storage#object\",\"name\":\"aruma-ref/s0c-20261023-emu/go/small.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788613965\",\"metageneration\":\"1\",\"contentType\":\"text/plain\",\"timeCreated\":\"2026-10-23T20:50:13.966Z\",\"updated\":\"2026-10-23T20:50:13.966Z\",\"storageClass\":\"STANDARD\",\"size\":\"8\",\"md5Hash\":\"YDaSjrsTscfs6Mb/d+mR9A==\",\"etag\":\"B0MZGbEFoKL0FzUOV/6Da9hWjzA\",\"metadata\":{\"who\":\"go\"},\"crc32c\":\"yw5JyQ==\",\"timeStorageClassUpdated\":\"2026-10-23T20:50:13.966Z\",\"id\":\"demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/small.txt/1792788613965\",\"selfLink\":\"http://127.0.0.1:8860/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt\",\"mediaLink\":\"http://127.0.0.1:8860/download/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt?generation=1792788613965&alt=media\"}"
+            }
+          },
+          "elapsedMs": 13,
+          "ms": 245
+        }
+      ],
+      "result": {
+        "ok": {
+          "cacheControl": "",
+          "contentType": "text/plain",
+          "crc32c": 3406711241,
+          "created": "2026-10-23T20:50:13.966Z",
+          "etag": "B0MZGbEFoKL0FzUOV/6Da9hWjzA",
+          "generation": 1792788613965,
+          "md5": "YDaSjrsTscfs6Mb/d+mR9A==",
+          "metadata": {
+            "who": "go"
+          },
+          "metageneration": 1,
+          "name": "aruma-ref/s0c-20261023-emu/go/small.txt",
+          "size": 8,
+          "updated": "2026-10-23T20:50:13.966Z"
+        }
+      }
+    },
+    {
+      "step": "Writer small, default ChunkSize (16 MiB)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/upload/storage/v1/b/demo-aruma-ref.appspot.com/o?alt=json&name=aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fdefault.txt&prettyPrint=false&projection=full&uploadType=multipart",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "transfer-encoding": "chunked",
+              "content-type": "multipart/related; boundary=f609686901e1b5f734bc200c751e9ca59c535ea5663a533b03cfd5144048",
+              "x-goog-api-client": "gl-go/1.27.2 gccl/1.62.1",
+              "accept-encoding": "gzip"
+            },
+            "body": {
+              "text": "--f609686901e1b5f734bc200c751e9ca59c535ea5663a533b03cfd5144048\r\nContent-Type: application/json\r\n\r\n{\"bucket\":\"demo-aruma-ref.appspot.com\",\"crc32c\":\"U5UsBg==\",\"name\":\"aruma-ref/s0c-20261023-emu/go/default.txt\"}\n\r\n--f609686901e1b5f734bc200c751e9ca59c535ea5663a533b03cfd5144048\r\nContent-Type: text/plain; charset=utf-8\r\n\r\ngo default\r\n--f609686901e1b5f734bc200c751e9ca59c535ea5663a533b03cfd5144048--\r\n"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "853",
+              "etag": "W/\"355-4fGrM0YOu7MpLzYxA9a3pNqhlfg\""
+            },
+            "body": {
+              "text": "{\"kind\":\"storage#object\",\"name\":\"aruma-ref/s0c-20261023-emu/go/default.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788613971\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:13.971Z\",\"updated\":\"2026-10-23T20:50:13.971Z\",\"storageClass\":\"STANDARD\",\"size\":\"10\",\"md5Hash\":\"MGkiMo+E1o4kEUq5pXxteg==\",\"etag\":\"enaow/aZi3wv7NiIUnsLrv1EkQA\",\"crc32c\":\"U5UsBg==\",\"timeStorageClassUpdated\":\"2026-10-23T20:50:13.971Z\",\"id\":\"demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/default.txt/1792788613971\",\"selfLink\":\"http://127.0.0.1:8860/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fdefault.txt\",\"mediaLink\":\"http://127.0.0.1:8860/download/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fdefault.txt?generation=1792788613971&alt=media\"}"
+            }
+          },
+          "elapsedMs": 3,
+          "ms": 249
+        }
+      ],
+      "result": {
+        "ok": {
+          "cacheControl": "",
+          "contentType": "application/octet-stream",
+          "crc32c": 1402285062,
+          "created": "2026-10-23T20:50:13.971Z",
+          "etag": "enaow/aZi3wv7NiIUnsLrv1EkQA",
+          "generation": 1792788613971,
+          "md5": "MGkiMo+E1o4kEUq5pXxteg==",
+          "metadata": null,
+          "metageneration": 1,
+          "name": "aruma-ref/s0c-20261023-emu/go/default.txt",
+          "size": 10,
+          "updated": "2026-10-23T20:50:13.971Z"
+        }
+      }
+    },
+    {
+      "step": "Writer 9 MiB, ChunkSize 4 MiB (resumable, 3 chunks)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/upload/storage/v1/b/demo-aruma-ref.appspot.com/o?alt=json&name=aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fbig.bin&prettyPrint=false&projection=full&uploadType=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "content-length": "87",
+              "content-type": "application/json",
+              "x-goog-api-client": "gl-go/1.27.2 gccl/1.62.1",
+              "x-upload-content-type": "text/plain; charset=utf-8",
+              "accept-encoding": "gzip"
+            },
+            "body": {
+              "text": "{\"bucket\":\"demo-aruma-ref.appspot.com\",\"name\":\"aruma-ref/s0c-20261023-emu/go/big.bin\"}\n"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "location": "http://127.0.0.1:8865/upload/storage/v1/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fbig.bin&uploadType=resumable&upload_id=<upload-id-23>",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 2,
+          "ms": 255
+        },
+        {
+          "request": {
+            "method": "POST",
+            "url": "/upload/storage/v1/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fbig.bin&uploadType=resumable&upload_id=<upload-id-23>",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "content-length": "4194304",
+              "content-range": "bytes 0-4194303/*",
+              "content-type": "text/plain; charset=utf-8",
+              "x-goog-api-client": "gl-go/1.27.2 gdcl/0.279.0 gccl-invocation-id/10222126-778e-424e-b7e8-94a8f000c487 gccl-attempt-count/1",
+              "x-goog-gcs-idempotency-token": "10222126-778e-424e-b7e8-94a8f000c487",
+              "x-guploader-no-308": "yes",
+              "accept-encoding": "gzip"
+            },
+            "body": {
+              "length": 4194304,
+              "sha256": "0e664f95d3b275b7072eaf2b714d4056f8b7952977d092400a60948fc80dc14b",
+              "head": "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+              "tail": "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "location": "http://127.0.0.1:8865/upload/storage/v1/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fbig.bin&uploadType=resumable&upload_id=<upload-id-24>",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 2869,
+          "ms": 3134
+        }
+      ],
+      "result": {
+        "error": "invalid character 'O' looking for beginning of value"
+      }
+    },
+    {
+      "step": "Attrs",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt?alt=json&prettyPrint=false&projection=full",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "x-goog-api-client": "gl-go/1.27.2 gdcl/0.279.0 gccl-invocation-id/012fe3f0-04ab-4066-b685-6ca3747724c9 gccl-attempt-count/1 gl-go/1.27.2 gccl/1.62.1",
+              "x-goog-gcs-idempotency-token": "012fe3f0-04ab-4066-b685-6ca3747724c9",
+              "accept-encoding": "gzip"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "854",
+              "etag": "W/\"356-N0Gdd8ZHXZDDwqQSgJuN5lO7Fdc\""
+            },
+            "body": {
+              "text": "{\"kind\":\"storage#object\",\"name\":\"aruma-ref/s0c-20261023-emu/go/small.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788613965\",\"metageneration\":\"1\",\"contentType\":\"text/plain\",\"timeCreated\":\"2026-10-23T20:50:13.966Z\",\"updated\":\"2026-10-23T20:50:13.966Z\",\"storageClass\":\"STANDARD\",\"size\":\"8\",\"md5Hash\":\"YDaSjrsTscfs6Mb/d+mR9A==\",\"etag\":\"B0MZGbEFoKL0FzUOV/6Da9hWjzA\",\"metadata\":{\"who\":\"go\"},\"crc32c\":\"yw5JyQ==\",\"timeStorageClassUpdated\":\"2026-10-23T20:50:13.966Z\",\"id\":\"demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/small.txt/1792788613965\",\"selfLink\":\"http://127.0.0.1:8860/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt\",\"mediaLink\":\"http://127.0.0.1:8860/download/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt?generation=1792788613965&alt=media\"}"
+            }
+          },
+          "elapsedMs": 12,
+          "ms": 3162
+        }
+      ],
+      "result": {
+        "ok": {
+          "cacheControl": "",
+          "contentType": "text/plain",
+          "crc32c": 3406711241,
+          "created": "2026-10-23T20:50:13.966Z",
+          "etag": "B0MZGbEFoKL0FzUOV/6Da9hWjzA",
+          "generation": 1792788613965,
+          "md5": "YDaSjrsTscfs6Mb/d+mR9A==",
+          "metadata": {
+            "who": "go"
+          },
+          "metageneration": 1,
+          "name": "aruma-ref/s0c-20261023-emu/go/small.txt",
+          "size": 8,
+          "updated": "2026-10-23T20:50:13.966Z"
+        }
+      }
+    },
+    {
+      "step": "Attrs of a missing object",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fmissing.txt?alt=json&prettyPrint=false&projection=full",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "x-goog-api-client": "gl-go/1.27.2 gdcl/0.279.0 gccl-invocation-id/6f834c64-d23d-4c44-bc70-4ff921f07b9e gccl-attempt-count/1 gl-go/1.27.2 gccl/1.62.1",
+              "x-goog-gcs-idempotency-token": "6f834c64-d23d-4c44-bc70-4ff921f07b9e",
+              "accept-encoding": "gzip"
+            }
+          },
+          "response": {
+            "status": 404,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "267",
+              "etag": "W/\"10b-4ilMWEJ82CGc9uLPOn9zgzAAlCk\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":404,\"message\":\"No such object: demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/missing.txt\",\"errors\":[{\"message\":\"No such object: demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/missing.txt\",\"domain\":\"global\",\"reason\":\"notFound\"}]}}"
+            }
+          },
+          "elapsedMs": 6,
+          "ms": 3171
+        }
+      ],
+      "result": {
+        "error": "storage: object doesn't exist: googleapi: Error 404: No such object: demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/missing.txt, notFound"
+      }
+    },
+    {
+      "step": "Update (CacheControl, metadata)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "PATCH",
+            "url": "/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt?alt=json&prettyPrint=false&projection=full",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "content-length": "91",
+              "content-type": "application/json",
+              "x-goog-api-client": "gl-go/1.27.2 gdcl/0.279.0 gccl-invocation-id/98fa5501-a583-49e3-816f-f8ade6d156a3 gccl-attempt-count/1 gl-go/1.27.2 gccl/1.62.1",
+              "x-goog-gcs-idempotency-token": "98fa5501-a583-49e3-816f-f8ade6d156a3",
+              "accept-encoding": "gzip"
+            },
+            "body": {
+              "text": "{\"bucket\":\"demo-aruma-ref.appspot.com\",\"cacheControl\":\"no-store\",\"metadata\":{\"added\":\"1\"}}\n"
+            }
+          },
+          "response": {
+            "status": 501,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "15",
+              "etag": "W/\"f-fQJ74SexLoe24pZkYfRXD2evSf4\""
+            },
+            "body": {
+              "text": "Not Implemented"
+            }
+          },
+          "elapsedMs": 3,
+          "ms": 3190
+        }
+      ],
+      "result": {
+        "error": "googleapi: got HTTP response code 501 with body: Not Implemented"
+      }
+    },
+    {
+      "step": "NewReader",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/demo-aruma-ref.appspot.com/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "Go-http-client/1.1",
+              "x-goog-api-client": "gccl-invocation-id/7221ac7f-9310-4d68-8e6c-c7062472417e gccl-attempt-count/1 gl-go/1.27.2 gccl/1.62.1",
+              "x-goog-gcs-idempotency-token": "7221ac7f-9310-4d68-8e6c-c7062472417e",
+              "accept-encoding": "gzip"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "accept-ranges": "bytes",
+              "content-type": "text/plain",
+              "content-disposition": "attachment; filename*=small.txt",
+              "content-encoding": "",
+              "etag": "B0MZGbEFoKL0FzUOV/6Da9hWjzA",
+              "cache-control": "",
+              "x-goog-generation": "1792788613965",
+              "x-goog-metadatageneration": "1",
+              "x-goog-storage-class": "STANDARD",
+              "x-goog-hash": "crc32c=yw5JyQ==,md5=YDaSjrsTscfs6Mb/d+mR9A==",
+              "content-length": "8"
+            },
+            "body": {
+              "text": "go small"
+            }
+          },
+          "elapsedMs": 6,
+          "ms": 3198
+        }
+      ],
+      "result": {
+        "ok": "go small"
+      }
+    },
+    {
+      "step": "NewRangeReader 0..3",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/demo-aruma-ref.appspot.com/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "Go-http-client/1.1",
+              "range": "bytes=0-2",
+              "x-goog-api-client": "gccl-invocation-id/e9c506db-ae7b-4830-89ed-1569e6e64a4a gccl-attempt-count/1 gl-go/1.27.2 gccl/1.62.1",
+              "x-goog-gcs-idempotency-token": "e9c506db-ae7b-4830-89ed-1569e6e64a4a"
+            }
+          },
+          "response": {
+            "status": 206,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "accept-ranges": "bytes",
+              "content-type": "text/plain",
+              "content-disposition": "attachment; filename*=small.txt",
+              "content-encoding": "",
+              "etag": "B0MZGbEFoKL0FzUOV/6Da9hWjzA",
+              "cache-control": "",
+              "x-goog-generation": "1792788613965",
+              "x-goog-metadatageneration": "1",
+              "x-goog-storage-class": "STANDARD",
+              "x-goog-hash": "crc32c=yw5JyQ==,md5=YDaSjrsTscfs6Mb/d+mR9A==",
+              "content-range": "bytes 0-2/8",
+              "content-length": "3"
+            },
+            "body": {
+              "text": "go "
+            }
+          },
+          "elapsedMs": 47,
+          "ms": 3250
+        }
+      ],
+      "result": {
+        "ok": "go "
+      }
+    },
+    {
+      "step": "Objects with Prefix and Delimiter",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/storage/v1/b/demo-aruma-ref.appspot.com/o?alt=json&delimiter=%2F&endOffset=&includeFoldersAsPrefixes=false&includeTrailingDelimiter=false&matchGlob=&pageToken=&prefix=aruma-ref%2Fs0c-20261023-emu%2Fgo%2F&prettyPrint=false&projection=full&startOffset=&versions=false",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "x-goog-api-client": "gl-go/1.27.2 gdcl/0.279.0 gccl-invocation-id/a28e052e-57d6-44c4-b311-dce57821ebc3 gccl-attempt-count/1 gl-go/1.27.2 gccl/1.62.1",
+              "x-goog-gcs-idempotency-token": "a28e052e-57d6-44c4-b311-dce57821ebc3",
+              "accept-encoding": "gzip"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "1745",
+              "etag": "W/\"6d1-MCnxsy5f31jsYHcvrNMsMBslNVY\""
+            },
+            "body": {
+              "text": "{\"kind\":\"storage#objects\",\"items\":[{\"kind\":\"storage#object\",\"name\":\"aruma-ref/s0c-20261023-emu/go/default.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788613971\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:13.971Z\",\"updated\":\"2026-10-23T20:50:13.971Z\",\"storageClass\":\"STANDARD\",\"size\":\"10\",\"md5Hash\":\"MGkiMo+E1o4kEUq5pXxteg==\",\"etag\":\"enaow/aZi3wv7NiIUnsLrv1EkQA\",\"crc32c\":\"U5UsBg==\",\"timeStorageClassUpdated\":\"2026-10-23T20:50:13.971Z\",\"id\":\"demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/default.txt/1792788613971\",\"selfLink\":\"http://127.0.0.1:8860/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fdefault.txt\",\"mediaLink\":\"http://127.0.0.1:8860/download/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fdefault.txt?generation=1792788613971&alt=media\"},{\"kind\":\"storage#object\",\"name\":\"aruma-ref/s0c-20261023-emu/go/small.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788613965\",\"metageneration\":\"1\",\"contentType\":\"text/plain\",\"timeCreated\":\"2026-10-23T20:50:13.966Z\",\"updated\":\"2026-10-23T20:50:13.966Z\",\"storageClass\":\"STANDARD\",\"size\":\"8\",\"md5Hash\":\"YDaSjrsTscfs6Mb/d+mR9A==\",\"etag\":\"B0MZGbEFoKL0FzUOV/6Da9hWjzA\",\"metadata\":{\"who\":\"go\"},\"crc32c\":\"yw5JyQ==\",\"timeStorageClassUpdated\":\"2026-10-23T20:50:13.966Z\",\"id\":\"demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/small.txt/1792788613965\",\"selfLink\":\"http://127.0.0.1:8860/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt\",\"mediaLink\":\"http://127.0.0.1:8860/download/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt?generation=1792788613965&alt=media\"}]}"
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 3252
+        }
+      ],
+      "result": {
+        "ok": [
+          "aruma-ref/s0c-20261023-emu/go/default.txt",
+          "aruma-ref/s0c-20261023-emu/go/small.txt"
+        ]
+      }
+    },
+    {
+      "step": "CopierFrom (rewrite)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt/rewriteTo/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fcopy.txt?alt=json&prettyPrint=false&projection=full",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "content-length": "3",
+              "content-type": "application/json",
+              "x-goog-api-client": "gl-go/1.27.2 gdcl/0.279.0 gccl-invocation-id/86c8dd73-6c0e-4670-b6e3-ea860b196131 gccl-attempt-count/1 gl-go/1.27.2 gccl/1.62.1",
+              "x-goog-gcs-idempotency-token": "86c8dd73-6c0e-4670-b6e3-ea860b196131",
+              "accept-encoding": "gzip"
+            },
+            "body": {
+              "text": "{}\n"
+            }
+          },
+          "response": {
+            "status": 501,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "15",
+              "etag": "W/\"f-fQJ74SexLoe24pZkYfRXD2evSf4\""
+            },
+            "body": {
+              "text": "Not Implemented"
+            }
+          },
+          "elapsedMs": 0,
+          "ms": 3253
+        }
+      ],
+      "result": {
+        "error": "googleapi: got HTTP response code 501 with body: Not Implemented"
+      }
+    },
+    {
+      "step": "Writer with DoesNotExist precondition on an existing object",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/upload/storage/v1/b/demo-aruma-ref.appspot.com/o?alt=json&ifGenerationMatch=0&name=aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt&prettyPrint=false&projection=full&uploadType=multipart",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "transfer-encoding": "chunked",
+              "content-type": "multipart/related; boundary=97df78fbf4362d48837a687b74ebe60002327e33d9272e1b5a6002f37eba",
+              "x-goog-api-client": "gccl-invocation-id/a21792ad-774f-4846-b0f2-b89ab4ff3755 gccl-attempt-count/1 gl-go/1.27.2 gccl/1.62.1",
+              "x-goog-gcs-idempotency-token": "a21792ad-774f-4846-b0f2-b89ab4ff3755",
+              "accept-encoding": "gzip"
+            },
+            "body": {
+              "text": "--97df78fbf4362d48837a687b74ebe60002327e33d9272e1b5a6002f37eba\r\nContent-Type: application/json\r\n\r\n{\"bucket\":\"demo-aruma-ref.appspot.com\",\"name\":\"aruma-ref/s0c-20261023-emu/go/small.txt\"}\n\r\n--97df78fbf4362d48837a687b74ebe60002327e33d9272e1b5a6002f37eba\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nagain\r\n--97df78fbf4362d48837a687b74ebe60002327e33d9272e1b5a6002f37eba--\r\n"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "844",
+              "etag": "W/\"34c-3nmPIRHqpiyIcewlf73BeSYhmv8\""
+            },
+            "body": {
+              "text": "{\"kind\":\"storage#object\",\"name\":\"aruma-ref/s0c-20261023-emu/go/small.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788616979\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:16.979Z\",\"updated\":\"2026-10-23T20:50:16.979Z\",\"storageClass\":\"STANDARD\",\"size\":\"5\",\"md5Hash\":\"Y5hJ9rNoAZd4mRsyQ0NU/A==\",\"etag\":\"6jdg9C3JDTd4bJTfVlJzQgagfvE\",\"crc32c\":\"dO2O+Q==\",\"timeStorageClassUpdated\":\"2026-10-23T20:50:16.979Z\",\"id\":\"demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/small.txt/1792788616979\",\"selfLink\":\"http://127.0.0.1:8860/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt\",\"mediaLink\":\"http://127.0.0.1:8860/download/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt?generation=1792788616979&alt=media\"}"
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 3256
+        }
+      ],
+      "result": {
+        "ok": {
+          "cacheControl": "",
+          "contentType": "application/octet-stream",
+          "crc32c": 1961725689,
+          "created": "2026-10-23T20:50:16.979Z",
+          "etag": "6jdg9C3JDTd4bJTfVlJzQgagfvE",
+          "generation": 1792788616979,
+          "md5": "Y5hJ9rNoAZd4mRsyQ0NU/A==",
+          "metadata": null,
+          "metageneration": 1,
+          "name": "aruma-ref/s0c-20261023-emu/go/small.txt",
+          "size": 5,
+          "updated": "2026-10-23T20:50:16.979Z"
+        }
+      }
+    },
+    {
+      "step": "Delete a missing object",
+      "exchanges": [
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fmissing.txt?alt=json&prettyPrint=false",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "x-goog-api-client": "gl-go/1.27.2 gdcl/0.279.0 gccl-invocation-id/5924394b-d2a6-4069-a549-40436563c019 gccl-attempt-count/1 gl-go/1.27.2 gccl/1.62.1",
+              "x-goog-gcs-idempotency-token": "5924394b-d2a6-4069-a549-40436563c019",
+              "accept-encoding": "gzip"
+            }
+          },
+          "response": {
+            "status": 404,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "267",
+              "etag": "W/\"10b-4ilMWEJ82CGc9uLPOn9zgzAAlCk\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":404,\"message\":\"No such object: demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/missing.txt\",\"errors\":[{\"message\":\"No such object: demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/missing.txt\",\"domain\":\"global\",\"reason\":\"notFound\"}]}}"
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 3260
+        }
+      ],
+      "result": {
+        "error": "storage: object doesn't exist: googleapi: Error 404: No such object: demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/missing.txt, notFound"
+      }
+    },
+    {
+      "step": "Bucket Attrs",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/storage/v1/b/demo-aruma-ref.appspot.com?alt=json&prettyPrint=false&projection=full",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "x-goog-api-client": "gl-go/1.27.2 gdcl/0.279.0 gccl-invocation-id/f433fcc9-5b7b-4409-8cad-e1e1d88c6f36 gccl-attempt-count/1 gl-go/1.27.2 gccl/1.62.1",
+              "x-goog-gcs-idempotency-token": "f433fcc9-5b7b-4409-8cad-e1e1d88c6f36",
+              "accept-encoding": "gzip"
+            }
+          },
+          "response": {
+            "status": 404,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "209",
+              "etag": "W/\"d1-rk9gBfkRinjw6u4yj2oVzB2pf2E\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":404,\"message\":\"No such object: storage/v1/b/demo-aruma-ref.appspot.com\",\"errors\":[{\"message\":\"No such object: storage/v1/b/demo-aruma-ref.appspot.com\",\"domain\":\"global\",\"reason\":\"notFound\"}]}}"
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 3263
+        }
+      ],
+      "result": {
+        "error": "storage: bucket doesn't exist: googleapi: Error 404: No such object: storage/v1/b/demo-aruma-ref.appspot.com, notFound"
+      }
+    },
+    {
+      "step": "Delete small.txt",
+      "exchanges": [
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fsmall.txt?alt=json&prettyPrint=false",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "x-goog-api-client": "gl-go/1.27.2 gdcl/0.279.0 gccl-invocation-id/59ab74fd-6d9c-45d2-8407-ea04936cec88 gccl-attempt-count/1 gl-go/1.27.2 gccl/1.62.1",
+              "x-goog-gcs-idempotency-token": "59ab74fd-6d9c-45d2-8407-ea04936cec88",
+              "accept-encoding": "gzip"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 3265
+        }
+      ],
+      "result": {
+        "ok": null
+      }
+    },
+    {
+      "step": "Delete default.txt",
+      "exchanges": [
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fdefault.txt?alt=json&prettyPrint=false",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "x-goog-api-client": "gl-go/1.27.2 gdcl/0.279.0 gccl-invocation-id/c418ccaf-a929-4d1f-8e01-af22d09875f6 gccl-attempt-count/1 gl-go/1.27.2 gccl/1.62.1",
+              "x-goog-gcs-idempotency-token": "c418ccaf-a929-4d1f-8e01-af22d09875f6",
+              "accept-encoding": "gzip"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 3267
+        }
+      ],
+      "result": {
+        "ok": null
+      }
+    },
+    {
+      "step": "Delete big.bin",
+      "exchanges": [
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fbig.bin?alt=json&prettyPrint=false",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "x-goog-api-client": "gl-go/1.27.2 gdcl/0.279.0 gccl-invocation-id/96f13815-b9eb-4d48-a6c4-afe4ab385989 gccl-attempt-count/1 gl-go/1.27.2 gccl/1.62.1",
+              "x-goog-gcs-idempotency-token": "96f13815-b9eb-4d48-a6c4-afe4ab385989",
+              "accept-encoding": "gzip"
+            }
+          },
+          "response": {
+            "status": 404,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "259",
+              "etag": "W/\"103-bvvd9f5WvBSTuzc4xVR68EeZZp0\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":404,\"message\":\"No such object: demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/big.bin\",\"errors\":[{\"message\":\"No such object: demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/big.bin\",\"domain\":\"global\",\"reason\":\"notFound\"}]}}"
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 3268
+        }
+      ],
+      "result": {
+        "error": "storage: object doesn't exist: googleapi: Error 404: No such object: demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/big.bin, notFound"
+      }
+    },
+    {
+      "step": "Delete copy.txt",
+      "exchanges": [
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/storage/v1/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fgo%2Fcopy.txt?alt=json&prettyPrint=false",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "user-agent": "google-api-go-client/0.5",
+              "x-goog-api-client": "gl-go/1.27.2 gdcl/0.279.0 gccl-invocation-id/f421c005-3f84-46db-84d5-4a02506e5339 gccl-attempt-count/1 gl-go/1.27.2 gccl/1.62.1",
+              "x-goog-gcs-idempotency-token": "f421c005-3f84-46db-84d5-4a02506e5339",
+              "accept-encoding": "gzip"
+            }
+          },
+          "response": {
+            "status": 404,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "261",
+              "etag": "W/\"105-ZYV8LOoET58iCpodoZFQ9Duyhww\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":404,\"message\":\"No such object: demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/copy.txt\",\"errors\":[{\"message\":\"No such object: demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/copy.txt\",\"domain\":\"global\",\"reason\":\"notFound\"}]}}"
+            }
+          },
+          "elapsedMs": 1,
+          "ms": 3269
+        }
+      ],
+      "result": {
+        "error": "storage: object doesn't exist: googleapi: Error 404: No such object: demo-aruma-ref.appspot.com/aruma-ref/s0c-20261023-emu/go/copy.txt, notFound"
+      }
+    }
+  ],
+  "notes": []
+}
