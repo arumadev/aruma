@@ -62,7 +62,7 @@ go run ./tools/rules-diff -seed 1 -n 1000                                   # م
 | deployed | pyric | 274 | 274 | 0 | | | | |
 | rules-test-api | aruma | 2034 | 15 | 2019 | | | | |
 | rules-test-api | pyric | 1649 | 39 | 1610 | | | | |
-| emulator | aruma | 689 | 47 | 642 | | | | |
+| emulator | aruma | 689 | 49 | 640 | | | | |
 | emulator | hidane | 1345 | 0 | 1345 | | | | |
 
 - `finer`: من المعدودة، ما طابقت نتيجته الأدق أيضًا. `permissive`: سماح رفضه المصدر ومن فوقه؛ يجب أن يكون صفرًا.
@@ -87,6 +87,7 @@ go run ./tools/rules-diff -seed 1 -n 1000                                   # م
 | الفرق | الحالات | ما نفعله |
 |---|---|---|
 | حدّ القراءات في محاكي Firestore يعدّ تقييمَي الشرط معًا (firebase-tools #6252) | `aruma/limits/exists_get_same_6` | نتبع Test API والوثائق: القراءة نفسها لا تُعدّ مرتين |
+| محاكي Storage لا يطبّق حدّ القراءات: ثلاثة مستندات و11 تُسمح، وStorage المنشور يرفض الثالث | `aruma/storage/fs_lookups_3`، `aruma/storage/fs_lookups_11` | خارج النسبة، والحدّ تثبته حالات المرساة (`rulestest.Anchors`): 10 تُسمح و11 تُرفض في Firestore، و2 تُسمح و3 تُرفض في Storage |
 | `list` في Storage: المحاكي يطابق أبناء المسار لا المسار نفسه | `aruma/storage/read_list`، `aruma/storage/method_list`، `aruma/storage-paths/list_on_folder` | لم يُحسم على المنشور؛ S2 |
 
 ### فروق مقصودة
