@@ -37,7 +37,7 @@ func TestLookups(t *testing.T) {
 		{"exists of a stored document", exists("request"), OutcomeTrue, 1},
 		{"exists of a missing one", exists("resource"), OutcomeFalse, 1},
 		{"get of a stored document is its value", or(get("request"), tru()), OutcomeTrue, 1},
-		{"get of a missing one fails", get("resource"), OutcomeError, 1},
+		{"get of a missing one is null", get("resource"), OutcomeError, 1},
 		{"get of a missing one, absorbed", or(get("resource"), tru()), OutcomeTrue, 1},
 		{"get and exists of one path: one read", and(exists("request"), or(get("request"), tru())), OutcomeTrue, 1},
 		{"getAfter is another state", and(exists("request"), call("existsAfter", ident("request"))), OutcomeTrue, 2},
@@ -160,12 +160,34 @@ func TestLookupOutage(t *testing.T) {
 	if !errors.Is(err, broken) || d.Allow {
 		t.Fatalf("Evaluate = %+v, %v; want the outage", d, err)
 	}
-	// A failed lookup is not cached: the next one asks again.
+	// A lookup Firestore cannot answer is cached with its error: repeating it is free.
 	docs := &memDocs{err: ErrNoDocuments}
 	req := lookupRequest(docs, "x/1", "x/2")
 	rs = lookupRules(t, or(call("exists", ident("request")), call("exists", ident("request"))))
-	if d := evaluate(t, rs, req); d.Allow || docs.total() != 2 {
+	if d := evaluate(t, rs, req); d.Allow || docs.total() != 1 {
 		t.Fatalf("%+v after %d reads", d, docs.total())
+	}
+}
+
+// get() of a missing document is null (the rules.firestore reference, the emulator).
+func TestGetMissingIsNull(t *testing.T) {
+	got := evaluate(t, lookupRules(t, call("get", ident("resource"))), lookupRequest(&memDocs{}, "x/1", "x/2"))
+	if got.Statements[0].Message != "Type error. Received: [null] Expected: [bool]." {
+		t.Errorf("get of a missing document: %+v", got.Statements[0])
+	}
+}
+
+// In v0.3 every Storage lookup fails; repeating one is free, so its errors stay absorbable
+// however often a rule names the same document (deployed Storage counts a repeated document
+// once: Pyric's lookup-budget "repeat").
+func TestRepeatedFailedLookup(t *testing.T) {
+	ex := func() expr { return nscall("firestore", "exists", ident("request")) }
+	body := block{matches: []*match{matchb("/{all=**}", block{allows: []*allow{
+		allowb("read", or(or(or(ex(), ex()), ex()), tru())),
+	}})}}
+	rs := compile(t, Storage, rulesFile("2", Storage, body))
+	if d := evaluate(t, rs, lookupRequest(NoDocuments{}, "u/1", "u/2")); !d.Allow {
+		t.Fatalf("three references to one document denied: %+v", d)
 	}
 }
 

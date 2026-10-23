@@ -54,10 +54,12 @@ type lookupKey struct {
 	path  string // the document path, encoded so that no two paths share it
 }
 
-// lookupResult is a cached lookup. Failed lookups are not cached.
+// lookupResult is a cached lookup. A lookup Firestore could not answer (ErrNoDocuments) is
+// cached with its error, so that repeating it is free; an outage ends the evaluation and is not.
 type lookupResult struct {
 	doc   Value
 	found bool
+	err   error // an *evalError, or nil
 }
 
 // NewBudget returns an empty budget for one request.
@@ -88,11 +90,12 @@ var lookupFunctions = map[Service]map[string]bool{
 // isLookup reports whether name ("get", "firestore.get") is a lookup svc enables.
 func isLookup(svc Service, name string) bool { return lookupFunctions[svc][name] }
 
-// lookup calls a lookup: get and getAfter return the document, which must exist; exists and
-// existsAfter whether it does. The argument is a path to a document of the default database.
-// A Documents that cannot read Firestore (ErrNoDocuments) and a missing document for get are
-// evaluation errors; going past a lookup limit ends the evaluation with a denial (ADR-021 §4);
-// any other failure of Documents is an outage.
+// lookup calls a lookup: get and getAfter return the document, or null when it does not exist
+// (the rules.firestore reference: "the document, or null if it does not exist"; the emulator
+// agrees, and no deployed capture tells the two apart); exists and existsAfter whether it does.
+// The argument is a path to a document of the default database. A Documents that cannot read
+// Firestore (ErrNoDocuments) is an evaluation error; going past a lookup limit ends the
+// evaluation with a denial (ADR-021 §4); any other failure of Documents is an outage.
 func (ev *evaluator) lookup(e *callExpr, fr *frame) (Value, error) {
 	if len(e.args) != 1 {
 		return Value{}, errorf("Incorrect number of arguments. Received: %d. Expected: %s(path).", len(e.args), e.name)
@@ -116,9 +119,7 @@ func (ev *evaluator) lookup(e *callExpr, fr *frame) (Value, error) {
 		return Bool(found), nil
 	}
 	if !found {
-		// The emulator answers null. Production's answer is not recorded, and an error grants
-		// in no case where null would not.
-		return Value{}, errorf("Null value error.")
+		return Null(), nil
 	}
 	return doc, nil
 }
@@ -132,8 +133,8 @@ func isDocumentPath(segs []string) bool {
 }
 
 // read reads a document through the request's budget: a cached lookup is free; any other counts
-// against the operation's limit and the request's before Documents is asked. A failed lookup
-// counts and is not cached.
+// against the operation's limit and the request's before Documents is asked. A lookup that
+// failed with ErrNoDocuments counts once, as a document does.
 func (ev *evaluator) read(segs []string, after bool) (Value, bool, error) {
 	b := ev.req.Budget
 	key := lookupKey{after: after, path: encodePath(segs)}
@@ -141,7 +142,7 @@ func (ev *evaluator) read(segs []string, after bool) (Value, bool, error) {
 	r, hit := b.cache[key]
 	b.mu.Unlock()
 	if hit {
-		return r.doc, r.found, nil
+		return r.doc, r.found, r.err
 	}
 	if err := ev.ctx.Err(); err != nil {
 		return Value{}, false, &abort{msg: "evaluation cancelled", err: err}
@@ -160,9 +161,10 @@ func (ev *evaluator) read(segs []string, after bool) (Value, bool, error) {
 	ev.lookups++
 
 	doc, found, err := ev.req.Documents.Get(ev.ctx, ev.req.Project, segs, after)
+	r = lookupResult{doc: doc, found: found}
 	switch {
 	case errors.Is(err, ErrNoDocuments):
-		return Value{}, false, errorf("%s", err.Error())
+		r = lookupResult{err: errorf("%s", err.Error())}
 	case err != nil:
 		return Value{}, false, &abort{msg: "document lookup failed", err: err}
 	}
@@ -170,9 +172,9 @@ func (ev *evaluator) read(segs []string, after bool) (Value, bool, error) {
 	if b.cache == nil {
 		b.cache = map[lookupKey]lookupResult{}
 	}
-	b.cache[key] = lookupResult{doc: doc, found: found}
+	b.cache[key] = r
 	b.mu.Unlock()
-	return doc, found, nil
+	return r.doc, r.found, r.err
 }
 
 // encodePath encodes a document path so that no two paths share a key: each segment with its
