@@ -59,17 +59,17 @@ export const cases = [
   r('v1_rest_one_segment', 'v1: {rest=**} of a single segment', fs('1', rest("rest == 'a'")), 'p/a'),
   r('v1_rest_is_map', 'v1: rest is map', fs('1', rest('rest is map')), 'p/a/b/c'),
   r('v2_rest_on_one_segment', 'v2: {rest=**} of p/a is /a', fs('2', rest('rest == /a')), 'p/a'),
-  r('nested_under_root_recursive', 'v2: match /{rest=**} { match /x/{d} } on x/d', fs('2', `    match /{rest=**} {
+  r('nested_under_root_recursive', "v2: a nested match under a block whose own path ends in {rest=**}: match /{rest=**} { match /x/{d} } on x/d", fs('2', `    match /{rest=**} {
       match /x/{d} {
         allow get: if true;
       }
     }`), 'x/d'),
-  r('nested_under_recursive_deep', 'v2: match /p/{rest=**} { match /x/{d} } on p/a/b/x/d', fs('2', `    match /p/{rest=**} {
+  r('nested_under_recursive_deep', "v2: a nested match under a block whose own path ends in {rest=**}: match /p/{rest=**} { match /x/{d} } on p/a/b/x/d", fs('2', `    match /p/{rest=**} {
       match /x/{d} {
         allow get: if true;
       }
     }`), 'p/a/b/x/d'),
-  r('nested_under_recursive_var', 'v2: the {rest=**} variable inside a nested match', fs('2', `    match /p/{rest=**} {
+  r('nested_under_recursive_var', "v2: the {rest=**} variable inside a match nested under a block whose own path ends in {rest=**}", fs('2', `    match /p/{rest=**} {
       match /x/{d} {
         allow get: if rest == /a;
       }

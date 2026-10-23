@@ -1,6 +1,11 @@
 This directory includes test fixtures from hidane (https://github.com/hidane-dev/hidane),
 Copyright (c) 2026 Hiroki Nomura, licensed under either of the Apache License,
 Version 2.0 or the MIT license, and used here under the Apache License, Version 2.0:
-hidane/original/cases/rules-heldout.json and the heldout/* results of
-results/rules-conditions-official-v1.22.0.json, unchanged, and their conversion
-in hidane/normalised/.
+
+- hidane/original/cases/rules-heldout.json: unchanged.
+- hidane/original/results/rules-conditions-official-v1.22.0.heldout.json: modified.
+  It is hidane's results/rules-conditions-official-v1.22.0.json reduced to its
+  header, its 106 heldout/* result lines and its closing lines (the other results
+  are on the s0-rules-oracle branch), with the trailing comma of the last result
+  line removed; nothing else was changed.
+- hidane/normalised/: their conversion to Aruma's fixture format.

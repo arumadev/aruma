@@ -39,7 +39,7 @@ export const cases = [
   r('v2_not_final', 'v2: {rest=**} followed by more segments', st('2', `    match /{rest=**}/x/{f} {
       allow get: if true;
     }`), 'a/x/f.txt'),
-  r('v2_nested_under_recursive', 'v2: a nested match under a non-final {rest=**}', st('2', `    match /p/{rest=**} {
+  r('v2_nested_under_recursive', "v2: a nested match under a block whose own path ends in {rest=**} (match /p/{rest=**} { match /x/{f} })", st('2', `    match /p/{rest=**} {
       match /x/{f} {
         allow get: if true;
       }

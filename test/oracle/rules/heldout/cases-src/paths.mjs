@@ -69,7 +69,7 @@ export const cases = [
   r('wild_v2_two_recursive', 'v2: two recursive wildcards in one match', fs('2', `    match /{a=**}/x/{b=**} {
       allow get: if true;
     }`), 'q/x/y/z'),
-  r('wild_v2_nested_under_recursive', 'v2: a nested match under a non-final {rest=**}', fs('2', `    match /p/{rest=**} {
+  r('wild_v2_nested_under_recursive', "v2: a nested match under a block whose own path ends in {rest=**} (match /p/{rest=**} { match /docs/{d} })", fs('2', `    match /p/{rest=**} {
       match /docs/{d} {
         allow get: if true;
       }
