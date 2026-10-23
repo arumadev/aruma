@@ -109,7 +109,8 @@ func syntaxShape(e expr) string {
 	return fmt.Sprintf("?%T", e)
 }
 
-// Precedence follows the documentation's table (rules-language, "Operators").
+// Precedence is production's (Rules Test API probes, S1-A review), not the documentation's
+// table: == binds tighter than is, and is tighter than in; any operator may follow "x is T".
 func TestParsePrecedence(t *testing.T) {
 	for _, c := range []struct{ cond, want string }{
 		{"a || b && c == d + e * f", "(a || (b && (c == (d + (e * f)))))"},
@@ -122,11 +123,26 @@ func TestParsePrecedence(t *testing.T) {
 		{"!-a", "(!(-a))"},
 		{"-1 - -2.5 % 3", "((-1) - ((-2.5f) % 3))"},
 		{"a < b == c >= d", "((a < b) == (c >= d))"},
-		// Relational operators bind tighter than in, in than is, is than the equalities.
+		// Relational operators bind tighter than the equalities, the equalities than is, is
+		// than in, and in than &&.
 		{"a < b in c", "((a < b) in c)"},
-		{"a == b in c", "(a == (b in c))"},
-		{"a in b is bool", "((a in b) is bool)"},
-		{"a == b is bool", "(a == (b is bool))"},
+		{"1 in [1] != false", "(1 in ([1] != false))"},
+		{"true == 1 is int", "((true == 1) is int)"},
+		{"1 == 1 is bool", "((1 == 1) is bool)"},
+		{"1 in [1] == true", "(1 in ([1] == true))"},
+		{"'a' in ['a'] is bool", `("a" in (["a"] is bool))`},
+		{"1 == 2 in [false]", "((1 == 2) in [false])"},
+		{"[1] is list in [true]", "(([1] is list) in [true])"},
+		{"1 is int < 2", "((1 is int) < 2)"},
+		{"a && b is int < 2", "(a && ((b is int) < 2))"},
+		{"false && false in [false]", "(false && (false in [false]))"},
+		{"true || false in [false]", "(true || (false in [false]))"},
+		{"false && true is bool", "(false && (true is bool))"},
+		{"1 in [1] in [true]", "((1 in [1]) in [true])"},
+		{"1 < 2 is bool", "((1 < 2) is bool)"},
+		{"1 + 1 is int", "((1 + 1) is int)"},
+		{"!true is bool", "((!true) is bool)"},
+		{"true in [true] < 2", "(true in ([true] < 2))"},
 		{"x is string && y in [1, 2,]", "((x is string) && (y in [1, 2]))"},
 		{"x is int is bool", "((x is int) is bool)"},
 		// ?: is the loosest and right-associative, and a branch may be a conditional.

@@ -30,10 +30,12 @@ import (
 // Lines after the first error do not always match the compiler's, which depend on ANTLR's
 // prediction; the first error does in every case hidane recorded.
 //
-// The precedence of operators is the documentation's table (rules-language, "Operators"), from
-// the tightest: a[i] a() a.f, then ! -, then * / %, then + -, then < <= > >=, then in, then is,
-// then == !=, then &&, then ||, then ?:. All are left-associative but ?:, whose branches may be
-// conditionals themselves.
+// The precedence of operators is production's, which differs from the documentation's table
+// (Rules Test API probes, S1-A review): from the tightest, a[i] a() a.f, then ! -, then * / %,
+// then + -, then < <= > >=, then == !=, then is, then in, then &&, then ||, then ?:. All are
+// left-associative but ?:, whose branches may be conditionals themselves. They are read by
+// precedence climbing, as ANTLR reads a left-recursive rule, and "x is T" is a postfix of its
+// level: any operator may follow it, so "1 is int < 2" is ((1 is int) < 2).
 //
 // Nesting is checked once a file parses (ADR-021 §2.1, §4): an expression nested
 // lim.ExpressionDepth+1 deep (99) is "Expression is too complex to evaluate safely.", reported
@@ -1044,7 +1046,7 @@ func (p *parser) tooComplex() {
 }
 
 func (p *parser) ternary() expr {
-	test := p.binaryLevel(0)
+	test := p.operators(1)
 	if p.abort || p.la(1) != tkQuestion {
 		return test
 	}
@@ -1066,40 +1068,53 @@ func (p *parser) ternary() expr {
 	return &condExpr{span: span{test.pos().start, max(test.pos().end, no.pos().end)}, test: test, yes: yes, no: no}
 }
 
-// binaryLevels are the levels of binary operators, the loosest first; is is read at its own
-// level, between in and the equalities.
-var binaryLevels = [][]tk{
-	{tk(tokOr)},
-	{tk(tokAnd)},
-	{tk(tokEQ), tk(tokNE)},
-	{tkIs},
-	{tkIn},
-	{tk(tokLT), tk(tokLE), tk(tokGT), tk(tokGE)},
-	{tk(tokPlus), tk(tokMinus)},
-	{tk(tokStar), tk(tokSlash), tk(tokPercent)},
+// precedence returns the level of a binary operator, or of is, from the loosest (1); 0 is no
+// operator.
+func (t tk) precedence() int {
+	switch t {
+	case tk(tokOr):
+		return 1
+	case tk(tokAnd):
+		return 2
+	case tkIn:
+		return 3
+	case tkIs:
+		return 4
+	case tk(tokEQ), tk(tokNE):
+		return 5
+	case tk(tokLT), tk(tokLE), tk(tokGT), tk(tokGE):
+		return 6
+	case tk(tokPlus), tk(tokMinus):
+		return 7
+	case tk(tokStar), tk(tokSlash), tk(tokPercent):
+		return 8
+	}
+	return 0
 }
 
-// binaryLevel reads the operators of one level and what they join, left-associative.
-func (p *parser) binaryLevel(level int) expr {
-	if level == len(binaryLevels) {
-		return p.unary()
-	}
-	next := func() expr { return p.binaryLevel(level + 1) }
-	x := next()
-	for n := 0; !p.abort && slices.Contains(binaryLevels[level], p.la(1)); n++ {
+// operators reads operands joined by operators of level lowest or tighter, left-associative: the
+// right operand of an operator holds only tighter ones.
+func (p *parser) operators(lowest int) expr {
+	x := p.unary()
+	for n := 0; !p.abort; n++ {
+		t := p.la(1)
+		prec := t.precedence()
+		if prec == 0 || prec < lowest {
+			break
+		}
 		if n == parseMaxOperators {
 			// Far deeper than the compiler accepts; the depth check reports it.
 			p.abort = true
 			break
 		}
 		op := p.bump()
-		if op.kind == lexIdent && p.src[op.start:op.end] == "is" {
+		if t == tkIs {
 			x = p.isType(x)
 			continue
 		}
-		y := p.operand(next)
+		y := p.operand(func() expr { return p.operators(prec + 1) })
 		opTok := op.op
-		if op.kind == lexIdent { // in
+		if t == tkIn {
 			opTok = tokIn
 		}
 		x = &binaryExpr{span: span{x.pos().start, max(x.pos().end, y.pos().end)}, op: opTok, x: x, y: y}
