@@ -31,6 +31,9 @@ var allowed = map[string][]string{
 	"internal/services/rtdb/rules": {},
 	// So does the wire protocol, tested on frames recorded from the emulator (rtdb-layout.md).
 	"internal/services/rtdb/wire": {},
+	// The Firestore and Storage rules language imports nothing internal: the services feed it
+	// values and documents through its own types, and app wires it (ADR-021, rules-layout.md).
+	"internal/platform/rules": {},
 	// The console mounts the services' routes through platform/consolemount; only app wires them.
 	"internal/admin":  {"internal/tenancy", "internal/configgen", "internal/events", "internal/store", "internal/platform", "internal/config"},
 	"internal/server": {"internal/admin", "internal/services/", "internal/tenancy", "internal/platform", "internal/config", "internal/store"},
@@ -195,6 +198,23 @@ func TestRulesThemselves(t *testing.T) {
 		{"internal/services/rtdb/api", "internal/services/auth/core", false},
 		{"internal/services/auth/core", "internal/services/rtdb/core", false},
 		{"internal/app", "internal/platform/idtoken", true},
+		// The Firestore and Storage rules language stands alone in platform; the services, the
+		// control plane that stores rulesets, the admin API and app import it.
+		{"internal/platform/rules", "internal/platform/idtoken", false},
+		{"internal/platform/rules", "internal/platform/log", false},
+		{"internal/platform/rules", "internal/services/storage/core", false},
+		{"internal/platform/rules", "internal/services/firestore/core", false},
+		{"internal/platform/rules", "internal/tenancy/core", false},
+		{"internal/platform/rules", "internal/store", false},
+		{"internal/platform/rules", "internal/config", false},
+		{"internal/platform/rules/rulestest", "internal/platform/rules", true},
+		{"internal/platform/rules/rulestest", "internal/store", false},
+		{"internal/services/storage/core", "internal/platform/rules", true},
+		{"internal/services/firestore/core", "internal/platform/rules", true},
+		{"internal/tenancy/core", "internal/platform/rules", true},
+		{"internal/admin/mgmt", "internal/platform/rules", true},
+		{"internal/config", "internal/platform/rules", true},
+		{"internal/app", "internal/platform/rules", true},
 		// Only app wires services into the console and the admin APIs.
 		{"internal/admin/console", "internal/services/auth/core", false},
 		{"internal/admin/console", "internal/services/auth/console", false},
