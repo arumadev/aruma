@@ -88,3 +88,24 @@ func TestShrink(t *testing.T) {
 		t.Errorf("no tries shrank to %q", got)
 	}
 }
+
+// TestEngineFailureDisagrees: an engine that panicked or failed disagrees with any verdict of
+// the emulator, a compile error and a deny included.
+func TestEngineFailureDisagrees(t *testing.T) {
+	compileError := verdict{Outcome: "compile-error"}
+	deny := verdict{Compiled: true, Outcome: "deny"}
+	for _, c := range []struct {
+		emu, eng verdict
+		want     bool
+	}{
+		{compileError, verdict{Outcome: "panic", Message: "nil map"}, true},
+		{deny, verdict{Compiled: true, Outcome: "outage", Message: "rules: Firestore documents are not available"}, true},
+		{deny, verdict{Compiled: true, Outcome: "error"}, false},
+		{compileError, verdict{Outcome: "compile-error"}, false},
+		{deny, verdict{Compiled: true, Allow: true, Outcome: "allow"}, true},
+	} {
+		if got := disagree(c.emu, c.eng); got != c.want {
+			t.Errorf("emulator %s, engine %s: disagree %v, want %v", c.emu.Outcome, c.eng.Outcome, got, c.want)
+		}
+	}
+}

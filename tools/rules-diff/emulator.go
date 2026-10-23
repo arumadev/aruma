@@ -27,6 +27,7 @@ const emulatorProject = "demo-rulesdiff"
 type emulator struct {
 	addr   string // host:port
 	cmd    *exec.Cmd
+	log    *os.File
 	client *http.Client
 	loaded string // the rules last loaded
 }
@@ -48,7 +49,7 @@ func startEmulator(java, jar string, port int, logDir string) (*emulator, error)
 		log.Close()
 		return nil, err
 	}
-	e := &emulator{addr: fmt.Sprintf("127.0.0.1:%d", port), cmd: cmd, client: &http.Client{Timeout: 30 * time.Second}}
+	e := &emulator{addr: fmt.Sprintf("127.0.0.1:%d", port), cmd: cmd, log: log, client: &http.Client{Timeout: 30 * time.Second}}
 	deadline := time.Now().Add(60 * time.Second)
 	for time.Now().Before(deadline) {
 		if res, err := e.client.Get("http://" + e.addr + "/"); err == nil {
@@ -60,7 +61,12 @@ func startEmulator(java, jar string, port int, logDir string) (*emulator, error)
 		time.Sleep(200 * time.Millisecond)
 	}
 	e.stop()
-	return nil, fmt.Errorf("the Firestore emulator did not answer on %s; see %s", e.addr, log.Name())
+	// The log directory goes when the tool ends: say what the log said.
+	out, _ := os.ReadFile(log.Name())
+	if len(out) > 2000 {
+		out = out[len(out)-2000:]
+	}
+	return nil, fmt.Errorf("the Firestore emulator did not answer on %s; its log ends:\n%s", e.addr, out)
 }
 
 // connectEmulator uses an emulator that is already running.
@@ -85,6 +91,7 @@ func (e *emulator) stop() {
 		e.cmd.Process.Kill()
 		<-done
 	}
+	e.log.Close()
 }
 
 type response struct {

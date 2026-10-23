@@ -94,14 +94,18 @@ func run(ctx context.Context, cfg config) (err error) {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("starting the Firestore emulator on 127.0.0.1:%d (log in %s)\n", cfg.port, logDir)
+		defer os.RemoveAll(logDir)
+		fmt.Printf("starting the Firestore emulator on 127.0.0.1:%d\n", cfg.port)
 		if emu, err = startEmulator(cfg.java, cfg.jar, cfg.port, logDir); err != nil {
 			return err
 		}
 		defer emu.stop()
 	}
 
-	eng := newEngine()
+	eng, err := newEngine()
+	if err != nil {
+		return err
+	}
 	if eng.stub != "" {
 		fmt.Printf("the engine is the contract's stub (%q): running the emulator side alone\n", eng.stub)
 	}
@@ -199,7 +203,12 @@ func oneLine(s string) string {
 }
 
 // disagree reports whether two verdicts differ in what counts: compiling, and allowing.
+// An engine that panicked or failed (outage) disagrees whatever the emulator decided: a crash on
+// a file the emulator rejects is exactly what the tool is for.
 func disagree(emu, eng verdict) bool {
+	if eng.Outcome == "panic" || eng.Outcome == "outage" {
+		return true
+	}
 	return emu.Compiled != eng.Compiled || emu.Allow != eng.Allow
 }
 
@@ -249,10 +258,13 @@ type engine struct {
 	stub   string
 }
 
-func newEngine() *engine {
+// newEngine returns the engine, with stub set while Compile is the contract's stub. A Compile
+// that panics otherwise on a plain rules file is an error, not a stub.
+func newEngine() (*engine, error) {
 	e := &engine{runner: rulestest.NewRunner()}
-	_, _, e.stub = e.runner.Compile(rules.Firestore, rules.File{Name: "firestore.rules", Content: ruleset("get", "true")})
-	return e
+	var err error
+	e.stub, err = e.runner.Probe()
+	return e, err
 }
 
 // oracleCase is the generated case in the oracle's shape, for the emulator binding.
