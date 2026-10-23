@@ -1,0 +1,475 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "encoding",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T21:47:52.148Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/encoding/json_int_is_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/json_float_is_float",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/json_2_0_is_float",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/json_2_0_is_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "evaluation error at L14:21 for 'get' @ L14, false for 'get' @ L14"
+   }
+  },
+  {
+   "id": "aruma/encoding/json_1e2_is_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "evaluation error at L17:21 for 'get' @ L17, false for 'get' @ L17"
+   }
+  },
+  {
+   "id": "aruma/encoding/json_int64_max",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/json_2pow53_plus1_is_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/json_neg_zero",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/json_ts_string_is_string",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/json_ts_string_is_timestamp",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "evaluation error at L32:21 for 'get' @ L32, false for 'get' @ L32"
+   }
+  },
+  {
+   "id": "aruma/encoding/json_null_field",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/json_nested_list_map",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/time_unset_is_timestamp",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [41], column [21]. Property time is undefined on object."
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/encoding/time_unset_eq_null",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [44], column [21]. Property time is undefined on object."
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/encoding/time_default_is_timestamp",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/encoding/time_set",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/encoding/time_set_nanos",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/encoding/time_set_millis_precision",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/encoding/time_offset",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/encoding/time_bad_format",
+   "production": {
+    "outcome": "error",
+    "errorKind": "request",
+    "message": "400 INVALID_ARGUMENT Test case 'request.time' value must be a timestamp of the form YYYY-MM-DDTHH:MM:SSZ."
+   },
+   "emulator": {
+    "skip": "the Test API refused the request itself"
+   }
+  },
+  {
+   "id": "aruma/encoding/time_no_fraction",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/encoding/resource_absent_is_null",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [65], column [21]. Null value error."
+   },
+   "emulator": {
+    "outcome": "allow",
+    "note": "404: the rules allowed the read of a missing document"
+   }
+  },
+  {
+   "id": "aruma/encoding/resource_absent_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow",
+    "note": "404: the rules allowed the read of a missing document"
+   }
+  },
+  {
+   "id": "aruma/encoding/resource_null_is_null",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow",
+    "note": "404: the rules allowed the read of a missing document"
+   }
+  },
+  {
+   "id": "aruma/encoding/resource_null_data",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [74], column [21]. Null value error."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L74:21 for 'get' @ L74, Null value error. for 'get' @ L74"
+   }
+  },
+  {
+   "id": "aruma/encoding/resource_null_data_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow",
+    "note": "404: the rules allowed the read of a missing document"
+   }
+  },
+  {
+   "id": "aruma/encoding/resource_empty_map_data",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/resource_name",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [83], column [21]. Property __name__ is undefined on object."
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/request_resource_null_on_get",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Property resource is undefined on object. for 'get' @ L86, Property resource is undefined on object. for 'get' @ L86"
+   }
+  },
+  {
+   "id": "aruma/encoding/request_path_value",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/request_path_is_path",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/request_method_get",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/database_var",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/doc_var",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_uid",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_token_email",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_token_list",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_token_missing_claim_get",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_absent",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [116], column [21]. Property auth is undefined on object."
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_null",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_null_uid",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [122], column [21]. Null value error."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Null value error. for 'get' @ L122, Null value error. for 'get' @ L122"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_null_uid_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_without_token",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [128], column [21]. Property token is undefined on object."
+   },
+   "emulator": {
+    "skip": "the auth cannot be an ID token"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_uid_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "the auth cannot be an ID token"
+   }
+  },
+  {
+   "id": "aruma/encoding/request_keys",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/request_is_map",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/request_query_on_get",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [140], column [21]. Property query is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Property query is undefined on object. for 'get' @ L140, Property query is undefined on object. for 'get' @ L140"
+   }
+  }
+ ]
+}

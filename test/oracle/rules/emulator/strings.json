@@ -1,0 +1,803 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "strings",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T21:47:55.140Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/strings/size_ascii",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/size_emoji_1",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L8"
+   }
+  },
+  {
+   "id": "aruma/strings/size_emoji_2",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/size_combining",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/size_empty",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/utf8_size_emoji",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/matches_full",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/matches_partial_is_false",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L26"
+   }
+  },
+  {
+   "id": "aruma/strings/matches_dotstar",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/matches_lookahead",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:35 Invalid regular expression pattern. Pattern: a(?=b).*."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:35 Invalid regular expression pattern. Pattern: a(?=b).*."
+   }
+  },
+  {
+   "id": "aruma/strings/matches_backref",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:34 Invalid regular expression pattern. Pattern: (a)\\1."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:34 Invalid regular expression pattern. Pattern: (a)\\1."
+   }
+  },
+  {
+   "id": "aruma/strings/matches_digit_two_backslashes",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/matches_dot_emoji",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/matches_dot_newline",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L38"
+   }
+  },
+  {
+   "id": "aruma/strings/matches_dotall_flag",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/matches_invalid",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:33 Invalid regular expression pattern. Pattern: (."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:33 Invalid regular expression pattern. Pattern: (."
+   }
+  },
+  {
+   "id": "aruma/strings/matches_invalid_or_true",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:33 Invalid regular expression pattern. Pattern: (."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:33 Invalid regular expression pattern. Pattern: (."
+   }
+  },
+  {
+   "id": "aruma/strings/matches_possessive",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:35 Invalid regular expression pattern. Pattern: a*+."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:35 Invalid regular expression pattern. Pattern: a*+."
+   }
+  },
+  {
+   "id": "aruma/strings/matches_counted",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/matches_counted_large",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:33 Invalid regular expression pattern. Pattern: a{1001}."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:33 Invalid regular expression pattern. Pattern: a{1001}."
+   }
+  },
+  {
+   "id": "aruma/strings/matches_on_int",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [47], column [21]. Function not found error: Name: [matches]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Function not found error: Name: [matches]. for 'get' @ L47, Function not found error: Name: [matches]. for 'get' @ L47"
+   }
+  },
+  {
+   "id": "aruma/strings/split_simple",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/split_regex",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/split_dot_is_regex",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L56"
+   }
+  },
+  {
+   "id": "aruma/strings/split_trailing_empty_kept",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L59"
+   }
+  },
+  {
+   "id": "aruma/strings/split_trailing_empty_dropped",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/split_leading_empty",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/split_empty_string",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/split_empty_string_size",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/split_empty_sep",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L74"
+   }
+  },
+  {
+   "id": "aruma/strings/split_path_style",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/replace_all",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/replace_regex",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/replace_group_dollar",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/replace_group_backslash",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L89"
+   }
+  },
+  {
+   "id": "aruma/strings/replace_literal_dollar",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L92"
+   }
+  },
+  {
+   "id": "aruma/strings/replace_empty_pattern",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/lower_e_acute",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L98"
+   }
+  },
+  {
+   "id": "aruma/strings/upper_sharp_s",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L101"
+   }
+  },
+  {
+   "id": "aruma/strings/upper_sharp_s_unchanged",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/lower_dotted_i",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L107"
+   }
+  },
+  {
+   "id": "aruma/strings/lower_final_sigma",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L110"
+   }
+  },
+  {
+   "id": "aruma/strings/trim_tab_newline",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/trim_nbsp",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L116"
+   }
+  },
+  {
+   "id": "aruma/strings/index",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/index_out_of_range",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [122], column [21]. Index out of bound error. Index: [5] , size: [3]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Index out of bound error. Index: [5] , size: [3]. for 'get' @ L122, Index out of bound error. Index: [5] , size: [3]. for 'get' @ L122"
+   }
+  },
+  {
+   "id": "aruma/strings/index_emoji",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L125"
+   }
+  },
+  {
+   "id": "aruma/strings/range",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/range_past_end",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [131], column [21]. Index out of bound error. Index: [9] , size: [3]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Index out of bound error. Index: [9] , size: [3]. for 'get' @ L131, Index out of bound error. Index: [9] , size: [3]. for 'get' @ L131"
+   }
+  },
+  {
+   "id": "aruma/strings/range_reversed",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [134], column [21]. Illegal range error. From index: [2] , To index: [1]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Illegal range error. From index: [2] , To index: [1]. for 'get' @ L134, Illegal range error. From index: [2] , To index: [1]. for 'get' @ L134"
+   }
+  },
+  {
+   "id": "aruma/strings/concat",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/compare_unicode",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/compare_emoji_vs_bmp",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L143"
+   }
+  },
+  {
+   "id": "aruma/strings/string_of_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/string_of_float",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/string_of_whole_float",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/string_of_whole_float_short",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L155"
+   }
+  },
+  {
+   "id": "aruma/strings/string_of_bool",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/string_of_null",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/string_of_list",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [164], column [21]. Unsupported operation error. Received: string(list). Expected: string(int), string(float), string(null), string(string), string(bool), string(path)."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: string(list). Expected: string(int), string(float), string(null), string(string), string(bool), string(path). for 'get' @ L164, Unsupported operation error. Received: string(list). Expected: string(int), string(float), string(null), string(string), string(bool), string(path). for 'get' @ L164"
+   }
+  },
+  {
+   "id": "aruma/strings/string_of_list_any",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [5], column [21]. Unsupported operation error. Received: string(list). Expected: string(int), string(float), string(null), string(string), string(bool), string(path)."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: string(list). Expected: string(int), string(float), string(null), string(string), string(bool), string(path). for 'get' @ L5, Unsupported operation error. Received: string(list). Expected: string(int), string(float), string(null), string(string), string(bool), string(path). for 'get' @ L5"
+   }
+  },
+  {
+   "id": "aruma/strings/string_of_large_float_any",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/int_of_string",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/int_of_float_string",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [14], column [21]. Type conversion error. Argument: [1.5], From type: [string], To type: [int]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Type conversion error. Argument: [1.5], From type: [string], To type: [int]. for 'get' @ L14, Type conversion error. Argument: [1.5], From type: [string], To type: [int]. for 'get' @ L14"
+   }
+  },
+  {
+   "id": "aruma/strings/int_of_spaced_string",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [17], column [21]. Type conversion error. Argument: [ 12], From type: [string], To type: [int]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Type conversion error. Argument: [ 12], From type: [string], To type: [int]. for 'get' @ L17, Type conversion error. Argument: [ 12], From type: [string], To type: [int]. for 'get' @ L17"
+   }
+  },
+  {
+   "id": "aruma/strings/float_of_string",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/float_of_exp_string",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/to_utf8",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/escape_unicode",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/escape_quote",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/double_quotes",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/escape_hex",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/escape_unknown",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:23 Missing a closing '\nERROR L5:23 Unexpected 'q'."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:23 Missing a closing '\nL5:23 Unexpected 'q'."
+   }
+  },
+  {
+   "id": "aruma/strings/raw_string",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:22 Unexpected ''a\\b''."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:22 Unexpected ''a\\b''."
+   }
+  },
+  {
+   "id": "aruma/strings/in_string",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [41], column [21]. Function not found error: Name: [in]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Function not found error: Name: [in]. for 'get' @ L41, Function not found error: Name: [in]. for 'get' @ L41"
+   }
+  }
+ ]
+}

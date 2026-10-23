@@ -1,0 +1,284 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "methods",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T21:47:56.958Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/methods/read_get",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/read_list",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/get_list",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/methods/write_create",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/write_update",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/write_delete",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/create_update",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/methods/update_create",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/methods/delete_update",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/methods/read_create",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/methods/write_get",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/methods/get_list_both",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/method_get",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/method_list",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/method_create",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/method_update",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/method_delete",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/create_resource_null",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/create_request_resource",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/delete_request_resource_null",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/delete_resource",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/list_query_limit",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [68], column [22]. Property query is undefined on object."
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'list' @ L68"
+   }
+  },
+  {
+   "id": "aruma/methods/unknown_method_word",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/methods/method_write_verb",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "method write has no REST request"
+   }
+  },
+  {
+   "id": "aruma/methods/list_query_in_request",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.query is not sent by a REST list"
+   }
+  },
+  {
+   "id": "aruma/methods/allow_without_condition",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/no_allow_statement",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:5 The 'match' body must contain at least one declaration."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:5 The 'match' body must contain at least one declaration."
+   }
+  }
+ ]
+}

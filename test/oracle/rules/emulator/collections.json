@@ -1,0 +1,564 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "collections",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T21:47:56.285Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/collections/list_size",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/list_hasall_empty",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/list_hasany_empty",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L11"
+   }
+  },
+  {
+   "id": "aruma/collections/list_hasonly",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/list_hasonly_dupes",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/list_plus",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [20], column [28]. Unsupported operation error. Received: list + list. Expected: int + int, float + float, string + string, duration + duration, duration + timestamp, timestamp + duration."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: list + list. Expected: int + int, float + float, string + string, duration + duration, duration + timestamp, timestamp + duration. for 'get' @ L20, Unsupported operation error. Received: list + list. Expected: int + int, float + float, string + string, duration + duration, duration + timestamp, timestamp + duration. for 'get' @ L20"
+   }
+  },
+  {
+   "id": "aruma/collections/list_removeall",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/list_index_out_of_range",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [26], column [21]. Index out of bound error. Index: [5] , size: [3]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Index out of bound error. Index: [5] , size: [3]. for 'get' @ L26, Index out of bound error. Index: [5] , size: [3]. for 'get' @ L26"
+   }
+  },
+  {
+   "id": "aruma/collections/list_index_negative",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [29], column [21]. Index out of bound error. Index: [-1] , size: [3]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Index out of bound error. Index: [-1] , size: [3]. for 'get' @ L29, Index out of bound error. Index: [-1] , size: [3]. for 'get' @ L29"
+   }
+  },
+  {
+   "id": "aruma/collections/list_range",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/list_range_past_end",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [35], column [21]. Index out of bound error. Index: [8] , size: [3]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Index out of bound error. Index: [8] , size: [3]. for 'get' @ L35, Index out of bound error. Index: [8] , size: [3]. for 'get' @ L35"
+   }
+  },
+  {
+   "id": "aruma/collections/list_join",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/list_join_ints",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/list_order_matters",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L44"
+   }
+  },
+  {
+   "id": "aruma/collections/list_mixed_types",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/list_neg_zero",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L50"
+   }
+  },
+  {
+   "id": "aruma/collections/list_hasall_in_float",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L53"
+   }
+  },
+  {
+   "id": "aruma/collections/list_in_map",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/set_eq",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/set_in_float",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/set_int_float_dedupe",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/set_difference",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/set_intersection",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/set_hasonly",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/set_eq_list",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L77"
+   }
+  },
+  {
+   "id": "aruma/collections/map_keys",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/map_values",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/map_keys_order_sorted",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/map_keys_order_insertion",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L89"
+   }
+  },
+  {
+   "id": "aruma/collections/map_values_order",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L92"
+   }
+  },
+  {
+   "id": "aruma/collections/map_size",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/map_in_key",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/map_get",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/map_get_default",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/map_get_path",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/map_get_path_through_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/map_get_empty_path",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L113"
+   }
+  },
+  {
+   "id": "aruma/collections/map_get_int_key",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [116], column [30]. Unsupported operation error. Received: map.get(int, int). Expected: map.get(string, any), map.get(list, any)."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: map.get(int, int). Expected: map.get(string, any), map.get(list, any). for 'get' @ L116, Unsupported operation error. Received: map.get(int, int). Expected: map.get(string, any), map.get(list, any). for 'get' @ L116"
+   }
+  },
+  {
+   "id": "aruma/collections/map_missing",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [119], column [21]. Property b is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Property b is undefined on object. for 'get' @ L119, Property b is undefined on object. for 'get' @ L119"
+   }
+  },
+  {
+   "id": "aruma/collections/map_duplicate_key",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/map_int_key",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [5], column [22]. Type error. Received: [int] Expected: [string]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Type error. Received: [int] Expected: [string]. for 'get' @ L5, Type error. Received: [int] Expected: [string]. for 'get' @ L5"
+   }
+  },
+  {
+   "id": "aruma/collections/map_eq",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/map_hasall_direct",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [125], column [21]. Function not found error: Name: [hasAll]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Function not found error: Name: [hasAll]. for 'get' @ L125, Function not found error: Name: [hasAll]. for 'get' @ L125"
+   }
+  },
+  {
+   "id": "aruma/collections/doc_keys_hasonly",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/diff_affected",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/diff_added",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L134"
+   }
+  },
+  {
+   "id": "aruma/collections/diff_removed",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L137"
+   }
+  },
+  {
+   "id": "aruma/collections/diff_changed",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/diff_unchanged",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/diff_int_float_changed",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/diff_nested",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/diff_not_map",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [152], column [30]. Unsupported operation error. Received: map.diff(list). Expected: map.diff(map)."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: map.diff(list). Expected: map.diff(map). for 'get' @ L152, Unsupported operation error. Received: map.diff(list). Expected: map.diff(map). for 'get' @ L152"
+   }
+  },
+  {
+   "id": "aruma/collections/diff_on_update",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/diff_on_update_hasonly",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  }
+ ]
+}

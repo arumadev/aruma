@@ -1,0 +1,682 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "storage",
+ "service": "storage",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T21:47:58.926Z",
+ "version": "cloud-storage-rules-runtime v1.1.3 (Java 21), driven over its stdin protocol",
+ "cases": [
+  {
+   "id": "aruma/storage/resource_size",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_content_type",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_metadata",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_metadata_missing",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [14], column [21]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [14], column [21]. Property missing is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/storage/resource_metadata_get",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_name",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_bucket",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_time_created_is_ts",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_md5",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_missing_field",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [32], column [21]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [32], column [21]. Property missing is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/storage/resource_size_string",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_size_string_is_int",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_time_created_int",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [41], column [42]. Unsupported operation error. Received: int < timestamp. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [41], column [42]. Unsupported operation error. Received: int < timestamp. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint."
+   }
+  },
+  {
+   "id": "aruma/storage/resource_custom_field",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_null_on_get",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_absent_on_get",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [50], column [21]. Null value error."
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/request_resource_on_get",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [53], column [21]. Property resource is undefined on object."
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/request_path",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/request_path_string",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny"
+   }
+  },
+  {
+   "id": "aruma/storage/bucket_var",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/auth_uid",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/auth_claim_bool",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/auth_provider",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/auth_null",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/auth_absent",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [77], column [21]. Property auth is undefined on object."
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/time_set",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_content_type",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_metadata",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_name",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_name_absent",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [92], column [24]. Property bucket is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [92], column [24]. Property bucket is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/storage/create_resource_null",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_metadata_owner",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_size_float_cmp",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_keys",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/update_both",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/read_get",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/read_list",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "deny"
+   }
+  },
+  {
+   "id": "aruma/storage/get_list",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny"
+   }
+  },
+  {
+   "id": "aruma/storage/write_update",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/write_delete",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/method_list",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "deny"
+   }
+  },
+  {
+   "id": "aruma/storage/fs_get",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow",
+    "lookups": [
+     "/databases/(default)/documents/users/alice"
+    ]
+   }
+  },
+  {
+   "id": "aruma/storage/fs_exists",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow",
+    "lookups": [
+     "/databases/(default)/documents/users/alice"
+    ]
+   }
+  },
+  {
+   "id": "aruma/storage/fs_get_unmocked",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [134], column [21]. Function not found error: Name: [firestore.get]."
+   },
+   "emulator": {
+    "outcome": "allow",
+    "lookups": [
+     "/databases/(default)/documents/users/alice"
+    ]
+   }
+  },
+  {
+   "id": "aruma/storage/fs_get_id",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [137], column [21]. Property id is undefined on object."
+   },
+   "emulator": {
+    "outcome": "allow",
+    "lookups": [
+     "/databases/(default)/documents/users/alice"
+    ]
+   }
+  },
+  {
+   "id": "aruma/storage/fs_get_name",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [140], column [21]. Property __name__ is undefined on object."
+   },
+   "emulator": {
+    "outcome": "deny",
+    "lookups": [
+     "/databases/(default)/documents/users/alice"
+    ]
+   }
+  },
+  {
+   "id": "aruma/storage/fs_database_var",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [5], column [51]. Null value error."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [5], column [51]. Null value error."
+   }
+  },
+  {
+   "id": "aruma/storage/fs_bare_get",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [143], column [21]. Function not found error: Name: [get]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [143], column [21]. Function not found error: Name: [get]."
+   }
+  },
+  {
+   "id": "aruma/storage/fs_lookups_2",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow",
+    "lookups": [
+     "/databases/(default)/documents/u/a",
+     "/databases/(default)/documents/u/b"
+    ]
+   }
+  },
+  {
+   "id": "aruma/storage/fs_lookups_3",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow",
+    "lookups": [
+     "/databases/(default)/documents/u/a",
+     "/databases/(default)/documents/u/b",
+     "/databases/(default)/documents/u/c"
+    ]
+   }
+  },
+  {
+   "id": "aruma/storage/fs_lookups_11",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow",
+    "lookups": [
+     "/databases/(default)/documents/u/d0",
+     "/databases/(default)/documents/u/d1",
+     "/databases/(default)/documents/u/d2",
+     "/databases/(default)/documents/u/d3",
+     "/databases/(default)/documents/u/d4",
+     "/databases/(default)/documents/u/d5",
+     "/databases/(default)/documents/u/d6",
+     "/databases/(default)/documents/u/d7",
+     "/databases/(default)/documents/u/d8",
+     "/databases/(default)/documents/u/d9",
+     "/databases/(default)/documents/u/d10"
+    ]
+   }
+  },
+  {
+   "id": "aruma/storage/err_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/err_and_false",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny"
+   }
+  },
+  {
+   "id": "aruma/storage/not_err",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [161], column [23]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [161], column [23]. Property missing is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/storage/horses_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/div_zero",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [167], column [23]. Divide by zero error."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [167], column [23]. Divide by zero error."
+   }
+  },
+  {
+   "id": "aruma/storage/int_overflow",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [170], column [41]. Integer value is out of the [-9223372036854775808, 9223372036854775807] range."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [170], column [41]. Integer value is out of the [-9223372036854775808, 9223372036854775807] range."
+   }
+  },
+  {
+   "id": "aruma/storage/split",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/size_emoji",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/math_round",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/list_neg_zero",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny"
+   }
+  },
+  {
+   "id": "aruma/storage/set_in_float",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/debug",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [5], column [21]. Function not found error: Name: [debug]."
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/hashing",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny"
+   }
+  }
+ ]
+}

@@ -1,0 +1,497 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "math",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T21:47:55.548Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/math/float_div_is_float",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/point_one_plus_point_two",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L8"
+   }
+  },
+  {
+   "id": "aruma/math/float_of_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/int_of_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/neg_zero",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/float_mod",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/neg_mod",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/unary_minus_field",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/unary_minus_string",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [29], column [21]. Unsupported operation error. Received: -string. Expected: -int, -float, -duration."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: -string. Expected: -int, -float, -duration. for 'get' @ L29, Unsupported operation error. Received: -string. Expected: -int, -float, -duration. for 'get' @ L29"
+   }
+  },
+  {
+   "id": "aruma/math/int_float_list_eq",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L32"
+   }
+  },
+  {
+   "id": "aruma/math/nan_eq_nan",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L35"
+   }
+  },
+  {
+   "id": "aruma/math/nan_ne_nan",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/abs_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/abs_float",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/abs_int_min",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/ceil_float",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/ceil_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/round_half_up",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/round_neg_half",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/round_neg_half_away",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L62"
+   }
+  },
+  {
+   "id": "aruma/math/round_nan",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/round_inf",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/sqrt",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/sqrt_negative_nan",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/pow",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/pow_fraction",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/isnan_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/isinfinite",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [86], column [21]. Function not found error: Name: [math.isInfinite]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Function not found error: Name: [math.isInfinite]. for 'get' @ L86, Function not found error: Name: [math.isInfinite]. for 'get' @ L86"
+   }
+  },
+  {
+   "id": "aruma/math/abs_string",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [89], column [26]. Unsupported operation error. Received: math.abs(string). Expected: math.abs(int), math.abs(float)."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: math.abs(string). Expected: math.abs(int), math.abs(float). for 'get' @ L89, Unsupported operation error. Received: math.abs(string). Expected: math.abs(int), math.abs(float). for 'get' @ L89"
+   }
+  },
+  {
+   "id": "aruma/math/abs_two_args",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [92], column [26]. Incorrect number of arguments. Received: 2. Expected: math.abs(int), math.abs(float)."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Incorrect number of arguments. Received: 2. Expected: math.abs(int), math.abs(float). for 'get' @ L92, Incorrect number of arguments. Received: 2. Expected: math.abs(int), math.abs(float). for 'get' @ L92"
+   }
+  },
+  {
+   "id": "aruma/math/trunc_absent",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [95], column [21]. Function not found error: Name: [math.trunc]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Function not found error: Name: [math.trunc]. for 'get' @ L95, Function not found error: Name: [math.trunc]. for 'get' @ L95"
+   }
+  },
+  {
+   "id": "aruma/math/sha256_string",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/sha256_bytes",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/md5_hex_upper",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/md5_hex_lower",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L107"
+   }
+  },
+  {
+   "id": "aruma/math/crc32",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L110"
+   }
+  },
+  {
+   "id": "aruma/math/crc32_is_bytes",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/crc32c_is_bytes",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/sha256_int",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [119], column [29]. Unsupported operation error. Received: hashing.sha256(int). Expected: hashing.sha256(bytes), hashing.sha256(string)."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: hashing.sha256(int). Expected: hashing.sha256(bytes), hashing.sha256(string). for 'get' @ L119, Unsupported operation error. Received: hashing.sha256(int). Expected: hashing.sha256(bytes), hashing.sha256(string). for 'get' @ L119"
+   }
+  },
+  {
+   "id": "aruma/math/bytes_size",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/bytes_hex_escape",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/bytes_base64",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/bytes_base64_url",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/bytes_base64_std",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L134"
+   }
+  },
+  {
+   "id": "aruma/math/bytes_compare",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/bytes_index",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [140], column [21]. Function not found error: Name: [[]]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Function not found error: Name: [[]]. for 'get' @ L140, Function not found error: Name: [[]]. for 'get' @ L140"
+   }
+  },
+  {
+   "id": "aruma/math/latlng_value",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/latlng_out_of_range",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [146], column [28]. Latitude should be in [-90,90] range and longitude should be in [-180,180] range. latitude: 91.0, longitude: 0.0."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Latitude should be in [-90,90] range and longitude should be in [-180,180] range. latitude: 91.0, longitude: 0.0. for 'get' @ L146, Latitude should be in [-90,90] range and longitude should be in [-180,180] range. latitude: 91.0, longitude: 0.0. for 'get' @ L146"
+   }
+  }
+ ]
+}

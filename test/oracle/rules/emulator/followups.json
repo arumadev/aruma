@@ -1,0 +1,577 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "followups",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T22:05:04.010Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/followups/crc32_little_endian",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/crc32_big_endian",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L8"
+   }
+  },
+  {
+   "id": "aruma/followups/crc32_hex",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L11"
+   }
+  },
+  {
+   "id": "aruma/followups/crc32c_hex",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L14"
+   }
+  },
+  {
+   "id": "aruma/followups/lower_non_ascii_unchanged",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/upper_non_ascii_unchanged",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/lower_ascii_mixed",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/index_emoji_utf16",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/index_emoji_half",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/split_empty_sep_size_3",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L32"
+   }
+  },
+  {
+   "id": "aruma/followups/split_empty_sep_size_4",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/split_empty_sep_first",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L38"
+   }
+  },
+  {
+   "id": "aruma/followups/split_only_separators",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L41"
+   }
+  },
+  {
+   "id": "aruma/followups/split_empty_sep_first_empty",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/split_empty_sep_last",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/split_only_separators_1",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/split_only_separators_3",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L53"
+   }
+  },
+  {
+   "id": "aruma/followups/split_trailing_two_empties",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/split_middle_empty_kept",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/split_slash_name",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/base64_url_md5",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/diff_added_direction",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/diff_removed_direction",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/int_of_inf_value",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/int_of_huge_float_value",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/int_of_nan_value",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/int_min_div_neg1_value",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/list_eq_int_float_strict",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/map_eq_int_float",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L89"
+   }
+  },
+  {
+   "id": "aruma/followups/set_eq_int_float",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/neg_zero_in_list",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/allow_unknown_verb_word",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/followups/v1_rest_is_path",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/v1_rest_eq_path",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/v1_rest_size",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [5], column [21]. Function not found error: Name: [size]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Function not found error: Name: [size]. for 'get' @ L5, Function not found error: Name: [size]. for 'get' @ L5"
+   }
+  },
+  {
+   "id": "aruma/followups/v1_rest_string",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L5"
+   }
+  },
+  {
+   "id": "aruma/followups/v1_rest_one_segment",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L5"
+   }
+  },
+  {
+   "id": "aruma/followups/v1_rest_is_map",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L5"
+   }
+  },
+  {
+   "id": "aruma/followups/v2_rest_on_one_segment",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/nested_under_root_recursive",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/nested_under_recursive_deep",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "the emulator cannot run it: seed p/a/b/x/d: 400 {\"error\":{\"code\":400,\"message\":\"Document name \\\"projects/demo-oracle/databases/(default)/documents/p/a/b/x/d\\\" lacks \\\"/\\\" at index 60.\",\"status\":\"INVALID_ARGUMENT\"}}"
+   }
+  },
+  {
+   "id": "aruma/followups/nested_under_recursive_var",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/size_comment_262000",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/size_comment_262100",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/size_comment_262110",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/size_comment_262117",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/size_comment_262118",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/size_comment_262119",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/size_comment_262120",
+   "production": {
+    "outcome": "error",
+    "errorKind": "request",
+    "message": "400 INVALID_ARGUMENT Total size of sources must be smaller than 262144."
+   },
+   "emulator": {
+    "skip": "the Test API refused the request itself"
+   }
+  },
+  {
+   "id": "aruma/followups/size_comment_262128",
+   "production": {
+    "outcome": "error",
+    "errorKind": "request",
+    "message": "400 INVALID_ARGUMENT Total size of sources must be smaller than 262144."
+   },
+   "emulator": {
+    "skip": "the Test API refused the request itself"
+   }
+  },
+  {
+   "id": "aruma/followups/size_comment_262129",
+   "production": {
+    "outcome": "error",
+    "errorKind": "request",
+    "message": "400 INVALID_ARGUMENT Total size of sources must be smaller than 262144."
+   },
+   "emulator": {
+    "skip": "the Test API refused the request itself"
+   }
+  },
+  {
+   "id": "aruma/followups/size_comment_262140",
+   "production": {
+    "outcome": "error",
+    "errorKind": "request",
+    "message": "400 INVALID_ARGUMENT Total size of sources must be smaller than 262144."
+   },
+   "emulator": {
+    "skip": "the Test API refused the request itself"
+   }
+  },
+  {
+   "id": "aruma/followups/and_true_99",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/ternary_nested_46",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/ternary_nested_47",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/ternary_nested_48",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/followups/ternary_nested_49",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:502 Expression is too complex to evaluate safely.\nERROR L5:507 Expression is too complex to evaluate safely."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:502 Expression is too complex to evaluate safely.\nL5:507 Expression is too complex to evaluate safely."
+   }
+  }
+ ]
+}
