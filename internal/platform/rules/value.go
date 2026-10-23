@@ -1,7 +1,10 @@
 package rules
 
 import (
+	"fmt"
 	"math"
+	"slices"
+	"strings"
 	"time"
 )
 
@@ -33,6 +36,9 @@ const (
 	KindUnknown    // what cannot be evaluated at all, such as request.path in a collection group
 )
 
+// kindNames are the names the official messages give the types ("Received: [int]",
+// "Received: set.difference(list)", "map.diff(string)"), the same in Pyric's recordings of the
+// Rules Test API and hidane's of the emulator; "is" takes them too (typeIs).
 var kindNames = [...]string{
 	kindInvalid:    "invalid",
 	KindNull:       "null",
@@ -54,7 +60,7 @@ var kindNames = [...]string{
 }
 
 // String returns the type's name as the messages write it ("Type error. Received: [int]
-// Expected: [bool].") and as "is" names it. S1-B checks the names against the oracle.
+// Expected: [bool].") and as "is" names it.
 func (k Kind) String() string {
 	if int(k) < len(kindNames) {
 		return kindNames[k]
@@ -79,14 +85,22 @@ type Value struct {
 	//	KindFloat                float64
 	//	KindString               string, UTF-8
 	//	KindBytes                string, the raw bytes
-	//	KindList, KindSet        []Value
-	//	KindMap                  map[string]Value
+	//	KindList, KindSet        []Value; a set's members are distinct by E4, in the order added
+	//	KindMap                  *mapValue
 	//	KindMapDiff              *mapDiff
 	//	KindTimestamp            time.Time, in UTC
 	//	KindDuration             duration
 	//	KindLatLng               latLng
 	//	KindPath                 []string, decoded segments
 	x any
+}
+
+// mapValue is a map with the order its entries were written in. values() returns them in that
+// order, and keys() sorted (Pyric, required-fields-and-mapdiff "keyOrder"), so the order is part
+// of the value. A map the services build with Map has its keys in sorted order.
+type mapValue struct {
+	keys    []string // each key of m once, in the order written
+	entries map[string]Value
 }
 
 // duration is a rules duration, which reaches ±10,000 years: more than time.Duration holds.
@@ -98,8 +112,9 @@ type duration struct {
 // latLng is a point in degrees.
 type latLng struct{ lat, lng float64 }
 
-// mapDiff is what left.diff(right) returns.
-type mapDiff struct{ left, right map[string]Value }
+// mapDiff is what left.diff(right) returns: the keys of left alone, of right alone, of both with
+// values that differ, and of both with values that do not (E4), each sorted.
+type mapDiff struct{ added, removed, changed, unchanged []string }
 
 // Null returns null.
 func Null() Value { return Value{kind: KindNull} }
@@ -127,12 +142,18 @@ func List(vs []Value) Value {
 	return Value{kind: KindList, x: vs}
 }
 
-// Map returns a map of m, which it takes ownership of.
+// Map returns a map of m, which it takes ownership of. Its entries are in the order of their
+// keys, which is the order values() returns them in.
 func Map(m map[string]Value) Value {
 	if m == nil {
 		m = map[string]Value{}
 	}
-	return Value{kind: KindMap, x: m}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	slices.Sort(keys)
+	return Value{kind: KindMap, x: &mapValue{keys: keys, entries: m}}
 }
 
 // Timestamp returns a timestamp.
@@ -197,8 +218,11 @@ func (v Value) AsList() ([]Value, bool) {
 // AsMap returns a map's entries, which the caller must not change; ok is false for any other
 // kind.
 func (v Value) AsMap() (map[string]Value, bool) {
-	m, ok := v.x.(map[string]Value)
-	return m, ok && v.kind == KindMap
+	m, ok := v.x.(*mapValue)
+	if !ok || v.kind != KindMap {
+		return nil, false
+	}
+	return m.entries, true
 }
 
 // AsTimestamp returns a timestamp's time, in UTC; ok is false for any other kind.
@@ -243,4 +267,227 @@ func (v Value) AsPath() ([]string, bool) {
 		return nil, false
 	}
 	return append([]string{}, p...), true
+}
+
+// The library reads values through these: the caller has checked the kind.
+
+func (v Value) str() string        { s, _ := v.x.(string); return s }
+func (v Value) items() []Value     { l, _ := v.x.([]Value); return l }
+func (v Value) mapv() *mapValue    { m, _ := v.x.(*mapValue); return m }
+func (v Value) segments() []string { p, _ := v.x.([]string); return p }
+func (v Value) integer() int64     { i, _ := v.x.(int64); return i }
+func (v Value) float() float64     { f, _ := v.x.(float64); return f }
+func (v Value) boolean() bool      { b, _ := v.x.(bool); return b }
+func (v Value) dur() duration      { d, _ := v.x.(duration); return d }
+func (v Value) instant() time.Time { t, _ := v.x.(time.Time); return t }
+func (v Value) point() latLng      { p, _ := v.x.(latLng); return p }
+func (v Value) diff() *mapDiff     { d, _ := v.x.(*mapDiff); return d }
+func (v Value) isNumber() bool     { return v.kind == KindInt || v.kind == KindFloat }
+func (v Value) isReserved() bool   { return v.kind == KindConstraint || v.kind == KindUnknown }
+func (v Value) isCollection() bool {
+	return v.kind == KindList || v.kind == KindMap || v.kind == KindSet
+}
+func (v Value) number() float64 {
+	if v.kind == KindInt {
+		return float64(v.integer())
+	}
+	return v.float()
+}
+
+// setOf returns a set of members already distinct by E4.
+func setOf(members []Value) Value {
+	if members == nil {
+		members = []Value{}
+	}
+	return Value{kind: KindSet, x: members}
+}
+
+// orderedMap returns a map of keys, each once, and their entries.
+func orderedMap(keys []string, entries map[string]Value) Value {
+	return Value{kind: KindMap, x: &mapValue{keys: keys, entries: entries}}
+}
+
+// pathOf returns a path of segs, which it takes ownership of.
+func pathOf(segs []string) Value { return Value{kind: KindPath, x: segs} }
+
+// The sizes the meter charges for what a builder allocates, besides the bytes of strings: one
+// element of a list or a set, and one entry of a map with its key's header. Values' own headers
+// are what Go spends on them, rounded up.
+const (
+	elemBytes  = 32
+	entryBytes = 64
+)
+
+// chargeString checks and charges a string or bytes value of n bytes about to be built.
+func chargeString(m *meter, n int) error {
+	if err := m.value(int64(n), 0); err != nil {
+		return err
+	}
+	return m.alloc(int64(n))
+}
+
+// chargeList checks and charges a list or a set of n elements about to be built.
+func chargeList(m *meter, n int) error {
+	if err := m.value(0, int64(n)); err != nil {
+		return err
+	}
+	return m.alloc(int64(n) * elemBytes)
+}
+
+// chargeMap checks and charges a map of n entries about to be built, keyBytes being the bytes
+// of keys it copies.
+func chargeMap(m *meter, n int, keyBytes int64) error {
+	if err := m.value(0, int64(n)); err != nil {
+		return err
+	}
+	return m.alloc(int64(n)*entryBytes + keyBytes)
+}
+
+// newString charges and returns a string of s, which the caller has built already from parts
+// whose sizes it charged; use it only where building costs no more than the string itself.
+func newString(m *meter, s string) (Value, error) {
+	if err := chargeString(m, len(s)); err != nil {
+		return Value{}, err
+	}
+	return String(s), nil
+}
+
+// buildList returns a list literal's value: [a, b]. The interpreter (S1-C) calls it with the
+// elements it evaluated, so the list is charged before it is kept.
+func buildList(m *meter, elems []Value) (Value, error) {
+	if err := chargeList(m, len(elems)); err != nil {
+		return Value{}, err
+	}
+	return List(slices.Clone(elems)), nil
+}
+
+// buildMap returns a map literal's value: {k: v, …}. Keys must be strings ("Type error.
+// Received: [int] Expected: [string].", Pyric simulator-language-semantics FS-SIM-11). A key
+// written twice keeps the place of its first and the value of its last (Pyric keyOrder:
+// "values() of a repeated key keeps its first position and last value").
+func buildMap(m *meter, keys, vals []Value) (Value, error) {
+	if len(keys) != len(vals) {
+		return Value{}, errorf("a map literal has %d keys and %d values", len(keys), len(vals))
+	}
+	var keyBytes int64
+	for _, k := range keys {
+		if err := reserved(k); err != nil {
+			return Value{}, err
+		}
+		if k.kind != KindString {
+			return Value{}, errType(k.kind.String(), "string")
+		}
+		keyBytes += int64(len(k.str()))
+	}
+	if err := chargeMap(m, len(keys), keyBytes); err != nil {
+		return Value{}, err
+	}
+	order := make([]string, 0, len(keys))
+	entries := make(map[string]Value, len(keys))
+	for i, k := range keys {
+		name := k.str()
+		if _, seen := entries[name]; !seen {
+			order = append(order, name)
+		}
+		entries[name] = vals[i]
+	}
+	return orderedMap(order, entries), nil
+}
+
+// The official messages of evaluation errors, as both Pyric's recordings of the Rules Test API
+// and hidane's of the emulator have them.
+
+func errNull() *evalError { return errorf("Null value error.") }
+
+func errProperty(name string) *evalError {
+	return errorf("Property %s is undefined on object.", name)
+}
+
+func errType(received, expected string) *evalError {
+	return errorf("Type error. Received: [%s] Expected: [%s].", received, expected)
+}
+
+func errUnsupported(received string, expected []string) *evalError {
+	return errorf("Unsupported operation error. Received: %s. Expected: %s.", received, strings.Join(expected, ", "))
+}
+
+func errNotFound(name string) *evalError {
+	return errorf("Function not found error: Name: [%s].", name)
+}
+
+func errArity(received int, expected []string) *evalError {
+	return errorf("Incorrect number of arguments. Received: %d. Expected: %s.", received, strings.Join(expected, ", "))
+}
+
+func errIndex(index int64, size int) *evalError {
+	return errorf("Index out of bound error. Index: [%d] , size: [%d].", index, size)
+}
+
+func errRange(from, to int64) *evalError {
+	return errorf("Illegal range error. From index: [%d] , To index: [%d].", from, to)
+}
+
+func errOverflow() *evalError {
+	return errorf("Integer value is out of the [-9223372036854775808, 9223372036854775807] range.")
+}
+
+func errDivideByZero() *evalError { return errorf("Divide by zero error.") }
+
+func errConversion(argument string, from, to Kind) *evalError {
+	return errorf("Type conversion error. Argument: [%s], From type: [%s], To type: [%s].", argument, from, to)
+}
+
+func errRegex(pattern string) *evalError {
+	return errorf("Invalid regular expression pattern. Pattern: %s.", pattern)
+}
+
+func errTimestamp() *evalError {
+	return errorf("Timestamp is not valid. Seconds must be in range [-62,135,596,800, +253,402,300,799]. Nanos must be in range [0, +999,999,999].")
+}
+
+func errDuration() *evalError {
+	return errorf("Duration is not valid. Seconds must be in range [-315,576,000,000, +315,576,000,000]. Nanos must be in range [-999,999,999, +999,999,999]. Nanos must have the same sign as seconds.")
+}
+
+// errReserved is the error on a Constraint or an Unknown value, or on the zero Value: no
+// message, a denial (ADR-021 §2.4).
+func errReserved() *evalError { return &evalError{} }
+
+// reserved returns errReserved for a value no operation may take: the reserved kinds and the
+// zero Value.
+func reserved(v Value) error {
+	if v.isReserved() || v.kind == kindInvalid {
+		return errReserved()
+	}
+	return nil
+}
+
+// typeNames lists the kinds of vs as the messages do: "int, string".
+func typeNames(vs []Value) string {
+	names := make([]string, len(vs))
+	for i, v := range vs {
+		names[i] = v.kind.String()
+	}
+	return strings.Join(names, ", ")
+}
+
+// signatures is the official text of a function's forms: name(int), name(float).
+func signatures(name string, forms ...[]string) []string {
+	out := make([]string, len(forms))
+	for i, params := range forms {
+		out[i] = fmt.Sprintf("%s(%s)", name, strings.Join(params, ", "))
+	}
+	return out
+}
+
+// mismatch is the error for a call of name that fits none of its forms: the wrong number of
+// arguments when no form takes as many, wrong types otherwise.
+func mismatch(name string, args []Value, forms ...[]string) *evalError {
+	expected := signatures(name, forms...)
+	for _, f := range forms {
+		if len(f) == len(args) {
+			return errUnsupported(fmt.Sprintf("%s(%s)", name, typeNames(args)), expected)
+		}
+	}
+	return errArity(len(args), expected)
 }
