@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/arumadev/aruma/internal/config"
+	"github.com/arumadev/aruma/internal/platform/rules"
 )
 
 var update = flag.Bool("update", false, "rewrite golden files")
@@ -73,5 +74,38 @@ func TestConsoleRouteTable(t *testing.T) {
 	}
 	if got != string(want) {
 		t.Errorf("console routes differ from %s:\n--- got ---\n%s\n--- want ---\n%s", path, got, want)
+	}
+}
+
+// The rules engine gets the configured limits and one Inflight for the whole process.
+func TestRulesWiring(t *testing.T) {
+	cfg, err := config.Load("", func(k string) string {
+		return map[string]string{
+			"ARUMA_DATABASE_URL":         "postgres://unused",
+			"ARUMA_PUBLIC_URL":           "https://aruma.test",
+			"ARUMA_MASTER_KEY":           "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+			"ARUMA_RULES_CALL_DEPTH":     "10",
+			"ARUMA_RULES_INFLIGHT_BYTES": "1048576",
+		}[k]
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pool, err := pgxpool.New(context.Background(), "postgres://unused@127.0.0.1:1/unused")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	a, err := New(cfg, slog.New(slog.NewTextHandler(io.Discard, nil)), "test", pool)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := rules.DefaultLimits()
+	want.CallDepth, want.InflightBytes = 10, 1<<20
+	if a.RulesLimits != want {
+		t.Errorf("rules limits = %+v, want %+v", a.RulesLimits, want)
+	}
+	if a.RulesInflight == nil {
+		t.Error("no Inflight for the rules engine")
 	}
 }
