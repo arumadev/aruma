@@ -21,6 +21,7 @@
 | [ADR-018](ADR-018-rtdb-database-url.md) | رابط Realtime Database ونطاقه وشهادته | معتمد (RTDB، R0) |
 | [ADR-019](ADR-019-rtdb-storage-and-ordering.md) | تخزين Realtime Database وترتيب الكتابة وحدودها | معتمد (RTDB، R0) |
 | [ADR-020](ADR-020-rtdb-v02-scope.md) | نطاق RTDB في 0.2: الاستعلامات والقواعد وREST والاستطلاع الطويل | معتمد (RTDB، R0) |
+| [ADR-021](ADR-021-rules-language.md) | محرك قواعد Firestore وStorage: لغة واحدة مكتوبة يدويًا في `platform/rules` | معتمد (v0.3، S0) |
 
 ## الصيغة
 
