@@ -29,6 +29,32 @@ for (const b of buckets) {
     probes.push({ request: { method: 'GET', url }, response: { status: res.status, headers, body: await res.text() } });
   }
 }
+// Shapes production shows without any bucket: the CORS preflight of the client API, and the
+// answers to a resumable start, a multipart upload and a garbage token, all against the random
+// control name (no bucket of anyone is touched; nothing can be stored).
+const extra = [
+  ['OPTIONS', `https://firebasestorage.googleapis.com/v0/b/${control}/o?name=x`, {
+    Origin: 'https://app.example.com', 'Access-Control-Request-Method': 'POST',
+    'Access-Control-Request-Headers': 'authorization,content-type,x-firebase-storage-version,x-firebase-gmpid,x-firebase-appcheck,x-goog-upload-protocol,x-goog-upload-command,x-goog-upload-offset,x-goog-upload-header-content-length,x-goog-upload-header-content-type',
+  }],
+  ['POST', `https://firebasestorage.googleapis.com/v0/b/${control}/o?name=x`, {
+    Origin: 'https://app.example.com', 'X-Goog-Upload-Protocol': 'resumable', 'X-Goog-Upload-Command': 'start',
+    'X-Goog-Upload-Header-Content-Length': '1', 'Content-Type': 'application/json; charset=utf-8',
+  }, '{"name":"x"}'],
+  ['POST', `https://firebasestorage.googleapis.com/v0/b/${control}/o?name=x`, {
+    'X-Goog-Upload-Protocol': 'multipart', 'Content-Type': 'multipart/related; boundary=b',
+  }, '--b\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{"name":"x"}\r\n--b\r\nContent-Type: text/plain\r\n\r\nx\r\n--b--'],
+  ['GET', `https://firebasestorage.googleapis.com/v0/b/${control}/o/x`, { Authorization: 'Firebase not-a-token' }],
+  ['GET', 'https://firebasestorage.googleapis.com/v0/b/', {}],
+  ['GET', 'https://firebasestorage.googleapis.com/v0/nothing-here', {}],
+];
+for (const [method, url, reqHeaders, body] of extra) {
+  const res = await fetch(url, { method, headers: reqHeaders, body });
+  const headers = {};
+  for (const [k, v] of res.headers) if (!['date', 'expires', 'x-guploader-uploadid', 'alt-svc', 'content-length'].includes(k)) headers[k] = v;
+  probes.push({ request: { method, url, headers: reqHeaders, ...(body ? { body } : {}) }, response: { status: res.status, headers, body: await res.text() } });
+}
+
 // Positive control: a public bucket that exists answers the same anonymous calls with
 // 200 (or 401/403 where listing is not public), so a 404 above means "no such bucket".
 for (const url of [
