@@ -1158,7 +1158,7 @@
    "provenance": "rules-test-api",
    "recordedAt": "2026-10-23T21:44:03.794Z",
    "version": "firebaserules.googleapis.com v1 projects.test",
-   "description": "v2: a nested match under a non-final {rest=**}",
+   "description": "v2: a nested match under a block whose own path ends in {rest=**} (match /p/{rest=**} { match /docs/{d} })",
    "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{rest=**} {\n      match /docs/{d} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
    "request": {
     "method": "get",

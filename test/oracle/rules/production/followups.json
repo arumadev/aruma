@@ -1612,7 +1612,7 @@
    "provenance": "rules-test-api",
    "recordedAt": "2026-10-23T22:03:01.343Z",
    "version": "firebaserules.googleapis.com v1 projects.test",
-   "description": "v2: match /{rest=**} { match /x/{d} } on x/d",
+   "description": "v2: a nested match under a block whose own path ends in {rest=**}: match /{rest=**} { match /x/{d} } on x/d",
    "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{rest=**} {\n      match /x/{d} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
    "request": {
     "method": "get",
@@ -1651,7 +1651,7 @@
    "provenance": "rules-test-api",
    "recordedAt": "2026-10-23T22:03:01.343Z",
    "version": "firebaserules.googleapis.com v1 projects.test",
-   "description": "v2: match /p/{rest=**} { match /x/{d} } on p/a/b/x/d",
+   "description": "v2: a nested match under a block whose own path ends in {rest=**}: match /p/{rest=**} { match /x/{d} } on p/a/b/x/d",
    "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{rest=**} {\n      match /x/{d} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
    "request": {
     "method": "get",
@@ -1690,7 +1690,7 @@
    "provenance": "rules-test-api",
    "recordedAt": "2026-10-23T22:03:01.343Z",
    "version": "firebaserules.googleapis.com v1 projects.test",
-   "description": "v2: the {rest=**} variable inside a nested match",
+   "description": "v2: the {rest=**} variable inside a match nested under a block whose own path ends in {rest=**}",
    "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{rest=**} {\n      match /x/{d} {\n        allow get: if rest == /a;\n      }\n    }\n  }\n}\n",
    "request": {
     "method": "get",

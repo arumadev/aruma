@@ -9,7 +9,7 @@
   كصندوقين أسودين. «المنشور» (`deployed`) = ملاحظات Pyric على Storage حقيقي بقواعد منشورة. **Test API ليست
   الإنتاج المنشور**: آثارها المعروفة في القسم 6 وفي [parity-exceptions.md](../../../test/oracle/rules/parity-exceptions.md).
   لم ننشر أي قواعد.
-- **الحجم:** 666 حالة من حالاتنا في مجموعة التطوير (و142 محجوبة)، و1345 شرطًا من hidane أعدنا تقييمها عبر
+- **الحجم:** 689 حالة من حالاتنا في مجموعة التطوير (و142 محجوبة)، و1345 شرطًا من hidane أعدنا تقييمها عبر
   Test API، و1649 حالة Test API و274 قيمة من Storage منشور من Pyric.
 - **المحجوب:** قرابة خُمس حالاتنا وشروط hidane المحجوبة في الفرع `oracle-rules-heldout`، لا يقرؤها إلا S1-E.
   هذه الوثيقة لا تستشهد إلا بحالات التطوير.
@@ -169,10 +169,31 @@ Firestore لم نقسه على الإنتاج (Test API لا تطبّقه)؛ ا�
   `aruma/paths/wild_v2_not_final`، `aruma/paths/wild_v2_two_recursive`، `aruma/paths/wild_v1_not_final`،
   `aruma/paths/wild_v1_zero_segments_doc`، `aruma/paths/wild_v1_rest_is_string`، `aruma/followups/v1_rest_is_path`،
   `aruma/followups/v1_rest_eq_path`، `aruma/storage-paths/v2_zero_segments`، `aruma/storage-paths/v1_zero_segments`).
-- match متداخل تحت `{rest=**}` غير أخير: Test API **تقبل** (والمحاكي كذلك)، خلافًا لما توقّعته المراجعة
-  (DENY)؛ لم نتحقق من المنشور (`aruma/paths/wild_v2_nested_under_recursive`،
-  `aruma/storage-paths/v2_nested_under_recursive`، `aruma/followups/nested_under_root_recursive`،
-  `aruma/followups/nested_under_recursive_var`).
+- match متداخل والـ glob. الفرق هو موضع الـ glob في مسار الكتلة الخارجية **نفسها** (لا في المسار الكامل).
+  المحاكي يطابق Test API في كل ما يلي (`emulator/nesting.json`، `emulator/nesting-storage.json`):
+  - **تحت كتلة ينتهي مسارها هي بـ `{x=**}`** (الـ glob أخير فيها)، في rules_version 2: يُقبل على أي عمق،
+    ومع صفر مقاطع: `match /p/{r=**} { match /docs/{d} }` يغطّي `p/docs/d1` و`p/a/b/c/docs/d1`
+    (`aruma/nesting/final_v2_zero`، `aruma/nesting/final_v2_depth_1`، `aruma/nesting/final_v2_depth_3`،
+    `aruma/paths/wild_v2_nested_under_recursive`، `aruma/storage-paths/v2_nested_under_recursive`،
+    `aruma/followups/nested_under_root_recursive`، `aruma/followups/nested_under_recursive_var`،
+    `aruma/nesting-storage/storage_final_depth`). في rules_version 1 وبلا سطر الإصدار: لا يطابق
+    (`no-matching-statement`) (`aruma/nesting/final_v1_depth_1`، `aruma/nesting/final_noversion_depth_1`،
+    `aruma/nesting/final_v1_depth_3`، `aruma/nesting-storage/storage_final_v1`).
+  - **تحت كتلة يتبع الـ glob فيها مقاطعُ أخرى** (`match /{g=**}/groups/{id} { match /members/{m} }`): لا يطابق
+    (`no-matching-statement`)، لا على `groups/g1/members/m1` ولا على `orgs/o1/groups/g1/members/m1`، والكتلة
+    الخارجية نفسها تطابق مستنداتها؛ وكذلك `/p/{r=**}/q/{id}` > `/docs/{d}` وصيغة Storage
+    (`aruma/nesting/nonfinal_groups_top`، `aruma/nesting/nonfinal_groups_deep`،
+    `aruma/nesting/nonfinal_groups_outer_doc`، `aruma/nesting/nonfinal_pq`، `aruma/nesting/nonfinal_pq_zero`،
+    `aruma/nesting-storage/storage_nonfinal`، `aruma/nesting-storage/storage_nonfinal_top`). الصيغة المسطّحة
+    `match /{r=**}/groups/{g}/members/{m}` تطابق الاثنين (`aruma/nesting/flat_groups_top`،
+    `aruma/nesting/flat_groups_deep`). أي إن التداخل ليس مجرد وصل للمسارين.
+  - glob واحد في المسار كله، المتداخل منه أيضًا: `{s=**}` في كتلة داخل `/a/{r=**}` خطأ ترجمة «Invalid glob
+    match expression. Only one glob match is permitted in a match declaration path.»؛ وفي rules_version 1 الـ
+    glob غير الأخير «Glob matches are permitted as the last segment in a match declaration path.»
+    (`aruma/nesting/nested_second_glob`، `aruma/nesting/v1_nonlast_glob`).
+  - الربط: `match /{document=**} { match /notes/{noteId} }` على `notes/n1/notes/n2` يعطي
+    `document == /notes/n1` و`noteId == 'n2'` (`aruma/nesting/binding_both`، `aruma/nesting/binding_document`،
+    `aruma/nesting/binding_note_id`).
 - قاعدة على `/c/{d}` لا تغطّي `/c/{d}/sub/{e}`؛ الدالة على المستوى الأعلى لا ترى متغيرات match
   («Null value error.»)، والمعرّفة داخل match تراها؛ wildcard داخل مقطع خطأ؛ `rules_version = '3'` خطأ
   (`aruma/paths/nested_parent_rule_not_inherited`، `aruma/paths/function_outer_var_not_visible`،
@@ -201,7 +222,7 @@ Firestore لم نقسه على الإنتاج (Test API لا تطبّقه)؛ ا�
 
 ## 4. المحاكي مقابل Test API
 
-596 حالة متطابقة من 625 شُغّلت، و1324 من 1333 شرطًا من hidane. لم نجد خلافًا في دلالات اللغة (العوامل،
+617 حالة متطابقة من 646 شُغّلت، و1324 من 1333 شرطًا من hidane. لم نجد خلافًا في دلالات اللغة (العوامل،
 المكتبة، الأخطاء، المسارات): كل الخلافات آثار من Test API (القسم 6) أو من طريقة المحاكي في بناء الطلب، إلا:
 
 - حدّ عمليات البحث يطبّقه المحاكي (من 11 مستندًا) ويعدّ تقييمين (`aruma/limits/exists_get_same_6`).

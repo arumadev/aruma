@@ -1,0 +1,767 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "nesting",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "rules-test-api",
+ "project": "chatapp-8ae21",
+ "recordedAt": "2026-10-23T22:36:33.661Z",
+ "version": "firebaserules.googleapis.com v1 projects.test",
+ "rulesets": {},
+ "resources": {
+  "default": {
+   "data": {
+    "n": 1,
+    "f": 1.5,
+    "s": "abc",
+    "b": true,
+    "nul": null,
+    "arr": [
+     1,
+     2,
+     3
+    ],
+    "tags": [
+     "a",
+     "b"
+    ],
+    "m": {
+     "x": 1,
+     "y": "z"
+    },
+    "owner": "alice"
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "aruma/nesting/nonfinal_groups_top",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: match /{g=**}/groups/{id} { match /members/{m} } on groups/g1/members/m1",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{g=**}/groups/{id} {\n      match /members/{m} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/groups/g1/members/m1",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   }
+  },
+  {
+   "id": "aruma/nesting/nonfinal_groups_deep",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: match /{g=**}/groups/{id} { match /members/{m} } on orgs/o1/groups/g1/members/m1",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{g=**}/groups/{id} {\n      match /members/{m} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/orgs/o1/groups/g1/members/m1",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   }
+  },
+  {
+   "id": "aruma/nesting/nonfinal_groups_outer_doc",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: the outer block itself, match /{g=**}/groups/{id} with allow get, on orgs/o1/groups/g1",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{g=**}/groups/{id} {\n      allow get: if true;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/orgs/o1/groups/g1",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/nonfinal_pq",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: match /p/{r=**}/q/{id} { match /docs/{d} } on p/a/q/x/docs/d1",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{r=**}/q/{id} {\n      match /docs/{d} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/p/a/q/x/docs/d1",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   }
+  },
+  {
+   "id": "aruma/nesting/nonfinal_pq_zero",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: match /p/{r=**}/q/{id} { match /docs/{d} } on p/q/x/docs/d1",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{r=**}/q/{id} {\n      match /docs/{d} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/p/q/x/docs/d1",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   }
+  },
+  {
+   "id": "aruma/nesting/final_v2_zero",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: match /p/{r=**} { match /docs/{d} } on p/docs/d1",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{r=**} {\n      match /docs/{d} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/p/docs/d1",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/final_v2_depth_1",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: match /p/{r=**} { match /docs/{d} } on p/a/docs/d1",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{r=**} {\n      match /docs/{d} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/p/a/docs/d1",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/final_v2_depth_3",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: match /p/{r=**} { match /docs/{d} } on p/a/b/c/docs/d1",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{r=**} {\n      match /docs/{d} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/p/a/b/c/docs/d1",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/final_v1_depth_1",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "rules_version '1': match /p/{r=**} { match /docs/{d} } on p/a/docs/d1",
+   "ruleset": "rules_version = '1';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{r=**} {\n      match /docs/{d} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/p/a/docs/d1",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "warnings": "WARNING Lundefined:undefined Ruleset uses old version (version [1]). Please update to the latest version (version [2]).\nWARNING L4:5 Glob(**) resource rules should not have child resource rules.",
+   "expected": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   }
+  },
+  {
+   "id": "aruma/nesting/final_noversion_depth_1",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "no rules_version: match /p/{r=**} { match /docs/{d} } on p/a/docs/d1",
+   "ruleset": "service cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{r=**} {\n      match /docs/{d} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/p/a/docs/d1",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "warnings": "WARNING Lundefined:undefined Ruleset uses old version (version [1]). Please update to the latest version (version [2]).\nWARNING L3:5 Glob(**) resource rules should not have child resource rules.",
+   "expected": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   }
+  },
+  {
+   "id": "aruma/nesting/final_v1_depth_3",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "rules_version '1': match /p/{r=**} { match /docs/{d} } on p/a/b/c/docs/d1",
+   "ruleset": "rules_version = '1';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{r=**} {\n      match /docs/{d} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/p/a/b/c/docs/d1",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "warnings": "WARNING Lundefined:undefined Ruleset uses old version (version [1]). Please update to the latest version (version [2]).\nWARNING L4:5 Glob(**) resource rules should not have child resource rules.",
+   "expected": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   }
+  },
+  {
+   "id": "aruma/nesting/flat_groups_top",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: match /{r=**}/groups/{g}/members/{m} on groups/g1/members/m1",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{r=**}/groups/{g}/members/{m} {\n      allow get: if true;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/groups/g1/members/m1",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/flat_groups_deep",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: match /{r=**}/groups/{g}/members/{m} on orgs/o1/groups/g1/members/m1",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{r=**}/groups/{g}/members/{m} {\n      allow get: if true;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/orgs/o1/groups/g1/members/m1",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/nested_second_glob",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: match /a/{r=**} { match /b/{s=**} }: a second glob in a nested block",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /a/{r=**} {\n      match /b/{s=**} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/a/x/b/y",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:7 Invalid glob match expression. Only one glob match is permitted in a match declaration path."
+   }
+  },
+  {
+   "id": "aruma/nesting/v1_nonlast_glob",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "rules_version '1': match /{r=**}/x/{d}",
+   "ruleset": "rules_version = '1';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{r=**}/x/{d} {\n      allow get: if true;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/a/b/x/d",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:11 Invalid glob match expression. Glob matches are permitted as the last segment in a match declaration path."
+   }
+  },
+  {
+   "id": "aruma/nesting/binding_both",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: match /{document=**} { match /notes/{noteId} } on notes/n1/notes/n2: document == /notes/n1 && noteId == n2",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      match /notes/{noteId} {\n        allow get: if document == /notes/n1 && noteId == 'n2';\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/notes/n1/notes/n2",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/binding_document",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: the same; document == /notes/n1",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      match /notes/{noteId} {\n        allow get: if document == /notes/n1;\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/notes/n1/notes/n2",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/binding_note_id",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: the same; noteId == 'n2'",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      match /notes/{noteId} {\n        allow get: if noteId == 'n2';\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/notes/n1/notes/n2",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/binding_true",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T22:36:33.661Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: the same; allow get: if true",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      match /notes/{noteId} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/notes/n1/notes/n2",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  }
+ ]
+}

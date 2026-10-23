@@ -352,7 +352,7 @@
    "provenance": "rules-test-api",
    "recordedAt": "2026-10-23T21:44:42.858Z",
    "version": "firebaserules.googleapis.com v1 projects.test",
-   "description": "v2: a nested match under a non-final {rest=**}",
+   "description": "v2: a nested match under a block whose own path ends in {rest=**} (match /p/{rest=**} { match /x/{f} })",
    "ruleset": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      match /x/{f} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
    "request": {
     "method": "get",
