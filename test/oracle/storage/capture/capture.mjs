@@ -79,6 +79,7 @@ function learn(headers, bodyText) {
   };
   visit(j);
 }
+const LOCAL_PATH =/(?:\/Volumes|\/Users|\/private|\/var\/folders|\/opt|\/home|\/tmp)\/[^\s"'<>():\\]+/g;
 function redact(s) {
   if (typeof s !== 'string') return s;
   // Longest first, so an ID token is replaced before a uid inside it could be.
@@ -86,6 +87,8 @@ function redact(s) {
   for (const k of keys) s = s.split(k).join(SECRETS.get(k));
   // Any other JWT (a forged token) is not recorded either.
   s = s.replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*/g, '<jwt>');
+  // Absolute paths of the capture machine (an emulator stack trace in an error page).
+  s = s.replace(LOCAL_PATH, '<path>');
   return s;
 }
 
