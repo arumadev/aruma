@@ -14,11 +14,16 @@
 ## 0. الخلاصة
 
 1. **ترتيب Firestore لا يُكتب بـ `ORDER BY` على jsonb.** نحتاج مفتاحًا من البايتات: ترتيب `memcmp` عليه هو ترتيب Firestore نفسه. يُحسب في Go، ويُخزَّن في `bytea`، ويقارنه Postgres بـ `memcmp` ثم الطول (`varlena.c:4069-4087`) [V].
-   - Google تفعل الشيء نفسه: مكتبة الويب تحمل نسخة من ترميز الخادم، والتعليق فيها يقول «These constants are taken from the backend» (`ordered_code_writer.ts:20`) [V].
+   - Google تفعل الشيء نفسه. مكتبة الويب تحمل ترميزًا **مشتقًا** من ترميز الخادم، لا نسخة مطابقة منه (§2.1):
+     - تعليق `ordered_code_writer.ts:20`: «These constants are taken from the backend».
+     - تعليق `firestore_index_value_writer.ts:50-51`: «copied from the backend… Code that has different behavior was modified» [V].
 2. **جدول إدخالات فهارس يُكتب في معاملة المستند نفسها** (نمط IndexEntries، وهو أيضًا ما فعله Kor) أفضل من فهارس Postgres الأصلية على jsonb. ثلاثة أسباب:
    - (أ) ترتيب الأنواع المختلطة.
    - (ب) خطة استعلام محددة سلفًا.
-   - (ج) Kor قاس كلفة GIN على كامل المستند: نحو 1.5 MB من WAL لكل مستند حجمه 38 kB، ونحو 90% من حجم WAL [V].
+   - (ج) كلفة GIN على كامل المستند عند Kor. عندنا منها رقمان مختلفان المصدر:
+     - **حادثة إنتاج:** «~1.5 MB of WAL per 21 kB document» وامتلأ القرص. ورسالة الـ commit `62bffa8` تقول إن السبب المفترض أولًا، full-page writes من تكرار الـ checkpoint، «was mostly wrong». أما أن GIN هو السبب في الحادثة فاستنتاج من القياس التالي، لا قياس للحادثة نفسها.
+     - **قياس اصطناعي** (`walcost_test.go`، خلف `KOR_WAL_COST`): مستندات متداخلة على شكل TMDB. النتيجة 65.0 kB WAL لكل مستند مع GIN، و6.5 kB بدونه، أي 90% من WAL. والكاتب نفسه يقول إن الأرقام تعتمد على العتاد «and the point is the ratio» [V].
+   - **[I] الثقة متوسطة لا عالية:** (أ) و(ب) حجتان في التصميم، و(ج) قياس واحد على شكل واحد. التجربة F0-2 (§8) تقيس على أشكالنا.
 3. **مفتاح فهرس النطاق `COLLECTION` يجب أن يبدأ بمسار المجموعة الأم.** وثائق حساب الحجم عند Google تضع «اسم المستند الأب» في كل إدخال فهرس على نطاق المجموعة، ولا تضعه في نطاق `COLLECTION_GROUP` [V].
    - Kor لا يضع الأب في المفتاح، ولا يقيّد المسح به. استنتاجي من قراءة الكود، دون تشغيل: استعلام على `users/A/posts` يخدمه فهرس قد يعيد مستندات من `users/B/posts` [I].
 4. **الفهرس الأحادي التلقائي يكفيه اتجاه واحد في Postgres.** المسح العكسي لـ `(field, value, name)` تصاعديًا يعطي بالضبط `value DESC, __name__ DESC`، وهو ترتيب Firestore للفهرس التنازلي [I]. أما في Firestore فكل حقل يأخذ فهرسين، تصاعديًا وتنازليًا [V].
@@ -61,6 +66,18 @@
 
 ### 2.1 OrderedCode عند Google: الأصل
 - **[V]** مكتبة الويب تنقل منطق الخادم، والتعليق يقول «These constants are taken from the backend» (`ordered_code_writer.ts:20-31`).
+- **[V] لكن كاتب الفهرس نسخة معدّلة لا مطابقة:** «This file is copied from the backend. Code that is not used by Firestore was removed. Code that has different behavior was modified» (`firestore_index_value_writer.ts:50-51`). الفروق المعروفة عن الخادم:
+
+  | الفرق | المصدر |
+  |---|---|
+  | **لا قطع:** «the SDK does not implement truncation»، وعلامة `NOT_TRUNCATED` تُكتب دائمًا | `:316-321` |
+  | الأعداد الصحيحة تُكتب كـ double عبر `writeNumber` | `:113-115` |
+  | المرجع يتجاوز أول خمسة أجزاء، لأن المكتبة لا تقبل إلا قاعدتها | `:53-55` |
+  | BSON timestamp يُرمَّز «differently than the backend» لحدود `number` في JS | `:326-330` |
+  | فيه تسميات أنواع BSON (`MIN_KEY` و`BSON_TIMESTAMP` و`BSON_BINARY` و`BSON_OBJECT_ID` و`REGEX` و`MAX_KEY`)، وهي حسب [data-types](https://firebase.google.com/docs/firestore/manage-data/data-types) «Supported only in Enterprise edition» | `:57-75` |
+
+  - **[I]** فنأخذ منه تسميات الأنواع وترتيبها وبنية العلامات، ونأخذ الأرقام والقطع من الخادم كما تصفهما الوثائق (§1). ولا نعدّه مواصفة حرفية.
+  - **[U] سؤال للإنتاج (F0-1):** كيف يعامل Standard edition خريطة شكلها شكل نوع BSON، مثل `{"__oid__": "..."}` (`detectMapRepresentation`)؟ هل يرتّبها كـ map عادية أم يرفضها؟ مسبار في `aruma-ref` يحسم ذلك.
   - داخل النص: `0x00` يصبح `0x00 0xFF`، والفاصل `0x00 0x01`.
   - و`0xFF` يصبح `0xFF 0x00`، و«ما لا نهاية» `0xFF 0xFF`.
 - **[V]** النسخة المفتوحة في Go، `google/orderedcode` (Apache-2.0):
@@ -134,10 +151,10 @@
 - **[I] ما نستنتجه:**
   - المفاتيح `bytea` دائمًا.
   - `COLLATE "C"` للأسماء النصية فقط إن احتجناها، كما في Kor `0001_init.sql:1-2`.
-  - جسم المستند نفسه يُخزَّن protobuf في `bytea`، كما يفعل hidane، لا jsonb:
-    - لأن jsonb يُسقط ‎-0.0 ولا يحمل U+0000 (رأينا الأول في RTDB، والثاني في سطر RTDB أعلاه).
-    - ولأنه لا يميّز int64 عن double.
-    - وKor احتاج لذلك ترميزًا بمفتاح نوع في jsonb (`{"i":"-42"}`).
+  - **جسم المستند: خياران، والقرار بقياس (F0-2)، والثقة متوسطة:**
+    - **jsonb الخام لا يصلح:** يُسقط ‎-0.0، ولا يحمل U+0000 (رأينا الاثنين في RTDB)، ولا يميّز int64 عن double.
+    - **(أ) jsonb معلَّم بالأنواع، أسلوب Kor:** مثل `{"i":"-42"}`. يحفظ ‎-0.0 وNaN وint64، لأن الأرقام نصوص، ويبقى قابلًا للقراءة بـ SQL في اللوحة وأدوات التشغيل. ويحتاج حلًا لـ U+0000، كترميز RTDB الحالي.
+    - **(ب) protobuf في `bytea`، أسلوب hidane وGoogle** [P §IV-D1]: الأدق والأصغر غالبًا، لكنه معتم لـ SQL، فكل قراءة في اللوحة أو الأدوات تمر بفك الترميز في Go.
     - هذا قرار تخزين يمس المسار A أيضًا.
 
 ### 3.2 حدود حجم الإدخال
@@ -152,10 +169,21 @@
 - **[I] النتيجة:**
   - فهرس مركّب على نصين طولهما 1500 بايت مع معرّف طوله 1500 بايت يتجاوز 2704، فيفشل الإدراج إن لم يُضغط. وFirestore يقبله.
   - المفاتيح فوق 510 بايت تُضغط، فتُفك عند كل مقارنة في البحث.
-- **الخيارات** (تُحسم بتجربة في F0):
-  - (أ) قطع المفتاح كله عند حد آمن، ثم إعادة فحص المستند. هذا أقرب لسلوك Firestore المعلن «may return inconsistent results».
-  - (ب) رفض الكتابة. أكثر تشددًا من Firebase، فيُوثَّق فرقًا.
-  - (ج) `SET STORAGE PLAIN` لعمود المفتاح لمنع الضغط. [U] لم أتحقق هل يصل الإعداد إلى عمود الفهرس.
+- **الخيارات، وثلاثة منها لا تصلح:**
+  - (أ) ~~قطع المفتاح كله عند حد آمن ثم إعادة فحص المستند.~~ **لا يصلح:**
+    - يكسر تفرّد المفتاح الأساسي، وكسر التعادل بـ `__name__` الذي يأتي في ذيل المفتاح.
+    - مفاتيح نطاق `COLLECTION_GROUP` تحمل الاسم الكامل، وطوله حتى 6 KiB.
+  - (ب) ~~رفض الكتابة.~~ **لا يصلح:** أكثر تشددًا من Firebase في مستند قانوني.
+  - (ج) ~~`SET STORAGE PLAIN`~~ **ضار:** يمنع الضغط داخل الفهرس (`indextuple.c:120-123`)، فيصل المفتاح الطويل إلى حد 2704 بايت أسرع. والضغط هو ما يجعل بعض المفاتيح الطويلة تتسع اليوم.
+  - **(د) المقترح: مفتاح محدود الطول.**
+    - المفتاح بادئة حافظة للترتيب بطول محدود، ثم digest للجزء الطويل، ثم إعادة فحص كل نتيجة على المستند نفسه بالمقارن الحقيقي.
+    - هذا نهج Firenook (المسار B §5): مفتاح «exact» للقيم القصيرة، وبادئة مع SHA-256 لما يطول، وإعادة ترتيب كل مجموعة متساوية البادئة بالمقارن.
+    - **[I]** يحفظ التفرد لأن الـ digest يميّز الذيل، ويحفظ الترتيب حتى حد البادئة. والمستندات ذات البادئة المشتركة تُرتّب بعد القراءة. وهي حالات نادرة ومحدودة.
+- **التجربة F0-3 بأسوأ مستند قانوني:**
+  - معرّف 1500 بايت، ومسار مجموعة أم 1500 بايت، وقيمة 1500 بايت، في فهرس مركّب من حقلين.
+  - واسم 6 KiB في نطاق `COLLECTION_GROUP`.
+  - وبايتات عشوائية غير قابلة للضغط.
+  - نقيس: هل يُرفض الإدراج دون (د)؟ وما كلفة (د) في الكتابة والقراءة؟
 
 ### 3.3 Deduplication وbottom-up deletion والضغط
 - **[V]** deduplication (من PG13) يدمج المفاتيح المكررة في posting list. لا يُستعمل مع `numeric` و`jsonb` و`float8` والمركّبات و`INCLUDE`، وبايتات `bytea` تقبله.
@@ -244,7 +272,7 @@
 |---|---|---|---|
 | ترتيب Firestore المختلط | نعم، بالمفتاح | لا ترتيب أصلًا | لا: `ORDER BY data->'x'` يتبع ترتيب jsonb (Kor `docs/indexes.md:24-28` [V]) |
 | مدى وlimit رخيص | مدى واحد، والكلفة بقدر limit (Kor `indexes.md:18-22` [V]) | يعطي مرشحين فقط، ثم الفرز في Go بكلفة O(المطابقات) (`store/query.go:145-198` [V]) | نعم لنوع واحد |
-| كلفة الكتابة | إدخال لكل (فهرس، مستند). المصفوفة في array-contains إدخال لكل عنصر مميز | قاس Kor نحو 1.5 MB من WAL لكل مستند 38 kB، ونحو 90% من WAL، بسبب full-page images (`walcost_test.go:13-20`، `0003_containment_exclusions.sql:3-10` [V]) | كل فهرس يُحدَّث مع كل تحديث غير HOT. وDDL ديناميكي لكل مستأجر |
+| كلفة الكتابة | إدخال لكل (فهرس، مستند). المصفوفة في array-contains إدخال لكل عنصر مميز | قياس Kor الاصطناعي على مستندات متداخلة بشكل TMDB: 65.0 kB WAL لكل مستند مع GIN، و6.5 kB بدونه (90%)، وأغلبه full-page images. وحادثة الإنتاج (~1.5 MB لكل مستند 21 kB) نُسبت إلى GIN بالاستنتاج من هذا القياس (commit `62bffa8`، `walcost_test.go:13-20`، `0003_containment_exclusions.sql:3-10` [V]). يُعاد القياس على أشكالنا في F0-2 | كل فهرس يُحدَّث مع كل تحديث غير HOT. وDDL ديناميكي لكل مستأجر |
 | مع RLS | قابل للاستعمال لأن مقارنات bytea leakproof [V] | غير قابل لأن `@>` ليس leakproof [V] | يعتمد على الدالة |
 | الفهرس الجزئي | لا يلزم | Kor وجد أن الفهرس الجزئي لا يُستعمل مع معامل مربوط في خطة عامة (`partialgin_test.go:13-20` [V]) | المشكلة نفسها |
 | الاستثناءات | سهلة: لا نكتب إدخالات للحقل | على مستوى المجموعة فقط في Kor | — |
@@ -314,9 +342,11 @@
 ```sql
 -- Isolation: database_id leads every key. firestore.databases carries project_number
 -- (scopecheck / optional RLS). Named databases come later; '(default)' only in v0.4.
+-- Child tables reach the project through database_id with ON DELETE CASCADE; whether they
+-- also carry project_number (with the control.projects FK) is an ADR-024 decision, see notes.
 CREATE TABLE firestore.databases (
     id             bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    project_number bigint NOT NULL REFERENCES control.projects,
+    project_number bigint NOT NULL REFERENCES control.projects (project_number) ON DELETE CASCADE,
     name           text   NOT NULL DEFAULT '(default)',
     seq            bigint NOT NULL DEFAULT 0,            -- single writer, as ADR-019
     UNIQUE (project_number, name)
@@ -325,7 +355,7 @@ CREATE TABLE firestore.databases (
 -- One row per collection instance (users/A/posts): a short prefix for index keys,
 -- and ListCollectionIds without a DISTINCT scan (as in Kor's collections table).
 CREATE TABLE firestore.collections (
-    database_id bigint NOT NULL,
+    database_id bigint NOT NULL REFERENCES firestore.databases (id) ON DELETE CASCADE,
     id          bigint GENERATED ALWAYS AS IDENTITY,
     parent      bytea  NOT NULL,   -- segment-ordered encoding of the parent document ('' for root)
     coll_id     text   COLLATE "C" NOT NULL,
@@ -334,11 +364,12 @@ CREATE TABLE firestore.collections (
 );
 
 CREATE TABLE firestore.documents (
-    database_id    bigint NOT NULL,
-    project_number bigint NOT NULL,   -- only if scopecheck/RLS needs it on this table
+    database_id    bigint NOT NULL REFERENCES firestore.databases (id) ON DELETE CASCADE,
+    -- only if ADR-024 puts project_number on child tables (scopecheck/RLS); then with the FK:
+    project_number bigint NOT NULL REFERENCES control.projects (project_number) ON DELETE CASCADE,
     name_key       bytea  NOT NULL,   -- segment-ordered full name: one range per subtree, __id<n>__ numeric
     collection_pk  bigint NOT NULL,
-    fields         bytea  NOT NULL,   -- protobuf MapValue: keeps -0.0, int64 vs double, U+0000
+    fields         bytea  NOT NULL,   -- protobuf MapValue, or tagged jsonb: decided by F0-2
     create_time    bigint NOT NULL,   -- microseconds
     update_time    bigint NOT NULL,
     PRIMARY KEY (database_id, name_key)
@@ -350,14 +381,14 @@ CREATE TABLE firestore.documents (
 -- single-field automatic: one logical index per kind; the prefix holds the escaped field
 -- path. Ascending only: a backward scan gives DESC with __name__ DESC.
 CREATE TABLE firestore.index_entries (
-    database_id bigint NOT NULL,
+    database_id bigint NOT NULL REFERENCES firestore.databases (id) ON DELETE CASCADE,
     index_id    bigint NOT NULL,      -- 1 = auto asc, 2 = auto array-contains, ≥100 = defs
     key         bytea  NOT NULL,
     PRIMARY KEY (database_id, index_id, key)
 );   -- no doc_name index: maintenance deletes exact keys from old-vs-new diffs
 
 CREATE TABLE firestore.index_defs (
-    database_id bigint NOT NULL,
+    database_id bigint NOT NULL REFERENCES firestore.databases (id) ON DELETE CASCADE,
     index_id    bigint NOT NULL,
     spec        text   NOT NULL,      -- canonical form from firestore.indexes.json
     scope       text   NOT NULL CHECK (scope IN ('COLLECTION','COLLECTION_GROUP')),
@@ -371,12 +402,19 @@ CREATE TABLE firestore.index_defs (
 
 **ملاحظات:**
 - **اسم المستند في ذيل المفتاح** يكفي لاستخراج `name_key` للجلب: في نطاق المجموعة `collection_pk` ثم المعرّف. لذا لا عمود `doc_name` منفصل. هل يستحق عمود `doc bytea` للوضوح؟ قرار يُقاس.
-- **`project_number` في `documents`** لإرضاء scopecheck. ونترك `index_entries` تحت `database_id` فقط، أو نضيفه هناك أيضًا: يقرره ADR-024 مع قرار RLS (§3.6).
+- **`project_number` في الجداول الفرعية:** يقرره ADR-024 مع قرار RLS (§3.6). خياران:
+  - **(أ) الوراثة عبر `database_id`:** الجداول الفرعية تصل إلى المشروع عبر `database_id` بـ `ON DELETE CASCADE`. والـ scope annotation تشرح أن `database_id` لا يُعطى إلا لمشروعه. هذا نمط `rtdb.nodes` اليوم.
+  - **(ب) `project_number` في كل جدول:** بالصيغة المعتمدة في `control/00001_init.sql:74` وما بعده: `project_number bigint NOT NULL REFERENCES control.projects (project_number) ON DELETE CASCADE`. يزيد 8 بايت لكل صف فهرس، لكنه شرط لأي سياسة RLS بسيطة.
+- **[V] عدم اتساق قائم يدخل ADR-024:** `rtdb.databases.project_number` بلا FK إلى `control.projects` (`internal/store/migrations/rtdb/00001_init.sql:12`)، بخلاف جداول `control`. فحذف مشروع لا يحذف قواعد RTDB تلقائيًا. نقرر لـ Firestore صراحة ألا نكرر ذلك، ونشير إلى RTDB لإصلاحه في migration جديد.
 
 ## 8. تجارب F0 مقترحة
-1. **fuzz الترميز:** يتحقق من `Compare == bytes.Compare` تصاعديًا وتنازليًا ومتسلسلًا، ويشمل `__id<n>__` وحدود 2^53 و2^63. ثم **مقارنة الترتيب مع المحاكي** عبر مكتبة Go الرسمية، بأسلوب Kor (`docs/differential-testing.md`). ثم **عينة من الإنتاج** على المشروع المرجعي تحت `aruma-ref`.
-2. **WAL والحجم:** قياس `pg_current_wal_lsn` قبل وبعد، و`pg_relation_size`، لكتابة مستندات بـ 10 و100 و1000 حقل، ولمصفوفة من 1000 عنصر. مقارنة ثلاثة خيارات: (أ) `index_entries` بالفرق، (ب) `index_entries` بحذف الكل وإعادته مع فهرس `doc`، (ج) GIN على `data`، وهو أساس Kor.
-3. **حدود المفتاح:** نص 1500 بايت × 2 مع معرّف 1500 بايت: هل يُرفض الإدراج؟ ما أثر الضغط على زمن البحث؟ هل يمنعه `SET STORAGE PLAIN`؟
+1. **fuzz الترميز:** يتحقق من `Compare == bytes.Compare` تصاعديًا وتنازليًا ومتسلسلًا، ويشمل `__id<n>__` وحدود 2^53 و2^63. ثم **مقارنة الترتيب مع المحاكي** عبر مكتبة Go الرسمية، بأسلوب Kor (`docs/differential-testing.md`). ثم **عينة من الإنتاج** على المشروع المرجعي تحت `aruma-ref`، ومعها مسبار لخرائط بشكل أنواع BSON في Standard edition (§2.1).
+2. **WAL والحجم والجسم:** نقيس `pg_current_wal_lsn` قبل وبعد، و`pg_relation_size`.
+   - **الفهارس:** ثلاثة خيارات: (أ) `index_entries` بالفرق، و(ب) `index_entries` بحذف الكل وإعادته مع فهرس `doc`، و(ج) GIN على `data`، وهو أساس Kor.
+   - **أشكال المستندات:** مسطّح بـ 20 و100 حقل، ومتداخل، وشكل TMDB نفسه الذي قاسه Kor، ومصفوفة من 1000 عنصر.
+   - **جسم المستند:** protobuf `bytea` مقابل jsonb معلَّم بالأنواع. نقيس الحجم بعد TOAST، وWAL لكل كتابة، وCPU فك الترميز عند 1 KB و100 KB و1 MiB.
+   - **وقائمة بالاستعلامات** التي تحتاج SQL على الأجسام في اللوحة والتشغيل (تصفح، بحث، تصدير، إصلاح). قائمة طويلة ترجّح jsonb المعلَّم.
+3. **حدود المفتاح بأسوأ مستند قانوني** (§3.2): معرّف 1500 بايت، ومسار أم 1500 بايت، وقيمة 1500 بايت، واسم 6 KiB في نطاق `COLLECTION_GROUP`، وبايتات غير قابلة للضغط. نقيس الإدراج دون المفتاح المحدود (د) ومعه، وكلفة (د) في الكتابة والقراءة.
 4. **index-only scan تحت الكتابة:** نسبة `Heap Fetches` في `EXPLAIN (ANALYZE, BUFFERS)` مع autovacuum افتراضي ثم معدّل.
 5. **RLS نعم أم لا:** زمن مسح المدى وكلفة `set_config` لكل معاملة عبر pgx، مع RLS (دور بلا BYPASSRLS) ودونه.
 6. **zig-zag:** دمج في Go مقابل `INTERSECT` في SQL لاستعلام مساواة على حقلين بتقاطع نادر.

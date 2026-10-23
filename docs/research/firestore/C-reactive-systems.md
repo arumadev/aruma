@@ -32,11 +32,11 @@
 6. **العودة إلى polling:** يرجع المستمع من listening إلى polling تلقائيًا عند إعادة توازن الـ changelog، أو hotspots، أو إعادة تشغيل خادم. «If your polling queries are fast enough, a polling state becomes transparent to your app's users».
 7. **المستمع على مجموعة كبيرة كثيرة التغير مكلف حتى لو كانت نتيجته صغيرة:** «Snapshot listeners that try to filter too much incoming data might be slow even if the result set is small».
 
-### 0.2 changelog واحد لكل قاعدة: هكذا عمل Firestore سنوات
+### 0.2 changelog واحد لكل قاعدة: هكذا عمل بث Firestore سنوات
 من مدوّنة Google Cloud بتاريخ 2022-10-21 (https://cloud.google.com/blog/products/databases/building-scalable-real-time-applications-with-firestore) **[V]**:
 - «Previously, the changelogs were managed by a single backend server for each Firestore database. This meant that the maximum write throughput for Firestore Native was limited to what could be processed by one server».
 - وكان الحد: «a limit of 10,000 write operations per second per database». أُزيل في 2022 بتقسيم الـ changelog أفقيًا، وصارت معالجة الاستعلام تقرأ من عدة مصادر.
-- **[I]** هذا هو نموذجنا في ADR-019 (كاتب واحد وتسلسل واحد لكل قاعدة). وقد خدم Firestore الإنتاجي حتى 2022 بحد 10k كتابة/ث للقاعدة، وهو أعلى بكثير مما يحتاجه خادم Aruma واحد.
+- **[I] التشابه جزئي:** الواحد لكل قاعدة عند Google كان **الـ changelog**، أي ترتيب التغييرات وتوزيعها. أما الـ commits فكانت متزامنة، كل منها معاملة Spanner مستقلة بأقفال لكل مستند [P §IV-D1، §IV-D2؛ المسار A §3]. فـ «تسلسل واحد وتوزيع واحد لكل قاعدة» جُرّب في الإنتاج حتى 2022 بحد 10k كتابة/ث. أما «كاتب واحد ينفّذ التحقق والقواعد والـ commit» في ADR-019 فلم يجرّبه أحد على هذا المقياس، وسقفه يُقاس في F0 (README، F0-11).
 
 ### 0.3 الاستئناف وحدوده كما يراها العميل والفوترة
 - **30 دقيقة:** صفحة التسعير (https://firebase.google.com/docs/firestore/pricing) **[V]**: «If offline persistence is enabled and the listener is disconnected for more than 30 minutes … you will be charged for documents and index entries read as if you had issued a brand-new query». **[I]** أي أن الإنتاج لا يستأنف من resume token أقدم من نحو 30 دقيقة بقراءة الفروق، بل يعيد الاستعلام كاملًا.
@@ -172,7 +172,7 @@
 كل ما يلي توصيات **[I]** مبنية على الأدلة أعلاه، إلا ما عليه [V].
 
 **C1. نُبقي نموذج ADR-019 ولا نقرأ WAL أو LISTEN/NOTIFY.** الثقة عالية.
-- Firestore نفسه عمل بـ changelog واحد لكل قاعدة حتى 2022 **[V]**.
+- Firestore نفسه عمل بـ changelog واحد لكل قاعدة حتى 2022 **[V]**. وهذا يدعم التسلسل والتوزيع الواحد. أما تنفيذ الـ commits كلها بالتتابع فشيء لم تفعله Google **[I]** (§0.2).
 - كل من بنى على WAL اضطر إلى إعادة بناء تسلسل وhistory وslot وحيد (Instant)، أو خسر الأحداث عند الانقطاع (Supabase، slot مؤقت).
 - Hasura يرفض الاثنين لأسباب موثّقة.
 - القيد المعروف: كتابة تتجاوز Aruma (psql مباشرة) لا تصل المستمعين. نوثّقه في `docs/compat`.
