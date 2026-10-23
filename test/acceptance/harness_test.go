@@ -75,7 +75,6 @@ func newEnv(t *testing.T, env map[string]string, opts ...app.Option) *Env {
 func newEnvWithPool(t *testing.T, maxConns int, env map[string]string, opts ...app.Option) *Env {
 	t.Helper()
 	dbURL := storetest.NewDB(t)
-	ctx := context.Background()
 	poolURL := dbURL
 	if maxConns > 0 {
 		u, err := url.Parse(dbURL)
@@ -87,6 +86,20 @@ func newEnvWithPool(t *testing.T, maxConns int, env map[string]string, opts ...a
 		u.RawQuery = q.Encode()
 		poolURL = u.String()
 	}
+	return serveOn(t, dbURL, poolURL, env, opts...)
+}
+
+// restart starts a new server on e's database with the settings env, as a restarted process:
+// nothing carries over but what the database holds. The caller stops e's connections first.
+func (e *Env) restart(env map[string]string, opts ...app.Option) *Env {
+	e.t.Helper()
+	return serveOn(e.t, e.DB, e.DB, env, opts...)
+}
+
+// serveOn starts a server on the database at dbURL, its pool opened with poolURL.
+func serveOn(t *testing.T, dbURL, poolURL string, env map[string]string, opts ...app.Option) *Env {
+	t.Helper()
+	ctx := context.Background()
 	pool, err := store.Open(ctx, poolURL)
 	if err != nil {
 		t.Fatal(err)

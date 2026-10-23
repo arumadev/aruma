@@ -411,6 +411,15 @@ func TestOutbox(t *testing.T) {
 	if o.push([]byte("y")) {
 		t.Error("a closed outbox took a message")
 	}
+	// The bound is in bytes, never in messages: a client behind on many small pushes stays
+	// as long as their bytes fit (Lark 0.3.0 dropped clients at 1000 queued messages, which
+	// a large first sync reached on its own).
+	o = newOutbox(1 << 20)
+	for i := range 100_000 {
+		if !o.push([]byte("0123456789")) {
+			t.Fatalf("message %d refused", i)
+		}
+	}
 }
 
 func TestReplyOrder(t *testing.T) {

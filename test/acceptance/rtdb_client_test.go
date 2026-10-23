@@ -21,6 +21,11 @@ import (
 // unless locked is set.
 func rtdbEnv(t *testing.T, locked bool, extra map[string]string) *Env {
 	t.Helper()
+	return newEnv(t, rtdbSettings(locked, extra))
+}
+
+// rtdbSettings are the settings of rtdbEnv.
+func rtdbSettings(locked bool, extra map[string]string) map[string]string {
 	env := map[string]string{"ARUMA_RTDB_ENABLED": "true"}
 	if !locked {
 		// Open rules need a loopback listener; the test server's real listener is
@@ -31,7 +36,7 @@ func rtdbEnv(t *testing.T, locked bool, extra map[string]string) *Env {
 	for k, v := range extra {
 		env[k] = v
 	}
-	return newEnv(t, env)
+	return env
 }
 
 // wsClient is one raw protocol connection.
@@ -53,6 +58,8 @@ type dialOpts struct {
 	query  string // replaces ?v=5&ns=...
 	// forwardedHost is sent as X-Forwarded-Host, as a proxy in front would.
 	forwardedHost string
+	// readRate, when set, caps how fast the client reads, in bytes per second: a slow link.
+	readRate int
 }
 
 // dial opens /.ws on the test server for namespace ns and reads the handshake.
@@ -88,7 +95,11 @@ func (e *Env) tryDial(ns string, o dialOpts) (*wsClient, *http.Response, error) 
 	}
 	client := &http.Client{Transport: &http.Transport{
 		DialContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
-			return (&net.Dialer{}).DialContext(ctx, network, addr)
+			conn, err := (&net.Dialer{}).DialContext(ctx, network, addr)
+			if err != nil || o.readRate == 0 {
+				return conn, err
+			}
+			return newSlowConn(conn, o.readRate), nil
 		},
 	}}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
