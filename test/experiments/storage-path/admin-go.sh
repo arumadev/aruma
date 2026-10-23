@@ -19,6 +19,7 @@ trap stop_stub EXIT
 scenarios=("$@")
 [[ ${#scenarios[@]} -gt 0 ]] || scenarios=(
   admin-default admin-emulator-http admin-endpoint admin-endpoint-jsonreads admin-endpoint-prefix gcs-endpoint
+  gcs-endpoint-jsonreads admin-endpoint-messaging
 )
 
 start_stub "$gen" -buckets s0path.appspot.com

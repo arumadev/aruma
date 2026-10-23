@@ -18,7 +18,7 @@ trap stop_stub EXIT
 scenarios=("$@")
 [[ ${#scenarios[@]} -gt 0 ]] || scenarios=(
   admin-cert-default admin-cert-emulator-http admin-cert-emulator-https admin-firebase-emulator-host
-  admin-aruma-credential gcs-endpoint-noauth gcs-endpoint-auth-keyfile gcs-endpoint-auth-aruma
+  admin-aruma-credential gcs-endpoint-noauth gcs-endpoint-auth-keyfile gcs-endpoint-auth-aruma gcs-universe-aruma
   gcs-endpoint-prefix-aruma
 )
 

@@ -24,6 +24,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/messaging"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
@@ -73,6 +74,22 @@ func main() {
 			var c *storage.Client
 			if c, err = storage.NewClient(ctx, creds, option.WithEndpoint(stubURL+"/storage/v1/")); err == nil {
 				bkt = c.Bucket(bucketName)
+			}
+		case "gcs-endpoint-jsonreads":
+			// A storage-only client, apart from the firebase.App: what an adminstorage helper returns.
+			var c *storage.Client
+			if c, err = storage.NewClient(ctx, creds, option.WithEndpoint(stubURL+"/storage/v1/"), storage.WithJSONReads()); err == nil {
+				bkt = c.Bucket(bucketName)
+			}
+		case "admin-endpoint-messaging":
+			// The same WithEndpoint on firebase.NewApp, seen from another service of the app.
+			var app *firebase.App
+			if app, err = firebase.NewApp(ctx, &firebase.Config{ProjectID: "s0path", StorageBucket: bucketName}, creds, option.WithEndpoint(stubURL+"/storage/v1/")); err == nil {
+				var m *messaging.Client
+				if m, err = app.Messaging(ctx); err == nil {
+					_, sendErr := m.Send(ctx, &messaging.Message{Topic: "s0path", Data: map[string]string{"k": "v"}})
+					return fmt.Sprintf("messaging.Send with WithEndpoint on the app: %v", sendErr), nil
+				}
 			}
 		default:
 			err = fmt.Errorf("unknown scenario %q", scenario)

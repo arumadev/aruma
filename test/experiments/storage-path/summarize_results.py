@@ -39,6 +39,8 @@ def main():
                 print(f"  {'PASS' if x['ok'] else 'FAIL'} {x['op']:<22} {x.get('detail', '')}")
             for b in r.get("blocked", []) or []:
                 print(f"  BLOCKED (guard) {b}")
+            for o in r.get("outbound", []) or []:
+                print(f"  OUTBOUND (refused) {o}")
             reqs = by_scenario.get(s, [])
             counts = collections.Counter()
             for e in reqs:

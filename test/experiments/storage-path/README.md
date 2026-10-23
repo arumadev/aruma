@@ -8,9 +8,9 @@ network guard, and a request to Google is refused and listed as `BLOCKED`.
 
 | Runner | SDK | Modes | Guard |
 |---|---|---|---|
-| `admin-node.sh` | firebase-admin 14.5.0, @google-cloud/storage 8.4.0 | 9 configurations (`admin-node/scenario.mjs`) | `../netguard.cjs` |
-| `admin-go.sh` | firebase-admin-go 4.22.0, cloud.google.com/go/storage 1.62.1 | 6 configurations (`admin-go/main.go`, a module of its own) | `HTTPS_PROXY` = the stub's refusing proxy |
-| `web.sh` | firebase 13.1.0 (gstatic CDN build) in Chromium | emulator, prod-asis, prod-xhr, prod-xhr-https, prod-build | Chromium resolves only localhost; failed requests are recorded |
+| `admin-node.sh` | firebase-admin 14.5.0, @google-cloud/storage 8.4.0 | 10 configurations (`admin-node/scenario.mjs`), each also calling firebase-admin's `getDownloadURL` and a wrapper's own | `../netguard.cjs`; `scenario.mjs` records what a refused request would have carried (URL, `Authorization` scheme) |
+| `admin-go.sh` | firebase-admin-go 4.22.0, cloud.google.com/go/storage 1.62.1 | 8 configurations (`admin-go/main.go`, a module of its own), one of them FCM on an app with `WithEndpoint` | `HTTPS_PROXY` = the stub's refusing proxy |
+| `web.sh` | firebase 13.1.0 (gstatic CDN build) in Chromium | emulator, prod-asis, prod-xhr, prod-xhr-https, prod-build; and `node-host` (no browser: the Node build with `storage.host` set, and `refFromURL` on each URL form) | Chromium resolves only localhost; failed requests are recorded |
 | `android.sh` | firebase-storage 23.0.0 (BoM 35.0.2), instrumented test | emulator, prod-asis, prod-spike, prod-spike-https | iptables on the app's uid (`adb root`) + `NetworkGuard` |
 | `ios.sh` | FirebaseStorage 12.19.2, XCTest in a host app on the simulator | emulator, prod-asis, prod-spike, prod-spike-https, background upload (http, https), background probe | `LoopbackGuard` (default and ephemeral sessions) |
 | `flutter.sh` | firebase_storage 14.0.1 (firebase_core 5.1.0) on Android | emulator, prod-spike | iptables, as `android.sh` |
@@ -18,7 +18,10 @@ network guard, and a request to Google is refused and listed as `BLOCKED`.
 The operations: upload (small, and a 3 MB resumable one; on Android and iOS also from a file),
 getMetadata, getDownloadURL, download (bytes; on the web also a Blob, on Android and iOS also to a
 file or a stream), list, delete, and then the download URL opened outside the SDK (`fetch` and
-`<img>` on the web, `HttpURLConnection` on Android, `URLSession.shared` on iOS).
+`<img>` on the web, `HttpURLConnection` on Android, `URLSession.shared` on iOS, `dart:io` in
+Flutter). Byte downloads (getBytes, `data`, Node and Go downloads) are compared byte for byte;
+getFile, getStream, `write(toFile:)` and getBlob only by length. A PASS for getDownloadURL means the
+call returned: check the host of the URL in its detail.
 
 ## Running
 
@@ -27,6 +30,7 @@ source .cache/env.sh                                    # or the same variables
 test/experiments/storage-path/admin-node.sh             # ~1 min
 test/experiments/storage-path/admin-go.sh               # ~30 s (builds offline from the module cache)
 test/experiments/storage-path/web.sh                    # ~1 min
+test/experiments/storage-path/web.sh node-host          # ~5 s, no browser
 ANDROID_SERIAL=emulator-8830 JAVA_HOME=<JDK 17+> test/experiments/storage-path/android.sh   # ~5 min
 test/experiments/storage-path/ios.sh                    # first build ~10 min, then ~3 min
 ANDROID_SERIAL=emulator-8830 JAVA_HOME=<JDK 17+> \
