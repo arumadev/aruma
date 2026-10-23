@@ -1,0 +1,3339 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "hidane-conditions",
+ "service": "firestore",
+ "set": "heldout",
+ "source": "aruma",
+ "provenance": "rules-test-api",
+ "project": "chatapp-8ae21",
+ "recordedAt": "2026-10-23T21:57:44.137Z",
+ "version": "firebaserules.googleapis.com v1 projects.test",
+ "rulesets": {
+  "pack-1": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /hh0000/{room} {\n      allow read: if request.auth != null || resource.data.visibility == 'public';\n    }\n    match /hh0001/{room} {\n      allow read: if resource.data.get('visibility', 'private') == 'public' || request.auth == null;\n    }\n    match /hh0002/{room} {\n      allow read: if resource.data.tags.size() < 5 && resource.data.tags.hasAll(['a']);\n    }\n    match /hh0003/{room} {\n      allow read: if resource.data.s.size() > 2 && resource.data.s.size() <= 30;\n    }\n    match /hh0004/{room} {\n      allow read: if resource.data.keys().hasOnly(['n', 'f', 'one_f', 's', 'b', 'nul', 'arr', 'tags', 'm', 'ts', 'geo', 'ref', 'by', 'big']);\n    }\n    match /hh0005/{room} {\n      allow read: if resource.data.ts < request.time - duration.value(1, 'd');\n    }\n    match /hh0006/{room} {\n      allow read: if request.time < timestamp.date(2000, 1, 1);\n    }\n    match /hh0007/{room} {\n      allow read: if resource.data.m.size() == 2 && 'x' in resource.data.m;\n    }\n    match /hh0008/{room} {\n      allow read: if resource.data.n is int && resource.data.n >= 0 && resource.data.n < 10;\n    }\n    match /hh0009/{room} {\n      allow read: if resource.data.f > 1 && resource.data.f < 2;\n    }\n    match /hh0010/{room} {\n      allow read: if resource.data.f * 2 == 3;\n    }\n    match /hh0011/{room} {\n      allow read: if resource.data.n / 2 == 0;\n    }\n    match /hh0012/{room} {\n      allow read: if resource.data.n % 2 == 1;\n    }\n    match /hh0013/{room} {\n      allow read: if resource.data.s in ['abc', 'def'];\n    }\n    match /hh0014/{room} {\n      allow read: if resource.data.n in [1, 2, 3];\n    }\n    match /hh0015/{room} {\n      allow read: if resource.data.tags[0] == 'a';\n    }\n    match /hh0016/{room} {\n      allow read: if resource.data.tags[-1] == 'b';\n    }\n    match /hh0017/{room} {\n      allow read: if resource.data.arr[3] == 4;\n    }\n    match /hh0018/{room} {\n      allow read: if resource.data.s.matches('^a.*');\n    }\n    match /hh0019/{room} {\n      allow read: if resource.data.s.matches('A.*');\n    }\n    match /hh0020/{room} {\n      allow read: if resource.data.s.lower().matches('[a-z]+');\n    }\n    match /hh0021/{room} {\n      allow read: if resource.data.s.split('b').size() == 2;\n    }\n    match /hh0022/{room} {\n      allow read: if resource.data.s.replace('b', '') == 'ac';\n    }\n    match /hh0023/{room} {\n      allow read: if resource.data.m.keys().size() == 2 && resource.data.m.values().size() == 2;\n    }\n    match /hh0024/{room} {\n      allow read: if resource.data.m.diff({}).addedKeys().size() == 2;\n    }\n    match /hh0025/{room} {\n      allow read: if resource.data.m.diff(resource.data.m).affectedKeys().size() == 0;\n    }\n    match /hh0026/{room} {\n      allow read: if resource.data.arr.toSet().hasAny([3]);\n    }\n    match /hh0027/{room} {\n      allow read: if resource.data.arr.concat(resource.data.tags).size() == 5;\n    }\n    match /hh0028/{room} {\n      allow read: if resource.data.big > 9000000000000000000;\n    }\n    match /hh0029/{room} {\n      allow read: if resource.data.big - 1 < resource.data.big;\n    }\n    match /hh0030/{room} {\n      allow read: if -resource.data.big - 2 < 0;\n    }\n    match /hh0031/{room} {\n      allow read: if resource.data.geo.latitude() < resource.data.geo.longitude();\n    }\n    match /hh0032/{room} {\n      allow read: if string(resource.data.n) + string(resource.data.f) == '11.5';\n    }\n    match /hh0033/{room} {\n      allow read: if int(resource.data.f) == 1 && float(resource.data.n) == 1.0;\n    }\n    match /hh0034/{room} {\n      allow read: if math.abs(resource.data.f - 2) == 0.5;\n    }\n    match /hh0035/{room} {\n      allow read: if resource.data.ts.toMillis() > 0 && resource.data.ts.year() >= 2020;\n    }\n    match /hh0036/{room} {\n      allow read: if duration.value(resource.data.n, 'd') == duration.value(24, 'h');\n    }\n    match /hh0037/{room} {\n      allow read: if resource.__name__[3] == 'rooms' && resource.__name__[4] == room;\n    }\n    match /hh0038/{room} {\n      allow read: if request.path[4] == resource.id;\n    }\n    match /hh0039/{room} {\n      allow read: if resource.data.nul == null && !(resource.data.b == false);\n    }\n    match /hh0040/{room} {\n      allow read: if (resource.data.missing == 1) == false;\n    }\n    match /hh0041/{room} {\n      allow read: if resource.data.get('m', {}).get('x', 0) == 1;\n    }\n    match /hh0042/{room} {\n      allow read: if resource.data.tags.join('-').size() == 3;\n    }\n    match /hh0043/{room} {\n      allow read: if 'a' in resource.data.tags.toSet();\n    }\n    match /hh0044/{room} {\n      allow read: if resource.data.tags.toSet().union(['c'].toSet()).size() == 3;\n    }\n    match /hh0045/{room} {\n      allow read: if [1, 2, 3].hasOnly(resource.data.arr);\n    }\n    match /hh0046/{room} {\n      allow read: if resource.data.s + resource.data.s == 'abcabc';\n    }\n    match /hh0047/{room} {\n      allow read: if resource.data.f + resource.data.n == 2.5;\n    }\n    match /hh0048/{room} {\n      allow read: if resource.data.n + 0.5 == 1.5;\n    }\n    match /hh0049/{room} {\n      allow read: if resource.data.f % 1 == 0.5;\n    }\n    match /hh0050/{room} {\n      allow read: if resource.data.one_f == resource.data.n;\n    }\n    match /hh0051/{room} {\n      allow read: if [resource.data.one_f] == [resource.data.n];\n    }\n    match /hh0052/{room} {\n      allow read: if {'a': resource.data.n} == {'a': 1};\n    }\n    match /hh0053/{room} {\n      allow read: if resource.data.m.x is int && resource.data.m.y is string;\n    }\n    match /hh0054/{room} {\n      allow read: if resource.data is map;\n    }\n    match /hh0055/{room} {\n      allow read: if request.auth is map;\n    }\n    match /hh0056/{room} {\n      allow read: if request.time is timestamp;\n    }\n    match /hh0057/{room} {\n      allow read: if request.time - resource.data.ts > duration.value(1, 'd');\n    }\n    match /hh0058/{room} {\n      allow read: if resource.data.s[0] == 'a' && resource.data.s[1:3] == 'bc';\n    }\n    match /hh0059/{room} {\n      allow read: if resource.data.arr[0:2].size() == 2;\n    }\n  }\n}\n",
+  "pack-2": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /hh0060/{room} {\n      allow read: if resource.data.tags.removeAll(['a']) == ['b'];\n    }\n    match /hh0061/{room} {\n      allow read: if resource.data.s.upper().lower() == resource.data.s;\n    }\n    match /hh0062/{room} {\n      allow read: if resource.data.s.trim().size() == 3;\n    }\n    match /hh0063/{room} {\n      allow read: if resource.data.f >= resource.data.n;\n    }\n    match /hh0064/{room} {\n      allow read: if resource.data.by.toBase64().size() == 4;\n    }\n    match /hh0065/{room} {\n      allow read: if resource.data.missing.size() > 0 || resource.data.n == 1;\n    }\n    match /hh0066/{room} {\n      allow read: if resource.data.n == 1 ? resource.data.s == 'abc' : resource.data.missing;\n    }\n    match /hh0067/{room} {\n      allow read: if resource.data.arr.size() > 0 && resource.data.arr[0] is int;\n    }\n    match /hh0068/{room} {\n      allow read: if resource.data.ref == path('/databases/(default)/documents/rooms/r2');\n    }\n    match /hh0069/{room} {\n      allow read: if resource.data.ref != resource.__name__;\n    }\n    match /hh0070/{room} {\n      allow read: if resource.data.missing == 1 || resource.data.n == 1;\n    }\n    match /hh0071/{room} {\n      allow read: if resource.data.missing == 1 || request.method == 'get';\n    }\n    match /hh0072/{room} {\n      allow read: if resource.data.n == 1 || resource.data.missing == 1;\n    }\n    match /hh0073/{room} {\n      allow read: if resource.data.missing == 1 && resource.data.n == 2;\n    }\n    match /hh0074/{room} {\n      allow read: if resource.data.n == 2 && resource.data.missing == 1;\n    }\n    match /hh0075/{room} {\n      allow read: if resource.data.missing == 1 || (1 == 1);\n    }\n    match /hh0076/{room} {\n      allow read: if resource.data.missing == 1 || !false;\n    }\n    match /hh0077/{room} {\n      allow read: if resource.data.missing == 1 || true || resource.data.n == 1;\n    }\n    match /hh0078/{room} {\n      allow read: if resource.data.n == 2 || resource.data.missing == 1 || true;\n    }\n    match /hh0079/{room} {\n      allow read: if (resource.data.missing == 1 || true) && resource.data.n == 1;\n    }\n    match /hh0080/{room} {\n      allow read: if resource.data.missing == 1 && false;\n    }\n    match /hh0081/{room} {\n      allow read: if resource.data.missing == 1 && request.method == 'list';\n    }\n    match /hh0082/{room} {\n      allow read: if resource.data.missing.size() > 0 || true;\n    }\n    match /hh0083/{room} {\n      allow read: if resource.data.missing == 1 || request.auth == null;\n    }\n    match /hh0084/{room} {\n      allow read: if resource.data.missing == 1 || 'n' in resource.data;\n    }\n    match /hh0085/{room} {\n      allow read: if (resource.data.n == 1 ? resource.data.missing : true) || true;\n    }\n    match /hh0086/{room} {\n      allow read: if !(resource.data.missing == 1) || true;\n    }\n    match /hh0087/{room} {\n      allow read: if resource.data.arr[5] == 1 || resource.data.n == 1;\n    }\n    match /hh0088/{room} {\n      allow read: if resource.data.big + 1 > 0 || resource.data.n == 1;\n    }\n    match /hh0089/{room} {\n      allow read: if resource.data.nul.x == 1 || resource.data.n == 1;\n    }\n    match /hh0090/{room} {\n      allow read: if int('abc') == 1 || true;\n    }\n    match /hh0091/{room} {\n      allow read: if {'a': 1}.b == 1 || true;\n    }\n    match /hh0093/{room} {\n      allow read: if request.path[10] == 'x' || true;\n    }\n    match /hh0094/{room} {\n      allow read: if request.path[10] == 'x' || request.method == 'get';\n    }\n    match /hh0095/{room} {\n      allow read: if true && request.path[10] == 'x';\n    }\n    match /hh0096/{room} {\n      allow read: if request.path[10] == 'x' && false;\n    }\n    match /hh0097/{room} {\n      allow read: if request.path[10] == 'x' && request.method == 'list';\n    }\n    match /hh0098/{room} {\n      allow read: if request.path[10] == 'x' || resource.data.n == 1;\n    }\n    match /hh0099/{room} {\n      allow read: if resource.data.n == 1 || request.path[10] == 'x';\n    }\n    match /hh0100/{room} {\n      allow read: if request.method == 'get' || request.path[10] == 'x';\n    }\n    match /hh0101/{room} {\n      allow read: if resource.data.missing == 1 || resource.data.missing2 == 1 || true;\n    }\n    match /hh0102/{room} {\n      allow read: if resource.data.n == 1 && resource.data.missing == 1;\n    }\n    match /hh0103/{room} {\n      allow read: if !(resource.data.missing == 1) || request.method == 'get';\n    }\n    match /hh0104/{room} {\n      allow read: if resource.data.missing == 1 ? false : true;\n    }\n    match /hh0105/{room} {\n      allow read: if resource.data.missing in [1] || request.method == 'get';\n    }\n  }\n}\n"
+ },
+ "resources": {
+  "default": {
+   "data": {
+    "n": 1,
+    "f": 1.5,
+    "one_f": 1,
+    "s": "abc",
+    "b": true,
+    "nul": null,
+    "arr": [
+     1,
+     2,
+     3
+    ],
+    "tags": [
+     "a",
+     "b"
+    ],
+    "m": {
+     "x": 1,
+     "y": "z"
+    },
+    "ts": "2020-01-02T03:04:05.123Z",
+    "geo": {
+     "latitude": 10,
+     "longitude": 20
+    },
+    "ref": "/databases/(default)/documents/rooms/r2",
+    "by": "AQI=",
+    "big": 777009
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "aruma/hidane-conditions/heldout/0",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/0; emulator: error",
+   "expression": "request.auth != null || resource.data.visibility == 'public'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0000/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [5], column [46]. Property visibility is undefined on object."
+   },
+   "hidaneEmulatorOutcome": "error"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/1",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/1; emulator: allow",
+   "expression": "resource.data.get('visibility', 'private') == 'public' || request.auth == null",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0001/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/2",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/2; emulator: allow",
+   "expression": "resource.data.tags.size() < 5 && resource.data.tags.hasAll(['a'])",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0002/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/3",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/3; emulator: allow",
+   "expression": "resource.data.s.size() > 2 && resource.data.s.size() <= 30",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0003/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/4",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/4; emulator: allow",
+   "expression": "resource.data.keys().hasOnly(['n', 'f', 'one_f', 's', 'b', 'nul', 'arr', 'tags', 'm', 'ts', 'geo', 'ref', 'by', 'big'])",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0004/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "note": "comparable: false (reads a field the Test API cannot type)",
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/5",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/5; emulator: allow",
+   "expression": "resource.data.ts < request.time - duration.value(1, 'd')",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0005/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/6",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/6; emulator: false",
+   "expression": "request.time < timestamp.date(2000, 1, 1)",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0006/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "hidaneEmulatorOutcome": "false"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/7",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/7; emulator: allow",
+   "expression": "resource.data.m.size() == 2 && 'x' in resource.data.m",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0007/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/8",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/8; emulator: allow",
+   "expression": "resource.data.n is int && resource.data.n >= 0 && resource.data.n < 10",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0008/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/9",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/9; emulator: allow",
+   "expression": "resource.data.f > 1 && resource.data.f < 2",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0009/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/10",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/10; emulator: allow",
+   "expression": "resource.data.f * 2 == 3",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0010/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/11",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/11; emulator: allow",
+   "expression": "resource.data.n / 2 == 0",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0011/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/12",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/12; emulator: allow",
+   "expression": "resource.data.n % 2 == 1",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0012/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/13",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/13; emulator: allow",
+   "expression": "resource.data.s in ['abc', 'def']",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0013/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/14",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/14; emulator: allow",
+   "expression": "resource.data.n in [1, 2, 3]",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0014/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/15",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/15; emulator: allow",
+   "expression": "resource.data.tags[0] == 'a'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0015/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/16",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/16; emulator: error",
+   "expression": "resource.data.tags[-1] == 'b'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0016/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [53], column [22]. Index out of bound error. Index: [-1] , size: [2]."
+   },
+   "hidaneEmulatorOutcome": "error"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/17",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/17; emulator: error",
+   "expression": "resource.data.arr[3] == 4",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0017/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [56], column [22]. Index out of bound error. Index: [3] , size: [3]."
+   },
+   "hidaneEmulatorOutcome": "error"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/18",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/18; emulator: allow",
+   "expression": "resource.data.s.matches('^a.*')",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0018/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/19",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/19; emulator: false",
+   "expression": "resource.data.s.matches('A.*')",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0019/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "hidaneEmulatorOutcome": "false"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/20",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/20; emulator: allow",
+   "expression": "resource.data.s.lower().matches('[a-z]+')",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0020/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/21",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/21; emulator: allow",
+   "expression": "resource.data.s.split('b').size() == 2",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0021/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/22",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/22; emulator: allow",
+   "expression": "resource.data.s.replace('b', '') == 'ac'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0022/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/23",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/23; emulator: allow",
+   "expression": "resource.data.m.keys().size() == 2 && resource.data.m.values().size() == 2",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0023/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/24",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/24; emulator: allow",
+   "expression": "resource.data.m.diff({}).addedKeys().size() == 2",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0024/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/25",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/25; emulator: allow",
+   "expression": "resource.data.m.diff(resource.data.m).affectedKeys().size() == 0",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0025/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/26",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/26; emulator: allow",
+   "expression": "resource.data.arr.toSet().hasAny([3])",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0026/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/27",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/27; emulator: allow",
+   "expression": "resource.data.arr.concat(resource.data.tags).size() == 5",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0027/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/28",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/28; emulator: allow",
+   "expression": "resource.data.big > 9000000000000000000",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0028/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/29",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/29; emulator: allow",
+   "expression": "resource.data.big - 1 < resource.data.big",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0029/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/30",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/30; emulator: error",
+   "expression": "-resource.data.big - 2 < 0",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0030/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [95], column [41]. Integer value is out of the [-9223372036854775808, 9223372036854775807] range."
+   },
+   "hidaneEmulatorOutcome": "error"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/31",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/31; emulator: allow",
+   "expression": "resource.data.geo.latitude() < resource.data.geo.longitude()",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0031/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "note": "comparable: false (reads a field the Test API cannot type)",
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/32",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/32; emulator: allow",
+   "expression": "string(resource.data.n) + string(resource.data.f) == '11.5'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0032/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/33",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/33; emulator: allow",
+   "expression": "int(resource.data.f) == 1 && float(resource.data.n) == 1.0",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0033/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/34",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/34; emulator: allow",
+   "expression": "math.abs(resource.data.f - 2) == 0.5",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0034/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/35",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/35; emulator: allow",
+   "expression": "resource.data.ts.toMillis() > 0 && resource.data.ts.year() >= 2020",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0035/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/36",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/36; emulator: allow",
+   "expression": "duration.value(resource.data.n, 'd') == duration.value(24, 'h')",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0036/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/37",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/37; emulator: allow",
+   "expression": "resource.__name__[3] == 'rooms' && resource.__name__[4] == room",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0037/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [116], column [22]. Property __name__ is undefined on object."
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/38",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/38; emulator: allow",
+   "expression": "request.path[4] == resource.id",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0038/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [119], column [41]. Property id is undefined on object."
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/39",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/39; emulator: allow",
+   "expression": "resource.data.nul == null && !(resource.data.b == false)",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0039/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/40",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/40; emulator: error",
+   "expression": "(resource.data.missing == 1) == false",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0040/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [125], column [23]. Property missing is undefined on object."
+   },
+   "hidaneEmulatorOutcome": "error"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/41",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/41; emulator: allow",
+   "expression": "resource.data.get('m', {}).get('x', 0) == 1",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0041/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/42",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/42; emulator: allow",
+   "expression": "resource.data.tags.join('-').size() == 3",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0042/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/43",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/43; emulator: allow",
+   "expression": "'a' in resource.data.tags.toSet()",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0043/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/44",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/44; emulator: allow",
+   "expression": "resource.data.tags.toSet().union(['c'].toSet()).size() == 3",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0044/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/45",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/45; emulator: allow",
+   "expression": "[1, 2, 3].hasOnly(resource.data.arr)",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0045/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/46",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/46; emulator: allow",
+   "expression": "resource.data.s + resource.data.s == 'abcabc'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0046/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/47",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/47; emulator: allow",
+   "expression": "resource.data.f + resource.data.n == 2.5",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0047/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/48",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/48; emulator: allow",
+   "expression": "resource.data.n + 0.5 == 1.5",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0048/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/49",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/49; emulator: allow",
+   "expression": "resource.data.f % 1 == 0.5",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0049/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/50",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/50; emulator: allow",
+   "expression": "resource.data.one_f == resource.data.n",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0050/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "note": "comparable: false (reads a field the Test API cannot type)",
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/51",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/51; emulator: false",
+   "expression": "[resource.data.one_f] == [resource.data.n]",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0051/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "note": "comparable: false (reads a field the Test API cannot type)",
+   "hidaneEmulatorOutcome": "false"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/52",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/52; emulator: allow",
+   "expression": "{'a': resource.data.n} == {'a': 1}",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0052/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/53",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/53; emulator: allow",
+   "expression": "resource.data.m.x is int && resource.data.m.y is string",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0053/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/54",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/54; emulator: allow",
+   "expression": "resource.data is map",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0054/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/55",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/55; emulator: false",
+   "expression": "request.auth is map",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0055/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "hidaneEmulatorOutcome": "false"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/56",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/56; emulator: allow",
+   "expression": "request.time is timestamp",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0056/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/57",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/57; emulator: allow",
+   "expression": "request.time - resource.data.ts > duration.value(1, 'd')",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0057/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/58",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/58; emulator: allow",
+   "expression": "resource.data.s[0] == 'a' && resource.data.s[1:3] == 'bc'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0058/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/59",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/59; emulator: allow",
+   "expression": "resource.data.arr[0:2].size() == 2",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0059/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/60",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/60; emulator: allow",
+   "expression": "resource.data.tags.removeAll(['a']) == ['b']",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0060/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/61",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/61; emulator: allow",
+   "expression": "resource.data.s.upper().lower() == resource.data.s",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0061/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/62",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/62; emulator: allow",
+   "expression": "resource.data.s.trim().size() == 3",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0062/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/63",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/63; emulator: allow",
+   "expression": "resource.data.f >= resource.data.n",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0063/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/64",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/64; emulator: allow",
+   "expression": "resource.data.by.toBase64().size() == 4",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0064/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [17], column [22]. Function not found error: Name: [toBase64]."
+   },
+   "note": "comparable: false (reads a field the Test API cannot type)",
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/65",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/65; emulator: allow",
+   "expression": "resource.data.missing.size() > 0 || resource.data.n == 1",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0065/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/66",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/66; emulator: allow",
+   "expression": "resource.data.n == 1 ? resource.data.s == 'abc' : resource.data.missing",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0066/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/67",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/67; emulator: allow",
+   "expression": "resource.data.arr.size() > 0 && resource.data.arr[0] is int",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0067/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/68",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/68; emulator: allow",
+   "expression": "resource.data.ref == path('/databases/(default)/documents/rooms/r2')",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0068/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "note": "comparable: false (reads a field the Test API cannot type)",
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/69",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/69; emulator: allow",
+   "expression": "resource.data.ref != resource.__name__",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0069/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [32], column [43]. Property __name__ is undefined on object."
+   },
+   "note": "comparable: false (reads a field the Test API cannot type)",
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/70",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/70; emulator: allow",
+   "expression": "resource.data.missing == 1 || resource.data.n == 1",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0070/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/71",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/71; emulator: allow",
+   "expression": "resource.data.missing == 1 || request.method == 'get'",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0071/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/72",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/72; emulator: allow",
+   "expression": "resource.data.n == 1 || resource.data.missing == 1",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0072/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/73",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/73; emulator: false",
+   "expression": "resource.data.missing == 1 && resource.data.n == 2",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0073/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "hidaneEmulatorOutcome": "false"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/74",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/74; emulator: false",
+   "expression": "resource.data.n == 2 && resource.data.missing == 1",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0074/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "hidaneEmulatorOutcome": "false"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/75",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/75; emulator: allow",
+   "expression": "resource.data.missing == 1 || (1 == 1)",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0075/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/76",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/76; emulator: allow",
+   "expression": "resource.data.missing == 1 || !false",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0076/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/77",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/77; emulator: allow",
+   "expression": "resource.data.missing == 1 || true || resource.data.n == 1",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0077/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/78",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/78; emulator: allow",
+   "expression": "resource.data.n == 2 || resource.data.missing == 1 || true",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0078/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/79",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/79; emulator: allow",
+   "expression": "(resource.data.missing == 1 || true) && resource.data.n == 1",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0079/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/80",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/80; emulator: false",
+   "expression": "resource.data.missing == 1 && false",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0080/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "hidaneEmulatorOutcome": "false"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/81",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/81; emulator: false",
+   "expression": "resource.data.missing == 1 && request.method == 'list'",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0081/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "hidaneEmulatorOutcome": "false"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/82",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/82; emulator: allow",
+   "expression": "resource.data.missing.size() > 0 || true",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0082/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/83",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/83; emulator: allow",
+   "expression": "resource.data.missing == 1 || request.auth == null",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0083/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/84",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/84; emulator: allow",
+   "expression": "resource.data.missing == 1 || 'n' in resource.data",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0084/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/85",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/85; emulator: allow",
+   "expression": "(resource.data.n == 1 ? resource.data.missing : true) || true",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0085/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/86",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/86; emulator: allow",
+   "expression": "!(resource.data.missing == 1) || true",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0086/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/87",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/87; emulator: allow",
+   "expression": "resource.data.arr[5] == 1 || resource.data.n == 1",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0087/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/88",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/88; emulator: allow",
+   "expression": "resource.data.big + 1 > 0 || resource.data.n == 1",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0088/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/89",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/89; emulator: allow",
+   "expression": "resource.data.nul.x == 1 || resource.data.n == 1",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0089/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/90",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/90; emulator: allow",
+   "expression": "int('abc') == 1 || true",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0090/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/91",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/91; emulator: allow",
+   "expression": "{'a': 1}.b == 1 || true",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0091/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/92",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/92; emulator: compile",
+   "expression": "'abc'.matches('(') || true",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /hh0092/{room} {\n      allow read: if 'abc'.matches('(') || true;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0092/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:36 Invalid regular expression pattern. Pattern: (."
+   },
+   "hidaneEmulatorOutcome": "compile"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/93",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/93; emulator: allow",
+   "expression": "request.path[10] == 'x' || true",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0093/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/94",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/94; emulator: allow",
+   "expression": "request.path[10] == 'x' || request.method == 'get'",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0094/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/95",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/95; emulator: error",
+   "expression": "true && request.path[10] == 'x'",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0095/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [107], column [30]. Index out of bound error. Index: [10] , size: [5]."
+   },
+   "hidaneEmulatorOutcome": "error"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/96",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/96; emulator: false",
+   "expression": "request.path[10] == 'x' && false",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0096/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "hidaneEmulatorOutcome": "false"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/97",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/97; emulator: false",
+   "expression": "request.path[10] == 'x' && request.method == 'list'",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0097/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "hidaneEmulatorOutcome": "false"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/98",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/98; emulator: allow",
+   "expression": "request.path[10] == 'x' || resource.data.n == 1",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0098/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/99",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/99; emulator: allow",
+   "expression": "resource.data.n == 1 || request.path[10] == 'x'",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0099/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/100",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/100; emulator: allow",
+   "expression": "request.method == 'get' || request.path[10] == 'x'",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0100/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/101",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/101; emulator: allow",
+   "expression": "resource.data.missing == 1 || resource.data.missing2 == 1 || true",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0101/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/102",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/102; emulator: error",
+   "expression": "resource.data.n == 1 && resource.data.missing == 1",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0102/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [128], column [46]. Property missing is undefined on object."
+   },
+   "hidaneEmulatorOutcome": "error"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/103",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/103; emulator: allow",
+   "expression": "!(resource.data.missing == 1) || request.method == 'get'",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0103/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/104",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/104; emulator: error",
+   "expression": "resource.data.missing == 1 ? false : true",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0104/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [134], column [22]. Property missing is undefined on object."
+   },
+   "hidaneEmulatorOutcome": "error"
+  },
+  {
+   "id": "aruma/hidane-conditions/heldout/105",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:57:44.137Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hidane heldout/105; emulator: allow",
+   "expression": "resource.data.missing in [1] || request.method == 'get'",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/hh0105/r1",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "rawNumbers": [
+    {
+     "from": 777009,
+     "to": "9223372036854775807"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   },
+   "hidaneEmulatorOutcome": "allow"
+  }
+ ]
+}

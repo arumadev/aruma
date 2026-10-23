@@ -1,0 +1,420 @@
+{
+ "topic": "storage-paths",
+ "set": "heldout",
+ "recordedAt": "2026-10-23T21:44:33.967Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "alone",
+   "id": "v2_rest_string",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "8be61c60d206cd128148238293aa27f17e1b590a240722c03cfcf245d5634093",
+        "bytes": 157
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a/b.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 117,
+         "endOffset": 122
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "noversion_rest_is_string",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "5c7fc7a9aff2da3a1b0b101cf353d9c165be10e26ff27e587dc824a9873edb46",
+        "bytes": 124
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a/b.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 4,
+         "column": 21,
+         "currentOffset": 96,
+         "endOffset": 99
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v2_zero_segments_value",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "edfc9cc2993e34c69a097a8f2cdd552d29af81e1278db63ce29efc3f2fe253dc",
+        "bytes": 140
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules",
+       "line": 5,
+       "column": 29,
+       "currentOffset": 125,
+       "endOffset": 125
+      },
+      "description": "Forward slash '/' found where identifier or binding expected.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v2_all_paths",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "8a50b84a6367382110692b40799b87d38b973de161ae0fd07ade8604395088a7",
+        "bytes": 137
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/a/b/c.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 119,
+         "endOffset": 122
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_all_paths",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "79bfa51008cf10ca5208143a6df448d782cc0c0e4d74d0447986c44058fd3019",
+        "bytes": 137
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/a/b/c.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 119,
+         "endOffset": 122
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_nested_under_recursive",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "e7f651e906b6bed0303b1239ffad6ed5de9a69a43ef1d10686b4b2354c2727b0",
+        "bytes": 166
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a/x/f.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules",
+       "line": 4,
+       "column": 5,
+       "currentOffset": 76,
+       "endOffset": 80
+      },
+      "description": "Glob(**) resource rules should not have child resource rules.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "single_no_slash",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "e6b485bba8afef813ecf36ca2274fb6300c050d415ef8ccabde9b50860880323",
+        "bytes": 129
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a/b.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "FAILURE"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "single_with_dot",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "8b1f22e0fd243fe9a3cabc4ceafa8bae39ba8ddc75f105d490817af28df4ec3a",
+        "bytes": 137
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a.b.c"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 111,
+         "endOffset": 111
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "encoded_name",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "5219c20acbb3bc6db5c289b87649068ffbc7ca87e997b1433d29efa160fdac41",
+        "bytes": 139
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a%20b.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 111,
+         "endOffset": 111
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "bucket_other",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "4ca6fc654324844a1e52e93cf6e39a496af241ee55c6df222050896eee134169",
+        "bytes": 133
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "FAILURE"
+     }
+    ]
+   }
+  }
+ ]
+}

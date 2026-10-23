@@ -1,0 +1,445 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "math",
+ "service": "firestore",
+ "set": "heldout",
+ "source": "aruma",
+ "provenance": "rules-test-api",
+ "project": "chatapp-8ae21",
+ "recordedAt": "2026-10-23T21:43:43.957Z",
+ "version": "firebaserules.googleapis.com v1 projects.test",
+ "rulesets": {
+  "pack-1": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_int_plus_float/{doc} {\n      allow get: if 1 + 1.5 == 2.5 && (1 + 1.5) is float;\n    }\n    match /c_int_div_is_int/{doc} {\n      allow get: if (3 / 2) is int && 3 / 2 == 1;\n    }\n    match /c_int_float_map_eq/{doc} {\n      allow get: if {'a': 1} == {'a': 1.0};\n    }\n    match /c_int_float_in_list/{doc} {\n      allow get: if 1 in [1.0];\n    }\n    match /c_floor_negative/{doc} {\n      allow get: if math.floor(-1.2) == -2.0;\n    }\n    match /c_max_absent/{doc} {\n      allow get: if math.max(1, 2) == 2;\n    }\n    match /c_sha256_base64/{doc} {\n      allow get: if hashing.sha256('abc').toBase64() == 'ungWv48Bz+pBQUDeXa4iI7ADYaOWF3qctBD/YfIAFa0=';\n    }\n    match /c_crc32c/{doc} {\n      allow get: if hashing.crc32c('abc') == b'\\x36\\x4b\\x3f\\xb7';\n    }\n    match /c_bytes_eq_string/{doc} {\n      allow get: if b'abc' == 'abc';\n    }\n    match /c_latlng_distance/{doc} {\n      allow get: if latlng.value(0.0, 0.0).distance(latlng.value(0.0, 1.0)) > 111000;\n    }\n  }\n}\n"
+ },
+ "resources": {
+  "default": {
+   "data": {
+    "n": 1,
+    "f": 1.5,
+    "s": "abc",
+    "b": true,
+    "nul": null,
+    "arr": [
+     1,
+     2,
+     3
+    ],
+    "tags": [
+     "a",
+     "b"
+    ],
+    "m": {
+     "x": 1,
+     "y": "z"
+    },
+    "owner": "alice"
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "aruma/math/int_plus_float",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:43.957Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "1 + 1.5 == 2.5 && (1 + 1.5) is float",
+   "expression": "1 + 1.5 == 2.5 && (1 + 1.5) is float",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_int_plus_float/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/int_div_is_int",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:43.957Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "(3 / 2) is int && 3 / 2 == 1",
+   "expression": "(3 / 2) is int && 3 / 2 == 1",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_int_div_is_int/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/int_float_map_eq",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:43.957Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "{'a': 1} == {'a': 1.0}",
+   "expression": "{'a': 1} == {'a': 1.0}",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_int_float_map_eq/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/math/int_float_in_list",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:43.957Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "1 in [1.0]",
+   "expression": "1 in [1.0]",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_int_float_in_list/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/math/floor_negative",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:43.957Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "math.floor(-1.2) == -2.0",
+   "expression": "math.floor(-1.2) == -2.0",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_floor_negative/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/max_absent",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:43.957Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "math.max(1, 2) == 2",
+   "expression": "math.max(1, 2) == 2",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_max_absent/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [20], column [21]. Function not found error: Name: [math.max]."
+   }
+  },
+  {
+   "id": "aruma/math/sha256_base64",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:43.957Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hashing.sha256('abc').toBase64() == 'ungWv48Bz+pBQUDeXa4iI7ADYaOWF3qctBD/YfIAFa0='",
+   "expression": "hashing.sha256('abc').toBase64() == 'ungWv48Bz+pBQUDeXa4iI7ADYaOWF3qctBD/YfIAFa0='",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_sha256_base64/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/math/crc32c",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:43.957Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hashing.crc32c('abc') == b'\\x36\\x4b\\x3f\\xb7'",
+   "expression": "hashing.crc32c('abc') == b'\\x36\\x4b\\x3f\\xb7'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_crc32c/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/math/bytes_eq_string",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:43.957Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "b'abc' == 'abc'",
+   "expression": "b'abc' == 'abc'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_bytes_eq_string/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/math/latlng_distance",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:43.957Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "latlng.value(0.0, 0.0).distance(latlng.value(0.0, 1.0)) > 111000",
+   "expression": "latlng.value(0.0, 0.0).distance(latlng.value(0.0, 1.0)) > 111000",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_latlng_distance/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  }
+ ]
+}

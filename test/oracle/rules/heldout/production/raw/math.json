@@ -1,0 +1,215 @@
+{
+ "topic": "math",
+ "set": "heldout",
+ "recordedAt": "2026-10-23T21:43:43.957Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "f7eb00b8c5a71ebbce6891b0f83aceea96a13603f6c31c902d7c038609f405bc",
+        "bytes": 1073
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_int_plus_float/doc",
+      "/databases/(default)/documents/c_int_div_is_int/doc",
+      "/databases/(default)/documents/c_int_float_map_eq/doc",
+      "/databases/(default)/documents/c_int_float_in_list/doc",
+      "/databases/(default)/documents/c_floor_negative/doc",
+      "/databases/(default)/documents/c_max_absent/doc",
+      "/databases/(default)/documents/c_sha256_base64/doc",
+      "/databases/(default)/documents/c_crc32c/doc",
+      "/databases/(default)/documents/c_bytes_eq_string/doc",
+      "/databases/(default)/documents/c_latlng_distance/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 20,
+       "column": 26,
+       "currentOffset": 591,
+       "endOffset": 593
+      },
+      "description": "Invalid function name: math.max.",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 29,
+       "column": 28,
+       "currentOffset": 922,
+       "endOffset": 923
+      },
+      "description": "The sub-expressions are not comparable, so this comparison will always return false.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 145,
+         "endOffset": 145
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 245,
+         "endOffset": 245
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 11,
+         "column": 21,
+         "currentOffset": 339,
+         "endOffset": 339
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 14,
+         "column": 21,
+         "currentOffset": 428,
+         "endOffset": 428
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 17,
+         "column": 21,
+         "currentOffset": 502,
+         "endOffset": 505
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [20], column [21]. Function not found error: Name: [math.max]."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 20,
+       "column": 21,
+       "currentOffset": 586,
+       "endOffset": 589
+      },
+      "functionCalls": [
+       {
+        "function": "math.max",
+        "args": [
+         1,
+         2
+        ]
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 23,
+         "column": 21,
+         "currentOffset": 668,
+         "endOffset": 674
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 26,
+         "column": 21,
+         "currentOffset": 806,
+         "endOffset": 812
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 29,
+         "column": 21,
+         "currentOffset": 915,
+         "endOffset": 920
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 32,
+         "column": 21,
+         "currentOffset": 995,
+         "endOffset": 1000
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

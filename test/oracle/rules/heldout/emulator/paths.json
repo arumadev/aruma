@@ -1,0 +1,89 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "paths",
+ "service": "firestore",
+ "set": "heldout",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T22:05:22.764Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/paths/literal_eq",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/interpolate_whole",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L8"
+   }
+  },
+  {
+   "id": "aruma/paths/path_fn",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/path_size",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:32 Unexpected '('."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:32 Unexpected '('."
+   }
+  },
+  {
+   "id": "aruma/paths/path_bind",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:35 Unexpected '('.\nERROR L5:46 Unexpected ')'.\nERROR L5:51 Missing 'match' keyword before path.\nERROR L5:57 mismatched input ';' expecting {'{', '/', PATH_SEGMENT}\nERROR L8:1 Unexpected '}'."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:35 Unexpected '('.\nL5:46 Unexpected ')'.\nL5:51 Missing 'match' keyword before path.\nL5:57 mismatched input ';' expecting {'{', '/', PATH_SEGMENT}\nL8:1 Unexpected '}'."
+   }
+  },
+  {
+   "id": "aruma/paths/wild_v2_rest_value",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/wild_v1_nested_under_recursive",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  }
+ ]
+}

@@ -1,0 +1,188 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "collections",
+ "service": "firestore",
+ "set": "heldout",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T22:05:22.722Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/collections/list_in",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/list_hasall",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/list_hasany_false",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L11"
+   }
+  },
+  {
+   "id": "aruma/collections/list_concat",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/list_index",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/list_index_float",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [20], column [21]. Unsupported operation error. Received: list[float]. Expected: list[int]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: list[float]. Expected: list[int]. for 'get' @ L20, Unsupported operation error. Received: list[float]. Expected: list[int]. for 'get' @ L20"
+   }
+  },
+  {
+   "id": "aruma/collections/list_tostring_compare",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [23], column [32]. Unsupported operation error. Received: list < list. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: list < list. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint. for 'get' @ L23, Unsupported operation error. Received: list < list. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint. for 'get' @ L23"
+   }
+  },
+  {
+   "id": "aruma/collections/set_size",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/set_in",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/set_union",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/set_hasall_list",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/set_difference_list_arg",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [38], column [36]. Unsupported operation error. Received: set.difference(list). Expected: set.difference(set)."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: set.difference(list). Expected: set.difference(set). for 'get' @ L38, Unsupported operation error. Received: set.difference(list). Expected: set.difference(set). for 'get' @ L38"
+   }
+  },
+  {
+   "id": "aruma/collections/set_index",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [41], column [21]. Function not found error: Name: [[]]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Function not found error: Name: [[]]. for 'get' @ L41, Function not found error: Name: [[]]. for 'get' @ L41"
+   }
+  },
+  {
+   "id": "aruma/collections/map_in_value",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [44], column [23]. Unsupported operation error. Received: map.in(int). Expected: map.in(string)."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: map.in(int). Expected: map.in(string). for 'get' @ L44, Unsupported operation error. Received: map.in(int). Expected: map.in(string). for 'get' @ L44"
+   }
+  },
+  {
+   "id": "aruma/collections/map_dot",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/map_index",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/collections/doc_keys_hasall",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  }
+ ]
+}

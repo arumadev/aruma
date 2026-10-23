@@ -1,0 +1,284 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "limits",
+ "service": "firestore",
+ "set": "heldout",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T22:05:31.670Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/limits/recursion_18",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:14 Recursive call is not allowed."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:14 Recursive call is not allowed."
+   }
+  },
+  {
+   "id": "aruma/limits/recursion_19",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:14 Recursive call is not allowed."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:14 Recursive call is not allowed."
+   }
+  },
+  {
+   "id": "aruma/limits/lets_1",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/lets_5",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/lets_10",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/lets_20",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:170 Maximum allowed variable count of 10 for a given function has been reached."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:170 Maximum allowed variable count of 10 for a given function has been reached."
+   }
+  },
+  {
+   "id": "aruma/limits/lets_9_params_2",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/lets_10_params_2",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/let_no_version",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "WARNING Lundefined:undefined Ruleset uses old version (version [1]). Please update to the latest version (version [2]).\nERROR L3:24 Let bindings are not allowed in rules_version=\"1\";\nWARNING L3:24 Unused variable: a1.\nERROR L3:36 Let bindings are not allowed in rules_version=\"1\";"
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL0:0 Ruleset uses old version (version [1]). Please update to the latest version (version [2]).\nL3:24 Let bindings are not allowed in rules_version=\"1\";\nL3:24 Unused variable: a1.\nL3:36 Let bindings are not allowed in rules_version=\"1\";"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_80",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_1000",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L6:21 Expression is too complex to evaluate safely.\nERROR L6:7229 Expression is too complex to evaluate safely."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL6:21 Expression is too complex to evaluate safely.\nL6:7229 Expression is too complex to evaluate safely."
+   }
+  },
+  {
+   "id": "aruma/limits/and_field_30",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_100",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_500",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_994",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_995",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/parens_10",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/parens_90",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/parens_95",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/ternary_nested_35",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/fn_calls_300",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L6:21 Expression is too complex to evaluate safely.\nERROR L6:1428 Expression is too complex to evaluate safely."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL6:21 Expression is too complex to evaluate safely.\nL6:1428 Expression is too complex to evaluate safely."
+   }
+  },
+  {
+   "id": "aruma/limits/size_comment_131072",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/size_comment_250000",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/size_functions_900",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/size_functions_1000",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/exists_unmocked",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [6], column [21]. Function not found error: Name: [exists]."
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/get_short_circuit",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L6"
+   }
+  }
+ ]
+}

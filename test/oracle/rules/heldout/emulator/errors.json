@@ -1,0 +1,179 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "errors",
+ "service": "firestore",
+ "set": "heldout",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T22:05:22.432Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/errors/missing_eq_null",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [11], column [21]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L11:21 for 'get' @ L11, Property missing is undefined on object. for 'get' @ L11"
+   }
+  },
+  {
+   "id": "aruma/errors/not_err_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/let_used_err_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/index_missing_key",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [20], column [21]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L20:21 for 'get' @ L20, Property missing is undefined on object. for 'get' @ L20"
+   }
+  },
+  {
+   "id": "aruma/errors/list_lt_list",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [23], column [25]. Unsupported operation error. Received: list < list. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: list < list. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint. for 'get' @ L23, Unsupported operation error. Received: list < list. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint. for 'get' @ L23"
+   }
+  },
+  {
+   "id": "aruma/errors/bool_lt_bool",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [26], column [27]. Unsupported operation error. Received: bool < bool. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: bool < bool. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint. for 'get' @ L26, Unsupported operation error. Received: bool < bool. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint. for 'get' @ L26"
+   }
+  },
+  {
+   "id": "aruma/errors/mod_zero",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [29], column [23]. Divide by zero error."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Divide by zero error. for 'get' @ L29, Divide by zero error. for 'get' @ L29"
+   }
+  },
+  {
+   "id": "aruma/errors/int_exponent_literal",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L11:22 Unexpected 'e3'."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL11:22 Unexpected 'e3'."
+   }
+  },
+  {
+   "id": "aruma/errors/int_max_plus_one_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/int_max_times_two",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [35], column [41]. Integer value is out of the [-9223372036854775808, 9223372036854775807] range."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Integer value is out of the [-9223372036854775808, 9223372036854775807] range. for 'get' @ L35, Integer value is out of the [-9223372036854775808, 9223372036854775807] range. for 'get' @ L35"
+   }
+  },
+  {
+   "id": "aruma/errors/int_min_negate",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [38], column [21]. Integer value is out of the [-9223372036854775808, 9223372036854775807] range."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Integer value is out of the [-9223372036854775808, 9223372036854775807] range. for 'get' @ L38, Integer value is out of the [-9223372036854775808, 9223372036854775807] range. for 'get' @ L38"
+   }
+  },
+  {
+   "id": "aruma/errors/int_max_literal",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/int_min_literal",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/err_stmt_then_true_stmt",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/err_match_then_true_match",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  }
+ ]
+}

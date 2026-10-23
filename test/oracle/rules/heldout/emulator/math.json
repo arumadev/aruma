@@ -1,0 +1,121 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "math",
+ "service": "firestore",
+ "set": "heldout",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T22:05:22.600Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/math/int_plus_float",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/int_div_is_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/int_float_map_eq",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L11"
+   }
+  },
+  {
+   "id": "aruma/math/int_float_in_list",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L14"
+   }
+  },
+  {
+   "id": "aruma/math/floor_negative",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/math/max_absent",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [20], column [21]. Function not found error: Name: [math.max]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Function not found error: Name: [math.max]. for 'get' @ L20, Function not found error: Name: [math.max]. for 'get' @ L20"
+   }
+  },
+  {
+   "id": "aruma/math/sha256_base64",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L23"
+   }
+  },
+  {
+   "id": "aruma/math/crc32c",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L26"
+   }
+  },
+  {
+   "id": "aruma/math/bytes_eq_string",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L29"
+   }
+  },
+  {
+   "id": "aruma/math/latlng_distance",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  }
+ ]
+}

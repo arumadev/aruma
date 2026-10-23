@@ -1,0 +1,108 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "time",
+ "service": "firestore",
+ "set": "heldout",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T22:05:22.626Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/time/year",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/month",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/to_millis",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/ts_date_type",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/duration_plus_ts",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/ts_minus_ts_seconds",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/ts_gt_int",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [23], column [34]. Unsupported operation error. Received: timestamp > int. Expected: string > string, bytes > bytes, int > int, float > float, duration > duration, timestamp > timestamp, constraint > any, any > constraint."
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/units_ns",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/duration_abs",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/duration_times_int",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [32], column [44]. Unsupported operation error. Received: duration * int. Expected: int * int, float * float."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: duration * int. Expected: int * int, float * float. for 'get' @ L32, Unsupported operation error. Received: duration * int. Expected: int * int, float * float. for 'get' @ L32"
+   }
+  }
+ ]
+}

@@ -1,0 +1,205 @@
+{
+ "topic": "time",
+ "set": "heldout",
+ "recordedAt": "2026-10-23T21:43:46.840Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "64f72b2a732bef8cf796d7f0901af40e537b5f2a6c615f9a3cd3ab9f9f3d8352",
+        "bytes": 1139
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_year/doc",
+      "/databases/(default)/documents/c_month/doc",
+      "/databases/(default)/documents/c_to_millis/doc",
+      "/databases/(default)/documents/c_ts_date_type/doc",
+      "/databases/(default)/documents/c_duration_plus_ts/doc",
+      "/databases/(default)/documents/c_ts_minus_ts_seconds/doc",
+      "/databases/(default)/documents/c_ts_gt_int/doc",
+      "/databases/(default)/documents/c_units_ns/doc",
+      "/databases/(default)/documents/c_duration_abs/doc",
+      "/databases/(default)/documents/c_duration_times_int/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 32,
+       "column": 30,
+       "currentOffset": 1082,
+       "endOffset": 1086
+      },
+      "description": "Invalid type. Received one of [duration]. Expected one of [int, float].",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 32,
+       "column": 48,
+       "currentOffset": 1100,
+       "endOffset": 1101
+      },
+      "description": "The sub-expressions are not comparable, so this comparison will always return false.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 135,
+         "endOffset": 141
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 217,
+         "endOffset": 223
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 11,
+         "column": 21,
+         "currentOffset": 301,
+         "endOffset": 307
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 14,
+         "column": 21,
+         "currentOffset": 403,
+         "endOffset": 411
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 17,
+         "column": 21,
+         "currentOffset": 508,
+         "endOffset": 515
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 20,
+         "column": 21,
+         "currentOffset": 629,
+         "endOffset": 629
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [23], column [34]. Unsupported operation error. Received: timestamp > int. Expected: string > string, bytes > bytes, int > int, float > float, duration > duration, timestamp > timestamp, constraint > any, any > constraint."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 23,
+       "column": 34,
+       "currentOffset": 763,
+       "endOffset": 763
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 26,
+         "column": 21,
+         "currentOffset": 824,
+         "endOffset": 831
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 29,
+         "column": 21,
+         "currentOffset": 942,
+         "endOffset": 949
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [32], column [44]. Unsupported operation error. Received: duration * int. Expected: int * int, float * float."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 32,
+       "column": 44,
+       "currentOffset": 1096,
+       "endOffset": 1096
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

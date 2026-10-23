@@ -1,0 +1,192 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "strings",
+ "service": "firestore",
+ "set": "heldout",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T22:05:22.540Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/strings/size_e_acute",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/matches_anchors",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/matches_case_flag",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/matches_digit_one_backslash",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:37 Missing a closing '\nERROR L5:37 mismatched input 'd' expecting {'&&', ',', '.', '==', '>', '>=', '[', '<', '<=', '-', '%', '!=', '||', '+', ')', '/', '*', '?', 'in', 'is'}\nERROR L6:5 Missing a closing '"
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:37 Unexpected 'd'."
+   }
+  },
+  {
+   "id": "aruma/strings/matches_unicode_class",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/matches_dot_e_acute",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/matches_named_group",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/split_dot_is_regex_empty",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L23"
+   }
+  },
+  {
+   "id": "aruma/strings/split_escaped_dot",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/lower_ascii",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/trim_spaces",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/trim_ideographic_space",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L35"
+   }
+  },
+  {
+   "id": "aruma/strings/index_negative",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [38], column [21]. Index out of bound error. Index: [-1] , size: [3]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Index out of bound error. Index: [-1] , size: [3]. for 'get' @ L38, Index out of bound error. Index: [-1] , size: [3]. for 'get' @ L38"
+   }
+  },
+  {
+   "id": "aruma/strings/compare_case",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/string_of_large_float",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/int_truncates",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/escape_octal",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/strings/string_times_int",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [53], column [26]. Unsupported operation error. Received: string * int. Expected: int * int, float * float."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: string * int. Expected: int * int, float * float. for 'get' @ L53, Unsupported operation error. Received: string * int. Expected: int * int, float * float. for 'get' @ L53"
+   }
+  }
+ ]
+}

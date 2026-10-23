@@ -1,0 +1,51 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "methods",
+ "service": "firestore",
+ "set": "heldout",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T22:05:22.872Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/methods/list_get",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/methods/update_both",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/update_keys_hasonly",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/methods/method_read_verb",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "method read has no REST request"
+   }
+  }
+ ]
+}

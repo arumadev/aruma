@@ -1,0 +1,1746 @@
+{
+ "topic": "hidane-conditions",
+ "set": "heldout",
+ "recordedAt": "2026-10-23T21:57:44.137Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "fee593952739618848ab94a8d6e026f32b57544a7e082abe144e2094ab67c14c",
+        "bytes": 6135
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/hh0000/r1",
+      "/databases/(default)/documents/hh0001/r1",
+      "/databases/(default)/documents/hh0002/r1",
+      "/databases/(default)/documents/hh0003/r1",
+      "/databases/(default)/documents/hh0004/r1",
+      "/databases/(default)/documents/hh0005/r1",
+      "/databases/(default)/documents/hh0006/r1",
+      "/databases/(default)/documents/hh0007/r1",
+      "/databases/(default)/documents/hh0008/r1",
+      "/databases/(default)/documents/hh0009/r1",
+      "/databases/(default)/documents/hh0010/r1",
+      "/databases/(default)/documents/hh0011/r1",
+      "/databases/(default)/documents/hh0012/r1",
+      "/databases/(default)/documents/hh0013/r1",
+      "/databases/(default)/documents/hh0014/r1",
+      "/databases/(default)/documents/hh0015/r1",
+      "/databases/(default)/documents/hh0016/r1",
+      "/databases/(default)/documents/hh0017/r1",
+      "/databases/(default)/documents/hh0018/r1",
+      "/databases/(default)/documents/hh0019/r1",
+      "/databases/(default)/documents/hh0020/r1",
+      "/databases/(default)/documents/hh0021/r1",
+      "/databases/(default)/documents/hh0022/r1",
+      "/databases/(default)/documents/hh0023/r1",
+      "/databases/(default)/documents/hh0024/r1",
+      "/databases/(default)/documents/hh0025/r1",
+      "/databases/(default)/documents/hh0026/r1",
+      "/databases/(default)/documents/hh0027/r1",
+      "/databases/(default)/documents/hh0028/r1",
+      "/databases/(default)/documents/hh0029/r1",
+      "/databases/(default)/documents/hh0030/r1",
+      "/databases/(default)/documents/hh0031/r1",
+      "/databases/(default)/documents/hh0032/r1",
+      "/databases/(default)/documents/hh0033/r1",
+      "/databases/(default)/documents/hh0034/r1",
+      "/databases/(default)/documents/hh0035/r1",
+      "/databases/(default)/documents/hh0036/r1",
+      "/databases/(default)/documents/hh0037/r1",
+      "/databases/(default)/documents/hh0038/r1",
+      "/databases/(default)/documents/hh0039/r1",
+      "/databases/(default)/documents/hh0040/r1",
+      "/databases/(default)/documents/hh0041/r1",
+      "/databases/(default)/documents/hh0042/r1",
+      "/databases/(default)/documents/hh0043/r1",
+      "/databases/(default)/documents/hh0044/r1",
+      "/databases/(default)/documents/hh0045/r1",
+      "/databases/(default)/documents/hh0046/r1",
+      "/databases/(default)/documents/hh0047/r1",
+      "/databases/(default)/documents/hh0048/r1",
+      "/databases/(default)/documents/hh0049/r1",
+      "/databases/(default)/documents/hh0050/r1",
+      "/databases/(default)/documents/hh0051/r1",
+      "/databases/(default)/documents/hh0052/r1",
+      "/databases/(default)/documents/hh0053/r1",
+      "/databases/(default)/documents/hh0054/r1",
+      "/databases/(default)/documents/hh0055/r1",
+      "/databases/(default)/documents/hh0056/r1",
+      "/databases/(default)/documents/hh0057/r1",
+      "/databases/(default)/documents/hh0058/r1",
+      "/databases/(default)/documents/hh0059/r1"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [5], column [46]. Property visibility is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 46,
+       "currentOffset": 161,
+       "endOffset": 168
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 22,
+         "currentOffset": 253,
+         "endOffset": 260
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 11,
+         "column": 22,
+         "currentOffset": 387,
+         "endOffset": 394
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 14,
+         "column": 22,
+         "currentOffset": 508,
+         "endOffset": 515
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 17,
+         "column": 22,
+         "currentOffset": 622,
+         "endOffset": 629
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 20,
+         "column": 22,
+         "currentOffset": 797,
+         "endOffset": 804
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 23,
+         "column": 22,
+         "currentOffset": 909,
+         "endOffset": 915
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 26,
+         "column": 22,
+         "currentOffset": 1006,
+         "endOffset": 1013
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 29,
+         "column": 22,
+         "currentOffset": 1115,
+         "endOffset": 1122
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 32,
+         "column": 22,
+         "currentOffset": 1241,
+         "endOffset": 1248
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 35,
+         "column": 22,
+         "currentOffset": 1339,
+         "endOffset": 1346
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 38,
+         "column": 22,
+         "currentOffset": 1419,
+         "endOffset": 1426
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 41,
+         "column": 22,
+         "currentOffset": 1499,
+         "endOffset": 1506
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 44,
+         "column": 22,
+         "currentOffset": 1579,
+         "endOffset": 1586
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 47,
+         "column": 22,
+         "currentOffset": 1668,
+         "endOffset": 1675
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 50,
+         "column": 22,
+         "currentOffset": 1752,
+         "endOffset": 1759
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [53], column [22]. Index out of bound error. Index: [-1] , size: [2]."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 53,
+       "column": 22,
+       "currentOffset": 1836,
+       "endOffset": 1843
+      }
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [56], column [22]. Index out of bound error. Index: [3] , size: [3]."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 56,
+       "column": 22,
+       "currentOffset": 1921,
+       "endOffset": 1928
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 59,
+         "column": 22,
+         "currentOffset": 2002,
+         "endOffset": 2009
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 62,
+         "column": 22,
+         "currentOffset": 2089,
+         "endOffset": 2096
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 65,
+         "column": 22,
+         "currentOffset": 2175,
+         "endOffset": 2182
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 68,
+         "column": 22,
+         "currentOffset": 2272,
+         "endOffset": 2279
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 71,
+         "column": 22,
+         "currentOffset": 2366,
+         "endOffset": 2373
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 74,
+         "column": 22,
+         "currentOffset": 2462,
+         "endOffset": 2469
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 77,
+         "column": 22,
+         "currentOffset": 2592,
+         "endOffset": 2599
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 80,
+         "column": 22,
+         "currentOffset": 2696,
+         "endOffset": 2703
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 83,
+         "column": 22,
+         "currentOffset": 2816,
+         "endOffset": 2823
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 86,
+         "column": 22,
+         "currentOffset": 2909,
+         "endOffset": 2916
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 89,
+         "column": 22,
+         "currentOffset": 3021,
+         "endOffset": 3028
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 92,
+         "column": 22,
+         "currentOffset": 3116,
+         "endOffset": 3123
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [95], column [41]. Integer value is out of the [-9223372036854775808, 9223372036854775807] range."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 95,
+       "column": 41,
+       "currentOffset": 3232,
+       "endOffset": 3232
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 98,
+         "column": 22,
+         "currentOffset": 3295,
+         "endOffset": 3302
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 101,
+         "column": 22,
+         "currentOffset": 3411,
+         "endOffset": 3416
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 104,
+         "column": 22,
+         "currentOffset": 3526,
+         "endOffset": 3528
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 107,
+         "column": 22,
+         "currentOffset": 3640,
+         "endOffset": 3643
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 110,
+         "column": 22,
+         "currentOffset": 3732,
+         "endOffset": 3739
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 113,
+         "column": 22,
+         "currentOffset": 3854,
+         "endOffset": 3861
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [116], column [22]. Property __name__ is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 116,
+       "column": 22,
+       "currentOffset": 3973,
+       "endOffset": 3980
+      }
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [119], column [41]. Property id is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 119,
+       "column": 41,
+       "currentOffset": 4111,
+       "endOffset": 4118
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 122,
+         "column": 22,
+         "currentOffset": 4178,
+         "endOffset": 4185
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [125], column [23]. Property missing is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 125,
+       "column": 23,
+       "currentOffset": 4291,
+       "endOffset": 4298
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 128,
+         "column": 22,
+         "currentOffset": 4383,
+         "endOffset": 4390
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 131,
+         "column": 22,
+         "currentOffset": 4482,
+         "endOffset": 4489
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 134,
+         "column": 22,
+         "currentOffset": 4578,
+         "endOffset": 4580
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 137,
+         "column": 22,
+         "currentOffset": 4667,
+         "endOffset": 4674
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 140,
+         "column": 22,
+         "currentOffset": 4782,
+         "endOffset": 4782
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 143,
+         "column": 22,
+         "currentOffset": 4874,
+         "endOffset": 4881
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 146,
+         "column": 22,
+         "currentOffset": 4975,
+         "endOffset": 4982
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 149,
+         "column": 22,
+         "currentOffset": 5071,
+         "endOffset": 5078
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 152,
+         "column": 22,
+         "currentOffset": 5155,
+         "endOffset": 5162
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 155,
+         "column": 22,
+         "currentOffset": 5237,
+         "endOffset": 5244
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 158,
+         "column": 22,
+         "currentOffset": 5331,
+         "endOffset": 5331
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 161,
+         "column": 22,
+         "currentOffset": 5429,
+         "endOffset": 5429
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 164,
+         "column": 22,
+         "currentOffset": 5519,
+         "endOffset": 5526
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 167,
+         "column": 22,
+         "currentOffset": 5630,
+         "endOffset": 5637
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 170,
+         "column": 22,
+         "currentOffset": 5706,
+         "endOffset": 5712
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 173,
+         "column": 22,
+         "currentOffset": 5781,
+         "endOffset": 5787
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 176,
+         "column": 22,
+         "currentOffset": 5862,
+         "endOffset": 5868
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 179,
+         "column": 22,
+         "currentOffset": 5974,
+         "endOffset": 5981
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 182,
+         "column": 22,
+         "currentOffset": 6087,
+         "endOffset": 6094
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "9586d5a51245861d0724dd77bb77d1ff84aadc66dd9de7f804d86310d84da2cb",
+        "bytes": 4818
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/hh0060/r1",
+      "/databases/(default)/documents/hh0061/r1",
+      "/databases/(default)/documents/hh0062/r1",
+      "/databases/(default)/documents/hh0063/r1",
+      "/databases/(default)/documents/hh0064/r1",
+      "/databases/(default)/documents/hh0065/r1",
+      "/databases/(default)/documents/hh0066/r1",
+      "/databases/(default)/documents/hh0067/r1",
+      "/databases/(default)/documents/hh0068/r1",
+      "/databases/(default)/documents/hh0069/r1",
+      "/databases/(default)/documents/hh0070/r1",
+      "/databases/(default)/documents/hh0071/r1",
+      "/databases/(default)/documents/hh0072/r1",
+      "/databases/(default)/documents/hh0073/r1",
+      "/databases/(default)/documents/hh0074/r1",
+      "/databases/(default)/documents/hh0075/r1",
+      "/databases/(default)/documents/hh0076/r1",
+      "/databases/(default)/documents/hh0077/r1",
+      "/databases/(default)/documents/hh0078/r1",
+      "/databases/(default)/documents/hh0079/r1",
+      "/databases/(default)/documents/hh0080/r1",
+      "/databases/(default)/documents/hh0081/r1",
+      "/databases/(default)/documents/hh0082/r1",
+      "/databases/(default)/documents/hh0083/r1",
+      "/databases/(default)/documents/hh0084/r1",
+      "/databases/(default)/documents/hh0085/r1",
+      "/databases/(default)/documents/hh0086/r1",
+      "/databases/(default)/documents/hh0087/r1",
+      "/databases/(default)/documents/hh0088/r1",
+      "/databases/(default)/documents/hh0089/r1",
+      "/databases/(default)/documents/hh0090/r1",
+      "/databases/(default)/documents/hh0091/r1",
+      "/databases/(default)/documents/hh0092/r1",
+      "/databases/(default)/documents/hh0093/r1",
+      "/databases/(default)/documents/hh0094/r1",
+      "/databases/(default)/documents/hh0095/r1",
+      "/databases/(default)/documents/hh0096/r1",
+      "/databases/(default)/documents/hh0097/r1",
+      "/databases/(default)/documents/hh0098/r1",
+      "/databases/(default)/documents/hh0099/r1",
+      "/databases/(default)/documents/hh0100/r1",
+      "/databases/(default)/documents/hh0101/r1",
+      "/databases/(default)/documents/hh0102/r1",
+      "/databases/(default)/documents/hh0103/r1",
+      "/databases/(default)/documents/hh0104/r1",
+      "/databases/(default)/documents/hh0105/r1"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 101,
+       "column": 36,
+       "currentOffset": 3458,
+       "endOffset": 3460
+      },
+      "description": "Invalid regular expression pattern. Pattern: (.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "67be5be8acd4364f05cb9ffd1b184e6ffd326786f3cc4cdbcbc25b548dd5d4d3",
+        "bytes": 4736
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/hh0060/r1",
+      "/databases/(default)/documents/hh0061/r1",
+      "/databases/(default)/documents/hh0062/r1",
+      "/databases/(default)/documents/hh0063/r1",
+      "/databases/(default)/documents/hh0064/r1",
+      "/databases/(default)/documents/hh0065/r1",
+      "/databases/(default)/documents/hh0066/r1",
+      "/databases/(default)/documents/hh0067/r1",
+      "/databases/(default)/documents/hh0068/r1",
+      "/databases/(default)/documents/hh0069/r1",
+      "/databases/(default)/documents/hh0070/r1",
+      "/databases/(default)/documents/hh0071/r1",
+      "/databases/(default)/documents/hh0072/r1",
+      "/databases/(default)/documents/hh0073/r1",
+      "/databases/(default)/documents/hh0074/r1",
+      "/databases/(default)/documents/hh0075/r1",
+      "/databases/(default)/documents/hh0076/r1",
+      "/databases/(default)/documents/hh0077/r1",
+      "/databases/(default)/documents/hh0078/r1",
+      "/databases/(default)/documents/hh0079/r1",
+      "/databases/(default)/documents/hh0080/r1",
+      "/databases/(default)/documents/hh0081/r1",
+      "/databases/(default)/documents/hh0082/r1",
+      "/databases/(default)/documents/hh0083/r1",
+      "/databases/(default)/documents/hh0084/r1",
+      "/databases/(default)/documents/hh0085/r1",
+      "/databases/(default)/documents/hh0086/r1",
+      "/databases/(default)/documents/hh0087/r1",
+      "/databases/(default)/documents/hh0088/r1",
+      "/databases/(default)/documents/hh0089/r1",
+      "/databases/(default)/documents/hh0090/r1",
+      "/databases/(default)/documents/hh0091/r1",
+      "/databases/(default)/documents/hh0093/r1",
+      "/databases/(default)/documents/hh0094/r1",
+      "/databases/(default)/documents/hh0095/r1",
+      "/databases/(default)/documents/hh0096/r1",
+      "/databases/(default)/documents/hh0097/r1",
+      "/databases/(default)/documents/hh0098/r1",
+      "/databases/(default)/documents/hh0099/r1",
+      "/databases/(default)/documents/hh0100/r1",
+      "/databases/(default)/documents/hh0101/r1",
+      "/databases/(default)/documents/hh0102/r1",
+      "/databases/(default)/documents/hh0103/r1",
+      "/databases/(default)/documents/hh0104/r1",
+      "/databases/(default)/documents/hh0105/r1"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 22,
+         "currentOffset": 137,
+         "endOffset": 144
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 22,
+         "currentOffset": 237,
+         "endOffset": 244
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 11,
+         "column": 22,
+         "currentOffset": 343,
+         "endOffset": 350
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 14,
+         "column": 22,
+         "currentOffset": 433,
+         "endOffset": 440
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [17], column [22]. Function not found error: Name: [toBase64]."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 17,
+       "column": 22,
+       "currentOffset": 523,
+       "endOffset": 530
+      },
+      "functionCalls": [
+       {
+        "function": "toBase64"
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 20,
+         "column": 22,
+         "currentOffset": 618,
+         "endOffset": 625
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 23,
+         "column": 22,
+         "currentOffset": 730,
+         "endOffset": 737
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 26,
+         "column": 22,
+         "currentOffset": 857,
+         "endOffset": 864
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 29,
+         "column": 22,
+         "currentOffset": 972,
+         "endOffset": 979
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [32], column [43]. Property __name__ is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 32,
+       "column": 43,
+       "currentOffset": 1117,
+       "endOffset": 1124
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 35,
+         "column": 22,
+         "currentOffset": 1190,
+         "endOffset": 1197
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 38,
+         "column": 22,
+         "currentOffset": 1296,
+         "endOffset": 1303
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 41,
+         "column": 22,
+         "currentOffset": 1405,
+         "endOffset": 1412
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 44,
+         "column": 22,
+         "currentOffset": 1511,
+         "endOffset": 1518
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 47,
+         "column": 22,
+         "currentOffset": 1617,
+         "endOffset": 1624
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 50,
+         "column": 22,
+         "currentOffset": 1723,
+         "endOffset": 1730
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 53,
+         "column": 22,
+         "currentOffset": 1817,
+         "endOffset": 1824
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 56,
+         "column": 22,
+         "currentOffset": 1909,
+         "endOffset": 1916
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 59,
+         "column": 22,
+         "currentOffset": 2023,
+         "endOffset": 2030
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 62,
+         "column": 22,
+         "currentOffset": 2137,
+         "endOffset": 2137
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 65,
+         "column": 22,
+         "currentOffset": 2253,
+         "endOffset": 2260
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 68,
+         "column": 22,
+         "currentOffset": 2344,
+         "endOffset": 2351
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 71,
+         "column": 22,
+         "currentOffset": 2454,
+         "endOffset": 2461
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 74,
+         "column": 22,
+         "currentOffset": 2550,
+         "endOffset": 2557
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 77,
+         "column": 22,
+         "currentOffset": 2656,
+         "endOffset": 2663
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 80,
+         "column": 22,
+         "currentOffset": 2762,
+         "endOffset": 2762
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 83,
+         "column": 22,
+         "currentOffset": 2879,
+         "endOffset": 2879
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 86,
+         "column": 22,
+         "currentOffset": 2972,
+         "endOffset": 2979
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 89,
+         "column": 22,
+         "currentOffset": 3077,
+         "endOffset": 3084
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 92,
+         "column": 22,
+         "currentOffset": 3182,
+         "endOffset": 3189
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 95,
+         "column": 22,
+         "currentOffset": 3286,
+         "endOffset": 3288
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 98,
+         "column": 22,
+         "currentOffset": 3365,
+         "endOffset": 3365
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 101,
+         "column": 22,
+         "currentOffset": 3444,
+         "endOffset": 3450
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 104,
+         "column": 22,
+         "currentOffset": 3531,
+         "endOffset": 3537
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [107], column [30]. Index out of bound error. Index: [10] , size: [5]."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 107,
+       "column": 30,
+       "currentOffset": 3645,
+       "endOffset": 3651
+      }
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 110,
+         "column": 22,
+         "currentOffset": 3724,
+         "endOffset": 3730
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 113,
+         "column": 22,
+         "currentOffset": 3812,
+         "endOffset": 3818
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 116,
+         "column": 22,
+         "currentOffset": 3919,
+         "endOffset": 3925
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 119,
+         "column": 22,
+         "currentOffset": 4022,
+         "endOffset": 4029
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 122,
+         "column": 22,
+         "currentOffset": 4125,
+         "endOffset": 4131
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 125,
+         "column": 22,
+         "currentOffset": 4231,
+         "endOffset": 4238
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [128], column [46]. Property missing is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 128,
+       "column": 46,
+       "currentOffset": 4376,
+       "endOffset": 4383
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 131,
+         "column": 22,
+         "currentOffset": 4458,
+         "endOffset": 4458
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [134], column [22]. Property missing is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 134,
+       "column": 22,
+       "currentOffset": 4570,
+       "endOffset": 4577
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 137,
+         "column": 22,
+         "currentOffset": 4667,
+         "endOffset": 4674
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "heldout/92",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "92c05180790bc1788d715b213d676a40c50860e9d57587fef02a59328ef12ab2",
+        "bytes": 177
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/hh0092/r1"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 36,
+       "currentOffset": 151,
+       "endOffset": 153
+      },
+      "description": "Invalid regular expression pattern. Pattern: (.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  }
+ ]
+}

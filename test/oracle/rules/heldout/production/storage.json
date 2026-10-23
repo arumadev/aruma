@@ -1,0 +1,650 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "storage",
+ "service": "storage",
+ "set": "heldout",
+ "source": "aruma",
+ "provenance": "rules-test-api",
+ "project": "chatapp-8ae21",
+ "recordedAt": "2026-10-23T21:44:27.060Z",
+ "version": "firebaserules.googleapis.com v1 projects.test",
+ "rulesets": {
+  "pack-1": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /c_resource_time_created_is_string/{file} {\n      allow get: if resource.timeCreated is string;\n    }\n    match /c_resource_updated_is_ts/{file} {\n      allow get: if resource.updated is timestamp;\n    }\n    match /c_resource_generation_int/{file} {\n      allow get: if resource.generation is int;\n    }\n    match /c_resource_time_created_bad/{file} {\n      allow get: if resource.timeCreated is timestamp;\n    }\n    match /c_request_method/{file} {\n      allow get: if request.method == 'get';\n    }\n    match /c_file_var/{file} {\n      allow get: if file == 'file.txt';\n    }\n    match /c_auth_claim_list/{file} {\n      allow get: if request.auth.token.groups.hasAny(['g1']);\n    }\n    match /c_auth_null_uid_or_true/{file} {\n      allow get: if request.auth.uid == 'x' || true;\n    }\n    match /c_create_size/{file} {\n      allow create: if request.resource.size < 5 * 1024 * 1024;\n    }\n    match /c_delete_request_resource/{file} {\n      allow delete: if request.resource == null;\n    }\n    match /c_write_create/{file} {\n      allow write: if true;\n    }\n    match /c_create_update/{file} {\n      allow create: if true;\n    }\n    match /c_string_plus_int/{file} {\n      allow get: if file + resource.size == 'x';\n    }\n    match /c_matches/{file} {\n      allow get: if file.matches('.*[.]txt');\n    }\n    match /c_map_keys_order/{file} {\n      allow get: if {'b': 1, 'a': 2}.keys() == ['a', 'b'];\n    }\n  }\n}\n"
+ },
+ "resources": {
+  "default": {
+   "name": "dir/file.txt",
+   "bucket": "demo-oracle.appspot.com",
+   "size": 1024,
+   "contentType": "text/plain",
+   "metadata": {
+    "owner": "alice",
+    "k": "v"
+   },
+   "timeCreated": "2026-01-02T03:04:05.000Z",
+   "updated": "2026-01-03T03:04:05.000Z",
+   "generation": 1700000000000000,
+   "metageneration": 1,
+   "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+   "crc32c": "yZRlqg==",
+   "etag": "CJqUmJ6Ry4ADEAE=",
+   "contentDisposition": "inline",
+   "contentEncoding": "identity"
+  }
+ },
+ "cases": [
+  {
+   "id": "aruma/storage/resource_time_created_is_string",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.timeCreated is string",
+   "expression": "resource.timeCreated is string",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_time_created_is_string/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_updated_is_ts",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.updated is timestamp",
+   "expression": "resource.updated is timestamp",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_updated_is_ts/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_generation_int",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.generation is int",
+   "expression": "resource.generation is int",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_generation_int/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_time_created_bad",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.timeCreated is timestamp",
+   "expression": "resource.timeCreated is timestamp",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_time_created_bad/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resource": {
+    "timeCreated": "yesterday"
+   },
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/storage/request_method",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.method == 'get'",
+   "expression": "request.method == 'get'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_request_method/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/file_var",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "file == 'file.txt'",
+   "expression": "file == 'file.txt'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_file_var/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/auth_claim_list",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.auth.token.groups.hasAny(['g1'])",
+   "expression": "request.auth.token.groups.hasAny(['g1'])",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_auth_claim_list/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/auth_null_uid_or_true",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.auth.uid == 'x' || true",
+   "expression": "request.auth.uid == 'x' || true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_auth_null_uid_or_true/file.txt",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_size",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.resource.size < 5 * 1024 * 1024",
+   "expression": "request.resource.size < 5 * 1024 * 1024",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "create",
+    "path": "/b/demo-oracle.appspot.com/o/c_create_size/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": {
+     "name": "c_x/file.txt",
+     "size": 2048,
+     "contentType": "image/png",
+     "metadata": {
+      "k": "v",
+      "owner": "alice"
+     }
+    }
+   },
+   "resource": null,
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/delete_request_resource",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.resource == null",
+   "expression": "request.resource == null",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "delete",
+    "path": "/b/demo-oracle.appspot.com/o/c_delete_request_resource/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": null
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/write_create",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "true",
+   "expression": "true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "create",
+    "path": "/b/demo-oracle.appspot.com/o/c_write_create/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": {
+     "name": "c_x/file.txt",
+     "size": 2048,
+     "contentType": "image/png",
+     "metadata": {
+      "k": "v",
+      "owner": "alice"
+     }
+    }
+   },
+   "resource": null,
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_update",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "true",
+   "expression": "true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "update",
+    "path": "/b/demo-oracle.appspot.com/o/c_create_update/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": {
+     "name": "c_x/file.txt",
+     "size": 2048,
+     "contentType": "image/png",
+     "metadata": {
+      "k": "v",
+      "owner": "alice"
+     }
+    }
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   }
+  },
+  {
+   "id": "aruma/storage/string_plus_int",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "file + resource.size == 'x'",
+   "expression": "file + resource.size == 'x'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_string_plus_int/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [41], column [26]. Unsupported operation error. Received: string + int. Expected: int + int, float + float, string + string, duration + duration, duration + timestamp, timestamp + duration."
+   }
+  },
+  {
+   "id": "aruma/storage/matches",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "file.matches('.*[.]txt')",
+   "expression": "file.matches('.*[.]txt')",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_matches/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/map_keys_order",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:27.060Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "{'b': 1, 'a': 2}.keys() == ['a', 'b']",
+   "expression": "{'b': 1, 'a': 2}.keys() == ['a', 'b']",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_map_keys_order/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  }
+ ]
+}

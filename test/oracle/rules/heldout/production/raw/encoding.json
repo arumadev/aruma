@@ -1,0 +1,164 @@
+{
+ "topic": "encoding",
+ "set": "heldout",
+ "recordedAt": "2026-10-23T21:43:12.031Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "0092a4840808ef718367b7e3e2a4b7736a97a6cb93184f28be35e95719e49352",
+        "bytes": 1008
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_json_2pow53_plus1/doc",
+      "/databases/(default)/documents/c_json_huge_number/doc",
+      "/databases/(default)/documents/c_resource_id/doc",
+      "/databases/(default)/documents/c_resource_name_absent/doc",
+      "/databases/(default)/documents/c_request_resource_absent_on_get/doc",
+      "/databases/(default)/documents/c_auth_token_nested/doc",
+      "/databases/(default)/documents/c_auth_token_bool/doc",
+      "/databases/(default)/documents/c_auth_token_missing_claim/doc",
+      "/databases/(default)/documents/c_auth_without_token_size/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 148,
+         "endOffset": 155
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 249,
+         "endOffset": 256
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [11], column [21]. Property id is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 11,
+       "column": 21,
+       "currentOffset": 334,
+       "endOffset": 341
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 14,
+         "column": 21,
+         "currentOffset": 424,
+         "endOffset": 431
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [17], column [21]. Property resource is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 17,
+       "column": 21,
+       "currentOffset": 537,
+       "endOffset": 543
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 20,
+         "column": 21,
+         "currentOffset": 628,
+         "endOffset": 634
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 23,
+         "column": 21,
+         "currentOffset": 751,
+         "endOffset": 757
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [26], column [21]. Property missing is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 26,
+       "column": 21,
+       "currentOffset": 857,
+       "endOffset": 863
+      }
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [29], column [21]. Property token is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 29,
+       "column": 21,
+       "currentOffset": 964,
+       "endOffset": 970
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,82 @@
+{
+ "topic": "methods",
+ "set": "heldout",
+ "recordedAt": "2026-10-23T21:44:22.308Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "738483fbe6a71d897ff5a1a0c5683d74113a1ca2c66b955ce4369cac97fe108c",
+        "bytes": 487
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_list_get/doc",
+      "/databases/(default)/documents/c_update_both/doc",
+      "/databases/(default)/documents/c_update_keys_hasonly/doc",
+      "/databases/(default)/documents/c_method_read_verb/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "FAILURE"
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 24,
+         "currentOffset": 208,
+         "endOffset": 214
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 11,
+         "column": 24,
+         "currentOffset": 326,
+         "endOffset": 332
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 14,
+         "column": 22,
+         "currentOffset": 469,
+         "endOffset": 472
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

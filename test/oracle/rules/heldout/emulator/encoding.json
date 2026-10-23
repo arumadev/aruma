@@ -1,0 +1,106 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "encoding",
+ "service": "firestore",
+ "set": "heldout",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T22:05:22.317Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/encoding/json_2pow53_plus1",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/json_huge_number",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/resource_id",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [11], column [21]. Property id is undefined on object."
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/resource_name_absent",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/request_resource_absent_on_get",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [17], column [21]. Property resource is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Property resource is undefined on object. for 'get' @ L17, Property resource is undefined on object. for 'get' @ L17"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_token_nested",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_token_bool",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_token_missing_claim",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [26], column [21]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Property missing is undefined on object. for 'get' @ L26, Property missing is undefined on object. for 'get' @ L26"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_without_token_size",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [29], column [21]. Property token is undefined on object."
+   },
+   "emulator": {
+    "skip": "the auth cannot be an ID token"
+   }
+  }
+ ]
+}

@@ -1,0 +1,2361 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "service": "firestore",
+ "set": "heldout",
+ "source": "hidane",
+ "provenance": "emulator",
+ "upstream": "https://github.com/hidane-dev/hidane/tree/abd4664b0d610781eb3f0fec45642e7bc9953533",
+ "licence": "MIT OR Apache-2.0 (cel-spec cases: Apache-2.0)",
+ "recordedAt": "2026-10-11",
+ "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+ "rulesets": {
+  "hidane-rooms-read": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /rooms/{room} {\n      allow read: if {{expr}};\n    }\n  }\n}\n"
+ },
+ "resources": {
+  "hidane-document": {
+   "data": {
+    "n": {
+     "integerValue": "1"
+    },
+    "f": {
+     "doubleValue": 1.5
+    },
+    "one_f": {
+     "doubleValue": 1
+    },
+    "s": {
+     "stringValue": "abc"
+    },
+    "b": {
+     "booleanValue": true
+    },
+    "nul": {
+     "nullValue": null
+    },
+    "arr": {
+     "arrayValue": {
+      "values": [
+       {
+        "integerValue": "1"
+       },
+       {
+        "integerValue": "2"
+       },
+       {
+        "integerValue": "3"
+       }
+      ]
+     }
+    },
+    "tags": {
+     "arrayValue": {
+      "values": [
+       {
+        "stringValue": "a"
+       },
+       {
+        "stringValue": "b"
+       }
+      ]
+     }
+    },
+    "m": {
+     "mapValue": {
+      "fields": {
+       "x": {
+        "integerValue": "1"
+       },
+       "y": {
+        "stringValue": "z"
+       }
+      }
+     }
+    },
+    "ts": {
+     "timestampValue": "2020-01-02T03:04:05.123Z"
+    },
+    "geo": {
+     "geoPointValue": {
+      "latitude": 10,
+      "longitude": 20
+     }
+    },
+    "ref": {
+     "referenceValue": "projects/rules/databases/(default)/documents/rooms/r2"
+    },
+    "by": {
+     "bytesValue": "AQI="
+    },
+    "big": {
+     "integerValue": "9223372036854775807"
+    }
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "hidane/heldout/0",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "request.auth != null || resource.data.visibility == 'public'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L5:22 for 'get' @ L5\nProperty visibility is undefined on object. for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/1",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.get('visibility', 'private') == 'public' || request.auth == null",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/2",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.tags.size() < 5 && resource.data.tags.hasAll(['a'])",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/3",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.s.size() > 2 && resource.data.s.size() <= 30",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/4",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.keys().hasOnly(['n', 'f', 'one_f', 's', 'b', 'nul', 'arr', 'tags', 'm', 'ts', 'geo', 'ref', 'by', 'big'])",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/5",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.ts < request.time - duration.value(1, 'd')",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/6",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "request.time < timestamp.date(2000, 1, 1)",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/7",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.m.size() == 2 && 'x' in resource.data.m",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/8",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.n is int && resource.data.n >= 0 && resource.data.n < 10",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/9",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.f > 1 && resource.data.f < 2",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/10",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.f * 2 == 3",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/11",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.n / 2 == 0",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/12",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.n % 2 == 1",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/13",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.s in ['abc', 'def']",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/14",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.n in [1, 2, 3]",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/15",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.tags[0] == 'a'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/16",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.tags[-1] == 'b'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L5:22 for 'get' @ L5\nIndex out of bound error. Index: [-1]\nsize: [2]. for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/17",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.arr[3] == 4",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L5:22 for 'get' @ L5\nIndex out of bound error. Index: [3]\nsize: [3]. for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/18",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.s.matches('^a.*')",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/19",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.s.matches('A.*')",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "evaluation error at L5:22 for 'get' @ L5\nfalse for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/20",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.s.lower().matches('[a-z]+')",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/21",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.s.split('b').size() == 2",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/22",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.s.replace('b', '') == 'ac'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/23",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.m.keys().size() == 2 && resource.data.m.values().size() == 2",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/24",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.m.diff({}).addedKeys().size() == 2",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/25",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.m.diff(resource.data.m).affectedKeys().size() == 0",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/26",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.arr.toSet().hasAny([3])",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/27",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.arr.concat(resource.data.tags).size() == 5",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/28",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.big > 9000000000000000000",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/29",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.big - 1 < resource.data.big",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/30",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "-resource.data.big - 2 < 0",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L5:22 for 'get' @ L5\nInteger value is out of the [-9223372036854775808\n9223372036854775807] range. for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/31",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.geo.latitude() < resource.data.geo.longitude()",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/32",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "string(resource.data.n) + string(resource.data.f) == '11.5'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/33",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "int(resource.data.f) == 1 && float(resource.data.n) == 1.0",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/34",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "math.abs(resource.data.f - 2) == 0.5",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/35",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.ts.toMillis() > 0 && resource.data.ts.year() >= 2020",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/36",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "duration.value(resource.data.n, 'd') == duration.value(24, 'h')",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/37",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.__name__[3] == 'rooms' && resource.__name__[4] == room",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/38",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "request.path[4] == resource.id",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/39",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.nul == null && !(resource.data.b == false)",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/40",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "(resource.data.missing == 1) == false",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L5:22 for 'get' @ L5\nProperty missing is undefined on object. for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/41",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.get('m', {}).get('x', 0) == 1",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/42",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.tags.join('-').size() == 3",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/43",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "'a' in resource.data.tags.toSet()",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/44",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.tags.toSet().union(['c'].toSet()).size() == 3",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/45",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "[1, 2, 3].hasOnly(resource.data.arr)",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/46",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.s + resource.data.s == 'abcabc'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/47",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.f + resource.data.n == 2.5",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/48",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.n + 0.5 == 1.5",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/49",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.f % 1 == 0.5",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/50",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.one_f == resource.data.n",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/51",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "[resource.data.one_f] == [resource.data.n]",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "evaluation error at L5:22 for 'get' @ L5\nfalse for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/52",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "{'a': resource.data.n} == {'a': 1}",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/53",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.m.x is int && resource.data.m.y is string",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/54",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data is map",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/55",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "request.auth is map",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/56",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "request.time is timestamp",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/57",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "request.time - resource.data.ts > duration.value(1, 'd')",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/58",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.s[0] == 'a' && resource.data.s[1:3] == 'bc'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/59",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.arr[0:2].size() == 2",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/60",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.tags.removeAll(['a']) == ['b']",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/61",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.s.upper().lower() == resource.data.s",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/62",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.s.trim().size() == 3",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/63",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.f >= resource.data.n",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/64",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.by.toBase64().size() == 4",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/65",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.missing.size() > 0 || resource.data.n == 1",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/66",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.n == 1 ? resource.data.s == 'abc' : resource.data.missing",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/67",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.arr.size() > 0 && resource.data.arr[0] is int",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/68",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.ref == path('/databases/(default)/documents/rooms/r2')",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/69",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: mixed",
+   "expression": "resource.data.ref != resource.__name__",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/70",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.missing == 1 || resource.data.n == 1",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/71",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.missing == 1 || request.method == 'get'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/72",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.n == 1 || resource.data.missing == 1",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/73",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.missing == 1 && resource.data.n == 2",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "evaluation error at L5:22 for 'get' @ L5\nfalse for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/74",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.n == 2 && resource.data.missing == 1",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "evaluation error at L5:22 for 'get' @ L5\nfalse for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/75",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.missing == 1 || (1 == 1)",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/76",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.missing == 1 || !false",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/77",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.missing == 1 || true || resource.data.n == 1",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/78",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.n == 2 || resource.data.missing == 1 || true",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/79",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "(resource.data.missing == 1 || true) && resource.data.n == 1",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/80",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.missing == 1 && false",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/81",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.missing == 1 && request.method == 'list'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/82",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.missing.size() > 0 || true",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/83",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.missing == 1 || request.auth == null",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/84",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.missing == 1 || 'n' in resource.data",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/85",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "(resource.data.n == 1 ? resource.data.missing : true) || true",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/86",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "!(resource.data.missing == 1) || true",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/87",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.arr[5] == 1 || resource.data.n == 1",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/88",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.big + 1 > 0 || resource.data.n == 1",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/89",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.nul.x == 1 || resource.data.n == 1",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/90",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "int('abc') == 1 || true",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/91",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "{'a': 1}.b == 1 || true",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/92",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "'abc'.matches('(') || true",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:36 Invalid regular expression pattern. Pattern: (."
+   }
+  },
+  {
+   "id": "hidane/heldout/93",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "request.path[10] == 'x' || true",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/94",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "request.path[10] == 'x' || request.method == 'get'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/95",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "true && request.path[10] == 'x'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Index out of bound error. Index: [10]\nsize: [5]. for 'get' @ L5\nIndex out of bound error. Index: [10]\nsize: [5]. for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/96",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "request.path[10] == 'x' && false",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/97",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "request.path[10] == 'x' && request.method == 'list'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/98",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "request.path[10] == 'x' || resource.data.n == 1",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/99",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.n == 1 || request.path[10] == 'x'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/100",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "request.method == 'get' || request.path[10] == 'x'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/101",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.missing == 1 || resource.data.missing2 == 1 || true",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/102",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.n == 1 && resource.data.missing == 1",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L5:22 for 'get' @ L5\nProperty missing is undefined on object. for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/103",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "!(resource.data.missing == 1) || request.method == 'get'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "hidane/heldout/104",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.missing == 1 ? false : true",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L5:22 for 'get' @ L5\nProperty missing is undefined on object. for 'get' @ L5"
+   }
+  },
+  {
+   "id": "hidane/heldout/105",
+   "service": "firestore",
+   "source": "hidane",
+   "provenance": "emulator",
+   "recordedAt": "2026-10-11",
+   "version": "cloud-firestore-emulator v1.22.0 (recorded by hidane)",
+   "description": "heldout: error absorption",
+   "expression": "resource.data.missing in [1] || request.method == 'get'",
+   "rulesetRef": "hidane-rooms-read",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rooms/r1",
+    "auth": null
+   },
+   "resourceRef": "hidane-document",
+   "valueEncoding": "firestore-rest",
+   "expected": {
+    "outcome": "allow"
+   }
+  }
+ ]
+}

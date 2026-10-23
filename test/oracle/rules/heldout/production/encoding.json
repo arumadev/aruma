@@ -1,0 +1,404 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "encoding",
+ "service": "firestore",
+ "set": "heldout",
+ "source": "aruma",
+ "provenance": "rules-test-api",
+ "project": "chatapp-8ae21",
+ "recordedAt": "2026-10-23T21:43:12.031Z",
+ "version": "firebaserules.googleapis.com v1 projects.test",
+ "rulesets": {
+  "pack-1": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_json_2pow53_plus1/{doc} {\n      allow get: if resource.data.g == 9007199254740993;\n    }\n    match /c_json_huge_number/{doc} {\n      allow get: if resource.data.g is float;\n    }\n    match /c_resource_id/{doc} {\n      allow get: if resource.id == 'doc';\n    }\n    match /c_resource_name_absent/{doc} {\n      allow get: if resource.__name__ == null || true;\n    }\n    match /c_request_resource_absent_on_get/{doc} {\n      allow get: if request.resource == null;\n    }\n    match /c_auth_token_nested/{doc} {\n      allow get: if request.auth.token.firebase.sign_in_provider == 'password';\n    }\n    match /c_auth_token_bool/{doc} {\n      allow get: if request.auth.token.admin == true;\n    }\n    match /c_auth_token_missing_claim/{doc} {\n      allow get: if request.auth.token.missing == true;\n    }\n    match /c_auth_without_token_size/{doc} {\n      allow get: if request.auth.token.size() == 0;\n    }\n  }\n}\n"
+ },
+ "resources": {
+  "default": {
+   "data": {
+    "n": 1,
+    "f": 1.5,
+    "s": "abc",
+    "b": true,
+    "nul": null,
+    "arr": [
+     1,
+     2,
+     3
+    ],
+    "tags": [
+     "a",
+     "b"
+    ],
+    "m": {
+     "x": 1,
+     "y": "z"
+    },
+    "owner": "alice"
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "aruma/encoding/json_2pow53_plus1",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:12.031Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.data.g == 9007199254740993",
+   "expression": "resource.data.g == 9007199254740993",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_json_2pow53_plus1/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resource": {
+    "data": {
+     "g": 777005
+    }
+   },
+   "rawNumbers": [
+    {
+     "from": 777005,
+     "to": "9007199254740993"
+    }
+   ],
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/encoding/json_huge_number",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:12.031Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.data.g is float",
+   "expression": "resource.data.g is float",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_json_huge_number/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resource": {
+    "data": {
+     "g": 777007
+    }
+   },
+   "rawNumbers": [
+    {
+     "from": 777007,
+     "to": "1e300"
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/resource_id",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:12.031Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.id == 'doc'",
+   "expression": "resource.id == 'doc'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_resource_id/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [11], column [21]. Property id is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/encoding/resource_name_absent",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:12.031Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.__name__ == null || true",
+   "expression": "resource.__name__ == null || true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_resource_name_absent/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/request_resource_absent_on_get",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:12.031Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.resource == null",
+   "expression": "request.resource == null",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_request_resource_absent_on_get/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [17], column [21]. Property resource is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_token_nested",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:12.031Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.auth.token.firebase.sign_in_provider == 'password'",
+   "expression": "request.auth.token.firebase.sign_in_provider == 'password'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_auth_token_nested/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_token_bool",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:12.031Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.auth.token.admin == true",
+   "expression": "request.auth.token.admin == true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_auth_token_bool/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_token_missing_claim",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:12.031Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.auth.token.missing == true",
+   "expression": "request.auth.token.missing == true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_auth_token_missing_claim/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [26], column [21]. Property missing is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/encoding/auth_without_token_size",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:12.031Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.auth.token.size() == 0",
+   "expression": "request.auth.token.size() == 0",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_auth_without_token_size/doc",
+    "auth": {
+     "uid": "bob"
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [29], column [21]. Property token is undefined on object."
+   }
+  }
+ ]
+}

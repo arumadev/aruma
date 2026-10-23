@@ -1,0 +1,326 @@
+{
+ "topic": "collections",
+ "set": "heldout",
+ "recordedAt": "2026-10-23T21:43:50.706Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "97e844095382978b592b501532323c72062abac9ddbf72dc48092953978e3f57",
+        "bytes": 1551
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_list_in/doc",
+      "/databases/(default)/documents/c_list_hasall/doc",
+      "/databases/(default)/documents/c_list_hasany_false/doc",
+      "/databases/(default)/documents/c_list_concat/doc",
+      "/databases/(default)/documents/c_list_index/doc",
+      "/databases/(default)/documents/c_list_index_float/doc",
+      "/databases/(default)/documents/c_list_tostring_compare/doc",
+      "/databases/(default)/documents/c_set_size/doc",
+      "/databases/(default)/documents/c_set_in/doc",
+      "/databases/(default)/documents/c_set_union/doc",
+      "/databases/(default)/documents/c_set_hasall_list/doc",
+      "/databases/(default)/documents/c_set_difference_list_arg/doc",
+      "/databases/(default)/documents/c_set_index/doc",
+      "/databases/(default)/documents/c_map_in_value/doc",
+      "/databases/(default)/documents/c_map_dot/doc",
+      "/databases/(default)/documents/c_map_index/doc",
+      "/databases/(default)/documents/c_doc_keys_hasall/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 20,
+       "column": 31,
+       "currentOffset": 558,
+       "endOffset": 560
+      },
+      "description": "Invalid type. Received one of [float]. Expected one of [int, string].",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 38,
+       "column": 47,
+       "currentOffset": 1112,
+       "endOffset": 1112
+      },
+      "description": "Invalid type. Received one of [list]. Expected one of [set].",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 41,
+       "column": 25,
+       "currentOffset": 1194,
+       "endOffset": 1198
+      },
+      "description": "Invalid type. Received one of [set]. Expected one of [string, list, map, path].",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 138,
+         "endOffset": 138
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 210,
+         "endOffset": 210
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 11,
+         "column": 21,
+         "currentOffset": 295,
+         "endOffset": 295
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 14,
+         "column": 21,
+         "currentOffset": 374,
+         "endOffset": 374
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 17,
+         "column": 21,
+         "currentOffset": 465,
+         "endOffset": 465
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [20], column [21]. Unsupported operation error. Received: list[float]. Expected: list[int]."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 20,
+       "column": 21,
+       "currentOffset": 548,
+       "endOffset": 548
+      }
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [23], column [32]. Unsupported operation error. Received: list < list. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 23,
+       "column": 32,
+       "currentOffset": 649,
+       "endOffset": 649
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 26,
+         "column": 21,
+         "currentOffset": 714,
+         "endOffset": 714
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 29,
+         "column": 21,
+         "currentOffset": 799,
+         "endOffset": 799
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 32,
+         "column": 21,
+         "currentOffset": 874,
+         "endOffset": 874
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 35,
+         "column": 21,
+         "currentOffset": 987,
+         "endOffset": 987
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [38], column [36]. Unsupported operation error. Received: set.difference(list). Expected: set.difference(set)."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 38,
+       "column": 36,
+       "currentOffset": 1101,
+       "endOffset": 1110
+      }
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [41], column [21]. Function not found error: Name: [[]]."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 41,
+       "column": 21,
+       "currentOffset": 1190,
+       "endOffset": 1190
+      },
+      "functionCalls": [
+       {
+        "function": "[]",
+        "args": [
+         0
+        ]
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [44], column [23]. Unsupported operation error. Received: map.in(int). Expected: map.in(string)."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 44,
+       "column": 23,
+       "currentOffset": 1273,
+       "endOffset": 1274
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 47,
+         "column": 21,
+         "currentOffset": 1341,
+         "endOffset": 1341
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 50,
+         "column": 21,
+         "currentOffset": 1415,
+         "endOffset": 1415
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 53,
+         "column": 21,
+         "currentOffset": 1498,
+         "endOffset": 1505
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

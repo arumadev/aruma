@@ -1,0 +1,385 @@
+{
+ "topic": "paths",
+ "set": "heldout",
+ "recordedAt": "2026-10-23T21:43:57.403Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "246c049e0e4265c5656395f9bead043e3ea38ab23750348cffcf48468b87ac5b",
+        "bytes": 500
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_literal_eq/doc",
+      "/databases/(default)/documents/c_interpolate_whole/doc",
+      "/databases/(default)/documents/c_path_fn/doc",
+      "/databases/(default)/documents/c_path_size/doc",
+      "/databases/(default)/documents/c_path_bind/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 14,
+       "column": 32,
+       "currentOffset": 384,
+       "endOffset": 384
+      },
+      "description": "Unexpected '('.",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 17,
+       "column": 35,
+       "currentOffset": 464,
+       "endOffset": 464
+      },
+      "description": "Unexpected '('.",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 17,
+       "column": 46,
+       "currentOffset": 475,
+       "endOffset": 475
+      },
+      "description": "Unexpected ')'.",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 17,
+       "column": 51,
+       "currentOffset": 480,
+       "endOffset": 481
+      },
+      "description": "Missing 'match' keyword before path.",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 17,
+       "column": 57,
+       "currentOffset": 486,
+       "endOffset": 486
+      },
+      "description": "mismatched input ';' expecting {'{', '/', PATH_SEGMENT}",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 20,
+       "column": 1,
+       "currentOffset": 498,
+       "endOffset": 498
+      },
+      "description": "Unexpected '}'.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "e571c68bf9b9bc4c48e221f19622a394cb791528ce8a38949f3e3bc2740df5ca",
+        "bytes": 328
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_literal_eq/doc",
+      "/databases/(default)/documents/c_interpolate_whole/doc",
+      "/databases/(default)/documents/c_path_fn/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 141,
+         "endOffset": 142
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 220,
+         "endOffset": 220
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 11,
+         "column": 21,
+         "currentOffset": 294,
+         "endOffset": 297
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "wild_v2_rest_value",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "bfb7d564f5b93ed9b0237fb8202229257599b48c7f14056b3488122caa140fe4",
+        "bytes": 162
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a/b/c"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 134,
+         "endOffset": 137
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "wild_v1_nested_under_recursive",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "6c4f0da5fb83e2946f8a5cda34f5504367c2fb13511fdb91ddcdbaf3c8c93604",
+        "bytes": 186
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a/docs/x"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 4,
+       "column": 5,
+       "currentOffset": 93,
+       "endOffset": 97
+      },
+      "description": "Glob(**) resource rules should not have child resource rules.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "path_size",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "43d64b26b8883a81d8a807eee69c11f6d7e0554b88eec04c4981c0ffb10f5909",
+        "bytes": 172
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_path_size/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 32,
+       "currentOffset": 151,
+       "endOffset": 151
+      },
+      "description": "Unexpected '('.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "path_bind",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "b7f81010f76f789317bdba6713e54d556ea7a46046705313d6b7ba29590e01e7",
+        "bytes": 190
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_path_bind/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 35,
+       "currentOffset": 154,
+       "endOffset": 154
+      },
+      "description": "Unexpected '('.",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 46,
+       "currentOffset": 165,
+       "endOffset": 165
+      },
+      "description": "Unexpected ')'.",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 51,
+       "currentOffset": 170,
+       "endOffset": 171
+      },
+      "description": "Missing 'match' keyword before path.",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 57,
+       "currentOffset": 176,
+       "endOffset": 176
+      },
+      "description": "mismatched input ';' expecting {'{', '/', PATH_SEGMENT}",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 8,
+       "column": 1,
+       "currentOffset": 188,
+       "endOffset": 188
+      },
+      "description": "Unexpected '}'.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  }
+ ]
+}

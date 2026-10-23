@@ -1,0 +1,631 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "errors",
+ "service": "firestore",
+ "set": "heldout",
+ "source": "aruma",
+ "provenance": "rules-test-api",
+ "project": "chatapp-8ae21",
+ "recordedAt": "2026-10-23T21:45:54.245Z",
+ "version": "firebaserules.googleapis.com v1 projects.test",
+ "rulesets": {
+  "pack-1": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    function errf() { return resource.data.missing == 1; }\n    function lazyLet() { let x = resource.data.missing; return true; }\n    function usedLet() { let x = resource.data.missing; return x == 1 || true; }\n    function nonBool() { return 1; }\n    function ignores(a) { return true; }\n    function uses(a) { return a == 1 || true; }\n    match /c_missing_eq_null/{doc} {\n      allow get: if resource.data.missing == null;\n    }\n    match /c_not_err_or_true/{doc} {\n      allow get: if !(resource.data.missing == 1) || true;\n    }\n    match /c_let_used_err_or_true/{doc} {\n      allow get: if usedLet();\n    }\n    match /c_index_missing_key/{doc} {\n      allow get: if resource.data['missing'] == 1;\n    }\n    match /c_list_lt_list/{doc} {\n      allow get: if [1] < [2];\n    }\n    match /c_bool_lt_bool/{doc} {\n      allow get: if false < true;\n    }\n    match /c_mod_zero/{doc} {\n      allow get: if 1 % 0 == 0;\n    }\n    match /c_int_max_plus_one_or_true/{doc} {\n      allow get: if (9223372036854775807 + 1 < 0) || true;\n    }\n    match /c_int_max_times_two/{doc} {\n      allow get: if 9223372036854775807 * 2 < 0;\n    }\n    match /c_int_min_negate/{doc} {\n      allow get: if -(-9223372036854775807 - 1) < 0;\n    }\n    match /c_int_max_literal/{doc} {\n      allow get: if 9223372036854775807 > 0;\n    }\n    match /c_int_min_literal/{doc} {\n      allow get: if -9223372036854775808 < 0;\n    }\n  }\n}\n"
+ },
+ "resources": {
+  "default": {
+   "data": {
+    "n": 1,
+    "f": 1.5,
+    "s": "abc",
+    "b": true,
+    "nul": null,
+    "arr": [
+     1,
+     2,
+     3
+    ],
+    "tags": [
+     "a",
+     "b"
+    ],
+    "m": {
+     "x": 1,
+     "y": "z"
+    },
+    "owner": "alice"
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "aruma/errors/missing_eq_null",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.data.missing == null",
+   "expression": "resource.data.missing == null",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_missing_eq_null/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [11], column [21]. Property missing is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/errors/not_err_or_true",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "!(resource.data.missing == 1) || true",
+   "expression": "!(resource.data.missing == 1) || true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_not_err_or_true/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/let_used_err_or_true",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "usedLet()",
+   "expression": "usedLet()",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_let_used_err_or_true/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/index_missing_key",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.data['missing'] == 1",
+   "expression": "resource.data['missing'] == 1",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_index_missing_key/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [20], column [21]. Property missing is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/errors/list_lt_list",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "[1] < [2]",
+   "expression": "[1] < [2]",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_list_lt_list/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [23], column [25]. Unsupported operation error. Received: list < list. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint."
+   }
+  },
+  {
+   "id": "aruma/errors/bool_lt_bool",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "false < true",
+   "expression": "false < true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_bool_lt_bool/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [26], column [27]. Unsupported operation error. Received: bool < bool. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint."
+   }
+  },
+  {
+   "id": "aruma/errors/mod_zero",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "1 % 0 == 0",
+   "expression": "1 % 0 == 0",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_mod_zero/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [29], column [23]. Divide by zero error."
+   }
+  },
+  {
+   "id": "aruma/errors/int_exponent_literal",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "1e3 == 1000.0",
+   "expression": "1e3 == 1000.0",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    function errf() { return resource.data.missing == 1; }\n    function lazyLet() { let x = resource.data.missing; return true; }\n    function usedLet() { let x = resource.data.missing; return x == 1 || true; }\n    function nonBool() { return 1; }\n    function ignores(a) { return true; }\n    function uses(a) { return a == 1 || true; }\n    match /c_int_exponent_literal/{doc} {\n      allow get: if 1e3 == 1000.0;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_int_exponent_literal/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L11:22 Unexpected 'e3'."
+   }
+  },
+  {
+   "id": "aruma/errors/int_max_plus_one_or_true",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "(9223372036854775807 + 1 < 0) || true",
+   "expression": "(9223372036854775807 + 1 < 0) || true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_int_max_plus_one_or_true/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/int_max_times_two",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "9223372036854775807 * 2 < 0",
+   "expression": "9223372036854775807 * 2 < 0",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_int_max_times_two/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [35], column [41]. Integer value is out of the [-9223372036854775808, 9223372036854775807] range."
+   }
+  },
+  {
+   "id": "aruma/errors/int_min_negate",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "-(-9223372036854775807 - 1) < 0",
+   "expression": "-(-9223372036854775807 - 1) < 0",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_int_min_negate/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [38], column [21]. Integer value is out of the [-9223372036854775808, 9223372036854775807] range."
+   }
+  },
+  {
+   "id": "aruma/errors/int_max_literal",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "9223372036854775807 > 0",
+   "expression": "9223372036854775807 > 0",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_int_max_literal/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/int_min_literal",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "-9223372036854775808 < 0",
+   "expression": "-9223372036854775808 < 0",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_int_min_literal/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/err_stmt_then_true_stmt",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "two statements on one match: the first errors, the second allows",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /two/{doc} {\n      allow get: if resource.data.missing == 1;\n      allow get: if true;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/two/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/err_match_then_true_match",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:45:54.245Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "two match blocks for the same path: one errors, the other allows",
+   "ruleset": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /two/{doc} {\n      allow get: if resource.data.missing == 1;\n    }\n    match /{coll}/{doc} {\n      allow read: if coll == 'two';\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/two/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  }
+ ]
+}

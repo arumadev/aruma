@@ -1,0 +1,446 @@
+{
+ "topic": "strings",
+ "set": "heldout",
+ "recordedAt": "2026-10-23T21:43:28.878Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "fb14660c5726e025d9489650772a60a83d0a4fa42de39a2d090949bc66d880a7",
+        "bytes": 1697
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_size_e_acute/doc",
+      "/databases/(default)/documents/c_matches_anchors/doc",
+      "/databases/(default)/documents/c_matches_case_flag/doc",
+      "/databases/(default)/documents/c_matches_digit_one_backslash/doc",
+      "/databases/(default)/documents/c_matches_unicode_class/doc",
+      "/databases/(default)/documents/c_matches_dot_e_acute/doc",
+      "/databases/(default)/documents/c_matches_named_group/doc",
+      "/databases/(default)/documents/c_split_dot_is_regex_empty/doc",
+      "/databases/(default)/documents/c_split_escaped_dot/doc",
+      "/databases/(default)/documents/c_lower_ascii/doc",
+      "/databases/(default)/documents/c_trim_spaces/doc",
+      "/databases/(default)/documents/c_trim_ideographic_space/doc",
+      "/databases/(default)/documents/c_index_negative/doc",
+      "/databases/(default)/documents/c_compare_case/doc",
+      "/databases/(default)/documents/c_string_of_large_float/doc",
+      "/databases/(default)/documents/c_int_truncates/doc",
+      "/databases/(default)/documents/c_escape_octal/doc",
+      "/databases/(default)/documents/c_string_times_int/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 14,
+       "column": 37,
+       "currentOffset": 429,
+       "endOffset": 429
+      },
+      "description": "Missing a closing '",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 14,
+       "column": 37,
+       "currentOffset": 429,
+       "endOffset": 429
+      },
+      "description": "mismatched input 'd' expecting {'&&', ',', '.', '==', '>', '>=', '[', '<', '<=', '-', '%', '!=', '||', '+', ')', '/', '*', '?', 'in', 'is'}",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 15,
+       "column": 5,
+       "currentOffset": 439,
+       "endOffset": 439
+      },
+      "description": "Missing a closing '",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "f7d94d4a877d5f2b9bf9505283d110a7793609abbbbf3f947d2219b5722b1e38",
+        "bytes": 1600
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_size_e_acute/doc",
+      "/databases/(default)/documents/c_matches_anchors/doc",
+      "/databases/(default)/documents/c_matches_case_flag/doc",
+      "/databases/(default)/documents/c_matches_unicode_class/doc",
+      "/databases/(default)/documents/c_matches_dot_e_acute/doc",
+      "/databases/(default)/documents/c_matches_named_group/doc",
+      "/databases/(default)/documents/c_split_dot_is_regex_empty/doc",
+      "/databases/(default)/documents/c_split_escaped_dot/doc",
+      "/databases/(default)/documents/c_lower_ascii/doc",
+      "/databases/(default)/documents/c_trim_spaces/doc",
+      "/databases/(default)/documents/c_trim_ideographic_space/doc",
+      "/databases/(default)/documents/c_index_negative/doc",
+      "/databases/(default)/documents/c_compare_case/doc",
+      "/databases/(default)/documents/c_string_of_large_float/doc",
+      "/databases/(default)/documents/c_int_truncates/doc",
+      "/databases/(default)/documents/c_escape_octal/doc",
+      "/databases/(default)/documents/c_string_times_int/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 53,
+       "column": 21,
+       "currentOffset": 1565,
+       "endOffset": 1568
+      },
+      "description": "Invalid type. Received one of [string]. Expected one of [int, float].",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 53,
+       "column": 30,
+       "currentOffset": 1574,
+       "endOffset": 1575
+      },
+      "description": "The sub-expressions are not comparable, so this comparison will always return false.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 143,
+         "endOffset": 145
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 223,
+         "endOffset": 227
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 11,
+         "column": 21,
+         "currentOffset": 312,
+         "endOffset": 316
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 14,
+         "column": 21,
+         "currentOffset": 407,
+         "endOffset": 409
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 17,
+         "column": 21,
+         "currentOffset": 497,
+         "endOffset": 499
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 20,
+         "column": 21,
+         "currentOffset": 582,
+         "endOffset": 585
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 23,
+         "column": 21,
+         "currentOffset": 681,
+         "endOffset": 685
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 26,
+         "column": 21,
+         "currentOffset": 770,
+         "endOffset": 774
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 29,
+         "column": 21,
+         "currentOffset": 863,
+         "endOffset": 867
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 32,
+         "column": 21,
+         "currentOffset": 946,
+         "endOffset": 952
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 35,
+         "column": 21,
+         "currentOffset": 1039,
+         "endOffset": 1047
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [38], column [21]. Index out of bound error. Index: [-1] , size: [3]."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 38,
+       "column": 21,
+       "currentOffset": 1126,
+       "endOffset": 1130
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 41,
+         "column": 21,
+         "currentOffset": 1204,
+         "endOffset": 1206
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 44,
+         "column": 21,
+         "currentOffset": 1284,
+         "endOffset": 1289
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 47,
+         "column": 21,
+         "currentOffset": 1392,
+         "endOffset": 1394
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 50,
+         "column": 21,
+         "currentOffset": 1486,
+         "endOffset": 1491
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [53], column [26]. Unsupported operation error. Received: string * int. Expected: int * int, float * float."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 53,
+       "column": 26,
+       "currentOffset": 1570,
+       "endOffset": 1570
+      }
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "matches_digit_one_backslash",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "a09519b47d80e8d3c8a08a4fd0abf1c7adf3e4858ee339a7f0a736fa78e34286",
+        "bytes": 192
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_matches_digit_one_backslash/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 37,
+       "currentOffset": 174,
+       "endOffset": 174
+      },
+      "description": "Missing a closing '",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 37,
+       "currentOffset": 174,
+       "endOffset": 174
+      },
+      "description": "mismatched input 'd' expecting {'&&', ',', '.', '==', '>', '>=', '[', '<', '<=', '-', '%', '!=', '||', '+', ')', '/', '*', '?', 'in', 'is'}",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 6,
+       "column": 5,
+       "currentOffset": 184,
+       "endOffset": 184
+      },
+      "description": "Missing a closing '",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  }
+ ]
+}
