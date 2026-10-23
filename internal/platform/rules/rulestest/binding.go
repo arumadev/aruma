@@ -719,3 +719,9 @@ func (b *binder) emulatorDocuments() (*MemoryDocuments, error) {
 	}
 	return docs, nil
 }
+
+// TestAPIValue converts JSON as the Test API reads a request or a resource (see Build).
+func TestAPIValue(raw []byte) (rules.Value, error) {
+	b := &binder{c: &Case{}}
+	return b.testAPIField(Field{raw: raw})
+}

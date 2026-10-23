@@ -19,7 +19,7 @@ func Exclusion(c *Case) string {
 	case c.Expected.Outcome == Fact:
 		return "not a decision: a value observed on deployed Storage"
 	case c.Skip != "":
-		return "not run on the emulator: " + c.Skip
+		return "not run on the emulator: " + firstLine(c.Skip)
 	case c.Ruleset == "":
 		return "no ruleset: " + c.NoRuleset
 	case c.Request == nil:
