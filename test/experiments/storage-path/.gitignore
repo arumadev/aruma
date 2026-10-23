@@ -1,0 +1,23 @@
+# Run outputs: the stub's log, results, throwaway keys and certificates.
+.generated/
+# Android and iOS build outputs.
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/google-services.json
+ios/.generated/
+android/app/src/main/res/raw/
+ios/StoragePath.xcodeproj/
+# Flutter: platform folders and files `flutter create` makes on every run (flutter.sh).
+flutter/android/
+flutter/.dart_tool/
+flutter/build/
+flutter/test/
+flutter/.metadata
+flutter/.gitignore
+flutter/README.md
+flutter/analysis_options.yaml
+flutter/*.iml
+flutter/.idea/
+flutter/.flutter-plugins*

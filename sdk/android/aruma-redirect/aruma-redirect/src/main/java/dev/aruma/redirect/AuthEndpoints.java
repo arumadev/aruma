@@ -17,6 +17,9 @@ final class AuthEndpoints {
     static final String SECURE_TOKEN_HOST = "securetoken.googleapis.com";
     static final String LEGACY_HOST = "www.googleapis.com";
     static final String LEGACY_PATH_PREFIX = "/identitytoolkit/v3/relyingparty/";
+    /** SPIKE (S0-B, docs/research/storage-production-path.md): Cloud Storage for Firebase, off by default. */
+    static final String STORAGE_HOST = "firebasestorage.googleapis.com";
+    static volatile boolean storageSpike;
 
     private AuthEndpoints() {}
 
@@ -44,6 +47,11 @@ final class AuthEndpoints {
                 break;
             case LEGACY_HOST:
                 if (!path.startsWith(LEGACY_PATH_PREFIX)) {
+                    return null;
+                }
+                break;
+            case STORAGE_HOST:
+                if (!storageSpike) {
                     return null;
                 }
                 break;

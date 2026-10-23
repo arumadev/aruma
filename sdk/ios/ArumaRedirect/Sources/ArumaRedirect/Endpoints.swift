@@ -59,6 +59,14 @@ enum AuthEndpoints {
   static let secureTokenHost = "securetoken.googleapis.com"
   static let legacyHost = "www.googleapis.com"
   static let legacyPathPrefix = "/identitytoolkit/v3/relyingparty/"
+  /// SPIKE (S0-B, docs/research/storage-production-path.md): Cloud Storage for Firebase, off by default.
+  static let storageHost = "firebasestorage.googleapis.com"
+  private static let spikeLock = NSLock()
+  private static var _storageSpike = false
+  static var storageSpike: Bool {
+    get { spikeLock.lock(); defer { spikeLock.unlock() }; return _storageSpike }
+    set { spikeLock.lock(); _storageSpike = newValue; spikeLock.unlock() }
+  }
 
   /// True for a production Auth request: https on the default port to one of the three families.
   static func matches(_ url: URL) -> Bool {
@@ -90,6 +98,8 @@ enum AuthEndpoints {
       break
     case legacyHost:
       guard path.hasPrefix(legacyPathPrefix) else { return nil }
+    case storageHost:
+      guard storageSpike else { return nil }
     default:
       return nil
     }
