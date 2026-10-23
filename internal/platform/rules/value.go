@@ -65,7 +65,11 @@ func (k Kind) String() string {
 // Value is a value of the rules language. Values are immutable: constructors that take a slice
 // or a map take ownership of it, and readers that return one return the value's own, which the
 // caller must not change. The zero Value is not a value: every operation on it is an error.
+//
+// Values cannot be compared with ==, which would panic on a list or a map: the language's four
+// equality relations are functions of their own (equal.go).
 type Value struct {
+	_    [0]func()
 	kind Kind
 	// x holds the kind's data:
 	//
@@ -210,8 +214,17 @@ func (v Value) AsDuration() (time.Duration, bool) {
 	if !ok || v.kind != KindDuration {
 		return 0, false
 	}
-	const maxSeconds = math.MaxInt64 / int64(time.Second)
-	if d.seconds > maxSeconds || d.seconds < -maxSeconds {
+	// time.Duration spans MinInt64 to MaxInt64 nanoseconds: whole seconds up to maxSeconds, and
+	// at ±maxSeconds only the nanoseconds left over.
+	const (
+		maxSeconds = math.MaxInt64 / int64(time.Second)
+		maxNanos   = math.MaxInt64 % int64(time.Second) // 854775807
+		minNanos   = math.MinInt64 % int64(time.Second) // -854775808
+	)
+	switch {
+	case d.seconds > maxSeconds || d.seconds < -maxSeconds,
+		d.seconds == maxSeconds && int64(d.nanos) > maxNanos,
+		d.seconds == -maxSeconds && int64(d.nanos) < minNanos:
 		return 0, false
 	}
 	return time.Duration(d.seconds)*time.Second + time.Duration(d.nanos), true

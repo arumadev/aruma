@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 )
 
 // Severity is how grave an issue is. Only an error stops a file from compiling.
@@ -83,8 +84,25 @@ const (
 	msgFunctionNotFound = "Function not found error: Name: [%s]."
 )
 
-// position converts a span of byte offsets in src to the Position an issue reports.
-// S1-A replaces this stub.
+// position converts a span of byte offsets in src to the Position an issue reports. Lines end at
+// "\n"; columns and offsets count code points, as the emulator does (ADR-021 §2.1). Offsets
+// outside src are clamped to it.
+//
+// This is the contract's provisional version, so that S1-C's tests have positions before S1-A
+// merges: S1-A replaces it (CRLF, the unit production uses) and owns its tests.
 func position(src string, at span) Position {
-	panic("S1-A: position")
+	clamp := func(off int) int { return min(max(off, 0), len(src)) }
+	start, end := clamp(at.start), clamp(at.end)
+	end = max(end, start)
+	p := Position{Line: 1, Column: 1}
+	for _, r := range src[:start] {
+		p.CurrentOffset++
+		if r == '\n' {
+			p.Line, p.Column = p.Line+1, 1
+		} else {
+			p.Column++
+		}
+	}
+	p.EndOffset = p.CurrentOffset + utf8.RuneCountInString(src[start:end])
+	return p
 }

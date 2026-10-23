@@ -35,12 +35,11 @@ func (NoDocuments) Get(context.Context, int64, []string, bool) (Value, bool, err
 // each evaluation's own (meter).
 //
 // A lookup answered from the cache does not count ("cached calls do not count"). get() and
-// exists() on the same path in the same state are one lookup. Each evaluation counts its own
-// lookups against perOperation; the budget counts the request's against perRequest.
+// exists() on the same path in the same state are one lookup. The limits are not the budget's:
+// Evaluate takes them from the ruleset (lookupLimits), so a budget made for one service cannot
+// give another service's limits. Each evaluation counts its own lookups against the operation's
+// limit; the budget counts the request's against the request's.
 type Budget struct {
-	perOperation int // Firestore 10; Storage 2
-	perRequest   int // Firestore 20; Storage 2, its requests being single operations
-
 	mu    sync.Mutex
 	used  int // lookups the request has made, cached ones excluded
 	cache map[lookupKey]lookupResult
@@ -58,14 +57,20 @@ type lookupResult struct {
 	found bool
 }
 
-// NewBudget returns an empty budget for one request to svc, with the lookup limits of lim.
-func NewBudget(svc Service, lim Limits) *Budget {
-	b := &Budget{cache: map[lookupKey]lookupResult{}}
+// NewBudget returns an empty budget for one request.
+func NewBudget() *Budget {
+	return &Budget{cache: map[lookupKey]lookupResult{}}
+}
+
+// lookupLimits returns the lookups one operation and one request of svc may make: in Firestore
+// 10 and 20; in Storage 2 for both, its requests being single operations ("No more than two
+// Firestore documents may be accessed in a single Rules evaluation"); none in any other.
+func lookupLimits(svc Service, lim *Limits) (perOperation, perRequest int) {
 	switch svc {
 	case Firestore:
-		b.perOperation, b.perRequest = lim.LookupsPerOperation, lim.LookupsPerRequest
+		return lim.LookupsPerOperation, lim.LookupsPerRequest
 	case Storage:
-		b.perOperation, b.perRequest = lim.StorageLookups, lim.StorageLookups
+		return lim.StorageLookups, lim.StorageLookups
 	}
-	return b
+	return 0, 0
 }

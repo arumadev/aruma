@@ -10,6 +10,10 @@ type regexCache struct {
 	mu sync.Mutex
 }
 
+// literalBytes estimates the bytes of the literal patterns' programs, which a ruleset's weight
+// counts. S1-B replaces this provisional answer, which is right while no program is kept.
+func (rx *regexCache) literalBytes() int64 { return 0 }
+
 // newRegexCache returns an empty cache bounded by lim.
 func newRegexCache(lim *Limits) *regexCache {
 	return &regexCache{}

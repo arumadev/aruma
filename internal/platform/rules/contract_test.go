@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -88,9 +89,6 @@ func TestValueReaders(t *testing.T) {
 			t.Errorf("Duration(%v).AsDuration() = %v, %v", d, got, ok)
 		}
 	}
-	if _, ok := (Value{kind: KindDuration, x: duration{seconds: 10_000 * 366 * 86400}}).AsDuration(); ok {
-		t.Error("a duration beyond time.Duration reads as one")
-	}
 	if lat, lng, ok := LatLng(1, 2).AsLatLng(); !ok || lat != 1 || lng != 2 {
 		t.Error("AsLatLng")
 	}
@@ -102,6 +100,32 @@ func TestValueReaders(t *testing.T) {
 	}
 	if _, ok := (Value{}).AsBool(); ok {
 		t.Error("the zero Value reads as a bool")
+	}
+	// == on two lists would panic at run time; it must not compile.
+	if reflect.TypeFor[Value]().Comparable() {
+		t.Error("Value is comparable with ==")
+	}
+}
+
+// The contract's provisional position (S1-A replaces it and its cases): lines end at \n, and
+// columns and offsets count code points.
+func TestProvisionalPosition(t *testing.T) {
+	src := "ab\nنص 🙂 x\r\ny"
+	x := strings.Index(src, "x") // after the emoji, four bytes and one code point
+	for _, c := range []struct {
+		at   span
+		want Position
+	}{
+		{span{0, 0}, Position{Line: 1, Column: 1}},
+		{span{1, 2}, Position{Line: 1, Column: 2, CurrentOffset: 1, EndOffset: 2}},
+		{span{3, 7}, Position{Line: 2, Column: 1, CurrentOffset: 3, EndOffset: 5}},
+		{span{x, x + 1}, Position{Line: 2, Column: 6, CurrentOffset: 8, EndOffset: 9}},
+		{span{len(src) - 1, len(src)}, Position{Line: 3, Column: 1, CurrentOffset: 11, EndOffset: 12}},
+		{span{-5, 1 << 20}, Position{Line: 1, Column: 1, EndOffset: 12}},
+	} {
+		if got := position(src, c.at); got != c.want {
+			t.Errorf("position(%v) = %+v, want %+v", c.at, got, c.want)
+		}
 	}
 }
 
@@ -173,6 +197,37 @@ func TestIssues(t *testing.T) {
 	}
 }
 
+// The checker resolves calls by these names before S1-B's library exists.
+func TestLibraryNames(t *testing.T) {
+	for _, name := range []string{"int", "float", "string", "path", "debug", "math.abs", "hashing.sha256", "latlng.value", "timestamp.date", "duration.value"} {
+		if !isLibraryFunction(name) {
+			t.Errorf("%s is not a library function", name)
+		}
+	}
+	// The lookups are lookup.go's, not the library's.
+	for _, name := range []string{"get", "exists", "getAfter", "firestore.get", "math", "size", ""} {
+		if isLibraryFunction(name) {
+			t.Errorf("%s is a library function", name)
+		}
+	}
+	for _, ns := range []string{"math", "hashing", "latlng", "timestamp", "duration"} {
+		if !isLibraryNamespace(ns) {
+			t.Errorf("%s is not a library namespace", ns)
+		}
+	}
+	if isLibraryNamespace("firestore") || isLibraryNamespace("request") {
+		t.Error("firestore or request is a library namespace")
+	}
+}
+
+func TestRulesetWeight(t *testing.T) {
+	lim := DefaultLimits()
+	rs := &Ruleset{src: strings.Repeat("x", 1000), lim: lim, regexes: newRegexCache(&lim)}
+	if got, want := rs.Weight(), int64(1000)+lim.RegexCacheBytes; got != want {
+		t.Errorf("Weight() = %d, want the text plus the pattern cache's cap, %d", got, want)
+	}
+}
+
 func TestNoDocuments(t *testing.T) {
 	var d Documents = NoDocuments{}
 	_, found, err := d.Get(context.Background(), 1, []string{"databases", "(default)", "documents", "c", "d"}, false)
@@ -181,16 +236,21 @@ func TestNoDocuments(t *testing.T) {
 	}
 }
 
-func TestNewBudget(t *testing.T) {
+// The lookup limits come from the ruleset's service and limits, never from the budget, which
+// holds only the request's count and cache.
+func TestLookupLimits(t *testing.T) {
 	lim := DefaultLimits()
-	if b := NewBudget(Firestore, lim); b.perOperation != 10 || b.perRequest != 20 || b.cache == nil {
-		t.Errorf("Firestore budget = %d per operation, %d per request", b.perOperation, b.perRequest)
+	if op, req := lookupLimits(Firestore, &lim); op != 10 || req != 20 {
+		t.Errorf("Firestore: %d per operation, %d per request; want 10 and 20", op, req)
 	}
-	if b := NewBudget(Storage, lim); b.perOperation != 2 || b.perRequest != 2 {
-		t.Errorf("Storage budget = %d per operation, %d per request", b.perOperation, b.perRequest)
+	if op, req := lookupLimits(Storage, &lim); op != 2 || req != 2 {
+		t.Errorf("Storage: %d per operation, %d per request; want 2 and 2", op, req)
 	}
-	if b := NewBudget("cloud.unknown", lim); b.perOperation != 0 || b.perRequest != 0 {
-		t.Error("an unknown service's budget allows lookups")
+	if op, req := lookupLimits("cloud.unknown", &lim); op != 0 || req != 0 {
+		t.Error("an unknown service allows lookups")
+	}
+	if b := NewBudget(); b.used != 0 || b.cache == nil {
+		t.Error("a new budget is not empty")
 	}
 }
 

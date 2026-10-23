@@ -46,6 +46,17 @@ func (rs *Ruleset) Version() int { return rs.version }
 // Service returns the service the ruleset was compiled for.
 func (rs *Ruleset) Service() Service { return rs.service }
 
+// Weight estimates the bytes the ruleset holds, for tenancy's cache of compiled rulesets, which
+// is bounded by weight rather than count (ADR-021 §4, §7): its text, the programs of its literal
+// patterns, and the cap of its cache of patterns built during evaluation, which it may fill.
+func (rs *Ruleset) Weight() int64 {
+	w := int64(len(rs.src)) + rs.lim.RegexCacheBytes
+	if rs.regexes != nil {
+		w += rs.regexes.literalBytes()
+	}
+	return w
+}
+
 // Method is what a request does, as allow statements name it. read covers Get and List; write
 // covers Create, Update and Delete.
 type Method uint8
@@ -132,7 +143,7 @@ type Request struct {
 	Path      []Segment        // what the match blocks see, from the service root
 	Variables map[string]Value // "request" and "resource", built by the service
 	Documents Documents        // required; rules.NoDocuments{} where Firestore cannot be read
-	Budget    *Budget          // Firebase's lookup limits and cache, one per request, shared by a batch
+	Budget    *Budget          // the request's lookup count and cache, one per request, shared by a batch
 	Inflight  *Inflight        // required; the process-wide cap on evaluation memory, made once by app
 	Trace     TraceLevel       // TraceNone or TraceStatements; TraceExpressions is reserved for :test (S5)
 }
