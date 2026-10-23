@@ -68,7 +68,13 @@ func syntaxShape(e expr) string {
 	case *indexExpr:
 		return syntaxShape(e.x) + "[" + syntaxShape(e.i) + "]"
 	case *sliceExpr:
-		return syntaxShape(e.x) + "[" + syntaxShape(e.lo) + ":" + syntaxShape(e.hi) + "]"
+		bound := func(b expr) string {
+			if b == nil {
+				return ""
+			}
+			return syntaxShape(b)
+		}
+		return syntaxShape(e.x) + "[" + bound(e.lo) + ":" + bound(e.hi) + "]"
 	case *callExpr:
 		var args []string
 		for _, a := range e.args {
@@ -171,6 +177,11 @@ func TestParsePrimaries(t *testing.T) {
 		{"{'a': [1, {}], 'b': null,} != {}", `({"a": [1, {}], "b": null} != {})`},
 		{"{1: 2}[1] == 2", "({1: 2}[1] == 2)"},
 		{"'abc'[1:2] == 'b'", `("abc"[1:2] == "b")`},
+		// Bounds may be left out (production compiles all of these).
+		{"'abc'[:2] == 'ab'", `("abc"[:2] == "ab")`},
+		{"'abc'[1:] == 'bc'", `("abc"[1:] == "bc")`},
+		{"'abc'[:] == 'abc'", `("abc"[:] == "abc")`},
+		{"[1,2,3][:2] == [1,2]", "([1, 2, 3][:2] == [1, 2])"},
 		{"a[b][c:d][e]", "a[b][c:d][e]"},
 		{"get(/a/b).data.x", "get(/a/b).data.x"},
 		{"f() && g(1, 2,) && h(1)", "((f() && g(1, 2)) && h(1))"},
@@ -420,6 +431,18 @@ func TestParseErrors(t *testing.T) {
 			"L5:31 mismatched input ';' expecting {'--', '++', '{', '[', '(', '-', '!', '/', 'false', 'null', 'true', PATH_SEGMENT, IDENTIFIER, NUM_INT, NUM_FLOAT, UNPAIRED_DOUBLE_QUOTE, UNPAIRED_SINGLE_QUOTE, STRING, BYTES}", true},
 		{"comment before an error", syntaxInMatch("allow read: /* نص 🙂 */ true;"), "L5:30 Missing 'if' before conditional expression.", false},
 		{"CRLF", strings.ReplaceAll(syntaxInMatch("allow read: true;"), "\n", "\r\n"), "L5:19 Missing 'if' before conditional expression.", false},
+		{"bytes with a \\u escape", syntaxInMatch(`allow read: if b'\u00ff' == b'\xff' && B"\u0041" == b'A';`),
+			"L5:22 Invalid bytes literal b'\\u00ff'.\nL5:46 Invalid bytes literal B\"\\u0041\".", false},
+		{"slice without a colon's operand", syntaxInMatch("allow read: if 'abc'[] == 'a';"), "L5:28 Unexpected ']'.", true},
+		{"slice with two colons", syntaxInMatch("allow read: if 'abc'[1:2:3] == 'a';"), "L5:31 Unexpected ':'.", true},
+		// A path segment after a complete operand inside brackets is a match path without its
+		// keyword (production, int64_min_negate_div).
+		{"segment in parentheses", syntaxInMatch("allow read: if ((-9223372036854775808)/-1) == ((-9223372036854775808)/-1);"),
+			"L5:45 Missing 'match' keyword before path.\nL5:45 Unexpected '/-1'.\nL5:48 mismatched input ')' expecting {'{', '/', PATH_SEGMENT}\nL5:76 Missing 'match' keyword before path.\nL5:79 mismatched input ')' expecting {'{', '/', PATH_SEGMENT}", true},
+		// An extraneous token before a closing one ends the statement: production reports the
+		// repeated one once (cel self_eval_int_hex).
+		{"extraneous token in parentheses", syntaxInMatch("allow read: if (0x1) == (0x1);"), "L5:24 Unexpected 'x1'.", true},
+		{"function without a brace", "service s {\n  function f() return true;\n  match /a { allow read; }\n}\n", "L2:16 mismatched input 'return' expecting '{'", true},
 		{"numbers out of range", syntaxInMatch("allow read: if 9223372036854775808 + -(9223372036854775808) + 9223372036854775807 + -9223372036854775808 == 0;"),
 			"L5:22 Invalid number literal 9223372036854775808.\nL5:46 Invalid number literal 9223372036854775808.", false},
 	} {
@@ -434,6 +457,45 @@ func TestParseErrors(t *testing.T) {
 			if i.Severity != SeverityError || i.File != "t.rules" {
 				t.Errorf("%s: issue %+v", c.name, i)
 			}
+		}
+	}
+}
+
+// -1 is the negation of a literal, never a negative literal: it counts two toward the limits
+// (production allows neg_498 and denies neg_499). Only -9223372036854775808, whose operand
+// does not fit, is one literal.
+func TestParseNegationOfALiteral(t *testing.T) {
+	for _, c := range []struct{ cond, want string }{
+		{"-1", "(-1)"},
+		{"- 1.5", "(-1.5f)"},
+		{"-(1)", "(-1)"},
+		{"-x", "(-x)"},
+		{"-[1][0]", "(-[1][0])"},
+	} {
+		e := syntaxCond(t, c.cond)
+		u, ok := e.(*unaryExpr)
+		if !ok || u.op != tokMinus || syntaxShape(e) != c.want {
+			t.Errorf("%s: %T %s, want a negation %s", c.cond, e, syntaxShape(e), c.want)
+		}
+	}
+	if lit, ok := syntaxCond(t, "-9223372036854775808").(*litExpr); !ok || lit.val.Kind() != KindInt {
+		t.Error("-9223372036854775808 is not one literal")
+	}
+}
+
+// A chain of member accesses at the limit is reported once, at its start (production:
+// aruma/limits/and_field_100).
+func TestParseNestingReportsAChainOnce(t *testing.T) {
+	for _, c := range []struct{ first, want string }{
+		{"resource.data.n.m", "L5:22 " + msgTooComplex + "\nL5:43 " + msgTooComplex},
+		{"resource.data.n.m()", "L5:22 " + msgTooComplex + "\nL5:45 " + msgTooComplex},
+		{"(resource.data).n[0]", "L5:23 " + msgTooComplex + "\nL5:46 " + msgTooComplex},
+	} {
+		// 100 terms: the first two are at depth 99.
+		cond := c.first + strings.Repeat(" && true", 99)
+		_, issues := parse("t.rules", syntaxInMatch("allow read: if "+cond+";"), DefaultLimits())
+		if got := syntaxIssues(issues); got != c.want {
+			t.Errorf("%s: got %q, want %q", c.first, got, c.want)
 		}
 	}
 }

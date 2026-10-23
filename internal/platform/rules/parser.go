@@ -28,7 +28,10 @@ import (
 //     one.
 //
 // Lines after the first error do not always match the compiler's, which depend on ANTLR's
-// prediction; the first error does in every case hidane recorded.
+// prediction, and neither does the first line in a few cases: against production and hidane's
+// emulator cases, every file compiles or fails as recorded, and 94% of the error lists match
+// line for line (S1-A review). A known first-line difference: an error inside a map inside
+// parentheses, which the compiler reports at the operator before the map ("Unexpected '=='.").
 //
 // The precedence of operators is production's, which differs from the documentation's table
 // (Rules Test API probes, S1-A review): from the tightest, a[i] a() a.f, then ! -, then * / %,
@@ -64,6 +67,7 @@ const (
 	msgImport            = "Import statements are not allowed."
 	msgImportModule      = `Module "%s" is not part of the standard library.`
 	msgInvalidNumber     = "Invalid number literal %s."
+	msgInvalidBytes      = "Invalid bytes literal %s."
 	msgTokenRecognition  = "token recognition error at: '%s'"
 	expectExpression     = "{'--', '++', '{', '[', '(', '-', '!', '/', 'false', 'null', 'true', PATH_SEGMENT, IDENTIFIER, NUM_INT, NUM_FLOAT, UNPAIRED_DOUBLE_QUOTE, UNPAIRED_SINGLE_QUOTE, STRING, BYTES}"
 	expectNegated        = "{'{', '[', '(', '/', 'false', 'null', 'true', PATH_SEGMENT, IDENTIFIER, NUM_INT, NUM_FLOAT, UNPAIRED_DOUBLE_QUOTE, UNPAIRED_SINGLE_QUOTE, STRING, BYTES}"
@@ -930,7 +934,7 @@ func (p *parser) function(pl *place) *function {
 		}
 	}
 	if p.la(1) != tkLBrace {
-		p.noViable(1)
+		p.mismatch(1, tkLBrace.display())
 		p.skipUntil(stops)
 		return nil
 	}
@@ -1251,36 +1255,55 @@ func (p *parser) postfix() expr {
 			}
 			continue
 		}
+		// x[i], or a slice x[lo:hi] whose bounds may be left out: x[:2], x[1:], x[:] (production
+		// compiles all three).
 		p.bump()
 		p.nesting++
-		i := p.operand(p.expression)
-		var hi expr
-		if p.la(1) == tkColon && !p.abort {
+		var lo, hi expr
+		if p.la(1) != tkColon {
+			lo = p.operand(p.expression)
+		}
+		slice := p.la(1) == tkColon && !p.abort
+		if slice {
 			p.bump()
-			hi = p.operand(p.expression)
+			if p.la(1) != tkRBrack {
+				hi = p.operand(p.expression)
+			}
 		}
 		p.close(tkRBrack)
 		p.nesting--
-		if hi != nil {
-			x = &sliceExpr{span: p.from(start), x: x, lo: i, hi: hi}
+		if slice {
+			x = &sliceExpr{span: p.from(start), x: x, lo: lo, hi: hi}
 		} else {
-			x = &indexExpr{span: p.from(start), x: x, i: i}
+			x = &indexExpr{span: p.from(start), x: x, i: lo}
 		}
 	}
 	return x
 }
 
 // close matches a closing token: an extraneous token before it is deleted; otherwise its
-// absence is "Unexpected" (ANTLR finds no viable alternative there).
+// absence is "Unexpected" (ANTLR finds no viable alternative there). A path segment after a
+// complete operand is read as a match path without its keyword, as the compiler does:
+// "((x)/-1)" is "Missing 'match' keyword before path.", the segment unexpected and a mismatch
+// at the token after it.
 func (p *parser) close(want tk) {
 	switch {
 	case p.abort:
+	case p.la(1) == tkSegment:
+		p.missingMatch(p.tok(1).span)
+		p.unexpected(1)
+		p.skip()
+		p.mismatch(1, expectPathNext)
+		p.abort = true
 	case p.la(1) == want:
 		p.bump()
 	case p.la(1) != tkEOF && p.la(2) == want:
+		// Production then reports nothing more in the statement: "(0x1) == (0x1)" has one
+		// "Unexpected 'x1'.".
 		p.unexpected(1)
 		p.skip()
 		p.bump()
+		p.abort = true
 	default:
 		p.noViable(1)
 	}
@@ -1330,6 +1353,9 @@ func (p *parser) primary() expr {
 		return &litExpr{span: t.span, val: String(lexUnquote(p.text(t)))}
 	case tkBytes:
 		p.bump()
+		if lexBytesHasU(p.text(t)) {
+			p.late = append(p.late, finding{t.span, fmt.Sprintf(msgInvalidBytes, p.text(t))})
+		}
 		return &litExpr{span: t.span, val: Bytes([]byte(lexUnquote(p.text(t))))}
 	case tkUnpairedSingle, tkUnpairedDouble:
 		p.bump()
@@ -1456,8 +1482,11 @@ func (p *parser) checkDepth(root expr) {
 		e       expr
 		level   int
 		negated bool
+		// covered is an accessed value or a receiver whose parent is reported at the same
+		// depth: production reports the chain once (oracle and_field_100).
+		covered bool
 	}
-	stack := []item{{root, 0, false}}
+	stack := []item{{e: root}}
 	for len(stack) > 0 {
 		it := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
@@ -1467,12 +1496,13 @@ func (p *parser) checkDepth(root expr) {
 		}
 		level := it.level
 		for _, at := range parens {
-			if level == limit {
+			if level == limit && !it.covered {
 				p.late = append(p.late, finding{at, msgTooComplex})
 			}
 			level++
 		}
-		if level == limit {
+		reported := level == limit && !it.covered
+		if reported {
 			p.late = append(p.late, finding{it.e.pos(), msgTooComplex})
 		}
 		if level > limit {
@@ -1483,11 +1513,13 @@ func (p *parser) checkDepth(root expr) {
 		deeper := func(es ...expr) {
 			for _, e := range es {
 				if e != nil {
-					children = append(children, item{e, level + 1, false})
+					children = append(children, item{e: e, level: level + 1})
 				}
 			}
 		}
-		same := func(e expr) { children = append(children, item{e, level, false}) }
+		same := func(e expr) {
+			children = append(children, item{e: e, level: level, covered: level == limit && (reported || it.covered)})
+		}
 		switch e := it.e.(type) {
 		case *listExpr:
 			deeper(e.elems...)
@@ -1515,7 +1547,7 @@ func (p *parser) checkDepth(root expr) {
 			}
 			deeper(e.args...)
 		case *unaryExpr:
-			children = append(children, item{e.x, level + 1, e.op == tokMinus})
+			children = append(children, item{e: e.x, level: level + 1, negated: e.op == tokMinus})
 		case *binaryExpr:
 			deeper(e.x, e.y)
 		case *isExpr:
