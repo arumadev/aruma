@@ -95,7 +95,9 @@ func (c *Case) Build(inflight *rules.Inflight) (rules.File, *rules.Request, erro
 	if !strings.HasPrefix(c.Request.Path, "/") {
 		return file, nil, notExpressible("the request path %q is not absolute", c.Request.Path)
 	}
-	b := &binder{c: c}
+	// The Test API read the whole request as written, raw numbers included; the emulator
+	// recorder wrote them into the documents' data alone (record-emulator.mjs, applyRaw).
+	b := &binder{c: c, raw: c.Provenance != Emulator}
 	var (
 		vars map[string]rules.Value
 		docs *MemoryDocuments
@@ -104,7 +106,7 @@ func (c *Case) Build(inflight *rules.Inflight) (rules.File, *rules.Request, erro
 	if c.Provenance == Emulator {
 		vars, err = b.emulatorVariables()
 		if err == nil {
-			docs, err = b.emulatorDocuments()
+			docs, err = b.emulatorDocuments(vars)
 		}
 	} else {
 		vars, err = b.testAPIVariables()
@@ -128,7 +130,10 @@ func (c *Case) Build(inflight *rules.Inflight) (rules.File, *rules.Request, erro
 	return file, req, nil
 }
 
-type binder struct{ c *Case }
+type binder struct {
+	c   *Case
+	raw bool // apply the case's raw numbers: where the source read them as written
+}
 
 // decode reads a field's JSON, keeping numbers as their text.
 func (b *binder) decode(f Field) (any, error) {
@@ -144,7 +149,7 @@ func (b *binder) decode(f Field) (any, error) {
 // numberText returns the text a number had in the request: the case's raw text for a
 // placeholder, else the JSON's own.
 func (b *binder) numberText(n json.Number) (text string, raw bool) {
-	if t, ok := b.c.RawNumbers[n.String()]; ok {
+	if t, ok := b.c.RawNumbers[n.String()]; ok && b.raw {
 		return t, true
 	}
 	return n.String(), false
@@ -496,8 +501,12 @@ func restFields(fields map[string]any) (rules.Value, error) {
 	return rules.Map(out), nil
 }
 
-// emulatorData converts a document's data, written as the case's encoding writes it.
-func (b *binder) emulatorData(v any) (rules.Value, error) {
+// emulatorData converts a document's data, written as the case's encoding writes it, with
+// the case's raw numbers when raw is set.
+func (b *binder) emulatorData(v any, raw bool) (rules.Value, error) {
+	prev := b.raw
+	b.raw = raw
+	defer func() { b.raw = prev }()
 	if b.c.Encoding == EncodingFirestoreREST {
 		fields, _ := v.(map[string]any)
 		return restFields(fields)
@@ -650,7 +659,7 @@ func (b *binder) emulatorVariables() (map[string]rules.Value, error) {
 				data = m["data"]
 			}
 		}
-		dv, err := b.emulatorData(data)
+		dv, err := b.emulatorData(data, true)
 		if err != nil {
 			return nil, err
 		}
@@ -664,7 +673,7 @@ func (b *binder) emulatorVariables() (map[string]rules.Value, error) {
 		}
 		m, _ := v.(map[string]any)
 		if data, ok := m["data"]; ok {
-			dv, err := b.emulatorData(data)
+			dv, err := b.emulatorData(data, true)
 			if err != nil {
 				return nil, err
 			}
@@ -674,48 +683,66 @@ func (b *binder) emulatorVariables() (map[string]rules.Value, error) {
 	return map[string]rules.Value{"request": rules.Map(req), "resource": res}, nil
 }
 
-func (b *binder) emulatorDocuments() (*MemoryDocuments, error) {
+// emulatorDocuments returns the documents the emulator held when the case ran, as the recorder
+// wrote them, in its order: each mock in turn (get() with data and a true exists() write the
+// document; anything else, getAfter() and existsAfter() included, deletes it), then the
+// request's own document, stored or deleted. Reads after the request's writes see the same
+// documents, except the request's own, which a create or an update writes and a delete removes.
+func (b *binder) emulatorDocuments(vars map[string]rules.Value) (*MemoryDocuments, error) {
 	docs := NewMemoryDocuments()
-	for _, pass := range []bool{false, true} {
-		for _, m := range b.c.Mocks {
-			get, after, err := mockTarget(m.Function)
-			if err != nil {
-				return nil, err
+	both := func(path string, doc rules.Value, found bool) {
+		for _, after := range []bool{false, true} {
+			if found {
+				docs.Put(Project, path, after, doc)
+			} else {
+				docs.Absent(Project, path, after)
 			}
-			if get != pass {
-				continue
-			}
-			var data any
-			stored := false
-			if m.Result.Present() && !m.Result.IsNull() {
-				v, err := b.decode(m.Result)
-				if err != nil {
-					return nil, err
-				}
-				if get {
-					if mv, ok := v.(map[string]any); ok {
-						data, stored = mv["data"], mv["data"] != nil
-					}
-				} else {
-					stored = v == true
-				}
-			}
-			if !stored {
-				docs.Absent(Project, m.Path, after)
-				continue
-			}
-			dv, err := b.emulatorData(data)
-			if err != nil {
-				return nil, err
-			}
-			var prefix []string
-			if b.c.Service == rules.Storage {
-				// The Storage emulator names documents as the Firestore emulator sends them.
-				prefix = []string{"projects", emulatorProject}
-			}
-			doc := document(m.Path, dv, prefix...)
-			docs.Put(Project, m.Path, after, doc)
 		}
+	}
+	var prefix []string
+	if b.c.Service == rules.Storage {
+		// The Storage emulator names documents as the Firestore emulator sends them.
+		prefix = []string{"projects", emulatorProject}
+	}
+	for _, m := range b.c.Mocks {
+		fn := strings.TrimPrefix(m.Function, "firestore.")
+		var data any
+		stored := false
+		if (fn == "get" || fn == "exists") && m.Result.Present() && !m.Result.IsNull() {
+			v, err := b.decode(m.Result)
+			if err != nil {
+				return nil, err
+			}
+			if fn == "get" {
+				if mv, ok := v.(map[string]any); ok {
+					data, stored = mv["data"], mv["data"] != nil
+				}
+			} else {
+				stored = v == true
+			}
+		}
+		if !stored {
+			both(m.Path, rules.Value{}, false)
+			continue
+		}
+		dv, err := b.emulatorData(data, false)
+		if err != nil {
+			return nil, err
+		}
+		both(m.Path, document(m.Path, dv, prefix...), true)
+	}
+	if b.c.Service != rules.Firestore {
+		return docs, nil
+	}
+	path := b.c.Request.Path
+	res := vars["resource"]
+	both(path, res, res.Kind() == rules.KindMap)
+	req, _ := vars["request"].AsMap()
+	switch b.c.Request.Method {
+	case "create", "update":
+		docs.Put(Project, path, true, req["resource"])
+	case "delete":
+		docs.Absent(Project, path, true)
 	}
 	return docs, nil
 }
