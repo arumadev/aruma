@@ -1,11 +1,16 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/arumadev/aruma/internal/platform/rules"
 )
 
 const testKey = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=" // 32 bytes
@@ -247,5 +252,90 @@ func TestRTDBRejectsBadValues(t *testing.T) {
 	m["ARUMA_RTDB_DOMAIN"] = "rtdb.example.com"
 	if _, err := Load("", env(m)); err != nil {
 		t.Errorf("rtdb.example.com beside aruma.example.com: %v", err)
+	}
+}
+
+func TestRulesLimitsDefaultToADR021(t *testing.T) {
+	c, err := Load("", env(required()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := c.RulesEngineLimits(); got != rules.DefaultLimits() {
+		t.Errorf("rules limits = %+v, want rules.DefaultLimits()", got)
+	}
+	if l := c.Rules.Limits; l.InflightBytes != 512<<20 || l.CompiledRulesetsBytes != 128<<20 || l.CallDepth != 20 {
+		t.Errorf("rules limits do not follow ADR-021: %+v", l)
+	}
+}
+
+// Every rules limit has a file key and an ARUMA_RULES_* variable named after it, and the
+// variable wins. The file lowers every limit by one, which every limit accepts, and the
+// variables lower every other one by one more.
+func TestRulesLimitsSettings(t *testing.T) {
+	fields := reflect.VisibleFields(reflect.TypeFor[RulesLimits]())
+	def := reflect.ValueOf(Defaults().Rules.Limits)
+	var yaml strings.Builder
+	yaml.WriteString("database_url: postgres://file/aruma\npublic_url: https://aruma.example.com\nmaster_key: " + testKey + "\nrules:\n  limits:\n")
+	vars := map[string]string{}
+	for i, f := range fields {
+		key, n := f.Tag.Get("yaml"), def.Field(i).Int()
+		fmt.Fprintf(&yaml, "    %s: %d\n", key, n-1)
+		if i%2 == 0 {
+			vars["ARUMA_RULES_"+strings.ToUpper(key)] = strconv.FormatInt(n-2, 10)
+		}
+	}
+	path := filepath.Join(t.TempDir(), "aruma.yaml")
+	if err := os.WriteFile(path, []byte(yaml.String()), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	c, err := Load(path, env(vars))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := reflect.ValueOf(c.Rules.Limits)
+	for i, f := range fields {
+		want := def.Field(i).Int() - 1
+		if i%2 == 0 {
+			want--
+		}
+		if got.Field(i).Int() != want {
+			t.Errorf("%s (ARUMA_RULES_%s) = %d, want %d", f.Tag.Get("yaml"), strings.ToUpper(f.Tag.Get("yaml")), got.Field(i).Int(), want)
+		}
+	}
+	if rules.Limits(c.Rules.Limits) != c.RulesEngineLimits() {
+		t.Error("RulesEngineLimits does not return the configured limits")
+	}
+}
+
+func TestRulesLimitsRejectBadValues(t *testing.T) {
+	for _, c := range []struct {
+		name, value, want string
+	}{
+		// Raising a Firebase limit would allow what Firebase denies.
+		{"ARUMA_RULES_CALL_DEPTH", "21", "rules.limits.call_depth 21 is above Firebase's 20"},
+		{"ARUMA_RULES_EXPRESSION_DEPTH", "99", "rules.limits.expression_depth"},
+		{"ARUMA_RULES_LOOKUPS_PER_REQUEST", "21", "rules.limits.lookups_per_request"},
+		{"ARUMA_RULES_STORAGE_LOOKUPS", "3", "rules.limits.storage_lookups"},
+		{"ARUMA_RULES_SOURCE_BYTES", "1000000", "rules.limits.source_bytes"},
+		{"ARUMA_RULES_INFLIGHT_BYTES", "0", "rules.limits.inflight_bytes must be at least 1"},
+		{"ARUMA_RULES_WORK", "-5", "rules.limits.work must be at least 1"},
+		// An Inflight cap below one evaluation's allocation would refuse every evaluation.
+		{"ARUMA_RULES_INFLIGHT_BYTES", "1048576", "rules.limits.inflight_bytes 1048576 must be at least alloc_bytes"},
+		{"ARUMA_RULES_MATCH_DEPTH", "ten", "ARUMA_RULES_MATCH_DEPTH"},
+	} {
+		m := required()
+		m[c.name] = c.value
+		_, err := Load("", env(m))
+		if err == nil || !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%s=%s: error %v, want one containing %q", c.name, c.value, err, c.want)
+		}
+	}
+	// Aruma's limits have no ceiling.
+	m := required()
+	m["ARUMA_RULES_WORK"] = "1099511627776"
+	m["ARUMA_RULES_INFLIGHT_BYTES"] = "1099511627776"
+	m["ARUMA_RULES_MEMBER_CHAIN"] = "100000"
+	if _, err := Load("", env(m)); err != nil {
+		t.Errorf("raised Aruma limits: %v", err)
 	}
 }

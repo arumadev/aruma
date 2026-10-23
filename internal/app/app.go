@@ -21,6 +21,7 @@ import (
 	"github.com/arumadev/aruma/internal/platform/crypto"
 	"github.com/arumadev/aruma/internal/platform/idtoken"
 	"github.com/arumadev/aruma/internal/platform/metrics"
+	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/server"
 	authapi "github.com/arumadev/aruma/internal/services/auth/api"
 	authconsole "github.com/arumadev/aruma/internal/services/auth/console"
@@ -43,6 +44,12 @@ type App struct {
 	// its tokens: the Realtime Database.
 	IDTokens    idtoken.Verifier
 	Revocations idtoken.Revocations
+
+	// The Firestore and Storage rules engine's limits, and the one cap on the memory of every
+	// evaluation in the process (ADR-021 §4). Storage takes both in S2 with rules.NoDocuments{},
+	// the rules API's :test the same Inflight in S5.
+	RulesLimits   rules.Limits
+	RulesInflight *rules.Inflight
 
 	Server  *server.Server
 	Console *console.API
@@ -104,6 +111,8 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		st.idp(authSvc)
 	}
 	idTokens, revocations := authSvc.IDTokenVerifier(), authSvc.Revocations()
+	rulesLimits := cfg.RulesEngineLimits()
+	rulesInflight := rules.NewInflight(rulesLimits.InflightBytes)
 	var rtdbSvc *rtdb.Service
 	if cfg.RTDB.Enabled {
 		l := cfg.RTDB.Limits
@@ -156,6 +165,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 
 	srv := server.New(cfg, logger, pool, metrics.New(version), handlers)
 	return &App{Config: cfg, Service: svc, Auth: authSvc, RTDB: rtdbSvc, IDTokens: idTokens, Revocations: revocations,
+		RulesLimits: rulesLimits, RulesInflight: rulesInflight,
 		Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
 }
 

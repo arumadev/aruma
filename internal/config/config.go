@@ -17,6 +17,7 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	"github.com/arumadev/aruma/internal/platform/log"
+	"github.com/arumadev/aruma/internal/platform/rules"
 )
 
 // Config is the validated server configuration.
@@ -46,10 +47,12 @@ type Config struct {
 	Session Session `yaml:"session"`
 	Mail    Mail    `yaml:"mail"`
 	RTDB    RTDB    `yaml:"rtdb"`
+	Rules   Rules   `yaml:"rules"`
 
 	masterKey      []byte
 	publicURL      *url.URL
 	trustedProxies []netip.Prefix
+	rulesLimits    rules.Limits
 }
 
 // Session holds console session lifetimes.
@@ -152,7 +155,49 @@ func Defaults() Config {
 			OutboxBytes:                 64 << 20,
 			ReadRows:                    1_000_000,
 		}},
+		Rules: Rules{Limits: RulesLimits(rules.DefaultLimits())},
 	}
+}
+
+// Rules holds the settings of the Firestore and Storage security rules engine (ADR-021).
+type Rules struct {
+	// Limits bound what a ruleset may hold and what one evaluation may do.
+	Limits RulesLimits `yaml:"limits"`
+}
+
+// RulesLimits are the rules engine's limits (ADR-021 §4), defaulting to rules.DefaultLimits. It
+// mirrors rules.Limits field for field, so each converts to the other and the compiler keeps
+// the two in step. Firebase's limits are part of compatibility: a value may lower one, and a
+// value above Firebase's is refused, since it would allow what Firebase denies. Aruma's own
+// limits protect the server from hostile rules and may be set freely.
+type RulesLimits struct {
+	// Firebase's.
+	CallDepth           int `yaml:"call_depth"`            // the longest chain of function calls
+	FunctionLets        int `yaml:"function_lets"`         // let bindings in one function
+	FunctionArgs        int `yaml:"function_args"`         // parameters of one function
+	ExpressionDepth     int `yaml:"expression_depth"`      // the deepest nesting of an expression
+	MatchDepth          int `yaml:"match_depth"`           // nested match blocks
+	MatchSegments       int `yaml:"match_segments"`        // path segments of nested match blocks
+	MatchVariables      int `yaml:"match_variables"`       // path variables of nested match blocks
+	SourceBytes         int `yaml:"source_bytes"`          // the size of a rules file
+	Expressions         int `yaml:"expressions"`           // expressions evaluated for one request
+	LookupsPerOperation int `yaml:"lookups_per_operation"` // documents one Firestore operation reads
+	LookupsPerRequest   int `yaml:"lookups_per_request"`   // documents a Firestore batch reads
+	StorageLookups      int `yaml:"storage_lookups"`       // Firestore documents one Storage request reads
+
+	// Aruma's.
+	MemberChain       int   `yaml:"member_chain"`        // a chain of .field and [index]
+	Work              int64 `yaml:"work"`                // work units of one evaluation (patterns, collections)
+	ValueBytes        int64 `yaml:"value_bytes"`         // one string or bytes value
+	ValueElements     int   `yaml:"value_elements"`      // one list, map or set
+	AllocBytes        int64 `yaml:"alloc_bytes"`         // the values one evaluation builds
+	InflightBytes     int64 `yaml:"inflight_bytes"`      // the values every evaluation in the process builds together
+	RegexInstructions int   `yaml:"regex_instructions"`  // the compiled program of one pattern
+	RequestSegments   int   `yaml:"request_segments"`    // the segments of a request path
+	RegexCacheEntries int   `yaml:"regex_cache_entries"` // patterns built during evaluation a ruleset keeps
+	RegexCacheBytes   int64 `yaml:"regex_cache_bytes"`   // the estimated programs of those patterns
+	// CompiledRulesetsBytes caps the compiled rulesets kept in memory, by estimated weight.
+	CompiledRulesetsBytes int64 `yaml:"compiled_rulesets_bytes"`
 }
 
 // Load reads the YAML file at path (skipped when empty), applies environment overrides from
@@ -268,6 +313,36 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	conns := int64(lim.ConnectionsPerProject)
 	integer("ARUMA_RTDB_CONNECTIONS_PER_PROJECT", &conns)
 	lim.ConnectionsPerProject = int(conns)
+
+	count := func(name string, dst *int) {
+		n := int64(*dst)
+		integer(name, &n)
+		*dst = int(n)
+	}
+	rl := &c.Rules.Limits
+	count("ARUMA_RULES_CALL_DEPTH", &rl.CallDepth)
+	count("ARUMA_RULES_FUNCTION_LETS", &rl.FunctionLets)
+	count("ARUMA_RULES_FUNCTION_ARGS", &rl.FunctionArgs)
+	count("ARUMA_RULES_EXPRESSION_DEPTH", &rl.ExpressionDepth)
+	count("ARUMA_RULES_MATCH_DEPTH", &rl.MatchDepth)
+	count("ARUMA_RULES_MATCH_SEGMENTS", &rl.MatchSegments)
+	count("ARUMA_RULES_MATCH_VARIABLES", &rl.MatchVariables)
+	count("ARUMA_RULES_SOURCE_BYTES", &rl.SourceBytes)
+	count("ARUMA_RULES_EXPRESSIONS", &rl.Expressions)
+	count("ARUMA_RULES_LOOKUPS_PER_OPERATION", &rl.LookupsPerOperation)
+	count("ARUMA_RULES_LOOKUPS_PER_REQUEST", &rl.LookupsPerRequest)
+	count("ARUMA_RULES_STORAGE_LOOKUPS", &rl.StorageLookups)
+	count("ARUMA_RULES_MEMBER_CHAIN", &rl.MemberChain)
+	integer("ARUMA_RULES_WORK", &rl.Work)
+	integer("ARUMA_RULES_VALUE_BYTES", &rl.ValueBytes)
+	count("ARUMA_RULES_VALUE_ELEMENTS", &rl.ValueElements)
+	integer("ARUMA_RULES_ALLOC_BYTES", &rl.AllocBytes)
+	integer("ARUMA_RULES_INFLIGHT_BYTES", &rl.InflightBytes)
+	count("ARUMA_RULES_REGEX_INSTRUCTIONS", &rl.RegexInstructions)
+	count("ARUMA_RULES_REQUEST_SEGMENTS", &rl.RequestSegments)
+	count("ARUMA_RULES_REGEX_CACHE_ENTRIES", &rl.RegexCacheEntries)
+	integer("ARUMA_RULES_REGEX_CACHE_BYTES", &rl.RegexCacheBytes)
+	integer("ARUMA_RULES_COMPILED_RULESETS_BYTES", &rl.CompiledRulesetsBytes)
 	return errors.Join(errs...)
 }
 
@@ -351,6 +426,7 @@ func (c *Config) validate() error {
 	}
 
 	errs = append(errs, c.validateRTDB()...)
+	errs = append(errs, c.validateRules()...)
 
 	if c.Session.IdleTimeout <= 0 || c.Session.AbsoluteTimeout <= 0 {
 		errs = append(errs, errors.New("session timeouts must be positive"))
@@ -404,6 +480,25 @@ func (c *Config) validateRTDB() []error {
 	return errs
 }
 
+// validateRules checks the rules section: rules.Limits.Validate refuses a limit below 1 and a
+// Firebase limit above Firebase's value.
+func (c *Config) validateRules() []error {
+	lim := rules.Limits(c.Rules.Limits)
+	err := lim.Validate()
+	if err == nil {
+		c.rulesLimits = lim
+		return nil
+	}
+	var errs []error
+	if joined, ok := err.(interface{ Unwrap() []error }); ok {
+		for _, e := range joined.Unwrap() {
+			errs = append(errs, fmt.Errorf("rules.limits.%w", e))
+		}
+		return errs
+	}
+	return []error{fmt.Errorf("rules.limits: %w", err)}
+}
+
 // loopbackListen reports whether the listen address accepts connections from this machine
 // only.
 func loopbackListen(listen string) bool {
@@ -445,6 +540,9 @@ func (c *Config) PublicBaseURL() *url.URL { u := *c.publicURL; return &u }
 
 // TrustedProxyPrefixes returns the parsed trusted proxy ranges.
 func (c *Config) TrustedProxyPrefixes() []netip.Prefix { return c.trustedProxies }
+
+// RulesEngineLimits returns the validated rules.limits as the rules engine takes them.
+func (c *Config) RulesEngineLimits() rules.Limits { return c.rulesLimits }
 
 // SecureCookies reports whether cookies must carry the Secure attribute: always over https,
 // and on loopback hosts, which browsers treat as secure contexts.
