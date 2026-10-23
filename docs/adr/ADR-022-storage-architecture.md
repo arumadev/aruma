@@ -1,7 +1,7 @@
 # ADR-022: Cloud Storage for Firebase: المعمارية
 
 - الحالة: مقترح (ينتظر المراجعة العدائية)
-- التاريخ: 2026-10-24
+- التاريخ: 2026-10-24 (وثلاث مراجعات عدائية في اليوم نفسه: البناء لكل منصة، وأمانة البروتوكول، والمعمارية؛ 35 نتيجة أُدخلت كلها)
 - المرحلة: S0 من الإصدار 0.3 (القواعد وStorage)
 - المراجع: [storage-layout.md](../research/storage-layout.md)، ADR-023، ADR-008، ADR-010، ADR-015، ADR-017، ADR-019، ADR-021، و:
   - أبحاث S0 (كلها على main): [A-client-protocol.md](../research/storage/A-client-protocol.md) (اختصارها **A**)، و[B-admin-gcs-protocol.md](../research/storage/B-admin-gcs-protocol.md) (**B**)، و[C-management.md](../research/storage/C-management.md) (**C**)، و[D-emulator.md](../research/storage/D-emulator.md) (**D**)، و[E-production-vs-emulator.md](../research/storage/E-production-vs-emulator.md) (**E**)، و[F-architecture-lessons.md](../research/storage/F-architecture-lessons.md) (**F**)، و[storage-production-path.md](../research/storage-production-path.md) (**P**)، و[rules/B-design-lessons.md](../research/rules/B-design-lessons.md)، و[rules-layout.md](../research/rules-layout.md).

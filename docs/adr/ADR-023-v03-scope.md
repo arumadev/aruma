@@ -1,7 +1,7 @@
 # ADR-023: نطاق الإصدار 0.3: لغة القواعد وCloud Storage for Firebase
 
 - الحالة: مقترح (ينتظر المراجعة العدائية)
-- التاريخ: 2026-10-24
+- التاريخ: 2026-10-24 (ومراجعات ADR-022 الثلاث أُدخلت هنا أيضًا)
 - المرحلة: S0 من الإصدار 0.3
 - المراجع: ADR-021 (محرك القواعد)، ADR-022 (معمارية Storage)، [storage-layout.md](../research/storage-layout.md)، [rules-layout.md](../research/rules-layout.md)، وأبحاث Storage A إلى F و[storage-production-path.md](../research/storage-production-path.md) (الاختصارات كما في ADR-022)، وخطة v0.3/v0.4 التي اعتمدها المالك (`.cache/briefs/plan-v03-v04.html`، الأقسام 1 إلى 4)، وقرارات المالك في 2026-10-23 و2026-10-24.
 
