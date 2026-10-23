@@ -162,14 +162,19 @@ func TestIndexAgreesWithRelations(t *testing.T) {
 	for i := range 40 {
 		items = append(items, Int(int64(i)), Float(float64(i)+0.5), String(string(rune('a'+i))))
 	}
-	items = append(items, Int(1<<53), Int(1<<53+1), Float(negZero), List([]Value{Float(negZero)}), Float(math.NaN()))
+	items = append(items, Int(1<<53), Int(1<<53+1), Float(negZero), List([]Value{Float(negZero)}), Float(math.NaN()),
+		Null(), Bool(true), Bool(false), Bytes([]byte("a")), vm("a", vi(1), "b", vl(vf(2))), vm("a", vf(1)),
+		vset(vi(1), vs("x")), vset(vf(1)), vts("2025-01-01T00:00:00.5Z"), vdur(-time.Second), LatLng(negZero, 1),
+		vp("a", "b"), vCallValue(vm("a", vi(1)), "diff", vm()))
+	items = append(items, items...) // duplicates, to fill buckets
 	for _, rel := range []relation{relList, relSet} {
 		ix, err := newIndex(m, rel, items)
 		if err != nil {
 			t.Fatal(err)
 		}
 		probes := append([]Value{Int(1<<53 + 1), Float(1 << 53), Float(0), List([]Value{Float(0)}),
-			Float(math.NaN()), Int(77), Map(nil)}, items...)
+			Float(math.NaN()), Int(77), Map(nil), vm("b", vl(vi(2)), "a", vf(1)), vset(vs("x"), vf(1)),
+			vts("2025-01-01T01:00:00.5+01:00"), LatLng(0, 1), vp("a"), Bytes([]byte("b"))}, items...)
 		for _, p := range probes {
 			want := false
 			for _, it := range items {
@@ -183,8 +188,28 @@ func TestIndexAgreesWithRelations(t *testing.T) {
 			}
 		}
 	}
+	// Large sets compare through the index too.
+	var big, bigFloats []Value
+	for i := range 20 {
+		big, bigFloats = append(big, Int(int64(i))), append([]Value{Float(float64(i))}, bigFloats...)
+	}
+	if eq, err := equalTop(m, setOf(big), setOf(bigFloats)); err != nil || !eq {
+		t.Errorf("20 ints == the 20 equal floats as sets: %v, %v", eq, err)
+	}
+	if eq, err := equalTop(m, setOf(big), setOf(append(bigFloats[1:], Float(99)))); err != nil || eq {
+		t.Errorf("sets that differ in one member: %v, %v", eq, err)
+	}
 	members, err := distinct(m, []Value{Int(1 << 53), Int(1<<53 + 1), Float(1 << 53)})
 	if err != nil || len(members) != 2 {
 		t.Errorf("distinct(2^53, 2^53+1, 2^53 as a float) = %d members, %v; want 2", len(members), err)
 	}
+}
+
+// vCallValue returns recv.name(args), which must not fail.
+func vCallValue(recv Value, name string, args ...Value) Value {
+	v, err := callMethod(newTestMeter(), recv, name, args)
+	if err != nil {
+		panic(err)
+	}
+	return v
 }

@@ -223,8 +223,8 @@ func subtract(x, y Value) (Value, error) {
 
 // multiply evaluates x * y, x / y and x % y. Ints divide toward zero and the remainder takes
 // the dividend's sign (-7 / 2 == -3, -7 % 2 == -1: Pyric int-float-and-division and
-// float-modulo-unary-minus). The smallest int divided by -1 is itself, as in Java and in Go
-// (hidane, the emulator; production not recorded).
+// float-modulo-unary-minus). Overflow is an error on + - *, but the smallest int divided by -1
+// is itself, as in Java and in Go (production, Rules Test API, S0-A; hidane, the emulator).
 func multiply(op token, x, y Value) (Value, error) {
 	if x.kind == KindInt && y.kind == KindInt {
 		a, b := x.integer(), y.integer()

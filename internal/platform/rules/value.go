@@ -284,9 +284,8 @@ func (v Value) point() latLng      { p, _ := v.x.(latLng); return p }
 func (v Value) diff() *mapDiff     { d, _ := v.x.(*mapDiff); return d }
 func (v Value) isNumber() bool     { return v.kind == KindInt || v.kind == KindFloat }
 func (v Value) isReserved() bool   { return v.kind == KindConstraint || v.kind == KindUnknown }
-func (v Value) isCollection() bool {
-	return v.kind == KindList || v.kind == KindMap || v.kind == KindSet
-}
+
+// number is an int's or a float's value as a float.
 func (v Value) number() float64 {
 	if v.kind == KindInt {
 		return float64(v.integer())
