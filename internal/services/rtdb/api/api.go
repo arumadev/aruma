@@ -17,6 +17,7 @@ import (
 	"net/netip"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/platform/httpx"
@@ -45,6 +46,9 @@ type Options struct {
 	// AllowedOrigins, when set, lists the hosts whose web pages may connect besides a
 	// database's own host (rtdb.allowed_origins). Empty allows every origin, as Firebase does.
 	AllowedOrigins []string
+	// WriteTimeout bounds the write of one frame to a WebSocket; zero is 30 seconds. Tests
+	// shorten it.
+	WriteTimeout time.Duration
 }
 
 // API is the Realtime Database endpoint.
@@ -78,6 +82,9 @@ type transport interface {
 // New returns the API.
 func New(svc *core.Service, opts Options, logger *slog.Logger) *API {
 	opts.Domain = strings.ToLower(opts.Domain)
+	if opts.WriteTimeout <= 0 {
+		opts.WriteTimeout = writeTimeout
+	}
 	lim := svc.Limits()
 	return &API{
 		svc: svc, opts: opts, log: logger, conns: map[transport]struct{}{},

@@ -89,7 +89,7 @@ func (a *API) joinLP(ws *websocket.Conn, target core.Target, s, host string) {
 		c.lp = lp
 	}
 	if c == nil || !lp.join(c) {
-		ctx, cancel := context.WithTimeout(context.Background(), writeTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), a.opts.WriteTimeout)
 		defer cancel()
 		_ = ws.Write(ctx, websocket.MessageText, wire.EncodeReset(host))
 		_ = ws.CloseNow()

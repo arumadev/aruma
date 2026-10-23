@@ -61,8 +61,9 @@ type App struct {
 type Option func(*settings)
 
 type settings struct {
-	argon2 crypto.Argon2Params
-	idp    func(*identity.Service)
+	argon2           crypto.Argon2Params
+	idp              func(*identity.Service)
+	rtdbWriteTimeout time.Duration
 }
 
 // WithArgon2 overrides the password hashing cost. Tests use cheap parameters.
@@ -74,6 +75,12 @@ func WithIdPEndpoints(google, apple identity.IdPEndpoints, client *http.Client) 
 	return func(s *settings) {
 		s.idp = func(a *identity.Service) { a.SetIdPEndpoints(google, apple, client) }
 	}
+}
+
+// WithRTDBWriteTimeout bounds the write of one Realtime Database frame. Tests only: the
+// server's own is 30 seconds.
+func WithRTDBWriteTimeout(d time.Duration) Option {
+	return func(s *settings) { s.rtdbWriteTimeout = d }
 }
 
 // argon2Concurrency caps simultaneous password hashes (≈19 MiB each).
@@ -157,6 +164,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 			Credentials:    svc,
 			Projects:       svc,
 			AllowedOrigins: cfg.RTDB.AllowedOrigins,
+			WriteTimeout:   st.rtdbWriteTimeout,
 		}, logger)
 		handlers.RTDB, handlers.TLSAsk = rtdbAPI, rtdbAPI.TLSAsk()
 		// A purged project's databases go with it.
