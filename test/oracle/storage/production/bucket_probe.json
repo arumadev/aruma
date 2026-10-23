@@ -1,0 +1,230 @@
+{
+  "scenario": "bucket_probe",
+  "description": "Anonymous GETs against both default bucket names of the project and a random control name, on the Firebase Storage client API and the GCS JSON API.",
+  "source": "production",
+  "captured": "2026-10-23",
+  "script": "capture/probe_bucket.mjs",
+  "control": "zz-no-such-bucket-k4atrcy8.appspot.com",
+  "probes": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://firebasestorage.googleapis.com/v0/b/<project>.appspot.com/o?maxResults=1"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=UTF-8",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Content-Range, X-Firebase-Storage-XSRF",
+          "x-content-type-options": "nosniff",
+          "cache-control": "private, max-age=0",
+          "server": "UploadServer"
+        },
+        "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"Not Found.\"\n  }\n}"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://firebasestorage.googleapis.com/v0/b/<project>.appspot.com/o/x"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=UTF-8",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Content-Range, X-Firebase-Storage-XSRF",
+          "x-content-type-options": "nosniff",
+          "cache-control": "private, max-age=0",
+          "server": "UploadServer"
+        },
+        "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"Not Found.\"\n  }\n}"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://storage.googleapis.com/storage/v1/b/<project>.appspot.com"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=UTF-8",
+          "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+          "server": "UploadServer"
+        },
+        "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"The specified bucket does not exist.\",\n    \"errors\": [\n      {\n        \"message\": \"The specified bucket does not exist.\",\n        \"domain\": \"global\",\n        \"reason\": \"notFound\"\n      }\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://storage.googleapis.com/storage/v1/b/<project>.appspot.com/o?maxResults=1"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=UTF-8",
+          "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+          "server": "UploadServer"
+        },
+        "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"The specified bucket does not exist.\",\n    \"errors\": [\n      {\n        \"message\": \"The specified bucket does not exist.\",\n        \"domain\": \"global\",\n        \"reason\": \"notFound\"\n      }\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://firebasestorage.googleapis.com/v0/b/<project>.firebasestorage.app/o?maxResults=1"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=UTF-8",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Content-Range, X-Firebase-Storage-XSRF",
+          "x-content-type-options": "nosniff",
+          "cache-control": "private, max-age=0",
+          "server": "UploadServer"
+        },
+        "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"Not Found.\"\n  }\n}"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://firebasestorage.googleapis.com/v0/b/<project>.firebasestorage.app/o/x"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=UTF-8",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Content-Range, X-Firebase-Storage-XSRF",
+          "x-content-type-options": "nosniff",
+          "cache-control": "private, max-age=0",
+          "server": "UploadServer"
+        },
+        "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"Not Found.\"\n  }\n}"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://storage.googleapis.com/storage/v1/b/<project>.firebasestorage.app"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=UTF-8",
+          "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+          "server": "UploadServer"
+        },
+        "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"The specified bucket does not exist.\",\n    \"errors\": [\n      {\n        \"message\": \"The specified bucket does not exist.\",\n        \"domain\": \"global\",\n        \"reason\": \"notFound\"\n      }\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://storage.googleapis.com/storage/v1/b/<project>.firebasestorage.app/o?maxResults=1"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=UTF-8",
+          "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+          "server": "UploadServer"
+        },
+        "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"The specified bucket does not exist.\",\n    \"errors\": [\n      {\n        \"message\": \"The specified bucket does not exist.\",\n        \"domain\": \"global\",\n        \"reason\": \"notFound\"\n      }\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://firebasestorage.googleapis.com/v0/b/zz-no-such-bucket-k4atrcy8.appspot.com/o?maxResults=1"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=UTF-8",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Content-Range, X-Firebase-Storage-XSRF",
+          "x-content-type-options": "nosniff",
+          "cache-control": "private, max-age=0",
+          "server": "UploadServer"
+        },
+        "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"Not Found.\"\n  }\n}"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://firebasestorage.googleapis.com/v0/b/zz-no-such-bucket-k4atrcy8.appspot.com/o/x"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=UTF-8",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Content-Range, X-Firebase-Storage-XSRF",
+          "x-content-type-options": "nosniff",
+          "cache-control": "private, max-age=0",
+          "server": "UploadServer"
+        },
+        "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"Not Found.\"\n  }\n}"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://storage.googleapis.com/storage/v1/b/zz-no-such-bucket-k4atrcy8.appspot.com"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=UTF-8",
+          "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+          "server": "UploadServer"
+        },
+        "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"The specified bucket does not exist.\",\n    \"errors\": [\n      {\n        \"message\": \"The specified bucket does not exist.\",\n        \"domain\": \"global\",\n        \"reason\": \"notFound\"\n      }\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://storage.googleapis.com/storage/v1/b/zz-no-such-bucket-k4atrcy8.appspot.com/o?maxResults=1"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=UTF-8",
+          "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+          "server": "UploadServer"
+        },
+        "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"The specified bucket does not exist.\",\n    \"errors\": [\n      {\n        \"message\": \"The specified bucket does not exist.\",\n        \"domain\": \"global\",\n        \"reason\": \"notFound\"\n      }\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "control": "existing public bucket",
+      "request": {
+        "method": "GET",
+        "url": "https://storage.googleapis.com/storage/v1/b/gcp-public-data-landsat"
+      },
+      "response": {
+        "status": 200,
+        "body": "{\n  \"kind\": \"storage#bucket\",\n  \"selfLink\": \"https://www.googleapis.com/storage/v1/b/gcp-public-data-landsat\",\n  \"id\": \"gcp-public-data-landsat\",\n  \"name\": \"gcp-public-data-landsat\",\n  \"projectNumber\": \"570399209098\",\n  \"generation\": \"1\",\n  \"metageneration\": \"17\",\n  \"location\": \"US\",\n  \"storageClass\": \"STANDARD\",\n  \"etag\": \"CBE=\",\n  \"timeCreated\": \"2016-08-25T18:11:15.759Z\",\n  \"updated\": \"2024-09-..."
+      }
+    },
+    {
+      "control": "existing public bucket",
+      "request": {
+        "method": "GET",
+        "url": "https://storage.googleapis.com/storage/v1/b/gcp-public-data-landsat/o?maxResults=1"
+      },
+      "response": {
+        "status": 200,
+        "body": "{\n  \"kind\": \"storage#objects\",\n  \"nextPageToken\": \"CmlMQzA4LzAxLzAwMS8wMDIvTEMwOF9MMUdUXzAwMTAwMl8yMDE2MDgxN18yMDE3MDMyMl8wMV9UMi9MQzA4X0wxR1RfMDAxMDAyXzIwMTYwODE3XzIwMTcwMzIyXzAxX1QyX0FORy50eHQ=\",\n  \"items\": [\n    {\n      \"kind\": \"storage#object\",\n      \"id\": \"gcp-public-data-landsat/LC08/01/001/002/LC08_L1GT_001002_20160817_20170322_01_T2/LC08_L1GT_001002_20160817_20170322_01_T2_ANG.txt/15023910..."
+      }
+    }
+  ]
+}

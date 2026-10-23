@@ -1,0 +1,1859 @@
+{
+  "scenario": "rules",
+  "description": "Rules denials and allows (emulator/storage.rules): unauthenticated, size, contentType, custom metadata, another user's folder, list vs get, update and delete guarded by stored metadata, public read, and download tokens on a path the reader may not read.",
+  "source": "emulator",
+  "version": "firebase-tools 15.34.0 Storage emulator (cloud-storage-rules-runtime-v1.1.3.jar, OpenJDK 21)",
+  "captured": "2026-10-23",
+  "script": "capture/capture.mjs",
+  "clients": {
+    "web": "firebase 13.1.0 (Node 24, fetch)",
+    "admin": "firebase-admin 14.5.0 + @google-cloud/storage 8.4.0"
+  },
+  "run": "s0c-20261023-emu",
+  "bucket": "demo-aruma-ref.appspot.com",
+  "steps": [
+    {
+      "step": "unauthenticated upload to open/",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fr%2Fanon.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=685669997000268954072274534579",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "294"
+            },
+            "body": {
+              "text": "--685669997000268954072274534579\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/open/r/anon.txt\",\"contentType\":\"application/octet-stream\"}\r\n--685669997000268954072274534579\r\nContent-Type: application/octet-stream\r\n\r\naaa\r\n--685669997000268954072274534579--"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "final",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "74",
+              "etag": "W/\"4a-hfXY/tWzGa+Al+u16F0IrZ4Xqlc\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No WRITE permission.\"}}"
+            }
+          },
+          "elapsedMs": 9,
+          "ms": 11
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/open/r/anon.txt'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "unauthenticated resumable upload to open/ (700 KiB)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fr%2Fanon-big.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "start",
+              "x-goog-upload-header-content-length": "716800",
+              "x-goog-upload-header-content-type": "application/octet-stream",
+              "content-type": "application/json; charset=utf-8",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "98"
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/r/anon-big.txt\",\"contentType\":\"application/octet-stream\"}"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-chunk-granularity": "10000",
+              "x-goog-upload-control-url": "",
+              "x-goog-upload-status": "active",
+              "x-gupload-uploadid": "<upload-id-4>",
+              "x-goog-upload-url": "http://127.0.0.1:8865/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fr%2Fanon-big.txt&upload_id=<upload-id-4>&upload_protocol=resumable",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 6,
+          "ms": 81
+        },
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fr%2Fanon-big.txt&upload_id=<upload-id-4>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-command": "upload",
+              "x-goog-upload-offset": "0",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "262144"
+            },
+            "body": {
+              "length": 262144,
+              "sha256": "dd3dde87623d9a6b354c68c943d189c89c63652d945e7bbdf0986cae91a49521",
+              "headBase64": "YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQ=="
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "active",
+              "x-gupload-uploadid": "<upload-id-4>",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 14,
+          "ms": 109
+        },
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fr%2Fanon-big.txt&upload_id=<upload-id-4>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-command": "upload, finalize",
+              "x-goog-upload-offset": "262144",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "454656"
+            },
+            "body": {
+              "length": 454656,
+              "sha256": "714bc3a03c9111cb84b282a467c502981a4365cdf79eb37a5c3fb68ad8b8c1fe",
+              "headBase64": "YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQ=="
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "final",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "74",
+              "etag": "W/\"4a-hfXY/tWzGa+Al+u16F0IrZ4Xqlc\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No WRITE permission.\"}}"
+            }
+          },
+          "elapsedMs": 31,
+          "ms": 160
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/open/r/anon-big.txt'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "limited: allowed (text, small, tag=ok)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Flimited%2Fok.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=1822886519634405701117368326711321",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "308"
+            },
+            "body": {
+              "text": "--1822886519634405701117368326711321\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/limited/ok.txt\",\"contentType\":\"text/plain\",\"metadata\":{\"tag\":\"ok\"}}\r\n--1822886519634405701117368326711321\r\nContent-Type: text/plain\r\n\r\naaaaaaaaaa\r\n--1822886519634405701117368326711321--"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "518",
+              "etag": "W/\"206-BlMyVHa/5DekcxxaRmI00+IJDfg\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/limited/ok.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788610615\",\"metageneration\":\"1\",\"contentType\":\"text/plain\",\"timeCreated\":\"2026-10-23T20:50:10.616Z\",\"updated\":\"2026-10-23T20:50:10.616Z\",\"storageClass\":\"STANDARD\",\"size\":\"10\",\"md5Hash\":\"4JyAxC/aVfnZkuWcprMwfQ==\",\"crc32c\":\"3878052912\",\"etag\":\"2kfLtowoB6Ceb3rFc6PYm/KY1pQ\",\"downloadTokens\":\"<download-token-31>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{\"tag\":\"ok\"}}"
+            }
+          },
+          "elapsedMs": 24,
+          "ms": 243
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788610615",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/limited/ok.txt",
+          "name": "ok.txt",
+          "size": 10,
+          "timeCreated": "2026-10-23T20:50:10.616Z",
+          "updated": "2026-10-23T20:50:10.616Z",
+          "md5Hash": "4JyAxC/aVfnZkuWcprMwfQ==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "text/plain",
+          "customMetadata": {
+            "tag": "ok"
+          }
+        }
+      }
+    },
+    {
+      "step": "limited: too big (2000 bytes)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Flimited%2Fbig.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=879675841548809742311424750265314",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "2296"
+            },
+            "body": {
+              "text": "--879675841548809742311424750265314\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/limited/big.txt\",\"contentType\":\"text/plain\",\"metadata\":{\"tag\":\"ok\"}}\r\n--879675841548809742311424750265314\r\nContent-Type: text/plain\r\n\r\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n--879675841548809742311424750265314--"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "final",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "74",
+              "etag": "W/\"4a-hfXY/tWzGa+Al+u16F0IrZ4Xqlc\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No WRITE permission.\"}}"
+            }
+          },
+          "elapsedMs": 9,
+          "ms": 256
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/limited/big.txt'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "limited: wrong contentType",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Flimited%2Fimg.png",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=4690415810037348349635486832126297",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "307"
+            },
+            "body": {
+              "text": "--4690415810037348349635486832126297\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/limited/img.png\",\"contentType\":\"image/png\",\"metadata\":{\"tag\":\"ok\"}}\r\n--4690415810037348349635486832126297\r\nContent-Type: image/png\r\n\r\naaaaaaaaaa\r\n--4690415810037348349635486832126297--"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "final",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "74",
+              "etag": "W/\"4a-hfXY/tWzGa+Al+u16F0IrZ4Xqlc\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No WRITE permission.\"}}"
+            }
+          },
+          "elapsedMs": 10,
+          "ms": 321
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/limited/img.png'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "limited: missing tag",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Flimited%2Fnotag.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=156073585600927888425213765771953",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "284"
+            },
+            "body": {
+              "text": "--156073585600927888425213765771953\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/limited/notag.txt\",\"contentType\":\"text/plain\"}\r\n--156073585600927888425213765771953\r\nContent-Type: text/plain\r\n\r\naaaaaaaaaa\r\n--156073585600927888425213765771953--"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "final",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "74",
+              "etag": "W/\"4a-hfXY/tWzGa+Al+u16F0IrZ4Xqlc\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No WRITE permission.\"}}"
+            }
+          },
+          "elapsedMs": 19,
+          "ms": 395
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/limited/notag.txt'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "limited: resumable too big (300 KiB, denied at start or finalize?)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Flimited%2Fbig-resumable.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "start",
+              "x-goog-upload-header-content-length": "307200",
+              "x-goog-upload-header-content-type": "text/plain",
+              "content-type": "application/json; charset=utf-8",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "114"
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/limited/big-resumable.txt\",\"contentType\":\"text/plain\",\"metadata\":{\"tag\":\"ok\"}}"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-chunk-granularity": "10000",
+              "x-goog-upload-control-url": "",
+              "x-goog-upload-status": "active",
+              "x-gupload-uploadid": "<upload-id-7>",
+              "x-goog-upload-url": "http://127.0.0.1:8865/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Flimited%2Fbig-resumable.txt&upload_id=<upload-id-7>&upload_protocol=resumable",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 5,
+          "ms": 458
+        },
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Flimited%2Fbig-resumable.txt&upload_id=<upload-id-7>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-command": "upload",
+              "x-goog-upload-offset": "0",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "262144"
+            },
+            "body": {
+              "length": 262144,
+              "sha256": "dd3dde87623d9a6b354c68c943d189c89c63652d945e7bbdf0986cae91a49521",
+              "headBase64": "YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQ=="
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "active",
+              "x-gupload-uploadid": "<upload-id-7>",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 5,
+          "ms": 468
+        },
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Flimited%2Fbig-resumable.txt&upload_id=<upload-id-7>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-command": "upload, finalize",
+              "x-goog-upload-offset": "262144",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "45056"
+            },
+            "body": {
+              "length": 45056,
+              "sha256": "5bcc72b8616c689e36b9ba2e4924b05aefc5777ab6e91b4d5d07b6aefa66422a",
+              "headBase64": "YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQ=="
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "final",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "74",
+              "etag": "W/\"4a-hfXY/tWzGa+Al+u16F0IrZ4Xqlc\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No WRITE permission.\"}}"
+            }
+          },
+          "elapsedMs": 9,
+          "ms": 482
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/limited/big-resumable.txt'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "limited: updateMetadata drops tag (update rule)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "PATCH",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Flimited%2Fok.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "content-type": "application/json; charset=utf-8",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "25"
+            },
+            "body": {
+              "text": "{\"metadata\":{\"tag\":null}}"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "74",
+              "etag": "W/\"4a-hfXY/tWzGa+Al+u16F0IrZ4Xqlc\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No WRITE permission.\"}}"
+            }
+          },
+          "elapsedMs": 7,
+          "ms": 544
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/limited/ok.txt'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "limited: updateMetadata keeps tag",
+      "exchanges": [
+        {
+          "request": {
+            "method": "PATCH",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Flimited%2Fok.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "content-type": "application/json; charset=utf-8",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "26"
+            },
+            "body": {
+              "text": "{\"metadata\":{\"other\":\"x\"}}"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-disposition": "inline",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "530",
+              "etag": "W/\"212-oZnAqvlD7L34H8iYzEzPce4qELk\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/limited/ok.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788610615\",\"metageneration\":\"2\",\"contentType\":\"text/plain\",\"timeCreated\":\"2026-10-23T20:50:10.616Z\",\"updated\":\"2026-10-23T20:50:10.997Z\",\"storageClass\":\"STANDARD\",\"size\":\"10\",\"md5Hash\":\"4JyAxC/aVfnZkuWcprMwfQ==\",\"crc32c\":\"3878052912\",\"etag\":\"2kfLtowoB6Ceb3rFc6PYm/KY1pQ\",\"downloadTokens\":\"<download-token-31>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{\"tag\":\"ok\",\"other\":\"x\"}}"
+            }
+          },
+          "elapsedMs": 6,
+          "ms": 605
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788610615",
+          "metageneration": "2",
+          "fullPath": "aruma-ref/s0c-20261023-emu/limited/ok.txt",
+          "name": "ok.txt",
+          "size": 10,
+          "timeCreated": "2026-10-23T20:50:10.616Z",
+          "updated": "2026-10-23T20:50:10.997Z",
+          "md5Hash": "4JyAxC/aVfnZkuWcprMwfQ==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "text/plain",
+          "customMetadata": {
+            "tag": "ok",
+            "other": "x"
+          }
+        }
+      }
+    },
+    {
+      "step": "users: A writes own folder",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fusers%2F<uid-a>%2Fa.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=56073778860435458634182834851944",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "326"
+            },
+            "body": {
+              "text": "--56073778860435458634182834851944\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/users/<uid-a>/a.txt\",\"contentType\":\"application/octet-stream\"}\r\n--56073778860435458634182834851944\r\nContent-Type: application/octet-stream\r\n\r\naaaa\r\n--56073778860435458634182834851944--"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "547",
+              "etag": "W/\"223-4CK7rF5g2OVWmQtEILN91GWzDFs\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/users/<uid-a>/a.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788611005\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:11.005Z\",\"updated\":\"2026-10-23T20:50:11.005Z\",\"storageClass\":\"STANDARD\",\"size\":\"4\",\"md5Hash\":\"dLhzN0VCANTTP4DEZj3F5Q==\",\"crc32c\":\"1783819952\",\"etag\":\"F6nqAlVbKKFZVinT2W0iUmX6frA\",\"downloadTokens\":\"<download-token-33>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 6,
+          "ms": 615
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788611005",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/users/<uid-a>/a.txt",
+          "name": "a.txt",
+          "size": 4,
+          "timeCreated": "2026-10-23T20:50:11.005Z",
+          "updated": "2026-10-23T20:50:11.005Z",
+          "md5Hash": "dLhzN0VCANTTP4DEZj3F5Q==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "application/octet-stream",
+          "customMetadata": {}
+        }
+      }
+    },
+    {
+      "step": "users: B reads A's file",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fusers%2F<uid-a>%2Fa.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-b>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "73",
+              "etag": "W/\"49-rW1o0iNt7zW3rgr9/wz7M3rApug\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No READ permission.\"}}"
+            }
+          },
+          "elapsedMs": 7,
+          "ms": 626
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/users/<uid-a>/a.txt'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "users: B writes A's folder",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fusers%2F<uid-a>%2Fb.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=00342468283656771637018507866848693",
+              "authorization": "Firebase <id-token-b>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "335"
+            },
+            "body": {
+              "text": "--00342468283656771637018507866848693\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/users/<uid-a>/b.txt\",\"contentType\":\"application/octet-stream\"}\r\n--00342468283656771637018507866848693\r\nContent-Type: application/octet-stream\r\n\r\naaaa\r\n--00342468283656771637018507866848693--"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "final",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "74",
+              "etag": "W/\"4a-hfXY/tWzGa+Al+u16F0IrZ4Xqlc\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No WRITE permission.\"}}"
+            }
+          },
+          "elapsedMs": 17,
+          "ms": 701
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/users/<uid-a>/b.txt'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "users: B reads a missing file in A's folder",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fusers%2F<uid-a>%2Fmissing.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-b>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "73",
+              "etag": "W/\"49-rW1o0iNt7zW3rgr9/wz7M3rApug\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No READ permission.\"}}"
+            }
+          },
+          "elapsedMs": 7,
+          "ms": 763
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/users/<uid-a>/missing.txt'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "users: A reads a missing file in own folder",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fusers%2F<uid-a>%2Fmissing.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 404,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "9",
+              "etag": "W/\"9-0gXL1ngzMqISxa6S1zx3F4wtLyg\""
+            },
+            "body": {
+              "text": "Not Found"
+            }
+          },
+          "elapsedMs": 13,
+          "ms": 830
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/object-not-found",
+          "status": 0,
+          "message": "Firebase Storage: Object 'aruma-ref/s0c-20261023-emu/users/<uid-a>/missing.txt' does not exist. (storage/object-not-found)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "nolist: write",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fnolist%2Fn.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=90414413498696313482637259114464",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "298"
+            },
+            "body": {
+              "text": "--90414413498696313482637259114464\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/nolist/n.txt\",\"contentType\":\"application/octet-stream\"}\r\n--90414413498696313482637259114464\r\nContent-Type: application/octet-stream\r\n\r\naaaa\r\n--90414413498696313482637259114464--"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "519",
+              "etag": "W/\"207-ZXLr8kBBQVBwXg3N+vEboCJBlmg\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/nolist/n.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788611281\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:11.281Z\",\"updated\":\"2026-10-23T20:50:11.281Z\",\"storageClass\":\"STANDARD\",\"size\":\"4\",\"md5Hash\":\"dLhzN0VCANTTP4DEZj3F5Q==\",\"crc32c\":\"1783819952\",\"etag\":\"BfdCqXuTFgGttTvdk6EJzUmYL28\",\"downloadTokens\":\"<download-token-34>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 6,
+          "ms": 891
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788611281",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/nolist/n.txt",
+          "name": "n.txt",
+          "size": 4,
+          "timeCreated": "2026-10-23T20:50:11.281Z",
+          "updated": "2026-10-23T20:50:11.281Z",
+          "md5Hash": "dLhzN0VCANTTP4DEZj3F5Q==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "application/octet-stream",
+          "customMetadata": {}
+        }
+      }
+    },
+    {
+      "step": "nolist: get",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fnolist%2Fn.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "519",
+              "etag": "W/\"207-ZXLr8kBBQVBwXg3N+vEboCJBlmg\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/nolist/n.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788611281\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:11.281Z\",\"updated\":\"2026-10-23T20:50:11.281Z\",\"storageClass\":\"STANDARD\",\"size\":\"4\",\"md5Hash\":\"dLhzN0VCANTTP4DEZj3F5Q==\",\"crc32c\":\"1783819952\",\"etag\":\"BfdCqXuTFgGttTvdk6EJzUmYL28\",\"downloadTokens\":\"<download-token-34>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 8,
+          "ms": 902
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788611281",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/nolist/n.txt",
+          "name": "n.txt",
+          "size": 4,
+          "timeCreated": "2026-10-23T20:50:11.281Z",
+          "updated": "2026-10-23T20:50:11.281Z",
+          "md5Hash": "dLhzN0VCANTTP4DEZj3F5Q==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "application/octet-stream",
+          "customMetadata": {}
+        }
+      }
+    },
+    {
+      "step": "nolist: list",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?prefix=aruma-ref%2Fs0c-20261023-emu%2Fnolist%2F&delimiter=%2F",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "73",
+              "etag": "W/\"49-Ex3LFn4bZmyH6L+B5Sp1uqXGojo\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No LIST permission.\"}}"
+            }
+          },
+          "elapsedMs": 8,
+          "ms": 913
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/nolist'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "list of the run root (no rule)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?prefix=aruma-ref%2Fs0c-20261023-emu%2F&delimiter=%2F",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "73",
+              "etag": "W/\"49-Ex3LFn4bZmyH6L+B5Sp1uqXGojo\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No LIST permission.\"}}"
+            }
+          },
+          "elapsedMs": 6,
+          "ms": 973
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "guarded: create locked, not deletable",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fguarded%2Fg.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=353866326048932030766489132288632",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "330"
+            },
+            "body": {
+              "text": "--353866326048932030766489132288632\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/guarded/g.txt\",\"contentType\":\"application/octet-stream\",\"metadata\":{\"locked\":\"yes\"}}\r\n--353866326048932030766489132288632\r\nContent-Type: application/octet-stream\r\n\r\naaaa\r\n--353866326048932030766489132288632--"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "534",
+              "etag": "W/\"216-DtyzPZDEqj6oToJEm4wSjBswNh0\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/guarded/g.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788611431\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:11.432Z\",\"updated\":\"2026-10-23T20:50:11.432Z\",\"storageClass\":\"STANDARD\",\"size\":\"4\",\"md5Hash\":\"dLhzN0VCANTTP4DEZj3F5Q==\",\"crc32c\":\"1783819952\",\"etag\":\"rRsz9usesQB9KjF1ohYExBawuaI\",\"downloadTokens\":\"<download-token-36>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{\"locked\":\"yes\"}}"
+            }
+          },
+          "elapsedMs": 12,
+          "ms": 1045
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788611431",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/guarded/g.txt",
+          "name": "g.txt",
+          "size": 4,
+          "timeCreated": "2026-10-23T20:50:11.432Z",
+          "updated": "2026-10-23T20:50:11.432Z",
+          "md5Hash": "dLhzN0VCANTTP4DEZj3F5Q==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "application/octet-stream",
+          "customMetadata": {
+            "locked": "yes"
+          }
+        }
+      }
+    },
+    {
+      "step": "guarded: update a locked object",
+      "exchanges": [
+        {
+          "request": {
+            "method": "PATCH",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fguarded%2Fg.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "content-type": "application/json; charset=utf-8",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "20"
+            },
+            "body": {
+              "text": "{\"cacheControl\":\"x\"}"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "74",
+              "etag": "W/\"4a-hfXY/tWzGa+Al+u16F0IrZ4Xqlc\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No WRITE permission.\"}}"
+            }
+          },
+          "elapsedMs": 9,
+          "ms": 1063
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/guarded/g.txt'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "guarded: overwrite a locked object (update)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fguarded%2Fg.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=342733507415512569720648119767322",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "303"
+            },
+            "body": {
+              "text": "--342733507415512569720648119767322\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/guarded/g.txt\",\"contentType\":\"application/octet-stream\"}\r\n--342733507415512569720648119767322\r\nContent-Type: application/octet-stream\r\n\r\naaaaa\r\n--342733507415512569720648119767322--"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "520",
+              "etag": "W/\"208-8ga6OENZ120bhsQ75f8vAQkW+9I\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/guarded/g.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788611516\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:11.516Z\",\"updated\":\"2026-10-23T20:50:11.516Z\",\"storageClass\":\"STANDARD\",\"size\":\"5\",\"md5Hash\":\"WU+AOzgKQTlu1j3KOVA1Qg==\",\"crc32c\":\"1940874007\",\"etag\":\"h0YcrraKQkWgvaI8Q+zy9YPGzM0\",\"downloadTokens\":\"<download-token-37>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 8,
+          "ms": 1126
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788611516",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/guarded/g.txt",
+          "name": "g.txt",
+          "size": 5,
+          "timeCreated": "2026-10-23T20:50:11.516Z",
+          "updated": "2026-10-23T20:50:11.516Z",
+          "md5Hash": "WU+AOzgKQTlu1j3KOVA1Qg==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "application/octet-stream",
+          "customMetadata": {}
+        }
+      }
+    },
+    {
+      "step": "guarded: delete without deletable",
+      "exchanges": [
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fguarded%2Fg.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "74",
+              "etag": "W/\"4a-hfXY/tWzGa+Al+u16F0IrZ4Xqlc\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No WRITE permission.\"}}"
+            }
+          },
+          "elapsedMs": 7,
+          "ms": 1141
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/guarded/g.txt'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "guarded: create deletable",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fguarded%2Fd.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=0282572099819560225118700847587336",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "336"
+            },
+            "body": {
+              "text": "--0282572099819560225118700847587336\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/guarded/d.txt\",\"contentType\":\"application/octet-stream\",\"metadata\":{\"deletable\":\"yes\"}}\r\n--0282572099819560225118700847587336\r\nContent-Type: application/octet-stream\r\n\r\naaaa\r\n--0282572099819560225118700847587336--"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "537",
+              "etag": "W/\"219-t5b56u53lEAOOvx7TruQMOe+vM8\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/guarded/d.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788611595\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:11.595Z\",\"updated\":\"2026-10-23T20:50:11.595Z\",\"storageClass\":\"STANDARD\",\"size\":\"4\",\"md5Hash\":\"dLhzN0VCANTTP4DEZj3F5Q==\",\"crc32c\":\"1783819952\",\"etag\":\"W5NX/0i12ieBxkzvV9OiFdiH4VI\",\"downloadTokens\":\"<download-token-38>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{\"deletable\":\"yes\"}}"
+            }
+          },
+          "elapsedMs": 5,
+          "ms": 1204
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788611595",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/guarded/d.txt",
+          "name": "d.txt",
+          "size": 4,
+          "timeCreated": "2026-10-23T20:50:11.595Z",
+          "updated": "2026-10-23T20:50:11.595Z",
+          "md5Hash": "dLhzN0VCANTTP4DEZj3F5Q==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "application/octet-stream",
+          "customMetadata": {
+            "deletable": "yes"
+          }
+        }
+      }
+    },
+    {
+      "step": "guarded: delete deletable",
+      "exchanges": [
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fguarded%2Fd.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 204,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\""
+            }
+          },
+          "elapsedMs": 3,
+          "ms": 1210
+        }
+      ],
+      "result": {}
+    },
+    {
+      "step": "guarded: delete missing object",
+      "exchanges": [
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fguarded%2Fnone.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "74",
+              "etag": "W/\"4a-hfXY/tWzGa+Al+u16F0IrZ4Xqlc\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No WRITE permission.\"}}"
+            }
+          },
+          "elapsedMs": 4,
+          "ms": 1216
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/guarded/none.txt'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "users: A gets a download URL of own file",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fusers%2F<uid-a>%2Fa.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "547",
+              "etag": "W/\"223-4CK7rF5g2OVWmQtEILN91GWzDFs\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/users/<uid-a>/a.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788611005\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:11.005Z\",\"updated\":\"2026-10-23T20:50:11.005Z\",\"storageClass\":\"STANDARD\",\"size\":\"4\",\"md5Hash\":\"dLhzN0VCANTTP4DEZj3F5Q==\",\"crc32c\":\"1783819952\",\"etag\":\"F6nqAlVbKKFZVinT2W0iUmX6frA\",\"downloadTokens\":\"<download-token-33>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 4,
+          "ms": 1273
+        }
+      ],
+      "result": {
+        "ok": "http://127.0.0.1:8865/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fusers%2F<uid-a>%2Fa.txt?alt=media&token=<download-token-33>"
+      }
+    },
+    {
+      "step": "download URL with no auth: token bypasses rules?",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fusers%2F<uid-a>%2Fa.txt?alt=media&token=<download-token-33>",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "accept-ranges": "bytes",
+              "content-type": "application/octet-stream",
+              "content-disposition": "inline; filename*=a.txt",
+              "content-encoding": "",
+              "etag": "F6nqAlVbKKFZVinT2W0iUmX6frA",
+              "cache-control": "",
+              "x-goog-generation": "1792788611005",
+              "x-goog-metadatageneration": "1",
+              "x-goog-storage-class": "STANDARD",
+              "x-goog-hash": "crc32c=alLusA==,md5=dLhzN0VCANTTP4DEZj3F5Q==",
+              "content-length": "4"
+            },
+            "body": {
+              "text": "aaaa"
+            }
+          },
+          "elapsedMs": 3,
+          "ms": 1277
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "download URL with B's auth",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fusers%2F<uid-a>%2Fa.txt?alt=media&token=<download-token-33>",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <id-token-b>",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "accept-ranges": "bytes",
+              "content-type": "application/octet-stream",
+              "content-disposition": "inline; filename*=a.txt",
+              "content-encoding": "",
+              "etag": "F6nqAlVbKKFZVinT2W0iUmX6frA",
+              "cache-control": "",
+              "x-goog-generation": "1792788611005",
+              "x-goog-metadatageneration": "1",
+              "x-goog-storage-class": "STANDARD",
+              "x-goog-hash": "crc32c=alLusA==,md5=dLhzN0VCANTTP4DEZj3F5Q==",
+              "content-length": "4"
+            },
+            "body": {
+              "text": "aaaa"
+            }
+          },
+          "elapsedMs": 3,
+          "ms": 1281
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "token on the metadata URL (no alt=media), no auth",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fusers%2F<uid-a>%2Fa.txt?token=<download-token-33>",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "547",
+              "etag": "W/\"223-4CK7rF5g2OVWmQtEILN91GWzDFs\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/users/<uid-a>/a.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788611005\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:11.005Z\",\"updated\":\"2026-10-23T20:50:11.005Z\",\"storageClass\":\"STANDARD\",\"size\":\"4\",\"md5Hash\":\"dLhzN0VCANTTP4DEZj3F5Q==\",\"crc32c\":\"1783819952\",\"etag\":\"F6nqAlVbKKFZVinT2W0iUmX6frA\",\"downloadTokens\":\"<download-token-33>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 3,
+          "ms": 1285
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "public: anonymous read of a missing object",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fpublic%2Fnone.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 404,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "9",
+              "etag": "W/\"9-0gXL1ngzMqISxa6S1zx3F4wtLyg\""
+            },
+            "body": {
+              "text": "Not Found"
+            }
+          },
+          "elapsedMs": 4,
+          "ms": 1291
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/object-not-found",
+          "status": 0,
+          "message": "Firebase Storage: Object 'aruma-ref/s0c-20261023-emu/public/none.txt' does not exist. (storage/object-not-found)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "public: A writes (denied)",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fpublic%2Fp.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=725106029572955245499566887863374",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "301"
+            },
+            "body": {
+              "text": "--725106029572955245499566887863374\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/public/p.txt\",\"contentType\":\"application/octet-stream\"}\r\n--725106029572955245499566887863374\r\nContent-Type: application/octet-stream\r\n\r\naaaa\r\n--725106029572955245499566887863374--"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "final",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "74",
+              "etag": "W/\"4a-hfXY/tWzGa+Al+u16F0IrZ4Xqlc\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No WRITE permission.\"}}"
+            }
+          },
+          "elapsedMs": 6,
+          "ms": 1396
+        }
+      ],
+      "result": {
+        "error": {
+          "name": "FirebaseError",
+          "code": "storage/unauthorized",
+          "status": 403,
+          "message": "Firebase Storage: User does not have permission to access 'aruma-ref/s0c-20261023-emu/public/p.txt'. (storage/unauthorized)",
+          "serverResponse": ""
+        }
+      }
+    },
+    {
+      "step": "raw: forged alg=none token",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fplain.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase <jwt>",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "524",
+              "etag": "W/\"20c-6ktzFdlVr1/Xx0fqHlCRNKoiFkc\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/plain.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788609486\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:09.486Z\",\"updated\":\"2026-10-23T20:50:09.486Z\",\"storageClass\":\"STANDARD\",\"size\":\"5\",\"md5Hash\":\"RSmDCNvsXAdX5vdR0PsqKQ==\",\"crc32c\":\"2783812997\",\"etag\":\"1hV3uZFbNfX+T7lsJ0m36A1lHpM\",\"downloadTokens\":\"<download-token-9>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 11,
+          "ms": 1471
+        }
+      ],
+      "result": {
+        "status": 200
+      }
+    },
+    {
+      "step": "raw: garbage token",
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o/aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fplain.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "authorization": "Firebase not-a-token",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate"
+            }
+          },
+          "response": {
+            "status": 403,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "73",
+              "etag": "W/\"49-rW1o0iNt7zW3rgr9/wz7M3rApug\""
+            },
+            "body": {
+              "text": "{\"error\":{\"code\":403,\"message\":\"Permission denied. No READ permission.\"}}"
+            }
+          },
+          "elapsedMs": 4,
+          "ms": 1476
+        }
+      ],
+      "result": {
+        "status": 403
+      }
+    }
+  ],
+  "notes": []
+}

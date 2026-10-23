@@ -1,0 +1,727 @@
+{
+  "scenario": "sdk_upload",
+  "description": "Uploads through the web SDK (firebase 13.1.0 in Node): uploadBytes (multipart), uploadString in each format, uploadBytesResumable small (multipart) and 700 KiB (resumable, several chunks), with metadata.",
+  "source": "emulator",
+  "version": "firebase-tools 15.34.0 Storage emulator (cloud-storage-rules-runtime-v1.1.3.jar, OpenJDK 21)",
+  "captured": "2026-10-23",
+  "script": "capture/capture.mjs",
+  "clients": {
+    "web": "firebase 13.1.0 (Node 24, fetch)",
+    "admin": "firebase-admin 14.5.0 + @google-cloud/storage 8.4.0"
+  },
+  "run": "s0c-20261023-emu",
+  "bucket": "demo-aruma-ref.appspot.com",
+  "steps": [
+    {
+      "step": "uploadBytes small, no metadata",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fplain.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=990053505285998643527123877440854",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "313"
+            },
+            "body": {
+              "text": "--990053505285998643527123877440854\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/plain.txt\",\"contentType\":\"application/octet-stream\"}\r\n--990053505285998643527123877440854\r\nContent-Type: application/octet-stream\r\n\r\nhhhhhhhhhhh\r\n--990053505285998643527123877440854--"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "524",
+              "etag": "W/\"20c-ep13XKJPoHJgAYf/Pw+lA27N0+I\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/plain.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788609154\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:09.155Z\",\"updated\":\"2026-10-23T20:50:09.155Z\",\"storageClass\":\"STANDARD\",\"size\":\"11\",\"md5Hash\":\"HKVs1faVK/OQQiANbhuOVQ==\",\"crc32c\":\"338055207\",\"etag\":\"n3M1bkEDMlqV/XYatcs081G2qKw\",\"downloadTokens\":\"<download-token-1>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 129,
+          "ms": 139
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788609154",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/open/up/plain.txt",
+          "name": "plain.txt",
+          "size": 11,
+          "timeCreated": "2026-10-23T20:50:09.155Z",
+          "updated": "2026-10-23T20:50:09.155Z",
+          "md5Hash": "HKVs1faVK/OQQiANbhuOVQ==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "application/octet-stream",
+          "customMetadata": {}
+        }
+      }
+    },
+    {
+      "step": "uploadBytes with full metadata",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fmeta.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=1081106111898866317807750093659758",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "483"
+            },
+            "body": {
+              "text": "--1081106111898866317807750093659758\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/meta.txt\",\"cacheControl\":\"public, max-age=60\",\"contentDisposition\":\"inline; filename=\\\"m.txt\\\"\",\"contentEncoding\":\"identity\",\"contentLanguage\":\"en\",\"contentType\":\"text/plain;charset=utf-8\",\"metadata\":{\"a\":\"1\",\"b\":\"two\"}}\r\n--1081106111898866317807750093659758\r\nContent-Type: text/plain;charset=utf-8\r\n\r\nhello meta\r\n--1081106111898866317807750093659758--"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "620",
+              "etag": "W/\"26c-DlZrJun4sVxLD2MTz6lk9+Qc/No\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/meta.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788609287\",\"metageneration\":\"1\",\"contentType\":\"text/plain;charset=utf-8\",\"timeCreated\":\"2026-10-23T20:50:09.287Z\",\"updated\":\"2026-10-23T20:50:09.287Z\",\"storageClass\":\"STANDARD\",\"size\":\"10\",\"md5Hash\":\"siwpdHdzko11R6q2rUHFcw==\",\"crc32c\":\"1792781822\",\"etag\":\"7kIJteEvsfZ9N2ZJZgYwr8sUfdg\",\"downloadTokens\":\"<download-token-2>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline; filename=\\\"m.txt\\\"\",\"metadata\":{\"a\":\"1\",\"b\":\"two\"},\"contentLanguage\":\"en\",\"cacheControl\":\"public, max-age=60\"}"
+            }
+          },
+          "elapsedMs": 10,
+          "ms": 159
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788609287",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/open/up/meta.txt",
+          "name": "meta.txt",
+          "size": 10,
+          "timeCreated": "2026-10-23T20:50:09.287Z",
+          "updated": "2026-10-23T20:50:09.287Z",
+          "md5Hash": "siwpdHdzko11R6q2rUHFcw==",
+          "cacheControl": "public, max-age=60",
+          "contentDisposition": "inline; filename=\"m.txt\"",
+          "contentEncoding": "identity",
+          "contentLanguage": "en",
+          "contentType": "text/plain;charset=utf-8",
+          "customMetadata": {
+            "a": "1",
+            "b": "two"
+          }
+        }
+      }
+    },
+    {
+      "step": "uploadString raw",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fraw.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=399636067664289946488571082075668",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "312"
+            },
+            "body": {
+              "text": "--399636067664289946488571082075668\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/raw.txt\",\"contentType\":\"application/octet-stream\"}\r\n--399636067664289946488571082075668\r\nContent-Type: application/octet-stream\r\n\r\nraw text ✓\r\n--399636067664289946488571082075668--"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "523",
+              "etag": "W/\"20b-cXmrzZ5OVaDVloEHNZYCmkgl2qU\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/raw.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788609303\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:09.303Z\",\"updated\":\"2026-10-23T20:50:09.303Z\",\"storageClass\":\"STANDARD\",\"size\":\"12\",\"md5Hash\":\"FQy146ScQYPPIGO9cSiBxQ==\",\"crc32c\":\"2514340836\",\"etag\":\"xPSQjLuhgv6JhBJ5v+OufhiKeHM\",\"downloadTokens\":\"<download-token-3>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 10,
+          "ms": 173
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788609303",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/open/up/raw.txt",
+          "name": "raw.txt",
+          "size": 12,
+          "timeCreated": "2026-10-23T20:50:09.303Z",
+          "updated": "2026-10-23T20:50:09.303Z",
+          "md5Hash": "FQy146ScQYPPIGO9cSiBxQ==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "application/octet-stream",
+          "customMetadata": {}
+        }
+      }
+    },
+    {
+      "step": "uploadString base64",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fb64.bin",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=56397251049398177486890004110012",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "302"
+            },
+            "body": {
+              "base64": "LS01NjM5NzI1MTA0OTM5ODE3NzQ4Njg5MDAwNDExMDAxMg0KQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi9qc29uOyBjaGFyc2V0PXV0Zi04DQoNCnsibmFtZSI6ImFydW1hLXJlZi9zMGMtMjAyNjEwMjMtZW11L29wZW4vdXAvYjY0LmJpbiIsImNvbnRlbnRUeXBlIjoiYXBwbGljYXRpb24vb2N0ZXQtc3RyZWFtIn0NCi0tNTYzOTcyNTEwNDkzOTgxNzc0ODY4OTAwMDQxMTAwMTINCkNvbnRlbnQtVHlwZTogYXBwbGljYXRpb24vb2N0ZXQtc3RyZWFtDQoNCgABAgMEDQotLTU2Mzk3MjUxMDQ5Mzk4MTc3NDg2ODkwMDA0MTEwMDEyLS0=",
+              "length": 302
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "521",
+              "etag": "W/\"209-+NCYhgk6ffQO9QUBMIRGkzkmleA\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/b64.bin\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788609317\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:09.317Z\",\"updated\":\"2026-10-23T20:50:09.317Z\",\"storageClass\":\"STANDARD\",\"size\":\"5\",\"md5Hash\":\"0FN03Dgdm1KAZEanHI55sQ==\",\"crc32c\":\"606449926\",\"etag\":\"51oERmn0XfHEnna5VWDuEJxTMxI\",\"downloadTokens\":\"<download-token-4>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 14,
+          "ms": 192
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788609317",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/open/up/b64.bin",
+          "name": "b64.bin",
+          "size": 5,
+          "timeCreated": "2026-10-23T20:50:09.317Z",
+          "updated": "2026-10-23T20:50:09.317Z",
+          "md5Hash": "0FN03Dgdm1KAZEanHI55sQ==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "application/octet-stream",
+          "customMetadata": {}
+        }
+      }
+    },
+    {
+      "step": "uploadString data_url",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fdata.png",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=230357895230997038444226223491508",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "279"
+            },
+            "body": {
+              "base64": "LS0yMzAzNTc4OTUyMzA5OTcwMzg0NDQyMjYyMjM0OTE1MDgNCkNvbnRlbnQtVHlwZTogYXBwbGljYXRpb24vanNvbjsgY2hhcnNldD11dGYtOA0KDQp7Im5hbWUiOiJhcnVtYS1yZWYvczBjLTIwMjYxMDIzLWVtdS9vcGVuL3VwL2RhdGEucG5nIiwiY29udGVudFR5cGUiOiJpbWFnZS9wbmcifQ0KLS0yMzAzNTc4OTUyMzA5OTcwMzg0NDQyMjYyMjM0OTE1MDgNCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKDQotLTIzMDM1Nzg5NTIzMDk5NzAzODQ0NDIyNjIyMzQ5MTUwOC0t",
+              "length": 279
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "506",
+              "etag": "W/\"1fa-vQ/Jcx1n5r1mIyF5Gwnir9FvEfM\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/data.png\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788609342\",\"metageneration\":\"1\",\"contentType\":\"image/png\",\"timeCreated\":\"2026-10-23T20:50:09.342Z\",\"updated\":\"2026-10-23T20:50:09.342Z\",\"storageClass\":\"STANDARD\",\"size\":\"8\",\"md5Hash\":\"6d0nlwGMrXkYbgPoxa7I3A==\",\"crc32c\":\"83209967\",\"etag\":\"8HgXGtKUYV/8Onc+YlVScNWeUaA\",\"downloadTokens\":\"<download-token-5>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 30,
+          "ms": 227
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788609342",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/open/up/data.png",
+          "name": "data.png",
+          "size": 8,
+          "timeCreated": "2026-10-23T20:50:09.342Z",
+          "updated": "2026-10-23T20:50:09.342Z",
+          "md5Hash": "6d0nlwGMrXkYbgPoxa7I3A==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "image/png",
+          "customMetadata": {}
+        }
+      }
+    },
+    {
+      "step": "uploadBytesResumable 1 KiB",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fsmall-resumable.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=418760840735905472674919326782246",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "1336"
+            },
+            "body": {
+              "text": "--418760840735905472674919326782246\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/small-resumable.txt\",\"contentType\":\"application/octet-stream\"}\r\n--418760840735905472674919326782246\r\nContent-Type: application/octet-stream\r\n\r\nrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\r\n--418760840735905472674919326782246--"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "537",
+              "etag": "W/\"219-eRkx9CLjcXQuHnu/dUWvstAR8Mg\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/small-resumable.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788609375\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:09.375Z\",\"updated\":\"2026-10-23T20:50:09.375Z\",\"storageClass\":\"STANDARD\",\"size\":\"1024\",\"md5Hash\":\"qt0+apVcSpkCTKC/EmFEqQ==\",\"crc32c\":\"3565715690\",\"etag\":\"haJ9QPSBzutDMEfX2xhmBZbY/No\",\"downloadTokens\":\"<download-token-6>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 11,
+          "ms": 245
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788609375",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/open/up/small-resumable.txt",
+          "name": "small-resumable.txt",
+          "size": 1024,
+          "timeCreated": "2026-10-23T20:50:09.375Z",
+          "updated": "2026-10-23T20:50:09.375Z",
+          "md5Hash": "qt0+apVcSpkCTKC/EmFEqQ==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "application/octet-stream",
+          "customMetadata": {}
+        }
+      }
+    },
+    {
+      "step": "uploadBytesResumable 700 KiB",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Flarge.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "resumable",
+              "x-goog-upload-command": "start",
+              "x-goog-upload-header-content-length": "716800",
+              "x-goog-upload-header-content-type": "text/plain",
+              "content-type": "application/json; charset=utf-8",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "107"
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/large.txt\",\"contentType\":\"text/plain\",\"metadata\":{\"big\":\"yes\"}}"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-chunk-granularity": "10000",
+              "x-goog-upload-control-url": "",
+              "x-goog-upload-status": "active",
+              "x-gupload-uploadid": "<upload-id-1>",
+              "x-goog-upload-url": "http://127.0.0.1:8865/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Flarge.txt&upload_id=<upload-id-1>&upload_protocol=resumable",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 4,
+          "ms": 261
+        },
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Flarge.txt&upload_id=<upload-id-1>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-command": "upload",
+              "x-goog-upload-offset": "0",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "262144"
+            },
+            "body": {
+              "length": 262144,
+              "sha256": "af8ce11ea954b085f6d9e583a2a1e2511ace249b18e9559776513e97aa92d255",
+              "headBase64": "TExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTA=="
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "active",
+              "x-gupload-uploadid": "<upload-id-1>",
+              "content-type": "text/plain; charset=utf-8",
+              "content-length": "2",
+              "etag": "W/\"2-nOO9QiTIwXgNtWtBJezz8kv3SLc\""
+            },
+            "body": {
+              "text": "OK"
+            }
+          },
+          "elapsedMs": 7,
+          "ms": 276
+        },
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Flarge.txt&upload_id=<upload-id-1>&upload_protocol=resumable",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-command": "upload, finalize",
+              "x-goog-upload-offset": "262144",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "454656"
+            },
+            "body": {
+              "length": 454656,
+              "sha256": "19cb09b4ee592d6d6033856a74eaf746dfd32a8547deb32749a4c6dcfedccd97",
+              "headBase64": "TExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTA=="
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "x-goog-upload-status": "final",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "526",
+              "etag": "W/\"20e-i8sygG9so7uIZ425MrLHe8ecMUk\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/large.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788609419\",\"metageneration\":\"1\",\"contentType\":\"text/plain\",\"timeCreated\":\"2026-10-23T20:50:09.419Z\",\"updated\":\"2026-10-23T20:50:09.419Z\",\"storageClass\":\"STANDARD\",\"size\":\"716800\",\"md5Hash\":\"k+kQKv0fEcHWVrAczTuCRQ==\",\"crc32c\":\"1264927764\",\"etag\":\"RKpUXSBSP9IE3pyNZd1o0/jutTc\",\"downloadTokens\":\"<download-token-7>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{\"big\":\"yes\"}}"
+            }
+          },
+          "elapsedMs": 13,
+          "ms": 294
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788609419",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/open/up/large.txt",
+          "name": "large.txt",
+          "size": 716800,
+          "timeCreated": "2026-10-23T20:50:09.419Z",
+          "updated": "2026-10-23T20:50:09.419Z",
+          "md5Hash": "k+kQKv0fEcHWVrAczTuCRQ==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "text/plain",
+          "customMetadata": {
+            "big": "yes"
+          }
+        }
+      }
+    },
+    {
+      "step": "uploadBytes path with spaces and unicode",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fdir%20with%20space%2F%D9%85%D9%84%D9%81%20%231%3F.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=54002686099298127105969708855104",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "322"
+            },
+            "body": {
+              "text": "--54002686099298127105969708855104\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/dir with space/ملف #1?.txt\",\"contentType\":\"application/octet-stream\"}\r\n--54002686099298127105969708855104\r\nContent-Type: application/octet-stream\r\n\r\nuuu\r\n--54002686099298127105969708855104--"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "544",
+              "etag": "W/\"220-qLC/QuUejcE91xB8fKHBazT5YkM\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/dir with space/ملف #1?.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788609440\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:09.440Z\",\"updated\":\"2026-10-23T20:50:09.440Z\",\"storageClass\":\"STANDARD\",\"size\":\"3\",\"md5Hash\":\"xw/UJgyeuQvAup0EfAaOuA==\",\"crc32c\":\"2875260516\",\"etag\":\"MhFB2U+xVDOt50/2hsO1UbLMnLA\",\"downloadTokens\":\"<download-token-8>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 22,
+          "ms": 320
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788609440",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/open/up/dir with space/ملف #1?.txt",
+          "name": "ملف #1?.txt",
+          "size": 3,
+          "timeCreated": "2026-10-23T20:50:09.440Z",
+          "updated": "2026-10-23T20:50:09.440Z",
+          "md5Hash": "xw/UJgyeuQvAup0EfAaOuA==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "application/octet-stream",
+          "customMetadata": {}
+        }
+      }
+    },
+    {
+      "step": "uploadBytes overwrite plain.txt",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fplain.txt",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=8712835387979094622062447174203",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "301"
+            },
+            "body": {
+              "text": "--8712835387979094622062447174203\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/plain.txt\",\"contentType\":\"application/octet-stream\"}\r\n--8712835387979094622062447174203\r\nContent-Type: application/octet-stream\r\n\r\nooooo\r\n--8712835387979094622062447174203--"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "524",
+              "etag": "W/\"20c-6ktzFdlVr1/Xx0fqHlCRNKoiFkc\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/plain.txt\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788609486\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:09.486Z\",\"updated\":\"2026-10-23T20:50:09.486Z\",\"storageClass\":\"STANDARD\",\"size\":\"5\",\"md5Hash\":\"RSmDCNvsXAdX5vdR0PsqKQ==\",\"crc32c\":\"2783812997\",\"etag\":\"1hV3uZFbNfX+T7lsJ0m36A1lHpM\",\"downloadTokens\":\"<download-token-9>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 11,
+          "ms": 357
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788609486",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/open/up/plain.txt",
+          "name": "plain.txt",
+          "size": 5,
+          "timeCreated": "2026-10-23T20:50:09.486Z",
+          "updated": "2026-10-23T20:50:09.486Z",
+          "md5Hash": "RSmDCNvsXAdX5vdR0PsqKQ==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "application/octet-stream",
+          "customMetadata": {}
+        }
+      }
+    },
+    {
+      "step": "uploadBytes empty file",
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "url": "/v0/b/demo-aruma-ref.appspot.com/o?name=aruma-ref%2Fs0c-20261023-emu%2Fopen%2Fup%2Fempty",
+            "headers": {
+              "host": "127.0.0.1:8865",
+              "x-goog-upload-protocol": "multipart",
+              "content-type": "multipart/related; boundary=99267789631823727835769250651806",
+              "authorization": "Firebase <id-token-a>",
+              "x-firebase-storage-version": "webjs/13.1.0",
+              "accept": "*/*",
+              "accept-language": "*",
+              "sec-fetch-mode": "cors",
+              "user-agent": "node",
+              "accept-encoding": "gzip, deflate",
+              "content-length": "295"
+            },
+            "body": {
+              "text": "--99267789631823727835769250651806\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/empty\",\"contentType\":\"application/octet-stream\"}\r\n--99267789631823727835769250651806\r\nContent-Type: application/octet-stream\r\n\r\n\r\n--99267789631823727835769250651806--"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "x-powered-by": "Express",
+              "vary": "Origin",
+              "access-control-expose-headers": "content-type,x-firebase-storage-version,X-Goog-Upload-Size-Received,x-goog-upload-url,x-goog-upload-command,x-gupload-uploadid,x-goog-upload-header-content-length,x-goog-upload-header-content-type,x-goog-upload-protocol,x-goog-upload-status,x-goog-upload-chunk-granularity,x-goog-upload-control-url",
+              "content-type": "application/json; charset=utf-8",
+              "content-length": "511",
+              "etag": "W/\"1ff-/sgzOor+5BH61jwU1ylTCs5yzqg\""
+            },
+            "body": {
+              "text": "{\"name\":\"aruma-ref/s0c-20261023-emu/open/up/empty\",\"bucket\":\"demo-aruma-ref.appspot.com\",\"generation\":\"1792788609500\",\"metageneration\":\"1\",\"contentType\":\"application/octet-stream\",\"timeCreated\":\"2026-10-23T20:50:09.500Z\",\"updated\":\"2026-10-23T20:50:09.500Z\",\"storageClass\":\"STANDARD\",\"size\":\"0\",\"md5Hash\":\"1B2M2Y8AsgTpgAmY7PhCfg==\",\"crc32c\":\"0\",\"etag\":\"ncZxqN7qF5A7FPNsEZX8BYw/oLE\",\"downloadTokens\":\"<download-token-10>\",\"contentEncoding\":\"identity\",\"contentDisposition\":\"inline\",\"metadata\":{}}"
+            }
+          },
+          "elapsedMs": 4,
+          "ms": 366
+        }
+      ],
+      "result": {
+        "ok": {
+          "type": "file",
+          "bucket": "demo-aruma-ref.appspot.com",
+          "generation": "1792788609500",
+          "metageneration": "1",
+          "fullPath": "aruma-ref/s0c-20261023-emu/open/up/empty",
+          "name": "empty",
+          "size": 0,
+          "timeCreated": "2026-10-23T20:50:09.500Z",
+          "updated": "2026-10-23T20:50:09.500Z",
+          "md5Hash": "1B2M2Y8AsgTpgAmY7PhCfg==",
+          "contentDisposition": "inline",
+          "contentEncoding": "identity",
+          "contentType": "application/octet-stream",
+          "customMetadata": {}
+        }
+      }
+    }
+  ],
+  "notes": []
+}
