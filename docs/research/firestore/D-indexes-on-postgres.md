@@ -342,8 +342,10 @@
 ```sql
 -- Isolation: database_id leads every key. firestore.databases carries project_number
 -- (scopecheck / optional RLS). Named databases come later; '(default)' only in v0.4.
--- Child tables reach the project through database_id with ON DELETE CASCADE; whether they
--- also carry project_number (with the control.projects FK) is an ADR-024 decision, see notes.
+-- Project data is removed by an idempotent PurgeProject hook (OnProjectPurged) that deletes
+-- the databases row; project rows are never deleted, so the FK to control.projects is for
+-- referential integrity only. Child tables follow via database_id ON DELETE CASCADE; whether
+-- they also carry project_number is an ADR-024 decision, see notes.
 CREATE TABLE firestore.databases (
     id             bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     project_number bigint NOT NULL REFERENCES control.projects (project_number) ON DELETE CASCADE,
@@ -405,7 +407,11 @@ CREATE TABLE firestore.index_defs (
 - **`project_number` في الجداول الفرعية:** يقرره ADR-024 مع قرار RLS (§3.6). خياران:
   - **(أ) الوراثة عبر `database_id`:** الجداول الفرعية تصل إلى المشروع عبر `database_id` بـ `ON DELETE CASCADE`. والـ scope annotation تشرح أن `database_id` لا يُعطى إلا لمشروعه. هذا نمط `rtdb.nodes` اليوم.
   - **(ب) `project_number` في كل جدول:** بالصيغة المعتمدة في `control/00001_init.sql:74` وما بعده: `project_number bigint NOT NULL REFERENCES control.projects (project_number) ON DELETE CASCADE`. يزيد 8 بايت لكل صف فهرس، لكنه شرط لأي سياسة RLS بسيطة.
-- **[V] عدم اتساق قائم يدخل ADR-024:** `rtdb.databases.project_number` بلا FK إلى `control.projects` (`internal/store/migrations/rtdb/00001_init.sql:12`)، بخلاف جداول `control`. فحذف مشروع لا يحذف قواعد RTDB تلقائيًا. نقرر لـ Firestore صراحة ألا نكرر ذلك، ونشير إلى RTDB لإصلاحه في migration جديد.
+- **[V] حذف بيانات المشروع: الآلية عقد purge hook، لا cascade.**
+  - صفوف المشاريع لا تُحذف أبدًا: «Project rows stay, so their ids remain reserved forever» (`internal/tenancy/core/projects.go:378-380`).
+  - كل خدمة بيانات تحذف بياناتها بنفسها حين تنتهي مدة الاحتفاظ: `PurgeExpired` (`projects.go:381` وما بعده) يستدعي الـ hooks المسجّلة، مثل `svc.OnProjectPurged(rtdbSvc.PurgeProject)` (`internal/app/app.go:154`).
+  - فـ `ON DELETE CASCADE` إلى `control.projects` لا يعمل عمليًا. والعقد لـ Firestore في ADR-024: **`PurgeProject` idempotent يُسجَّل بـ `OnProjectPurged`**، ويحذف صف `firestore.databases`.
+  - الـ cascade على `database_id` داخل مخطط Firestore يبقى مفيدًا: يمسح الجداول الفرعية حين يحذف الـ hook صف القاعدة. وFK إلى `control.projects` يجوز للسلامة المرجعية فقط، لا للحذف. لهذا لا يُعدّ غيابه في `rtdb.databases` خللًا.
 
 ## 8. تجارب F0 مقترحة
 1. **fuzz الترميز:** يتحقق من `Compare == bytes.Compare` تصاعديًا وتنازليًا ومتسلسلًا، ويشمل `__id<n>__` وحدود 2^53 و2^63. ثم **مقارنة الترتيب مع المحاكي** عبر مكتبة Go الرسمية، بأسلوب Kor (`docs/differential-testing.md`). ثم **عينة من الإنتاج** على المشروع المرجعي تحت `aruma-ref`، ومعها مسبار لخرائط بشكل أنواع BSON في Standard edition (§2.1).

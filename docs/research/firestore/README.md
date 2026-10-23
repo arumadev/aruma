@@ -89,10 +89,13 @@ ADR-017 أجّل RLS، ونصّ على إعادة النظر حين تظهر «�
 
 ميلي [I]: builder مع حارس، وRLS على جداول Firestore وحدها إن كانت كلفته أقل من 5% في المسار الساخن.
 
-**المفتاح الأجنبي إلى المشروع (يدخل ADR-024 أيًا كان قرار RLS):**
-- `firestore.databases` تحمل `project_number bigint NOT NULL REFERENCES control.projects (project_number) ON DELETE CASCADE`، بصيغة جداول `control` (`control/00001_init.sql:74`).
-- الجداول الفرعية إما ترث المشروع عبر `database_id REFERENCES firestore.databases ON DELETE CASCADE`، والـ scope annotation تشرح ذلك، وإما تحمل `project_number` بالـ FK نفسه، وهو شرط لسياسة RLS بسيطة (D §7).
-- **[V] سابقة غير متسقة:** `rtdb.databases.project_number` بلا FK (`rtdb/00001_init.sql:12`)، فحذف مشروع لا يحذف قواعد RTDB. لا نكررها، ونقترح إصلاحها في migration جديد.
+**المفتاح الأجنبي إلى المشروع، وحذف البيانات (يدخلان ADR-024 أيًا كان قرار RLS):**
+- **الحذف عقد purge hook، لا cascade:**
+  - صفوف المشاريع لا تُحذف أبدًا (`internal/tenancy/core/projects.go:378-380`).
+  - كل خدمة بيانات تسجّل `PurgeProject` idempotent يستدعيه `PurgeExpired` حين تنتهي مدة الاحتفاظ، كما يفعل RTDB (`internal/app/app.go:154`).
+  - Firestore يسجّل hook مثله يحذف صف `firestore.databases`. والجداول الفرعية تتبعه بـ `ON DELETE CASCADE` على `database_id`.
+- **FK من `firestore.databases.project_number` إلى `control.projects`:** يجوز للسلامة المرجعية، لا بوصفه آلية حذف.
+- **الجداول الفرعية:** إما ترث المشروع عبر `database_id`، والـ scope annotation تشرح ذلك، وإما تحمل `project_number`، وهو شرط لسياسة RLS بسيطة (D §7).
 
 ## أسئلة تُحسم بتجربة في F0
 
