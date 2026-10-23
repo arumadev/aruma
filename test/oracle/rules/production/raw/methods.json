@@ -1,0 +1,474 @@
+{
+ "topic": "methods",
+ "set": "development",
+ "recordedAt": "2026-10-23T21:44:22.706Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "c04a971f4df6410c1cb6480301b0987d12bac99580c12e4bc8af2de4b5a923c1",
+        "bytes": 1925
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_read_get/doc",
+      "/databases/(default)/documents/c_read_list/doc",
+      "/databases/(default)/documents/c_get_list/doc",
+      "/databases/(default)/documents/c_write_create/doc",
+      "/databases/(default)/documents/c_write_update/doc",
+      "/databases/(default)/documents/c_write_delete/doc",
+      "/databases/(default)/documents/c_create_update/doc",
+      "/databases/(default)/documents/c_update_create/doc",
+      "/databases/(default)/documents/c_delete_update/doc",
+      "/databases/(default)/documents/c_read_create/doc",
+      "/databases/(default)/documents/c_write_get/doc",
+      "/databases/(default)/documents/c_get_list_both/doc",
+      "/databases/(default)/documents/c_method_get/doc",
+      "/databases/(default)/documents/c_method_list/doc",
+      "/databases/(default)/documents/c_method_create/doc",
+      "/databases/(default)/documents/c_method_update/doc",
+      "/databases/(default)/documents/c_method_delete/doc",
+      "/databases/(default)/documents/c_create_resource_null/doc",
+      "/databases/(default)/documents/c_create_request_resource/doc",
+      "/databases/(default)/documents/c_delete_request_resource_null/doc",
+      "/databases/(default)/documents/c_delete_resource/doc",
+      "/databases/(default)/documents/c_list_query_limit/doc",
+      "/databases/(default)/documents/c_method_write_verb/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 22,
+         "currentOffset": 140,
+         "endOffset": 143
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 22,
+         "currentOffset": 204,
+         "endOffset": 207
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE"
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 14,
+         "column": 23,
+         "currentOffset": 334,
+         "endOffset": 337
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 17,
+         "column": 23,
+         "currentOffset": 402,
+         "endOffset": 405
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 20,
+         "column": 23,
+         "currentOffset": 470,
+         "endOffset": 473
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE"
+     },
+     {
+      "state": "FAILURE"
+     },
+     {
+      "state": "FAILURE"
+     },
+     {
+      "state": "FAILURE"
+     },
+     {
+      "state": "FAILURE"
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 38,
+         "column": 27,
+         "currentOffset": 884,
+         "endOffset": 887
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 41,
+         "column": 22,
+         "currentOffset": 949,
+         "endOffset": 955
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 44,
+         "column": 22,
+         "currentOffset": 1034,
+         "endOffset": 1040
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 47,
+         "column": 23,
+         "currentOffset": 1123,
+         "endOffset": 1129
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 50,
+         "column": 23,
+         "currentOffset": 1214,
+         "endOffset": 1220
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 53,
+         "column": 23,
+         "currentOffset": 1305,
+         "endOffset": 1311
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 56,
+         "column": 24,
+         "currentOffset": 1404,
+         "endOffset": 1411
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 59,
+         "column": 24,
+         "currentOffset": 1496,
+         "endOffset": 1502
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 62,
+         "column": 24,
+         "currentOffset": 1624,
+         "endOffset": 1630
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 65,
+         "column": 24,
+         "currentOffset": 1716,
+         "endOffset": 1723
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [68], column [22]. Property query is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 68,
+       "column": 22,
+       "currentOffset": 1813,
+       "endOffset": 1819
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 71,
+         "column": 23,
+         "currentOffset": 1907,
+         "endOffset": 1910
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "unknown_method_word",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "9c6746d6105af397751590a4c29714a5089782ca8bbecc7b97c543da0bf90f2a",
+        "bytes": 170
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_unknown_method_word/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 13,
+       "currentOffset": 142,
+       "endOffset": 146
+      },
+      "description": "Invalid method name: fetch.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "list_query_in_request",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "b76fe416bbb533272c8969d8dca74b1105fb084d65a33d652af9b00f2925a030",
+        "bytes": 170
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/q/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 22,
+         "currentOffset": 131,
+         "endOffset": 137
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "allow_without_condition",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "5f4d9d41155bdc1f6916c97df328e637f7e067eaa5a17172f518fcc3efe8a3de",
+        "bytes": 139
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/q/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 13,
+         "currentOffset": 122,
+         "endOffset": 124
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "no_allow_statement",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "aa137ca672c9a2ec7352f8ab92ca8ae38220ead2664e751e5f250733298256dd",
+        "bytes": 122
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/q/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 5,
+       "currentOffset": 114,
+       "endOffset": 114
+      },
+      "description": "The 'match' body must contain at least one declaration.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  }
+ ]
+}

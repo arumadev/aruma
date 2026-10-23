@@ -1,0 +1,1238 @@
+{
+ "topic": "storage",
+ "set": "development",
+ "recordedAt": "2026-10-23T21:44:28.593Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "418fc4cce02226bc4a26c25aa83f3841d23cdd07d90053204ef89ff70c6a14ee",
+        "bytes": 7010
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/c_resource_size/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_content_type/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_metadata/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_metadata_missing/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_metadata_get/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_name/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_bucket/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_time_created_is_ts/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_md5/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_missing_field/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_size_string/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_size_string_is_int/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_time_created_int/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_custom_field/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_null_on_get/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_resource_absent_on_get/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_request_resource_on_get/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_request_path/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_request_path_string/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_bucket_var/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_auth_uid/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_auth_claim_bool/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_auth_provider/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_auth_null/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_auth_absent/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_time_set/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_create_content_type/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_create_metadata/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_create_name/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_create_name_absent/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_create_resource_null/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_create_metadata_owner/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_create_size_float_cmp/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_create_keys/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_update_both/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_read_get/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_read_list/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_get_list/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_write_update/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_write_delete/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_method_list/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_fs_get/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_fs_exists/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_fs_get_unmocked/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_fs_get_id/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_fs_get_name/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_fs_bare_get/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_fs_lookups_2/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_fs_lookups_3/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_fs_lookups_11/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_err_or_true/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_err_and_false/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_not_err/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_horses_or_true/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_div_zero/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_int_overflow/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_split/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_size_emoji/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_math_round/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_list_neg_zero/file.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules",
+       "line": 143,
+       "column": 21,
+       "currentOffset": 4991,
+       "endOffset": 4993
+      },
+      "description": "Invalid function name: get.",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules",
+       "line": 164,
+       "column": 21,
+       "currentOffset": 6477,
+       "endOffset": 6484
+      },
+      "description": "Invalid type. Received one of [string]. Expected one of [bool].",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 128,
+         "endOffset": 135
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 245,
+         "endOffset": 252
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 11,
+         "column": 21,
+         "currentOffset": 349,
+         "endOffset": 356
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [14], column [21]. Property missing is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 14,
+       "column": 21,
+       "currentOffset": 459,
+       "endOffset": 466
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 17,
+         "column": 21,
+         "currentOffset": 563,
+         "endOffset": 570
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 20,
+         "column": 21,
+         "currentOffset": 671,
+         "endOffset": 678
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 23,
+         "column": 21,
+         "currentOffset": 768,
+         "endOffset": 775
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 26,
+         "column": 21,
+         "currentOffset": 890,
+         "endOffset": 897
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 29,
+         "column": 21,
+         "currentOffset": 986,
+         "endOffset": 993
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [32], column [21]. Property missing is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 32,
+       "column": 21,
+       "currentOffset": 1085,
+       "endOffset": 1092
+      }
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 35,
+         "column": 21,
+         "currentOffset": 1177,
+         "endOffset": 1184
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 38,
+         "column": 21,
+         "currentOffset": 1276,
+         "endOffset": 1283
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [41], column [42]. Unsupported operation error. Received: int < timestamp. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 41,
+       "column": 42,
+       "currentOffset": 1393,
+       "endOffset": 1393
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 44,
+         "column": 21,
+         "currentOffset": 1479,
+         "endOffset": 1486
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 47,
+         "column": 21,
+         "currentOffset": 1574,
+         "endOffset": 1581
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [50], column [21]. Null value error."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 50,
+       "column": 21,
+       "currentOffset": 1663,
+       "endOffset": 1670
+      }
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [53], column [21]. Property resource is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 53,
+       "column": 21,
+       "currentOffset": 1753,
+       "endOffset": 1759
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 56,
+         "column": 21,
+         "currentOffset": 1840,
+         "endOffset": 1846
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 59,
+         "column": 21,
+         "currentOffset": 1978,
+         "endOffset": 1984
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 62,
+         "column": 21,
+         "currentOffset": 2116,
+         "endOffset": 2121
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 65,
+         "column": 21,
+         "currentOffset": 2210,
+         "endOffset": 2216
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 68,
+         "column": 21,
+         "currentOffset": 2303,
+         "endOffset": 2309
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 71,
+         "column": 21,
+         "currentOffset": 2399,
+         "endOffset": 2405
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 74,
+         "column": 21,
+         "currentOffset": 2517,
+         "endOffset": 2523
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [77], column [21]. Property auth is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 77,
+       "column": 21,
+       "currentOffset": 2599,
+       "endOffset": 2605
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 80,
+         "column": 21,
+         "currentOffset": 2678,
+         "endOffset": 2684
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 83,
+         "column": 24,
+         "currentOffset": 2833,
+         "endOffset": 2839
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 86,
+         "column": 24,
+         "currentOffset": 2950,
+         "endOffset": 2956
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 89,
+         "column": 24,
+         "currentOffset": 3049,
+         "endOffset": 3055
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [92], column [24]. Property bucket is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 92,
+       "column": 24,
+       "currentOffset": 3160,
+       "endOffset": 3166
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 95,
+         "column": 24,
+         "currentOffset": 3264,
+         "endOffset": 3271
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 98,
+         "column": 24,
+         "currentOffset": 3355,
+         "endOffset": 3361
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 101,
+         "column": 24,
+         "currentOffset": 3481,
+         "endOffset": 3487
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 104,
+         "column": 24,
+         "currentOffset": 3580,
+         "endOffset": 3586
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 107,
+         "column": 24,
+         "currentOffset": 3700,
+         "endOffset": 3706
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 110,
+         "column": 22,
+         "currentOffset": 3853,
+         "endOffset": 3856
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 113,
+         "column": 22,
+         "currentOffset": 3918,
+         "endOffset": 3921
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE"
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 119,
+         "column": 23,
+         "currentOffset": 4050,
+         "endOffset": 4053
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 122,
+         "column": 23,
+         "currentOffset": 4119,
+         "endOffset": 4122
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 125,
+         "column": 22,
+         "currentOffset": 4186,
+         "endOffset": 4192
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "functionCalls": [
+       {
+        "function": "firestore.get",
+        "args": [
+         "/databases/%28default%29/documents/users/alice"
+        ]
+       }
+      ],
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 128,
+         "column": 21,
+         "currentOffset": 4267,
+         "endOffset": 4275
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "functionCalls": [
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/users/alice"
+        ]
+       }
+      ],
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 131,
+         "column": 21,
+         "currentOffset": 4419,
+         "endOffset": 4427
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [134], column [21]. Function not found error: Name: [firestore.get]."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 134,
+       "column": 21,
+       "currentOffset": 4559,
+       "endOffset": 4567
+      },
+      "functionCalls": [
+       {
+        "function": "firestore.get",
+        "args": [
+         "/databases/%28default%29/documents/users/alice"
+        ]
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [137], column [21]. Property id is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 137,
+       "column": 21,
+       "currentOffset": 4684,
+       "endOffset": 4692
+      },
+      "functionCalls": [
+       {
+        "function": "firestore.get",
+        "args": [
+         "/databases/%28default%29/documents/users/alice"
+        ]
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [140], column [21]. Property __name__ is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 140,
+       "column": 21,
+       "currentOffset": 4817,
+       "endOffset": 4825
+      },
+      "functionCalls": [
+       {
+        "function": "firestore.get",
+        "args": [
+         "/databases/%28default%29/documents/users/alice"
+        ]
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [143], column [21]. Function not found error: Name: [get]."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 143,
+       "column": 21,
+       "currentOffset": 4991,
+       "endOffset": 4993
+      },
+      "functionCalls": [
+       {
+        "function": "get",
+        "args": [
+         "/databases/%28default%29/documents/users/alice"
+        ]
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "functionCalls": [
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/a"
+        ]
+       },
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/b"
+        ]
+       }
+      ],
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 146,
+         "column": 21,
+         "currentOffset": 5122,
+         "endOffset": 5130
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "functionCalls": [
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/a"
+        ]
+       },
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/b"
+        ]
+       },
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/c"
+        ]
+       }
+      ],
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 149,
+         "column": 21,
+         "currentOffset": 5293,
+         "endOffset": 5301
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "functionCalls": [
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/d0"
+        ]
+       },
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/d1"
+        ]
+       },
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/d2"
+        ]
+       },
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/d3"
+        ]
+       },
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/d4"
+        ]
+       },
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/d5"
+        ]
+       },
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/d6"
+        ]
+       },
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/d7"
+        ]
+       },
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/d8"
+        ]
+       },
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/d9"
+        ]
+       },
+       {
+        "function": "firestore.exists",
+        "args": [
+         "/databases/%28default%29/documents/u/d10"
+        ]
+       }
+      ],
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 152,
+         "column": 21,
+         "currentOffset": 5521,
+         "endOffset": 5529
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 155,
+         "column": 21,
+         "currentOffset": 6207,
+         "endOffset": 6214
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 158,
+         "column": 21,
+         "currentOffset": 6300,
+         "endOffset": 6307
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [161], column [23]. Property missing is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 161,
+       "column": 23,
+       "currentOffset": 6390,
+       "endOffset": 6397
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 164,
+         "column": 21,
+         "currentOffset": 6477,
+         "endOffset": 6484
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [167], column [23]. Divide by zero error."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 167,
+       "column": 23,
+       "currentOffset": 6554,
+       "endOffset": 6554
+      }
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [170], column [41]. Integer value is out of the [-9223372036854775808, 9223372036854775807] range."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 170,
+       "column": 41,
+       "currentOffset": 6645,
+       "endOffset": 6645
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 173,
+         "column": 21,
+         "currentOffset": 6708,
+         "endOffset": 6715
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 176,
+         "column": 21,
+         "currentOffset": 6816,
+         "endOffset": 6818
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 179,
+         "column": 21,
+         "currentOffset": 6892,
+         "endOffset": 6895
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 182,
+         "column": 21,
+         "currentOffset": 6978,
+         "endOffset": 6978
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "ee4e5c5653fd12e4107588a1582e089bf9637b2c70ffec9e211379c8b3e71ba4",
+        "bytes": 277
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/c_set_in_float/file.txt",
+      "/b/demo-oracle.appspot.com/o/c_hashing/file.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 127,
+         "endOffset": 127
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 203,
+         "endOffset": 209
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "fs_database_var",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "340c3708405870130bbc5f14e8f1d1797db9a70b37093289a015cd4e12e459f3",
+        "bytes": 206
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/c_fs_database_var/file.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules",
+       "line": 5,
+       "column": 51,
+       "currentOffset": 160,
+       "endOffset": 167
+      },
+      "description": "Invalid variable name: database.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [5], column [51]. Null value error."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 5,
+       "column": 51,
+       "currentOffset": 160,
+       "endOffset": 167
+      }
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "debug",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "2fd94f04b4fb7fb3d0abf3fc8a4c3de1d7439330251c85898a5c6c3ca14dceec",
+        "bytes": 145
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/c_debug/file.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: storage.rules line [5], column [21]. Function not found error: Name: [debug]."
+      ],
+      "errorPosition": {
+       "fileName": "storage.rules",
+       "line": 5,
+       "column": 21,
+       "currentOffset": 120,
+       "endOffset": 124
+      },
+      "functionCalls": [
+       {
+        "function": "debug",
+        "args": [
+         true
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,699 @@
+{
+ "topic": "storage-paths",
+ "set": "development",
+ "recordedAt": "2026-10-23T21:44:42.858Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "alone",
+   "id": "v2_rest_is_path",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "23827c52837c734aa6aad139c80c646f094038d39a085d63f16bf6ac819a32ef",
+        "bytes": 143
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a/b.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 117,
+         "endOffset": 120
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v2_rest_value",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "cb07f80472ae164b9dcbf75ed0646989d9a2ca0d4baa33c269e0b448180a6d3e",
+        "bytes": 147
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a/b.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 117,
+         "endOffset": 120
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_rest_is_string",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "f1ae73758f3f0e6a22594fe21f0d1f5f29f76beec86a99ce8cfc5d02e370cf7b",
+        "bytes": 145
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a/b.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 117,
+         "endOffset": 120
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_rest_value",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "c1a14c5c966f4e4ab869fd4df6975a8c7080fdd3c94979bdcfbaa882c01dbb56",
+        "bytes": 148
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a/b.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules",
+       "line": 5,
+       "column": 26,
+       "currentOffset": 122,
+       "endOffset": 123
+      },
+      "description": "The sub-expressions are not comparable, so this comparison will always return false.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 117,
+         "endOffset": 120
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v2_zero_segments",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "16b891a5cbe20578aab845a5e564bff02a81b74233ed83f34f9dfbdb49567a18",
+        "bytes": 135
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 117,
+         "endOffset": 120
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_zero_segments",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "9886f85970803b52c66342387b444efce5ab582f86188b75909ae10b36612118",
+        "bytes": 135
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_not_final",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "cd583e74a4fbf8ccad8194af428b2e91fdc8f87d07d82125478648fc8a70a70e",
+        "bytes": 139
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/a/x/f.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules",
+       "line": 4,
+       "column": 11,
+       "currentOffset": 82,
+       "endOffset": 82
+      },
+      "description": "Invalid glob match expression. Glob matches are permitted as the last segment in a match declaration path.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v2_not_final",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "9ed6a22e493ccaaba71536db353794e6d781d4e740cd8735c66209c67d73a288",
+        "bytes": 139
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/a/x/f.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 121,
+         "endOffset": 124
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v2_nested_under_recursive",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "ebce2a1e9f267a84a76fe1da4e0f9210d462efb1c0ecf2034fff66319674ab1c",
+        "bytes": 166
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a/x/f.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 6,
+         "column": 23,
+         "currentOffset": 140,
+         "endOffset": 143
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "space_in_name",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "5219c20acbb3bc6db5c289b87649068ffbc7ca87e997b1433d29efa160fdac41",
+        "bytes": 139
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a b.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 111,
+         "endOffset": 111
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "overlap_or",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "bf9021375752a40ae94ef4d6f65618c93e0bb2c252bc927566bff56592902f1b",
+        "bytes": 187
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 111,
+         "endOffset": 115
+        },
+        "value": false
+       },
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 165,
+         "endOffset": 165
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "bucket_literal",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "e4613e89535ad02d17e3b9894b2b4abdc817cea92570fd3f567fc0db7788565a",
+        "bytes": 144
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 126,
+         "endOffset": 129
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "let_v1",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "3741a368a2df70a461657a4c48c9f21dbfe215be35df3c2eb81a985d5ee2152e",
+        "bytes": 175
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules",
+       "line": 4,
+       "column": 24,
+       "currentOffset": 95,
+       "endOffset": 95
+      },
+      "description": "Let bindings are not allowed in rules_version=\"1\";",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "function_v1",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "633c839df71e9fb5fa86116e1d4ecd2b9f3c5aa8e708370687616a8375798879",
+        "bytes": 162
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a.txt"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 6,
+         "column": 21,
+         "currentOffset": 145,
+         "endOffset": 145
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "list_on_prefix",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "ef1252f4bff1d9093a77577e6a46c92d77a35509463cea3a1b72dcce9f945329",
+        "bytes": 136
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/"
+     ]
+    }
+   },
+   "status": 400,
+   "response": {
+    "error": {
+     "code": 400,
+     "message": "Resource path string_value: \t \"/b/demo-oracle.appspot.com/o/p/\"\n should be URL-encoded.",
+     "status": "INVALID_ARGUMENT"
+    }
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "list_on_folder",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "storage.rules",
+       "content": {
+        "sha256": "bda1ccc38325f83f1d5f46dbacbed009be8c4a8c25b2a07e6326685e53cd6fab",
+        "bytes": 134
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/b/demo-oracle.appspot.com/o/p/a"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 22,
+         "currentOffset": 112,
+         "endOffset": 112
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

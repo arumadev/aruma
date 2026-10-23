@@ -1,0 +1,1661 @@
+{
+ "topic": "followups",
+ "set": "development",
+ "recordedAt": "2026-10-23T22:03:01.343Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "d57a0baa04c4200ba99030ce071a1c4d4be989721565df90ec4f35ba66044453",
+        "bytes": 3301
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_crc32_little_endian/doc",
+      "/databases/(default)/documents/c_crc32_big_endian/doc",
+      "/databases/(default)/documents/c_crc32_hex/doc",
+      "/databases/(default)/documents/c_crc32c_hex/doc",
+      "/databases/(default)/documents/c_lower_non_ascii_unchanged/doc",
+      "/databases/(default)/documents/c_upper_non_ascii_unchanged/doc",
+      "/databases/(default)/documents/c_lower_ascii_mixed/doc",
+      "/databases/(default)/documents/c_index_emoji_utf16/doc",
+      "/databases/(default)/documents/c_index_emoji_half/doc",
+      "/databases/(default)/documents/c_split_empty_sep_size_3/doc",
+      "/databases/(default)/documents/c_split_empty_sep_size_4/doc",
+      "/databases/(default)/documents/c_split_empty_sep_first/doc",
+      "/databases/(default)/documents/c_split_only_separators/doc",
+      "/databases/(default)/documents/c_split_empty_sep_first_empty/doc",
+      "/databases/(default)/documents/c_split_empty_sep_last/doc",
+      "/databases/(default)/documents/c_split_only_separators_1/doc",
+      "/databases/(default)/documents/c_split_only_separators_3/doc",
+      "/databases/(default)/documents/c_split_trailing_two_empties/doc",
+      "/databases/(default)/documents/c_split_middle_empty_kept/doc",
+      "/databases/(default)/documents/c_split_slash_name/doc",
+      "/databases/(default)/documents/c_base64_url_md5/doc",
+      "/databases/(default)/documents/c_diff_added_direction/doc",
+      "/databases/(default)/documents/c_diff_removed_direction/doc",
+      "/databases/(default)/documents/c_int_of_inf_value/doc",
+      "/databases/(default)/documents/c_int_of_huge_float_value/doc",
+      "/databases/(default)/documents/c_int_of_nan_value/doc",
+      "/databases/(default)/documents/c_int_min_div_neg1_value/doc",
+      "/databases/(default)/documents/c_list_eq_int_float_strict/doc",
+      "/databases/(default)/documents/c_map_eq_int_float/doc",
+      "/databases/(default)/documents/c_set_eq_int_float/doc",
+      "/databases/(default)/documents/c_neg_zero_in_list/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 150,
+         "endOffset": 156
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 259,
+         "endOffset": 265
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 11,
+         "column": 21,
+         "currentOffset": 361,
+         "endOffset": 367
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 14,
+         "column": 21,
+         "currentOffset": 469,
+         "endOffset": 475
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 17,
+         "column": 21,
+         "currentOffset": 593,
+         "endOffset": 595
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 20,
+         "column": 21,
+         "currentOffset": 686,
+         "endOffset": 688
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 23,
+         "column": 21,
+         "currentOffset": 771,
+         "endOffset": 775
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 26,
+         "column": 21,
+         "currentOffset": 860,
+         "endOffset": 863
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 29,
+         "column": 21,
+         "currentOffset": 940,
+         "endOffset": 943
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 32,
+         "column": 21,
+         "currentOffset": 1031,
+         "endOffset": 1035
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 35,
+         "column": 21,
+         "currentOffset": 1130,
+         "endOffset": 1134
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 38,
+         "column": 21,
+         "currentOffset": 1228,
+         "endOffset": 1232
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 41,
+         "column": 21,
+         "currentOffset": 1324,
+         "endOffset": 1327
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 44,
+         "column": 21,
+         "currentOffset": 1428,
+         "endOffset": 1432
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 47,
+         "column": 21,
+         "currentOffset": 1522,
+         "endOffset": 1526
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 50,
+         "column": 21,
+         "currentOffset": 1620,
+         "endOffset": 1623
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 53,
+         "column": 21,
+         "currentOffset": 1720,
+         "endOffset": 1723
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 56,
+         "column": 21,
+         "currentOffset": 1823,
+         "endOffset": 1827
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 59,
+         "column": 21,
+         "currentOffset": 1921,
+         "endOffset": 1926
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 62,
+         "column": 21,
+         "currentOffset": 2022,
+         "endOffset": 2039
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 65,
+         "column": 21,
+         "currentOffset": 2145,
+         "endOffset": 2151
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 68,
+         "column": 21,
+         "currentOffset": 2275,
+         "endOffset": 2275
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 71,
+         "column": 21,
+         "currentOffset": 2407,
+         "endOffset": 2407
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 74,
+         "column": 21,
+         "currentOffset": 2535,
+         "endOffset": 2537
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 77,
+         "column": 21,
+         "currentOffset": 2645,
+         "endOffset": 2647
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 80,
+         "column": 21,
+         "currentOffset": 2762,
+         "endOffset": 2764
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 83,
+         "column": 21,
+         "currentOffset": 2853,
+         "endOffset": 2853
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 86,
+         "column": 21,
+         "currentOffset": 2986,
+         "endOffset": 2986
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 89,
+         "column": 21,
+         "currentOffset": 3080,
+         "endOffset": 3080
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 92,
+         "column": 21,
+         "currentOffset": 3168,
+         "endOffset": 3168
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 95,
+         "column": 21,
+         "currentOffset": 3262,
+         "endOffset": 3264
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "allow_unknown_verb_word",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "0c93b30298dc65376bbe6b9aa524cb4d8706e32c48bb81692e5eebc5150aad66",
+        "bytes": 174
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_allow_unknown_verb_word/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 13,
+       "currentOffset": 146,
+       "endOffset": 150
+      },
+      "description": "Invalid method name: fetch.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_rest_is_path",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "5c88162c4f9a143e775585e290dd6c81c2be7c8b31ec345d3a91a7d3e8e9b859",
+        "bytes": 160
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a/b/c"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 134,
+         "endOffset": 137
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_rest_eq_path",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "9d11d59e8c2a8e0e170f849d82a41a1c9dff04517cb3f6c8be78e09135f8b17d",
+        "bytes": 162
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a/b/c"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 134,
+         "endOffset": 137
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_rest_size",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "930debfdec2a975e576d66fdae1f8d9637433c1e8559e9fedf97c75c69e8f06c",
+        "bytes": 164
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a/b/c"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 21,
+       "currentOffset": 134,
+       "endOffset": 137
+      },
+      "description": "Invalid type. Received one of [path]. Expected one of [string, bytes, list, set, map].",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 21,
+       "currentOffset": 134,
+       "endOffset": 137
+      },
+      "description": "Invalid type. There is no type for variable 'rest' that satisfies all clauses.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [5], column [21]. Function not found error: Name: [size]."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 21,
+       "currentOffset": 134,
+       "endOffset": 137
+      },
+      "functionCalls": [
+       {
+        "function": "size"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_rest_string",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "c7afb95431ebd4f29cad6dbfb7871f44f6ab05480d1da72fb79ed7e0668d6660",
+        "bytes": 171
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a/b/c"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 134,
+         "endOffset": 139
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_rest_one_segment",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "f25235703dbd9de5199a28c298d2dd2c2172a0ef4deea94555c131ae1acc89b8",
+        "bytes": 159
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 26,
+       "currentOffset": 139,
+       "endOffset": 140
+      },
+      "description": "The sub-expressions are not comparable, so this comparison will always return false.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 134,
+         "endOffset": 137
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_rest_is_map",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "98549334b06fc09cb336e67c9ad5e142b07f1ed2ba912711e3703540e6193204",
+        "bytes": 159
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a/b/c"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 134,
+         "endOffset": 137
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v2_rest_on_one_segment",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "592fb41d1dc9186ab0c8ad6aebc27ba3a95d5e5c36aaa280b921b971c88f34da",
+        "bytes": 158
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 134,
+         "endOffset": 137
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "nested_under_root_recursive",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "0ca9f301934afcc5f6d71696dc917dfaa50677ee7c61dd60efd5af6bc9b6223c",
+        "bytes": 181
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/x/d"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 6,
+         "column": 23,
+         "currentOffset": 155,
+         "endOffset": 158
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "nested_under_recursive_deep",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "18d174f44b08cf77280dfa55ac145b67fe485ddc4c8db57f908023e5d5880554",
+        "bytes": 183
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a/b/x/d"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 6,
+         "column": 23,
+         "currentOffset": 157,
+         "endOffset": 160
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "nested_under_recursive_var",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "8fca39e53a70174c09e5c0c43d6f598e625cc2d9c35cefcde2d698e2ca23d1e6",
+        "bytes": 189
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a/x/d"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 6,
+         "column": 23,
+         "currentOffset": 157,
+         "endOffset": 160
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "size_comment_262000",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "2b7c6aa7fcfd6203ccedd103860cf6849dd9de1d671ed113ccd3b6441ac8d668",
+        "bytes": 262000,
+        "generated": {
+         "kind": "comment-padding",
+         "total": 262000
+        }
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 7,
+         "column": 21,
+         "currentOffset": 261982,
+         "endOffset": 261985
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "size_comment_262100",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "171287c192bcff98ad815312519288e092d2ffb643c11175fdba5928c263e86b",
+        "bytes": 262100,
+        "generated": {
+         "kind": "comment-padding",
+         "total": 262100
+        }
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 7,
+         "column": 21,
+         "currentOffset": 262082,
+         "endOffset": 262085
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "size_comment_262110",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "8a9f1f90d5c77be438081607674074f48b45fc8a0549d20252219c32018a0bd9",
+        "bytes": 262110,
+        "generated": {
+         "kind": "comment-padding",
+         "total": 262110
+        }
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 7,
+         "column": 21,
+         "currentOffset": 262092,
+         "endOffset": 262095
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "size_comment_262117",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "86f281422470622a1c3d045f3ccd76dea41c708651ea22377d9ec25e364e13bf",
+        "bytes": 262117,
+        "generated": {
+         "kind": "comment-padding",
+         "total": 262117
+        }
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 7,
+         "column": 21,
+         "currentOffset": 262099,
+         "endOffset": 262102
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "size_comment_262118",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "818f0322f0dcf832c8b94e3a91d67933778149fd866ee3dbde100c3d29bbdf02",
+        "bytes": 262118,
+        "generated": {
+         "kind": "comment-padding",
+         "total": 262118
+        }
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 7,
+         "column": 21,
+         "currentOffset": 262100,
+         "endOffset": 262103
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "size_comment_262119",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "bd5f511e0a1c19dc0a38b8ec73510ed4ea5e6a75a207b63f9a01dddabcf65f2a",
+        "bytes": 262119,
+        "generated": {
+         "kind": "comment-padding",
+         "total": 262119
+        }
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 7,
+         "column": 21,
+         "currentOffset": 262101,
+         "endOffset": 262104
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "size_comment_262120",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "1ed05a4e7bd9674ebd9eb9d912ec4d7bbd4983800202021aa0fcde9fe934bdd2",
+        "bytes": 262120,
+        "generated": {
+         "kind": "comment-padding",
+         "total": 262120
+        }
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 400,
+   "response": {
+    "error": {
+     "code": 400,
+     "message": "Total size of sources must be smaller than 262144.",
+     "status": "INVALID_ARGUMENT"
+    }
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "size_comment_262128",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "e3a966c431eeb8c69b6ea31880b2318e2da2b55b020b238e25c2271bccf12a09",
+        "bytes": 262128,
+        "generated": {
+         "kind": "comment-padding",
+         "total": 262128
+        }
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 400,
+   "response": {
+    "error": {
+     "code": 400,
+     "message": "Total size of sources must be smaller than 262144.",
+     "status": "INVALID_ARGUMENT"
+    }
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "size_comment_262129",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "e9ae7aefd141b9b61a2e505e9b94fd9b2655b008a60fb5c191a01d4325e24bdc",
+        "bytes": 262129,
+        "generated": {
+         "kind": "comment-padding",
+         "total": 262129
+        }
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 400,
+   "response": {
+    "error": {
+     "code": 400,
+     "message": "Total size of sources must be smaller than 262144.",
+     "status": "INVALID_ARGUMENT"
+    }
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "size_comment_262140",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "e4f1929aa0a69dd3632f0bc83050a811f1e4a98c97eff0999f867c06383952d2",
+        "bytes": 262140,
+        "generated": {
+         "kind": "comment-padding",
+         "total": 262140
+        }
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 400,
+   "response": {
+    "error": {
+     "code": 400,
+     "message": "Total size of sources must be smaller than 262144.",
+     "status": "INVALID_ARGUMENT"
+    }
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "and_true_99",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "ae21dfbfde74a9b323c4d586b7788de08f99594bb1c65e5f204f4b2e2aea4d12",
+        "bytes": 934
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 132,
+         "endOffset": 135
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "ternary_nested_46",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "d6205beac613ef3aac46dcd428ed7970629df545f00850acb47ccce985e0a0e3",
+        "bytes": 1024
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 132,
+         "endOffset": 132
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "ternary_nested_47",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "d8a76ee926c0dd84121615c77d6e568e004f40e0804fd792573d3cd4439c8e20",
+        "bytes": 1043
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 132,
+         "endOffset": 132
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "ternary_nested_48",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "bea85615f6a40200c1408fbf9b4def545c00d5325ab616859f563e496a8ac9a5",
+        "bytes": 1062
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 132,
+         "endOffset": 132
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "ternary_nested_49",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "f13237ef1c949ce0ea55877187ed03d2ff661081fe869e9d99f0174c4626b9c3",
+        "bytes": 1081
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/lim/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 502,
+       "currentOffset": 613,
+       "endOffset": 613
+      },
+      "description": "Expression is too complex to evaluate safely.",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 507,
+       "currentOffset": 618,
+       "endOffset": 618
+      },
+      "description": "Expression is too complex to evaluate safely.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  }
+ ]
+}

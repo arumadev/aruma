@@ -1,0 +1,661 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "storage-paths",
+ "service": "storage",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "rules-test-api",
+ "project": "chatapp-8ae21",
+ "recordedAt": "2026-10-23T21:44:42.858Z",
+ "version": "firebaserules.googleapis.com v1 projects.test",
+ "rulesets": {},
+ "resources": {
+  "default": {
+   "name": "dir/file.txt",
+   "bucket": "demo-oracle.appspot.com",
+   "size": 1024,
+   "contentType": "text/plain",
+   "metadata": {
+    "owner": "alice",
+    "k": "v"
+   },
+   "timeCreated": "2026-01-02T03:04:05.000Z",
+   "updated": "2026-01-03T03:04:05.000Z",
+   "generation": 1700000000000000,
+   "metageneration": 1,
+   "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+   "crc32c": "yZRlqg==",
+   "etag": "CJqUmJ6Ry4ADEAE=",
+   "contentDisposition": "inline",
+   "contentEncoding": "identity"
+  }
+ },
+ "cases": [
+  {
+   "id": "aruma/storage-paths/v2_rest_is_path",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: {rest=**} is a path",
+   "ruleset": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      allow get: if rest is path;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/p/a/b.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage-paths/v2_rest_value",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: {rest=**} of p/a/b.txt",
+   "ruleset": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      allow get: if rest == /a/b.txt;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/p/a/b.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage-paths/v1_rest_is_string",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v1: {rest=**} is a string",
+   "ruleset": "rules_version = '1';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      allow get: if rest is string;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/p/a/b.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "warnings": "WARNING Lundefined:undefined Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/storage-paths/v1_rest_value",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v1: {rest=**} of p/a/b.txt",
+   "ruleset": "rules_version = '1';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      allow get: if rest == 'a/b.txt';\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/p/a/b.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "warnings": "WARNING Lundefined:undefined Ruleset uses old version (version [1]). Please update to the latest version (version [2]).\nWARNING L5:26 The sub-expressions are not comparable, so this comparison will always return false.",
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/storage-paths/v2_zero_segments",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: match /p/{rest=**} on the object p",
+   "ruleset": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      allow get: if true;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/p",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage-paths/v1_zero_segments",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v1: match /p/{rest=**} on the object p",
+   "ruleset": "rules_version = '1';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      allow get: if true;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/p",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "warnings": "WARNING Lundefined:undefined Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+   "expected": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   }
+  },
+  {
+   "id": "aruma/storage-paths/v1_not_final",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v1: {rest=**} followed by more segments",
+   "ruleset": "rules_version = '1';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /{rest=**}/x/{f} {\n      allow get: if true;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/a/x/f.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:11 Invalid glob match expression. Glob matches are permitted as the last segment in a match declaration path."
+   }
+  },
+  {
+   "id": "aruma/storage-paths/v2_not_final",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: {rest=**} followed by more segments",
+   "ruleset": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /{rest=**}/x/{f} {\n      allow get: if true;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/a/x/f.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage-paths/v2_nested_under_recursive",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: a nested match under a non-final {rest=**}",
+   "ruleset": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      match /x/{f} {\n        allow get: if true;\n      }\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/p/a/x/f.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage-paths/space_in_name",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "an object name with a space",
+   "ruleset": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{f} {\n      allow get: if f == 'a b.txt';\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/p/a b.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage-paths/overlap_or",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "two matches: one false, one true",
+   "ruleset": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{f} {\n      allow get: if false;\n    }\n    match /{d}/{f} {\n      allow get: if d == 'p';\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/p/a.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false,
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage-paths/bucket_literal",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "match a bucket by name",
+   "ruleset": "rules_version = '2';\nservice firebase.storage {\n  match /b/demo-oracle.appspot.com/o {\n    match /p/{f} {\n      allow get: if true;\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/p/a.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage-paths/let_v1",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "a let binding in a function under rules_version '1'",
+   "ruleset": "rules_version = '1';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    function g() { let a = 1; return a == 1; }\n    match /p/{f} {\n      allow get: if g();\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/p/a.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "WARNING Lundefined:undefined Ruleset uses old version (version [1]). Please update to the latest version (version [2]).\nERROR L4:24 Let bindings are not allowed in rules_version=\"1\";"
+   }
+  },
+  {
+   "id": "aruma/storage-paths/function_v1",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "a function under rules_version '1'",
+   "ruleset": "rules_version = '1';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    function g() { return true; }\n    match /p/{f} {\n      allow get: if g();\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/p/a.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "warnings": "WARNING Lundefined:undefined Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage-paths/list_on_prefix",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "list with a path that ends in a slash",
+   "ruleset": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      allow list: if true;\n    }\n  }\n}\n",
+   "request": {
+    "method": "list",
+    "path": "/b/demo-oracle.appspot.com/o/p/",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "error",
+    "errorKind": "request",
+    "message": "400 INVALID_ARGUMENT Resource path string_value: \t \"/b/demo-oracle.appspot.com/o/p/\"\n should be URL-encoded."
+   }
+  },
+  {
+   "id": "aruma/storage-paths/list_on_folder",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:42.858Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "list on the folder p/a",
+   "ruleset": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{f} {\n      allow list: if f == 'a';\n    }\n  }\n}\n",
+   "request": {
+    "method": "list",
+    "path": "/b/demo-oracle.appspot.com/o/p/a",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resource": null,
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  }
+ ]
+}

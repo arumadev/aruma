@@ -1,0 +1,1267 @@
+{
+ "topic": "paths",
+ "set": "development",
+ "recordedAt": "2026-10-23T21:44:03.794Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "01ebbfb47e5688169cb5278256fe7f2071dafaab9ca2512d9eedad9ad04bc0c2",
+        "bytes": 1870
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_literal_ne/doc",
+      "/databases/(default)/documents/c_interpolate/doc",
+      "/databases/(default)/documents/c_interpolate_slash/doc",
+      "/databases/(default)/documents/c_interpolate_slash_size/doc",
+      "/databases/(default)/documents/c_interpolate_int/doc",
+      "/databases/(default)/documents/c_path_fn_relative/doc",
+      "/databases/(default)/documents/c_path_index/doc",
+      "/databases/(default)/documents/c_path_index_out_of_range/doc",
+      "/databases/(default)/documents/c_path_eq_string/doc",
+      "/databases/(default)/documents/c_path_string/doc",
+      "/databases/(default)/documents/c_path_concat/doc",
+      "/databases/(default)/documents/c_request_path_index/doc",
+      "/databases/(default)/documents/c_request_path_tail/doc",
+      "/databases/(default)/documents/c_path_is_path/doc",
+      "/databases/(default)/documents/c_path_in/doc",
+      "/databases/(default)/documents/c_path_special_chars/doc",
+      "/databases/(default)/documents/c_path_encoded_segment/doc",
+      "/databases/(default)/documents/c_path_dot_segment/doc",
+      "/databases/(default)/documents/c_path_dash_segment/doc",
+      "/databases/(default)/documents/c_path_parens_segment/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 29,
+       "column": 26,
+       "currentOffset": 869,
+       "endOffset": 870
+      },
+      "description": "The sub-expressions are not comparable, so this comparison will always return false.",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 35,
+       "column": 21,
+       "currentOffset": 1022,
+       "endOffset": 1023
+      },
+      "description": "Invalid type. Received one of [path]. Expected one of [int, float, string, duration, timestamp].",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 47,
+       "column": 28,
+       "currentOffset": 1383,
+       "endOffset": 1384
+      },
+      "description": "Invalid type. Received one of [path]. Expected one of [list, set, map, constraint].",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 141,
+         "endOffset": 142
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 214,
+         "endOffset": 223
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 11,
+         "column": 21,
+         "currentOffset": 350,
+         "endOffset": 351
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 14,
+         "column": 21,
+         "currentOffset": 447,
+         "endOffset": 448
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 17,
+         "column": 21,
+         "currentOffset": 537,
+         "endOffset": 538
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 20,
+         "column": 21,
+         "currentOffset": 618,
+         "endOffset": 621
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 23,
+         "column": 21,
+         "currentOffset": 697,
+         "endOffset": 698
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [26], column [21]. Index out of bound error. Index: [5] , size: [2]."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 26,
+       "column": 21,
+       "currentOffset": 786,
+       "endOffset": 787
+      }
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 29,
+         "column": 21,
+         "currentOffset": 864,
+         "endOffset": 865
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 32,
+         "column": 21,
+         "currentOffset": 939,
+         "endOffset": 944
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [35], column [26]. Unsupported operation error. Received: path + string. Expected: int + int, float + float, string + string, duration + duration, duration + timestamp, timestamp + duration."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 35,
+       "column": 26,
+       "currentOffset": 1027,
+       "endOffset": 1027
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 38,
+         "column": 21,
+         "currentOffset": 1113,
+         "endOffset": 1119
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 41,
+         "column": 21,
+         "currentOffset": 1221,
+         "endOffset": 1227
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 44,
+         "column": 21,
+         "currentOffset": 1307,
+         "endOffset": 1308
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [47], column [21]. Function not found error: Name: [in]."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 47,
+       "column": 21,
+       "currentOffset": 1376,
+       "endOffset": 1378
+      },
+      "functionCalls": [
+       {
+        "function": "in",
+        "args": [
+         "b"
+        ]
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 50,
+         "column": 21,
+         "currentOffset": 1455,
+         "endOffset": 1456
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 53,
+         "column": 21,
+         "currentOffset": 1550,
+         "endOffset": 1551
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 56,
+         "column": 21,
+         "currentOffset": 1636,
+         "endOffset": 1637
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 59,
+         "column": 21,
+         "currentOffset": 1721,
+         "endOffset": 1722
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 62,
+         "column": 21,
+         "currentOffset": 1808,
+         "endOffset": 1817
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "wild_v2_rest_is_path",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "6adaf9ff2bc8489f7f8c9dfe6ed86ec556d40ebe1b0e60ddcedd1fa94f89c729",
+        "bytes": 160
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a/b/c"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 134,
+         "endOffset": 137
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "wild_v1_rest_is_string",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "b56c4eb8a6c70c9af77702c201889676da7f3de499f6ed3ceba903070564ff57",
+        "bytes": 162
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a/b/c"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 134,
+         "endOffset": 137
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "wild_v1_rest_value",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "280474e17bb7f4bb220c13926c4619f5f616bf13460c4f5132ffe667d78347c7",
+        "bytes": 163
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a/b/c"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 26,
+       "currentOffset": 139,
+       "endOffset": 140
+      },
+      "description": "The sub-expressions are not comparable, so this comparison will always return false.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 134,
+         "endOffset": 137
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "wild_noversion_rest_is_string",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "5a56feeea291eeff6acf2213df4d1b9fcc2975d1c79779ce7476edb8005b99a8",
+        "bytes": 141
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a/b/c"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 4,
+         "column": 21,
+         "currentOffset": 113,
+         "endOffset": 116
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "wild_v1_not_final",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "cb7336a5f8cbcaced890c7e8079f481b24de245e4c66bcae4006467f7c94575a",
+        "bytes": 159
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/a/b/docs/x"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 4,
+       "column": 11,
+       "currentOffset": 99,
+       "endOffset": 99
+      },
+      "description": "Invalid glob match expression. Glob matches are permitted as the last segment in a match declaration path.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "wild_v2_not_final",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "0efc784cce01fe4d3d0e910b5d3525110a3e1227175c641f821cac7154e1b15b",
+        "bytes": 159
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/a/b/docs/x"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 141,
+         "endOffset": 144
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "wild_v2_not_final_zero",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "4e596257f989c190e64b13cdd48a98cba4e809bc60cac2e682dd9eaf92fbb77f",
+        "bytes": 164
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/docs/x"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 5,
+       "column": 29,
+       "currentOffset": 149,
+       "endOffset": 149
+      },
+      "description": "Forward slash '/' found where identifier or binding expected.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "wild_v2_two_recursive",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "2b24f26c3752fb1158d854474b42ea09074e7736048282e5597d4d5cc3f5625e",
+        "bytes": 156
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/q/x/y/z"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 4,
+       "column": 20,
+       "currentOffset": 108,
+       "endOffset": 108
+      },
+      "description": "Invalid glob match expression. Only one glob match is permitted in a match declaration path.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "wild_v2_nested_under_recursive",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "ee48b6d19f0c5c00db4273cdc500ae508a26b18a0f60f9a097d9578d7c4bbd99",
+        "bytes": 186
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/p/a/docs/x"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 6,
+         "column": 23,
+         "currentOffset": 160,
+         "endOffset": 163
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "wild_v2_zero_segments_doc",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "2fca2433a4ab502abc205d0839d643a8cb083340a638c98c0acf43ad529d6210",
+        "bytes": 156
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c/d"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 138,
+         "endOffset": 141
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "wild_v1_zero_segments_doc",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "e9ef2d2b829318756313e2b530312d7ab03b7b077d525d9499cf7b37ea0b3440",
+        "bytes": 156
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c/d"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "single_wildcard_one_segment",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "db4279486c1cb88490f76eccfb6325a6e87c83feb887f6f1f19412e55aad7cec",
+        "bytes": 146
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c/d/sub/e"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "FAILURE"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "overlap_or",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "51fc527df5b966917f018a84c50b120dc42fbe0b1c29d261f0327c76c3708e11",
+        "bytes": 210
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c/d"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 128,
+         "endOffset": 132
+        },
+        "value": false
+       },
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 185,
+         "endOffset": 188
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "nested_parent_rule_not_inherited",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "e04255393b384a7360314871da4c67c46bc87ee813fd70035f6aceba096e0df0",
+        "bytes": 208
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c/d/sub/e"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 7,
+         "column": 24,
+         "currentOffset": 181,
+         "endOffset": 185
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "nested_variables",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "830975aa824647d58170368f3cbc61ea7ec84a69bd48f3125347548ad439f4bf",
+        "bytes": 195
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c/d/sub/e"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 6,
+         "column": 23,
+         "currentOffset": 153,
+         "endOffset": 153
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "var_shadowing",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "6dfffb0f0791d0f51bbad5b01015a1ad355ba2b7617c6ff78aad4e083567fb9f",
+        "bytes": 183
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c/d/sub/e"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 6,
+         "column": 23,
+         "currentOffset": 153,
+         "endOffset": 153
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "function_sees_match_var",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "dc7708e2478c674bcc5cd66a51efedec21ec100b5e9704457eeaecd07012f01f",
+        "bytes": 189
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c/d"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 6,
+         "column": 21,
+         "currentOffset": 170,
+         "endOffset": 172
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "function_outer_var_not_visible",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "4c7b44aba5c4d35697e15e144a3321e36729da32d2932a63eed96c5b5d3ae54c",
+        "bytes": 187
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c/d"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 4,
+       "column": 29,
+       "currentOffset": 117,
+       "endOffset": 117
+      },
+      "description": "Invalid variable name: d.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [4], column [29]. Null value error."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 4,
+       "column": 29,
+       "currentOffset": 117,
+       "endOffset": 117
+      }
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "partial_segment_wildcard",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "18381821a492ce5587578f71571299698d2e32d363242ff9089eb9a770fc7598",
+        "bytes": 149
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c/prex"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 4,
+       "column": 11,
+       "currentOffset": 99,
+       "endOffset": 100
+      },
+      "description": "Missing 'match' keyword before path.",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 4,
+       "column": 18,
+       "currentOffset": 106,
+       "endOffset": 106
+      },
+      "description": "Unexpected 'd'.",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 4,
+       "column": 18,
+       "currentOffset": 106,
+       "endOffset": 106
+      },
+      "description": "Unexpected 'd'.",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 4,
+       "column": 21,
+       "currentOffset": 109,
+       "endOffset": 109
+      },
+      "description": "Unexpected '{'.",
+      "severity": "ERROR"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 8,
+       "column": 1,
+       "currentOffset": 147,
+       "endOffset": 147
+      },
+      "description": "Unexpected '}'.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "version_3",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "624bef8512747ea5358060d1bf9ee2323effd9ac74765754e598186b8c814c45",
+        "bytes": 146
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c/d"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 1,
+       "column": 1,
+       "endOffset": 12
+      },
+      "description": "Unsupported rules version 3.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  }
+ ]
+}

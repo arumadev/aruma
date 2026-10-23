@@ -1,0 +1,2923 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "storage",
+ "service": "storage",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "rules-test-api",
+ "project": "chatapp-8ae21",
+ "recordedAt": "2026-10-23T21:44:28.593Z",
+ "version": "firebaserules.googleapis.com v1 projects.test",
+ "rulesets": {
+  "pack-1": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /c_resource_size/{file} {\n      allow get: if resource.size == 1024 && resource.size is int;\n    }\n    match /c_resource_content_type/{file} {\n      allow get: if resource.contentType == 'text/plain';\n    }\n    match /c_resource_metadata/{file} {\n      allow get: if resource.metadata.owner == 'alice';\n    }\n    match /c_resource_metadata_missing/{file} {\n      allow get: if resource.metadata.missing == 'x';\n    }\n    match /c_resource_metadata_get/{file} {\n      allow get: if resource.metadata.get('missing', 'd') == 'd';\n    }\n    match /c_resource_name/{file} {\n      allow get: if resource.name == 'dir/file.txt';\n    }\n    match /c_resource_bucket/{file} {\n      allow get: if resource.bucket == 'demo-oracle.appspot.com';\n    }\n    match /c_resource_time_created_is_ts/{file} {\n      allow get: if resource.timeCreated is timestamp;\n    }\n    match /c_resource_md5/{file} {\n      allow get: if resource.md5Hash is string;\n    }\n    match /c_resource_missing_field/{file} {\n      allow get: if resource.missing == 1;\n    }\n    match /c_resource_size_string/{file} {\n      allow get: if resource.size == 1024;\n    }\n    match /c_resource_size_string_is_int/{file} {\n      allow get: if resource.size is int;\n    }\n    match /c_resource_time_created_int/{file} {\n      allow get: if resource.timeCreated < request.time;\n    }\n    match /c_resource_custom_field/{file} {\n      allow get: if resource.whatever == 'x';\n    }\n    match /c_resource_null_on_get/{file} {\n      allow get: if resource == null;\n    }\n    match /c_resource_absent_on_get/{file} {\n      allow get: if resource == null;\n    }\n    match /c_request_resource_on_get/{file} {\n      allow get: if request.resource == null;\n    }\n    match /c_request_path/{file} {\n      allow get: if request.path == /b/demo-oracle.appspot.com/o/c_request_path/file.txt;\n    }\n    match /c_request_path_string/{file} {\n      allow get: if request.path == '/b/demo-oracle.appspot.com/o/c_request_path_string/file.txt';\n    }\n    match /c_bucket_var/{file} {\n      allow get: if bucket == 'demo-oracle.appspot.com';\n    }\n    match /c_auth_uid/{file} {\n      allow get: if request.auth.uid == 'alice';\n    }\n    match /c_auth_claim_bool/{file} {\n      allow get: if request.auth.token.admin == true;\n    }\n    match /c_auth_provider/{file} {\n      allow get: if request.auth.token.firebase.sign_in_provider == 'password';\n    }\n    match /c_auth_null/{file} {\n      allow get: if request.auth == null;\n    }\n    match /c_auth_absent/{file} {\n      allow get: if request.auth == null;\n    }\n    match /c_time_set/{file} {\n      allow get: if request.time == timestamp.date(2026, 1, 15) + duration.time(10, 20, 30, 123000000);\n    }\n    match /c_create_content_type/{file} {\n      allow create: if request.resource.contentType.matches('image/.*');\n    }\n    match /c_create_metadata/{file} {\n      allow create: if request.resource.metadata.k == 'v';\n    }\n    match /c_create_name/{file} {\n      allow create: if request.resource.name == 'c_x/file.txt';\n    }\n    match /c_create_name_absent/{file} {\n      allow create: if request.resource.bucket == 'x';\n    }\n    match /c_create_resource_null/{file} {\n      allow create: if resource == null;\n    }\n    match /c_create_metadata_owner/{file} {\n      allow create: if request.resource.metadata.owner == request.auth.uid;\n    }\n    match /c_create_size_float_cmp/{file} {\n      allow create: if request.resource.size < 2.5 * 1024;\n    }\n    match /c_create_keys/{file} {\n      allow create: if request.resource.keys().hasAll(['size', 'contentType']);\n    }\n    match /c_update_both/{file} {\n      allow update: if request.resource.size > resource.size && request.resource.contentType == resource.contentType;\n    }\n    match /c_read_get/{file} {\n      allow read: if true;\n    }\n    match /c_read_list/{file} {\n      allow read: if true;\n    }\n    match /c_get_list/{file} {\n      allow get: if true;\n    }\n    match /c_write_update/{file} {\n      allow write: if true;\n    }\n    match /c_write_delete/{file} {\n      allow write: if true;\n    }\n    match /c_method_list/{file} {\n      allow list: if request.method == 'list';\n    }\n    match /c_fs_get/{file} {\n      allow get: if firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';\n    }\n    match /c_fs_exists/{file} {\n      allow get: if firestore.exists(/databases/(default)/documents/users/$(request.auth.uid));\n    }\n    match /c_fs_get_unmocked/{file} {\n      allow get: if firestore.get(/databases/(default)/documents/users/alice) == null;\n    }\n    match /c_fs_get_id/{file} {\n      allow get: if firestore.get(/databases/(default)/documents/users/alice).id == 'alice';\n    }\n    match /c_fs_get_name/{file} {\n      allow get: if firestore.get(/databases/(default)/documents/users/alice).__name__ == /databases/(default)/documents/users/alice;\n    }\n    match /c_fs_bare_get/{file} {\n      allow get: if get(/databases/(default)/documents/users/alice).data.role == 'admin';\n    }\n    match /c_fs_lookups_2/{file} {\n      allow get: if firestore.exists(/databases/(default)/documents/u/a) && firestore.exists(/databases/(default)/documents/u/b);\n    }\n    match /c_fs_lookups_3/{file} {\n      allow get: if firestore.exists(/databases/(default)/documents/u/a) && firestore.exists(/databases/(default)/documents/u/b) && firestore.exists(/databases/(default)/documents/u/c);\n    }\n    match /c_fs_lookups_11/{file} {\n      allow get: if firestore.exists(/databases/(default)/documents/u/d0) && firestore.exists(/databases/(default)/documents/u/d1) && firestore.exists(/databases/(default)/documents/u/d2) && firestore.exists(/databases/(default)/documents/u/d3) && firestore.exists(/databases/(default)/documents/u/d4) && firestore.exists(/databases/(default)/documents/u/d5) && firestore.exists(/databases/(default)/documents/u/d6) && firestore.exists(/databases/(default)/documents/u/d7) && firestore.exists(/databases/(default)/documents/u/d8) && firestore.exists(/databases/(default)/documents/u/d9) && firestore.exists(/databases/(default)/documents/u/d10);\n    }\n    match /c_err_or_true/{file} {\n      allow get: if resource.missing == 1 || true;\n    }\n    match /c_err_and_false/{file} {\n      allow get: if resource.missing == 1 && false;\n    }\n    match /c_not_err/{file} {\n      allow get: if !(resource.missing == 1);\n    }\n    match /c_horses_or_true/{file} {\n      allow get: if 'horses' || true;\n    }\n    match /c_div_zero/{file} {\n      allow get: if 1 / 0 == 0;\n    }\n    match /c_int_overflow/{file} {\n      allow get: if 9223372036854775807 + 1 < 0;\n    }\n    match /c_split/{file} {\n      allow get: if resource.name.split('/') == ['dir', 'file.txt'];\n    }\n    match /c_size_emoji/{file} {\n      allow get: if '😀'.size() == 2;\n    }\n    match /c_math_round/{file} {\n      allow get: if math.round(-2.5) == -2;\n    }\n    match /c_list_neg_zero/{file} {\n      allow get: if [0.0] == [-0.0];\n    }\n  }\n}\n",
+  "pack-2": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /c_set_in_float/{file} {\n      allow get: if 1 in [1.0].toSet();\n    }\n    match /c_hashing/{file} {\n      allow get: if hashing.md5(b'abc').toBase64() == 'kAFQmDzST7DWlj99KOF/cg==';\n    }\n  }\n}\n"
+ },
+ "resources": {
+  "default": {
+   "name": "dir/file.txt",
+   "bucket": "demo-oracle.appspot.com",
+   "size": 1024,
+   "contentType": "text/plain",
+   "metadata": {
+    "owner": "alice",
+    "k": "v"
+   },
+   "timeCreated": "2026-01-02T03:04:05.000Z",
+   "updated": "2026-01-03T03:04:05.000Z",
+   "generation": 1700000000000000,
+   "metageneration": 1,
+   "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+   "crc32c": "yZRlqg==",
+   "etag": "CJqUmJ6Ry4ADEAE=",
+   "contentDisposition": "inline",
+   "contentEncoding": "identity"
+  }
+ },
+ "cases": [
+  {
+   "id": "aruma/storage/resource_size",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.size == 1024 && resource.size is int",
+   "expression": "resource.size == 1024 && resource.size is int",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_size/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_content_type",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.contentType == 'text/plain'",
+   "expression": "resource.contentType == 'text/plain'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_content_type/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_metadata",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.metadata.owner == 'alice'",
+   "expression": "resource.metadata.owner == 'alice'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_metadata/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_metadata_missing",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.metadata.missing == 'x'",
+   "expression": "resource.metadata.missing == 'x'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_metadata_missing/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [14], column [21]. Property missing is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/storage/resource_metadata_get",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.metadata.get('missing', 'd') == 'd'",
+   "expression": "resource.metadata.get('missing', 'd') == 'd'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_metadata_get/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_name",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.name == 'dir/file.txt'",
+   "expression": "resource.name == 'dir/file.txt'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_name/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_bucket",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.bucket == 'demo-oracle.appspot.com'",
+   "expression": "resource.bucket == 'demo-oracle.appspot.com'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_bucket/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_time_created_is_ts",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.timeCreated is timestamp",
+   "expression": "resource.timeCreated is timestamp",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_time_created_is_ts/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_md5",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.md5Hash is string",
+   "expression": "resource.md5Hash is string",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_md5/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_missing_field",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.missing == 1",
+   "expression": "resource.missing == 1",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_missing_field/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [32], column [21]. Property missing is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/storage/resource_size_string",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.size == 1024",
+   "expression": "resource.size == 1024",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_size_string/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resource": {
+    "size": "1024"
+   },
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_size_string_is_int",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.size is int",
+   "expression": "resource.size is int",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_size_string_is_int/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resource": {
+    "size": "1024"
+   },
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_time_created_int",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.timeCreated < request.time",
+   "expression": "resource.timeCreated < request.time",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_time_created_int/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resource": {
+    "timeCreated": 1700000000000
+   },
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [41], column [42]. Unsupported operation error. Received: int < timestamp. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint."
+   }
+  },
+  {
+   "id": "aruma/storage/resource_custom_field",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.whatever == 'x'",
+   "expression": "resource.whatever == 'x'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_custom_field/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resource": {
+    "whatever": "x"
+   },
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_null_on_get",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource == null",
+   "expression": "resource == null",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_null_on_get/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resource": null,
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/resource_absent_on_get",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource == null",
+   "expression": "resource == null",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_resource_absent_on_get/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [50], column [21]. Null value error."
+   }
+  },
+  {
+   "id": "aruma/storage/request_resource_on_get",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.resource == null",
+   "expression": "request.resource == null",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_request_resource_on_get/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [53], column [21]. Property resource is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/storage/request_path",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.path == /b/demo-oracle.appspot.com/o/c_request_path/file.txt",
+   "expression": "request.path == /b/demo-oracle.appspot.com/o/c_request_path/file.txt",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_request_path/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/request_path_string",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.path == '/b/demo-oracle.appspot.com/o/c_request_path_string/file.txt'",
+   "expression": "request.path == '/b/demo-oracle.appspot.com/o/c_request_path_string/file.txt'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_request_path_string/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/storage/bucket_var",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "bucket == 'demo-oracle.appspot.com'",
+   "expression": "bucket == 'demo-oracle.appspot.com'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_bucket_var/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/auth_uid",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.auth.uid == 'alice'",
+   "expression": "request.auth.uid == 'alice'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_auth_uid/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/auth_claim_bool",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.auth.token.admin == true",
+   "expression": "request.auth.token.admin == true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_auth_claim_bool/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/auth_provider",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.auth.token.firebase.sign_in_provider == 'password'",
+   "expression": "request.auth.token.firebase.sign_in_provider == 'password'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_auth_provider/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/auth_null",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.auth == null",
+   "expression": "request.auth == null",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_auth_null/file.txt",
+    "auth": null,
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/auth_absent",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.auth == null",
+   "expression": "request.auth == null",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_auth_absent/file.txt",
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [77], column [21]. Property auth is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/storage/time_set",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time == timestamp.date(2026, 1, 15) + duration.time(10, 20, 30, 123000000)",
+   "expression": "request.time == timestamp.date(2026, 1, 15) + duration.time(10, 20, 30, 123000000)",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_time_set/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_content_type",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.resource.contentType.matches('image/.*')",
+   "expression": "request.resource.contentType.matches('image/.*')",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "create",
+    "path": "/b/demo-oracle.appspot.com/o/c_create_content_type/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": {
+     "name": "c_x/file.txt",
+     "size": 2048,
+     "contentType": "image/png",
+     "metadata": {
+      "k": "v",
+      "owner": "alice"
+     }
+    }
+   },
+   "resource": null,
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_metadata",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.resource.metadata.k == 'v'",
+   "expression": "request.resource.metadata.k == 'v'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "create",
+    "path": "/b/demo-oracle.appspot.com/o/c_create_metadata/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": {
+     "name": "c_x/file.txt",
+     "size": 2048,
+     "contentType": "image/png",
+     "metadata": {
+      "k": "v",
+      "owner": "alice"
+     }
+    }
+   },
+   "resource": null,
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_name",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.resource.name == 'c_x/file.txt'",
+   "expression": "request.resource.name == 'c_x/file.txt'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "create",
+    "path": "/b/demo-oracle.appspot.com/o/c_create_name/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": {
+     "name": "c_x/file.txt",
+     "size": 2048,
+     "contentType": "image/png",
+     "metadata": {
+      "k": "v",
+      "owner": "alice"
+     }
+    }
+   },
+   "resource": null,
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_name_absent",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.resource.bucket == 'x'",
+   "expression": "request.resource.bucket == 'x'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "create",
+    "path": "/b/demo-oracle.appspot.com/o/c_create_name_absent/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": {
+     "name": "c_x/file.txt",
+     "size": 2048,
+     "contentType": "image/png",
+     "metadata": {
+      "k": "v",
+      "owner": "alice"
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [92], column [24]. Property bucket is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/storage/create_resource_null",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource == null",
+   "expression": "resource == null",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "create",
+    "path": "/b/demo-oracle.appspot.com/o/c_create_resource_null/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": {
+     "name": "c_x/file.txt",
+     "size": 2048,
+     "contentType": "image/png",
+     "metadata": {
+      "k": "v",
+      "owner": "alice"
+     }
+    }
+   },
+   "resource": null,
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_metadata_owner",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.resource.metadata.owner == request.auth.uid",
+   "expression": "request.resource.metadata.owner == request.auth.uid",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "create",
+    "path": "/b/demo-oracle.appspot.com/o/c_create_metadata_owner/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": {
+     "name": "c_x/file.txt",
+     "size": 2048,
+     "contentType": "image/png",
+     "metadata": {
+      "k": "v",
+      "owner": "alice"
+     }
+    }
+   },
+   "resource": null,
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_size_float_cmp",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.resource.size < 2.5 * 1024",
+   "expression": "request.resource.size < 2.5 * 1024",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "create",
+    "path": "/b/demo-oracle.appspot.com/o/c_create_size_float_cmp/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": {
+     "name": "c_x/file.txt",
+     "size": 2048,
+     "contentType": "image/png",
+     "metadata": {
+      "k": "v",
+      "owner": "alice"
+     }
+    }
+   },
+   "resource": null,
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/create_keys",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.resource.keys().hasAll(['size', 'contentType'])",
+   "expression": "request.resource.keys().hasAll(['size', 'contentType'])",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "create",
+    "path": "/b/demo-oracle.appspot.com/o/c_create_keys/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": {
+     "name": "c_x/file.txt",
+     "size": 2048,
+     "contentType": "image/png",
+     "metadata": {
+      "k": "v",
+      "owner": "alice"
+     }
+    }
+   },
+   "resource": null,
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/update_both",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.resource.size > resource.size && request.resource.contentType == resource.contentType",
+   "expression": "request.resource.size > resource.size && request.resource.contentType == resource.contentType",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "update",
+    "path": "/b/demo-oracle.appspot.com/o/c_update_both/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": {
+     "size": 4096,
+     "contentType": "text/plain"
+    }
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/read_get",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "true",
+   "expression": "true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_read_get/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/read_list",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "true",
+   "expression": "true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "list",
+    "path": "/b/demo-oracle.appspot.com/o/c_read_list/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resource": null,
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/get_list",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "true",
+   "expression": "true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "list",
+    "path": "/b/demo-oracle.appspot.com/o/c_get_list/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   }
+  },
+  {
+   "id": "aruma/storage/write_update",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "true",
+   "expression": "true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "update",
+    "path": "/b/demo-oracle.appspot.com/o/c_write_update/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": {
+     "name": "c_x/file.txt",
+     "size": 2048,
+     "contentType": "image/png",
+     "metadata": {
+      "k": "v",
+      "owner": "alice"
+     }
+    }
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/write_delete",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "true",
+   "expression": "true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "delete",
+    "path": "/b/demo-oracle.appspot.com/o/c_write_delete/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z",
+    "resource": null
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/method_list",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.method == 'list'",
+   "expression": "request.method == 'list'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "list",
+    "path": "/b/demo-oracle.appspot.com/o/c_method_list/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resource": null,
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/fs_get",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'",
+   "expression": "firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_fs_get/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "functionMocks": [
+    {
+     "function": "firestore.get",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/users/alice"
+      }
+     ],
+     "result": {
+      "value": {
+       "data": {
+        "role": "admin"
+       }
+      }
+     }
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/fs_exists",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))",
+   "expression": "firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_fs_exists/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "functionMocks": [
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/users/alice"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/fs_get_unmocked",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "firestore.get(/databases/(default)/documents/users/alice) == null",
+   "expression": "firestore.get(/databases/(default)/documents/users/alice) == null",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_fs_get_unmocked/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [134], column [21]. Function not found error: Name: [firestore.get]."
+   }
+  },
+  {
+   "id": "aruma/storage/fs_get_id",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "firestore.get(/databases/(default)/documents/users/alice).id == 'alice'",
+   "expression": "firestore.get(/databases/(default)/documents/users/alice).id == 'alice'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_fs_get_id/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "functionMocks": [
+    {
+     "function": "firestore.get",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/users/alice"
+      }
+     ],
+     "result": {
+      "value": {
+       "data": {
+        "role": "admin"
+       }
+      }
+     }
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [137], column [21]. Property id is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/storage/fs_get_name",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "firestore.get(/databases/(default)/documents/users/alice).__name__ == /databases/(default)/documents/users/alice",
+   "expression": "firestore.get(/databases/(default)/documents/users/alice).__name__ == /databases/(default)/documents/users/alice",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_fs_get_name/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "functionMocks": [
+    {
+     "function": "firestore.get",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/users/alice"
+      }
+     ],
+     "result": {
+      "value": {
+       "data": {
+        "role": "admin"
+       }
+      }
+     }
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [140], column [21]. Property __name__ is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/storage/fs_database_var",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "firestore.exists(/databases/$(database)/documents/users/alice)",
+   "expression": "firestore.exists(/databases/$(database)/documents/users/alice)",
+   "ruleset": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /c_fs_database_var/{file} {\n      allow get: if firestore.exists(/databases/$(database)/documents/users/alice);\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_fs_database_var/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "functionMocks": [
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/users/alice"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    }
+   ],
+   "warnings": "WARNING L5:51 Invalid variable name: database.",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [5], column [51]. Null value error."
+   }
+  },
+  {
+   "id": "aruma/storage/fs_bare_get",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "get(/databases/(default)/documents/users/alice).data.role == 'admin'",
+   "expression": "get(/databases/(default)/documents/users/alice).data.role == 'admin'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_fs_bare_get/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "functionMocks": [
+    {
+     "function": "firestore.get",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/users/alice"
+      }
+     ],
+     "result": {
+      "value": {
+       "data": {
+        "role": "admin"
+       }
+      }
+     }
+    }
+   ],
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [143], column [21]. Function not found error: Name: [get]."
+   }
+  },
+  {
+   "id": "aruma/storage/fs_lookups_2",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "firestore.exists(/databases/(default)/documents/u/a) && firestore.exists(/databases/(default)/documents/u/b)",
+   "expression": "firestore.exists(/databases/(default)/documents/u/a) && firestore.exists(/databases/(default)/documents/u/b)",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_fs_lookups_2/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "functionMocks": [
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/a"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    },
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/b"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/fs_lookups_3",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "firestore.exists(/databases/(default)/documents/u/a) && firestore.exists(/databases/(default)/documents/u/b) && firestore.exists(/databases/(default)/documents/u/c)",
+   "expression": "firestore.exists(/databases/(default)/documents/u/a) && firestore.exists(/databases/(default)/documents/u/b) && firestore.exists(/databases/(default)/documents/u/c)",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_fs_lookups_3/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "functionMocks": [
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/a"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    },
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/b"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    },
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/c"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/fs_lookups_11",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "firestore.exists(/databases/(default)/documents/u/d0) && firestore.exists(/databases/(default)/documents/u/d1) && firestore.exists(/databases/(default)/documents/u/d2) && firestore.exists(/databases/(default)/documents/u/d3) && firestore.exists(/databases/(default)/documents/u/d4) && firestore.exists(/databases/(default)/documents/u/d5) && firestore.exists(/databases/(default)/documents/u/d6) && firestore.exists(/databases/(default)/documents/u/d7) && firestore.exists(/databases/(default)/documents/u/d8) && firestore.exists(/databases/(default)/documents/u/d9) && firestore.exists(/databases/(default)/documents/u/d10)",
+   "expression": "firestore.exists(/databases/(default)/documents/u/d0) && firestore.exists(/databases/(default)/documents/u/d1) && firestore.exists(/databases/(default)/documents/u/d2) && firestore.exists(/databases/(default)/documents/u/d3) && firestore.exists(/databases/(default)/documents/u/d4) && firestore.exists(/databases/(default)/documents/u/d5) && firestore.exists(/databases/(default)/documents/u/d6) && firestore.exists(/databases/(default)/documents/u/d7) && firestore.exists(/databases/(default)/documents/u/d8) && firestore.exists(/databases/(default)/documents/u/d9) && firestore.exists(/databases/(default)/documents/u/d10)",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_fs_lookups_11/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "functionMocks": [
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/d0"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    },
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/d1"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    },
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/d2"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    },
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/d3"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    },
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/d4"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    },
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/d5"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    },
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/d6"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    },
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/d7"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    },
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/d8"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    },
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/d9"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    },
+    {
+     "function": "firestore.exists",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/u/d10"
+      }
+     ],
+     "result": {
+      "value": true
+     }
+    }
+   ],
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/err_or_true",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.missing == 1 || true",
+   "expression": "resource.missing == 1 || true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_err_or_true/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/err_and_false",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.missing == 1 && false",
+   "expression": "resource.missing == 1 && false",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_err_and_false/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/storage/not_err",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "!(resource.missing == 1)",
+   "expression": "!(resource.missing == 1)",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_not_err/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [161], column [23]. Property missing is undefined on object."
+   }
+  },
+  {
+   "id": "aruma/storage/horses_or_true",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "'horses' || true",
+   "expression": "'horses' || true",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_horses_or_true/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/div_zero",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "1 / 0 == 0",
+   "expression": "1 / 0 == 0",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_div_zero/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [167], column [23]. Divide by zero error."
+   }
+  },
+  {
+   "id": "aruma/storage/int_overflow",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "9223372036854775807 + 1 < 0",
+   "expression": "9223372036854775807 + 1 < 0",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_int_overflow/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [170], column [41]. Integer value is out of the [-9223372036854775808, 9223372036854775807] range."
+   }
+  },
+  {
+   "id": "aruma/storage/split",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "resource.name.split('/') == ['dir', 'file.txt']",
+   "expression": "resource.name.split('/') == ['dir', 'file.txt']",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_split/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/size_emoji",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "'😀'.size() == 2",
+   "expression": "'😀'.size() == 2",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_size_emoji/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/math_round",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "math.round(-2.5) == -2",
+   "expression": "math.round(-2.5) == -2",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_math_round/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/list_neg_zero",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "[0.0] == [-0.0]",
+   "expression": "[0.0] == [-0.0]",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_list_neg_zero/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/storage/set_in_float",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "1 in [1.0].toSet()",
+   "expression": "1 in [1.0].toSet()",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_set_in_float/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/storage/debug",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "debug(true)",
+   "expression": "debug(true)",
+   "ruleset": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /c_debug/{file} {\n      allow get: if debug(true);\n    }\n  }\n}\n",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_debug/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: storage.rules line [5], column [21]. Function not found error: Name: [debug]."
+   }
+  },
+  {
+   "id": "aruma/storage/hashing",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:44:28.593Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "hashing.md5(b'abc').toBase64() == 'kAFQmDzST7DWlj99KOF/cg=='",
+   "expression": "hashing.md5(b'abc').toBase64() == 'kAFQmDzST7DWlj99KOF/cg=='",
+   "rulesetRef": "pack-2",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/c_hashing/file.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  }
+ ]
+}

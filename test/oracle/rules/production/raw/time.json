@@ -1,0 +1,559 @@
+{
+ "topic": "time",
+ "set": "development",
+ "recordedAt": "2026-10-23T21:43:48.170Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "pack",
+   "request": {
+    "source": {
+     "files": [
+      {
+       "name": "firestore.rules",
+       "content": {
+        "sha256": "ee13ee80a98e52e60d432e826079dd15d8cbec22fd0cdfb88476a627b5240161",
+        "bytes": 3781
+       }
+      }
+     ]
+    },
+    "testSuite": {
+     "testCasePaths": [
+      "/databases/(default)/documents/c_day/doc",
+      "/databases/(default)/documents/c_hours/doc",
+      "/databases/(default)/documents/c_minutes/doc",
+      "/databases/(default)/documents/c_seconds/doc",
+      "/databases/(default)/documents/c_nanos/doc",
+      "/databases/(default)/documents/c_day_of_week_wed_3/doc",
+      "/databases/(default)/documents/c_day_of_week_wed_4/doc",
+      "/databases/(default)/documents/c_day_of_year/doc",
+      "/databases/(default)/documents/c_date/doc",
+      "/databases/(default)/documents/c_time_of_day/doc",
+      "/databases/(default)/documents/c_ts_value_millis/doc",
+      "/databases/(default)/documents/c_ts_date_feb_30/doc",
+      "/databases/(default)/documents/c_ts_date_month_13/doc",
+      "/databases/(default)/documents/c_ts_date_year_0/doc",
+      "/databases/(default)/documents/c_ts_date_year_10000/doc",
+      "/databases/(default)/documents/c_ts_plus_duration/doc",
+      "/databases/(default)/documents/c_ts_minus_ts/doc",
+      "/databases/(default)/documents/c_ts_minus_duration/doc",
+      "/databases/(default)/documents/c_ts_plus_int/doc",
+      "/databases/(default)/documents/c_ts_eq_string/doc",
+      "/databases/(default)/documents/c_ts_lt_ts/doc",
+      "/databases/(default)/documents/c_units_w/doc",
+      "/databases/(default)/documents/c_units_h_m/doc",
+      "/databases/(default)/documents/c_units_s_ms/doc",
+      "/databases/(default)/documents/c_units_us_absent/doc",
+      "/databases/(default)/documents/c_unit_unknown/doc",
+      "/databases/(default)/documents/c_unit_float_amount/doc",
+      "/databases/(default)/documents/c_duration_seconds/doc",
+      "/databases/(default)/documents/c_duration_nanos_part/doc",
+      "/databases/(default)/documents/c_duration_negative_parts/doc",
+      "/databases/(default)/documents/c_duration_time/doc",
+      "/databases/(default)/documents/c_duration_compare/doc",
+      "/databases/(default)/documents/c_duration_eq_int/doc",
+      "/databases/(default)/documents/c_ts_round_trip_offset/doc"
+     ]
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 83,
+       "column": 36,
+       "currentOffset": 2874,
+       "endOffset": 2876
+      },
+      "description": "Invalid type. Received one of [float]. Expected one of [int].",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "firestore.rules",
+       "line": 101,
+       "column": 44,
+       "currentOffset": 3637,
+       "endOffset": 3638
+      },
+      "description": "The sub-expressions are not comparable, so this comparison will always return false.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 134,
+         "endOffset": 140
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 212,
+         "endOffset": 218
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 11,
+         "column": 21,
+         "currentOffset": 294,
+         "endOffset": 300
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 14,
+         "column": 21,
+         "currentOffset": 378,
+         "endOffset": 384
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 17,
+         "column": 21,
+         "currentOffset": 460,
+         "endOffset": 466
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 20,
+         "column": 21,
+         "currentOffset": 560,
+         "endOffset": 566
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 23,
+         "column": 21,
+         "currentOffset": 656,
+         "endOffset": 662
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 26,
+         "column": 21,
+         "currentOffset": 746,
+         "endOffset": 752
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 29,
+         "column": 21,
+         "currentOffset": 830,
+         "endOffset": 836
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 32,
+         "column": 21,
+         "currentOffset": 940,
+         "endOffset": 946
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 35,
+         "column": 21,
+         "currentOffset": 1061,
+         "endOffset": 1069
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [38], column [31]. Date is not valid. year: 2026, month: 2 day: 30."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 38,
+       "column": 31,
+       "currentOffset": 1231,
+       "endOffset": 1234
+      }
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [41], column [31]. Date is not valid. year: 2026, month: 13 day: 1."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 41,
+       "column": 31,
+       "currentOffset": 1337,
+       "endOffset": 1340
+      }
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [44], column [31]. Timestamp should be between 0001-01-01T00.00.00Z and 9999-12-31T23.59.59Z. year: 0."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 44,
+       "column": 31,
+       "currentOffset": 1441,
+       "endOffset": 1444
+      }
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [47], column [31]. Timestamp should be between 0001-01-01T00.00.00Z and 9999-12-31T23.59.59Z. year: 10000."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 47,
+       "column": 31,
+       "currentOffset": 1545,
+       "endOffset": 1548
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 50,
+         "column": 21,
+         "currentOffset": 1641,
+         "endOffset": 1647
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 53,
+         "column": 21,
+         "currentOffset": 1754,
+         "endOffset": 1760
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 56,
+         "column": 21,
+         "currentOffset": 1874,
+         "endOffset": 1882
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [59], column [34]. Unsupported operation error. Received: timestamp + int. Expected: int + int, float + float, string + string, duration + duration, duration + timestamp, timestamp + duration."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 59,
+       "column": 34,
+       "currentOffset": 2029,
+       "endOffset": 2029
+      }
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 62,
+         "column": 21,
+         "currentOffset": 2109,
+         "endOffset": 2115
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 65,
+         "column": 21,
+         "currentOffset": 2212,
+         "endOffset": 2220
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 68,
+         "column": 21,
+         "currentOffset": 2310,
+         "endOffset": 2317
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 71,
+         "column": 21,
+         "currentOffset": 2417,
+         "endOffset": 2424
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 74,
+         "column": 21,
+         "currentOffset": 2526,
+         "endOffset": 2533
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [77], column [30]. Invalid regular expression pattern. Pattern: us."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 77,
+       "column": 30,
+       "currentOffset": 2652,
+       "endOffset": 2656
+      }
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [80], column [30]. Invalid regular expression pattern. Pattern: x."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 80,
+       "column": 30,
+       "currentOffset": 2767,
+       "endOffset": 2771
+      }
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [83], column [30]. Unsupported operation error. Received: duration.value(float, string). Expected: duration.value(int, string)."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 83,
+       "column": 30,
+       "currentOffset": 2868,
+       "endOffset": 2872
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 86,
+         "column": 21,
+         "currentOffset": 2961,
+         "endOffset": 2968
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 89,
+         "column": 21,
+         "currentOffset": 3071,
+         "endOffset": 3078
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 92,
+         "column": 21,
+         "currentOffset": 3191,
+         "endOffset": 3198
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 95,
+         "column": 21,
+         "currentOffset": 3350,
+         "endOffset": 3357
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 98,
+         "column": 21,
+         "currentOffset": 3501,
+         "endOffset": 3508
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 101,
+         "column": 21,
+         "currentOffset": 3614,
+         "endOffset": 3621
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 104,
+         "column": 21,
+         "currentOffset": 3711,
+         "endOffset": 3717
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}
