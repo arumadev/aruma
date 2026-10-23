@@ -65,11 +65,14 @@ type lexer struct {
 	pos    int
 	tokens []lexeme
 	errors []lexError
+	// closeAt is the first "*/" at or after closeFrom, or -1 when there is none, so that a file
+	// of unclosed "/*" is not searched to its end from each of them.
+	closeFrom, closeAt int
 }
 
 // lex reads every token of src. The last token is lexEOF, at the end of src.
 func lex(src string) ([]lexeme, []lexError) {
-	l := &lexer{src: src}
+	l := &lexer{src: src, closeFrom: -1}
 	l.run()
 	return l.tokens, l.errors
 }
@@ -145,11 +148,23 @@ func (l *lexer) commentLen() int {
 		}
 		return len(rest)
 	case strings.HasPrefix(rest, "/*"):
-		if i := strings.Index(rest[2:], "*/"); i >= 0 {
-			return i + 4
+		if at := l.blockClose(l.pos + 2); at >= 0 {
+			return at + 2 - l.pos
 		}
 	}
 	return 0
+}
+
+// blockClose returns the offset of the first "*/" at or after from, or -1. The offsets asked
+// only grow, so each search starts past the last one: the lexer stays linear.
+func (l *lexer) blockClose(from int) int {
+	if l.closeFrom < 0 || from < l.closeFrom || l.closeAt >= 0 && from > l.closeAt {
+		l.closeFrom, l.closeAt = from, -1
+		if i := strings.Index(l.src[from:], "*/"); i >= 0 {
+			l.closeAt = from + i
+		}
+	}
+	return l.closeAt
 }
 
 // number reads 1, 1.5, 1. or .5: a float when it has a dot.
@@ -342,10 +357,11 @@ func lexEscapeLen(s string) int {
 }
 
 // lexUnquote returns the value of a closed string or bytes literal, as written with its quotes
-// and its b. In a string, \xHH, \uHHHH and octal escapes are code points, and \u escapes of a
-// surrogate pair make one code point (the compiler reads UTF-16); a lone surrogate is U+FFFD.
-// In bytes, \xHH and octal escapes are a byte each, and \uHHHH is the low byte of its code
-// point (hidane, not yet confirmed by the oracle).
+// and its b. Strings are WTF-8 in the engine: \xHH, \uHHHH and octal escapes are code points,
+// \u escapes of a surrogate pair make one code point (the compiler reads UTF-16), and a lone
+// surrogate keeps its own three bytes, never U+FFFD (production: '\uD83D' == '\uFFFD' is
+// false). In bytes, \xHH and octal escapes are a byte each; \u is refused (lexBytesHasU), and
+// reads as the low byte of its code point here.
 func lexUnquote(lit string) string {
 	isBytes := lit[0] == 'b' || lit[0] == 'B'
 	body := lit[1 : len(lit)-1]
@@ -399,7 +415,7 @@ func lexUnquote(lit string) string {
 						continue
 					}
 				}
-				b.WriteRune(utf8.RuneError)
+				lexAppendSurrogate(&b, r)
 				continue
 			}
 		default:
@@ -450,4 +466,27 @@ func (c *posCursor) at(s span) Position {
 	// at 128 ends at 130); an empty span ends where it starts.
 	n := utf8.RuneCountInString(c.src[start:end])
 	return Position{Line: c.line, Column: c.col, CurrentOffset: c.cp, EndOffset: c.cp + max(n-1, 0)}
+}
+
+// lexAppendSurrogate writes a lone surrogate, U+D800 to U+DFFF, as WTF-8 does: the three bytes
+// UTF-8 would give it (ED A0..BF 80..BF), which no valid UTF-8 holds. S1-B's wtf8.go has the
+// shared form; this copy goes when the tasks merge (S1-E).
+func lexAppendSurrogate(b *strings.Builder, r rune) {
+	b.WriteByte(byte(0xE0 | r>>12))
+	b.WriteByte(byte(0x80 | r>>6&0x3F))
+	b.WriteByte(byte(0x80 | r&0x3F))
+}
+
+// lexBytesHasU reports whether a bytes literal, as written, holds a \u escape, which the
+// compiler refuses: "Invalid bytes literal b'\u00ff'." (production).
+func lexBytesHasU(lit string) bool {
+	for i := 0; i+1 < len(lit); i++ {
+		if lit[i] == '\\' {
+			if lit[i+1] == 'u' {
+				return true
+			}
+			i++ // the escaped character
+		}
+	}
+	return false
 }

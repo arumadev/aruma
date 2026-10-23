@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 )
 
 // syntaxLexemes prints the tokens of src as kind:text, without the end.
@@ -115,18 +116,70 @@ func TestLexUnquote(t *testing.T) {
 		{`'\r\t\b\f\\\'\"'`, "\r\t\b\f\\'\""},
 		{`'\xe9\u00e9\351'`, "ééé"},
 		{`'\u0041'`, "A"},
-		// A surrogate pair is one code point, as the compiler reads UTF-16; a lone one is U+FFFD.
+		// Strings are WTF-8: a surrogate pair is one code point, as the compiler reads UTF-16, and a
+		// lone surrogate keeps its own three bytes, never U+FFFD (production).
 		{`'\ud83d\ude00'`, "😀"},
-		{`'\ud83dx'`, "\uFFFDx"},
-		{`'\ude00'`, "\uFFFD"},
+		{`'\ud83dx'`, "\xed\xa0\xbdx"},
+		{`'\ude00'`, "\xed\xb8\x80"},
+		{`'\ud83d\ud83d\ude00'`, "\xed\xa0\xbd😀"},
+		{`'\ude00\ud83d'`, "\xed\xb8\x80\xed\xa0\xbd"},
+		{`'\uFFFD'`, "\uFFFD"},
 		{`'نص 🙂'`, "نص 🙂"},
-		// Bytes take one byte for \x and octal escapes, and the low byte of a \u escape.
+		// Bytes take one byte for \x and octal escapes; \u is refused by the parser.
 		{`b'\xff\000a'`, "\xff\x00a"},
 		{`b'é'`, "é"},
 		{`B"\u0141"`, "\x41"},
 	} {
 		if got := lexUnquote(c.lit); got != c.want {
 			t.Errorf("lexUnquote(%s) = %q, want %q", c.lit, got, c.want)
+		}
+	}
+}
+
+// The lone surrogate is WTF-8's form, distinct from U+FFFD, for every surrogate.
+func TestLexAppendSurrogate(t *testing.T) {
+	for r := rune(0xD800); r <= 0xDFFF; r++ {
+		var b strings.Builder
+		lexAppendSurrogate(&b, r)
+		got := b.String()
+		if len(got) != 3 || got[0] != 0xED || got[1] < 0xA0 || got[1] > 0xBF || got[2] < 0x80 || got[2] > 0xBF {
+			t.Fatalf("%U: % x", r, got)
+		}
+	}
+}
+
+func TestLexBytesHasU(t *testing.T) {
+	for lit, want := range map[string]bool{
+		`b'` + "\\" + `u00ff'`: true, `B"` + "\\" + `u0041"`: true, `b'` + "\\\\" + `u0041'`: false,
+		`b'` + "\\" + `xff'`: false, `b'u'`: false, `b'` + "\\" + `'u'`: false,
+	} {
+		if got := lexBytesHasU(lit); got != want {
+			t.Errorf("lexBytesHasU(%s) = %v", lit, got)
+		}
+	}
+}
+
+// Unclosed block comments do not make the lexer quadratic (S1-A review: 256 KiB took 4 s).
+func TestLexUnclosedCommentsAreLinear(t *testing.T) {
+	for _, src := range []string{
+		strings.Repeat("/*a", 1<<20/3) + "true",
+		strings.Repeat("/*a", 1<<19/3) + "*/" + strings.Repeat("/*a", 1<<19/3),
+		strings.Repeat("/**/", 1<<18),
+	} {
+		start := time.Now()
+		toks, _ := lex(src)
+		if d := time.Since(start); d > time.Second {
+			t.Errorf("%.12s…: %v for %d tokens", src, d, len(toks))
+		}
+	}
+	// The memo answers as a fresh search would.
+	for _, c := range []struct{ src, want string }{
+		{"/*a /*b */ c /*d", "id:c seg:/*d"},
+		{"/*a*/ /*/ x */ y", "id:y"},
+		{"/*a */ /*b", "seg:/*b"},
+	} {
+		if got := syntaxLexemes(c.src); got != c.want {
+			t.Errorf("lex(%q) = %q, want %q", c.src, got, c.want)
 		}
 	}
 }
