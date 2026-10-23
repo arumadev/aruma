@@ -6,7 +6,7 @@
 // are recorded in separate API calls, so no request, ruleset or response of
 // the development set contains a held-out case. For each set it writes
 // <dir>/<topic>.json (normalised cases) and <dir>/raw/<topic>.json (every
-// request body and response; requests carry no credentials). See ../README.md.
+// request body as sent and its response; requests carry no credentials). See ../README.md.
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -25,21 +25,22 @@ function bodyText(service, source, tcs, raw) {
   return text;
 }
 
-// rawRequest is the request body as recorded. The ruleset text and the test
-// cases are in the normalised file (rulesets, ruleset or rulesetGenerated;
-// request, resource, functionMocks): here the ruleset is replaced by its
-// size in bytes and its SHA-256 (of the UTF-8 text), and each test case by
-// its request path, which names it within the call.
+// rawRequest is the request body as sent (it never carries credentials:
+// the token travels in the Authorization header only). A generated ruleset
+// is replaced by its generator, size and SHA-256, so a file does not hold
+// hundreds of kilobytes of padding; requestSha256 is the digest of the whole
+// body as sent, generated ruleset included.
 function rawRequest(text, gen) {
   const b = JSON.parse(text);
-  const f = b.source.files[0];
-  f.content = {
-    sha256: createHash('sha256').update(f.content).digest('hex'),
-    bytes: Buffer.byteLength(f.content),
-    ...(gen ? { generated: gen } : {}),
-  };
-  if (b.testSuite) b.testSuite = { testCasePaths: b.testSuite.testCases.map((t) => t.request.path) };
-  return b;
+  const out = { requestSha256: createHash('sha256').update(text).digest('hex'), body: b };
+  // A number such as 2.0 or 9223372036854775807 does not survive JSON.parse:
+  // such a body is kept as its exact text instead.
+  if (!gen && JSON.stringify(b) !== text) return { requestSha256: out.requestSha256, bodyText: text };
+  if (gen) {
+    const f = b.source.files[0];
+    f.content = { generated: gen, sha256: createHash('sha256').update(f.content).digest('hex'), bytes: Buffer.byteLength(f.content) };
+  }
+  return out;
 }
 
 async function recordSet(mod, cases, set) {

@@ -7,40 +7,981 @@
   {
    "kind": "pack",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "01ebbfb47e5688169cb5278256fe7f2071dafaab9ca2512d9eedad9ad04bc0c2",
-        "bytes": 1870
+    "rebuilt": true,
+    "requestSha256": "3beee2f63831829f9de1156c52936d417e21e0f57678277b3b20e44858a3042d",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_literal_ne/{doc} {\n      allow get: if /a/b != /a/c;\n    }\n    match /c_interpolate/{doc} {\n      allow get: if /databases/$(database)/documents/c_interpolate/$(doc) == request.path;\n    }\n    match /c_interpolate_slash/{doc} {\n      allow get: if /a/$('b/c')/d == /a/b/c/d;\n    }\n    match /c_interpolate_slash_size/{doc} {\n      allow get: if /a/$('b/c')/d[1] == 'b/c';\n    }\n    match /c_interpolate_int/{doc} {\n      allow get: if /a/$(1) == /a/1;\n    }\n    match /c_path_fn_relative/{doc} {\n      allow get: if path('a/b') == /a/b;\n    }\n    match /c_path_index/{doc} {\n      allow get: if /a/b/c[1] == 'b';\n    }\n    match /c_path_index_out_of_range/{doc} {\n      allow get: if /a/b[5] == 'x';\n    }\n    match /c_path_eq_string/{doc} {\n      allow get: if /a/b == '/a/b';\n    }\n    match /c_path_string/{doc} {\n      allow get: if string(/a/b) == '/a/b';\n    }\n    match /c_path_concat/{doc} {\n      allow get: if /a/b + '/c' == '/a/b/c';\n    }\n    match /c_request_path_index/{doc} {\n      allow get: if request.path[3] == 'c_request_path_index';\n    }\n    match /c_request_path_tail/{doc} {\n      allow get: if request.path[4] == 'doc';\n    }\n    match /c_path_is_path/{doc} {\n      allow get: if /a/b is path;\n    }\n    match /c_path_in/{doc} {\n      allow get: if 'b' in /a/b;\n    }\n    match /c_path_special_chars/{doc} {\n      allow get: if /a/$('b c')/d[1] == 'b c';\n    }\n    match /c_path_encoded_segment/{doc} {\n      allow get: if /a/b%20c[1] == 'b c';\n    }\n    match /c_path_dot_segment/{doc} {\n      allow get: if /a/b.c[1] == 'b.c';\n    }\n    match /c_path_dash_segment/{doc} {\n      allow get: if /a/b-c[1] == 'b-c';\n    }\n    match /c_path_parens_segment/{doc} {\n      allow get: if /databases/(default)/documents[1] == '(default)';\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c_literal_ne/doc",
-      "/databases/(default)/documents/c_interpolate/doc",
-      "/databases/(default)/documents/c_interpolate_slash/doc",
-      "/databases/(default)/documents/c_interpolate_slash_size/doc",
-      "/databases/(default)/documents/c_interpolate_int/doc",
-      "/databases/(default)/documents/c_path_fn_relative/doc",
-      "/databases/(default)/documents/c_path_index/doc",
-      "/databases/(default)/documents/c_path_index_out_of_range/doc",
-      "/databases/(default)/documents/c_path_eq_string/doc",
-      "/databases/(default)/documents/c_path_string/doc",
-      "/databases/(default)/documents/c_path_concat/doc",
-      "/databases/(default)/documents/c_request_path_index/doc",
-      "/databases/(default)/documents/c_request_path_tail/doc",
-      "/databases/(default)/documents/c_path_is_path/doc",
-      "/databases/(default)/documents/c_path_in/doc",
-      "/databases/(default)/documents/c_path_special_chars/doc",
-      "/databases/(default)/documents/c_path_encoded_segment/doc",
-      "/databases/(default)/documents/c_path_dot_segment/doc",
-      "/databases/(default)/documents/c_path_dash_segment/doc",
-      "/databases/(default)/documents/c_path_parens_segment/doc"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_literal_ne/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_interpolate/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_interpolate_slash/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_interpolate_slash_size/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_interpolate_int/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_path_fn_relative/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_path_index/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_path_index_out_of_range/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_path_eq_string/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_path_string/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_path_concat/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_request_path_index/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_request_path_tail/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_path_is_path/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_path_in/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_path_special_chars/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_path_encoded_segment/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_path_dot_segment/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_path_dash_segment/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_path_parens_segment/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -373,21 +1314,69 @@
    "kind": "alone",
    "id": "wild_v2_rest_is_path",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "6adaf9ff2bc8489f7f8c9dfe6ed86ec556d40ebe1b0e60ddcedd1fa94f89c729",
-        "bytes": 160
+    "rebuilt": true,
+    "requestSha256": "adcdcfc8e4ed512ca3b796a30ee5396965c580fdaeab0a6b0835c59d993b8dd8",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{rest=**} {\n      allow get: if rest is path;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/p/a/b/c"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/p/a/b/c",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -414,21 +1403,69 @@
    "kind": "alone",
    "id": "wild_v1_rest_is_string",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "b56c4eb8a6c70c9af77702c201889676da7f3de499f6ed3ceba903070564ff57",
-        "bytes": 162
+    "rebuilt": true,
+    "requestSha256": "e7e1574673995cdfcaffb2c7987a2e48dc92ff1e3e67a92f0775c42f31ae84bf",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '1';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{rest=**} {\n      allow get: if rest is string;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/p/a/b/c"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/p/a/b/c",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -464,21 +1501,69 @@
    "kind": "alone",
    "id": "wild_v1_rest_value",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "280474e17bb7f4bb220c13926c4619f5f616bf13460c4f5132ffe667d78347c7",
-        "bytes": 163
+    "rebuilt": true,
+    "requestSha256": "7d7920c4b4230fc26a9419f6471ca765089ad6f290cde889ea241a806bb891f4",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '1';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{rest=**} {\n      allow get: if rest == 'a/b/c';\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/p/a/b/c"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/p/a/b/c",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -525,21 +1610,69 @@
    "kind": "alone",
    "id": "wild_noversion_rest_is_string",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "5a56feeea291eeff6acf2213df4d1b9fcc2975d1c79779ce7476edb8005b99a8",
-        "bytes": 141
+    "rebuilt": true,
+    "requestSha256": "dce08cd924d4f1855fa09ed29e46a894e77c43e791de4bf34448c458dd10c863",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "service cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{rest=**} {\n      allow get: if rest is string;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/p/a/b/c"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/p/a/b/c",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -575,21 +1708,69 @@
    "kind": "alone",
    "id": "wild_v1_not_final",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "cb7336a5f8cbcaced890c7e8079f481b24de245e4c66bcae4006467f7c94575a",
-        "bytes": 159
+    "rebuilt": true,
+    "requestSha256": "a3f9e910051d0da6a8e3103c553909da512c78bc4337ceeb73e26bd9e1adace4",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '1';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{rest=**}/docs/{d} {\n      allow get: if true;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/a/b/docs/x"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/a/b/docs/x",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -613,21 +1794,69 @@
    "kind": "alone",
    "id": "wild_v2_not_final",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "0efc784cce01fe4d3d0e910b5d3525110a3e1227175c641f821cac7154e1b15b",
-        "bytes": 159
+    "rebuilt": true,
+    "requestSha256": "aa688ce2ff92eaf3dec85f47fe0a6e60fbabc19425545c92cf793850e336c911",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{rest=**}/docs/{d} {\n      allow get: if true;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/a/b/docs/x"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/a/b/docs/x",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -654,21 +1883,69 @@
    "kind": "alone",
    "id": "wild_v2_not_final_zero",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "4e596257f989c190e64b13cdd48a98cba4e809bc60cac2e682dd9eaf92fbb77f",
-        "bytes": 164
+    "rebuilt": true,
+    "requestSha256": "06d413bcabf1ad689e1cff01b103c027c90133811980046fbdca01f67ec546f4",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{rest=**}/docs/{d} {\n      allow get: if rest == /;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/docs/x"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/docs/x",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -692,21 +1969,69 @@
    "kind": "alone",
    "id": "wild_v2_two_recursive",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "2b24f26c3752fb1158d854474b42ea09074e7736048282e5597d4d5cc3f5625e",
-        "bytes": 156
+    "rebuilt": true,
+    "requestSha256": "e1a6cb571c41f786173b69730871f3ca2d6b7157887b7da9adab52c20813628e",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{a=**}/x/{b=**} {\n      allow get: if true;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/q/x/y/z"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/q/x/y/z",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -730,21 +2055,69 @@
    "kind": "alone",
    "id": "wild_v2_nested_under_recursive",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "ee48b6d19f0c5c00db4273cdc500ae508a26b18a0f60f9a097d9578d7c4bbd99",
-        "bytes": 186
+    "rebuilt": true,
+    "requestSha256": "fbd484cd23b9dcbc0bb5ae9ca4c7e08b1a6589a6beb26f847ce9cec990297c59",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /p/{rest=**} {\n      match /docs/{d} {\n        allow get: if true;\n      }\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/p/a/docs/x"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/p/a/docs/x",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -771,21 +2144,69 @@
    "kind": "alone",
    "id": "wild_v2_zero_segments_doc",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "2fca2433a4ab502abc205d0839d643a8cb083340a638c98c0acf43ad529d6210",
-        "bytes": 156
+    "rebuilt": true,
+    "requestSha256": "027dfcd9f18ae4eb5759d0508dc273a14ed7a5978d7c9bd74f210a3b5eab7a99",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c/{d}/{rest=**} {\n      allow get: if true;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c/d"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c/d",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -812,21 +2233,69 @@
    "kind": "alone",
    "id": "wild_v1_zero_segments_doc",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "e9ef2d2b829318756313e2b530312d7ab03b7b077d525d9499cf7b37ea0b3440",
-        "bytes": 156
+    "rebuilt": true,
+    "requestSha256": "571642d26f931a53a2492c1c4702dfe8c03bbdad770ada35bfb72f0895249eb9",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '1';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c/{d}/{rest=**} {\n      allow get: if true;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c/d"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c/d",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -851,21 +2320,69 @@
    "kind": "alone",
    "id": "single_wildcard_one_segment",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "db4279486c1cb88490f76eccfb6325a6e87c83feb887f6f1f19412e55aad7cec",
-        "bytes": 146
+    "rebuilt": true,
+    "requestSha256": "bb3255e71b2748d6e65cc4357304e57eb07e4e8db529f0f785a8d4b601497949",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c/{d} {\n      allow get: if true;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c/d/sub/e"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c/d/sub/e",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -881,21 +2398,69 @@
    "kind": "alone",
    "id": "overlap_or",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "51fc527df5b966917f018a84c50b120dc42fbe0b1c29d261f0327c76c3708e11",
-        "bytes": 210
+    "rebuilt": true,
+    "requestSha256": "0f8dc54f96eb3961eb792213f09b305677ba41c0dcafdeea8cdd9b0343c2873e",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c/{d} {\n      allow get: if false;\n    }\n    match /{coll}/{d} {\n      allow get: if coll == 'c';\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c/d"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c/d",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -931,21 +2496,69 @@
    "kind": "alone",
    "id": "nested_parent_rule_not_inherited",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "e04255393b384a7360314871da4c67c46bc87ee813fd70035f6aceba096e0df0",
-        "bytes": 208
+    "rebuilt": true,
+    "requestSha256": "843bd8f63b5519a4511d3d040f16f3d704a87ac7dacd891d60c0d0fa1ac9b4ef",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c/{d} {\n      allow read: if true;\n      match /sub/{e} {\n        allow read: if false;\n      }\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c/d/sub/e"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c/d/sub/e",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -972,21 +2585,69 @@
    "kind": "alone",
    "id": "nested_variables",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "830975aa824647d58170368f3cbc61ea7ec84a69bd48f3125347548ad439f4bf",
-        "bytes": 195
+    "rebuilt": true,
+    "requestSha256": "31766b4c1e3e6cf7ce77eb3d3cd7a8fe2c168d0d11709b8c830dc2cf06227dfc",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c/{d} {\n      match /sub/{e} {\n        allow get: if d == 'd' && e == 'e';\n      }\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c/d/sub/e"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c/d/sub/e",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -1013,21 +2674,69 @@
    "kind": "alone",
    "id": "var_shadowing",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "6dfffb0f0791d0f51bbad5b01015a1ad355ba2b7617c6ff78aad4e083567fb9f",
-        "bytes": 183
+    "rebuilt": true,
+    "requestSha256": "045be747eb8cd4e282cabde58dab50fd4aab1dac8970a0e2de5af637f4a005f7",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c/{d} {\n      match /sub/{d} {\n        allow get: if d == 'e';\n      }\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c/d/sub/e"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c/d/sub/e",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -1054,21 +2763,69 @@
    "kind": "alone",
    "id": "function_sees_match_var",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "dc7708e2478c674bcc5cd66a51efedec21ec100b5e9704457eeaecd07012f01f",
-        "bytes": 189
+    "rebuilt": true,
+    "requestSha256": "1018ac9c9c3a9f3ab4d8048e219d162f08f891d63522d3ed444fed11a796301b",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c/{d} {\n      function isD() { return d == 'd'; }\n      allow get: if isD();\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c/d"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c/d",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -1095,21 +2852,69 @@
    "kind": "alone",
    "id": "function_outer_var_not_visible",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "4c7b44aba5c4d35697e15e144a3321e36729da32d2932a63eed96c5b5d3ae54c",
-        "bytes": 187
+    "rebuilt": true,
+    "requestSha256": "01e6c729c06ab484adf3941b7fdc86e3c3f715c8b068a574fda0156e470725e3",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    function isD() { return d == 'd'; }\n    match /c/{d} {\n      allow get: if isD();\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c/d"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c/d",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -1148,21 +2953,69 @@
    "kind": "alone",
    "id": "partial_segment_wildcard",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "18381821a492ce5587578f71571299698d2e32d363242ff9089eb9a770fc7598",
-        "bytes": 149
+    "rebuilt": true,
+    "requestSha256": "81dbcbd4e0cd9cbc979df389196570209e1dc87d891b728c2d7939431bfab131",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c/pre{d} {\n      allow get: if true;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c/prex"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c/prex",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -1230,21 +3083,69 @@
    "kind": "alone",
    "id": "version_3",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "624bef8512747ea5358060d1bf9ee2323effd9ac74765754e598186b8c814c45",
-        "bytes": 146
+    "rebuilt": true,
+    "requestSha256": "b2acf44f16c54f46f0312a994a34db1dcc829c12c1d8511b0cc4996740c6dcbd",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '3';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c/{d} {\n      allow get: if true;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c/d"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c/d",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,

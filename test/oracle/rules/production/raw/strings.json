@@ -7,80 +7,2901 @@
   {
    "kind": "pack",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "c633d1aced2a0aa666f582b6749e6d0c666e47407f12289751d3c319e481d9ae",
-        "bytes": 5479
+    "rebuilt": true,
+    "requestSha256": "ab0d3f5246181b317173ab515d5456859072e66e333417f07a2223e7e3560b2e",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_size_ascii/{doc} {\n      allow get: if 'abc'.size() == 3;\n    }\n    match /c_size_emoji_1/{doc} {\n      allow get: if '😀'.size() == 1;\n    }\n    match /c_size_emoji_2/{doc} {\n      allow get: if '😀'.size() == 2;\n    }\n    match /c_size_combining/{doc} {\n      allow get: if 'é'.size() == 2;\n    }\n    match /c_size_empty/{doc} {\n      allow get: if ''.size() == 0;\n    }\n    match /c_utf8_size_emoji/{doc} {\n      allow get: if '😀'.toUtf8().size() == 4;\n    }\n    match /c_matches_full/{doc} {\n      allow get: if 'abc'.matches('a.c');\n    }\n    match /c_matches_partial_is_false/{doc} {\n      allow get: if 'abc'.matches('b');\n    }\n    match /c_matches_dotstar/{doc} {\n      allow get: if 'abc'.matches('.*b.*');\n    }\n    match /c_matches_lookahead/{doc} {\n      allow get: if 'abc'.matches('a(?=b).*');\n    }\n    match /c_matches_backref/{doc} {\n      allow get: if 'aa'.matches('(a)\\\\1');\n    }\n    match /c_matches_digit_two_backslashes/{doc} {\n      allow get: if '123'.matches('\\\\d+');\n    }\n    match /c_matches_dot_emoji/{doc} {\n      allow get: if '😀'.matches('.');\n    }\n    match /c_matches_dot_newline/{doc} {\n      allow get: if 'a\\nb'.matches('a.b');\n    }\n    match /c_matches_dotall_flag/{doc} {\n      allow get: if 'a\\nb'.matches('(?s)a.b');\n    }\n    match /c_matches_invalid/{doc} {\n      allow get: if 'a'.matches('(');\n    }\n    match /c_matches_invalid_or_true/{doc} {\n      allow get: if 'a'.matches('(') || true;\n    }\n    match /c_matches_possessive/{doc} {\n      allow get: if 'aaa'.matches('a*+');\n    }\n    match /c_matches_counted/{doc} {\n      allow get: if 'aaa'.matches('a{3}');\n    }\n    match /c_matches_counted_large/{doc} {\n      allow get: if 'a'.matches('a{1001}') == false;\n    }\n    match /c_matches_on_int/{doc} {\n      allow get: if (1).matches('1');\n    }\n    match /c_split_simple/{doc} {\n      allow get: if 'a,b,c'.split(',') == ['a', 'b', 'c'];\n    }\n    match /c_split_regex/{doc} {\n      allow get: if 'a1b22c'.split('[0-9]+') == ['a', 'b', 'c'];\n    }\n    match /c_split_dot_is_regex/{doc} {\n      allow get: if 'a.b'.split('.') == ['', '', ''];\n    }\n    match /c_split_trailing_empty_kept/{doc} {\n      allow get: if 'a,b,'.split(',') == ['a', 'b', ''];\n    }\n    match /c_split_trailing_empty_dropped/{doc} {\n      allow get: if 'a,b,'.split(',') == ['a', 'b'];\n    }\n    match /c_split_leading_empty/{doc} {\n      allow get: if ',a'.split(',') == ['', 'a'];\n    }\n    match /c_split_empty_string/{doc} {\n      allow get: if ''.split(',') == [''];\n    }\n    match /c_split_empty_string_size/{doc} {\n      allow get: if ''.split(',').size() == 1;\n    }\n    match /c_split_empty_sep/{doc} {\n      allow get: if 'abc'.split('') == ['a', 'b', 'c'];\n    }\n    match /c_split_path_style/{doc} {\n      allow get: if '/a/b'.split('/') == ['', 'a', 'b'];\n    }\n    match /c_replace_all/{doc} {\n      allow get: if 'aaa'.replace('a', 'b') == 'bbb';\n    }\n    match /c_replace_regex/{doc} {\n      allow get: if 'a.b'.replace('.', '-') == '---';\n    }\n    match /c_replace_group_dollar/{doc} {\n      allow get: if 'ab'.replace('(a)(b)', '$2$1') == 'ba';\n    }\n    match /c_replace_group_backslash/{doc} {\n      allow get: if 'ab'.replace('(a)(b)', '\\\\2\\\\1') == 'ba';\n    }\n    match /c_replace_literal_dollar/{doc} {\n      allow get: if 'ab'.replace('(a)(b)', '$2$1') == '$2$1';\n    }\n    match /c_replace_empty_pattern/{doc} {\n      allow get: if 'ab'.replace('', '-') == '-a-b-';\n    }\n    match /c_lower_e_acute/{doc} {\n      allow get: if 'É'.lower() == 'é';\n    }\n    match /c_upper_sharp_s/{doc} {\n      allow get: if 'ß'.upper() == 'SS';\n    }\n    match /c_upper_sharp_s_unchanged/{doc} {\n      allow get: if 'ß'.upper() == 'ß';\n    }\n    match /c_lower_dotted_i/{doc} {\n      allow get: if 'İ'.lower().size() == 2;\n    }\n    match /c_lower_final_sigma/{doc} {\n      allow get: if 'ΟΣ'.lower() == 'ος';\n    }\n    match /c_trim_tab_newline/{doc} {\n      allow get: if '\\ta\\n'.trim() == 'a';\n    }\n    match /c_trim_nbsp/{doc} {\n      allow get: if '\\u00a0a'.trim() == 'a';\n    }\n    match /c_index/{doc} {\n      allow get: if 'abc'[1] == 'b';\n    }\n    match /c_index_out_of_range/{doc} {\n      allow get: if 'abc'[5] == 'x';\n    }\n    match /c_index_emoji/{doc} {\n      allow get: if '😀a'[1] == 'a';\n    }\n    match /c_range/{doc} {\n      allow get: if 'abcdef'[1:3] == 'bc';\n    }\n    match /c_range_past_end/{doc} {\n      allow get: if 'abc'[1:10] == 'bc';\n    }\n    match /c_range_reversed/{doc} {\n      allow get: if 'abc'[2:1] == '';\n    }\n    match /c_concat/{doc} {\n      allow get: if 'a' + 'b' == 'ab';\n    }\n    match /c_compare_unicode/{doc} {\n      allow get: if 'é' > 'z';\n    }\n    match /c_compare_emoji_vs_bmp/{doc} {\n      allow get: if '😀' > '\\uffff';\n    }\n    match /c_string_of_int/{doc} {\n      allow get: if string(1) == '1';\n    }\n    match /c_string_of_float/{doc} {\n      allow get: if string(1.5) == '1.5';\n    }\n    match /c_string_of_whole_float/{doc} {\n      allow get: if string(1.0) == '1.0';\n    }\n    match /c_string_of_whole_float_short/{doc} {\n      allow get: if string(1.0) == '1';\n    }\n    match /c_string_of_bool/{doc} {\n      allow get: if string(true) == 'true';\n    }\n    match /c_string_of_null/{doc} {\n      allow get: if string(null) == 'null';\n    }\n    match /c_string_of_list/{doc} {\n      allow get: if string([1, 'a']) == '[1, a]';\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c_size_ascii/doc",
-      "/databases/(default)/documents/c_size_emoji_1/doc",
-      "/databases/(default)/documents/c_size_emoji_2/doc",
-      "/databases/(default)/documents/c_size_combining/doc",
-      "/databases/(default)/documents/c_size_empty/doc",
-      "/databases/(default)/documents/c_utf8_size_emoji/doc",
-      "/databases/(default)/documents/c_matches_full/doc",
-      "/databases/(default)/documents/c_matches_partial_is_false/doc",
-      "/databases/(default)/documents/c_matches_dotstar/doc",
-      "/databases/(default)/documents/c_matches_lookahead/doc",
-      "/databases/(default)/documents/c_matches_backref/doc",
-      "/databases/(default)/documents/c_matches_digit_two_backslashes/doc",
-      "/databases/(default)/documents/c_matches_dot_emoji/doc",
-      "/databases/(default)/documents/c_matches_dot_newline/doc",
-      "/databases/(default)/documents/c_matches_dotall_flag/doc",
-      "/databases/(default)/documents/c_matches_invalid/doc",
-      "/databases/(default)/documents/c_matches_invalid_or_true/doc",
-      "/databases/(default)/documents/c_matches_possessive/doc",
-      "/databases/(default)/documents/c_matches_counted/doc",
-      "/databases/(default)/documents/c_matches_counted_large/doc",
-      "/databases/(default)/documents/c_matches_on_int/doc",
-      "/databases/(default)/documents/c_split_simple/doc",
-      "/databases/(default)/documents/c_split_regex/doc",
-      "/databases/(default)/documents/c_split_dot_is_regex/doc",
-      "/databases/(default)/documents/c_split_trailing_empty_kept/doc",
-      "/databases/(default)/documents/c_split_trailing_empty_dropped/doc",
-      "/databases/(default)/documents/c_split_leading_empty/doc",
-      "/databases/(default)/documents/c_split_empty_string/doc",
-      "/databases/(default)/documents/c_split_empty_string_size/doc",
-      "/databases/(default)/documents/c_split_empty_sep/doc",
-      "/databases/(default)/documents/c_split_path_style/doc",
-      "/databases/(default)/documents/c_replace_all/doc",
-      "/databases/(default)/documents/c_replace_regex/doc",
-      "/databases/(default)/documents/c_replace_group_dollar/doc",
-      "/databases/(default)/documents/c_replace_group_backslash/doc",
-      "/databases/(default)/documents/c_replace_literal_dollar/doc",
-      "/databases/(default)/documents/c_replace_empty_pattern/doc",
-      "/databases/(default)/documents/c_lower_e_acute/doc",
-      "/databases/(default)/documents/c_upper_sharp_s/doc",
-      "/databases/(default)/documents/c_upper_sharp_s_unchanged/doc",
-      "/databases/(default)/documents/c_lower_dotted_i/doc",
-      "/databases/(default)/documents/c_lower_final_sigma/doc",
-      "/databases/(default)/documents/c_trim_tab_newline/doc",
-      "/databases/(default)/documents/c_trim_nbsp/doc",
-      "/databases/(default)/documents/c_index/doc",
-      "/databases/(default)/documents/c_index_out_of_range/doc",
-      "/databases/(default)/documents/c_index_emoji/doc",
-      "/databases/(default)/documents/c_range/doc",
-      "/databases/(default)/documents/c_range_past_end/doc",
-      "/databases/(default)/documents/c_range_reversed/doc",
-      "/databases/(default)/documents/c_concat/doc",
-      "/databases/(default)/documents/c_compare_unicode/doc",
-      "/databases/(default)/documents/c_compare_emoji_vs_bmp/doc",
-      "/databases/(default)/documents/c_string_of_int/doc",
-      "/databases/(default)/documents/c_string_of_float/doc",
-      "/databases/(default)/documents/c_string_of_whole_float/doc",
-      "/databases/(default)/documents/c_string_of_whole_float_short/doc",
-      "/databases/(default)/documents/c_string_of_bool/doc",
-      "/databases/(default)/documents/c_string_of_null/doc",
-      "/databases/(default)/documents/c_string_of_list/doc"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_size_ascii/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_size_emoji_1/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_size_emoji_2/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_size_combining/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_size_empty/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_utf8_size_emoji/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_full/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_partial_is_false/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_dotstar/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_lookahead/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_backref/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_digit_two_backslashes/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_dot_emoji/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_dot_newline/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_dotall_flag/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_invalid/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_invalid_or_true/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_possessive/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_counted/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_counted_large/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_on_int/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_simple/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_regex/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_dot_is_regex/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_trailing_empty_kept/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_trailing_empty_dropped/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_leading_empty/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_empty_string/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_empty_string_size/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_empty_sep/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_path_style/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_replace_all/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_replace_regex/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_replace_group_dollar/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_replace_group_backslash/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_replace_literal_dollar/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_replace_empty_pattern/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_lower_e_acute/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_upper_sharp_s/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_upper_sharp_s_unchanged/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_lower_dotted_i/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_lower_final_sigma/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_trim_tab_newline/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_trim_nbsp/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_index/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_index_out_of_range/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_index_emoji/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_range/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_range_past_end/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_range_reversed/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_concat/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_compare_unicode/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_compare_emoji_vs_bmp/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_int/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_float/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_whole_float/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_whole_float_short/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_bool/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_null/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_list/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -180,74 +3001,2613 @@
   {
    "kind": "pack",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "785a6fd70461e3b5de78f53208cbe28c8c0dc13ab17793b3a96dd92ac241f10c",
-        "bytes": 4932
+    "rebuilt": true,
+    "requestSha256": "eb44dc4c8762a2fc10c07e059e0499aaf7c9bd9318899e06a774d106ff58ee9a",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_size_ascii/{doc} {\n      allow get: if 'abc'.size() == 3;\n    }\n    match /c_size_emoji_1/{doc} {\n      allow get: if '😀'.size() == 1;\n    }\n    match /c_size_emoji_2/{doc} {\n      allow get: if '😀'.size() == 2;\n    }\n    match /c_size_combining/{doc} {\n      allow get: if 'é'.size() == 2;\n    }\n    match /c_size_empty/{doc} {\n      allow get: if ''.size() == 0;\n    }\n    match /c_utf8_size_emoji/{doc} {\n      allow get: if '😀'.toUtf8().size() == 4;\n    }\n    match /c_matches_full/{doc} {\n      allow get: if 'abc'.matches('a.c');\n    }\n    match /c_matches_partial_is_false/{doc} {\n      allow get: if 'abc'.matches('b');\n    }\n    match /c_matches_dotstar/{doc} {\n      allow get: if 'abc'.matches('.*b.*');\n    }\n    match /c_matches_digit_two_backslashes/{doc} {\n      allow get: if '123'.matches('\\\\d+');\n    }\n    match /c_matches_dot_emoji/{doc} {\n      allow get: if '😀'.matches('.');\n    }\n    match /c_matches_dot_newline/{doc} {\n      allow get: if 'a\\nb'.matches('a.b');\n    }\n    match /c_matches_dotall_flag/{doc} {\n      allow get: if 'a\\nb'.matches('(?s)a.b');\n    }\n    match /c_matches_counted/{doc} {\n      allow get: if 'aaa'.matches('a{3}');\n    }\n    match /c_matches_on_int/{doc} {\n      allow get: if (1).matches('1');\n    }\n    match /c_split_simple/{doc} {\n      allow get: if 'a,b,c'.split(',') == ['a', 'b', 'c'];\n    }\n    match /c_split_regex/{doc} {\n      allow get: if 'a1b22c'.split('[0-9]+') == ['a', 'b', 'c'];\n    }\n    match /c_split_dot_is_regex/{doc} {\n      allow get: if 'a.b'.split('.') == ['', '', ''];\n    }\n    match /c_split_trailing_empty_kept/{doc} {\n      allow get: if 'a,b,'.split(',') == ['a', 'b', ''];\n    }\n    match /c_split_trailing_empty_dropped/{doc} {\n      allow get: if 'a,b,'.split(',') == ['a', 'b'];\n    }\n    match /c_split_leading_empty/{doc} {\n      allow get: if ',a'.split(',') == ['', 'a'];\n    }\n    match /c_split_empty_string/{doc} {\n      allow get: if ''.split(',') == [''];\n    }\n    match /c_split_empty_string_size/{doc} {\n      allow get: if ''.split(',').size() == 1;\n    }\n    match /c_split_empty_sep/{doc} {\n      allow get: if 'abc'.split('') == ['a', 'b', 'c'];\n    }\n    match /c_split_path_style/{doc} {\n      allow get: if '/a/b'.split('/') == ['', 'a', 'b'];\n    }\n    match /c_replace_all/{doc} {\n      allow get: if 'aaa'.replace('a', 'b') == 'bbb';\n    }\n    match /c_replace_regex/{doc} {\n      allow get: if 'a.b'.replace('.', '-') == '---';\n    }\n    match /c_replace_group_dollar/{doc} {\n      allow get: if 'ab'.replace('(a)(b)', '$2$1') == 'ba';\n    }\n    match /c_replace_group_backslash/{doc} {\n      allow get: if 'ab'.replace('(a)(b)', '\\\\2\\\\1') == 'ba';\n    }\n    match /c_replace_literal_dollar/{doc} {\n      allow get: if 'ab'.replace('(a)(b)', '$2$1') == '$2$1';\n    }\n    match /c_replace_empty_pattern/{doc} {\n      allow get: if 'ab'.replace('', '-') == '-a-b-';\n    }\n    match /c_lower_e_acute/{doc} {\n      allow get: if 'É'.lower() == 'é';\n    }\n    match /c_upper_sharp_s/{doc} {\n      allow get: if 'ß'.upper() == 'SS';\n    }\n    match /c_upper_sharp_s_unchanged/{doc} {\n      allow get: if 'ß'.upper() == 'ß';\n    }\n    match /c_lower_dotted_i/{doc} {\n      allow get: if 'İ'.lower().size() == 2;\n    }\n    match /c_lower_final_sigma/{doc} {\n      allow get: if 'ΟΣ'.lower() == 'ος';\n    }\n    match /c_trim_tab_newline/{doc} {\n      allow get: if '\\ta\\n'.trim() == 'a';\n    }\n    match /c_trim_nbsp/{doc} {\n      allow get: if '\\u00a0a'.trim() == 'a';\n    }\n    match /c_index/{doc} {\n      allow get: if 'abc'[1] == 'b';\n    }\n    match /c_index_out_of_range/{doc} {\n      allow get: if 'abc'[5] == 'x';\n    }\n    match /c_index_emoji/{doc} {\n      allow get: if '😀a'[1] == 'a';\n    }\n    match /c_range/{doc} {\n      allow get: if 'abcdef'[1:3] == 'bc';\n    }\n    match /c_range_past_end/{doc} {\n      allow get: if 'abc'[1:10] == 'bc';\n    }\n    match /c_range_reversed/{doc} {\n      allow get: if 'abc'[2:1] == '';\n    }\n    match /c_concat/{doc} {\n      allow get: if 'a' + 'b' == 'ab';\n    }\n    match /c_compare_unicode/{doc} {\n      allow get: if 'é' > 'z';\n    }\n    match /c_compare_emoji_vs_bmp/{doc} {\n      allow get: if '😀' > '\\uffff';\n    }\n    match /c_string_of_int/{doc} {\n      allow get: if string(1) == '1';\n    }\n    match /c_string_of_float/{doc} {\n      allow get: if string(1.5) == '1.5';\n    }\n    match /c_string_of_whole_float/{doc} {\n      allow get: if string(1.0) == '1.0';\n    }\n    match /c_string_of_whole_float_short/{doc} {\n      allow get: if string(1.0) == '1';\n    }\n    match /c_string_of_bool/{doc} {\n      allow get: if string(true) == 'true';\n    }\n    match /c_string_of_null/{doc} {\n      allow get: if string(null) == 'null';\n    }\n    match /c_string_of_list/{doc} {\n      allow get: if string([1, 'a']) == '[1, a]';\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c_size_ascii/doc",
-      "/databases/(default)/documents/c_size_emoji_1/doc",
-      "/databases/(default)/documents/c_size_emoji_2/doc",
-      "/databases/(default)/documents/c_size_combining/doc",
-      "/databases/(default)/documents/c_size_empty/doc",
-      "/databases/(default)/documents/c_utf8_size_emoji/doc",
-      "/databases/(default)/documents/c_matches_full/doc",
-      "/databases/(default)/documents/c_matches_partial_is_false/doc",
-      "/databases/(default)/documents/c_matches_dotstar/doc",
-      "/databases/(default)/documents/c_matches_digit_two_backslashes/doc",
-      "/databases/(default)/documents/c_matches_dot_emoji/doc",
-      "/databases/(default)/documents/c_matches_dot_newline/doc",
-      "/databases/(default)/documents/c_matches_dotall_flag/doc",
-      "/databases/(default)/documents/c_matches_counted/doc",
-      "/databases/(default)/documents/c_matches_on_int/doc",
-      "/databases/(default)/documents/c_split_simple/doc",
-      "/databases/(default)/documents/c_split_regex/doc",
-      "/databases/(default)/documents/c_split_dot_is_regex/doc",
-      "/databases/(default)/documents/c_split_trailing_empty_kept/doc",
-      "/databases/(default)/documents/c_split_trailing_empty_dropped/doc",
-      "/databases/(default)/documents/c_split_leading_empty/doc",
-      "/databases/(default)/documents/c_split_empty_string/doc",
-      "/databases/(default)/documents/c_split_empty_string_size/doc",
-      "/databases/(default)/documents/c_split_empty_sep/doc",
-      "/databases/(default)/documents/c_split_path_style/doc",
-      "/databases/(default)/documents/c_replace_all/doc",
-      "/databases/(default)/documents/c_replace_regex/doc",
-      "/databases/(default)/documents/c_replace_group_dollar/doc",
-      "/databases/(default)/documents/c_replace_group_backslash/doc",
-      "/databases/(default)/documents/c_replace_literal_dollar/doc",
-      "/databases/(default)/documents/c_replace_empty_pattern/doc",
-      "/databases/(default)/documents/c_lower_e_acute/doc",
-      "/databases/(default)/documents/c_upper_sharp_s/doc",
-      "/databases/(default)/documents/c_upper_sharp_s_unchanged/doc",
-      "/databases/(default)/documents/c_lower_dotted_i/doc",
-      "/databases/(default)/documents/c_lower_final_sigma/doc",
-      "/databases/(default)/documents/c_trim_tab_newline/doc",
-      "/databases/(default)/documents/c_trim_nbsp/doc",
-      "/databases/(default)/documents/c_index/doc",
-      "/databases/(default)/documents/c_index_out_of_range/doc",
-      "/databases/(default)/documents/c_index_emoji/doc",
-      "/databases/(default)/documents/c_range/doc",
-      "/databases/(default)/documents/c_range_past_end/doc",
-      "/databases/(default)/documents/c_range_reversed/doc",
-      "/databases/(default)/documents/c_concat/doc",
-      "/databases/(default)/documents/c_compare_unicode/doc",
-      "/databases/(default)/documents/c_compare_emoji_vs_bmp/doc",
-      "/databases/(default)/documents/c_string_of_int/doc",
-      "/databases/(default)/documents/c_string_of_float/doc",
-      "/databases/(default)/documents/c_string_of_whole_float/doc",
-      "/databases/(default)/documents/c_string_of_whole_float_short/doc",
-      "/databases/(default)/documents/c_string_of_bool/doc",
-      "/databases/(default)/documents/c_string_of_null/doc",
-      "/databases/(default)/documents/c_string_of_list/doc"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_size_ascii/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_size_emoji_1/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_size_emoji_2/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_size_combining/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_size_empty/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_utf8_size_emoji/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_full/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_partial_is_false/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_dotstar/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_digit_two_backslashes/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_dot_emoji/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_dot_newline/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_dotall_flag/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_counted/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_on_int/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_simple/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_regex/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_dot_is_regex/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_trailing_empty_kept/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_trailing_empty_dropped/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_leading_empty/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_empty_string/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_empty_string_size/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_empty_sep/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_split_path_style/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_replace_all/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_replace_regex/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_replace_group_dollar/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_replace_group_backslash/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_replace_literal_dollar/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_replace_empty_pattern/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_lower_e_acute/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_upper_sharp_s/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_upper_sharp_s_unchanged/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_lower_dotted_i/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_lower_final_sigma/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_trim_tab_newline/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_trim_nbsp/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_index/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_index_out_of_range/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_index_emoji/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_range/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_range_past_end/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_range_reversed/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_concat/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_compare_unicode/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_compare_emoji_vs_bmp/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_int/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_float/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_whole_float/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_whole_float_short/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_bool/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_null/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_list/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -1042,33 +6402,645 @@
   {
    "kind": "pack",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "1ce5ee600c0261e6557a2c3be60f90219c3a1e3939286d0f9ef79ea5bce82945",
-        "bytes": 1190
+    "rebuilt": true,
+    "requestSha256": "691996886f9e65effc75d5f9e7ce2abb2f76a69c6bb2cbbf254cac0e5ca3ef17",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_string_of_list_any/{doc} {\n      allow get: if string([1, 'a']) is string;\n    }\n    match /c_string_of_large_float_any/{doc} {\n      allow get: if string(10000000000000000000000.0) is string;\n    }\n    match /c_int_of_string/{doc} {\n      allow get: if int('12') == 12;\n    }\n    match /c_int_of_float_string/{doc} {\n      allow get: if int('1.5') == 1;\n    }\n    match /c_int_of_spaced_string/{doc} {\n      allow get: if int(' 12') == 12;\n    }\n    match /c_float_of_string/{doc} {\n      allow get: if float('1.5') == 1.5;\n    }\n    match /c_float_of_exp_string/{doc} {\n      allow get: if float('1e3') == 1000.0;\n    }\n    match /c_to_utf8/{doc} {\n      allow get: if 'abc'.toUtf8() == b'abc';\n    }\n    match /c_escape_unicode/{doc} {\n      allow get: if '\\u00e9' == 'é';\n    }\n    match /c_escape_quote/{doc} {\n      allow get: if 'a\\'b'.size() == 3;\n    }\n    match /c_double_quotes/{doc} {\n      allow get: if \"dq\" == 'dq';\n    }\n    match /c_escape_hex/{doc} {\n      allow get: if '\\x41' == 'A';\n    }\n    match /c_in_string/{doc} {\n      allow get: if 'b' in 'abc';\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c_string_of_list_any/doc",
-      "/databases/(default)/documents/c_string_of_large_float_any/doc",
-      "/databases/(default)/documents/c_int_of_string/doc",
-      "/databases/(default)/documents/c_int_of_float_string/doc",
-      "/databases/(default)/documents/c_int_of_spaced_string/doc",
-      "/databases/(default)/documents/c_float_of_string/doc",
-      "/databases/(default)/documents/c_float_of_exp_string/doc",
-      "/databases/(default)/documents/c_to_utf8/doc",
-      "/databases/(default)/documents/c_escape_unicode/doc",
-      "/databases/(default)/documents/c_escape_quote/doc",
-      "/databases/(default)/documents/c_double_quotes/doc",
-      "/databases/(default)/documents/c_escape_hex/doc",
-      "/databases/(default)/documents/c_in_string/doc"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_list_any/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_string_of_large_float_any/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_int_of_string/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_int_of_float_string/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_int_of_spaced_string/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_float_of_string/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_float_of_exp_string/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_to_utf8/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_escape_unicode/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_escape_quote/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_double_quotes/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_escape_hex/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_in_string/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -1291,21 +7263,69 @@
    "kind": "alone",
    "id": "escape_unknown",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "b9eac5967da2813a381fdb6d1e9f5e48443108f342db7188b7d820193d0ae253",
-        "bytes": 175
+    "rebuilt": true,
+    "requestSha256": "fd62bd4d637c32bb70ea64d59cd7c855c776036b5d70d5194c0e0ad1c302e2d3",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_escape_unknown/{doc} {\n      allow get: if '\\q'.size() == 2;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c_escape_unknown/doc"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_escape_unknown/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -1340,21 +7360,69 @@
    "kind": "alone",
    "id": "raw_string",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "5652b588b75be0e66906df9429f3d88ec27c12aa711a7bba8bf4aa0d212c47a2",
-        "bytes": 173
+    "rebuilt": true,
+    "requestSha256": "06a4fbe20def54825df3a42ca86fac3cd70c9d52eca13237932e14d867ec1ff0",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_raw_string/{doc} {\n      allow get: if r'a\\b'.size() == 3;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c_raw_string/doc"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_raw_string/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -1378,21 +7446,69 @@
    "kind": "alone",
    "id": "matches_lookahead",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "9dbbddb2e529dc28a81fd93966cf3a50083ecd9a4c1327b1334f8fd3b7c6089b",
-        "bytes": 187
+    "rebuilt": true,
+    "requestSha256": "a35c7efb88f9a24f44759cb350c1ff28bbaaca81d07208ae8c5dbeccda8162ee",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_matches_lookahead/{doc} {\n      allow get: if 'abc'.matches('a(?=b).*');\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c_matches_lookahead/doc"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_lookahead/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -1416,21 +7532,69 @@
    "kind": "alone",
    "id": "matches_backref",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "057efb97b0112d52b74f2e97923d3ee20c0f43563755ad547204eb4d73b27e33",
-        "bytes": 182
+    "rebuilt": true,
+    "requestSha256": "f3dba5395390fc6b2e9bb3cd8f7aa1227c59819c56aec3c0ad6455c3ab818fc7",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_matches_backref/{doc} {\n      allow get: if 'aa'.matches('(a)\\\\1');\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c_matches_backref/doc"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_backref/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -1454,21 +7618,69 @@
    "kind": "alone",
    "id": "matches_invalid",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "43c395c17373814f965e3f8771976643233ce18bcf85ef28d3b509a51ba7d3e1",
-        "bytes": 176
+    "rebuilt": true,
+    "requestSha256": "29b6e03d11990ca32544041d778b126de0562a4662e2e7d19a6a944f2ef571ab",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_matches_invalid/{doc} {\n      allow get: if 'a'.matches('(');\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c_matches_invalid/doc"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_invalid/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -1492,21 +7704,69 @@
    "kind": "alone",
    "id": "matches_invalid_or_true",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "3a5652bbdb82d6e7aa0415b557009ac8f6b33eccae7fe73ef4c77060f55773c7",
-        "bytes": 192
+    "rebuilt": true,
+    "requestSha256": "05af87a889b4e8c0f4d0c26b78e459ed4e8dab10850aebf8b15c88b1c0b4a9f9",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_matches_invalid_or_true/{doc} {\n      allow get: if 'a'.matches('(') || true;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c_matches_invalid_or_true/doc"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_invalid_or_true/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -1530,21 +7790,69 @@
    "kind": "alone",
    "id": "matches_possessive",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "cf938832a4580be746f4d291a7bd3236cb88b83f56ab67d2b3dee429aa062cf3",
-        "bytes": 183
+    "rebuilt": true,
+    "requestSha256": "4b940fff264168cf0a8bcad72241c8d6dc5dfa381d5355d2c4c6b0753750555c",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_matches_possessive/{doc} {\n      allow get: if 'aaa'.matches('a*+');\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c_matches_possessive/doc"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_possessive/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
@@ -1568,21 +7876,69 @@
    "kind": "alone",
    "id": "matches_counted_large",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "7ced359ea10fe5341c2b9f8032ab5ebb57bf2c3d8f4ff16ce3eea5cd7a41bdf4",
-        "bytes": 197
+    "rebuilt": true,
+    "requestSha256": "2c6c4b0c9428dcfb551ccb59f5b4556adea45ea3c04b2e636a4b45feb03d041b",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_matches_counted_large/{doc} {\n      allow get: if 'a'.matches('a{1001}') == false;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c_matches_counted_large/doc"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_matches_counted_large/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,

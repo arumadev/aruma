@@ -7,68 +7,2325 @@
   {
    "kind": "pack",
    "request": {
-    "source": {
-     "files": [
-      {
-       "name": "firestore.rules",
-       "content": {
-        "sha256": "e882a28d28c9b3c46c7abe9b833c8790fa8bb2461352e2efe91b8404d6f7feb2",
-        "bytes": 4708
+    "rebuilt": true,
+    "requestSha256": "fa39d99fde803adb4ff225a293a1918b342b5b327651b3a500fe06155799667f",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_float_div_is_float/{doc} {\n      allow get: if (3.0 / 2) is float;\n    }\n    match /c_point_one_plus_point_two/{doc} {\n      allow get: if 0.1 + 0.2 == 0.3;\n    }\n    match /c_float_of_int/{doc} {\n      allow get: if float(2) == 2.0 && float(2) is float;\n    }\n    match /c_int_of_int/{doc} {\n      allow get: if int(2) is int;\n    }\n    match /c_neg_zero/{doc} {\n      allow get: if -0.0 == 0.0;\n    }\n    match /c_float_mod/{doc} {\n      allow get: if 5.5 % 2 == 1.5;\n    }\n    match /c_neg_mod/{doc} {\n      allow get: if -5 % 3 == -2;\n    }\n    match /c_unary_minus_field/{doc} {\n      allow get: if -resource.data.n == -1;\n    }\n    match /c_unary_minus_string/{doc} {\n      allow get: if -'a' == 'a';\n    }\n    match /c_int_float_list_eq/{doc} {\n      allow get: if [1] == [1.0];\n    }\n    match /c_nan_eq_nan/{doc} {\n      allow get: if (0.0 / 0.0) == (0.0 / 0.0);\n    }\n    match /c_nan_ne_nan/{doc} {\n      allow get: if (0.0 / 0.0) != (0.0 / 0.0);\n    }\n    match /c_abs_int/{doc} {\n      allow get: if math.abs(-1) == 1 && math.abs(-1) is int;\n    }\n    match /c_abs_float/{doc} {\n      allow get: if math.abs(-1.5) == 1.5;\n    }\n    match /c_abs_int_min/{doc} {\n      allow get: if math.abs(-9223372036854775807 - 1) < 0;\n    }\n    match /c_ceil_float/{doc} {\n      allow get: if math.ceil(1.2) == 2.0 && math.ceil(1.2) is float;\n    }\n    match /c_ceil_int/{doc} {\n      allow get: if math.ceil(1) == 1.0 && math.ceil(1) is float;\n    }\n    match /c_round_half_up/{doc} {\n      allow get: if math.round(2.5) == 3 && math.round(2.5) is int;\n    }\n    match /c_round_neg_half/{doc} {\n      allow get: if math.round(-2.5) == -2;\n    }\n    match /c_round_neg_half_away/{doc} {\n      allow get: if math.round(-2.5) == -3;\n    }\n    match /c_round_nan/{doc} {\n      allow get: if math.round(0.0 / 0.0) == 0;\n    }\n    match /c_round_inf/{doc} {\n      allow get: if math.round(1.0 / 0.0) == 9223372036854775807;\n    }\n    match /c_sqrt/{doc} {\n      allow get: if math.sqrt(4) == 2.0 && math.sqrt(4) is float;\n    }\n    match /c_sqrt_negative_nan/{doc} {\n      allow get: if math.isNaN(math.sqrt(-1));\n    }\n    match /c_pow/{doc} {\n      allow get: if math.pow(2, 10) == 1024.0 && math.pow(2, 10) is float;\n    }\n    match /c_pow_fraction/{doc} {\n      allow get: if math.pow(4, 0.5) == 2.0;\n    }\n    match /c_isnan_int/{doc} {\n      allow get: if math.isNaN(1) == false;\n    }\n    match /c_isinfinite/{doc} {\n      allow get: if math.isInfinite(1.0 / 0.0);\n    }\n    match /c_abs_string/{doc} {\n      allow get: if math.abs('a') == 1;\n    }\n    match /c_abs_two_args/{doc} {\n      allow get: if math.abs(1, 2) == 1;\n    }\n    match /c_trunc_absent/{doc} {\n      allow get: if math.trunc(1.5) == 1.0;\n    }\n    match /c_sha256_string/{doc} {\n      allow get: if hashing.sha256('abc') == b'\\xba\\x78\\x16\\xbf\\x8f\\x01\\xcf\\xea\\x41\\x41\\x40\\xde\\x5d\\xae\\x22\\x23\\xb0\\x03\\x61\\xa3\\x96\\x17\\x7a\\x9c\\xb4\\x10\\xff\\x61\\xf2\\x00\\x15\\xad';\n    }\n    match /c_sha256_bytes/{doc} {\n      allow get: if hashing.sha256(b'abc') == b'\\xba\\x78\\x16\\xbf\\x8f\\x01\\xcf\\xea\\x41\\x41\\x40\\xde\\x5d\\xae\\x22\\x23\\xb0\\x03\\x61\\xa3\\x96\\x17\\x7a\\x9c\\xb4\\x10\\xff\\x61\\xf2\\x00\\x15\\xad';\n    }\n    match /c_md5_hex_upper/{doc} {\n      allow get: if hashing.md5('abc').toHexString() == '900150983CD24FB0D6963F7D28E17F72';\n    }\n    match /c_md5_hex_lower/{doc} {\n      allow get: if hashing.md5('abc').toHexString() == '900150983cd24fb0d6963f7d28e17f72';\n    }\n    match /c_crc32/{doc} {\n      allow get: if hashing.crc32('abc') == b'\\x35\\x24\\x41\\xc2';\n    }\n    match /c_crc32_is_bytes/{doc} {\n      allow get: if hashing.crc32('abc') is bytes;\n    }\n    match /c_crc32c_is_bytes/{doc} {\n      allow get: if hashing.crc32c('abc') is bytes;\n    }\n    match /c_sha256_int/{doc} {\n      allow get: if hashing.sha256(1) is bytes;\n    }\n    match /c_bytes_size/{doc} {\n      allow get: if b'abc'.size() == 3;\n    }\n    match /c_bytes_hex_escape/{doc} {\n      allow get: if b'\\x00\\xff'.size() == 2;\n    }\n    match /c_bytes_base64/{doc} {\n      allow get: if b'abc'.toBase64() == 'YWJj';\n    }\n    match /c_bytes_base64_url/{doc} {\n      allow get: if b'\\xfb\\xff'.toBase64() == '-_8=';\n    }\n    match /c_bytes_base64_std/{doc} {\n      allow get: if b'\\xfb\\xff'.toBase64() == '+/8=';\n    }\n    match /c_bytes_compare/{doc} {\n      allow get: if b'a' < b'b';\n    }\n    match /c_bytes_index/{doc} {\n      allow get: if b'abc'[0] == 97;\n    }\n    match /c_latlng_value/{doc} {\n      allow get: if latlng.value(10.0, 20.0).latitude() == 10.0;\n    }\n    match /c_latlng_out_of_range/{doc} {\n      allow get: if latlng.value(91.0, 0.0) is latlng;\n    }\n  }\n}\n"
        }
-      }
-     ]
-    },
-    "testSuite": {
-     "testCasePaths": [
-      "/databases/(default)/documents/c_float_div_is_float/doc",
-      "/databases/(default)/documents/c_point_one_plus_point_two/doc",
-      "/databases/(default)/documents/c_float_of_int/doc",
-      "/databases/(default)/documents/c_int_of_int/doc",
-      "/databases/(default)/documents/c_neg_zero/doc",
-      "/databases/(default)/documents/c_float_mod/doc",
-      "/databases/(default)/documents/c_neg_mod/doc",
-      "/databases/(default)/documents/c_unary_minus_field/doc",
-      "/databases/(default)/documents/c_unary_minus_string/doc",
-      "/databases/(default)/documents/c_int_float_list_eq/doc",
-      "/databases/(default)/documents/c_nan_eq_nan/doc",
-      "/databases/(default)/documents/c_nan_ne_nan/doc",
-      "/databases/(default)/documents/c_abs_int/doc",
-      "/databases/(default)/documents/c_abs_float/doc",
-      "/databases/(default)/documents/c_abs_int_min/doc",
-      "/databases/(default)/documents/c_ceil_float/doc",
-      "/databases/(default)/documents/c_ceil_int/doc",
-      "/databases/(default)/documents/c_round_half_up/doc",
-      "/databases/(default)/documents/c_round_neg_half/doc",
-      "/databases/(default)/documents/c_round_neg_half_away/doc",
-      "/databases/(default)/documents/c_round_nan/doc",
-      "/databases/(default)/documents/c_round_inf/doc",
-      "/databases/(default)/documents/c_sqrt/doc",
-      "/databases/(default)/documents/c_sqrt_negative_nan/doc",
-      "/databases/(default)/documents/c_pow/doc",
-      "/databases/(default)/documents/c_pow_fraction/doc",
-      "/databases/(default)/documents/c_isnan_int/doc",
-      "/databases/(default)/documents/c_isinfinite/doc",
-      "/databases/(default)/documents/c_abs_string/doc",
-      "/databases/(default)/documents/c_abs_two_args/doc",
-      "/databases/(default)/documents/c_trunc_absent/doc",
-      "/databases/(default)/documents/c_sha256_string/doc",
-      "/databases/(default)/documents/c_sha256_bytes/doc",
-      "/databases/(default)/documents/c_md5_hex_upper/doc",
-      "/databases/(default)/documents/c_md5_hex_lower/doc",
-      "/databases/(default)/documents/c_crc32/doc",
-      "/databases/(default)/documents/c_crc32_is_bytes/doc",
-      "/databases/(default)/documents/c_crc32c_is_bytes/doc",
-      "/databases/(default)/documents/c_sha256_int/doc",
-      "/databases/(default)/documents/c_bytes_size/doc",
-      "/databases/(default)/documents/c_bytes_hex_escape/doc",
-      "/databases/(default)/documents/c_bytes_base64/doc",
-      "/databases/(default)/documents/c_bytes_base64_url/doc",
-      "/databases/(default)/documents/c_bytes_base64_std/doc",
-      "/databases/(default)/documents/c_bytes_compare/doc",
-      "/databases/(default)/documents/c_bytes_index/doc",
-      "/databases/(default)/documents/c_latlng_value/doc",
-      "/databases/(default)/documents/c_latlng_out_of_range/doc"
-     ]
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_float_div_is_float/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_point_one_plus_point_two/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_float_of_int/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_int_of_int/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_neg_zero/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_float_mod/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_neg_mod/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_unary_minus_field/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_unary_minus_string/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_int_float_list_eq/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_nan_eq_nan/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_nan_ne_nan/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_abs_int/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_abs_float/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_abs_int_min/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_ceil_float/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_ceil_int/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_round_half_up/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_round_neg_half/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_round_neg_half_away/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_round_nan/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_round_inf/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_sqrt/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_sqrt_negative_nan/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_pow/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_pow_fraction/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_isnan_int/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_isinfinite/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_abs_string/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_abs_two_args/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_trunc_absent/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_sha256_string/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_sha256_bytes/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_md5_hex_upper/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_md5_hex_lower/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_crc32/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_crc32_is_bytes/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_crc32c_is_bytes/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_sha256_int/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_bytes_size/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_bytes_hex_escape/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_bytes_base64/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_bytes_base64_url/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_bytes_base64_std/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_bytes_compare/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_bytes_index/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_latlng_value/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       },
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_latlng_out_of_range/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
     }
    },
    "status": 200,
