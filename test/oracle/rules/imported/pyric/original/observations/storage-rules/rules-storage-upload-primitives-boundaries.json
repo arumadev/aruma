@@ -1,0 +1,3116 @@
+{
+  "name": "rules-storage-upload-primitives-boundaries",
+  "matrixRow": "Storage rules engine #126-#128",
+  "rowIds": [
+    "storage-rules#126",
+    "storage-rules#127",
+    "storage-rules#128"
+  ],
+  "description": "Storage Rules Test API verdicts for corpus scenario \"upload-primitives-boundaries\" (STORAGE-P2-PRIMITIVES). Boundary-first evidence for Storage size, MIME, metadata, path, identity, and time helpers, including production-pinned metadata collection methods.",
+  "observedAt": "2026-09-30T03:43:31.594Z",
+  "fbSdkVersion": "12.13.0",
+  "projectId": "digame-mas",
+  "inputDigest": {
+    "algorithm": "sha256",
+    "value": "c2712ad704c5f3601796325324a08ec0e5332a4ee523f6f368632b6d031e215e"
+  },
+  "behavior": {
+    "size: zero bytes is within inclusive maximum": "ALLOW",
+    "size: exact maximum is allowed": "ALLOW",
+    "size: maximum plus one is denied": "DENY",
+    "MIME exact: image/png is allowed": "ALLOW",
+    "MIME exact: case difference is denied": "DENY",
+    "MIME exact: parameterized value is denied": "DENY",
+    "MIME regex: image/jpeg whole value is allowed": "ALLOW",
+    "MIME regex: suffix defeats whole-string match": "DENY",
+    "metadata keys: required keys with an extra key are allowed": "ALLOW",
+    "metadata keys: missing required key is denied": "DENY",
+    "metadata keys: absent metadata map is denied": "DENY",
+    "metadata get: missing key returns supplied default": "ALLOW",
+    "metadata get: present non-default value is denied": "DENY",
+    "metadata update: unchanged bytes and owner are allowed": "ALLOW",
+    "metadata update: changed byte size is denied": "DENY",
+    "metadata update: changed owner is denied": "DENY",
+    "path wildcard: string png filename is allowed": "ALLOW",
+    "path wildcard: non-png filename is denied": "DENY",
+    "identity: exact name bucket generation and metageneration are allowed": "ALLOW",
+    "identity: generation mismatch is denied": "DENY",
+    "identity: absent generation is denied": "DENY",
+    "time: one millisecond before strict 60 second boundary is allowed": "ALLOW",
+    "time: exact strict 60 second boundary is denied": "DENY",
+    "time: after strict 60 second boundary is denied": "DENY",
+    "time: future timeCreated value makes the strict comparison true": "ALLOW",
+    "delete: missing request.resource does not become a usable null guard": "DENY",
+    "keys: toSet() equals a set of the metadata keys": "ALLOW",
+    "keys: hasAll() with a List argument": "ALLOW",
+    "keys: size() counts the metadata keys": "ALLOW",
+    "keys: [0] is the only metadata key": "ALLOW",
+    "keys: join() joins the metadata keys": "ALLOW",
+    "keys: hasAny()": "ALLOW",
+    "keys: hasOnly()": "ALLOW",
+    "keys: keys() is list": "ALLOW",
+    "keys: keys() is set is false": "DENY",
+    "keys: !(keys() is set)": "ALLOW",
+    "keys: toSet().size()": "ALLOW",
+    "list: toSet: keys().toSet() equals a Set literal in another order": "ALLOW",
+    "list: toSet: a List literal with a duplicate equals the distinct Set": "ALLOW",
+    "list: toSet: != a smaller Set is true": "ALLOW",
+    "list: toSet: != the same Set is false": "DENY",
+    "list: toSet: a Set receiver is an error": "DENY",
+    "list: toSet: a Map receiver is an error": "DENY",
+    "list: toSet: an argument is an error": "DENY",
+    "list: join: keys().join() joins the keys": "ALLOW",
+    "list: join: a List literal joins with the separator": "ALLOW",
+    "list: join: != another string is true": "ALLOW",
+    "list: join: an empty List joins to the empty string": "ALLOW",
+    "list: join: int, bool and null elements convert as string() does": "ALLOW",
+    "list: join: float elements convert as string() does": "ALLOW",
+    "list: join: a List element is an error": "DENY",
+    "list: join: an int separator is an error": "DENY",
+    "list: join: no separator is an error": "DENY",
+    "list: join: a Set receiver is an error": "DENY",
+    "list: hasAll: a Set argument to a List receiver is an error": "DENY",
+    "list: hasAny: keys().hasAny() with one shared key": "ALLOW",
+    "list: hasAny: a List literal with one shared element": "ALLOW",
+    "list: hasAny: != true with no shared key": "ALLOW",
+    "list: hasAny: an empty argument is false": "ALLOW",
+    "list: hasAny: a Set receiver takes a Set argument": "ALLOW",
+    "list: hasAny: a Set argument to a List receiver is an error": "DENY",
+    "list: hasAny: a string argument is an error": "DENY",
+    "list: hasAny: a Map receiver is an error": "DENY",
+    "list: hasOnly: keys().hasOnly() is false for a missing key": "ALLOW",
+    "list: hasOnly: a List literal with a duplicate": "ALLOW",
+    "list: hasOnly: != true for a missing key": "ALLOW",
+    "list: hasOnly: an empty receiver is true": "ALLOW",
+    "list: hasOnly: a Set receiver takes a Set argument": "ALLOW",
+    "list: hasOnly: a Set argument to a List receiver is an error": "DENY",
+    "list: hasOnly: a string argument is an error": "DENY",
+    "list: concat: keys().concat() appends the argument": "ALLOW",
+    "list: concat: a List literal keeps duplicates in order": "ALLOW",
+    "list: concat: != the receiver is true": "ALLOW",
+    "list: concat: keys() with itself has four elements": "ALLOW",
+    "list: concat: two empty Lists": "ALLOW",
+    "list: concat: a string argument is an error": "DENY",
+    "list: concat: a Set argument is an error": "DENY",
+    "list: concat: a Set receiver is an error": "DENY",
+    "list: concat: a string receiver is an error": "DENY",
+    "list: concat: no argument is an error": "DENY",
+    "list: removeAll: keys().removeAll() drops the listed key": "ALLOW",
+    "list: removeAll: a List literal drops every occurrence": "ALLOW",
+    "list: removeAll: != the receiver is true": "ALLOW",
+    "list: removeAll: an absent element leaves the List unchanged": "ALLOW",
+    "list: removeAll: List, Map and null elements compare by value": "ALLOW",
+    "list: removeAll: a string argument is an error": "DENY",
+    "list: removeAll: a Set argument is an error": "DENY",
+    "list: removeAll: a Set receiver is an error": "DENY",
+    "list: removeAll: a Map receiver is an error": "DENY",
+    "list: in: a float is not in a List of the equal int": "DENY",
+    "list: in: !(float in a List of the equal int) is true": "ALLOW",
+    "list: in: an int is not in a List of the equal float": "DENY",
+    "list: in: -0.0 is in a List of 0.0": "ALLOW",
+    "list: in: an int zero is not in a List of -0.0": "DENY",
+    "list: in: NaN is not in a List of NaN": "DENY",
+    "list: in: a List of an int is not in a List of a List of the equal float": "DENY",
+    "list: in: a Map of an int is not in a List of a Map of the equal float": "DENY",
+    "list: in: a List of 0.0 is not in a List of a List of -0.0": "DENY",
+    "list: in: a float is in a List of the same float": "ALLOW",
+    "list: hasAny: an int List has no float of the same value": "DENY",
+    "list: hasAny: != true for a float of the same value": "ALLOW",
+    "list: hasAny: a float List has no int of the same value": "DENY",
+    "list: hasAll: an int List does not have all of a float List": "DENY",
+    "list: hasOnly: an int List does not have only a float List": "DENY",
+    "list: hasAll: a mixed List has all of a float List": "ALLOW",
+    "list: hasAny: a List of 0.0 has -0.0": "ALLOW",
+    "list: hasAny: a List of an int List has no List of the equal float": "DENY",
+    "list: hasAny: a List of a 0.0 List has no List of -0.0": "DENY",
+    "list: removeAll: a float argument leaves the equal int": "ALLOW",
+    "list: removeAll: a float argument does not remove the equal int": "DENY",
+    "list: removeAll: an int argument leaves the equal float": "ALLOW",
+    "list: removeAll: an int argument removes the equal int": "ALLOW",
+    "list: removeAll: a 0.0 argument removes -0.0": "ALLOW",
+    "list: removeAll: a float List argument leaves the equal int List": "ALLOW",
+    "list: removeAll: a float argument removes the same float": "ALLOW",
+    "list: join: != the joined string is false": "DENY",
+    "list: join: || true absorbs the no-separator error": "ALLOW",
+    "list: join: two separators is an error": "DENY",
+    "list: join: a null element is not the empty string": "DENY",
+    "list: join: a float element is not printed as an int": "DENY",
+    "list: join: floats convert as string() does": "ALLOW",
+    "list: join: a path element converts as string() does": "ALLOW",
+    "list: join: || true absorbs a List element error": "ALLOW",
+    "list: join: a Map element is an error": "DENY",
+    "list: join: a bytes element is an error": "DENY",
+    "list: join: a duration element is an error": "DENY",
+    "list: join: an empty separator": "ALLOW",
+    "list: receiver: || true absorbs concat on a string": "ALLOW",
+    "list: receiver: removeAll on a string is an error": "DENY",
+    "list: receiver: join on a string is an error": "DENY",
+    "list: receiver: toSet on a string is an error": "DENY",
+    "list: receiver: hasAny on a string is an error": "DENY",
+    "list: receiver: hasAll on a string is an error": "DENY",
+    "list: receiver: hasOnly on a string is an error": "DENY",
+    "list: receiver: concat on a Map is an error": "DENY",
+    "list: receiver: join on a Map is an error": "DENY",
+    "list: receiver: hasAll on a Map is an error": "DENY",
+    "list: keys: keys() of a literal is sorted": "ALLOW",
+    "list: keys: keys() of a literal is not in written order": "DENY",
+    "list: keys: keys() != the sorted List is false": "DENY",
+    "list: keys: keys()[0] is the least key": "ALLOW",
+    "list: keys: keys().join() joins the sorted keys": "ALLOW",
+    "list: keys: keys() orders digits, upper case, underscore and lower case by code point": "ALLOW",
+    "list: keys: keys() does not order numeric keys by value": "DENY",
+    "list: keys: keys() puts '10' before '9'": "ALLOW",
+    "list: keys: keys() orders non-ASCII keys by code point": "ALLOW",
+    "list: keys: keys() does not order by UTF-16 code unit": "DENY",
+    "list: keys: keys() puts a prefix before its extensions": "ALLOW",
+    "list: values: values() keeps the written order": "ALLOW",
+    "list: values: values() is not in key order": "DENY",
+    "list: values: values() keeps an integer-like key in written order": "ALLOW",
+    "list: values: values() does not put an integer-like key first": "DENY",
+    "list: values: values() != the written order is false": "DENY",
+    "list: values: values() keeps '10' and '9' in written order": "ALLOW",
+    "list: values: values() keeps non-ASCII, integer-like and empty keys in written order": "ALLOW",
+    "list: values: values() of a nested literal keeps its written order": "ALLOW",
+    "list: values: values()[0] is the first value written": "ALLOW",
+    "list: values: values().join() joins in written order": "ALLOW",
+    "list: values: values() of a repeated key keeps its first position and last value": "ALLOW",
+    "list: values: values() of a repeated key does not move it last": "DENY",
+    "list: values: values() of an empty Map is an empty List": "ALLOW",
+    "list: values: values() is list": "ALLOW",
+    "list: values: values() with an argument is an error": "DENY",
+    "list: values: || true absorbs values() with an argument": "ALLOW",
+    "list: values: keys() with an argument is an error": "DENY",
+    "list: values: values() on a List is an error": "DENY",
+    "list: values: values() on a string is an error": "DENY",
+    "list: values: keys() on a List is an error": "DENY",
+    "list: values: keys() on a string is an error": "DENY",
+    "list: values: get() on a List is an error": "DENY",
+    "list: argument: hasAll with a List argument": "ALLOW",
+    "list: argument: hasAll != false with a missing element": "DENY",
+    "list: argument: || true absorbs a Set argument to hasAny on a List": "ALLOW",
+    "list: argument: a Map argument to hasAll is an error": "DENY",
+    "list: argument: a null argument to hasOnly is an error": "DENY",
+    "list: argument: || true absorbs a string argument to hasAll": "ALLOW",
+    "list: argument: hasAny with no argument is an error": "DENY",
+    "list: argument: hasAll with two arguments is an error": "DENY",
+    "keys order: metadata keys() is sorted": "ALLOW",
+    "keys order: metadata keys() is not in written order": "DENY",
+    "keys order: metadata keys()[0] is the least key": "ALLOW",
+    "keys order: metadata keys().join() joins the sorted keys": "ALLOW",
+    "keys order: metadata values() keeps the order the request sent": "ALLOW",
+    "keys order: metadata values() is not in key order": "DENY",
+    "keys order: metadata values()[0] is the first value sent": "ALLOW"
+  },
+  "diagnostics": {
+    "size: zero bytes is within inclusive maximum": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 21,
+              "column": 24,
+              "currentOffset": 646,
+              "endOffset": 655
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "size: exact maximum is allowed": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 21,
+              "column": 24,
+              "currentOffset": 646,
+              "endOffset": 655
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "size: maximum plus one is denied": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 21,
+              "column": 24,
+              "currentOffset": 646,
+              "endOffset": 655
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "MIME exact: image/png is allowed": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 24,
+              "column": 24,
+              "currentOffset": 726,
+              "endOffset": 731
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "MIME exact: case difference is denied": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 24,
+              "column": 24,
+              "currentOffset": 726,
+              "endOffset": 731
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "MIME exact: parameterized value is denied": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 24,
+              "column": 24,
+              "currentOffset": 726,
+              "endOffset": 731
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "MIME regex: image/jpeg whole value is allowed": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 27,
+              "column": 24,
+              "currentOffset": 811,
+              "endOffset": 817
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "MIME regex: suffix defeats whole-string match": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 27,
+              "column": 24,
+              "currentOffset": 811,
+              "endOffset": 817
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "metadata keys: required keys with an extra key are allowed": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 30,
+              "column": 24,
+              "currentOffset": 940,
+              "endOffset": 950
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "metadata keys: missing required key is denied": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 30,
+              "column": 24,
+              "currentOffset": 940,
+              "endOffset": 950
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "metadata keys: absent metadata map is denied": {
+      "notes": [
+        "Error: storage.rules line [11], column [14]. Property metadata is undefined on object."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 11,
+          "column": 14,
+          "currentOffset": 305,
+          "endOffset": 311
+        }
+      }
+    },
+    "metadata get: missing key returns supplied default": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 33,
+              "column": 24,
+              "currentOffset": 1045,
+              "endOffset": 1054
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "metadata get: present non-default value is denied": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 33,
+              "column": 24,
+              "currentOffset": 1045,
+              "endOffset": 1054
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "metadata update: unchanged bytes and owner are allowed": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 36,
+              "column": 24,
+              "currentOffset": 1164,
+              "endOffset": 1170
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "metadata update: changed byte size is denied": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 36,
+              "column": 24,
+              "currentOffset": 1164,
+              "endOffset": 1170
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "metadata update: changed owner is denied": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 36,
+              "column": 24,
+              "currentOffset": 1164,
+              "endOffset": 1170
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "path wildcard: string png filename is allowed": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 40,
+              "column": 24,
+              "currentOffset": 1332,
+              "endOffset": 1339
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "path wildcard: non-png filename is denied": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 40,
+              "column": 24,
+              "currentOffset": 1332,
+              "endOffset": 1339
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "identity: exact name bucket generation and metageneration are allowed": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 43,
+              "column": 21,
+              "currentOffset": 1443,
+              "endOffset": 1450
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "identity: generation mismatch is denied": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 43,
+              "column": 21,
+              "currentOffset": 1443,
+              "endOffset": 1450
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "identity: absent generation is denied": {
+      "notes": [
+        "Error: storage.rules line [45], column [12]. Property generation is undefined on object."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 45,
+          "column": 12,
+          "currentOffset": 1530,
+          "endOffset": 1537
+        }
+      }
+    },
+    "time: one millisecond before strict 60 second boundary is allowed": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 49,
+              "column": 24,
+              "currentOffset": 1655,
+              "endOffset": 1667
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "time: exact strict 60 second boundary is denied": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 49,
+              "column": 24,
+              "currentOffset": 1655,
+              "endOffset": 1667
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "time: after strict 60 second boundary is denied": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 49,
+              "column": 24,
+              "currentOffset": 1655,
+              "endOffset": 1667
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "time: future timeCreated value makes the strict comparison true": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 49,
+              "column": 24,
+              "currentOffset": 1655,
+              "endOffset": 1667
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "delete: missing request.resource does not become a usable null guard": {
+      "notes": [
+        "Error: storage.rules line [52], column [24]. Property resource is undefined on object."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 52,
+          "column": 24,
+          "currentOffset": 1751,
+          "endOffset": 1757
+        }
+      }
+    },
+    "keys: toSet() equals a set of the metadata keys": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 56,
+              "column": 24,
+              "currentOffset": 1909,
+              "endOffset": 1915
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "keys: hasAll() with a List argument": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 59,
+              "column": 24,
+              "currentOffset": 2039,
+              "endOffset": 2045
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "keys: size() counts the metadata keys": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 62,
+              "column": 24,
+              "currentOffset": 2155,
+              "endOffset": 2161
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "keys: [0] is the only metadata key": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 65,
+              "column": 24,
+              "currentOffset": 2265,
+              "endOffset": 2271
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "keys: join() joins the metadata keys": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 68,
+              "column": 24,
+              "currentOffset": 2372,
+              "endOffset": 2378
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "keys: hasAny()": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 71,
+              "column": 24,
+              "currentOffset": 2489,
+              "endOffset": 2495
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "keys: hasOnly()": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 74,
+              "column": 24,
+              "currentOffset": 2609,
+              "endOffset": 2615
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "keys: keys() is list": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 77,
+              "column": 24,
+              "currentOffset": 2734,
+              "endOffset": 2740
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "keys: keys() is set is false": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 80,
+              "column": 24,
+              "currentOffset": 2841,
+              "endOffset": 2847
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "keys: !(keys() is set)": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 83,
+              "column": 24,
+              "currentOffset": 2951,
+              "endOffset": 2951
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "keys: toSet().size()": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 86,
+              "column": 24,
+              "currentOffset": 3065,
+              "endOffset": 3071
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: toSet: keys().toSet() equals a Set literal in another order": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 90,
+              "column": 24,
+              "currentOffset": 3230,
+              "endOffset": 3236
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: toSet: a List literal with a duplicate equals the distinct Set": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 93,
+              "column": 24,
+              "currentOffset": 3354,
+              "endOffset": 3354
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: toSet: != a smaller Set is true": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 96,
+              "column": 24,
+              "currentOffset": 3461,
+              "endOffset": 3467
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: toSet: != the same Set is false": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 99,
+              "column": 24,
+              "currentOffset": 3580,
+              "endOffset": 3580
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: toSet: a Set receiver is an error": {
+      "notes": [
+        "Error: storage.rules line [102], column [26]. Function not found error: Name: [toSet]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 102,
+          "column": 26,
+          "currentOffset": 3679,
+          "endOffset": 3679
+        },
+        "functionCalls": [
+          {
+            "function": "toSet"
+          }
+        ]
+      }
+    },
+    "list: toSet: a Map receiver is an error": {
+      "notes": [
+        "Error: storage.rules line [105], column [26]. Function not found error: Name: [toSet]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 105,
+          "column": 26,
+          "currentOffset": 3782,
+          "endOffset": 3788
+        },
+        "functionCalls": [
+          {
+            "function": "toSet"
+          }
+        ]
+      }
+    },
+    "list: toSet: an argument is an error": {
+      "notes": [
+        "Error: storage.rules line [108], column [32]. Incorrect number of arguments. Received: 1. Expected: list.toSet()."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 108,
+          "column": 32,
+          "currentOffset": 3903,
+          "endOffset": 3907
+        }
+      }
+    },
+    "list: join: keys().join() joins the keys": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 111,
+              "column": 24,
+              "currentOffset": 3991,
+              "endOffset": 3997
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: join: a List literal joins with the separator": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 114,
+              "column": 24,
+              "currentOffset": 4104,
+              "endOffset": 4104
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: join: != another string is true": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 117,
+              "column": 24,
+              "currentOffset": 4195,
+              "endOffset": 4201
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: join: an empty List joins to the empty string": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 120,
+              "column": 24,
+              "currentOffset": 4307,
+              "endOffset": 4307
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: join: int, bool and null elements convert as string() does": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 123,
+              "column": 24,
+              "currentOffset": 4388,
+              "endOffset": 4388
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: join: float elements convert as string() does": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 126,
+              "column": 24,
+              "currentOffset": 4500,
+              "endOffset": 4500
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: join: a List element is an error": {
+      "notes": [
+        "Error: storage.rules line [129], column [34]. Unsupported operation error. Received: string(list). Expected: string(int), string(float), string(null), string(string), string(bool), string(path)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 129,
+          "column": 34,
+          "currentOffset": 4608,
+          "endOffset": 4611
+        }
+      }
+    },
+    "list: join: an int separator is an error": {
+      "notes": [
+        "Error: storage.rules line [132], column [37]. Unsupported operation error. Received: list.join(int). Expected: list.join(string)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 132,
+          "column": 37,
+          "currentOffset": 4701,
+          "endOffset": 4704
+        }
+      }
+    },
+    "list: join: no separator is an error": {
+      "notes": [
+        "Error: storage.rules line [135], column [37]. Incorrect number of arguments. Received: 0. Expected: list.join(string)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 135,
+          "column": 37,
+          "currentOffset": 4792,
+          "endOffset": 4795
+        }
+      }
+    },
+    "list: join: a Set receiver is an error": {
+      "notes": [
+        "Error: storage.rules line [138], column [26]. Function not found error: Name: [join]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 138,
+          "column": 26,
+          "currentOffset": 4871,
+          "endOffset": 4871
+        },
+        "functionCalls": [
+          {
+            "function": "join",
+            "args": [
+              ","
+            ]
+          }
+        ]
+      }
+    },
+    "list: hasAll: a Set argument to a List receiver is an error": {
+      "notes": [
+        "Error: storage.rules line [141], column [37]. Unsupported operation error. Received: list.hasAll(set). Expected: list.hasAll(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 141,
+          "column": 37,
+          "currentOffset": 4978,
+          "endOffset": 4983
+        }
+      }
+    },
+    "list: hasAny: keys().hasAny() with one shared key": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 144,
+              "column": 24,
+              "currentOffset": 5063,
+              "endOffset": 5069
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: hasAny: a List literal with one shared element": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 147,
+              "column": 24,
+              "currentOffset": 5177,
+              "endOffset": 5177
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: hasAny: != true with no shared key": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 150,
+              "column": 24,
+              "currentOffset": 5264,
+              "endOffset": 5270
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: hasAny: an empty argument is false": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 153,
+              "column": 24,
+              "currentOffset": 5381,
+              "endOffset": 5381
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: hasAny: a Set receiver takes a Set argument": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 156,
+              "column": 24,
+              "currentOffset": 5461,
+              "endOffset": 5467
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: hasAny: a Set argument to a List receiver is an error": {
+      "notes": [
+        "Error: storage.rules line [159], column [37]. Unsupported operation error. Received: list.hasAny(set). Expected: list.hasAny(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 159,
+          "column": 37,
+          "currentOffset": 5599,
+          "endOffset": 5604
+        }
+      }
+    },
+    "list: hasAny: a string argument is an error": {
+      "notes": [
+        "Error: storage.rules line [162], column [37]. Unsupported operation error. Received: list.hasAny(string). Expected: list.hasAny(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 162,
+          "column": 37,
+          "currentOffset": 5697,
+          "endOffset": 5702
+        }
+      }
+    },
+    "list: hasAny: a Map receiver is an error": {
+      "notes": [
+        "Error: storage.rules line [165], column [25]. Function not found error: Name: [hasAny]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 165,
+          "column": 25,
+          "currentOffset": 5773,
+          "endOffset": 5773
+        },
+        "functionCalls": [
+          {
+            "function": "hasAny",
+            "args": [
+              [
+                "z"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "list: hasOnly: keys().hasOnly() is false for a missing key": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 168,
+              "column": 24,
+              "currentOffset": 5877,
+              "endOffset": 5877
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: hasOnly: a List literal with a duplicate": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 171,
+              "column": 24,
+              "currentOffset": 5988,
+              "endOffset": 5988
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: hasOnly: != true for a missing key": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 174,
+              "column": 24,
+              "currentOffset": 6076,
+              "endOffset": 6082
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: hasOnly: an empty receiver is true": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 177,
+              "column": 24,
+              "currentOffset": 6194,
+              "endOffset": 6194
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: hasOnly: a Set receiver takes a Set argument": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 180,
+              "column": 24,
+              "currentOffset": 6271,
+              "endOffset": 6277
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: hasOnly: a Set argument to a List receiver is an error": {
+      "notes": [
+        "Error: storage.rules line [183], column [37]. Unsupported operation error. Received: list.hasOnly(set). Expected: list.hasOnly(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 183,
+          "column": 37,
+          "currentOffset": 6415,
+          "endOffset": 6421
+        }
+      }
+    },
+    "list: hasOnly: a string argument is an error": {
+      "notes": [
+        "Error: storage.rules line [186], column [32]. Unsupported operation error. Received: list.hasOnly(string). Expected: list.hasOnly(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 186,
+          "column": 32,
+          "currentOffset": 6509,
+          "endOffset": 6515
+        }
+      }
+    },
+    "list: concat: keys().concat() appends the argument": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 189,
+              "column": 24,
+              "currentOffset": 6585,
+              "endOffset": 6591
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: concat: a List literal keeps duplicates in order": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 192,
+              "column": 24,
+              "currentOffset": 6713,
+              "endOffset": 6713
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: concat: != the receiver is true": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 195,
+              "column": 24,
+              "currentOffset": 6819,
+              "endOffset": 6825
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: concat: keys() with itself has four elements": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 198,
+              "column": 24,
+              "currentOffset": 6942,
+              "endOffset": 6948
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: concat: two empty Lists": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 201,
+              "column": 24,
+              "currentOffset": 7090,
+              "endOffset": 7090
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: concat: a string argument is an error": {
+      "notes": [
+        "Error: storage.rules line [204], column [32]. Unsupported operation error. Received: list.concat(string). Expected: list.concat(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 204,
+          "column": 32,
+          "currentOffset": 7180,
+          "endOffset": 7185
+        }
+      }
+    },
+    "list: concat: a Set argument is an error": {
+      "notes": [
+        "Error: storage.rules line [207], column [32]. Unsupported operation error. Received: list.concat(set). Expected: list.concat(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 207,
+          "column": 32,
+          "currentOffset": 7272,
+          "endOffset": 7277
+        }
+      }
+    },
+    "list: concat: a Set receiver is an error": {
+      "notes": [
+        "Error: storage.rules line [210], column [26]. Function not found error: Name: [concat]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 210,
+          "column": 26,
+          "currentOffset": 7368,
+          "endOffset": 7368
+        },
+        "functionCalls": [
+          {
+            "function": "concat",
+            "args": [
+              [
+                "b"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "list: concat: a string receiver is an error": {
+      "notes": [
+        "Error: storage.rules line [213], column [26]. Function not found error: Name: [concat]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 213,
+          "column": 26,
+          "currentOffset": 7470,
+          "endOffset": 7472
+        },
+        "functionCalls": [
+          {
+            "function": "concat",
+            "args": [
+              "b"
+            ]
+          }
+        ]
+      }
+    },
+    "list: concat: no argument is an error": {
+      "notes": [
+        "Error: storage.rules line [216], column [32]. Incorrect number of arguments. Received: 0. Expected: list.concat(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 216,
+          "column": 32,
+          "currentOffset": 7564,
+          "endOffset": 7569
+        }
+      }
+    },
+    "list: removeAll: keys().removeAll() drops the listed key": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 219,
+              "column": 24,
+              "currentOffset": 7645,
+              "endOffset": 7651
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: removeAll: a List literal drops every occurrence": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 222,
+              "column": 24,
+              "currentOffset": 7766,
+              "endOffset": 7766
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: removeAll: != the receiver is true": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 225,
+              "column": 24,
+              "currentOffset": 7880,
+              "endOffset": 7886
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: removeAll: an absent element leaves the List unchanged": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 228,
+              "column": 24,
+              "currentOffset": 8006,
+              "endOffset": 8006
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: removeAll: List, Map and null elements compare by value": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 231,
+              "column": 24,
+              "currentOffset": 8110,
+              "endOffset": 8110
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: removeAll: a string argument is an error": {
+      "notes": [
+        "Error: storage.rules line [234], column [32]. Unsupported operation error. Received: list.removeAll(string). Expected: list.removeAll(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 234,
+          "column": 32,
+          "currentOffset": 8247,
+          "endOffset": 8255
+        }
+      }
+    },
+    "list: removeAll: a Set argument is an error": {
+      "notes": [
+        "Error: storage.rules line [237], column [37]. Unsupported operation error. Received: list.removeAll(set). Expected: list.removeAll(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 237,
+          "column": 37,
+          "currentOffset": 8347,
+          "endOffset": 8355
+        }
+      }
+    },
+    "list: removeAll: a Set receiver is an error": {
+      "notes": [
+        "Error: storage.rules line [240], column [26]. Function not found error: Name: [removeAll]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 240,
+          "column": 26,
+          "currentOffset": 8446,
+          "endOffset": 8446
+        },
+        "functionCalls": [
+          {
+            "function": "removeAll",
+            "args": [
+              [
+                "a"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "list: removeAll: a Map receiver is an error": {
+      "notes": [
+        "Error: storage.rules line [243], column [26]. Function not found error: Name: [removeAll]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 243,
+          "column": 26,
+          "currentOffset": 8559,
+          "endOffset": 8565
+        },
+        "functionCalls": [
+          {
+            "function": "removeAll",
+            "args": [
+              [
+                "a"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "list: in: a float is not in a List of the equal int": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 246,
+              "column": 24,
+              "currentOffset": 8674,
+              "endOffset": 8676
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: in: !(float in a List of the equal int) is true": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 249,
+              "column": 24,
+              "currentOffset": 8747,
+              "endOffset": 8747
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: in: an int is not in a List of the equal float": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 252,
+              "column": 24,
+              "currentOffset": 8823,
+              "endOffset": 8823
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: in: -0.0 is in a List of 0.0": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 255,
+              "column": 24,
+              "currentOffset": 8896,
+              "endOffset": 8896
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: in: an int zero is not in a List of -0.0": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 258,
+              "column": 24,
+              "currentOffset": 8972,
+              "endOffset": 8972
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: in: NaN is not in a List of NaN": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 261,
+              "column": 24,
+              "currentOffset": 9046,
+              "endOffset": 9050
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: in: a List of an int is not in a List of a List of the equal float": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 264,
+              "column": 24,
+              "currentOffset": 9139,
+              "endOffset": 9139
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: in: a Map of an int is not in a List of a Map of the equal float": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 267,
+              "column": 24,
+              "currentOffset": 9216,
+              "endOffset": 9216
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: in: a List of 0.0 is not in a List of a List of -0.0": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 270,
+              "column": 24,
+              "currentOffset": 9303,
+              "endOffset": 9303
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: in: a float is in a List of the same float": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 273,
+              "column": 24,
+              "currentOffset": 9383,
+              "endOffset": 9385
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: hasAny: an int List has no float of the same value": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 276,
+              "column": 24,
+              "currentOffset": 9458,
+              "endOffset": 9458
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: hasAny: != true for a float of the same value": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 279,
+              "column": 24,
+              "currentOffset": 9538,
+              "endOffset": 9538
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: hasAny: a float List has no int of the same value": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 282,
+              "column": 24,
+              "currentOffset": 9626,
+              "endOffset": 9626
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: hasAll: an int List does not have all of a float List": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 285,
+              "column": 24,
+              "currentOffset": 9706,
+              "endOffset": 9706
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: hasOnly: an int List does not have only a float List": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 288,
+              "column": 24,
+              "currentOffset": 9786,
+              "endOffset": 9786
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: hasAll: a mixed List has all of a float List": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 291,
+              "column": 24,
+              "currentOffset": 9867,
+              "endOffset": 9867
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: hasAny: a List of 0.0 has -0.0": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 294,
+              "column": 24,
+              "currentOffset": 9952,
+              "endOffset": 9952
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: hasAny: a List of an int List has no List of the equal float": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 297,
+              "column": 24,
+              "currentOffset": 10035,
+              "endOffset": 10035
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: hasAny: a List of a 0.0 List has no List of -0.0": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 300,
+              "column": 24,
+              "currentOffset": 10119,
+              "endOffset": 10119
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: removeAll: a float argument leaves the equal int": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 303,
+              "column": 24,
+              "currentOffset": 10206,
+              "endOffset": 10206
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: removeAll: a float argument does not remove the equal int": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 306,
+              "column": 24,
+              "currentOffset": 10302,
+              "endOffset": 10302
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: removeAll: an int argument leaves the equal float": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 309,
+              "column": 24,
+              "currentOffset": 10395,
+              "endOffset": 10395
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: removeAll: an int argument removes the equal int": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 312,
+              "column": 24,
+              "currentOffset": 10493,
+              "endOffset": 10493
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: removeAll: a 0.0 argument removes -0.0": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 315,
+              "column": 24,
+              "currentOffset": 10584,
+              "endOffset": 10584
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: removeAll: a float List argument leaves the equal int List": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 318,
+              "column": 24,
+              "currentOffset": 10676,
+              "endOffset": 10676
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: removeAll: a float argument removes the same float": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 321,
+              "column": 24,
+              "currentOffset": 10772,
+              "endOffset": 10772
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: join: != the joined string is false": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 324,
+              "column": 24,
+              "currentOffset": 10863,
+              "endOffset": 10863
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: join: || true absorbs the no-separator error": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 327,
+              "column": 24,
+              "currentOffset": 10955,
+              "endOffset": 10955
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: join: two separators is an error": {
+      "notes": [
+        "Error: storage.rules line [330], column [32]. Incorrect number of arguments. Received: 2. Expected: list.join(string)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 330,
+          "column": 32,
+          "currentOffset": 11060,
+          "endOffset": 11063
+        }
+      }
+    },
+    "list: join: a null element is not the empty string": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 333,
+              "column": 24,
+              "currentOffset": 11145,
+              "endOffset": 11145
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: join: a float element is not printed as an int": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 336,
+              "column": 24,
+              "currentOffset": 11237,
+              "endOffset": 11237
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: join: floats convert as string() does": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 339,
+              "column": 24,
+              "currentOffset": 11322,
+              "endOffset": 11322
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: join: a path element converts as string() does": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 342,
+              "column": 24,
+              "currentOffset": 11439,
+              "endOffset": 11439
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: join: || true absorbs a List element error": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 345,
+              "column": 24,
+              "currentOffset": 11536,
+              "endOffset": 11536
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: join: a Map element is an error": {
+      "notes": [
+        "Error: storage.rules line [348], column [39]. Unsupported operation error. Received: string(map). Expected: string(int), string(float), string(null), string(string), string(bool), string(path)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 348,
+          "column": 39,
+          "currentOffset": 11648,
+          "endOffset": 11651
+        }
+      }
+    },
+    "list: join: a bytes element is an error": {
+      "notes": [
+        "Error: storage.rules line [351], column [34]. Unsupported operation error. Received: string(bytes). Expected: string(int), string(float), string(null), string(string), string(bool), string(path)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 351,
+          "column": 34,
+          "currentOffset": 11738,
+          "endOffset": 11741
+        }
+      }
+    },
+    "list: join: a duration element is an error": {
+      "notes": [
+        "Error: storage.rules line [354], column [51]. Unsupported operation error. Received: string(duration). Expected: string(int), string(float), string(null), string(string), string(bool), string(path)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 354,
+          "column": 51,
+          "currentOffset": 11845,
+          "endOffset": 11848
+        }
+      }
+    },
+    "list: join: an empty separator": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 357,
+              "column": 24,
+              "currentOffset": 11925,
+              "endOffset": 11925
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: receiver: || true absorbs concat on a string": {
+      "api": {
+        "functionCalls": [
+          {
+            "function": "concat",
+            "args": [
+              "b"
+            ]
+          }
+        ],
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 360,
+              "column": 24,
+              "currentOffset": 12015,
+              "endOffset": 12015
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: receiver: removeAll on a string is an error": {
+      "notes": [
+        "Error: storage.rules line [363], column [26]. Function not found error: Name: [removeAll]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 363,
+          "column": 26,
+          "currentOffset": 12112,
+          "endOffset": 12114
+        },
+        "functionCalls": [
+          {
+            "function": "removeAll",
+            "args": [
+              [
+                "a"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "list: receiver: join on a string is an error": {
+      "notes": [
+        "Error: storage.rules line [366], column [26]. Function not found error: Name: [join]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 366,
+          "column": 26,
+          "currentOffset": 12205,
+          "endOffset": 12207
+        },
+        "functionCalls": [
+          {
+            "function": "join",
+            "args": [
+              ","
+            ]
+          }
+        ]
+      }
+    },
+    "list: receiver: toSet on a string is an error": {
+      "notes": [
+        "Error: storage.rules line [369], column [26]. Function not found error: Name: [toSet]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 369,
+          "column": 26,
+          "currentOffset": 12291,
+          "endOffset": 12293
+        },
+        "functionCalls": [
+          {
+            "function": "toSet"
+          }
+        ]
+      }
+    },
+    "list: receiver: hasAny on a string is an error": {
+      "notes": [
+        "Error: storage.rules line [372], column [25]. Function not found error: Name: [hasAny]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 372,
+          "column": 25,
+          "currentOffset": 12384,
+          "endOffset": 12384
+        },
+        "functionCalls": [
+          {
+            "function": "hasAny",
+            "args": [
+              [
+                "a"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "list: receiver: hasAll on a string is an error": {
+      "notes": [
+        "Error: storage.rules line [375], column [25]. Function not found error: Name: [hasAll]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 375,
+          "column": 25,
+          "currentOffset": 12467,
+          "endOffset": 12467
+        },
+        "functionCalls": [
+          {
+            "function": "hasAll",
+            "args": [
+              [
+                "a"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "list: receiver: hasOnly on a string is an error": {
+      "notes": [
+        "Error: storage.rules line [378], column [25]. Function not found error: Name: [hasOnly]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 378,
+          "column": 25,
+          "currentOffset": 12550,
+          "endOffset": 12550
+        },
+        "functionCalls": [
+          {
+            "function": "hasOnly",
+            "args": [
+              [
+                "a"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "list: receiver: concat on a Map is an error": {
+      "notes": [
+        "Error: storage.rules line [381], column [26]. Function not found error: Name: [concat]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 381,
+          "column": 26,
+          "currentOffset": 12635,
+          "endOffset": 12635
+        },
+        "functionCalls": [
+          {
+            "function": "concat",
+            "args": [
+              [
+                1
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "list: receiver: join on a Map is an error": {
+      "notes": [
+        "Error: storage.rules line [384], column [26]. Function not found error: Name: [join]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 384,
+          "column": 26,
+          "currentOffset": 12728,
+          "endOffset": 12728
+        },
+        "functionCalls": [
+          {
+            "function": "join",
+            "args": [
+              ","
+            ]
+          }
+        ]
+      }
+    },
+    "list: receiver: hasAll on a Map is an error": {
+      "notes": [
+        "Error: storage.rules line [387], column [25]. Function not found error: Name: [hasAll]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 387,
+          "column": 25,
+          "currentOffset": 12818,
+          "endOffset": 12818
+        },
+        "functionCalls": [
+          {
+            "function": "hasAll",
+            "args": [
+              [
+                "a"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "list: keys: keys() of a literal is sorted": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 390,
+              "column": 24,
+              "currentOffset": 12906,
+              "endOffset": 12906
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: keys: keys() of a literal is not in written order": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 393,
+              "column": 24,
+              "currentOffset": 13007,
+              "endOffset": 13007
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: keys: keys() != the sorted List is false": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 396,
+              "column": 24,
+              "currentOffset": 13108,
+              "endOffset": 13108
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: keys: keys()[0] is the least key": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 399,
+              "column": 24,
+              "currentOffset": 13209,
+              "endOffset": 13209
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: keys: keys().join() joins the sorted keys": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 402,
+              "column": 24,
+              "currentOffset": 13306,
+              "endOffset": 13306
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: keys: keys() orders digits, upper case, underscore and lower case by code point": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 405,
+              "column": 24,
+              "currentOffset": 13412,
+              "endOffset": 13412
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: keys: keys() does not order numeric keys by value": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 408,
+              "column": 24,
+              "currentOffset": 13606,
+              "endOffset": 13606
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: keys: keys() puts '10' before '9'": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 411,
+              "column": 24,
+              "currentOffset": 13800,
+              "endOffset": 13800
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: keys: keys() orders non-ASCII keys by code point": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 414,
+              "column": 24,
+              "currentOffset": 13916,
+              "endOffset": 13916
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: keys: keys() does not order by UTF-16 code unit": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 417,
+              "column": 24,
+              "currentOffset": 14056,
+              "endOffset": 14056
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: keys: keys() puts a prefix before its extensions": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 420,
+              "column": 24,
+              "currentOffset": 14196,
+              "endOffset": 14196
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: values: values() keeps the written order": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 423,
+              "column": 24,
+              "currentOffset": 14327,
+              "endOffset": 14327
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: values: values() is not in key order": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 426,
+              "column": 24,
+              "currentOffset": 14437,
+              "endOffset": 14437
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: values: values() keeps an integer-like key in written order": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 429,
+              "column": 24,
+              "currentOffset": 14547,
+              "endOffset": 14547
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: values: values() does not put an integer-like key first": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 432,
+              "column": 24,
+              "currentOffset": 14646,
+              "endOffset": 14646
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: values: values() != the written order is false": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 435,
+              "column": 24,
+              "currentOffset": 14745,
+              "endOffset": 14745
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: values: values() keeps '10' and '9' in written order": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 438,
+              "column": 24,
+              "currentOffset": 14844,
+              "endOffset": 14844
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: values: values() keeps non-ASCII, integer-like and empty keys in written order": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 441,
+              "column": 24,
+              "currentOffset": 14955,
+              "endOffset": 14955
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: values: values() of a nested literal keeps its written order": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 444,
+              "column": 24,
+              "currentOffset": 15109,
+              "endOffset": 15109
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: values: values()[0] is the first value written": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 447,
+              "column": 24,
+              "currentOffset": 15217,
+              "endOffset": 15217
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: values: values().join() joins in written order": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 450,
+              "column": 24,
+              "currentOffset": 15314,
+              "endOffset": 15314
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: values: values() of a repeated key keeps its first position and last value": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 453,
+              "column": 24,
+              "currentOffset": 15422,
+              "endOffset": 15422
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: values: values() of a repeated key does not move it last": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 456,
+              "column": 24,
+              "currentOffset": 15529,
+              "endOffset": 15529
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: values: values() of an empty Map is an empty List": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 459,
+              "column": 24,
+              "currentOffset": 15636,
+              "endOffset": 15636
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: values: values() is list": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 462,
+              "column": 24,
+              "currentOffset": 15717,
+              "endOffset": 15717
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: values: values() with an argument is an error": {
+      "notes": [
+        "Error: storage.rules line [465], column [35]. Incorrect number of arguments. Received: 1. Expected: map.values()."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 465,
+          "column": 35,
+          "currentOffset": 15825,
+          "endOffset": 15830
+        }
+      }
+    },
+    "list: values: || true absorbs values() with an argument": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 468,
+              "column": 24,
+              "currentOffset": 15906,
+              "endOffset": 15906
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: values: keys() with an argument is an error": {
+      "notes": [
+        "Error: storage.rules line [471], column [35]. Incorrect number of arguments. Received: 1. Expected: map.keys()."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 471,
+          "column": 35,
+          "currentOffset": 16016,
+          "endOffset": 16019
+        }
+      }
+    },
+    "list: values: values() on a List is an error": {
+      "notes": [
+        "Error: storage.rules line [474], column [26]. Function not found error: Name: [values]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 474,
+          "column": 26,
+          "currentOffset": 16099,
+          "endOffset": 16099
+        },
+        "functionCalls": [
+          {
+            "function": "values"
+          }
+        ]
+      }
+    },
+    "list: values: values() on a string is an error": {
+      "notes": [
+        "Error: storage.rules line [477], column [26]. Function not found error: Name: [values]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 477,
+          "column": 26,
+          "currentOffset": 16185,
+          "endOffset": 16187
+        },
+        "functionCalls": [
+          {
+            "function": "values"
+          }
+        ]
+      }
+    },
+    "list: values: keys() on a List is an error": {
+      "notes": [
+        "Error: storage.rules line [480], column [26]. Function not found error: Name: [keys]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 480,
+          "column": 26,
+          "currentOffset": 16273,
+          "endOffset": 16273
+        },
+        "functionCalls": [
+          {
+            "function": "keys"
+          }
+        ]
+      }
+    },
+    "list: values: keys() on a string is an error": {
+      "notes": [
+        "Error: storage.rules line [483], column [26]. Function not found error: Name: [keys]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 483,
+          "column": 26,
+          "currentOffset": 16357,
+          "endOffset": 16359
+        },
+        "functionCalls": [
+          {
+            "function": "keys"
+          }
+        ]
+      }
+    },
+    "list: values: get() on a List is an error": {
+      "notes": [
+        "Error: storage.rules line [486], column [26]. Function not found error: Name: [get]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 486,
+          "column": 26,
+          "currentOffset": 16443,
+          "endOffset": 16443
+        },
+        "functionCalls": [
+          {
+            "function": "get",
+            "args": [
+              0,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    "list: argument: hasAll with a List argument": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 489,
+              "column": 24,
+              "currentOffset": 16526,
+              "endOffset": 16526
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: argument: hasAll != false with a missing element": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 492,
+              "column": 24,
+              "currentOffset": 16619,
+              "endOffset": 16619
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "list: argument: || true absorbs a Set argument to hasAny on a List": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 495,
+              "column": 24,
+              "currentOffset": 16721,
+              "endOffset": 16721
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: argument: a Map argument to hasAll is an error": {
+      "notes": [
+        "Error: storage.rules line [498], column [33]. Unsupported operation error. Received: list.hasAll(map). Expected: list.hasAll(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 498,
+          "column": 33,
+          "currentOffset": 16836,
+          "endOffset": 16841
+        }
+      }
+    },
+    "list: argument: a null argument to hasOnly is an error": {
+      "notes": [
+        "Error: storage.rules line [501], column [33]. Unsupported operation error. Received: list.hasOnly(null). Expected: list.hasOnly(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 501,
+          "column": 33,
+          "currentOffset": 16926,
+          "endOffset": 16932
+        }
+      }
+    },
+    "list: argument: || true absorbs a string argument to hasAll": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 504,
+              "column": 24,
+              "currentOffset": 17004,
+              "endOffset": 17004
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list: argument: hasAny with no argument is an error": {
+      "notes": [
+        "Error: storage.rules line [507], column [33]. Incorrect number of arguments. Received: 0. Expected: list.hasAny(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 507,
+          "column": 33,
+          "currentOffset": 17105,
+          "endOffset": 17110
+        }
+      }
+    },
+    "list: argument: hasAll with two arguments is an error": {
+      "notes": [
+        "Error: storage.rules line [510], column [33]. Incorrect number of arguments. Received: 2. Expected: list.hasAll(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 510,
+          "column": 33,
+          "currentOffset": 17187,
+          "endOffset": 17192
+        }
+      }
+    },
+    "keys order: metadata keys() is sorted": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 514,
+              "column": 24,
+              "currentOffset": 17321,
+              "endOffset": 17327
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "keys order: metadata keys() is not in written order": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 517,
+              "column": 24,
+              "currentOffset": 17453,
+              "endOffset": 17459
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "keys order: metadata keys()[0] is the least key": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 520,
+              "column": 24,
+              "currentOffset": 17585,
+              "endOffset": 17591
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "keys order: metadata keys().join() joins the sorted keys": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 523,
+              "column": 24,
+              "currentOffset": 17703,
+              "endOffset": 17709
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "keys order: metadata values() keeps the order the request sent": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 526,
+              "column": 24,
+              "currentOffset": 17834,
+              "endOffset": 17840
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "keys order: metadata values() is not in key order": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 529,
+              "column": 24,
+              "currentOffset": 17968,
+              "endOffset": 17974
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "keys order: metadata values()[0] is the first value sent": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 532,
+              "column": 24,
+              "currentOffset": 18102,
+              "endOffset": 18108
+            },
+            "value": true
+          }
+        ]
+      }
+    }
+  }
+}

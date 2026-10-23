@@ -1,0 +1,354 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "time",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T21:47:55.796Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/time/day",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/hours",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/minutes",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/seconds",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/nanos",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/day_of_week_wed_3",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/day_of_week_wed_4",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/day_of_year",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/date",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/time_of_day",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/ts_value_millis",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/ts_date_feb_30",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [38], column [31]. Date is not valid. year: 2026, month: 2 day: 30."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Date is not valid. year: 2026, month: 2 day: 30. for 'get' @ L38, Date is not valid. year: 2026, month: 2 day: 30. for 'get' @ L38"
+   }
+  },
+  {
+   "id": "aruma/time/ts_date_month_13",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [41], column [31]. Date is not valid. year: 2026, month: 13 day: 1."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Date is not valid. year: 2026, month: 13 day: 1. for 'get' @ L41, Date is not valid. year: 2026, month: 13 day: 1. for 'get' @ L41"
+   }
+  },
+  {
+   "id": "aruma/time/ts_date_year_0",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [44], column [31]. Timestamp should be between 0001-01-01T00.00.00Z and 9999-12-31T23.59.59Z. year: 0."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Timestamp should be between 0001-01-01T00.00.00Z and 9999-12-31T23.59.59Z. year: 0. for 'get' @ L44, Timestamp should be between 0001-01-01T00.00.00Z and 9999-12-31T23.59.59Z. year: 0. for 'get' @ L44"
+   }
+  },
+  {
+   "id": "aruma/time/ts_date_year_10000",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [47], column [31]. Timestamp should be between 0001-01-01T00.00.00Z and 9999-12-31T23.59.59Z. year: 10000."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Timestamp should be between 0001-01-01T00.00.00Z and 9999-12-31T23.59.59Z. year: 10000. for 'get' @ L47, Timestamp should be between 0001-01-01T00.00.00Z and 9999-12-31T23.59.59Z. year: 10000. for 'get' @ L47"
+   }
+  },
+  {
+   "id": "aruma/time/ts_plus_duration",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/ts_minus_ts",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/ts_minus_duration",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/ts_plus_int",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [59], column [34]. Unsupported operation error. Received: timestamp + int. Expected: int + int, float + float, string + string, duration + duration, duration + timestamp, timestamp + duration."
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/ts_eq_string",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/ts_lt_ts",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  },
+  {
+   "id": "aruma/time/units_w",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/units_h_m",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/units_s_ms",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/units_us_absent",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [77], column [30]. Invalid regular expression pattern. Pattern: us."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Invalid regular expression pattern. Pattern: us. for 'get' @ L77, Invalid regular expression pattern. Pattern: us. for 'get' @ L77"
+   }
+  },
+  {
+   "id": "aruma/time/unit_unknown",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [80], column [30]. Invalid regular expression pattern. Pattern: x."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Invalid regular expression pattern. Pattern: x. for 'get' @ L80, Invalid regular expression pattern. Pattern: x. for 'get' @ L80"
+   }
+  },
+  {
+   "id": "aruma/time/unit_float_amount",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [83], column [30]. Unsupported operation error. Received: duration.value(float, string). Expected: duration.value(int, string)."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: duration.value(float, string). Expected: duration.value(int, string). for 'get' @ L83, Unsupported operation error. Received: duration.value(float, string). Expected: duration.value(int, string). for 'get' @ L83"
+   }
+  },
+  {
+   "id": "aruma/time/duration_seconds",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/duration_nanos_part",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/duration_negative_parts",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/duration_time",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/duration_compare",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/duration_eq_int",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L101"
+   }
+  },
+  {
+   "id": "aruma/time/ts_round_trip_offset",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "skip": "request.time cannot be chosen on the emulator"
+   }
+  }
+ ]
+}

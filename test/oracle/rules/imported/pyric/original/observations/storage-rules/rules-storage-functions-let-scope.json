@@ -1,0 +1,249 @@
+{
+  "name": "rules-storage-functions-let-scope",
+  "matrixRow": "",
+  "rowIds": [
+    "storage-rules#104"
+  ],
+  "description": "Storage Rules Test API verdicts for corpus scenario \"functions-let-scope\" (STORAGE-FUNC). User-defined functions with let bindings, functions calling functions, and a match-block-scoped helper — the evaluator surface #96/#104 wrongly call unsupported.",
+  "observedAt": "2026-09-28T03:39:08.882Z",
+  "fbSdkVersion": "12.13.0",
+  "projectId": "digame-mas",
+  "inputDigest": {
+    "algorithm": "sha256",
+    "value": "fcdcee64296078261954ba10aaf1b6e1a4a34b91cf4e9305bb447040fd0f98bf"
+  },
+  "behavior": {
+    "let + nested calls: small png under 5MB": "ALLOW",
+    "let + nested calls: oversized png denied": "DENY",
+    "nested call isImage(): wrong content type denied": "DENY",
+    "block-scoped helper tooBig(): small file allowed": "ALLOW",
+    "block-scoped helper tooBig(): large file denied": "DENY",
+    "undefined function after a true || operand: allowed": "ALLOW",
+    "undefined function that decides the rule: denied": "DENY",
+    "an erroring argument the function never reads: allowed": "ALLOW",
+    "an erroring argument the function reads: denied": "DENY",
+    "an erroring argument passed through two calls and never read: allowed": "ALLOW",
+    "an erroring argument passed through two calls and read: denied": "DENY",
+    "an argument calling a method an int lacks, never read: allowed": "ALLOW",
+    "an erroring let the function never reads: allowed": "ALLOW",
+    "an erroring let the function reads: denied": "DENY"
+  },
+  "diagnostics": {
+    "let + nested calls: small png under 5MB": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 15,
+              "column": 24,
+              "currentOffset": 410,
+              "endOffset": 422
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "let + nested calls: oversized png denied": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 15,
+              "column": 24,
+              "currentOffset": 410,
+              "endOffset": 422
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "nested call isImage(): wrong content type denied": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 15,
+              "column": 24,
+              "currentOffset": 410,
+              "endOffset": 422
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "block-scoped helper tooBig(): small file allowed": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 21,
+              "column": 24,
+              "currentOffset": 564,
+              "endOffset": 564
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "block-scoped helper tooBig(): large file denied": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 21,
+              "column": 24,
+              "currentOffset": 564,
+              "endOffset": 564
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "undefined function after a true || operand: allowed": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 27,
+              "column": 22,
+              "currentOffset": 737,
+              "endOffset": 753
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "undefined function that decides the rule: denied": {
+      "notes": [
+        "Error: storage.rules line [25], column [43]. Function not found error: Name: [notDeclared]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 25,
+          "column": 43,
+          "currentOffset": 693,
+          "endOffset": 703
+        },
+        "functionCalls": [
+          {
+            "function": "notDeclared"
+          }
+        ]
+      }
+    },
+    "an erroring argument the function never reads: allowed": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 36,
+              "column": 24,
+              "currentOffset": 1177,
+              "endOffset": 1186
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "an erroring argument the function reads: denied": {
+      "notes": [
+        "Error: storage.rules line [39], column [35]. Divide by zero error."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 39,
+          "column": 35,
+          "currentOffset": 1286,
+          "endOffset": 1286
+        }
+      }
+    },
+    "an erroring argument passed through two calls and never read: allowed": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 42,
+              "column": 24,
+              "currentOffset": 1388,
+              "endOffset": 1405
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "an erroring argument passed through two calls and read: denied": {
+      "notes": [
+        "Error: storage.rules line [45], column [43]. Divide by zero error."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 45,
+          "column": 43,
+          "currentOffset": 1528,
+          "endOffset": 1528
+        }
+      }
+    },
+    "an argument calling a method an int lacks, never read: allowed": {
+      "api": {
+        "functionCalls": [
+          {
+            "function": "hours"
+          }
+        ],
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 48,
+              "column": 24,
+              "currentOffset": 1626,
+              "endOffset": 1635
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "an erroring let the function never reads: allowed": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 51,
+              "column": 24,
+              "currentOffset": 1730,
+              "endOffset": 1738
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "an erroring let the function reads: denied": {
+      "notes": [
+        "Error: storage.rules line [34], column [36]. Divide by zero error."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 34,
+          "column": 36,
+          "currentOffset": 1081,
+          "endOffset": 1081
+        }
+      }
+    }
+  }
+}

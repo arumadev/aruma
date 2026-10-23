@@ -1,0 +1,1397 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "time",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "rules-test-api",
+ "project": "chatapp-8ae21",
+ "recordedAt": "2026-10-23T21:43:48.170Z",
+ "version": "firebaserules.googleapis.com v1 projects.test",
+ "rulesets": {
+  "pack-1": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_day/{doc} {\n      allow get: if request.time.day() == 4;\n    }\n    match /c_hours/{doc} {\n      allow get: if request.time.hours() == 5;\n    }\n    match /c_minutes/{doc} {\n      allow get: if request.time.minutes() == 6;\n    }\n    match /c_seconds/{doc} {\n      allow get: if request.time.seconds() == 7;\n    }\n    match /c_nanos/{doc} {\n      allow get: if request.time.nanos() == 123456000;\n    }\n    match /c_day_of_week_wed_3/{doc} {\n      allow get: if request.time.dayOfWeek() == 3;\n    }\n    match /c_day_of_week_wed_4/{doc} {\n      allow get: if request.time.dayOfWeek() == 4;\n    }\n    match /c_day_of_year/{doc} {\n      allow get: if request.time.dayOfYear() == 63;\n    }\n    match /c_date/{doc} {\n      allow get: if request.time.date() == timestamp.date(2026, 3, 4);\n    }\n    match /c_time_of_day/{doc} {\n      allow get: if request.time.time() == duration.time(5, 6, 7, 123456000);\n    }\n    match /c_ts_value_millis/{doc} {\n      allow get: if timestamp.value(1772600767123) == timestamp.date(2026, 3, 4) + duration.time(5, 6, 7, 123000000);\n    }\n    match /c_ts_date_feb_30/{doc} {\n      allow get: if timestamp.date(2026, 2, 30) is timestamp;\n    }\n    match /c_ts_date_month_13/{doc} {\n      allow get: if timestamp.date(2026, 13, 1) is timestamp;\n    }\n    match /c_ts_date_year_0/{doc} {\n      allow get: if timestamp.date(0, 1, 1) is timestamp;\n    }\n    match /c_ts_date_year_10000/{doc} {\n      allow get: if timestamp.date(10000, 1, 1) is timestamp;\n    }\n    match /c_ts_plus_duration/{doc} {\n      allow get: if request.time + duration.value(1, 'd') > request.time;\n    }\n    match /c_ts_minus_ts/{doc} {\n      allow get: if request.time - request.time == duration.value(0, 's');\n    }\n    match /c_ts_minus_duration/{doc} {\n      allow get: if timestamp.date(2026, 3, 4) - duration.value(1, 'd') == timestamp.date(2026, 3, 3);\n    }\n    match /c_ts_plus_int/{doc} {\n      allow get: if request.time + 1 > request.time;\n    }\n    match /c_ts_eq_string/{doc} {\n      allow get: if request.time == '2026-03-04T05:06:07.123456Z';\n    }\n    match /c_ts_lt_ts/{doc} {\n      allow get: if timestamp.date(2026, 3, 3) < request.time;\n    }\n    match /c_units_w/{doc} {\n      allow get: if duration.value(1, 'w') == duration.value(7, 'd');\n    }\n    match /c_units_h_m/{doc} {\n      allow get: if duration.value(1, 'h') == duration.value(60, 'm');\n    }\n    match /c_units_s_ms/{doc} {\n      allow get: if duration.value(1, 's') == duration.value(1000, 'ms');\n    }\n    match /c_units_us_absent/{doc} {\n      allow get: if duration.value(1, 'us') == duration.value(1000, 'ns');\n    }\n    match /c_unit_unknown/{doc} {\n      allow get: if duration.value(1, 'x') is duration;\n    }\n    match /c_unit_float_amount/{doc} {\n      allow get: if duration.value(1.5, 's') is duration;\n    }\n    match /c_duration_seconds/{doc} {\n      allow get: if duration.value(90, 'm').seconds() == 5400;\n    }\n    match /c_duration_nanos_part/{doc} {\n      allow get: if duration.value(1500, 'ms').nanos() == 500000000;\n    }\n    match /c_duration_negative_parts/{doc} {\n      allow get: if duration.value(-1500, 'ms').seconds() == -1 && duration.value(-1500, 'ms').nanos() == -500000000;\n    }\n    match /c_duration_time/{doc} {\n      allow get: if duration.time(1, 2, 3, 4).nanos() == 4 && duration.time(1, 2, 3, 4).seconds() == 3723;\n    }\n    match /c_duration_compare/{doc} {\n      allow get: if duration.value(1, 'm') > duration.value(59, 's');\n    }\n    match /c_duration_eq_int/{doc} {\n      allow get: if duration.value(0, 's') == 0;\n    }\n    match /c_ts_round_trip_offset/{doc} {\n      allow get: if request.time == timestamp.value(request.time.toMillis());\n    }\n  }\n}\n"
+ },
+ "resources": {
+  "default": {
+   "data": {
+    "n": 1,
+    "f": 1.5,
+    "s": "abc",
+    "b": true,
+    "nul": null,
+    "arr": [
+     1,
+     2,
+     3
+    ],
+    "tags": [
+     "a",
+     "b"
+    ],
+    "m": {
+     "x": 1,
+     "y": "z"
+    },
+    "owner": "alice"
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "aruma/time/day",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time.day() == 4",
+   "expression": "request.time.day() == 4",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_day/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/hours",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time.hours() == 5",
+   "expression": "request.time.hours() == 5",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_hours/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/minutes",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time.minutes() == 6",
+   "expression": "request.time.minutes() == 6",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_minutes/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/seconds",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time.seconds() == 7",
+   "expression": "request.time.seconds() == 7",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_seconds/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/nanos",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time.nanos() == 123456000",
+   "expression": "request.time.nanos() == 123456000",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_nanos/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/day_of_week_wed_3",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time.dayOfWeek() == 3",
+   "expression": "request.time.dayOfWeek() == 3",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_day_of_week_wed_3/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/day_of_week_wed_4",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time.dayOfWeek() == 4",
+   "expression": "request.time.dayOfWeek() == 4",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_day_of_week_wed_4/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/time/day_of_year",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time.dayOfYear() == 63",
+   "expression": "request.time.dayOfYear() == 63",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_day_of_year/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/date",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time.date() == timestamp.date(2026, 3, 4)",
+   "expression": "request.time.date() == timestamp.date(2026, 3, 4)",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_date/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/time_of_day",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time.time() == duration.time(5, 6, 7, 123456000)",
+   "expression": "request.time.time() == duration.time(5, 6, 7, 123456000)",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_time_of_day/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/ts_value_millis",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "timestamp.value(1772600767123) == timestamp.date(2026, 3, 4) + duration.time(5, 6, 7, 123000000)",
+   "expression": "timestamp.value(1772600767123) == timestamp.date(2026, 3, 4) + duration.time(5, 6, 7, 123000000)",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_ts_value_millis/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/ts_date_feb_30",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "timestamp.date(2026, 2, 30) is timestamp",
+   "expression": "timestamp.date(2026, 2, 30) is timestamp",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_ts_date_feb_30/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [38], column [31]. Date is not valid. year: 2026, month: 2 day: 30."
+   }
+  },
+  {
+   "id": "aruma/time/ts_date_month_13",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "timestamp.date(2026, 13, 1) is timestamp",
+   "expression": "timestamp.date(2026, 13, 1) is timestamp",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_ts_date_month_13/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [41], column [31]. Date is not valid. year: 2026, month: 13 day: 1."
+   }
+  },
+  {
+   "id": "aruma/time/ts_date_year_0",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "timestamp.date(0, 1, 1) is timestamp",
+   "expression": "timestamp.date(0, 1, 1) is timestamp",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_ts_date_year_0/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [44], column [31]. Timestamp should be between 0001-01-01T00.00.00Z and 9999-12-31T23.59.59Z. year: 0."
+   }
+  },
+  {
+   "id": "aruma/time/ts_date_year_10000",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "timestamp.date(10000, 1, 1) is timestamp",
+   "expression": "timestamp.date(10000, 1, 1) is timestamp",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_ts_date_year_10000/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [47], column [31]. Timestamp should be between 0001-01-01T00.00.00Z and 9999-12-31T23.59.59Z. year: 10000."
+   }
+  },
+  {
+   "id": "aruma/time/ts_plus_duration",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time + duration.value(1, 'd') > request.time",
+   "expression": "request.time + duration.value(1, 'd') > request.time",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_ts_plus_duration/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/ts_minus_ts",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time - request.time == duration.value(0, 's')",
+   "expression": "request.time - request.time == duration.value(0, 's')",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_ts_minus_ts/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/ts_minus_duration",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "timestamp.date(2026, 3, 4) - duration.value(1, 'd') == timestamp.date(2026, 3, 3)",
+   "expression": "timestamp.date(2026, 3, 4) - duration.value(1, 'd') == timestamp.date(2026, 3, 3)",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_ts_minus_duration/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/ts_plus_int",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time + 1 > request.time",
+   "expression": "request.time + 1 > request.time",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_ts_plus_int/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [59], column [34]. Unsupported operation error. Received: timestamp + int. Expected: int + int, float + float, string + string, duration + duration, duration + timestamp, timestamp + duration."
+   }
+  },
+  {
+   "id": "aruma/time/ts_eq_string",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time == '2026-03-04T05:06:07.123456Z'",
+   "expression": "request.time == '2026-03-04T05:06:07.123456Z'",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_ts_eq_string/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/time/ts_lt_ts",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "timestamp.date(2026, 3, 3) < request.time",
+   "expression": "timestamp.date(2026, 3, 3) < request.time",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_ts_lt_ts/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/units_w",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "duration.value(1, 'w') == duration.value(7, 'd')",
+   "expression": "duration.value(1, 'w') == duration.value(7, 'd')",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_units_w/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/units_h_m",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "duration.value(1, 'h') == duration.value(60, 'm')",
+   "expression": "duration.value(1, 'h') == duration.value(60, 'm')",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_units_h_m/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/units_s_ms",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "duration.value(1, 's') == duration.value(1000, 'ms')",
+   "expression": "duration.value(1, 's') == duration.value(1000, 'ms')",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_units_s_ms/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/units_us_absent",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "duration.value(1, 'us') == duration.value(1000, 'ns')",
+   "expression": "duration.value(1, 'us') == duration.value(1000, 'ns')",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_units_us_absent/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [77], column [30]. Invalid regular expression pattern. Pattern: us."
+   }
+  },
+  {
+   "id": "aruma/time/unit_unknown",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "duration.value(1, 'x') is duration",
+   "expression": "duration.value(1, 'x') is duration",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_unit_unknown/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [80], column [30]. Invalid regular expression pattern. Pattern: x."
+   }
+  },
+  {
+   "id": "aruma/time/unit_float_amount",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "duration.value(1.5, 's') is duration",
+   "expression": "duration.value(1.5, 's') is duration",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_unit_float_amount/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [83], column [30]. Unsupported operation error. Received: duration.value(float, string). Expected: duration.value(int, string)."
+   }
+  },
+  {
+   "id": "aruma/time/duration_seconds",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "duration.value(90, 'm').seconds() == 5400",
+   "expression": "duration.value(90, 'm').seconds() == 5400",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_duration_seconds/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/duration_nanos_part",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "duration.value(1500, 'ms').nanos() == 500000000",
+   "expression": "duration.value(1500, 'ms').nanos() == 500000000",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_duration_nanos_part/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/duration_negative_parts",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "duration.value(-1500, 'ms').seconds() == -1 && duration.value(-1500, 'ms').nanos() == -500000000",
+   "expression": "duration.value(-1500, 'ms').seconds() == -1 && duration.value(-1500, 'ms').nanos() == -500000000",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_duration_negative_parts/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/duration_time",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "duration.time(1, 2, 3, 4).nanos() == 4 && duration.time(1, 2, 3, 4).seconds() == 3723",
+   "expression": "duration.time(1, 2, 3, 4).nanos() == 4 && duration.time(1, 2, 3, 4).seconds() == 3723",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_duration_time/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/duration_compare",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "duration.value(1, 'm') > duration.value(59, 's')",
+   "expression": "duration.value(1, 'm') > duration.value(59, 's')",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_duration_compare/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    true
+   ],
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/time/duration_eq_int",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "duration.value(0, 's') == 0",
+   "expression": "duration.value(0, 's') == 0",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_duration_eq_int/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/time/ts_round_trip_offset",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-23T21:43:48.170Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.time == timestamp.value(request.time.toMillis())",
+   "expression": "request.time == timestamp.value(request.time.toMillis())",
+   "rulesetRef": "pack-1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/c_ts_round_trip_offset/doc",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "email": "alice@example.com",
+      "email_verified": true,
+      "admin": true,
+      "role": "editor",
+      "groups": [
+       "g1",
+       "g2"
+      ],
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-03-04T05:06:07.123456Z"
+   },
+   "resourceRef": "default",
+   "visited": [
+    false
+   ],
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  }
+ ]
+}

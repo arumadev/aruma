@@ -1,0 +1,432 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "paths",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T21:47:56.642Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/paths/literal_ne",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/interpolate",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/interpolate_slash",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L11"
+   }
+  },
+  {
+   "id": "aruma/paths/interpolate_slash_size",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/interpolate_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/path_fn_relative",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/path_index",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/path_index_out_of_range",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [26], column [21]. Index out of bound error. Index: [5] , size: [2]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Index out of bound error. Index: [5] , size: [2]. for 'get' @ L26, Index out of bound error. Index: [5] , size: [2]. for 'get' @ L26"
+   }
+  },
+  {
+   "id": "aruma/paths/path_eq_string",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L29"
+   }
+  },
+  {
+   "id": "aruma/paths/path_string",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/path_concat",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [35], column [26]. Unsupported operation error. Received: path + string. Expected: int + int, float + float, string + string, duration + duration, duration + timestamp, timestamp + duration."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: path + string. Expected: int + int, float + float, string + string, duration + duration, duration + timestamp, timestamp + duration. for 'get' @ L35, Unsupported operation error. Received: path + string. Expected: int + int, float + float, string + string, duration + duration, duration + timestamp, timestamp + duration. for 'get' @ L35"
+   }
+  },
+  {
+   "id": "aruma/paths/request_path_index",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/request_path_tail",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/path_is_path",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/path_in",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [47], column [21]. Function not found error: Name: [in]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Function not found error: Name: [in]. for 'get' @ L47, Function not found error: Name: [in]. for 'get' @ L47"
+   }
+  },
+  {
+   "id": "aruma/paths/path_special_chars",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/path_encoded_segment",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/path_dot_segment",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/path_dash_segment",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/path_parens_segment",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/wild_v2_rest_is_path",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/wild_v1_rest_is_string",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L5"
+   }
+  },
+  {
+   "id": "aruma/paths/wild_v1_rest_value",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L5"
+   }
+  },
+  {
+   "id": "aruma/paths/wild_noversion_rest_is_string",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L4"
+   }
+  },
+  {
+   "id": "aruma/paths/wild_v1_not_final",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:11 Invalid glob match expression. Glob matches are permitted as the last segment in a match declaration path."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:11 Invalid glob match expression. Glob matches are permitted as the last segment in a match declaration path."
+   }
+  },
+  {
+   "id": "aruma/paths/wild_v2_not_final",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/wild_v2_not_final_zero",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:29 Forward slash '/' found where identifier or binding expected."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:29 Forward slash '/' found where identifier or binding expected."
+   }
+  },
+  {
+   "id": "aruma/paths/wild_v2_two_recursive",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:20 Invalid glob match expression. Only one glob match is permitted in a match declaration path."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:20 Invalid glob match expression. Only one glob match is permitted in a match declaration path."
+   }
+  },
+  {
+   "id": "aruma/paths/wild_v2_nested_under_recursive",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/wild_v2_zero_segments_doc",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/wild_v1_zero_segments_doc",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/paths/single_wildcard_one_segment",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/paths/overlap_or",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/nested_parent_rule_not_inherited",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L7"
+   }
+  },
+  {
+   "id": "aruma/paths/nested_variables",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/var_shadowing",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/function_sees_match_var",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/paths/function_outer_var_not_visible",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [4], column [29]. Null value error."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Null value error. for 'get' @ L6, Null value error. for 'get' @ L6"
+   }
+  },
+  {
+   "id": "aruma/paths/partial_segment_wildcard",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:11 Missing 'match' keyword before path.\nERROR L4:18 Unexpected 'd'.\nERROR L4:18 Unexpected 'd'.\nERROR L4:21 Unexpected '{'.\nERROR L8:1 Unexpected '}'."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:11 Missing 'match' keyword before path.\nL4:18 Unexpected 'd'.\nL4:18 Unexpected 'd'.\nL4:21 Unexpected '{'.\nL8:1 Unexpected '}'."
+   }
+  },
+  {
+   "id": "aruma/paths/version_3",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L1:1 Unsupported rules version 3."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL1:1 Unsupported rules version 3."
+   }
+  }
+ ]
+}

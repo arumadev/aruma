@@ -1,0 +1,51 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "nesting-storage",
+ "service": "storage",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T22:37:22.733Z",
+ "version": "cloud-storage-rules-runtime v1.1.3 (Java 21), driven over its stdin protocol",
+ "cases": [
+  {
+   "id": "aruma/nesting-storage/storage_nonfinal",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny"
+   }
+  },
+  {
+   "id": "aruma/nesting-storage/storage_nonfinal_top",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny"
+   }
+  },
+  {
+   "id": "aruma/nesting-storage/storage_final_depth",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting-storage/storage_final_v1",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny"
+   }
+  }
+ ]
+}

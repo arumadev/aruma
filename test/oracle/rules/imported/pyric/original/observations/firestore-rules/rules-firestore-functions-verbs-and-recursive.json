@@ -1,0 +1,173 @@
+{
+  "name": "rules-firestore-functions-verbs-and-recursive",
+  "matrixRow": "firestore-rules#182",
+  "rowIds": [
+    "firestore-rules#182"
+  ],
+  "description": "Firestore Rules Test API verdicts for corpus scenario \"functions-verbs-and-recursive\" (Coverage: functions/let, granular verbs, ternary, recursive wildcard, methods on untyped receivers). Production must accept function declarations with let bindings, allow get/list/update/write verbs, the ternary operator, and a recursive {document=**} match, and must compile method calls on receivers whose type is known only at evaluation.",
+  "observedAt": "2026-09-28T00:23:15.917Z",
+  "fbSdkVersion": "12.13.0",
+  "projectId": "digame-mas",
+  "inputDigest": {
+    "algorithm": "sha256",
+    "value": "d3ada4f598649ad5b7f00598dc22d7276fe7be41d7090adab7a4913a7296a58e"
+  },
+  "behavior": {
+    "signed-in get ALLOW": "ALLOW",
+    "anonymous get DENY": "DENY",
+    "signed-in list with roleLevel 2 ALLOW (let + ternary + mul)": "ALLOW",
+    "signed-in update with roleLevel 2 ALLOW": "ALLOW",
+    "signed-in create covered by write grant ALLOW": "ALLOW",
+    "recursive subtree read when signed-in ALLOW": "ALLOW",
+    "recursive subtree read denied when anonymous DENY": "DENY",
+    "get() result parameter with a list field ALLOW": "ALLOW",
+    "get() result parameter with an int field DENY (int has no size())": "DENY",
+    "method on a get() field ALLOW": "ALLOW",
+    "map field parameter ALLOW": "ALLOW",
+    "string field parameter DENY (string has no keys())": "DENY",
+    "parameter relayed between functions ALLOW": "ALLOW",
+    "int parameter relayed between functions DENY (int has no keys())": "DENY",
+    "let-bound document with a map field ALLOW": "ALLOW",
+    "let-bound document with a list field DENY (list has no keys())": "DENY",
+    "ternary map branch size() ALLOW": "ALLOW",
+    "ternary string branch size() ALLOW": "ALLOW",
+    "ternary map branch keys() ALLOW": "ALLOW",
+    "ternary string branch keys() DENY (string has no keys())": "DENY",
+    "key outside the diff of two request maps ALLOW": "ALLOW",
+    "split element of a request string has one part ALLOW": "ALLOW",
+    "split element of a request string has two parts DENY": "DENY",
+    "literal split by a request string has a two-word element ALLOW": "ALLOW",
+    "literal split by a request string has a one-word element DENY": "DENY"
+  },
+  "diagnostics": {
+    "anonymous get DENY": {
+      "notes": [
+        "Error: firestore.rules line [5], column [14]. Property auth is undefined on object."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 5,
+          "column": 14,
+          "currentOffset": 130,
+          "endOffset": 136
+        }
+      }
+    },
+    "recursive subtree read denied when anonymous DENY": {
+      "notes": [
+        "Error: firestore.rules line [5], column [14]. Property auth is undefined on object."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 5,
+          "column": 14,
+          "currentOffset": 130,
+          "endOffset": 136
+        }
+      }
+    },
+    "get() result parameter with an int field DENY (int has no size())": {
+      "notes": [
+        "Error: firestore.rules line [13], column [14]. Function not found error: Name: [size]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 13,
+          "column": 14,
+          "currentOffset": 323,
+          "endOffset": 326
+        },
+        "functionCalls": [
+          {
+            "function": "get",
+            "args": [
+              "/databases/%28default%29/documents/lobbies/main"
+            ]
+          },
+          {
+            "function": "size"
+          }
+        ]
+      }
+    },
+    "string field parameter DENY (string has no keys())": {
+      "notes": [
+        "Error: firestore.rules line [16], column [14]. Function not found error: Name: [keys]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 16,
+          "column": 14,
+          "currentOffset": 398,
+          "endOffset": 401
+        },
+        "functionCalls": [
+          {
+            "function": "keys"
+          }
+        ]
+      }
+    },
+    "int parameter relayed between functions DENY (int has no keys())": {
+      "notes": [
+        "Error: firestore.rules line [16], column [14]. Function not found error: Name: [keys]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 16,
+          "column": 14,
+          "currentOffset": 398,
+          "endOffset": 401
+        },
+        "functionCalls": [
+          {
+            "function": "keys"
+          }
+        ]
+      }
+    },
+    "let-bound document with a list field DENY (list has no keys())": {
+      "notes": [
+        "Error: firestore.rules line [23], column [14]. Function not found error: Name: [keys]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 23,
+          "column": 14,
+          "currentOffset": 587,
+          "endOffset": 589
+        },
+        "functionCalls": [
+          {
+            "function": "keys"
+          }
+        ]
+      }
+    },
+    "ternary string branch keys() DENY (string has no keys())": {
+      "notes": [
+        "Error: firestore.rules line [69], column [24]. Function not found error: Name: [keys]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 69,
+          "column": 24,
+          "currentOffset": 2411,
+          "endOffset": 2411
+        },
+        "functionCalls": [
+          {
+            "function": "keys"
+          }
+        ]
+      }
+    }
+  }
+}

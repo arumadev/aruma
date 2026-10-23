@@ -1,0 +1,1015 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "errors",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T22:04:42.004Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/errors/missing_eq",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [11], column [21]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L11:21 for 'get' @ L11, Property missing is undefined on object. for 'get' @ L11"
+   }
+  },
+  {
+   "id": "aruma/errors/missing_ne_null",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [14], column [21]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L14:21 for 'get' @ L14, Property missing is undefined on object. for 'get' @ L14"
+   }
+  },
+  {
+   "id": "aruma/errors/null_field_eq_null",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/err_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/true_or_err",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/err_or_false",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [26], column [21]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L26:21 for 'get' @ L26, Property missing is undefined on object. for 'get' @ L26"
+   }
+  },
+  {
+   "id": "aruma/errors/false_or_err",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [29], column [30]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L29:21 for 'get' @ L29, Property missing is undefined on object. for 'get' @ L29"
+   }
+  },
+  {
+   "id": "aruma/errors/err_and_false",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L32"
+   }
+  },
+  {
+   "id": "aruma/errors/false_and_err",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L35"
+   }
+  },
+  {
+   "id": "aruma/errors/err_and_true",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [38], column [21]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L38:21 for 'get' @ L38, Property missing is undefined on object. for 'get' @ L38"
+   }
+  },
+  {
+   "id": "aruma/errors/true_and_err",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [41], column [29]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L41:21 for 'get' @ L41, Property missing is undefined on object. for 'get' @ L41"
+   }
+  },
+  {
+   "id": "aruma/errors/err_or_err",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [44], column [21]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L44:21 for 'get' @ L44, Property missing is undefined on object. for 'get' @ L44"
+   }
+  },
+  {
+   "id": "aruma/errors/not_err",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [47], column [23]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L47:21 for 'get' @ L47, Property missing is undefined on object. for 'get' @ L47"
+   }
+  },
+  {
+   "id": "aruma/errors/not_not_err",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [50], column [24]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L50:21 for 'get' @ L50, Property missing is undefined on object. for 'get' @ L50"
+   }
+  },
+  {
+   "id": "aruma/errors/paren_err_or_true_and",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/err_and_false_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/false_and_err_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/ternary_err_cond",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [62], column [22]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L62:21 for 'get' @ L62, Property missing is undefined on object. for 'get' @ L62"
+   }
+  },
+  {
+   "id": "aruma/errors/ternary_true_skips_err",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/ternary_false_skips_err",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/ternary_takes_err",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [71], column [29]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L71:21 for 'get' @ L71, Property missing is undefined on object. for 'get' @ L71"
+   }
+  },
+  {
+   "id": "aruma/errors/err_eq_err",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [74], column [22]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L74:21 for 'get' @ L74, Property missing is undefined on object. for 'get' @ L74"
+   }
+  },
+  {
+   "id": "aruma/errors/err_ne_true",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [77], column [22]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L77:21 for 'get' @ L77, Property missing is undefined on object. for 'get' @ L77"
+   }
+  },
+  {
+   "id": "aruma/errors/err_eq_false",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [80], column [22]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L80:21 for 'get' @ L80, Property missing is undefined on object. for 'get' @ L80"
+   }
+  },
+  {
+   "id": "aruma/errors/err_in_list",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [83], column [22]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L83:21 for 'get' @ L83, Property missing is undefined on object. for 'get' @ L83"
+   }
+  },
+  {
+   "id": "aruma/errors/in_missing_list",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [86], column [26]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L86:21 for 'get' @ L86, Property missing is undefined on object. for 'get' @ L86"
+   }
+  },
+  {
+   "id": "aruma/errors/err_list_literal",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [89], column [22]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L89:21 for 'get' @ L89, Property missing is undefined on object. for 'get' @ L89"
+   }
+  },
+  {
+   "id": "aruma/errors/err_map_literal_value",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [92], column [27]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L92:21 for 'get' @ L92, Property missing is undefined on object. for 'get' @ L92"
+   }
+  },
+  {
+   "id": "aruma/errors/fn_err",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [4], column [30]. Property missing is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L95:21 for 'get' @ L95, Property missing is undefined on object. for 'get' @ L95"
+   }
+  },
+  {
+   "id": "aruma/errors/fn_ignores_err_arg",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/fn_uses_err_arg_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/fn_ignores_div_zero_arg",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/horses_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/true_or_horses",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/horses_and_false",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L113"
+   }
+  },
+  {
+   "id": "aruma/errors/debug_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/fn_err_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/let_unused_err",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/missing_key_in",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "evaluation error at L122:21 for 'get' @ L122, false for 'get' @ L122"
+   }
+  },
+  {
+   "id": "aruma/errors/present_key_in",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/missing_get_default",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/nested_get_default",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/nested_get_missing_default",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/nested_get_missing_parent",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/nested_get_through_scalar",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/nested_missing_key",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [143], column [21]. Property q is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L143:21 for 'get' @ L143, Property q is undefined on object. for 'get' @ L143"
+   }
+  },
+  {
+   "id": "aruma/errors/null_member",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [146], column [21]. Null value error."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L146:21 for 'get' @ L146, Null value error. for 'get' @ L146"
+   }
+  },
+  {
+   "id": "aruma/errors/scalar_member",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [149], column [21]. Type error. Received: [int] Expected: [map,path]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L149:21 for 'get' @ L149, Type error. Received: [int] Expected: [map,path]. for 'get' @ L149"
+   }
+  },
+  {
+   "id": "aruma/errors/string_plus_int",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [152], column [37]. Unsupported operation error. Received: string + int. Expected: int + int, float + float, string + string, duration + duration, duration + timestamp, timestamp + duration."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L152:21 for 'get' @ L152, Unsupported operation error. Received: string + int. Expected: int + int, float + float, string + string, duration + duration, duration + timestamp, timestamp + duration. for 'get' @ L152"
+   }
+  },
+  {
+   "id": "aruma/errors/string_lt_int",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [155], column [37]. Unsupported operation error. Received: string < int. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L155:21 for 'get' @ L155, Unsupported operation error. Received: string < int. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint. for 'get' @ L155"
+   }
+  },
+  {
+   "id": "aruma/errors/int_eq_string",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "evaluation error at L158:21 for 'get' @ L158, false for 'get' @ L158"
+   }
+  },
+  {
+   "id": "aruma/errors/int_ne_string",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/int_eq_float",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/int_lt_float",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/null_eq_null",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/null_lt_int",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [173], column [26]. Unsupported operation error. Received: null < int. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: null < int. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint. for 'get' @ L173, Unsupported operation error. Received: null < int. Expected: string < string, bytes < bytes, int < int, float < float, duration < duration, timestamp < timestamp, constraint < any, any < constraint. for 'get' @ L173"
+   }
+  },
+  {
+   "id": "aruma/errors/string_cmp",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/nonbool_int_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/true_or_nonbool_int",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/nonbool_string_and_true",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [185], column [27]. Type error. Received: [string] Expected: [bool]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Type error. Received: [string] Expected: [bool]. for 'get' @ L185, Type error. Received: [string] Expected: [bool]. for 'get' @ L185"
+   }
+  },
+  {
+   "id": "aruma/errors/false_and_nonbool",
+   "production": {
+    "outcome": "deny",
+    "reason": "false"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "false for 'get' @ L188"
+   }
+  },
+  {
+   "id": "aruma/errors/not_nonbool",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [11], column [21]. Unsupported operation error. Received: !int. Expected: !bool."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: !int. Expected: !bool. for 'get' @ L11, Unsupported operation error. Received: !int. Expected: !bool. for 'get' @ L11"
+   }
+  },
+  {
+   "id": "aruma/errors/nonbool_condition_fn",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [14], column [21]. Type error. Received: [int] Expected: [bool]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Type error. Received: [int] Expected: [bool]. for 'get' @ L14, Type error. Received: [int] Expected: [bool]. for 'get' @ L14"
+   }
+  },
+  {
+   "id": "aruma/errors/nonbool_condition_field",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [17], column [21]. Type error. Received: [int] Expected: [bool]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L17:21 for 'get' @ L17, Type error. Received: [int] Expected: [bool]. for 'get' @ L17"
+   }
+  },
+  {
+   "id": "aruma/errors/nonbool_condition_null",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [20], column [21]. Type error. Received: [null] Expected: [bool]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L20:21 for 'get' @ L20, Type error. Received: [null] Expected: [bool]. for 'get' @ L20"
+   }
+  },
+  {
+   "id": "aruma/errors/ternary_nonbool_cond",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [23], column [23]. Type error. Received: [int] Expected: [bool]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Type error. Received: [int] Expected: [bool]. for 'get' @ L23, Type error. Received: [int] Expected: [bool]. for 'get' @ L23"
+   }
+  },
+  {
+   "id": "aruma/errors/div_zero",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [26], column [23]. Divide by zero error."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Divide by zero error. for 'get' @ L26, Divide by zero error. for 'get' @ L26"
+   }
+  },
+  {
+   "id": "aruma/errors/div_zero_unspaced",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L11:22 Missing 'match' keyword before path.\nERROR L11:25 mismatched input '==' expecting {'{', '/', PATH_SEGMENT}"
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL11:22 Missing 'match' keyword before path.\nL11:25 mismatched input '==' expecting {'{', '/', PATH_SEGMENT}"
+   }
+  },
+  {
+   "id": "aruma/errors/div_zero_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/float_div_zero_inf",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/float_div_int_zero",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/neg_float_div_zero",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/float_exponent_literal",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L11:24 Unexpected 'e3'."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL11:24 Unexpected 'e3'."
+   }
+  },
+  {
+   "id": "aruma/errors/zero_div_zero_nan",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/float_mod_zero",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/int_max_plus_one",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [47], column [41]. Integer value is out of the [-9223372036854775808, 9223372036854775807] range."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Integer value is out of the [-9223372036854775808, 9223372036854775807] range. for 'get' @ L47, Integer value is out of the [-9223372036854775808, 9223372036854775807] range. for 'get' @ L47"
+   }
+  },
+  {
+   "id": "aruma/errors/int_min_minus_one",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [50], column [42]. Integer value is out of the [-9223372036854775808, 9223372036854775807] range."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Integer value is out of the [-9223372036854775808, 9223372036854775807] range. for 'get' @ L50, Integer value is out of the [-9223372036854775808, 9223372036854775807] range. for 'get' @ L50"
+   }
+  },
+  {
+   "id": "aruma/errors/int_min_div_neg1",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/int_min_mod_neg1",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/int_literal_overflow",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L11:21 Invalid number literal 9223372036854775808."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL11:21 Invalid number literal 9223372036854775808."
+   }
+  },
+  {
+   "id": "aruma/errors/int_of_huge_float",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/int_of_inf",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/int_of_nan",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/int_div_trunc",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/int_mod_sign",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/float_div",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/errors/unknown_identifier",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [11], column [21]. Null value error."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Null value error. for 'get' @ L11, Null value error. for 'get' @ L11"
+   }
+  },
+  {
+   "id": "aruma/errors/unknown_request_field",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [77], column [21]. Property foo is undefined on object."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Property foo is undefined on object. for 'get' @ L77, Property foo is undefined on object. for 'get' @ L77"
+   }
+  },
+  {
+   "id": "aruma/errors/unknown_function",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [11], column [21]. Function not found error: Name: [nosuch]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Function not found error: Name: [nosuch]. for 'get' @ L11, Function not found error: Name: [nosuch]. for 'get' @ L11"
+   }
+  },
+  {
+   "id": "aruma/errors/wrong_arg_count",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [11], column [25]. Incorrect number of arguments. Received: 1. Expected: string.size()."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Incorrect number of arguments. Received: 1. Expected: string.size(). for 'get' @ L11, Incorrect number of arguments. Received: 1. Expected: string.size(). for 'get' @ L11"
+   }
+  },
+  {
+   "id": "aruma/errors/debug_function",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [11], column [21]. Function not found error: Name: [debug]."
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  }
+ ]
+}

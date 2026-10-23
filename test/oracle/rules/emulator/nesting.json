@@ -1,0 +1,210 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "nesting",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T22:37:22.054Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/nesting/nonfinal_groups_top",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/nesting/nonfinal_groups_deep",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/nesting/nonfinal_groups_outer_doc",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/nonfinal_pq",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/nesting/nonfinal_pq_zero",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "skip": "the emulator cannot run it: seed p/q/x/docs/d1: 400 {\"error\":{\"code\":400,\"message\":\"Document name \\\"projects/demo-oracle/databases/(default)/documents/p/q/x/docs/d1\\\" lacks \\\"/\\\" at index 64.\",\"status\":\"INVALID_ARGUMENT\"}}"
+   }
+  },
+  {
+   "id": "aruma/nesting/final_v2_zero",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "skip": "the emulator cannot run it: seed p/docs/d1: 400 {\"error\":{\"code\":400,\"message\":\"Document name \\\"projects/demo-oracle/databases/(default)/documents/p/docs/d1\\\" lacks \\\"/\\\" at index 60.\",\"status\":\"INVALID_ARGUMENT\"}}"
+   }
+  },
+  {
+   "id": "aruma/nesting/final_v2_depth_1",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/final_v2_depth_3",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/final_v1_depth_1",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/nesting/final_noversion_depth_1",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/nesting/final_v1_depth_3",
+   "production": {
+    "outcome": "deny",
+    "reason": "no-matching-statement"
+   },
+   "emulator": {
+    "outcome": "deny",
+    "reason": "no-matching-statement",
+    "message": "No matching allow statements"
+   }
+  },
+  {
+   "id": "aruma/nesting/flat_groups_top",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/flat_groups_deep",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/nested_second_glob",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:7 Invalid glob match expression. Only one glob match is permitted in a match declaration path."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:7 Invalid glob match expression. Only one glob match is permitted in a match declaration path."
+   }
+  },
+  {
+   "id": "aruma/nesting/v1_nonlast_glob",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:11 Invalid glob match expression. Glob matches are permitted as the last segment in a match declaration path."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:11 Invalid glob match expression. Glob matches are permitted as the last segment in a match declaration path."
+   }
+  },
+  {
+   "id": "aruma/nesting/binding_both",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/binding_document",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/binding_note_id",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/nesting/binding_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  }
+ ]
+}

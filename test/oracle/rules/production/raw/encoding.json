@@ -1,0 +1,734 @@
+{
+ "topic": "encoding",
+ "set": "development",
+ "recordedAt": "2026-10-23T21:43:13.645Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "pack",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "a95c375931602071a23f82a1ab7b9930e5a7fb858c92e6045e1bcd1bd5ee5619",
+    "bodyText": "{\"source\":{\"files\":[{\"name\":\"firestore.rules\",\"content\":\"rules_version = '2';\\nservice cloud.firestore {\\n  match /databases/{database}/documents {\\n    match /c_json_int_is_int/{doc} {\\n      allow get: if resource.data.n is int && resource.data.n == 1;\\n    }\\n    match /c_json_float_is_float/{doc} {\\n      allow get: if resource.data.f is float;\\n    }\\n    match /c_json_2_0_is_float/{doc} {\\n      allow get: if resource.data.g is float;\\n    }\\n    match /c_json_2_0_is_int/{doc} {\\n      allow get: if resource.data.g is int;\\n    }\\n    match /c_json_1e2_is_int/{doc} {\\n      allow get: if resource.data.g is int && resource.data.g == 100;\\n    }\\n    match /c_json_int64_max/{doc} {\\n      allow get: if resource.data.g == 9223372036854775807;\\n    }\\n    match /c_json_2pow53_plus1_is_int/{doc} {\\n      allow get: if resource.data.g is int;\\n    }\\n    match /c_json_neg_zero/{doc} {\\n      allow get: if resource.data.g == 0 && resource.data.g is int;\\n    }\\n    match /c_json_ts_string_is_string/{doc} {\\n      allow get: if resource.data.t is string;\\n    }\\n    match /c_json_ts_string_is_timestamp/{doc} {\\n      allow get: if resource.data.t is timestamp;\\n    }\\n    match /c_json_null_field/{doc} {\\n      allow get: if resource.data.nul == null;\\n    }\\n    match /c_json_nested_list_map/{doc} {\\n      allow get: if resource.data.m.y == 'z' && resource.data.arr[2] == 3;\\n    }\\n    match /c_time_unset_is_timestamp/{doc} {\\n      allow get: if request.time is timestamp;\\n    }\\n    match /c_time_unset_eq_null/{doc} {\\n      allow get: if request.time == null;\\n    }\\n    match /c_time_default_is_timestamp/{doc} {\\n      allow get: if request.time is timestamp;\\n    }\\n    match /c_time_set/{doc} {\\n      allow get: if request.time == timestamp.date(2026, 3, 4) + duration.time(5, 6, 7, 123456789);\\n    }\\n    match /c_time_set_nanos/{doc} {\\n      allow get: if request.time.nanos() == 123456789;\\n    }\\n    match /c_time_set_millis_precision/{doc} {\\n      allow get: if request.time.toMillis() == 1772600767123;\\n    }\\n    match /c_time_offset/{doc} {\\n      allow get: if request.time == timestamp.date(2026, 3, 4);\\n    }\\n    match /c_time_no_fraction/{doc} {\\n      allow get: if request.time.nanos() == 0;\\n    }\\n    match /c_resource_absent_is_null/{doc} {\\n      allow get: if resource == null;\\n    }\\n    match /c_resource_absent_or_true/{doc} {\\n      allow get: if resource.data.n == 1 || true;\\n    }\\n    match /c_resource_null_is_null/{doc} {\\n      allow get: if resource == null;\\n    }\\n    match /c_resource_null_data/{doc} {\\n      allow get: if resource.data == null;\\n    }\\n    match /c_resource_null_data_or_true/{doc} {\\n      allow get: if resource.data.n == 1 || true;\\n    }\\n    match /c_resource_empty_map_data/{doc} {\\n      allow get: if resource.data.size() == 0;\\n    }\\n    match /c_resource_name/{doc} {\\n      allow get: if resource.__name__ == /databases/(default)/documents/c_resource_name/doc;\\n    }\\n    match /c_request_resource_null_on_get/{doc} {\\n      allow get: if request.resource == null;\\n    }\\n    match /c_request_path_value/{doc} {\\n      allow get: if request.path == /databases/(default)/documents/c_request_path_value/doc;\\n    }\\n    match /c_request_path_is_path/{doc} {\\n      allow get: if request.path is path;\\n    }\\n    match /c_request_method_get/{doc} {\\n      allow get: if request.method == 'get';\\n    }\\n    match /c_database_var/{doc} {\\n      allow get: if database == '(default)';\\n    }\\n    match /c_doc_var/{doc} {\\n      allow get: if doc == 'doc';\\n    }\\n    match /c_auth_uid/{doc} {\\n      allow get: if request.auth.uid == 'alice';\\n    }\\n    match /c_auth_token_email/{doc} {\\n      allow get: if request.auth.token.email == 'alice@example.com';\\n    }\\n    match /c_auth_token_list/{doc} {\\n      allow get: if request.auth.token.groups.hasAny(['g2']);\\n    }\\n    match /c_auth_token_missing_claim_get/{doc} {\\n      allow get: if request.auth.token.get('missing', false) == false;\\n    }\\n    match /c_auth_absent/{doc} {\\n      allow get: if request.auth == null;\\n    }\\n    match /c_auth_null/{doc} {\\n      allow get: if request.auth == null;\\n    }\\n    match /c_auth_null_uid/{doc} {\\n      allow get: if request.auth.uid == 'alice';\\n    }\\n    match /c_auth_null_uid_or_true/{doc} {\\n      allow get: if request.auth.uid == 'alice' || true;\\n    }\\n    match /c_auth_without_token/{doc} {\\n      allow get: if request.auth.token == null;\\n    }\\n    match /c_auth_uid_int/{doc} {\\n      allow get: if request.auth.uid is int;\\n    }\\n    match /c_request_keys/{doc} {\\n      allow get: if request.keys().hasAll(['auth', 'method', 'path', 'time']);\\n    }\\n    match /c_request_is_map/{doc} {\\n      allow get: if request is map && resource is map;\\n    }\\n    match /c_request_query_on_get/{doc} {\\n      allow get: if request.query == null;\\n    }\\n  }\\n}\\n\"}]},\"testSuite\":{\"testCases\":[{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_json_int_is_int/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_json_float_is_float/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_json_2_0_is_float/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"g\":2.0}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_json_2_0_is_int/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"g\":2.0}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_json_1e2_is_int/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"g\":1e2}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_json_int64_max/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"g\":9223372036854775807}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_json_2pow53_plus1_is_int/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"g\":9007199254740993}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_json_neg_zero/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"g\":-0}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_json_ts_string_is_string/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"t\":\"2020-01-02T03:04:05Z\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_json_ts_string_is_timestamp/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"t\":\"2020-01-02T03:04:05Z\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_json_null_field/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_json_nested_list_map/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_time_unset_is_timestamp/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}}},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_time_unset_eq_null/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}}},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_time_default_is_timestamp/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_time_set/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-03-04T05:06:07.123456789Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_time_set_nanos/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-03-04T05:06:07.123456789Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_time_set_millis_precision/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-03-04T05:06:07.123456789Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_time_offset/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-03-04T03:00:00+03:00\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_time_no_fraction/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-03-04T05:06:07Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_resource_absent_is_null/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_resource_absent_or_true/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_resource_null_is_null/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":null},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_resource_null_data/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":null},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_resource_null_data_or_true/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":null},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_resource_empty_map_data/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_resource_name/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_request_resource_null_on_get/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\",\"resource\":null},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_request_path_value/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_request_path_is_path/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_request_method_get/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_database_var/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_doc_var/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_auth_uid/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_auth_token_email/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_auth_token_list/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_auth_token_missing_claim_get/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_auth_absent/doc\",\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_auth_null/doc\",\"auth\":null,\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_auth_null_uid/doc\",\"auth\":null,\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_auth_null_uid_or_true/doc\",\"auth\":null,\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_auth_without_token/doc\",\"auth\":{\"uid\":\"bob\"},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_auth_uid_int/doc\",\"auth\":{\"uid\":7},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_request_keys/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_request_is_map/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}},{\"expectation\":\"ALLOW\",\"request\":{\"method\":\"get\",\"path\":\"/databases/(default)/documents/c_request_query_on_get/doc\",\"auth\":{\"uid\":\"alice\",\"token\":{\"sub\":\"alice\",\"email\":\"alice@example.com\",\"email_verified\":true,\"admin\":true,\"role\":\"editor\",\"groups\":[\"g1\",\"g2\"],\"firebase\":{\"sign_in_provider\":\"password\"}}},\"time\":\"2026-01-15T10:20:30.123Z\"},\"resource\":{\"data\":{\"n\":1,\"f\":1.5,\"s\":\"abc\",\"b\":true,\"nul\":null,\"arr\":[1,2,3],\"tags\":[\"a\",\"b\"],\"m\":{\"x\":1,\"y\":\"z\"},\"owner\":\"alice\"}}}]}}"
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 146,
+         "endOffset": 153
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 261,
+         "endOffset": 268
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 11,
+         "column": 21,
+         "currentOffset": 352,
+         "endOffset": 359
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 14,
+         "column": 21,
+         "currentOffset": 441,
+         "endOffset": 448
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 17,
+         "column": 21,
+         "currentOffset": 528,
+         "endOffset": 535
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 20,
+         "column": 21,
+         "currentOffset": 640,
+         "endOffset": 647
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 23,
+         "column": 21,
+         "currentOffset": 752,
+         "endOffset": 759
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 26,
+         "column": 21,
+         "currentOffset": 837,
+         "endOffset": 844
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 29,
+         "column": 21,
+         "currentOffset": 957,
+         "endOffset": 964
+        },
+        "value": false
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 32,
+         "column": 21,
+         "currentOffset": 1059,
+         "endOffset": 1066
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 35,
+         "column": 21,
+         "currentOffset": 1152,
+         "endOffset": 1159
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 38,
+         "column": 21,
+         "currentOffset": 1247,
+         "endOffset": 1254
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [41], column [21]. Property time is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 41,
+       "column": 21,
+       "currentOffset": 1373,
+       "endOffset": 1379
+      }
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [44], column [21]. Property time is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 44,
+       "column": 21,
+       "currentOffset": 1466,
+       "endOffset": 1472
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 47,
+         "column": 21,
+         "currentOffset": 1561,
+         "endOffset": 1567
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 50,
+         "column": 21,
+         "currentOffset": 1644,
+         "endOffset": 1650
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 53,
+         "column": 21,
+         "currentOffset": 1786,
+         "endOffset": 1792
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 56,
+         "column": 21,
+         "currentOffset": 1894,
+         "endOffset": 1900
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 59,
+         "column": 21,
+         "currentOffset": 1995,
+         "endOffset": 2001
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 62,
+         "column": 21,
+         "currentOffset": 2103,
+         "endOffset": 2109
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [65], column [21]. Null value error."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 65,
+       "column": 21,
+       "currentOffset": 2201,
+       "endOffset": 2208
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 68,
+         "column": 21,
+         "currentOffset": 2290,
+         "endOffset": 2297
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 71,
+         "column": 21,
+         "currentOffset": 2389,
+         "endOffset": 2396
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [74], column [21]. Null value error."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 74,
+       "column": 21,
+       "currentOffset": 2473,
+       "endOffset": 2480
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 77,
+         "column": 21,
+         "currentOffset": 2570,
+         "endOffset": 2577
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 80,
+         "column": 21,
+         "currentOffset": 2671,
+         "endOffset": 2678
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [83], column [21]. Property __name__ is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 83,
+       "column": 21,
+       "currentOffset": 2759,
+       "endOffset": 2766
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 86,
+         "column": 21,
+         "currentOffset": 2908,
+         "endOffset": 2914
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 89,
+         "column": 21,
+         "currentOffset": 3000,
+         "endOffset": 3006
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 92,
+         "column": 21,
+         "currentOffset": 3141,
+         "endOffset": 3147
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 95,
+         "column": 21,
+         "currentOffset": 3229,
+         "endOffset": 3235
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 98,
+         "column": 21,
+         "currentOffset": 3314,
+         "endOffset": 3321
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 101,
+         "column": 21,
+         "currentOffset": 3394,
+         "endOffset": 3396
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 104,
+         "column": 21,
+         "currentOffset": 3464,
+         "endOffset": 3470
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 107,
+         "column": 21,
+         "currentOffset": 3557,
+         "endOffset": 3563
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 110,
+         "column": 21,
+         "currentOffset": 3669,
+         "endOffset": 3675
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 113,
+         "column": 21,
+         "currentOffset": 3787,
+         "endOffset": 3793
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [116], column [21]. Property auth is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 116,
+       "column": 21,
+       "currentOffset": 3897,
+       "endOffset": 3903
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 119,
+         "column": 21,
+         "currentOffset": 3976,
+         "endOffset": 3982
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [122], column [21]. Null value error."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 122,
+       "column": 21,
+       "currentOffset": 4059,
+       "endOffset": 4065
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 125,
+         "column": 21,
+         "currentOffset": 4157,
+         "endOffset": 4163
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [128], column [21]. Property token is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 128,
+       "column": 21,
+       "currentOffset": 4260,
+       "endOffset": 4266
+      }
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 131,
+         "column": 21,
+         "currentOffset": 4348,
+         "endOffset": 4354
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 134,
+         "column": 21,
+         "currentOffset": 4433,
+         "endOffset": 4439
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 137,
+         "column": 21,
+         "currentOffset": 4554,
+         "endOffset": 4560
+        },
+        "value": true
+       }
+      ]
+     },
+     {
+      "state": "FAILURE",
+      "debugMessages": [
+       "Error: firestore.rules line [140], column [21]. Property query is undefined on object."
+      ],
+      "errorPosition": {
+       "fileName": "firestore.rules",
+       "line": 140,
+       "column": 21,
+       "currentOffset": 4657,
+       "endOffset": 4663
+      }
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "time_bad_format",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "c8c674ad9911ebb224beabe5ae4131c9f1f46620ebc4e33c7eaddbed5b3b4e73",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "firestore.rules",
+        "content": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /c_time_bad_format/{doc} {\n      allow get: if true;\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/databases/(default)/documents/c_time_bad_format/doc",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "yesterday"
+        },
+        "resource": {
+         "data": {
+          "n": 1,
+          "f": 1.5,
+          "s": "abc",
+          "b": true,
+          "nul": null,
+          "arr": [
+           1,
+           2,
+           3
+          ],
+          "tags": [
+           "a",
+           "b"
+          ],
+          "m": {
+           "x": 1,
+           "y": "z"
+          },
+          "owner": "alice"
+         }
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 400,
+   "response": {
+    "error": {
+     "code": 400,
+     "message": "Test case 'request.time' value must be a timestamp of the form YYYY-MM-DDTHH:MM:SSZ.",
+     "status": "INVALID_ARGUMENT"
+    }
+   }
+  }
+ ]
+}

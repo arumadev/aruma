@@ -1,0 +1,1367 @@
+{
+ "topic": "storage-paths",
+ "set": "development",
+ "recordedAt": "2026-10-23T21:44:42.858Z",
+ "project": "chatapp-8ae21",
+ "calls": [
+  {
+   "kind": "alone",
+   "id": "v2_rest_is_path",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "0c17ecfa979163df7ae14d6eabfad28155623326892d43139fff1e548c952898",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      allow get: if rest is path;\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/b/demo-oracle.appspot.com/o/p/a/b.txt",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "name": "dir/file.txt",
+         "bucket": "demo-oracle.appspot.com",
+         "size": 1024,
+         "contentType": "text/plain",
+         "metadata": {
+          "owner": "alice",
+          "k": "v"
+         },
+         "timeCreated": "2026-01-02T03:04:05.000Z",
+         "updated": "2026-01-03T03:04:05.000Z",
+         "generation": 1700000000000000,
+         "metageneration": 1,
+         "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+         "crc32c": "yZRlqg==",
+         "etag": "CJqUmJ6Ry4ADEAE=",
+         "contentDisposition": "inline",
+         "contentEncoding": "identity"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 117,
+         "endOffset": 120
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v2_rest_value",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "5ebf38d5df45717dcebbad2e4e5d50c332d28b4a6f708871af6903273998a5fb",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      allow get: if rest == /a/b.txt;\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/b/demo-oracle.appspot.com/o/p/a/b.txt",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "name": "dir/file.txt",
+         "bucket": "demo-oracle.appspot.com",
+         "size": 1024,
+         "contentType": "text/plain",
+         "metadata": {
+          "owner": "alice",
+          "k": "v"
+         },
+         "timeCreated": "2026-01-02T03:04:05.000Z",
+         "updated": "2026-01-03T03:04:05.000Z",
+         "generation": 1700000000000000,
+         "metageneration": 1,
+         "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+         "crc32c": "yZRlqg==",
+         "etag": "CJqUmJ6Ry4ADEAE=",
+         "contentDisposition": "inline",
+         "contentEncoding": "identity"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 117,
+         "endOffset": 120
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_rest_is_string",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "e20cddb7a5dbb8358b47b20f3170d033f709a2d911cfc7b47777192be49aeda9",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '1';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      allow get: if rest is string;\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/b/demo-oracle.appspot.com/o/p/a/b.txt",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "name": "dir/file.txt",
+         "bucket": "demo-oracle.appspot.com",
+         "size": 1024,
+         "contentType": "text/plain",
+         "metadata": {
+          "owner": "alice",
+          "k": "v"
+         },
+         "timeCreated": "2026-01-02T03:04:05.000Z",
+         "updated": "2026-01-03T03:04:05.000Z",
+         "generation": 1700000000000000,
+         "metageneration": 1,
+         "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+         "crc32c": "yZRlqg==",
+         "etag": "CJqUmJ6Ry4ADEAE=",
+         "contentDisposition": "inline",
+         "contentEncoding": "identity"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 117,
+         "endOffset": 120
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_rest_value",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "7482da840becf36e3942a8a2eb0b9271e83cadf44e3f6bb146141098e90cf364",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '1';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      allow get: if rest == 'a/b.txt';\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/b/demo-oracle.appspot.com/o/p/a/b.txt",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "name": "dir/file.txt",
+         "bucket": "demo-oracle.appspot.com",
+         "size": 1024,
+         "contentType": "text/plain",
+         "metadata": {
+          "owner": "alice",
+          "k": "v"
+         },
+         "timeCreated": "2026-01-02T03:04:05.000Z",
+         "updated": "2026-01-03T03:04:05.000Z",
+         "generation": 1700000000000000,
+         "metageneration": 1,
+         "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+         "crc32c": "yZRlqg==",
+         "etag": "CJqUmJ6Ry4ADEAE=",
+         "contentDisposition": "inline",
+         "contentEncoding": "identity"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules",
+       "line": 5,
+       "column": 26,
+       "currentOffset": 122,
+       "endOffset": 123
+      },
+      "description": "The sub-expressions are not comparable, so this comparison will always return false.",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 117,
+         "endOffset": 120
+        },
+        "value": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v2_zero_segments",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "9c5f6d6ed6bbec09d4b6dc9bb341d1db20016cd5af2d20aa498d50545354c842",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      allow get: if true;\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/b/demo-oracle.appspot.com/o/p",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "name": "dir/file.txt",
+         "bucket": "demo-oracle.appspot.com",
+         "size": 1024,
+         "contentType": "text/plain",
+         "metadata": {
+          "owner": "alice",
+          "k": "v"
+         },
+         "timeCreated": "2026-01-02T03:04:05.000Z",
+         "updated": "2026-01-03T03:04:05.000Z",
+         "generation": 1700000000000000,
+         "metageneration": 1,
+         "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+         "crc32c": "yZRlqg==",
+         "etag": "CJqUmJ6Ry4ADEAE=",
+         "contentDisposition": "inline",
+         "contentEncoding": "identity"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 117,
+         "endOffset": 120
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_zero_segments",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "c7e5834db8b16193ec3f496b3442db7eb53d69481d6c0c21f29c799120a30be8",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '1';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      allow get: if true;\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/b/demo-oracle.appspot.com/o/p",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "name": "dir/file.txt",
+         "bucket": "demo-oracle.appspot.com",
+         "size": 1024,
+         "contentType": "text/plain",
+         "metadata": {
+          "owner": "alice",
+          "k": "v"
+         },
+         "timeCreated": "2026-01-02T03:04:05.000Z",
+         "updated": "2026-01-03T03:04:05.000Z",
+         "generation": 1700000000000000,
+         "metageneration": 1,
+         "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+         "crc32c": "yZRlqg==",
+         "etag": "CJqUmJ6Ry4ADEAE=",
+         "contentDisposition": "inline",
+         "contentEncoding": "identity"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "FAILURE"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v1_not_final",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "bc47a5056fc9389ef00da392f9c8da4630b353e893d42d50c2d04eb16faacfdc",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '1';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /{rest=**}/x/{f} {\n      allow get: if true;\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/b/demo-oracle.appspot.com/o/a/x/f.txt",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "name": "dir/file.txt",
+         "bucket": "demo-oracle.appspot.com",
+         "size": 1024,
+         "contentType": "text/plain",
+         "metadata": {
+          "owner": "alice",
+          "k": "v"
+         },
+         "timeCreated": "2026-01-02T03:04:05.000Z",
+         "updated": "2026-01-03T03:04:05.000Z",
+         "generation": 1700000000000000,
+         "metageneration": 1,
+         "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+         "crc32c": "yZRlqg==",
+         "etag": "CJqUmJ6Ry4ADEAE=",
+         "contentDisposition": "inline",
+         "contentEncoding": "identity"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules",
+       "line": 4,
+       "column": 11,
+       "currentOffset": 82,
+       "endOffset": 82
+      },
+      "description": "Invalid glob match expression. Glob matches are permitted as the last segment in a match declaration path.",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v2_not_final",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "671cc41e5c3bdada65c9ec106f55def8169ed633e7474353d59822f094f7b17d",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /{rest=**}/x/{f} {\n      allow get: if true;\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/b/demo-oracle.appspot.com/o/a/x/f.txt",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "name": "dir/file.txt",
+         "bucket": "demo-oracle.appspot.com",
+         "size": 1024,
+         "contentType": "text/plain",
+         "metadata": {
+          "owner": "alice",
+          "k": "v"
+         },
+         "timeCreated": "2026-01-02T03:04:05.000Z",
+         "updated": "2026-01-03T03:04:05.000Z",
+         "generation": 1700000000000000,
+         "metageneration": 1,
+         "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+         "crc32c": "yZRlqg==",
+         "etag": "CJqUmJ6Ry4ADEAE=",
+         "contentDisposition": "inline",
+         "contentEncoding": "identity"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 121,
+         "endOffset": 124
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "v2_nested_under_recursive",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "6ad0784025c6cf57e02fe90fab9ad7dc4145f1c107675ca77ad000e404a1cde9",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      match /x/{f} {\n        allow get: if true;\n      }\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/b/demo-oracle.appspot.com/o/p/a/x/f.txt",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "name": "dir/file.txt",
+         "bucket": "demo-oracle.appspot.com",
+         "size": 1024,
+         "contentType": "text/plain",
+         "metadata": {
+          "owner": "alice",
+          "k": "v"
+         },
+         "timeCreated": "2026-01-02T03:04:05.000Z",
+         "updated": "2026-01-03T03:04:05.000Z",
+         "generation": 1700000000000000,
+         "metageneration": 1,
+         "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+         "crc32c": "yZRlqg==",
+         "etag": "CJqUmJ6Ry4ADEAE=",
+         "contentDisposition": "inline",
+         "contentEncoding": "identity"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 6,
+         "column": 23,
+         "currentOffset": 140,
+         "endOffset": 143
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "space_in_name",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "0e190928cbd929f5cb88006cbfffab6b81258ec4bea5226103c8dc4c95c1cb1d",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{f} {\n      allow get: if f == 'a b.txt';\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/b/demo-oracle.appspot.com/o/p/a b.txt",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "name": "dir/file.txt",
+         "bucket": "demo-oracle.appspot.com",
+         "size": 1024,
+         "contentType": "text/plain",
+         "metadata": {
+          "owner": "alice",
+          "k": "v"
+         },
+         "timeCreated": "2026-01-02T03:04:05.000Z",
+         "updated": "2026-01-03T03:04:05.000Z",
+         "generation": 1700000000000000,
+         "metageneration": 1,
+         "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+         "crc32c": "yZRlqg==",
+         "etag": "CJqUmJ6Ry4ADEAE=",
+         "contentDisposition": "inline",
+         "contentEncoding": "identity"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 111,
+         "endOffset": 111
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "overlap_or",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "926292645aecd5cfc24a0f7897e5351e62d98a444cbbd31fe8db7f781cca76e1",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{f} {\n      allow get: if false;\n    }\n    match /{d}/{f} {\n      allow get: if d == 'p';\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/b/demo-oracle.appspot.com/o/p/a.txt",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "name": "dir/file.txt",
+         "bucket": "demo-oracle.appspot.com",
+         "size": 1024,
+         "contentType": "text/plain",
+         "metadata": {
+          "owner": "alice",
+          "k": "v"
+         },
+         "timeCreated": "2026-01-02T03:04:05.000Z",
+         "updated": "2026-01-03T03:04:05.000Z",
+         "generation": 1700000000000000,
+         "metageneration": 1,
+         "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+         "crc32c": "yZRlqg==",
+         "etag": "CJqUmJ6Ry4ADEAE=",
+         "contentDisposition": "inline",
+         "contentEncoding": "identity"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 111,
+         "endOffset": 115
+        },
+        "value": false
+       },
+       {
+        "sourcePosition": {
+         "line": 8,
+         "column": 21,
+         "currentOffset": 165,
+         "endOffset": 165
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "bucket_literal",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "c70563dfafb38020c30b96fbc746ea25d007b8ad9f50e5a321ccd44bbd67ca8a",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '2';\nservice firebase.storage {\n  match /b/demo-oracle.appspot.com/o {\n    match /p/{f} {\n      allow get: if true;\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/b/demo-oracle.appspot.com/o/p/a.txt",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "name": "dir/file.txt",
+         "bucket": "demo-oracle.appspot.com",
+         "size": 1024,
+         "contentType": "text/plain",
+         "metadata": {
+          "owner": "alice",
+          "k": "v"
+         },
+         "timeCreated": "2026-01-02T03:04:05.000Z",
+         "updated": "2026-01-03T03:04:05.000Z",
+         "generation": 1700000000000000,
+         "metageneration": 1,
+         "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+         "crc32c": "yZRlqg==",
+         "etag": "CJqUmJ6Ry4ADEAE=",
+         "contentDisposition": "inline",
+         "contentEncoding": "identity"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 21,
+         "currentOffset": 126,
+         "endOffset": 129
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "let_v1",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "9c7e4d1ae146ed21c740de84de3f74ba5b055f34ab694a2e9a4c3ed02309c906",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '1';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    function g() { let a = 1; return a == 1; }\n    match /p/{f} {\n      allow get: if g();\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/b/demo-oracle.appspot.com/o/p/a.txt",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "name": "dir/file.txt",
+         "bucket": "demo-oracle.appspot.com",
+         "size": 1024,
+         "contentType": "text/plain",
+         "metadata": {
+          "owner": "alice",
+          "k": "v"
+         },
+         "timeCreated": "2026-01-02T03:04:05.000Z",
+         "updated": "2026-01-03T03:04:05.000Z",
+         "generation": 1700000000000000,
+         "metageneration": 1,
+         "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+         "crc32c": "yZRlqg==",
+         "etag": "CJqUmJ6Ry4ADEAE=",
+         "contentDisposition": "inline",
+         "contentEncoding": "identity"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     },
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules",
+       "line": 4,
+       "column": 24,
+       "currentOffset": 95,
+       "endOffset": 95
+      },
+      "description": "Let bindings are not allowed in rules_version=\"1\";",
+      "severity": "ERROR"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "function_v1",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "93ec1e9eeeb7e618fcfd536f8101bb340ce4815f59ce569d3cbea7683c1c01d8",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '1';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    function g() { return true; }\n    match /p/{f} {\n      allow get: if g();\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "get",
+         "path": "/b/demo-oracle.appspot.com/o/p/a.txt",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": {
+         "name": "dir/file.txt",
+         "bucket": "demo-oracle.appspot.com",
+         "size": 1024,
+         "contentType": "text/plain",
+         "metadata": {
+          "owner": "alice",
+          "k": "v"
+         },
+         "timeCreated": "2026-01-02T03:04:05.000Z",
+         "updated": "2026-01-03T03:04:05.000Z",
+         "generation": 1700000000000000,
+         "metageneration": 1,
+         "md5Hash": "XrY7u+Ae7tCTyyK7j1rNww==",
+         "crc32c": "yZRlqg==",
+         "etag": "CJqUmJ6Ry4ADEAE=",
+         "contentDisposition": "inline",
+         "contentEncoding": "identity"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "issues": [
+     {
+      "sourcePosition": {
+       "fileName": "storage.rules"
+      },
+      "description": "Ruleset uses old version (version [1]). Please update to the latest version (version [2]).",
+      "severity": "WARNING"
+     }
+    ],
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 6,
+         "column": 21,
+         "currentOffset": 145,
+         "endOffset": 145
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "list_on_prefix",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "2d21d4c36e16b607ab16dfd83abde518cd1f06902735920acba0199c34b421c6",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{rest=**} {\n      allow list: if true;\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "list",
+         "path": "/b/demo-oracle.appspot.com/o/p/",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": null
+       }
+      ]
+     }
+    }
+   },
+   "status": 400,
+   "response": {
+    "error": {
+     "code": 400,
+     "message": "Resource path string_value: \t \"/b/demo-oracle.appspot.com/o/p/\"\n should be URL-encoded.",
+     "status": "INVALID_ARGUMENT"
+    }
+   }
+  },
+  {
+   "kind": "alone",
+   "id": "list_on_folder",
+   "request": {
+    "rebuilt": true,
+    "requestSha256": "37e32c40345cea79c70ab39b4f8bf537e980f6ddf50732f34f7288e16b45fbe0",
+    "body": {
+     "source": {
+      "files": [
+       {
+        "name": "storage.rules",
+        "content": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /p/{f} {\n      allow list: if f == 'a';\n    }\n  }\n}\n"
+       }
+      ]
+     },
+     "testSuite": {
+      "testCases": [
+       {
+        "expectation": "ALLOW",
+        "request": {
+         "method": "list",
+         "path": "/b/demo-oracle.appspot.com/o/p/a",
+         "auth": {
+          "uid": "alice",
+          "token": {
+           "sub": "alice",
+           "email": "alice@example.com",
+           "email_verified": true,
+           "admin": true,
+           "role": "editor",
+           "groups": [
+            "g1",
+            "g2"
+           ],
+           "firebase": {
+            "sign_in_provider": "password"
+           }
+          }
+         },
+         "time": "2026-01-15T10:20:30.123Z"
+        },
+        "resource": null
+       }
+      ]
+     }
+    }
+   },
+   "status": 200,
+   "response": {
+    "testResults": [
+     {
+      "state": "SUCCESS",
+      "visitedExpressions": [
+       {
+        "sourcePosition": {
+         "line": 5,
+         "column": 22,
+         "currentOffset": 112,
+         "endOffset": 112
+        },
+        "value": true
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

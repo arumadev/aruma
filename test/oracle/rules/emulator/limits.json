@@ -1,0 +1,1181 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "limits",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "emulator",
+ "recordedAt": "2026-10-23T22:04:50.678Z",
+ "version": "cloud-firestore-emulator v1.22.0 (Java 21)",
+ "cases": [
+  {
+   "id": "aruma/limits/call_depth_5",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/call_depth_9",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/call_depth_10",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/call_depth_11",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/call_depth_12",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/call_depth_19",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/call_depth_20",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/call_depth_21",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/call_depth_22",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L25:14 Maximum allowed call depth of 20 is reached for [f1->f2->f3->f4->f5->f6->f7->f8->f9->f10->f11->f12->f13->f14->f15->f16->f17->f18->f19->f20->f21] call stack."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL25:14 Maximum allowed call depth of 20 is reached for [f1->f2->f3->f4->f5->f6->f7->f8->f9->f10->f11->f12->f13->f14->f15->f16->f17->f18->f19->f20->f21] call stack."
+   }
+  },
+  {
+   "id": "aruma/limits/call_depth_30",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L25:14 Maximum allowed call depth of 20 is reached for [f1->f2->f3->f4->f5->f6->f7->f8->f9->f10->f11->f12->f13->f14->f15->f16->f17->f18->f19->f20->f21] call stack."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL25:14 Maximum allowed call depth of 20 is reached for [f1->f2->f3->f4->f5->f6->f7->f8->f9->f10->f11->f12->f13->f14->f15->f16->f17->f18->f19->f20->f21] call stack."
+   }
+  },
+  {
+   "id": "aruma/limits/recursion_0",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:14 Recursive call is not allowed."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:14 Recursive call is not allowed."
+   }
+  },
+  {
+   "id": "aruma/limits/recursion_1",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:14 Recursive call is not allowed."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:14 Recursive call is not allowed."
+   }
+  },
+  {
+   "id": "aruma/limits/recursion_5",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:14 Recursive call is not allowed."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:14 Recursive call is not allowed."
+   }
+  },
+  {
+   "id": "aruma/limits/recursion_8",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:14 Recursive call is not allowed."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:14 Recursive call is not allowed."
+   }
+  },
+  {
+   "id": "aruma/limits/recursion_9",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:14 Recursive call is not allowed."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:14 Recursive call is not allowed."
+   }
+  },
+  {
+   "id": "aruma/limits/recursion_10",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:14 Recursive call is not allowed."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:14 Recursive call is not allowed."
+   }
+  },
+  {
+   "id": "aruma/limits/recursion_20",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:14 Recursive call is not allowed."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:14 Recursive call is not allowed."
+   }
+  },
+  {
+   "id": "aruma/limits/recursion_25",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:14 Recursive call is not allowed."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:14 Recursive call is not allowed."
+   }
+  },
+  {
+   "id": "aruma/limits/mutual_recursion_4",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:14 Detected a call cycle between [p,q] functions."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:14 Detected a call cycle between [p,q] functions."
+   }
+  },
+  {
+   "id": "aruma/limits/mutual_recursion_30",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:14 Detected a call cycle between [p,q] functions."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:14 Detected a call cycle between [p,q] functions."
+   }
+  },
+  {
+   "id": "aruma/limits/lets_9",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/lets_11",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/lets_12",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:177 Maximum allowed variable count of 10 for a given function has been reached."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:177 Maximum allowed variable count of 10 for a given function has been reached."
+   }
+  },
+  {
+   "id": "aruma/limits/lets_21",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L4:170 Maximum allowed variable count of 10 for a given function has been reached."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL4:170 Maximum allowed variable count of 10 for a given function has been reached."
+   }
+  },
+  {
+   "id": "aruma/limits/lets_8_params_3",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/lets_10_params_5",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/let_rules_v1",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "WARNING Lundefined:undefined Ruleset uses old version (version [1]). Please update to the latest version (version [2]).\nERROR L4:24 Let bindings are not allowed in rules_version=\"1\";\nWARNING L4:24 Unused variable: a1.\nERROR L4:36 Let bindings are not allowed in rules_version=\"1\";"
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL0:0 Ruleset uses old version (version [1]). Please update to the latest version (version [2]).\nL4:24 Let bindings are not allowed in rules_version=\"1\";\nL4:24 Unused variable: a1.\nL4:36 Let bindings are not allowed in rules_version=\"1\";"
+   }
+  },
+  {
+   "id": "aruma/limits/let_outside_function",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L5:11 Missing 'match' keyword before path.\nERROR L6:7 Unexpected 'let'.\nERROR L6:7 mismatched input 'let' expecting {'{', '/', PATH_SEGMENT}\nERROR L10:1 Unexpected '}'."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL5:11 Missing 'match' keyword before path.\nL6:7 Unexpected 'let'.\nL6:7 mismatched input 'let' expecting {'{', '/', PATH_SEGMENT}\nL10:1 Unexpected '}'."
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_2",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_10",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_20",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_30",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_40",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_50",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_60",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_70",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_90",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_92",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_94",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_96",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_98",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_100",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L6:21 Expression is too complex to evaluate safely.\nERROR L6:29 Expression is too complex to evaluate safely."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL6:21 Expression is too complex to evaluate safely.\nL6:29 Expression is too complex to evaluate safely."
+   }
+  },
+  {
+   "id": "aruma/limits/and_true_300",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L6:21 Expression is too complex to evaluate safely.\nERROR L6:1629 Expression is too complex to evaluate safely."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL6:21 Expression is too complex to evaluate safely.\nL6:1629 Expression is too complex to evaluate safely."
+   }
+  },
+  {
+   "id": "aruma/limits/and_field_10",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_field_20",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_field_40",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_field_100",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L6:21 Expression is too complex to evaluate safely.\nERROR L6:45 Expression is too complex to evaluate safely.\nERROR L6:69 Expression is too complex to evaluate safely.\nERROR L6:88 Expression is too complex to evaluate safely."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL6:21 Expression is too complex to evaluate safely.\nL6:45 Expression is too complex to evaluate safely.\nL6:69 Expression is too complex to evaluate safely.\nL6:88 Expression is too complex to evaluate safely."
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_600",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_700",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_800",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_900",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_950",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_990",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_993",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_996",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_997",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [6], column [21]. Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'get' @ L6"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_998",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [6], column [21]. Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'get' @ L6"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_1000",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [6], column [22]. Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'get' @ L6"
+   }
+  },
+  {
+   "id": "aruma/limits/list_literal_2000",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [6], column [3022]. Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'get' @ L6"
+   }
+  },
+  {
+   "id": "aruma/limits/and_balanced_3",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_balanced_4",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_balanced_5",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_balanced_6",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_balanced_7",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_balanced_8",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/and_balanced_9",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [6], column [3359]. Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unable to evaluate the expression as the maximum of 1000 expressions to evaluate has been reached. for 'get' @ L6"
+   }
+  },
+  {
+   "id": "aruma/limits/parens_50",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/parens_60",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/parens_70",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/parens_80",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/parens_96",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/parens_97",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/parens_98",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/parens_99",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L6:120 Expression is too complex to evaluate safely."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL6:120 Expression is too complex to evaluate safely."
+   }
+  },
+  {
+   "id": "aruma/limits/parens_100",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L6:120 Expression is too complex to evaluate safely."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL6:120 Expression is too complex to evaluate safely."
+   }
+  },
+  {
+   "id": "aruma/limits/parens_200",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L6:120 Expression is too complex to evaluate safely."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL6:120 Expression is too complex to evaluate safely."
+   }
+  },
+  {
+   "id": "aruma/limits/ternary_nested_10",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/ternary_nested_20",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/ternary_nested_30",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/ternary_nested_40",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/ternary_nested_45",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/ternary_nested_50",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L6:502 Expression is too complex to evaluate safely.\nERROR L6:507 Expression is too complex to evaluate safely.\nERROR L6:512 Expression is too complex to evaluate safely."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL6:502 Expression is too complex to evaluate safely.\nL6:507 Expression is too complex to evaluate safely.\nL6:512 Expression is too complex to evaluate safely."
+   }
+  },
+  {
+   "id": "aruma/limits/fn_calls_400",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L6:21 Expression is too complex to evaluate safely.\nERROR L6:2128 Expression is too complex to evaluate safely."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL6:21 Expression is too complex to evaluate safely.\nL6:2128 Expression is too complex to evaluate safely."
+   }
+  },
+  {
+   "id": "aruma/limits/size_comment_65536",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/size_comment_256000",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/size_comment_262143",
+   "production": {
+    "outcome": "error",
+    "errorKind": "request",
+    "message": "400 INVALID_ARGUMENT Total size of sources must be smaller than 262144."
+   },
+   "emulator": {
+    "skip": "the Test API refused the request itself"
+   }
+  },
+  {
+   "id": "aruma/limits/size_comment_262144",
+   "production": {
+    "outcome": "error",
+    "errorKind": "request",
+    "message": "400 INVALID_ARGUMENT Total size of sources must be smaller than 262144."
+   },
+   "emulator": {
+    "skip": "the Test API refused the request itself"
+   }
+  },
+  {
+   "id": "aruma/limits/size_comment_262145",
+   "production": {
+    "outcome": "error",
+    "errorKind": "request",
+    "message": "400 INVALID_ARGUMENT Total size of sources must be smaller than 262144."
+   },
+   "emulator": {
+    "skip": "the Test API refused the request itself"
+   }
+  },
+  {
+   "id": "aruma/limits/size_comment_300000",
+   "production": {
+    "outcome": "error",
+    "errorKind": "request",
+    "message": "400 INVALID_ARGUMENT Total size of sources must be smaller than 262144."
+   },
+   "emulator": {
+    "skip": "the Test API refused the request itself"
+   }
+  },
+  {
+   "id": "aruma/limits/size_comment_1048576",
+   "production": {
+    "outcome": "error",
+    "errorKind": "request",
+    "message": "400 INVALID_ARGUMENT Total size of sources must be smaller than 262144."
+   },
+   "emulator": {
+    "skip": "the Test API refused the request itself"
+   }
+  },
+  {
+   "id": "aruma/limits/size_functions_100",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/size_functions_500",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/size_functions_700",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/size_functions_950",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/size_functions_2000",
+   "production": {
+    "outcome": "error",
+    "errorKind": "request",
+    "message": "503 UNAVAILABLE The service is currently unavailable."
+   },
+   "emulator": {
+    "skip": "the Test API refused the request itself"
+   }
+  },
+  {
+   "id": "aruma/limits/exists_1",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/exists_9",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/exists_10",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/exists_11",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L6:21 for 'get' @ L6, Service call error. Function: [exists], Argument: [path_value {\n  segments {\n    simple: \"databases\"\n  }\n  segments {\n    simple: \"(default)\"\n  }\n  segments {\n    simple: \"documents\"\n  }\n  segments {\n    simple: \"m\"\n  }\n  segments {\n    simple: \"d11\"\n  }\n}\n]. for 'get' @ L6"
+   }
+  },
+  {
+   "id": "aruma/limits/exists_20",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L6:21 for 'get' @ L6, Service call error. Function: [exists], Argument: [path_value {\n  segments {\n    simple: \"databases\"\n  }\n  segments {\n    simple: \"(default)\"\n  }\n  segments {\n    simple: \"documents\"\n  }\n  segments {\n    simple: \"m\"\n  }\n  segments {\n    simple: \"d11\"\n  }\n}\n]. for 'get' @ L6"
+   }
+  },
+  {
+   "id": "aruma/limits/exists_21",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L6:21 for 'get' @ L6, Service call error. Function: [exists], Argument: [path_value {\n  segments {\n    simple: \"databases\"\n  }\n  segments {\n    simple: \"(default)\"\n  }\n  segments {\n    simple: \"documents\"\n  }\n  segments {\n    simple: \"m\"\n  }\n  segments {\n    simple: \"d11\"\n  }\n}\n]. for 'get' @ L6"
+   }
+  },
+  {
+   "id": "aruma/limits/exists_50",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L6:21 for 'get' @ L6, Service call error. Function: [exists], Argument: [path_value {\n  segments {\n    simple: \"databases\"\n  }\n  segments {\n    simple: \"(default)\"\n  }\n  segments {\n    simple: \"documents\"\n  }\n  segments {\n    simple: \"m\"\n  }\n  segments {\n    simple: \"d11\"\n  }\n}\n]. for 'get' @ L6"
+   }
+  },
+  {
+   "id": "aruma/limits/exists_101",
+   "production": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "ERROR L6:21 Expression is too complex to evaluate safely.\nERROR L6:119 Expression is too complex to evaluate safely.\nERROR L6:175 Expression is too complex to evaluate safely.\nERROR L6:237 Expression is too complex to evaluate safely."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "compile",
+    "message": "Error compiling rules:\nL6:21 Expression is too complex to evaluate safely.\nL6:119 Expression is too complex to evaluate safely.\nL6:175 Expression is too complex to evaluate safely.\nL6:237 Expression is too complex to evaluate safely."
+   }
+  },
+  {
+   "id": "aruma/limits/get_10",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/get_11",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L6:21 for 'get' @ L6, Service call error. Function: [get], Argument: [path_value {\n  segments {\n    simple: \"databases\"\n  }\n  segments {\n    simple: \"(default)\"\n  }\n  segments {\n    simple: \"documents\"\n  }\n  segments {\n    simple: \"m\"\n  }\n  segments {\n    simple: \"d11\"\n  }\n}\n]. for 'get' @ L6"
+   }
+  },
+  {
+   "id": "aruma/limits/exists_same_15",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/exists_get_same_6",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "evaluation error at L6:21 for 'get' @ L6, Service call error. Function: [exists], Argument: [path_value {\n  segments {\n    simple: \"databases\"\n  }\n  segments {\n    simple: \"(default)\"\n  }\n  segments {\n    simple: \"documents\"\n  }\n  segments {\n    simple: \"m\"\n  }\n  segments {\n    simple: \"d6\"\n  }\n}\n]. for 'get' @ L6"
+   }
+  },
+  {
+   "id": "aruma/limits/get_unmocked",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [6], column [21]. Function not found error: Name: [get]."
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/get_unmocked_or_true",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/get_mock_null",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [6], column [21]. Service call error. Function: [get], Argument: [path_value {\n  segments {\n    simple: \"databases\"\n  }\n  segments {\n    simple: \"(default)\"\n  }\n  segments {\n    simple: \"documents\"\n  }\n  segments {\n    simple: \"m\"\n  }\n  segments {\n    simple: \"d1\"\n  }\n}\n]."
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/get_mock_value_null",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/exists_mock_false",
+   "production": {
+    "outcome": "allow"
+   },
+   "emulator": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/limits/get_string_path",
+   "production": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Error: firestore.rules line [6], column [21]. Service call error. Function: [get], Argument: [string_value: \"/databases/(default)/documents/m/d1\"\n]."
+   },
+   "emulator": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "Unsupported operation error. Received: get(string). Expected: get(path). for 'get' @ L6, Unsupported operation error. Received: get(string). Expected: get(path). for 'get' @ L6"
+   }
+  }
+ ]
+}
