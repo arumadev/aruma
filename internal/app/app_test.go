@@ -85,7 +85,7 @@ func TestRulesWiring(t *testing.T) {
 			"ARUMA_PUBLIC_URL":           "https://aruma.test",
 			"ARUMA_MASTER_KEY":           "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
 			"ARUMA_RULES_CALL_DEPTH":     "10",
-			"ARUMA_RULES_INFLIGHT_BYTES": "1048576",
+			"ARUMA_RULES_INFLIGHT_BYTES": "33554432",
 		}[k]
 	})
 	if err != nil {
@@ -101,7 +101,7 @@ func TestRulesWiring(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := rules.DefaultLimits()
-	want.CallDepth, want.InflightBytes = 10, 1<<20
+	want.CallDepth, want.InflightBytes = 10, 32<<20
 	if a.RulesLimits != want {
 		t.Errorf("rules limits = %+v, want %+v", a.RulesLimits, want)
 	}

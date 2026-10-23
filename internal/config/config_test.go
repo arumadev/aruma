@@ -319,6 +319,8 @@ func TestRulesLimitsRejectBadValues(t *testing.T) {
 		{"ARUMA_RULES_SOURCE_BYTES", "1000000", "rules.limits.source_bytes"},
 		{"ARUMA_RULES_INFLIGHT_BYTES", "0", "rules.limits.inflight_bytes must be at least 1"},
 		{"ARUMA_RULES_WORK", "-5", "rules.limits.work must be at least 1"},
+		// An Inflight cap below one evaluation's allocation would refuse every evaluation.
+		{"ARUMA_RULES_INFLIGHT_BYTES", "1048576", "rules.limits.inflight_bytes 1048576 must be at least alloc_bytes"},
 		{"ARUMA_RULES_MATCH_DEPTH", "ten", "ARUMA_RULES_MATCH_DEPTH"},
 	} {
 		m := required()

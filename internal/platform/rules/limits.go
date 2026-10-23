@@ -86,8 +86,9 @@ func DefaultLimits() Limits {
 	}
 }
 
-// Validate reports every limit that is not positive, and every Firebase limit set above
-// Firebase's value: raising one would allow what Firebase denies.
+// Validate reports every limit that is not positive, every Firebase limit set above Firebase's
+// value (raising one would allow what Firebase denies), an Inflight cap below one evaluation's
+// allocation, and a value cap above it.
 func (l Limits) Validate() error {
 	var errs []error
 	for _, f := range []struct {
@@ -133,6 +134,15 @@ func (l Limits) Validate() error {
 		if f.v < 1 {
 			errs = append(errs, fmt.Errorf("%s must be at least 1", f.name))
 		}
+	}
+	// An evaluation that may build more than the process allows would fail as overloaded every
+	// time, an UNAVAILABLE the SDKs retry forever; one value larger than an evaluation may build
+	// could never be built.
+	if l.InflightBytes < l.AllocBytes {
+		errs = append(errs, fmt.Errorf("inflight_bytes %d must be at least alloc_bytes %d", l.InflightBytes, l.AllocBytes))
+	}
+	if l.ValueBytes > l.AllocBytes {
+		errs = append(errs, fmt.Errorf("value_bytes %d must not exceed alloc_bytes %d", l.ValueBytes, l.AllocBytes))
 	}
 	return errors.Join(errs...)
 }

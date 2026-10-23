@@ -91,3 +91,21 @@ func TestValidateRefusesLimitsBelowOne(t *testing.T) {
 		t.Error("a negative work limit validates")
 	}
 }
+
+func TestValidateRefusesInconsistentMemoryLimits(t *testing.T) {
+	l := DefaultLimits()
+	l.InflightBytes = l.AllocBytes - 1
+	if err := l.Validate(); err == nil || !strings.Contains(err.Error(), "inflight_bytes") {
+		t.Errorf("inflight_bytes below alloc_bytes: Validate() = %v", err)
+	}
+	l = DefaultLimits()
+	l.ValueBytes = l.AllocBytes + 1
+	if err := l.Validate(); err == nil || !strings.Contains(err.Error(), "value_bytes") {
+		t.Errorf("value_bytes above alloc_bytes: Validate() = %v", err)
+	}
+	l = DefaultLimits()
+	l.InflightBytes, l.ValueBytes = l.AllocBytes, l.AllocBytes
+	if err := l.Validate(); err != nil {
+		t.Errorf("inflight_bytes and value_bytes equal to alloc_bytes: %v", err)
+	}
+}
