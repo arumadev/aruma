@@ -233,7 +233,9 @@ func TestRulesThemselves(t *testing.T) {
 
 // stdlibOnly lists the packages that import Go's standard library alone (ADR-021 §1, §2): no
 // module outside the standard library, whose first path element has no dot. TestDependencyRules
-// sees only this module's imports, so this test covers the rest. Test files are held to it too.
+// sees only this module's imports, so this test covers the rest. Test files are held to it too,
+// except that the external tests (package rules_test: the oracle, grammar and fuzz tests, which
+// use the public contract alone) may import the package and its rulestest helpers.
 var stdlibOnly = []string{"internal/platform/rules"}
 
 func TestStandardLibraryOnly(t *testing.T) {
@@ -252,8 +254,12 @@ func TestStandardLibraryOnly(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			external := strings.HasSuffix(path, "_test.go") && strings.HasSuffix(f.Name.Name, "_test")
 			for _, imp := range f.Imports {
 				p := strings.Trim(imp.Path.Value, `"`)
+				if external && (p == module+pkg || strings.HasPrefix(p, module+pkg+"/rulestest")) {
+					continue
+				}
 				if first, _, _ := strings.Cut(p, "/"); strings.Contains(first, ".") {
 					t.Errorf("%s imports %s; the package imports the standard library alone", filepath.Base(path), p)
 				}
