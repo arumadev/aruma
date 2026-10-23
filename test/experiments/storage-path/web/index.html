@@ -1,0 +1,83 @@
+<!doctype html>
+<!-- S0-B web page: firebase/storage 13.1.0 from the gstatic CDN URLs (served locally by run.mjs, as
+     Flutter web loads it), in the mode the query names. window.__done resolves to the results. -->
+<meta charset="utf-8" />
+<title>S0-B storage path</title>
+<script type="module">
+  const params = new URLSearchParams(location.search);
+  const mode = params.get('mode');
+  const aruma = params.get('aruma');
+  const results = [];
+  async function step(op, fn) {
+    try {
+      const detail = await fn();
+      results.push({ op, ok: true, detail: detail === undefined ? '' : String(detail) });
+    } catch (e) {
+      results.push({ op, ok: false, detail: `${e.code ?? ''} ${e.message ?? e}`.trim().slice(0, 240) });
+    }
+  }
+  const redact = (u) => String(u).replace(/token=[^&]*/, 'token=<redacted>');
+
+  window.__done = (async () => {
+    if (mode === 'prod-asis' || mode.startsWith('prod-xhr')) {
+      // The redirect library as it is today: Auth requests through fetch.
+      const { install } = await import('/aruma-web/index.js');
+      install({ url: aruma, log: true });
+    }
+    if (mode.startsWith('prod-xhr')) {
+      const { installStorage } = await import('/aruma-web/storage-spike.js');
+      installStorage({ url: aruma, log: true });
+    }
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js');
+    const st = await import('https://www.gstatic.com/firebasejs/13.1.0/firebase-storage.js');
+    const app = initializeApp({
+      apiKey: 'AIzaS0pathNotARealKey', projectId: 's0path', appId: '1:1:web:s0path',
+      storageBucket: 's0path.appspot.com',
+    });
+    const s = st.getStorage(app);
+    if (mode === 'emulator') st.connectStorageEmulator(s, '127.0.0.1', Number(params.get('emuPort')));
+    // A blocked request is retried until these run out (defaults: 2 and 10 minutes).
+    s.maxOperationRetryTime = 4000;
+    s.maxUploadRetryTime = 4000;
+    results.push({ op: 'init', ok: true, detail: `host=${s.host} protocol=${s._protocol}` });
+
+    const small = new TextEncoder().encode('hello aruma\n');
+    const big = new Uint8Array(3 * 1024 * 1024 + 17).fill(7);
+    const png = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='), (c) => c.charCodeAt(0));
+    const r = (p) => st.ref(s, p);
+    let url;
+    await step('upload.small', () => st.uploadBytes(r('s0/small.txt'), small, { contentType: 'text/plain' }).then(() => ''));
+    await step('upload.resumable3MB', () => st.uploadBytesResumable(r('s0/big.bin'), big, { contentType: 'application/octet-stream' }).then(() => ''));
+    await step('getMetadata', async () => `size=${(await st.getMetadata(r('s0/small.txt'))).size}`);
+    await step('getDownloadURL', async () => redact((url = await st.getDownloadURL(r('s0/small.txt')))));
+    await step('download.getBytes', async () => {
+      const b = await st.getBytes(r('s0/big.bin'));
+      if (b.byteLength !== big.length) throw new Error(`got ${b.byteLength} bytes`);
+      return `${b.byteLength} bytes`;
+    });
+    await step('download.getBlob', async () => `${(await st.getBlob(r('s0/small.txt'))).size} bytes`);
+    await step('list', async () => `${(await st.list(r('s0'))).items.length} items`);
+    await step('downloadURL.fetch', async () => {
+      const res = await fetch(url);
+      return `${res.status} ${(await res.text()).length} bytes from ${new URL(url).host}`;
+    });
+    await step('downloadURL.img', async () => {
+      await st.uploadBytes(r('s0/pixel.png'), png, { contentType: 'image/png' });
+      const u = await st.getDownloadURL(r('s0/pixel.png'));
+      await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = resolve;
+        img.onerror = () => reject(new Error(`<img> failed to load from ${new URL(u).host}`));
+        img.src = u;
+      });
+      return `loaded from ${new URL(u).host}`;
+    });
+    await step('delete', async () => {
+      for (const p of ['s0/small.txt', 's0/big.bin', 's0/pixel.png']) await st.deleteObject(r(p));
+    });
+    return results;
+  })().catch((e) => {
+    results.push({ op: 'page', ok: false, detail: String(e) });
+    return results;
+  });
+</script>
