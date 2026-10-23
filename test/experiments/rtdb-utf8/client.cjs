@@ -6,7 +6,9 @@
 //
 //   node client.cjs <base url> <namespace>
 //
-// It prints one JSON line per check and exits 0 when all pass.
+// It prints one JSON line per check and exits 0 when all pass. A run that has not finished in
+// 120 s fails: a frame the SDK cannot take makes it reconnect and ask again forever, so a
+// framing bug shows as a hang, not as an error.
 const { initializeApp } = require('@firebase/app');
 const { getDatabase, ref, set, get, remove, onValue, off } = require('@firebase/database');
 
@@ -17,6 +19,10 @@ const writer = open('writer');
 const reader = open('reader');
 const say = (o) => console.log(JSON.stringify(o));
 let failed = 0;
+setTimeout(() => {
+  say({ result: 'timeout after 120 s', drops });
+  process.exit(1);
+}, 120000);
 const check = (name, ok, extra = {}) => {
   if (!ok) failed++;
   say({ check: name, ok, ...extra });

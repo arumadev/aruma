@@ -230,12 +230,18 @@ func TestRTDBPathSpellings(t *testing.T) {
 	if m := l.next(); !sameJSON(m, `{"t":"d","d":{"a":"d","b":{"p":"a/b","d":{"w":0}}}}`) {
 		t.Fatalf("first data: %s", m)
 	}
-	// A sibling whose key starts with b reaches no listener of a/b, set or updated from a,
-	// where a/b's listener is below the write and only the children decide: the next push it
-	// gets is the write to a/b itself.
+	// A sibling whose key starts with b reaches no listener of a/b, whether set, updated from
+	// a or from the root, or updated together with a/b, where the listener is concerned and
+	// only comparing keys, not strings, keeps a/bc out.
 	c.put("/a/bc", "other")
-	c.call("m", map[string]any{"p": "/a", "d": map[string]any{"bc": "other", "bcd/e": 1}}).mustOK(t)
+	c.call("m", map[string]any{"p": "/a", "d": map[string]any{"bc": "other"}}).mustOK(t)
+	c.call("m", map[string]any{"p": "/a", "d": map[string]any{"bcd/e": 1}}).mustOK(t)
 	c.call("m", map[string]any{"p": "/", "d": map[string]any{"a/bc": "other"}}).mustOK(t)
+	// An update that reaches a/b and a/bc at once: the listener hears a/b/w alone.
+	c.call("m", map[string]any{"p": "/a", "d": map[string]any{"b/w": 5, "bc": "other"}}).mustOK(t)
+	if m := l.next(); !sameJSON(m, `{"t":"d","d":{"a":"d","b":{"p":"a/b/w","d":5}}}`) {
+		t.Fatalf("after the update of a/b/w and a/bc: %s", m)
+	}
 	c.put("a//b/", map[string]any{"x": 1})
 	if m := l.next(); !sameJSON(m, `{"t":"d","d":{"a":"d","b":{"p":"a/b","d":{"x":1}}}}`) {
 		t.Fatalf("after the write: %s", m)
