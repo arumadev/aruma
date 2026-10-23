@@ -82,6 +82,16 @@ if (bucket) {
   const f2 = bucket.file('s0/big.bin');
   await step('upload.small', () => f1.save(small, { resumable: false, contentType: 'text/plain' }));
   await step('upload.resumable3MB', () => f2.save(big, { resumable: true, contentType: 'application/octet-stream' }));
+  if (scenario.startsWith('gcs-endpoint-')) {
+    // The workaround for save()'s unauthenticated session start with a custom endpoint:
+    // createResumableUpload passes useAuthWithCustomEndpoint (file.js), then save() uses the URI.
+    await step('upload.resumable3MB.createResumableUpload', async () => {
+      const f3 = bucket.file('s0/big-uri.bin');
+      const [uri] = await f3.createResumableUpload({ metadata: { contentType: 'application/octet-stream' } });
+      await f3.save(big, { uri, resumable: true, contentType: 'application/octet-stream' });
+      await f3.delete();
+    });
+  }
   await step('getMetadata', async () => `size=${(await f1.getMetadata())[0].size}`);
   await step('download', async () => {
     const [data] = await f2.download();

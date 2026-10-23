@@ -7,3 +7,5 @@ android/app/build/
 android/local.properties
 android/app/google-services.json
 ios/.generated/
+android/app/src/main/res/raw/
+ios/StoragePath.xcodeproj/

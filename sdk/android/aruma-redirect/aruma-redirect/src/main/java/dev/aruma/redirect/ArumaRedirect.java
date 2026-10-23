@@ -125,6 +125,14 @@ public final class ArumaRedirect {
         return false;
     }
 
+    /**
+     * SPIKE (S0-B, docs/research/storage-production-path.md), not the S6 API: also redirects
+     * {@code https://firebasestorage.googleapis.com}. Read per request, so it can be switched at any time.
+     */
+    public static void setStorageSpike(boolean on) {
+        AuthEndpoints.storageSpike = on;
+    }
+
     /** Test hook: forget the installed state and swap the installer. */
     static void resetForTest(Installer replacement) {
         synchronized (LOCK) {
