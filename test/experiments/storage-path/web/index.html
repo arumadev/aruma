@@ -1,6 +1,7 @@
 <!doctype html>
-<!-- S0-B web page: firebase/storage 13.1.0 from the gstatic CDN URLs (served locally by run.mjs, as
-     Flutter web loads it), in the mode the query names. window.__done resolves to the results. -->
+<!-- S0-B web page: firebase/storage 13.1.0, the CDN build Flutter web loads from www.gstatic.com
+     (served locally by run.mjs under /firebasejs/13.1.0/), in the mode the query names.
+     window.__done resolves to the results. -->
 <meta charset="utf-8" />
 <title>S0-B storage path</title>
 <script type="module">
@@ -28,8 +29,8 @@
       const { installStorage } = await import('/aruma-web/storage-spike.js');
       installStorage({ url: aruma, log: true });
     }
-    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js');
-    const st = await import('https://www.gstatic.com/firebasejs/13.1.0/firebase-storage.js');
+    const { initializeApp } = await import('/firebasejs/13.1.0/firebase-app.js');
+    const st = await import(`/firebasejs/13.1.0/firebase-storage.js${params.get('build') === '1' ? '?build=1' : ''}`);
     const app = initializeApp({
       apiKey: 'AIzaS0pathNotARealKey', projectId: 's0path', appId: '1:1:web:s0path',
       storageBucket: 's0path.appspot.com',

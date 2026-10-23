@@ -433,12 +433,19 @@ func (c *call) firebase(rest string) {
 	switch {
 	case err != nil || !hasO:
 		c.fail(http.StatusNotFound, "fb.unknown", fmt.Sprint("bad path: ", err))
-	case name == "" && q.Get("upload_id") != "":
+	case q.Get("upload_id") != "":
 		c.fbResumable(q.Get("upload_id"))
 	case name == "" && c.r.Method == http.MethodGet:
 		c.list("fb.list", bucket, false)
-	case name == "" && c.r.Method == http.MethodPost:
-		c.fbUpload(bucket, q.Get("name"))
+	case c.r.Method == http.MethodPost:
+		// The web and Android post to /o?name=…; iOS to the object's own path, /o/{name}?name=….
+		if name != "" {
+			c.e.Note = "upload posted to the object path"
+		}
+		if n := q.Get("name"); n != "" {
+			name = n
+		}
+		c.fbUpload(bucket, name)
 	case name == "":
 		c.fail(http.StatusMethodNotAllowed, "fb.unknown", "method")
 	case c.r.Method == http.MethodGet && q.Get("alt") == "media":

@@ -103,6 +103,12 @@ public enum ArumaRedirect {
     lock.lock(); _loaderRan = true; lock.unlock()
   }
 
+  /// SPIKE (S0-B, docs/research/storage-production-path.md), not the S6 API: also redirects
+  /// `https://firebasestorage.googleapis.com`. Read per request, so it can be switched at any time.
+  public static func setStorageSpike(_ on: Bool) {
+    AuthEndpoints.storageSpike = on
+  }
+
   /// Test hook: forget the installed mode. The URLProtocol stays registered and passes everything through.
   static func reset() {
     lock.lock(); _mode = nil; _logRequests = false; lock.unlock()
