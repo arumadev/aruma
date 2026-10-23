@@ -267,6 +267,19 @@ func TestEmulatorApps(t *testing.T) {
 		a.agree, a.differ, 100*float64(a.agree)/float64(a.agree+a.differ))
 }
 
+// TestEmulatorNulls replays the writes that leave validated nodes null (nulls.mjs): .validate
+// is skipped where the new data is null and runs everywhere else the write reaches. Lark
+// 0.3.0 fixed both directions in its engine (a null in a multi-path update denied, the
+// removal of a required child allowed); Aruma agreed with the emulator on every case here.
+func TestEmulatorNulls(t *testing.T) {
+	gf := readGolden(t, "nulls.golden.json")
+	a := replayGolden(t, gf, nil)
+	if a.agree < 100 {
+		t.Fatalf("only %d verdicts replayed", a.agree)
+	}
+	t.Logf("emulator nulls: %d verdicts agree, %d differ", a.agree, a.differ)
+}
+
 // knownLoadDifferences are rules documents Aruma loads differently from the emulator.
 var knownLoadDifferences = map[string]string{
 	".read: data.getPriority() == null":          "getPriority() is refused (decision Q4)",

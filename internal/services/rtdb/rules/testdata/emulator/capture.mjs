@@ -4,6 +4,7 @@
 //   java -jar ~/.cache/firebase/emulators/firebase-database-emulator-v4.11.2.jar --host 127.0.0.1 --port 9450
 //   node capture.mjs matrix.mjs matrix.golden.json 9450
 //   node capture.mjs apps.mjs apps.golden.json 9450
+//   node capture.mjs nulls.mjs nulls.golden.json 9450
 //
 // A matrix module exports {groups, loads}. A group is rules (an object, or rulesText: the raw
 // document, comments and all), the data stored before each check, and checks. Every check runs

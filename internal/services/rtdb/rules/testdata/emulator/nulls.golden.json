@@ -1,0 +1,644 @@
+{
+ "provenance": {
+  "source": "Firebase Realtime Database emulator, run locally; no Firebase project was contacted",
+  "jar": "firebase-database-emulator-v4.11.2.jar",
+  "java": "Temurin 19.0.2",
+  "captured": "2026-10-23",
+  "script": "capture.mjs",
+  "matrix": "nulls.mjs",
+  "transports": "REST (GET/PUT/PATCH/DELETE .json) and protocol v5 over WebSocket (q, p, m, o, om, oc)",
+  "auth": "none, or an unsigned alg:none ID token whose claims are listed under token",
+  "verdicts": "allow, deny, or \"error <status> <message>\" for an answer that is not a rules decision"
+ },
+ "loads": [],
+ "groups": [
+  {
+   "name": "required fields",
+   "rules": {
+    "rules": {
+     "items": {
+      "$id": {
+       ".write": true,
+       ".validate": "newData.hasChildren(['a', 'b'])",
+       "a": {
+        ".validate": "newData.isString()"
+       },
+       "b": {
+        ".validate": "newData.isNumber()"
+       },
+       "c": {
+        ".validate": "newData.isBoolean()"
+       },
+       "$other": {
+        ".validate": false
+       }
+      }
+     }
+    }
+   },
+   "data": {
+    "items": {
+     "x": {
+      "a": "s",
+      "b": 1,
+      "c": true
+     },
+     "y": {
+      "a": "t",
+      "b": 2
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "update",
+     "path": "/items/x",
+     "value": {
+      "c": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "items/x/c": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "items/x/c": null,
+      "items/y/c": true
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/items/x",
+     "value": {
+      "a": "new",
+      "c": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "delete",
+     "path": "/items/x/c",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/items/x/c",
+     "value": null,
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/items/x/c",
+     "value": {},
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/items/x",
+     "value": {
+      "a": "s",
+      "b": 1,
+      "c": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/items/x",
+     "value": {
+      "a": null
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "items/x/a": null
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "items/x/a": null,
+      "items/y/c": true
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "delete",
+     "path": "/items/x/a",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/items/x/a",
+     "value": null,
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/items/x",
+     "value": {
+      "a": null,
+      "b": 1
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "delete",
+     "path": "/items/x",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/items",
+     "value": {
+      "x": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "items/x/a": null,
+      "items/x/b": null,
+      "items/x/c": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "items/x": null,
+      "items/z": {
+       "a": "u",
+       "b": 3
+      }
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "items/x": null,
+      "items/z": {
+       "a": "u"
+      }
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/items/x",
+     "value": {
+      "d": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/items/x",
+     "value": {
+      "d": 1
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "/items/x/c/": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "/items/x/a/": null
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "items//x/a": null
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "onDisconnectSet",
+     "path": "/items/x/c",
+     "value": null,
+     "auth": null,
+     "ws": "allow"
+    },
+    {
+     "op": "onDisconnectSet",
+     "path": "/items/x/a",
+     "value": null,
+     "auth": null,
+     "ws": "deny"
+    },
+    {
+     "op": "onDisconnectUpdate",
+     "path": "/items/x",
+     "value": {
+      "c": null
+     },
+     "auth": null,
+     "ws": "allow"
+    },
+    {
+     "op": "onDisconnectUpdate",
+     "path": "/items/x",
+     "value": {
+      "a": null
+     },
+     "auth": null,
+     "ws": "deny"
+    }
+   ]
+  },
+  {
+   "name": "validate false",
+   "rules": {
+    "rules": {
+     "locked": {
+      ".write": true,
+      "$k": {
+       ".validate": false
+      }
+     }
+    }
+   },
+   "data": {
+    "locked": {
+     "k": 1,
+     "j": 2
+    }
+   },
+   "checks": [
+    {
+     "op": "delete",
+     "path": "/locked/k",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/locked",
+     "value": {
+      "k": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "locked/k": null,
+      "locked/j": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/locked/k",
+     "value": 2,
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "locked/k": null,
+      "locked/n": 1
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "set",
+     "path": "/locked",
+     "value": {
+      "k": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/locked",
+     "value": null,
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    }
+   ]
+  },
+  {
+   "name": "validate false on the parent",
+   "rules": {
+    "rules": {
+     "v": {
+      ".write": true,
+      ".validate": false
+     }
+    }
+   },
+   "data": {
+    "v": {
+     "a": 1,
+     "b": 2
+    }
+   },
+   "checks": [
+    {
+     "op": "delete",
+     "path": "/v",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "delete",
+     "path": "/v/a",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/v",
+     "value": {
+      "a": null
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/v",
+     "value": {
+      "a": null,
+      "b": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "v/a": null,
+      "v/b": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/v/a",
+     "value": 3,
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    }
+   ]
+  },
+  {
+   "name": "validate only null",
+   "rules": {
+    "rules": {
+     "w": {
+      "$k": {
+       ".write": true,
+       ".validate": "!newData.exists()"
+      }
+     }
+    }
+   },
+   "data": {
+    "w": {
+     "a": 1
+    }
+   },
+   "checks": [
+    {
+     "op": "delete",
+     "path": "/w/a",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/w",
+     "value": {
+      "a": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/w",
+     "value": {
+      "a": null,
+      "b": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "set",
+     "path": "/w/a",
+     "value": 1,
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/w",
+     "value": {
+      "a": null,
+      "b": 1
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    }
+   ]
+  },
+  {
+   "name": "nested required",
+   "rules": {
+    "rules": {
+     "p": {
+      ".write": true,
+      ".validate": "newData.hasChild('q')",
+      "q": {
+       ".validate": "newData.hasChild('r')",
+       "r": {
+        ".validate": "newData.isNumber()"
+       },
+       "s": {
+        ".validate": "newData.isNumber()"
+       }
+      }
+     }
+    }
+   },
+   "data": {
+    "p": {
+     "q": {
+      "r": 1,
+      "s": 2
+     }
+    }
+   },
+   "checks": [
+    {
+     "op": "delete",
+     "path": "/p/q/s",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "delete",
+     "path": "/p/q/r",
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/p/q",
+     "value": {
+      "r": null
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "p/q/r": null,
+      "p/q/s": null
+     },
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "delete",
+     "path": "/p/q",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "delete",
+     "path": "/p",
+     "auth": null,
+     "rest": "allow",
+     "ws": "allow"
+    },
+    {
+     "op": "update",
+     "path": "/",
+     "value": {
+      "p/q": null,
+      "p/t": 1
+     },
+     "auth": null,
+     "rest": "deny",
+     "ws": "deny"
+    }
+   ]
+  }
+ ]
+}
