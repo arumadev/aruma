@@ -163,7 +163,7 @@ func TestRegexProgramIsBounded(t *testing.T) {
 	lim := DefaultLimits()
 	for _, pattern := range []string{
 		strings.Repeat(`\pL{1000}`, 3000),
-		strings.Repeat(`\pL{0}`, 5000),         // few instructions, a dear parse
+		strings.Repeat(`\pL{0}`, 5000),          // few instructions, a dear parse
 		strings.Repeat(`(?:)`, 20_000),          // a long pattern of nothing
 		strings.Repeat(`(\pL{1000}){1000}`, 10), // refused by the parser itself
 		`((((a{100}){100}){100}){100})`,
