@@ -1,0 +1,25 @@
+{
+  "name": "rules-firestore-builtins-time-and-math",
+  "matrixRow": "firestore-rules#160",
+  "rowIds": [
+    "firestore-rules#160"
+  ],
+  "description": "Firestore Rules Test API verdicts for corpus scenario \"builtins-time-and-math\" (FM3). Simulator throws on math.*, timestamp.*, duration.* — agent rules using these silently deny in the simulator while production evaluates them.",
+  "observedAt": "2026-07-21T23:43:01.755Z",
+  "fbSdkVersion": "12.13.0",
+  "projectId": "digame-mas",
+  "inputDigest": {
+    "algorithm": "sha256",
+    "value": "2b8f772957be6a27ff65061d6293d227c7b538af406dc0c803c041151381d373"
+  },
+  "behavior": {
+    "math.abs(-75) <= 100 → ALLOW": "ALLOW",
+    "math.abs(200) <= 100 → DENY": "DENY",
+    "math.ceil(99.3) = 100 <= 100 → ALLOW": "ALLOW",
+    "math.ceil(100.1) = 101 <= 100 → DENY": "DENY",
+    "timestamp.date(2099,1,1) > timestamp.date(2025,1,1) → ALLOW": "ALLOW",
+    "timestamp.date(2025,1,1) > timestamp.date(2099,1,1) → DENY": "DENY",
+    "duration.value(2,'h') > duration.value(1,'h') → ALLOW": "ALLOW",
+    "duration.value(1,'h') > duration.value(2,'h') → DENY": "DENY"
+  }
+}

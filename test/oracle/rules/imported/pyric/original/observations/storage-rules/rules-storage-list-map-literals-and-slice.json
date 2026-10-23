@@ -1,0 +1,1511 @@
+{
+  "name": "rules-storage-list-map-literals-and-slice",
+  "matrixRow": "",
+  "rowIds": [
+    "storage-rules#122"
+  ],
+  "description": "Storage Rules Test API verdicts for corpus scenario \"list-map-literals-and-slice\" (Coverage: list/map literals, slice [i:j], OOB slice errors). Slices on split() lists and on strings must evaluate, list literals must compare by value, and an out-of-bounds slice end must error → deny (production does not clamp).",
+  "observedAt": "2026-09-30T04:33:26.997Z",
+  "fbSdkVersion": "12.13.0",
+  "projectId": "digame-mas",
+  "inputDigest": {
+    "algorithm": "sha256",
+    "value": "cd1f7625fbe0ab31500fc3580abb626011c71b18901c62b494a764a3bec7d2d8"
+  },
+  "behavior": {
+    "list mid-slice of split() → size 2 → ALLOW": "ALLOW",
+    "slice end beyond split() length errors → DENY": "DENY",
+    "slice == list literal → ALLOW": "ALLOW",
+    "slice == list literal (different segments) → DENY": "DENY",
+    "OOB slice end [0:9] errors, does not clamp → DENY": "DENY",
+    "string slice [1:4] is substring → ALLOW": "ALLOW",
+    "list slice [0:0] is an index error → DENY": "DENY",
+    "list slice [n:n] is an index error → DENY": "DENY",
+    "list slice [n-1:n-1] → empty → ALLOW": "ALLOW",
+    "list slice [n-1:n] → last element → ALLOW": "ALLOW",
+    "list slice [1:0] is an index error → DENY": "DENY",
+    "list slice start after end is a range error → DENY": "DENY",
+    "empty list slice [0:0] is an index error → DENY": "DENY",
+    "string slice [0:0] is an index error → DENY": "DENY",
+    "string slice [1:1] → empty string → ALLOW": "ALLOW",
+    "string slice [n-1:n-1] → empty string → ALLOW": "ALLOW",
+    "string slice [n:n] is an index error → DENY": "DENY",
+    "string slice start after end is a range error → DENY": "DENY",
+    "empty string slice [0:0] is an index error → DENY": "DENY",
+    "list index in range → ALLOW": "ALLOW",
+    "list index past the end is an index error → DENY": "DENY",
+    "negative list index is an index error → DENY": "DENY",
+    "string key on a list is an error → DENY": "DENY",
+    "equality: an int equals a float of the same value": "ALLOW",
+    "equality: a List of an int does not equal a List of a float": "DENY",
+    "equality: != between a List of an int and a List of a float is true": "ALLOW",
+    "equality: a List of a float does not equal a List of an int": "DENY",
+    "equality: one float element makes Lists unequal": "DENY",
+    "equality: nested Lists compare element types": "DENY",
+    "equality: a Map of an int does not equal a Map of a float": "DENY",
+    "equality: != between a Map of an int and a Map of a float is true": "ALLOW",
+    "equality: a Map value List compares element types": "DENY",
+    "equality: an element read from a List equals a float of the same value": "ALLOW",
+    "equality: a value read from a Map equals a float of the same value": "ALLOW",
+    "equality: Lists of equal floats are equal": "ALLOW",
+    "equality: Maps of equal floats are equal": "ALLOW",
+    "equality: an int zero equals a negative float zero": "ALLOW",
+    "equality: a List of 0.0 does not equal a List of -0.0": "DENY",
+    "equality: Lists of -0.0 are equal": "ALLOW",
+    "equality: a Map of -0.0 does not equal a Map of 0.0": "DENY",
+    "equality: NaN does not equal NaN": "DENY",
+    "equality: a List of NaN does not equal a List of NaN": "DENY",
+    "fileId.split('-').length == 4 (dot length on a list) → DENY": "DENY",
+    "fileId.split('-').length != 99 (dot length on a list) → DENY": "DENY",
+    "!(fileId.split('-').length == 4) (dot length on a list) → DENY": "DENY",
+    "fileId.split('-').length == 4 || true (dot length on a list) → ALLOW": "ALLOW",
+    "fileId.split('-').size == 4 (dot size without a call on a list) → DENY": "DENY",
+    "fileId.split('-').size != 99 (dot size without a call on a list) → DENY": "DENY",
+    "!(fileId.split('-').size == 4) (dot size without a call on a list) → DENY": "DENY",
+    "fileId.split('-').size == 4 || true (dot size without a call on a list) → ALLOW": "ALLOW",
+    "'abc'[0] == 'a' (int index on a string) → ALLOW": "ALLOW",
+    "'abc'[0] != 'zz' (int index on a string) → ALLOW": "ALLOW",
+    "!('abc'[0] == 'a') (int index on a string) → DENY": "DENY",
+    "'abc'[0] == 'a' || true (int index on a string) → ALLOW": "ALLOW",
+    "'abc'['length'] == 3 (string key on a string) → DENY": "DENY",
+    "'abc'['length'] != 99 (string key on a string) → DENY": "DENY",
+    "!('abc'['length'] == 3) (string key on a string) → DENY": "DENY",
+    "'abc'['length'] == 3 || true (string key on a string) → ALLOW": "ALLOW",
+    "fileId.length == 7 (dot length on a string) → DENY": "DENY",
+    "fileId.length != 99 (dot length on a string) → DENY": "DENY",
+    "!(fileId.length == 7) (dot length on a string) → DENY": "DENY",
+    "fileId.length == 7 || true (dot length on a string) → ALLOW": "ALLOW",
+    "request.path[0] == 'b' (int index on a path) → ALLOW": "ALLOW",
+    "request.path[0] != 'zz' (int index on a path) → ALLOW": "ALLOW",
+    "!(request.path[0] == 'b') (int index on a path) → DENY": "DENY",
+    "request.path[0] == 'b' || true (int index on a path) → ALLOW": "ALLOW",
+    "request.path['segments'] == null (unbound string key on a path) → DENY": "DENY",
+    "request.path['segments'] != 'zz' (unbound string key on a path) → DENY": "DENY",
+    "!(request.path['segments'] == null) (unbound string key on a path) → DENY": "DENY",
+    "request.path['segments'] == null || true (unbound string key on a path) → ALLOW": "ALLOW",
+    "request.path.segments == null (unbound name by dot access on a path) → DENY": "DENY",
+    "request.path.segments != 'zz' (unbound name by dot access on a path) → DENY": "DENY",
+    "!(request.path.segments == null) (unbound name by dot access on a path) → DENY": "DENY",
+    "request.path.segments == null || true (unbound name by dot access on a path) → ALLOW": "ALLOW",
+    "timestamp.value(0)[0] == null (int index on a timestamp) → DENY": "DENY",
+    "timestamp.value(0)[0] != 'zz' (int index on a timestamp) → DENY": "DENY",
+    "!(timestamp.value(0)[0] == null) (int index on a timestamp) → DENY": "DENY",
+    "timestamp.value(0)[0] == null || true (int index on a timestamp) → ALLOW": "ALLOW",
+    "latlng.value(1.0, 2.0)[0] == null (int index on a latlng) → DENY": "DENY",
+    "latlng.value(1.0, 2.0)[0] != 'zz' (int index on a latlng) → DENY": "DENY",
+    "!(latlng.value(1.0, 2.0)[0] == null) (int index on a latlng) → DENY": "DENY",
+    "latlng.value(1.0, 2.0)[0] == null || true (int index on a latlng) → ALLOW": "ALLOW",
+    "duration.value(1, 'h')[0] == null (int index on a duration) → DENY": "DENY",
+    "duration.value(1, 'h')[0] != 'zz' (int index on a duration) → DENY": "DENY",
+    "!(duration.value(1, 'h')[0] == null) (int index on a duration) → DENY": "DENY",
+    "duration.value(1, 'h')[0] == null || true (int index on a duration) → ALLOW": "ALLOW",
+    "{'a': 1}.size == 1 (dot size without a call on a map) → DENY": "DENY",
+    "{'a': 1}.size != 99 (dot size without a call on a map) → DENY": "DENY",
+    "!({'a': 1}.size == 1) (dot size without a call on a map) → DENY": "DENY",
+    "{'a': 1}.size == 1 || true (dot size without a call on a map) → ALLOW": "ALLOW"
+  },
+  "diagnostics": {
+    "list mid-slice of split() → size 2 → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 6,
+              "column": 22,
+              "currentOffset": 197,
+              "endOffset": 202
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "slice end beyond split() length errors → DENY": {
+      "notes": [
+        "Error: storage.rules line [6], column [22]. Index out of bound error. Index: [1] , size: [1]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 6,
+          "column": 22,
+          "currentOffset": 197,
+          "endOffset": 202
+        }
+      }
+    },
+    "slice == list literal → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 8,
+              "column": 24,
+              "currentOffset": 303,
+              "endOffset": 308
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "slice == list literal (different segments) → DENY": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 8,
+              "column": 24,
+              "currentOffset": 303,
+              "endOffset": 308
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "OOB slice end [0:9] errors, does not clamp → DENY": {
+      "notes": [
+        "Error: storage.rules line [10], column [24]. Index out of bound error. Index: [8] , size: [3]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 10,
+          "column": 24,
+          "currentOffset": 443,
+          "endOffset": 448
+        }
+      }
+    },
+    "string slice [1:4] is substring → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 12,
+              "column": 24,
+              "currentOffset": 545,
+              "endOffset": 552
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list slice [0:0] is an index error → DENY": {
+      "notes": [
+        "Error: storage.rules line [16], column [51]. Index out of bound error. Index: [-1] , size: [4]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 16,
+          "column": 51,
+          "currentOffset": 728,
+          "endOffset": 733
+        }
+      }
+    },
+    "list slice [n:n] is an index error → DENY": {
+      "notes": [
+        "Error: storage.rules line [17], column [49]. Index out of bound error. Index: [4] , size: [4]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 17,
+          "column": 49,
+          "currentOffset": 814,
+          "endOffset": 819
+        }
+      }
+    },
+    "list slice [n-1:n-1] → empty → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 18,
+              "column": 52,
+              "currentOffset": 903,
+              "endOffset": 908
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list slice [n-1:n] → last element → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 19,
+              "column": 54,
+              "currentOffset": 994,
+              "endOffset": 999
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list slice [1:0] is an index error → DENY": {
+      "notes": [
+        "Error: storage.rules line [20], column [57]. Index out of bound error. Index: [-1] , size: [4]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 20,
+          "column": 57,
+          "currentOffset": 1085,
+          "endOffset": 1090
+        }
+      }
+    },
+    "list slice start after end is a range error → DENY": {
+      "notes": [
+        "Error: storage.rules line [21], column [56]. Illegal range error. From index: [3] , To index: [1]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 21,
+          "column": 56,
+          "currentOffset": 1178,
+          "endOffset": 1183
+        }
+      }
+    },
+    "empty list slice [0:0] is an index error → DENY": {
+      "notes": [
+        "Error: storage.rules line [22], column [56]. Index out of bound error. Index: [0] , size: [0]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 22,
+          "column": 56,
+          "currentOffset": 1271,
+          "endOffset": 1271
+        }
+      }
+    },
+    "string slice [0:0] is an index error → DENY": {
+      "notes": [
+        "Error: storage.rules line [23], column [50]. Index out of bound error. Index: [-1] , size: [5]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 23,
+          "column": 50,
+          "currentOffset": 1337,
+          "endOffset": 1342
+        }
+      }
+    },
+    "string slice [1:1] → empty string → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 24,
+              "column": 48,
+              "currentOffset": 1405,
+              "endOffset": 1410
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "string slice [n-1:n-1] → empty string → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 25,
+              "column": 51,
+              "currentOffset": 1476,
+              "endOffset": 1481
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "string slice [n:n] is an index error → DENY": {
+      "notes": [
+        "Error: storage.rules line [26], column [48]. Index out of bound error. Index: [5] , size: [5]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 26,
+          "column": 48,
+          "currentOffset": 1544,
+          "endOffset": 1549
+        }
+      }
+    },
+    "string slice start after end is a range error → DENY": {
+      "notes": [
+        "Error: storage.rules line [27], column [55]. Illegal range error. From index: [2] , To index: [1]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 27,
+          "column": 55,
+          "currentOffset": 1619,
+          "endOffset": 1624
+        }
+      }
+    },
+    "empty string slice [0:0] is an index error → DENY": {
+      "notes": [
+        "Error: storage.rules line [28], column [55]. Index out of bound error. Index: [0] , size: [0]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 28,
+          "column": 55,
+          "currentOffset": 1694,
+          "endOffset": 1695
+        }
+      }
+    },
+    "list index in range → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 30,
+              "column": 55,
+              "currentOffset": 1830,
+              "endOffset": 1835
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "list index past the end is an index error → DENY": {
+      "notes": [
+        "Error: storage.rules line [31], column [55]. Index out of bound error. Index: [5] , size: [4]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 31,
+          "column": 55,
+          "currentOffset": 1915,
+          "endOffset": 1920
+        }
+      }
+    },
+    "negative list index is an index error → DENY": {
+      "notes": [
+        "Error: storage.rules line [32], column [56]. Index out of bound error. Index: [-1] , size: [4]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 32,
+          "column": 56,
+          "currentOffset": 2002,
+          "endOffset": 2007
+        }
+      }
+    },
+    "string key on a list is an error → DENY": {
+      "notes": [
+        "Error: storage.rules line [33], column [57]. Unsupported operation error. Received: list[string]. Expected: list[int]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 33,
+          "column": 57,
+          "currentOffset": 2090,
+          "endOffset": 2095
+        }
+      }
+    },
+    "equality: an int equals a float of the same value": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 35,
+              "column": 49,
+              "currentOffset": 2234,
+              "endOffset": 2234
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "equality: a List of an int does not equal a List of a float": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 36,
+              "column": 49,
+              "currentOffset": 2294,
+              "endOffset": 2294
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "equality: != between a List of an int and a List of a float is true": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 37,
+              "column": 49,
+              "currentOffset": 2358,
+              "endOffset": 2358
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "equality: a List of a float does not equal a List of an int": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 38,
+              "column": 49,
+              "currentOffset": 2422,
+              "endOffset": 2422
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "equality: one float element makes Lists unequal": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 39,
+              "column": 49,
+              "currentOffset": 2486,
+              "endOffset": 2486
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "equality: nested Lists compare element types": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 40,
+              "column": 49,
+              "currentOffset": 2556,
+              "endOffset": 2556
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "equality: a Map of an int does not equal a Map of a float": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 41,
+              "column": 49,
+              "currentOffset": 2624,
+              "endOffset": 2624
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "equality: != between a Map of an int and a Map of a float is true": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 42,
+              "column": 49,
+              "currentOffset": 2698,
+              "endOffset": 2698
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "equality: a Map value List compares element types": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 43,
+              "column": 49,
+              "currentOffset": 2772,
+              "endOffset": 2772
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "equality: an element read from a List equals a float of the same value": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 44,
+              "column": 49,
+              "currentOffset": 2850,
+              "endOffset": 2850
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "equality: a value read from a Map equals a float of the same value": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 45,
+              "column": 50,
+              "currentOffset": 2916,
+              "endOffset": 2916
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "equality: Lists of equal floats are equal": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 46,
+              "column": 50,
+              "currentOffset": 2986,
+              "endOffset": 2986
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "equality: Maps of equal floats are equal": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 47,
+              "column": 50,
+              "currentOffset": 3053,
+              "endOffset": 3053
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "equality: an int zero equals a negative float zero": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 48,
+              "column": 50,
+              "currentOffset": 3130,
+              "endOffset": 3130
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "equality: a List of 0.0 does not equal a List of -0.0": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 49,
+              "column": 50,
+              "currentOffset": 3192,
+              "endOffset": 3192
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "equality: Lists of -0.0 are equal": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 50,
+              "column": 50,
+              "currentOffset": 3260,
+              "endOffset": 3260
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "equality: a Map of -0.0 does not equal a Map of 0.0": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 51,
+              "column": 50,
+              "currentOffset": 3329,
+              "endOffset": 3329
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "equality: NaN does not equal NaN": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 52,
+              "column": 50,
+              "currentOffset": 3407,
+              "endOffset": 3411
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "equality: a List of NaN does not equal a List of NaN": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 53,
+              "column": 50,
+              "currentOffset": 3488,
+              "endOffset": 3488
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "fileId.split('-').length == 4 (dot length on a list) → DENY": {
+      "notes": [
+        "Error: storage.rules line [57], column [53]. Type error. Received: [list] Expected: [map,path]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 57,
+          "column": 53,
+          "currentOffset": 3747,
+          "endOffset": 3752
+        }
+      }
+    },
+    "fileId.split('-').length != 99 (dot length on a list) → DENY": {
+      "notes": [
+        "Error: storage.rules line [58], column [53]. Type error. Received: [list] Expected: [map,path]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 58,
+          "column": 53,
+          "currentOffset": 3832,
+          "endOffset": 3837
+        }
+      }
+    },
+    "!(fileId.split('-').length == 4) (dot length on a list) → DENY": {
+      "notes": [
+        "Error: storage.rules line [59], column [56]. Type error. Received: [list] Expected: [map,path]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 59,
+          "column": 56,
+          "currentOffset": 3921,
+          "endOffset": 3926
+        }
+      }
+    },
+    "fileId.split('-').length == 4 || true (dot length on a list) → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 60,
+              "column": 57,
+              "currentOffset": 4011,
+              "endOffset": 4016
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "fileId.split('-').size == 4 (dot size without a call on a list) → DENY": {
+      "notes": [
+        "Error: storage.rules line [62], column [56]. Type error. Received: [list] Expected: [map,path]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 62,
+          "column": 56,
+          "currentOffset": 4149,
+          "endOffset": 4154
+        }
+      }
+    },
+    "fileId.split('-').size != 99 (dot size without a call on a list) → DENY": {
+      "notes": [
+        "Error: storage.rules line [63], column [56]. Type error. Received: [list] Expected: [map,path]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 63,
+          "column": 56,
+          "currentOffset": 4235,
+          "endOffset": 4240
+        }
+      }
+    },
+    "!(fileId.split('-').size == 4) (dot size without a call on a list) → DENY": {
+      "notes": [
+        "Error: storage.rules line [64], column [59]. Type error. Received: [list] Expected: [map,path]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 64,
+          "column": 59,
+          "currentOffset": 4325,
+          "endOffset": 4330
+        }
+      }
+    },
+    "fileId.split('-').size == 4 || true (dot size without a call on a list) → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 65,
+              "column": 60,
+              "currentOffset": 4416,
+              "endOffset": 4421
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "'abc'[0] == 'a' (int index on a string) → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 67,
+              "column": 51,
+              "currentOffset": 4535,
+              "endOffset": 4539
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "'abc'[0] != 'zz' (int index on a string) → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 68,
+              "column": 51,
+              "currentOffset": 4604,
+              "endOffset": 4608
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "!('abc'[0] == 'a') (int index on a string) → DENY": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 69,
+              "column": 52,
+              "currentOffset": 4675,
+              "endOffset": 4675
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "'abc'[0] == 'a' || true (int index on a string) → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 70,
+              "column": 55,
+              "currentOffset": 4751,
+              "endOffset": 4755
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "'abc'['length'] == 3 (string key on a string) → DENY": {
+      "notes": [
+        "Error: storage.rules line [72], column [55]. Unsupported operation error. Received: string[string]. Expected: string[int]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 72,
+          "column": 55,
+          "currentOffset": 4863,
+          "endOffset": 4867
+        }
+      }
+    },
+    "'abc'['length'] != 99 (string key on a string) → DENY": {
+      "notes": [
+        "Error: storage.rules line [73], column [55]. Unsupported operation error. Received: string[string]. Expected: string[int]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 73,
+          "column": 55,
+          "currentOffset": 4941,
+          "endOffset": 4945
+        }
+      }
+    },
+    "!('abc'['length'] == 3) (string key on a string) → DENY": {
+      "notes": [
+        "Error: storage.rules line [74], column [58]. Unsupported operation error. Received: string[string]. Expected: string[int]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 74,
+          "column": 58,
+          "currentOffset": 5023,
+          "endOffset": 5027
+        }
+      }
+    },
+    "'abc'['length'] == 3 || true (string key on a string) → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 75,
+              "column": 59,
+              "currentOffset": 5106,
+              "endOffset": 5110
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "fileId.length == 7 (dot length on a string) → DENY": {
+      "notes": [
+        "Error: storage.rules line [77], column [52]. Type error. Received: [string] Expected: [map,path]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 77,
+          "column": 52,
+          "currentOffset": 5220,
+          "endOffset": 5225
+        }
+      }
+    },
+    "fileId.length != 99 (dot length on a string) → DENY": {
+      "notes": [
+        "Error: storage.rules line [78], column [52]. Type error. Received: [string] Expected: [map,path]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 78,
+          "column": 52,
+          "currentOffset": 5293,
+          "endOffset": 5298
+        }
+      }
+    },
+    "!(fileId.length == 7) (dot length on a string) → DENY": {
+      "notes": [
+        "Error: storage.rules line [79], column [55]. Type error. Received: [string] Expected: [map,path]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 79,
+          "column": 55,
+          "currentOffset": 5370,
+          "endOffset": 5375
+        }
+      }
+    },
+    "fileId.length == 7 || true (dot length on a string) → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 80,
+              "column": 56,
+              "currentOffset": 5448,
+              "endOffset": 5453
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "request.path[0] == 'b' (int index on a path) → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 82,
+              "column": 52,
+              "currentOffset": 5557,
+              "endOffset": 5563
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "request.path[0] != 'zz' (int index on a path) → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 83,
+              "column": 52,
+              "currentOffset": 5634,
+              "endOffset": 5640
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "!(request.path[0] == 'b') (int index on a path) → DENY": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 84,
+              "column": 53,
+              "currentOffset": 5713,
+              "endOffset": 5713
+            },
+            "value": false
+          }
+        ]
+      }
+    },
+    "request.path[0] == 'b' || true (int index on a path) → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 85,
+              "column": 56,
+              "currentOffset": 5797,
+              "endOffset": 5803
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "request.path['segments'] == null (unbound string key on a path) → DENY": {
+      "notes": [
+        "Error: storage.rules line [87], column [58]. Property segments is undefined on object."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 87,
+          "column": 58,
+          "currentOffset": 5925,
+          "endOffset": 5931
+        }
+      }
+    },
+    "request.path['segments'] != 'zz' (unbound string key on a path) → DENY": {
+      "notes": [
+        "Error: storage.rules line [88], column [58]. Property segments is undefined on object."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 88,
+          "column": 58,
+          "currentOffset": 6018,
+          "endOffset": 6024
+        }
+      }
+    },
+    "!(request.path['segments'] == null) (unbound string key on a path) → DENY": {
+      "notes": [
+        "Error: storage.rules line [89], column [61]. Property segments is undefined on object."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 89,
+          "column": 61,
+          "currentOffset": 6114,
+          "endOffset": 6120
+        }
+      }
+    },
+    "request.path['segments'] == null || true (unbound string key on a path) → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 90,
+              "column": 62,
+              "currentOffset": 6212,
+              "endOffset": 6218
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "request.path.segments == null (unbound name by dot access on a path) → DENY": {
+      "notes": [
+        "Error: storage.rules line [92], column [58]. Property segments is undefined on object."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 92,
+          "column": 58,
+          "currentOffset": 6363,
+          "endOffset": 6369
+        }
+      }
+    },
+    "request.path.segments != 'zz' (unbound name by dot access on a path) → DENY": {
+      "notes": [
+        "Error: storage.rules line [93], column [58]. Property segments is undefined on object."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 93,
+          "column": 58,
+          "currentOffset": 6453,
+          "endOffset": 6459
+        }
+      }
+    },
+    "!(request.path.segments == null) (unbound name by dot access on a path) → DENY": {
+      "notes": [
+        "Error: storage.rules line [94], column [61]. Property segments is undefined on object."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 94,
+          "column": 61,
+          "currentOffset": 6546,
+          "endOffset": 6552
+        }
+      }
+    },
+    "request.path.segments == null || true (unbound name by dot access on a path) → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 95,
+              "column": 62,
+              "currentOffset": 6641,
+              "endOffset": 6647
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "timestamp.value(0)[0] == null (int index on a timestamp) → DENY": {
+      "notes": [
+        "Error: storage.rules line [97], column [57]. Function not found error: Name: [[]]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 97,
+          "column": 57,
+          "currentOffset": 6771,
+          "endOffset": 6779
+        },
+        "functionCalls": [
+          {
+            "function": "[]",
+            "args": [
+              0
+            ]
+          }
+        ]
+      }
+    },
+    "timestamp.value(0)[0] != 'zz' (int index on a timestamp) → DENY": {
+      "notes": [
+        "Error: storage.rules line [98], column [57]. Function not found error: Name: [[]]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 98,
+          "column": 57,
+          "currentOffset": 6860,
+          "endOffset": 6868
+        },
+        "functionCalls": [
+          {
+            "function": "[]",
+            "args": [
+              0
+            ]
+          }
+        ]
+      }
+    },
+    "!(timestamp.value(0)[0] == null) (int index on a timestamp) → DENY": {
+      "notes": [
+        "Error: storage.rules line [99], column [60]. Function not found error: Name: [[]]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 99,
+          "column": 60,
+          "currentOffset": 6952,
+          "endOffset": 6960
+        },
+        "functionCalls": [
+          {
+            "function": "[]",
+            "args": [
+              0
+            ]
+          }
+        ]
+      }
+    },
+    "timestamp.value(0)[0] == null || true (int index on a timestamp) → ALLOW": {
+      "api": {
+        "functionCalls": [
+          {
+            "function": "[]",
+            "args": [
+              0
+            ]
+          }
+        ],
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 100,
+              "column": 61,
+              "currentOffset": 7046,
+              "endOffset": 7054
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "latlng.value(1.0, 2.0)[0] == null (int index on a latlng) → DENY": {
+      "notes": [
+        "Error: storage.rules line [102], column [54]. Function not found error: Name: [[]]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 102,
+          "column": 54,
+          "currentOffset": 7170,
+          "endOffset": 7175
+        },
+        "functionCalls": [
+          {
+            "function": "[]",
+            "args": [
+              0
+            ]
+          }
+        ]
+      }
+    },
+    "latlng.value(1.0, 2.0)[0] != 'zz' (int index on a latlng) → DENY": {
+      "notes": [
+        "Error: storage.rules line [103], column [54]. Function not found error: Name: [[]]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 103,
+          "column": 54,
+          "currentOffset": 7260,
+          "endOffset": 7265
+        },
+        "functionCalls": [
+          {
+            "function": "[]",
+            "args": [
+              0
+            ]
+          }
+        ]
+      }
+    },
+    "!(latlng.value(1.0, 2.0)[0] == null) (int index on a latlng) → DENY": {
+      "notes": [
+        "Error: storage.rules line [104], column [57]. Function not found error: Name: [[]]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 104,
+          "column": 57,
+          "currentOffset": 7353,
+          "endOffset": 7358
+        },
+        "functionCalls": [
+          {
+            "function": "[]",
+            "args": [
+              0
+            ]
+          }
+        ]
+      }
+    },
+    "latlng.value(1.0, 2.0)[0] == null || true (int index on a latlng) → ALLOW": {
+      "api": {
+        "functionCalls": [
+          {
+            "function": "[]",
+            "args": [
+              0
+            ]
+          }
+        ],
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 105,
+              "column": 58,
+              "currentOffset": 7448,
+              "endOffset": 7453
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "duration.value(1, 'h')[0] == null (int index on a duration) → DENY": {
+      "notes": [
+        "Error: storage.rules line [107], column [56]. Function not found error: Name: [[]]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 107,
+          "column": 56,
+          "currentOffset": 7580,
+          "endOffset": 7587
+        },
+        "functionCalls": [
+          {
+            "function": "[]",
+            "args": [
+              0
+            ]
+          }
+        ]
+      }
+    },
+    "duration.value(1, 'h')[0] != 'zz' (int index on a duration) → DENY": {
+      "notes": [
+        "Error: storage.rules line [108], column [56]. Function not found error: Name: [[]]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 108,
+          "column": 56,
+          "currentOffset": 7672,
+          "endOffset": 7679
+        },
+        "functionCalls": [
+          {
+            "function": "[]",
+            "args": [
+              0
+            ]
+          }
+        ]
+      }
+    },
+    "!(duration.value(1, 'h')[0] == null) (int index on a duration) → DENY": {
+      "notes": [
+        "Error: storage.rules line [109], column [59]. Function not found error: Name: [[]]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 109,
+          "column": 59,
+          "currentOffset": 7767,
+          "endOffset": 7774
+        },
+        "functionCalls": [
+          {
+            "function": "[]",
+            "args": [
+              0
+            ]
+          }
+        ]
+      }
+    },
+    "duration.value(1, 'h')[0] == null || true (int index on a duration) → ALLOW": {
+      "api": {
+        "functionCalls": [
+          {
+            "function": "[]",
+            "args": [
+              0
+            ]
+          }
+        ],
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 110,
+              "column": 60,
+              "currentOffset": 7864,
+              "endOffset": 7871
+            },
+            "value": true
+          }
+        ]
+      }
+    },
+    "{'a': 1}.size == 1 (dot size without a call on a map) → DENY": {
+      "notes": [
+        "Error: storage.rules line [112], column [55]. Property size is undefined on object."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 112,
+          "column": 55,
+          "currentOffset": 8004,
+          "endOffset": 8004
+        }
+      }
+    },
+    "{'a': 1}.size != 99 (dot size without a call on a map) → DENY": {
+      "notes": [
+        "Error: storage.rules line [113], column [55]. Property size is undefined on object."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 113,
+          "column": 55,
+          "currentOffset": 8080,
+          "endOffset": 8080
+        }
+      }
+    },
+    "!({'a': 1}.size == 1) (dot size without a call on a map) → DENY": {
+      "notes": [
+        "Error: storage.rules line [114], column [58]. Property size is undefined on object."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "storage.rules",
+          "line": 114,
+          "column": 58,
+          "currentOffset": 8160,
+          "endOffset": 8160
+        }
+      }
+    },
+    "{'a': 1}.size == 1 || true (dot size without a call on a map) → ALLOW": {
+      "api": {
+        "visitedExpressions": [
+          {
+            "sourcePosition": {
+              "line": 115,
+              "column": 59,
+              "currentOffset": 8241,
+              "endOffset": 8241
+            },
+            "value": true
+          }
+        ]
+      }
+    }
+  }
+}

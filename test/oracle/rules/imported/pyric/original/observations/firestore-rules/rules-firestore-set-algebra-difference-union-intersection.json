@@ -1,0 +1,759 @@
+{
+  "name": "rules-firestore-set-algebra-difference-union-intersection",
+  "matrixRow": "firestore-rules#174",
+  "rowIds": [
+    "firestore-rules#174"
+  ],
+  "description": "Firestore Rules Test API verdicts for corpus scenario \"set-algebra-difference-union-intersection\" (Item 5.1). Production distinguishes Map.keys() List receivers (no set algebra) from explicit List.toSet() Set receivers (difference/union/intersection supported); paired cases lock the boundary.",
+  "observedAt": "2026-09-30T03:43:25.405Z",
+  "fbSdkVersion": "12.13.0",
+  "projectId": "digame-mas",
+  "inputDigest": {
+    "algorithm": "sha256",
+    "value": "a01993cab1b42581354232c33cb08644f9b34eb25a2662e7eeaba630c59ffe95"
+  },
+  "behavior": {
+    "set difference (list arg) → hasOnly([c]) DENY": "DENY",
+    "set difference (set arg) → hasOnly([x]) DENY": "DENY",
+    "set union → size 4 DENY": "DENY",
+    "set union dedupes overlap → size 3 DENY": "DENY",
+    "set intersection → hasOnly([b,c]) DENY": "DENY",
+    "set intersection no overlap → empty DENY": "DENY",
+    "chained union+difference → hasOnly([b,c]) DENY": "DENY",
+    "difference with wrong expected size DENY": "DENY",
+    "explicit toSet difference ALLOW": "ALLOW",
+    "explicit toSet union ALLOW": "ALLOW",
+    "explicit toSet intersection ALLOW": "ALLOW",
+    "explicit toSet difference wrong size DENY": "DENY",
+    "string in toSet() holding it ALLOW": "ALLOW",
+    "string in toSet() lacking it DENY": "DENY",
+    "negated in toSet() lacking it ALLOW": "ALLOW",
+    "negated in toSet() holding it DENY": "DENY",
+    "int in toSet() holding it ALLOW": "ALLOW",
+    "string in union() result ALLOW": "ALLOW",
+    "changed key in affectedKeys() ALLOW": "ALLOW",
+    "changed key in changedKeys() ALLOW": "ALLOW",
+    "added key in addedKeys() ALLOW": "ALLOW",
+    "removed key in removedKeys() ALLOW": "ALLOW",
+    "unchanged key in unchangedKeys() ALLOW": "ALLOW",
+    "unchanged key in affectedKeys() DENY": "DENY",
+    "negated unchanged key in affectedKeys() ALLOW": "ALLOW",
+    "negated changed key in affectedKeys() DENY": "DENY",
+    "setIdentity: a Set of an int equals a Set of the equal float": "ALLOW",
+    "setIdentity: != between a Set of an int and a Set of the equal float is false": "DENY",
+    "setIdentity: an int and the equal float are one element": "ALLOW",
+    "setIdentity: an int and the equal float are not two elements": "DENY",
+    "setIdentity: an int is in a Set of the equal float": "ALLOW",
+    "setIdentity: a float is in a Set of the equal int": "ALLOW",
+    "setIdentity: hasAny() with a List of the equal float": "ALLOW",
+    "setIdentity: hasAny() != true is false for the equal float": "DENY",
+    "setIdentity: hasAll() with a List of the equal float": "ALLOW",
+    "setIdentity: hasOnly() with a List of the equal float": "ALLOW",
+    "setIdentity: hasAny() with a Set of the equal float": "ALLOW",
+    "setIdentity: difference() removes the equal float": "ALLOW",
+    "setIdentity: intersection() keeps the equal float": "ALLOW",
+    "setIdentity: union() merges the equal float": "ALLOW",
+    "setIdentity: a Set of an int List equals a Set of the equal float List": "ALLOW",
+    "setIdentity: an int List and the equal float List are one element": "ALLOW",
+    "setIdentity: a Map element matches the Map of the equal float": "ALLOW",
+    "setIdentity: an int List is in a Set of the equal float List": "ALLOW",
+    "setIdentity: nested Map and List elements compare by value": "ALLOW",
+    "setIdentity: a Set of 0.0 equals a Set of -0.0": "ALLOW",
+    "setIdentity: 0.0 and -0.0 are one element": "ALLOW",
+    "setIdentity: a Set of a 0.0 List equals a Set of a -0.0 List": "ALLOW",
+    "setIdentity: two NaN are one element": "ALLOW",
+    "setIdentity: a Set of NaN equals a Set of NaN": "ALLOW",
+    "setIdentity: NaN is in a Set of NaN": "ALLOW",
+    "setIdentity: hasAny() finds NaN": "ALLOW",
+    "setIdentity: two NaN Lists are one element": "ALLOW",
+    "setMethod: size() counts the elements": "ALLOW",
+    "setMethod: size() != the count is false": "DENY",
+    "setMethod: size() with an argument is an error": "DENY",
+    "setMethod: keys() on a Set is an error": "DENY",
+    "setMethod: || true absorbs keys() on a Set": "ALLOW",
+    "setMethod: values() on a Set is an error": "DENY",
+    "setMethod: get() on a Set is an error": "DENY",
+    "setMethod: diff() on a Set is an error": "DENY",
+    "setMethod: keys() on a MapDiff is an error": "DENY",
+    "setMethod: values() on a MapDiff is an error": "DENY",
+    "setMethod: get() on a MapDiff is an error": "DENY",
+    "setMethod: size() on a MapDiff is an error": "DENY",
+    "setMethod: hasOnly() with a List argument": "ALLOW",
+    "setMethod: hasAll() != false with a missing element": "DENY",
+    "setMethod: a string argument to hasAny() is an error": "DENY",
+    "setMethod: || true absorbs a string argument to hasAny()": "ALLOW",
+    "setMethod: a Map argument to hasAll() is an error": "DENY",
+    "setMethod: a string argument to hasOnly() is an error": "DENY",
+    "setMethod: hasAll() with two arguments is an error": "DENY",
+    "setMethod: hasAny() with no argument is an error": "DENY",
+    "setMethod: union() of two Sets": "ALLOW",
+    "setMethod: union() != the joined Set is false": "DENY",
+    "setMethod: a string argument to union() is an error": "DENY",
+    "setMethod: a Map argument to difference() is an error": "DENY",
+    "setMethod: a List argument to difference() is an error": "DENY",
+    "setMethod: intersection() with no argument is an error": "DENY",
+    "setMethod: union() with no argument is an error": "DENY",
+    "setMethod: || true absorbs union() with no argument": "ALLOW",
+    "setMethod: intersection() with two arguments is an error": "DENY",
+    "setMethod: difference() on a List is an error": "DENY",
+    "setMethod: union() on a List is an error": "DENY",
+    "setMethod: intersection() on a List is an error": "DENY",
+    "setMethod: || true absorbs union() on a List": "ALLOW",
+    "setMethod: intersection() on a string is an error": "DENY",
+    "setMethod: difference() on a Map is an error": "DENY"
+  },
+  "diagnostics": {
+    "set difference (list arg) → hasOnly([c]) DENY": {
+      "notes": [
+        "Error: firestore.rules line [7], column [12]. Function not found error: Name: [difference]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 7,
+          "column": 12,
+          "currentOffset": 234,
+          "endOffset": 240
+        },
+        "functionCalls": [
+          {
+            "function": "difference",
+            "args": [
+              [
+                "a",
+                "b"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "set difference (set arg) → hasOnly([x]) DENY": {
+      "notes": [
+        "Error: firestore.rules line [12], column [12]. Function not found error: Name: [difference]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 12,
+          "column": 12,
+          "currentOffset": 435,
+          "endOffset": 441
+        },
+        "functionCalls": [
+          {
+            "function": "difference",
+            "args": [
+              [
+                "y",
+                "z"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "set union → size 4 DENY": {
+      "notes": [
+        "Error: firestore.rules line [17], column [12]. Function not found error: Name: [union]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 17,
+          "column": 12,
+          "currentOffset": 646,
+          "endOffset": 652
+        },
+        "functionCalls": [
+          {
+            "function": "union",
+            "args": [
+              [
+                "c",
+                "d"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "set union dedupes overlap → size 3 DENY": {
+      "notes": [
+        "Error: firestore.rules line [22], column [12]. Function not found error: Name: [union]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 22,
+          "column": 12,
+          "currentOffset": 833,
+          "endOffset": 839
+        },
+        "functionCalls": [
+          {
+            "function": "union",
+            "args": [
+              [
+                "b",
+                "c"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "set intersection → hasOnly([b,c]) DENY": {
+      "notes": [
+        "Error: firestore.rules line [27], column [12]. Function not found error: Name: [intersection]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 27,
+          "column": 12,
+          "currentOffset": 1020,
+          "endOffset": 1026
+        },
+        "functionCalls": [
+          {
+            "function": "intersection",
+            "args": [
+              [
+                "b",
+                "c",
+                "d"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "set intersection no overlap → empty DENY": {
+      "notes": [
+        "Error: firestore.rules line [32], column [12]. Function not found error: Name: [intersection]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 32,
+          "column": 12,
+          "currentOffset": 1238,
+          "endOffset": 1244
+        },
+        "functionCalls": [
+          {
+            "function": "intersection",
+            "args": [
+              [
+                "x",
+                "y"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "chained union+difference → hasOnly([b,c]) DENY": {
+      "notes": [
+        "Error: firestore.rules line [37], column [12]. Function not found error: Name: [union]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 37,
+          "column": 12,
+          "currentOffset": 1434,
+          "endOffset": 1440
+        },
+        "functionCalls": [
+          {
+            "function": "union",
+            "args": [
+              [
+                "c"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "difference with wrong expected size DENY": {
+      "notes": [
+        "Error: firestore.rules line [42], column [12]. Function not found error: Name: [difference]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 42,
+          "column": 12,
+          "currentOffset": 1654,
+          "endOffset": 1660
+        },
+        "functionCalls": [
+          {
+            "function": "difference",
+            "args": [
+              [
+                "a"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "setMethod: size() with an argument is an error": {
+      "notes": [
+        "Error: firestore.rules line [188], column [40]. Incorrect number of arguments. Received: 1. Expected: set.size()."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 188,
+          "column": 40,
+          "currentOffset": 6882,
+          "endOffset": 6885
+        }
+      }
+    },
+    "setMethod: keys() on a Set is an error": {
+      "notes": [
+        "Error: firestore.rules line [191], column [26]. Function not found error: Name: [keys]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 191,
+          "column": 26,
+          "currentOffset": 6958,
+          "endOffset": 6958
+        },
+        "functionCalls": [
+          {
+            "function": "keys"
+          }
+        ]
+      }
+    },
+    "setMethod: values() on a Set is an error": {
+      "notes": [
+        "Error: firestore.rules line [197], column [26]. Function not found error: Name: [values]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 197,
+          "column": 26,
+          "currentOffset": 7151,
+          "endOffset": 7151
+        },
+        "functionCalls": [
+          {
+            "function": "values"
+          }
+        ]
+      }
+    },
+    "setMethod: get() on a Set is an error": {
+      "notes": [
+        "Error: firestore.rules line [200], column [26]. Function not found error: Name: [get]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 200,
+          "column": 26,
+          "currentOffset": 7246,
+          "endOffset": 7246
+        },
+        "functionCalls": [
+          {
+            "function": "get",
+            "args": [
+              "a",
+              1
+            ]
+          }
+        ]
+      }
+    },
+    "setMethod: diff() on a Set is an error": {
+      "notes": [
+        "Error: firestore.rules line [203], column [26]. Function not found error: Name: [diff]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 203,
+          "column": 26,
+          "currentOffset": 7340,
+          "endOffset": 7340
+        },
+        "functionCalls": [
+          {
+            "function": "diff",
+            "args": [
+              {
+                "a": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "setMethod: keys() on a MapDiff is an error": {
+      "notes": [
+        "Error: firestore.rules line [206], column [26]. Function not found error: Name: [keys]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 206,
+          "column": 26,
+          "currentOffset": 7457,
+          "endOffset": 7457
+        },
+        "functionCalls": [
+          {
+            "function": "keys"
+          }
+        ]
+      }
+    },
+    "setMethod: values() on a MapDiff is an error": {
+      "notes": [
+        "Error: firestore.rules line [209], column [26]. Function not found error: Name: [values]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 209,
+          "column": 26,
+          "currentOffset": 7554,
+          "endOffset": 7554
+        },
+        "functionCalls": [
+          {
+            "function": "values"
+          }
+        ]
+      }
+    },
+    "setMethod: get() on a MapDiff is an error": {
+      "notes": [
+        "Error: firestore.rules line [212], column [26]. Function not found error: Name: [get]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 212,
+          "column": 26,
+          "currentOffset": 7652,
+          "endOffset": 7652
+        },
+        "functionCalls": [
+          {
+            "function": "get",
+            "args": [
+              "a",
+              1
+            ]
+          }
+        ]
+      }
+    },
+    "setMethod: size() on a MapDiff is an error": {
+      "notes": [
+        "Error: firestore.rules line [215], column [26]. Function not found error: Name: [size]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 215,
+          "column": 26,
+          "currentOffset": 7751,
+          "endOffset": 7751
+        },
+        "functionCalls": [
+          {
+            "function": "size"
+          }
+        ]
+      }
+    },
+    "setMethod: a string argument to hasAny() is an error": {
+      "notes": [
+        "Error: firestore.rules line [224], column [40]. Unsupported operation error. Received: set.hasAny(string). Expected: set.hasAny(set), set.hasAny(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 224,
+          "column": 40,
+          "currentOffset": 8068,
+          "endOffset": 8073
+        }
+      }
+    },
+    "setMethod: a Map argument to hasAll() is an error": {
+      "notes": [
+        "Error: firestore.rules line [230], column [40]. Unsupported operation error. Received: set.hasAll(map). Expected: set.hasAll(set), set.hasAll(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 230,
+          "column": 40,
+          "currentOffset": 8255,
+          "endOffset": 8260
+        }
+      }
+    },
+    "setMethod: a string argument to hasOnly() is an error": {
+      "notes": [
+        "Error: firestore.rules line [233], column [40]. Unsupported operation error. Received: set.hasOnly(string). Expected: set.hasOnly(set), set.hasOnly(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 233,
+          "column": 40,
+          "currentOffset": 8350,
+          "endOffset": 8356
+        }
+      }
+    },
+    "setMethod: hasAll() with two arguments is an error": {
+      "notes": [
+        "Error: firestore.rules line [236], column [40]. Incorrect number of arguments. Received: 2. Expected: set.hasAll(set), set.hasAll(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 236,
+          "column": 40,
+          "currentOffset": 8441,
+          "endOffset": 8446
+        }
+      }
+    },
+    "setMethod: hasAny() with no argument is an error": {
+      "notes": [
+        "Error: firestore.rules line [239], column [40]. Incorrect number of arguments. Received: 0. Expected: set.hasAny(set), set.hasAny(list)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 239,
+          "column": 40,
+          "currentOffset": 8540,
+          "endOffset": 8545
+        }
+      }
+    },
+    "setMethod: a string argument to union() is an error": {
+      "notes": [
+        "Error: firestore.rules line [248], column [40]. Unsupported operation error. Received: set.union(string). Expected: set.union(set)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 248,
+          "column": 40,
+          "currentOffset": 8863,
+          "endOffset": 8867
+        }
+      }
+    },
+    "setMethod: a Map argument to difference() is an error": {
+      "notes": [
+        "Error: firestore.rules line [251], column [40]. Unsupported operation error. Received: set.difference(map). Expected: set.difference(set)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 251,
+          "column": 40,
+          "currentOffset": 8969,
+          "endOffset": 8978
+        }
+      }
+    },
+    "setMethod: a List argument to difference() is an error": {
+      "notes": [
+        "Error: firestore.rules line [254], column [40]. Unsupported operation error. Received: set.difference(list). Expected: set.difference(set)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 254,
+          "column": 40,
+          "currentOffset": 9085,
+          "endOffset": 9094
+        }
+      }
+    },
+    "setMethod: intersection() with no argument is an error": {
+      "notes": [
+        "Error: firestore.rules line [257], column [40]. Incorrect number of arguments. Received: 0. Expected: set.intersection(set)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 257,
+          "column": 40,
+          "currentOffset": 9198,
+          "endOffset": 9209
+        }
+      }
+    },
+    "setMethod: union() with no argument is an error": {
+      "notes": [
+        "Error: firestore.rules line [260], column [40]. Incorrect number of arguments. Received: 0. Expected: set.union(set)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 260,
+          "column": 40,
+          "currentOffset": 9308,
+          "endOffset": 9312
+        }
+      }
+    },
+    "setMethod: intersection() with two arguments is an error": {
+      "notes": [
+        "Error: firestore.rules line [266], column [40]. Incorrect number of arguments. Received: 2. Expected: set.intersection(set)."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 266,
+          "column": 40,
+          "currentOffset": 9521,
+          "endOffset": 9532
+        }
+      }
+    },
+    "setMethod: difference() on a List is an error": {
+      "notes": [
+        "Error: firestore.rules line [269], column [26]. Function not found error: Name: [difference]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 269,
+          "column": 26,
+          "currentOffset": 9645,
+          "endOffset": 9645
+        },
+        "functionCalls": [
+          {
+            "function": "difference",
+            "args": [
+              [
+                1
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "setMethod: union() on a List is an error": {
+      "notes": [
+        "Error: firestore.rules line [272], column [26]. Function not found error: Name: [union]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 272,
+          "column": 26,
+          "currentOffset": 9752,
+          "endOffset": 9752
+        },
+        "functionCalls": [
+          {
+            "function": "union",
+            "args": [
+              [
+                1
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "setMethod: intersection() on a List is an error": {
+      "notes": [
+        "Error: firestore.rules line [275], column [26]. Function not found error: Name: [intersection]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 275,
+          "column": 26,
+          "currentOffset": 9854,
+          "endOffset": 9854
+        },
+        "functionCalls": [
+          {
+            "function": "intersection",
+            "args": [
+              [
+                1
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "setMethod: intersection() on a string is an error": {
+      "notes": [
+        "Error: firestore.rules line [281], column [26]. Function not found error: Name: [intersection]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 281,
+          "column": 26,
+          "currentOffset": 10072,
+          "endOffset": 10074
+        },
+        "functionCalls": [
+          {
+            "function": "intersection",
+            "args": [
+              [
+                "a"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "setMethod: difference() on a Map is an error": {
+      "notes": [
+        "Error: firestore.rules line [284], column [26]. Function not found error: Name: [difference]."
+      ],
+      "api": {
+        "errorPosition": {
+          "fileName": "firestore.rules",
+          "line": 284,
+          "column": 26,
+          "currentOffset": 10185,
+          "endOffset": 10185
+        },
+        "functionCalls": [
+          {
+            "function": "difference",
+            "args": [
+              [
+                "a"
+              ]
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

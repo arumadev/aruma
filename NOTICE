@@ -4,3 +4,22 @@ Copyright 2026 The Aruma Authors
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 
 Aruma is not affiliated with or endorsed by Google. Firebase is a trademark of Google LLC.
+
+This product includes test fixtures from the following projects, unchanged
+in their original form and converted to Aruma's fixture format. See
+test/oracle/rules/README.md for what was taken and how.
+
+hidane (https://github.com/hidane-dev/hidane)
+Copyright (c) 2026 Hiroki Nomura
+Licensed under either of the Apache License, Version 2.0 or the MIT license;
+used here under the Apache License, Version 2.0.
+Files: test/oracle/rules/imported/hidane/ (Security Rules conditions and the
+official Firestore emulator's results for them). The cel-spec cases in
+cases/cel-spec.json come from google/cel-spec (https://github.com/google/cel-spec),
+Copyright Google LLC, licensed under the Apache License, Version 2.0.
+
+Pyric (https://github.com/davideast/pyric)
+Copyright 2026 David East
+Licensed under the Apache License, Version 2.0.
+Files: test/oracle/rules/imported/pyric/ (Firestore and Cloud Storage Security
+Rules observations and the rules corpus they were recorded from).
