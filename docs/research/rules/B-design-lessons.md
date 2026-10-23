@@ -42,11 +42,11 @@
 | الدالة المجهولة تُترجم بتحذير وتفشل وقت التقييم؛ الأنواع تُفحص وقت التشغيل، والفاحص الستاتيكي يحذّر فقط، إلا regex حرفي لا يُترجم [V] | المصدر نفسه |
 | `matches` مطابقة كاملة؛ `[1] == [1.0]` خطأ مع أن `1 == 1.0` صحيح؛ `1 in [1.0]` خطأ [V] | المصدر نفسه |
 | امتصاص الأخطاء على طريقة CEL تمامًا: `error \|\| true` سماح، `error && false` false [V] | المصدر نفسه |
-| **في الإنتاج:** Pyric سجّل من Rules Test API لقواعد Storage أن `&&` يمتص تبادليًا («Storage && absorbs commutatively like Firestore»)، وأن الخطأ يُبلَّغ عن **الطرف الأيسر** («two erroring operands of == → DENY, reported as the left one»، «two erroring method arguments → DENY, reported as the first») [V] | `pyric/packages/conformance/observations/storage-rules/rules-storage-error-absorption-and-direction.json` (observedAt 2026-09-28، SDK 12.13.0) |
-| **ميزانية التعبيرات على مستوى الطلب لا الشرط:** «an error, then a true rule past the expression limit → DENY, reported as the error» [V] | الملف نفسه |
+| **في الإنتاج:** Pyric سجّل من Rules Test API لقواعد Storage أن `&&` يمتص تبادليًا («Storage && absorbs commutatively like Firestore»)، وأن الخطأ يُبلَّغ عن **الطرف الأيسر** في `==` وعناصر القوائم ووسائط الدوال («two erroring operands of == → DENY, reported as the left one»، «two erroring method arguments → DENY, reported as the first») [V]. **لم يُرصد** ذلك لـ `error1 && error2` ولا `error1 \|\| error2`: أي خطأ يُبلَّغ هناك مجهول [U] | `pyric/packages/conformance/observations/storage-rules/rules-storage-error-absorption-and-direction.json` (observedAt 2026-09-28، SDK 12.13.0) |
+| **الميزانية بعد خطأ:** «an error, then a true rule past the expression limit → DENY, reported as the error» [V]. لكن هذه الحالة **لا تميّز** بين عدّاد لكل الطلب وعدّاد لكل شرط: القاعدة الثانية `overLimit0()` وحدها «evaluates about 1220 expressions» فتتجاوز 1000 في الحالتين (`rules-corpus/storage/error-absorption-and-direction.ts`:29-34، 83-86) [V]. نطاق العدّاد إذن **غير مثبت** | الملف نفسه، ومصدر السيناريو |
 | **التقييم كسول من اليسار:** «lazy OR: true left branch skips unmocked lookup and allows»، و«short-circuited third distinct lookup does not deny» [V] | `.../storage-rules/rules-storage-firestore-lookup-budget.json` (2026-07-21) |
 
-**ما يترتب [I]:** المواصفة تسمح بأي ترتيب، والإنتاج يقيّم من اليسار ويقصر عند الطرف الحاسم ويبلّغ عن الخطأ الأيسر. وما دام هناك عدّاد تعبيرات (1000) وعدّاد استدعاءات `get/exists`، فالترتيب **مرئي** للمستخدم: يغيّر هل نصل إلى الحد أم لا، وأي رسالة تظهر. إذن «تبادلي» صفة للنتيجة فقط، والترتيب الفعلي يجب أن يطابق الإنتاج: يسار أولًا، ولا يُقيَّم الأيمن إن حسم الأيسر.
+**ما يترتب [I]:** المواصفة تسمح بأي ترتيب، والإنتاج يقيّم من اليسار ويقصر عند الطرف الحاسم (مرصود في `get` الكسول)، ويبلّغ عن الخطأ الأيسر في `==` والقوائم والوسائط (مرصود؛ أما في `&&`/`||` فغير مرصود). وما دام هناك عدّاد تعبيرات (1000) وعدّاد استدعاءات `get/exists`، فالترتيب **مرئي** للمستخدم: يغيّر هل نصل إلى الحد أم لا، وأي رسالة تظهر. إذن «تبادلي» صفة للنتيجة فقط، والترتيب الفعلي يجب أن يطابق الإنتاج: يسار أولًا، ولا يُقيَّم الأيمن إن حسم الأيسر.
 
 ### 1.4 هل نحتاج «residual» على طريقة cel-go؟
 
@@ -85,7 +85,9 @@
 
 - Storage: `templates/init/storage/storage.rules`:6-12 يغلق كل شيء: `match /{allPaths=**} { allow read, write: if false; }` [V].
 - Firestore: `templates/init/firestore/firestore.rules`:5-15 «test mode» بانتهاء: `allow read, write: if request.time < timestamp.date({{IN_30_DAYS}});` مع تعليق يشرح أن كل الطلبات تُرفض بعد 30 يومًا [V].
-- دليل MCP في firebase-tools يقترح نسخة أضيق: `request.auth != null && request.time < timestamp.date(y, m, d)` (`src/mcp/resources/guides/init_firestore.ts`:51) [V].
+- دليل MCP في firebase-tools يقترح نسخة أضيق وأقصر عمرًا: `request.auth != null && request.time < timestamp.date(y, m, d)` بتعليق «This rule will only be valid until tomorrow» (`src/mcp/resources/guides/init_firestore.ts`:44-51) [V]، أي يوم واحد لا 30.
+- **المصادر لا تتفق على افتراضي Storage:** صفحة البدء تقول «By default, read and write access to Cloud Storage is restricted so only authenticated users can read or write data» [V، firebase.google.com/docs/storage/web/start]، بينما قالب `firebase init storage` هو `if false` (`storage.rules`:9) [V]. وما يضعه الكونسول اليوم عند إنشاء bucket [U]، يحسمه تسجيل.
+- **لماذا نختار `if false` رغم ذلك:** ADR-010 يجعل الافتراضيات الآمنة «كشرط إصدار، لا كتوصيات» لأن «ما لا يكون آمنًا افتراضيًا لن يكون آمنًا عند أغلب المشغّلين» (`docs/adr/ADR-010-secure-defaults.md`:10). و«أي مستخدم مسجّل» هو بالضبط نمط Chattr (2.1) ونمط «Access for any authenticated user» في 2.2. والفرق موثّق في `docs/compat`: من يريد سلوك صفحة البدء يكتب `request.auth != null` صراحة، والمحرر يعرض التحذير المقابل.
 
 ### 2.4 ماذا يعني هذا للوحة التحكم ومحرر القواعد [I]
 
@@ -135,7 +137,7 @@
 
 - «Cost units are ... deterministic; for any given CEL expression and input data, evaluation ... will always result in the same cost». المقارنة كلفتها 1، الـ list literal ‏40، و`matches` تقريبًا `length(regexString)*length(inputString)` لأسوأ حالة في RE2 [V] (kubernetes.io/docs/reference/using-api/cel، «Resource constraints»).
 - **ميزانيتان:** runtime budget يوقف التقييم بخطأ، وميزانية **لكل عملية** تجمع كل التعابير (per-validation)؛ وقدير ستاتيكي يرفض حفظ تعبير أسوأ حالته باهظة [V].
-- **ما ينتقل [I]:** ميزانية Firebase (1000 تعبير، 10/20 `get`) هي نفسها «per-validation budget» بلغة Kubernetes، وPyric أكد أنها لكل الطلب. أما **رفض الـ ruleset عند النشر بسبب كلفة تقديرية** فلا ننقله: Firebase لا يرفض بالكلفة، فنصبح أشد منه عند النشر ونكسر قواعد صالحة. التقدير الستاتيكي يصلح **تحذيرًا** في المحرر فقط.
+- **ما ينتقل [I]:** ميزانية Firebase (1000 تعبير، 10/20 `get`) تشبه «per-validation budget» بلغة Kubernetes إن كانت لكل الطلب؛ وهذا لم يُثبت بعد (حالة Pyric لا تميّز، انظر 1.3 وR3). أما **رفض الـ ruleset عند النشر بسبب كلفة تقديرية** فلا ننقله: Firebase لا يرفض بالكلفة، فنصبح أشد منه عند النشر ونكسر قواعد صالحة. التقدير الستاتيكي يصلح **تحذيرًا** في المحرر فقط.
 - وهذا ما فعلناه في RTDB: `maxMatchCost = 1 << 26` = طول النص × عدد تعليمات برنامج regex، لأن 10 MB أمام نمط كبير حبس الكاتب 59 ثانية [V] (`internal/services/rtdb/rules/regex.go`:70-120).
 
 ### 3.5 خصائص تُختبر بلا أوراكل (metamorphic) [I]
@@ -173,21 +175,21 @@
 | # | القرار المقترح | الدليل | الثقة |
 |---|---|---|---|
 | R1 | **مفسّر يدوي** في `internal/platform/` (لا cel-go)، ونظام قيم فيه نوع `error` كقيمة وقابل للتوسعة بنوع `constraint` لاحقًا | hidane ADR 0005 (105/106 مقابل 91 لـ cel-rust)؛ اختلافات المعجم والمساواة والدوال (1.3)؛ cel-go صار غلافًا لوحدة جديدة (1.2) | عالية |
-| R2 | **امتصاص CEL التبادلي للنتيجة، مع ترتيب تقييم ثابت يسار-أولًا وقصر عند الطرف الحاسم**، والإبلاغ عن الخطأ الأيسر/الأول | langdef.md:686-693؛ Pyric إنتاج (error-absorption، lazy lookups) | عالية |
-| R3 | **عدّاد تعابير واحد لكل طلب** (1000) يمر عبر كل السطور والكتل، لا لكل شرط؛ وكل شرط يُقيَّم مرة واحدة (لا #6252) | Pyric إنتاج: «past the expression limit → DENY»؛ Kubernetes per-validation budget | عالية |
+| R2 | **امتصاص CEL التبادلي للنتيجة، مع ترتيب تقييم ثابت يسار-أولًا وقصر عند الطرف الحاسم**، والإبلاغ عن الخطأ الأيسر/الأول في `==` والقوائم والوسائط؛ أي خطأ يُبلَّغ في `error1 \|\| error2` و`error1 && error2` يحسمه الأوراكل | langdef.md:686-693؛ Pyric إنتاج (error-absorption، lazy lookups) | عالية للامتصاص والقصر؛ منخفضة لرسالة `&&`/`\|\|` بخطأين |
+| R3 | **عدّاد التعابير (1000): نطاقه (لكل الطلب أم لكل شرط) قرار معلّق على الأوراكل**، والتصميم يسمح بالاثنين (العدّاد في سياق التقييم، يُصفَّر أو لا بين السطور). الافتراض المؤقت: لكل الطلب، لأنه الأشد (لا يجعلنا أكثر تساهلًا). وكل شرط يُقيَّم مرة واحدة (لا #6252). **حالات أوراكل مطلوبة:** (أ) سطران في كتلة، كل منهما ~600 تعبير، الأول false والثاني true: لكل الطلب ← DENY عند الحد، لكل شرط ← ALLOW؛ (ب) الشيء نفسه في كتلتين `match` متطابقتين؛ (ج) `error1 \|\| error2` و`error1 && error2` بخطأين مختلفين النص: أيهما يُبلَّغ | Pyric: الحالة الموجودة لا تميّز (`error-absorption-and-direction.ts`:29-34، 83-86)؛ Kubernetes per-validation budget (مقارنة لا دليل) | منخفضة حتى الأوراكل |
 | R4 | لا residual AST ولا `Prune` في v0.3. نوع القيمة يسمح بإضافة `constraint` في F5 على نموذج المحاكي الذي قاسه hidane | ADR 0005 #66؛ Storage لا يحتاج list implication | متوسطة (نموذج list مقاس على المحاكي لا الإنتاج) |
 | R5 | **حدود صامدة أمام قواعد معادية:** 256 KB، عمق المحلل، عمق الاستدعاء (قابل للضبط، 10 أو 20 حتى يحسمه الأوراكل)، 10 `let`، 1000 تعبير، **ميزانية بايتات** للقيم المبنية، `maxMatchCost` وسقف وكاش للأنماط الديناميكية، ومهلة context | القسم 4؛ `runtime/debug` (انهيار المكدس قاتل)؛ langdef §Performance؛ RTDB regex.go | عالية للمبدأ، متوسطة للأرقام الجديدة (البايتات، طول النمط) حتى تُقاس |
 | R6 | لا رفض للقواعد عند النشر بسبب كلفة تقديرية؛ التقدير الستاتيكي تحذير في المحرر فقط | Kubernetes يرفض، Firebase لا (لا مصدر يذكر رفضًا بالكلفة)؛ «لا نكون أشد من Firebase في القبول» عكس «لا نكون أكثر تساهلًا» في القرار | متوسطة |
 | R7 | `request.time` وكل «الآن» يُثبَّت مرة لكل طلب؛ لا مصدر وقت داخل المفسّر | OPA time.now_ns؛ CEL «deterministically evaluate» | عالية |
 | R8 | كاش للـ ruleset **المترجم** لكل release مع `singleflight`، ولا كاش للقرارات بين الطلبات؛ `get/exists` (v0.4) بلقطة واحدة وكاش داخل التقييم | Zanzibar §3.2.5؛ Firebase «cached calls not counted» | عالية |
 | R9 | **منهج اختبار على طريقة Cedar:** (أ) مقارنة تفاضلية بمدونة الأوراكل (الإنتاج أولًا)، (ب) مولّد قواعد عشوائي يُشغَّل ضد المحاكي صندوقًا أسود ويُسجَّل، (ج) خصائص metamorphic (3.5)، (د) fuzz للمحلل والمفسّر، (هـ) جزء محجوز لا يُرى أثناء البناء | Cedar: 4 + 21 خللًا بالبراهين وDRT/PBT؛ hidane held-out | عالية |
-| R10 | **تشخيصات المحرر** (2.4) دون تغيير الدلالة؛ وقواعد Storage الافتراضية `if false`، و«test mode» إن وُجد بتاريخ انتهاء 30 يومًا وعدّ تنازلي | قوالب firebase-tools؛ Chattr؛ FBK/Comparitech؛ ADR-010 | عالية |
+| R10 | **تشخيصات المحرر** (2.4) دون تغيير الدلالة؛ وقواعد Storage الافتراضية `if false` (فرق موثّق عن صفحة البدء التي تقول «authenticated users»)، و«test mode» إن وُجد بتاريخ انتهاء (30 يومًا كقالب firebase-tools؛ دليل MCP يجعله يومًا) وعدّ تنازلي | قالب `storage.rules`:9؛ docs/storage/web/start؛ Chattr؛ FBK/Comparitech؛ ADR-010:10 | عالية |
 | R11 (ADR-023) | خارج v0.3: residual/list implication، `firestore.get` الفعلي، التحقق الرمزي (SMT) من القواعد. داخل v0.3: التشخيصات الست في 2.4 | الأدبيات لا تقدم أداة تحقق رمزي جاهزة لقواعد Firebase (2.1) | متوسطة |
 
 ### ما يخالف الخطة أو يدققها
 
 1. **«شرط متبقٍ» (الخطة، ADR-021):** الدليل يشير إلى قيمة `constraint` لا residual expression. الاتجاه صحيح والشكل يتغير (R1، R4).
-2. **«تقييم كل شرط مرة واحدة» غير كافٍ:** الميزانية لكل الطلب، والترتيب مرئي عبرها؛ يجب تثبيت ترتيب يسار-أولًا مع القصر، وإلا اختلف القرار قرب الحدود عن الإنتاج (R2، R3).
+2. **«تقييم كل شرط مرة واحدة» غير كافٍ:** الترتيب مرئي عبر الميزانيات؛ يجب تثبيت ترتيب يسار-أولًا مع القصر، وإلا اختلف القرار قرب الحدود عن الإنتاج (R2). ونطاق عدّاد التعابير (لكل الطلب أم لكل شرط) **غير مثبت** بعد، فيُقاس قبل S1 بحالات R3.
 3. **حدود الخطة (عمق 20، 10 let، 1000، 256 KB) لا تكفي أمام قواعد معادية:** ينقصها حد للتعشيش في المحلل وميزانية بايتات للقيم (R5). بدونهما ruleset واحد يُسقط الخادم لكل المشاريع.
 4. **`firestore.get` من Storage:** الخطة تذكر 10/20؛ صفحة Storage تقول مستندين، وتسجيل Pyric يخالف الصفحة. لا أثر على v0.3 (خطأ = رفض)، لكنه سؤال أوراكل قبل v0.4.
 5. **عزل المشاريع:** ADR-017 أجّل RLS؛ أي جدول للقواعد (rulesets، releases) يحمل `project_number` ويمر بـ `scopecheck` واختبارات العزل، لا RLS كما تقول الخطة في القسم 4.
