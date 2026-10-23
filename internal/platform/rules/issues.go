@@ -78,8 +78,7 @@ func (is Issues) Err() error {
 const (
 	msgTooComplex       = "Expression is too complex to evaluate safely."
 	msgCallDepth        = "Maximum allowed call depth of %d is reached for [%s] call stack."
-	msgLetVersion1      = `Let bindings are not allowed in rules_version="1"`
-	msgNoMatch          = "No matching allow statements"
+	msgLetVersion1      = `Let bindings are not allowed in rules_version="1";`
 	msgTypeError        = "Type error. Received: [%s] Expected: [%s]."
 	msgFunctionNotFound = "Function not found error: Name: [%s]."
 )

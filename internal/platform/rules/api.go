@@ -24,8 +24,9 @@ type File struct {
 // Compile parses and checks one rules file for a service. The issues hold every error and
 // warning in source order; the ruleset is nil when any issue is an error.
 //
-// Limits that do not validate, a service other than Firestore and Storage, and a file larger
-// than lim.SourceBytes are errors about the whole file: nothing compiles under them.
+// Limits that do not validate, a service other than Firestore and Storage, and sources too
+// large (sourceTooLarge) are errors about the whole file: nothing compiles under them. A file
+// with a syntax error is not checked: production reports the syntax errors alone.
 func Compile(svc Service, f File, lim Limits) (*Ruleset, Issues) {
 	whole := func(desc string) Issues {
 		return Issues{{File: f.Name, Severity: SeverityError, Description: desc}}
@@ -36,11 +37,11 @@ func Compile(svc Service, f File, lim Limits) (*Ruleset, Issues) {
 	if svc != Firestore && svc != Storage {
 		return nil, whole(fmt.Sprintf(msgInvalidService, svc))
 	}
-	if len(f.Content) > lim.SourceBytes {
-		return nil, whole(fmt.Sprintf(msgSourceTooLarge, len(f.Content), lim.SourceBytes))
+	if sourceTooLarge(f, &lim) {
+		return nil, whole(fmt.Sprintf(msgSourceTooLarge, lim.SourceBytes))
 	}
 	tree, issues := parse(f.Name, f.Content, lim)
-	if tree == nil {
+	if tree == nil || Issues(issues).Err() != nil {
 		return nil, sortIssues(issues)
 	}
 	tree.name, tree.src = f.Name, f.Content
@@ -50,6 +51,16 @@ func Compile(svc Service, f File, lim Limits) (*Ruleset, Issues) {
 		return nil, all
 	}
 	return rs, all
+}
+
+// sourceFraming is what the Rules API adds to a source's content and name when it measures
+// "Total size of sources must be smaller than 262144.": for firestore.rules, 262,119 bytes of
+// content compile and 262,120 do not (S0-A's review probes on the Rules Test API).
+const sourceFraming = 9
+
+// sourceTooLarge reports whether a file's sources reach lim.SourceBytes as the Rules API counts.
+func sourceTooLarge(f File, lim *Limits) bool {
+	return len(f.Content)+len(f.Name)+sourceFraming >= lim.SourceBytes
 }
 
 // sortIssues orders issues as the Rules API lists them: those about the whole file first, then

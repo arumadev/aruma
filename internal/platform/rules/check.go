@@ -34,7 +34,7 @@ const (
 	msgGlobOnce          = "Invalid glob match expression. Only one glob match is permitted in a match declaration path."
 	msgGlobChildren      = "Glob(**) resource rules should not have child resource rules."
 	msgVariableInPattern = "Variable %s already exists in the PathTemplate."
-	msgSourceTooLarge    = "Rules source of %d bytes exceeds the maximum of %d bytes."
+	msgSourceTooLarge    = "Total size of sources must be smaller than %d."
 )
 
 // hierarchyLimit is how deep match blocks may nest before the checker stops descending, as the
@@ -57,7 +57,13 @@ func check(f *file, svc Service, lim Limits) (*Ruleset, []Issue) {
 	c.rs.regexes = newRegexCache(&c.rs.lim)
 	c.versions()
 	c.rs.version = c.version
-	if f.service != string(svc) {
+	// A file for the other service is an error (ADR-021 §2.1). A name that is no service compiles
+	// with a warning, as in production, and the ruleset grants nothing.
+	known := f.service == string(Firestore) || f.service == string(Storage)
+	switch {
+	case !known:
+		c.warnf(f.serviceAt, msgInvalidService, f.service)
+	case f.service != string(svc):
 		c.errorf(f.serviceAt, msgInvalidService, f.service)
 	}
 
@@ -75,6 +81,9 @@ func check(f *file, svc Service, lim Limits) (*Ruleset, []Issue) {
 		}
 	}
 	c.rs.treeBytes = c.nodes * nodeBytes
+	if !known {
+		c.rs.blocks = nil
+	}
 
 	for _, is := range c.issues {
 		if is.Severity == SeverityError {
@@ -287,13 +296,12 @@ func (c *checker) match(parent *scope, m *match, st matchState) {
 	for i, p := range m.path {
 		s := matchSeg{kind: p.kind, text: p.text}
 		if p.kind == patternRest {
-			// One {x=**} along a path, nested blocks included; in version 1, last in its
-			// statement, which is the only error two in one statement get there.
+			// In version 1, last in its statement; a second one nested in a block compiles
+			// there (production warns only of the children), the nested block being dead. In
+			// version 2, one along a path, nested blocks included.
 			switch {
 			case c.version == 1 && i != len(m.path)-1:
 				c.errorf(span{segmentStart(c.f.src, p.span), p.end}, msgGlobLast)
-			case c.version == 1 && st.globs > 0:
-				c.errorf(m.span, msgGlobOnce)
 			case c.version == 2 && st.globs+globs > 0:
 				at := m.span
 				if globs > 0 {

@@ -66,6 +66,7 @@ func TestCheckIssues(t *testing.T) {
 		{"version 1", "1", Firestore, docs(grantGet("/{d=**}", nil)), []string{"W " + msgOldVersion}},
 		{"version 3", "3", Firestore, docs(grantGet("/{d=**}", nil)), []string{"E Unsupported rules version 3."}},
 		{"another service", "2", "", docs(grantGet("/{d=**}", nil)), []string{"E Invalid service name: cloud.firestore."}},
+		{"no service", "2", "cloud.firestorex", docs(grantGet("/{d=**}", nil)), []string{"W Invalid service name: cloud.firestorex."}},
 
 		// Functions and lets.
 		{"let in version 1", "1", Firestore,
@@ -167,7 +168,7 @@ func TestCheckIssues(t *testing.T) {
 			docs(matchb("/x/{a=**}", block{matches: []*match{grantGet("/y/{b=**}", nil)}})), []string{"E " + msgGlobOnce}},
 		{"{x=**} in a block and in one nested, version 1", "1", Firestore,
 			docs(matchb("/x/{a=**}", block{matches: []*match{grantGet("/y/{b=**}", nil)}})),
-			[]string{"W " + msgOldVersion, "W " + msgGlobChildren, "E " + msgGlobOnce}},
+			[]string{"W " + msgOldVersion, "W " + msgGlobChildren}},
 		{"a non-final {x=**} with a block nested, version 2", "2", Firestore,
 			docs(matchb("/{p=**}/groups/{g}", block{matches: []*match{grantGet("/members/{m}", nil)}})), nil},
 		{"a variable twice in a statement", "2", Firestore, docs(grantGet("/{a}/{a}", nil)),
@@ -177,8 +178,12 @@ func TestCheckIssues(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			f := rulesFile(c.version, c.svc, c.body)
-			if c.svc == "" { // a Firestore file checked for Storage
+			switch c.svc {
+			case "": // a Firestore file checked for Storage
 				f.service, c.svc = string(Firestore), Storage
+			case Firestore, Storage:
+			default: // a name that is no service, checked for Firestore
+				f.service, c.svc = string(c.svc), Firestore
 			}
 			got, rs := issuesOf(c.svc, f)
 			if !slices.Equal(got, c.want) {
@@ -310,6 +315,35 @@ func TestCheckPositions(t *testing.T) {
 }
 
 // Weight counts the tree as well as the text and the pattern cache.
+// A name that is no service compiles, as in production, and the ruleset grants nothing.
+func TestUnknownServiceGrantsNothing(t *testing.T) {
+	f := rulesFile("2", Firestore, docsBlock(block{matches: []*match{grantGet("/{d=**}", nil)}}))
+	f.service = "cloud.firestorex"
+	rs, issues := check(f, Firestore, DefaultLimits())
+	if rs == nil || Issues(issues).Err() != nil {
+		t.Fatalf("does not compile: %v", issues)
+	}
+	if evaluate(t, rs, request(MethodGet, docPath("c", "d"), nil)).Allow {
+		t.Error("granted under an unknown service")
+	}
+}
+
+// The Rules API counts a source's content, its name and some framing: for firestore.rules,
+// 262,119 bytes of content compile and 262,120 do not.
+func TestSourceSizeBoundary(t *testing.T) {
+	lim := DefaultLimits()
+	for n, want := range map[int]bool{262_119: false, 262_120: true} {
+		f := File{Name: "firestore.rules", Content: strings.Repeat("x", n)}
+		if got := sourceTooLarge(f, &lim); got != want {
+			t.Errorf("%d bytes: too large %v, want %v", n, got, want)
+		}
+	}
+	rs, issues := Compile(Firestore, File{Name: "firestore.rules", Content: strings.Repeat("/", 262_120)}, lim)
+	if rs != nil || len(issues) != 1 || issues[0].Description != "Total size of sources must be smaller than 262144." {
+		t.Errorf("Compile = %v, %v", rs, issues)
+	}
+}
+
 func TestWeightCountsTheTree(t *testing.T) {
 	rs := compile(t, Firestore, rulesFile("2", Firestore, docsBlock(block{matches: []*match{grantGet("/{d=**}", and(tru(), tru()))}})))
 	if rs.Weight() <= rs.lim.RegexCacheBytes {
