@@ -1,7 +1,10 @@
 package rules
 
 import (
+	"cmp"
 	"errors"
+	"fmt"
+	"slices"
 )
 
 // Service names the service a rules file is for, as its service declaration does.
@@ -20,8 +23,50 @@ type File struct {
 
 // Compile parses and checks one rules file for a service. The issues hold every error and
 // warning in source order; the ruleset is nil when any issue is an error.
+//
+// Limits that do not validate, a service other than Firestore and Storage, and a file larger
+// than lim.SourceBytes are errors about the whole file: nothing compiles under them.
 func Compile(svc Service, f File, lim Limits) (*Ruleset, Issues) {
-	panic("S1-C: Compile")
+	whole := func(desc string) Issues {
+		return Issues{{File: f.Name, Severity: SeverityError, Description: desc}}
+	}
+	if err := lim.Validate(); err != nil {
+		return nil, whole("Invalid rules limits: " + err.Error())
+	}
+	if svc != Firestore && svc != Storage {
+		return nil, whole(fmt.Sprintf(msgInvalidService, svc))
+	}
+	if len(f.Content) > lim.SourceBytes {
+		return nil, whole(fmt.Sprintf(msgSourceTooLarge, len(f.Content), lim.SourceBytes))
+	}
+	tree, issues := parse(f.Name, f.Content, lim)
+	if tree == nil {
+		return nil, sortIssues(issues)
+	}
+	tree.name, tree.src = f.Name, f.Content
+	rs, more := check(tree, svc, lim)
+	all := sortIssues(append(issues, more...))
+	if all.Err() != nil {
+		return nil, all
+	}
+	return rs, all
+}
+
+// sortIssues orders issues as the Rules API lists them: those about the whole file first, then
+// by where they are.
+func sortIssues(is []Issue) Issues {
+	slices.SortStableFunc(is, func(a, b Issue) int {
+		switch {
+		case a.Position == nil && b.Position == nil:
+			return 0
+		case a.Position == nil:
+			return -1
+		case b.Position == nil:
+			return 1
+		}
+		return cmp.Compare(a.Position.CurrentOffset, b.Position.CurrentOffset)
+	})
+	return is
 }
 
 // Ruleset is a compiled rules file. It never changes once built and is safe for concurrent
@@ -37,7 +82,11 @@ type Ruleset struct {
 	// ones (regex.go).
 	regexes *regexCache
 
-	// The compiled match blocks and functions are check's (S1-C).
+	// blocks are the match blocks with allow statements, flattened, in file order (a block
+	// before the blocks in it). The functions they call hang off the tree (callExpr.user).
+	blocks []*compiledBlock
+	// treeBytes estimates the tree the ruleset keeps, for Weight.
+	treeBytes int64
 }
 
 // Version returns the file's rules_version: 1 or 2.
@@ -47,10 +96,11 @@ func (rs *Ruleset) Version() int { return rs.version }
 func (rs *Ruleset) Service() Service { return rs.service }
 
 // Weight estimates the bytes the ruleset holds, for tenancy's cache of compiled rulesets, which
-// is bounded by weight rather than count (ADR-021 §4, §7): its text, the programs of its literal
-// patterns, and the cap of its cache of patterns built during evaluation, which it may fill.
+// is bounded by weight rather than count (ADR-021 §4, §7): its text, its tree, the programs of
+// its literal patterns, and the cap of its cache of patterns built during evaluation, which it
+// may fill.
 func (rs *Ruleset) Weight() int64 {
-	w := int64(len(rs.src)) + rs.lim.RegexCacheBytes
+	w := int64(len(rs.src)) + rs.treeBytes + rs.lim.RegexCacheBytes
 	if rs.regexes != nil {
 		w += rs.regexes.literalBytes()
 	}
