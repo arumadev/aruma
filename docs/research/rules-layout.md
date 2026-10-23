@@ -147,7 +147,7 @@
   ```go
   // parser.go and issues.go (S1-A)
   func parse(name, src string, lim Limits) (*file, []Issue) { panic("S1-A: parse") }
-  func position(src string, at span) Position                 { panic("S1-A: position") }
+  func position(src string, at span) Position // provisional, working: code points, "\n" ends a line
 
   // ops.go, library.go, regex.go, path.go and auth.go (S1-B)
   func binary(m *meter, op token, x, y Value) (Value, error)                  { panic("S1-B: binary") }
@@ -159,6 +159,9 @@
   func callMethod(m *meter, recv Value, name string, args []Value) (Value, error) { panic("S1-B: callMethod") }
   func callFunction(m *meter, name string, args []Value) (Value, error)       { panic("S1-B: callFunction") }
   func compileLiteralRegex(rx *regexCache, pattern string) error              { panic("S1-B: compileLiteralRegex") }
+  func isLibraryFunction(name string) bool                                    // working: the rules.* list
+  func isLibraryNamespace(name string) bool                                   // working
+  func (rx *regexCache) literalBytes() int64                                  // working: 0 until B keeps programs
   func buildPath(m *meter, parts []pathPart) (Value, error)                   { panic("S1-B: buildPath") }
   func Auth(uid string, token map[string]any) Value                           { panic("S1-B: Auth") }
 
@@ -176,19 +179,23 @@
 حسمها S1-0 حيث سكت الهيكل أو تعارض، وكلها في الكود:
 
 - **دوال تذعر زائدة على القائمة، كلها في ملفات B:** `selectField` و`selectIndex` و`selectSlice` و`typeIs` في `ops.go`، و`buildPath` مع `pathPart` في `path.go`، و`Auth` في `auth.go`. الهيكل يجعل `a.f` و`a[i]` و`a[i:j]` و`is` وبناء المسار الحرفي من B، ولم يعطها توقيعًا، فكان C سيكتب نسخًا خاصة منها. أما `in` فعملية ثنائية (`tokIn`) تمر بـ `binary`.
-- **`position(src, at span)` لا `position(src, off int)`:** `Position` يحمل `CurrentOffset` و`EndOffset`، فيحتاج طرفي المدى، وكلاهما بوحدة التحويل نفسها.
+- **`position(src, at span)` لا `position(src, off int)`، وتعمل ولا تذعر:** `Position` يحمل `CurrentOffset` و`EndOffset`، فيحتاج طرفي المدى. وفي العقد نسخة مؤقتة تعدّ code points و`\n` نهاية السطر، حتى لا تنتظر اختبارات C مواضعَ A. يستبدلها A (CRLF، ووحدة الإنتاج) ويملك اختبارها.
+- **أسماء المكتبة للفاحص:** `isLibraryFunction` و`isLibraryNamespace` في `library.go` تعملان من الآن بقائمة مرجع rules.* (`int` و`float` و`string` و`path` و`debug`، و`math.*` و`hashing.*` و`latlng.value` و`timestamp.*` و`duration.*`)، فيربط C الاستدعاءات قبل دمج B. ويبقيها B مطابقة لـ `callFunction`. ودوال القراءة ليست فيها: هي لـ `lookup.go`.
+- **`(*Ruleset).Weight()`** في `api.go`: النص، وبرامج الأنماط الحرفية (`regexCache.literalBytes()`، صفر حتى يحفظها B)، وسقف ذاكرة الأنماط. يقرؤه LRU في `tenancy`.
 - **`compileLiteralRegex(rx *regexCache, pattern)`:** يأخذ ذاكرة أنماط الـ ruleset ليحفظ فيها برنامج النمط الحرفي (وزن الـ ruleset يحسب برامج أنماطه الحرفية). ونوع `regexCache` و`newRegexCache` (فارغة لا تذعر) في `regex.go` يملؤهما B. و`meter` يحمل `regexes`، فتصل `callMethod` إلى الذاكرة دون `Ruleset`.
 - **أسماء عقد التعابير بلاحقة `Expr`** (`binaryExpr` و`unaryExpr` و`callExpr`…)، لأن `binary` و`unary` أسماء الدوال في القائمة. وأنواع الاستدعاء `callsUser` و`callsFunction` و`callsMethod` و`callsLookup` للسبب نفسه. وحقول الربط التي يملؤها الفاحص (`identExpr.kind/slot` و`callExpr.kind/user/name`) في `ast.go` من الآن، فلا يلمسه C.
 - **`token` للعمليات وعلامات الترقيم وحدها:** الحرفيات والمعرّفات ومقاطع المسار أصناف معجمية يعرّفها A في `lexer.go`. والكلمات المحجوزة (`service` و`match` و`allow`…) معرّفات عند المعجم، يميزها المحلل بنصها.
 - **`MethodGet` و`MethodList`… لا `Get` و`List`:** `List` دالة بناء القيمة. وكذلك `SeverityError` و`SeverityWarning`.
 - **`abort{msg, err}`:** `err` هو العطل خلفه (`ErrOverloaded`، أو عطل `Documents`، أو `ctx`)، و`nil` لحد من حدود القواعد. فتبقى أخطاء المكتبة `*evalError` أو `*abort` وحدهما، ويعيد `Evaluate` العطل بـ `errors.As`.
 - **`meter.value(bytes, elems)` يفحص حجم القيمة ولا يحسب شيئًا،** و`alloc` وحده يحسب التخصيص ويحجز من `Inflight` بالبايت (CAS، بلا دفعات). ويُفحص حد التقييم قبل `Inflight`: الأول رفض، والثاني `ErrOverloaded`.
-- **`Budget`:** يعدّ قراءات الطلب ويحمل الذاكرة المؤقتة، أما عدّ العملية الواحدة فعند التقييم نفسه. وفي Storage حد الطلب = حد العملية = 2، وخدمة مجهولة صفر. والفاشل لا يُخزَّن.
-- **`Value`:** الصفر ليس قيمة (`kindInvalid`)، فكل عملية عليه خطأ. والتمثيل `kind` و`x any` (يغيّره B إن شاء)، و`duration` ثوانٍ ونانوثوانٍ لأن ±10,000 سنة لا تتسع لها `time.Duration`. وأسماء الأنواع في `Kind.String()` مبدئية، يطابقها B بالأوراكل.
+- **`Budget` بلا حدود:** `NewBudget()` يعدّ قراءات الطلب ويحمل الذاكرة المؤقتة فقط، و`Evaluate` يأخذ الحدود من الـ ruleset نفسه بـ `lookupLimits(rs.service, &rs.lim)`، فلا يعطي `Budget` صُنع لخدمة حدودَ خدمة أخرى. وعدّ العملية الواحدة عند التقييم. وفي Storage حد الطلب = حد العملية = 2، وخدمة مجهولة صفر. والفاشل لا يُخزَّن.
+- **`Value`:** الصفر ليس قيمة (`kindInvalid`)، فكل عملية عليه خطأ. و`==` عليه لا يُترجم (`_ [0]func()`)، لأنه يذعر على قائمتين: المساواة دوال `equal.go`. و`AsDuration` يرفض ما لا تتسع له `time.Duration` حتى النانوثانية. والتمثيل `kind` و`x any` (يغيّره B إن شاء)، و`duration` ثوانٍ ونانوثوانٍ لأن ±10,000 سنة لا تتسع لها `time.Duration`. وأسماء الأنواع في `Kind.String()` مبدئية، يطابقها B بالأوراكل.
 - **`StatementResult{Position, Methods []string, Outcome, Message}`:** الطرق كما كُتبت في العبارة (`read, write`)، و`Outcome` ثلاث قيم: `false` و`true` و`error`.
 - **`Segment`:** `Literal(name)` و`Literals(names...)` و`Name() (string, bool)`، والصفر هو الحرفي الفارغ.
 - **الإعداد:** `config.RulesLimits` نسخة من `rules.Limits` حقلًا بحقل بوسوم yaml، فالتحويل `rules.Limits(c.Rules.Limits)` تحويل نوع يفرض المترجم تطابقه، والقيم الافتراضية `RulesLimits(rules.DefaultLimits())`. يُفحص عند التحميل بـ `Validate`، و`Config.RulesEngineLimits()` يعيده لـ `app`. ورسائل الرفض بأسماء المفاتيح (`rules.limits.call_depth 21 is above Firebase's 20…`).
-- **اختبارات العقد** في `contract_test.go` و`limits_test.go` و`meter_test.go`، فتبقى `value_test.go` وأخواتها لـ B كما في الجدول.
+- **`Validate`** يرفض أيضًا `inflight_bytes` أقل من `alloc_bytes` (كل تقييم كان سيعيد `ErrOverloaded` أبدًا)، و`value_bytes` أكبر من `alloc_bytes`.
+- **archtest:** `TestStandardLibraryOnly` يرفض أي استيراد في `internal/platform/rules` أول عنصر في مساره فيه نقطة، لأن `TestDependencyRules` لا يرى إلا استيرادات الوحدة نفسها.
+- **اختبارات العقد** في `contract_test.go` و`limits_test.go` و`meter_test.go`. وحالات `value_test.go` التي تبني القيم من تمثيلها (حدود `AsDuration`) وضعها العقد هناك لأنها لـ B، يغيّرها مع التمثيل.
 
 ### المهام المتوازية
 
