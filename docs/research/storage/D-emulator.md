@@ -403,7 +403,7 @@ VERIFIED: `files.ts:415-493`، `apis/firebase.ts:153-199`، `apis/gcloud.ts:147-
    - Aruma يجب أن يتحقق، ويرفض `alg:none` و`Bearer owner` (ADR-010 S-3).
 2. **`Bearer owner` و`Firebase owner` يتجاوزان القواعد** على `/v0`. VERIFIED: `rules/utils.ts:117-119,139-141`.
 3. **الكتابة فوق كائن موجود تُقيَّم `create` لا `update`.** VERIFIED: `files.ts:320-330`.
-   - **تصحيح من المنسّق: هذا ليس انحرافًا.** الوثائق الرسمية تجعل `create` لكل كتابة لمحتوى الملف و`update` لتعديل البيانات الوصفية فقط، واختبار مطابقة يعمل على الإنتاج يؤكده (انظر 7.1).
+   - **تصحيح من المنسّق: الوثائق لا تراه انحرافًا.** الوثائق الرسمية تجعل `create` لكل كتابة لمحتوى الملف و`update` لتعديل البيانات الوصفية فقط. والإنتاج نفسه لم يُرصد (انظر 7.1 وE §3.3).
 4. `generation` بالميلي ثانية، والإنتاج بالميكروثانية (16 رقمًا).
    - `etag` لا يتغير بعد تعديل البيانات الوصفية، وصيغته sha1 لا صيغة GCS.
 5. `crc32c` في صيغة `/v0` نص عشري، والإنتاج على الأرجح base64 كما في GCS.
@@ -461,12 +461,13 @@ VERIFIED: `files.ts:415-493`، `apis/firebase.ts:153-199`، `apis/gcloud.ts:147-
 ### 7.1 ما أكدته التسجيلات من قراءة الشيفرة
 
 - **الرفع يُقيَّم `create` حتى فوق كائن موجود** (`rules.json`، الخطوة `guarded: overwrite a locked object (update)`): القاعدة تسمح بـ `create` وحده، وشرط `update` يرفض، فنجح الرفع.
-  - وهذا **يطابق الإنتاج** بحسب الوثائق الرسمية: `create` "Applies to writes to file contents"، و`update` "Applies to updates to (pre-existing) file metadata" (firebase.google.com/docs/storage/security/core-syntax، قُرئت 2026-10-23). واختبار المطابقة `should upload replace existing file` (يُشغَّل على الإنتاج أيضًا) يكتب فوق ملف لا يسمح له إلا `read, create`. فالبند 6.2-3 أعلاه **ليس انحرافًا**؛ `update` في Storage لـ PATCH البيانات الوصفية وحده.
+  - وهذا **يطابق الوثائق الرسمية**: `create` "Applies to writes to file contents"، و`update` "Applies to updates to (pre-existing) file metadata" (firebase.google.com/docs/storage/security/core-syntax، قُرئت 2026-10-23). فالبند 6.2-3 أعلاه ليس انحرافًا عن الوثائق؛ `update` في Storage لـ PATCH البيانات الوصفية وحده.
+  - **وليس دليل إنتاج:** اختبار المطابقة `should upload replace existing file` يعتمد على `scripts/storage-emulator-integration/storage.rules` الذي يُحمَّل في المحاكي فقط ولا يُنشر على مشروع الإنتاج، و`useProductionServers` مثبت على `false` (`conformance/env.ts:17`). فالدليل وثائق + محاكٍ، والبند مفتوح (E §3.3، §10).
 - **القواعد في الرفع المتقطع تُقيَّم عند الإنهاء**: الطلب `start` والقطعة الأولى يردّان 200، ثم `upload, finalize` يرد 403 مع `x-goog-upload-status: final` (`rules.json`، `unauthenticated resumable upload` و`limited: resumable too big`). الـ SDK يعيد `storage/unauthorized` بالحالة 403.
 - **التحقق من الصلاحية قبل الوجود**: B يقرأ ملفًا غير موجود في مجلد A فيأخذ 403 لا 404، وA يقرأ ملفًا غير موجود في مجلده فيأخذ 404 (`rules.json`). وحذف كائن غير موجود تحت قاعدة تقرأ `resource.metadata` يعطي 403 (`guarded: delete missing object`): `resource` يساوي `null` فيصير الشرط خطأً فرفضًا.
 - **الإزاحات لا تُفحص**: قطعة بإزاحة 15 بعد 10 بايتات، ثم قطعة بإزاحة 5، كلتاهما 200، والحجم النهائي 30 (`raw_resumable.json`). والإنهاء بـ 4 بايتات بعد إعلان 10 ينجح بحجم 4.
 - **رموز التنزيل تتجاوز القواعد** للبايتات وللبيانات الوصفية: رابط `getDownloadURL` لملف في مجلد A يعمل بلا مصادقة وبمصادقة B، و`?token=` على رابط البيانات الوصفية (بلا `alt=media`) يعيد البيانات الوصفية بلا مصادقة (`rules.json`).
-- **الرموز اتحاد لا استبدال**: PATCH من العميل بـ `metadata.firebaseStorageDownloadTokens: "mine-1"` **يضيف** `mine-1` إلى الرموز ويعمل رابطه بعدها، والحقل `downloadTokens` في جسم PATCH يُتجاهل (`tokens.json`). أي أن **عميلًا له صلاحية `update` يستطيع زرع رمز يعرفه** في المحاكي؛ سلوك الإنتاج هنا غير معروف (E، البند 3.4).
+- **الرموز اتحاد لا استبدال**: PATCH من العميل بـ `metadata.firebaseStorageDownloadTokens: "mine-1"` **يضيف** `mine-1` إلى الرموز ويعمل رابطه بعدها، والحقل `downloadTokens` في جسم PATCH يُتجاهل (`tokens.json`). أي أن **عميلًا له صلاحية `update` يستطيع زرع رمز يعرفه** في المحاكي؛ سلوك الإنتاج هنا غير معروف، وAruma يحذف المفتاح من كل metadata واردة من العملاء (E §5). أما الإبطال من Admin بحذف الرمز فيعمل في الإنتاج (Pyric، E §5)، فاتحاد المحاكي انحراف.
 - **`create_token`/`delete_token`** للمسؤول فقط (`Bearer owner`)، وللمستخدم 403 `{"error":{"code":403,"message":"Missing admin credentials."}}`. حذف رمز غير موجود يرد 200 ويرفع `metageneration`، و`create_token=true&delete_token=x` معًا يرد 200 (`tokens.json`).
 - **أي JWT يُقبل**: رمز `alg:none` مزوّر يقرأ (200)، والمخطط `Bearer` يُقبل لرمز المستخدم كما `Firebase`، والنص العشوائي يعطي 403 (`sdk_read.json`، `rules.json`).
 

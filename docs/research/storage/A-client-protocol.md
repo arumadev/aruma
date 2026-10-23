@@ -36,15 +36,17 @@
    - `[V]` JS requests.ts:427-433; AND network/ResumableNetworkRequest.java:26 + ResumableUploadStartRequest.java:43-45; GTM 566-572.
 4. **Android يرسل `updateMetadata` بـ `PUT` مع `X-HTTP-Method-Override: PATCH`.** `[V]` AND network/UpdateMetadataNetworkRequest.java:34,39-41.
 5. **JS لا يرسل `uploadType` أبدًا**، ويرسل `name` وحده. فنوع الرفع يُعرف من `X-Goog-Upload-Protocol`. `[V]` JS requests.ts:329-331,361,424.
-6. **التواريخ تُحلَّل بصيغة صارمة فيها ثلاث خانات للميلي ثانية بالضبط** (`2024-05-01T12:34:56.789Z`). بغيرها:
-   - Android يعيد 0. `[V]` AND internal/Util.java:48,52-67.
+6. **التواريخ تُحلَّل بنمط فيه خانات الميلي ثانية** (`2024-05-01T12:34:56.789Z`). بغير ثلاث خانات بالضبط:
+   - Android (`SimpleDateFormat` بالنمط `yyyy-MM-dd'T'HH:mm:ss.SSSZ`، وهو متساهل افتراضيًا): **غياب** الكسر يُفشل التحليل فيعيد 0؛ أما **كسر أطول** مثل `.123456Z` فيُقرأ 123456 ميلي ثانية، فيُزاح الوقت بصمت نحو دقيقتين، ولا خطأ. `[V]` AND internal/Util.java:48,52-67 (النمط والتحويل)؛ والتساهل `[I]` (سلوك `SimpleDateFormat` الافتراضي في Java).
    - iOS يعيد `nil`. `[V]` IOS StorageMetadata.swift:228-241.
+   - فالتوصية ثلاث خانات بالضبط ولاحقة `Z`.
 7. **iOS يفسد قائمة الملفات بصمت** إن احتوى أي عنصر في `items` على قيمة غير نصية: يحوّل إلى `[[String: String]]`. `[V]` IOS StorageListResult.swift:60-66.
    - والشيء نفسه في `metadata` المخصّصة: يحوّلها إلى `[String: String]`. `[V]` IOS StorageMetadata.swift:164.
 8. **`nextPageToken: ""` يدخل `listAll` في حلقة لا تنتهي** على المنصات الثلاث.
-   - يتوقف الدوران عند `null` أو عند غياب الحقل فقط.
-   - والرمز الفارغ لا يُرسل في الطلب التالي، فتُطلب الصفحة الأولى من جديد.
+   - الرمز الفارغ لا يُرسل في الطلب التالي، فتُطلب الصفحة الأولى من جديد.
    - `[V]` JS reference.ts:363 + requests.ts:190؛ AND StorageReference.java:628 + network/ListNetworkRequest.java:75؛ IOS StorageReference.swift:342.
+   - **غياب الحقل وحده يوقف الدوران في المنصات الثلاث.** أما قيمة JSON `null` فتوقفه في JS وiOS فقط. في Android يقرأ `ListResult` الحقل بـ `optString(PAGE_TOKEN_KEY, null)` (`[V]` AND ListResult.java:67)، و`optString` في `org.json` على Android تحوّل `JSONObject.NULL` إلى النص `"null"` (`[V]` AOSP `platform/libcore` فرع `main`، قُرئ 2026-10-24: `json/src/main/java/org/json/JSONObject.java:579-583` و`:114-116`، و`JSON.java:86-93`)، فيُرسل الطلب التالي `pageToken=null`. والشيء نفسه في `downloadTokens: null`: `optString("downloadTokens")` يعطي `"null"`، فيبني `getDownloadURL` رابطًا فيه `&token=null` (`[V]` AND GetDownloadUrlTask.java:59-64).
+   - **القاعدة: لا يُرسَل JSON `null` في أي رد على `/v0`. الحقل بلا قيمة يُحذف.**
 9. **iOS لا يعيد المحاولة على 500 ولا على 429.** يعيد على 408/502/503/504 وانقطاع الشبكة فقط. `[V]` GTMF 3618-3643; IOS Internal/StorageFetcherService.swift:82-93.
 10. **iOS يرسل `null` في PATCH** لكل حقل أعاده الخادم ولا يعرفه `dictionaryRepresentation`، مثل `downloadTokens` و`etag` و`crc32c`. فإن عامل الخادم `null` كحذف، **مسح iOS رموز التنزيل**. `[V]` IOS StorageMetadata.swift:108-125,205-207,247-255.
 11. **Android يلحق بايتات الاستئناف بالملف دون فحص 206.** فإن تجاهل الخادم `Range: bytes=N-` وأعاد 200 بالملف كله، فسد الملف. `[V]` AND FileDownloadTask.java:141-147,199-212.
@@ -54,6 +56,7 @@
     - `[V]` JS platform/browser/connection.ts:118-123; platform/node/connection.ts:97-99; requests.ts:108-117.
 13. **لا مكتبة تتحقق من `md5Hash` أو الحجم بعد الرفع.** `[V]` JS requests.ts:559-562 (TODO)؛ ولا استخدام لـ md5 في AND/IOS غير القراءة.
 14. **getDownloadURL بلا رموز:** JS يرمي `storage/no-download-url`، وiOS يرمي `unknown`، و**Android ينجح ويعيد `null`**. `[V]` JS reference.ts:472-475; IOS Internal/StorageGetDownloadURLTask.swift:32-40; AND GetDownloadUrlTask.java:58-70,79-86.
+    - لكن هذا لا يحدث في الإنتاج لكائن موجود: **GET البيانات الوصفية المصرّح به على `/v0` لكائن بلا رموز يُنشئ رمزًا ويحفظه**، فالرد يحمل `downloadTokens` دائمًا. الأدلة: Pyric على Storage حقيقي (`davideast/pyric@756d23e`، `packages/conformance/observations/storage-admin/admin-storage-metadata-download-url.json`: `mintsTokenIntoMetadata: true`)، واختبار المطابقة `returns url pointing to the expected host` (firebase-tools 4e6eb923، `scripts/storage-emulator-integration/conformance/firebase-js-sdk.test.ts:451-462`: كائن رُفع عبر GCS بلا رموز، و`getDownloadURL()` يعيد `?alt=media&token=`)، والمحاكي (`FT apis/firebase.ts:139-141`). انظر E §5.
 
 ## 2. العنوان الأساسي والترويسات المشتركة
 
@@ -359,11 +362,11 @@ Content-Type: <contentType>\r\n\r\n
 | `name` | يصير `fullPath`، و`name` = آخر مقطع. `[V]` metadata.ts:73-83 | `mPath`. `[V]` java:340 | `path`، و`name` = آخر مقطع. `[V]` swift:173-176 | string، المسار الكامل |
 | `generation`, `metageneration` | كما هو (النوع string). `[V]` metadata.ts:71-72 | `optString` (يحوّل الرقم). `[V]` java:339,342 | `Int` أو `String` رقمي إلى `Int64`. غير ذلك = 0. `[V]` swift:166-167,221-226 | string رقمي (أسلوب GCS) |
 | `size` | `Number(size)`. `[V]` metadata.ts:88-100 | `optLong` (يقبل نصًا أو رقمًا). `[V]` java:345 | `Int` أو `String`. `[V]` swift:165 | string رقمي (كما في المحاكي `FT metadata.ts:341`) |
-| `timeCreated`, `updated` | نص خام. `[V]` metadata.ts:101-102 | `yyyy-MM-dd'T'HH:mm:ss.SSSZ` بعد تحويل `Z` إلى `-0000`. الفشل = 0. `[V]` Util.java:48,52-67 | `yyyy'-'MM'-'dd'T'HH':'mm':'ss.SSSZZZZZ`. الفشل = `nil`. `[V]` swift:228-241 | **`2006-01-02T15:04:05.000Z` بالضبط**: 3 خانات، ولاحقة `Z` |
+| `timeCreated`, `updated` | نص خام. `[V]` metadata.ts:101-102 | `yyyy-MM-dd'T'HH:mm:ss.SSSZ` بعد تحويل `Z` إلى `-0000`. الفشل = 0، والكسر الأطول من ثلاث خانات يُقرأ ميلي ثوانيَ فيُزاح الوقت بصمت (§1.6). `[V]` Util.java:48,52-67 | `yyyy'-'MM'-'dd'T'HH':'mm':'ss.SSSZZZZZ`. الفشل = `nil`. `[V]` swift:228-241 | **`2006-01-02T15:04:05.000Z` بالضبط**: 3 خانات، ولاحقة `Z` |
 | `md5Hash` | كما هو. `[V]` | `optString`. `[V]` java:346 | `as? String`. `[V]` swift:170 | base64، دون تحقق في العميل |
 | `contentType`, `cacheControl`, `contentDisposition`, `contentEncoding`, `contentLanguage` | كما هي. `[V]` metadata.ts:104-108 | نص غير `null`. `[V]` java:356-371 | `as? String`. `[V]` swift:159-163 | string. وغيابها مقبول |
 | `metadata` (مخصّصة) | يصير `customMetadata`. `[V]` metadata.ts:109 | `getJSONObject`، ثم `getString` لكل مفتاح. `[V]` java:348-354 | `as? [String: String]`: **قيمة واحدة غير نصية تُسقط الخريطة كلها**. `[V]` swift:164 | كائن قيمه نصوص فقط |
-| `downloadTokens` | نص فيه فواصل، لـ `getDownloadURL` فقط. `[V]` metadata.ts:166-177 | `optString`. `[V]` GetDownloadUrlTask.java:59 | `as? String`. `[V]` GetDownloadURLTask.swift:51-53 | **string** مفصول بفواصل، لا مصفوفة |
+| `downloadTokens` | نص فيه فواصل، لـ `getDownloadURL` فقط. `[V]` metadata.ts:166-177 | `optString`، و`null` يصير `"null"` (§1.8). `[V]` GetDownloadUrlTask.java:59 | `as? String`. `[V]` GetDownloadURLTask.swift:51-53 | **string** مفصول بفواصل، لا مصفوفة ولا `null`. والمفتاح `firebaseStorageDownloadTokens` لا يظهر داخل `metadata` (E §5) |
 | حقول أخرى (`etag`, `crc32c`, `storageClass`...) | تُتجاهل | تُتجاهل | تُحفظ في `initialMetadata`، ثم تُرسل `null` في PATCH (3.5) | ضعها إن شئت، وتجاهل `null` لها في PATCH |
 
 مثال رد متوافق (على نسق المحاكي، `FT metadata.ts:312-352`):
@@ -374,8 +377,9 @@ Content-Type: <contentType>\r\n\r\n
  "contentEncoding":"identity","contentDisposition":"inline","metadata":{"k":"v"},
  "downloadTokens":"0b7c...-uuid"}
 ```
-- المحاكي يولّد رمز تنزيل UUID عند الرفع إن لم يوجد. `FT apis/firebase.ts:210-216`
-- ويولّده كذلك عند أول GET إن كانت القائمة فارغة. `FT apis/firebase.ts:139-141`
+- المحاكي يولّد رمز تنزيل UUID عند الرفع إن لم يرسل العميل واحدًا. `FT apis/firebase.ts:210-216`. **Aruma لا يقبل رمزًا من العميل** ويولّده دائمًا (§7، E §5).
+- ويولّده كذلك عند أول GET مصرّح به إن كانت القائمة فارغة. `FT apis/firebase.ts:139-141`. وهذا سلوك الإنتاج أيضًا (§1.14).
+- لا قيمة `null` في أي حقل: الحقل بلا قيمة يُحذف (§1.8).
 
 ## 5. الأخطاء وإعادة المحاولة
 
@@ -514,7 +518,7 @@ Content-Type: <contentType>\r\n\r\n
 - [ ] إزاحة لا تطابق المستلَم: 4xx مع `X-Goog-Upload-Status: active`. iOS سيرسل query، وAndroid يُصلح نفسه بالـ query، أما JS فيفشل. `[I]`
   - بديل أكثر تسامحًا: إن كانت القطعة مكررة بالكامل (`offset + len ≤ received`)، أجب 200 `active` بالحجم الحالي. `[I]`
 - [ ] الجلسات تبقى أيامًا (Android يعرض رابطها للاستئناف لاحقًا).
-- [ ] توليد `downloadTokens` (UUID) عند إنشاء الكائن إن لم يوجد.
+- [ ] **رموز التنزيل يولّدها الخادم وحده** (UUID) عند إنشاء الكائن عبر `/v0`. المفتاح `firebaseStorageDownloadTokens` يُحذف من الـ metadata المخصّصة الواردة في multipart وفي جسم `start` (وفي PATCH، أدناه) **قبل** تقييم القواعد وقبل الحفظ، فلا يُحترم رمز يرسله العميل، ولا تراه القواعد. (المحاكي يحترمه، D §2.2؛ والقرار وسببه في E §5.)
 
 **الـ metadata**
 - [ ] الحقول:
@@ -523,12 +527,14 @@ Content-Type: <contentType>\r\n\r\n
   - `timeCreated` و`updated` بصيغة `YYYY-MM-DDTHH:MM:SS.mmmZ`: ثلاث خانات بالضبط، ولاحقة `Z`.
   - `md5Hash` (base64).
   - `contentType` و`cacheControl` و`contentDisposition` و`contentEncoding` و`contentLanguage`.
-  - `metadata`: كائن قيمه نصوص فقط.
+  - `metadata`: كائن قيمه نصوص فقط، **بلا** المفتاح `firebaseStorageDownloadTokens` (الإنتاج يخفيه، E §5).
   - `downloadTokens`: نص مفصول بفواصل.
+- [ ] **لا JSON `null` في أي رد على `/v0`.** الحقل بلا قيمة يُحذف من الرد. Android يحوّل `null` إلى النص `"null"` (§1.8).
+- [ ] GET البيانات الوصفية **المصرّح به** لكائن بلا رموز يولّد رمزًا ويحفظه (ويرفع `metageneration`)، كما في الإنتاج (§1.14، E §5).
 - [ ] PATCH:
   - الحقول القابلة للتعديل: `contentType` و`cacheControl` و`contentDisposition` و`contentEncoding` و`contentLanguage` و`metadata`.
   - `null` على حقل منها = حذفه.
-  - `metadata` تُدمج مفتاحًا مفتاحًا، و`null` على مفتاح يحذفه.
+  - `metadata` تُدمج مفتاحًا مفتاحًا، و`null` على مفتاح يحذفه. **عدا `firebaseStorageDownloadTokens`**: يُحذف من الجسم الوارد قبل الدمج وقبل القواعد، بقيمة أو بـ `null`، فلا يضيف العميل رمزًا ولا يحذفه.
   - **كل ما سواها يُتجاهل حتى لو كان `null`.** ويشمل: `name`، و`bucket` (iOS يرسل `""`)، و`size`، و`generation`، و`metageneration`، و`timeCreated`، و`updated`، و`md5Hash`، و`etag`، و`crc32c`، و**`downloadTokens`**.
   - الرد: الـ metadata كاملة.
   - أثر `"metadata": null` كليًا يحتاج قرارًا (القسم 8).
@@ -538,13 +544,16 @@ Content-Type: <contentType>\r\n\r\n
 - [ ] `Content-Length` صحيح دائمًا، و`ETag` ثابت لمحتوى الكائن.
 - [ ] `Range: bytes=a-b` و`bytes=a-`: **206** مع `Content-Range`.
   - تجاهل `Range` وإعادة 200 يُفسد استئناف Android.
+  - **استثناء: الكائن الفارغ.** JS يرسل `Range: bytes=0-N` دائمًا مع `maxDownloadSizeBytes` ويقبل `[200, 206]` فقط (`[V]` JS requests.ts:227-230)، والنطاق غير قابل للإرضاء على طول 0، فيُرد **200 بجسم فارغ** لا 416 (E §4).
+- [ ] كائن مخزّن بـ `Content-Encoding: gzip` بلا `Accept-Encoding: gzip` في الطلب: يُفك الضغط ويُرسل بلا `Content-Encoding` ولا `Content-Length`، ويُتجاهل `Range` (decompressive transcoding، E §4).
+- [ ] `Cache-Control` المخزّن لا يُرسل `public` على رد طلب فيه `Authorization` (قرار ADR-022، E §4).
 
 **القائمة**
 - [ ] `prefix` فارغ أو غائب = الجذر. و`delimiter=/`.
 - [ ] `maxResults` بين 1 و1000، وافتراضيًا 1000. `[I]`
 - [ ] الرد `{"prefixes":["a/b/"],"items":[{"name":"a/x","bucket":"b"}],"nextPageToken":"..."}`.
   - العناصر بحقول نصية فقط.
-  - **احذف `nextPageToken` في آخر صفحة.** لا تُرسله فارغًا.
+  - **احذف `nextPageToken` في آخر صفحة.** لا تُرسله فارغًا ولا `null` (§1.8).
 
 **الحذف**
 - [ ] 204 أو 200 بجسم فارغ.
@@ -557,7 +566,7 @@ Content-Type: <contentType>\r\n\r\n
 - [ ] لا 308 في أي رد.
 
 **الويب (CORS)**
-- [ ] عكس الأصل، والسماح بالترويسات المذكورة في 6.1 وبطرق GET وPOST وPUT وPATCH وDELETE.
+- [ ] السماح بالترويسات المذكورة في 6.1 وبطرق GET وPOST وPUT وPATCH وDELETE. وسياسة الأصل، خصوصًا على `alt=media` الذي يحكمه في الإنتاج إعداد CORS للـ bucket، قرار مفتوح لـ ADR-022 (E §2).
 - [ ] كشف `X-Goog-Upload-URL` و`X-Goog-Upload-Status` و`X-Goog-Upload-Size-Received` (و`X-Goog-Upload-Chunk-Granularity` و`Content-Range` و`ETag` احتياطًا).
 
 **الترويسات**

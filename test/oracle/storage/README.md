@@ -22,8 +22,11 @@ object was written there. Nothing needed restoring.
 Everything else below comes from the **local Storage emulator**. The emulator is an oracle of
 the second rank (brief: production, then the emulator as a black box, then Google's SDK suites);
 `docs/research/storage/E-production-vs-emulator.md` lists where the emulator is known or
-suspected to differ from production, and which of those a production capture must settle once
-a project with a bucket is available.
+suspected to differ from production. The owner has since decided against production Storage
+captures (no Blaze plan), so production evidence comes only from the official docs, the
+firebase-tools conformance tests written to run against production (not those that depend on
+their own rules file), Pyric's observations on real Storage, and the SDK sources; E names the
+source of every row and keeps the rest as open items.
 
 ## emulator/ — the Storage emulator of firebase-tools 15.34.0
 
@@ -83,7 +86,9 @@ ID tokens (`<id-token-a>`, `<id-token-b>`), uids (`<uid-a>`), emails, the fixed 
 (`<upload-id-N>`, from `X-GUploader-UploadID` and `upload_id=`) are replaced before anything is
 written; the same value keeps the same placeholder within a file. Other UUIDs (multipart
 boundaries, `x-goog-gcs-idempotency-token`) are not secret and are kept. A forged `alg:none`
-token would be written `<jwt>`. The emulator's tokens grant nothing outside this machine; the
+token would be written `<jwt>`, and absolute paths of the capture machine (the emulator's HTML
+stack trace for invalid JSON in `sdk_metadata.json`) are written `<path>`; that file was
+normalised after capture with the same pattern `capture.mjs` now applies. The emulator's tokens grant nothing outside this machine; the
 redaction is there so the same script is safe on production.
 
 ### Scenarios

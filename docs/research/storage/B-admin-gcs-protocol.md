@@ -312,7 +312,12 @@ ACL و`makePublic` (`POST …/o/{o}/acl` مع `{entity:'allUsers',role:'READER'}
 
 لا يرسل Go `Accept-Encoding` إلا مع `ReadCompressed(true)` (`http_client.go:1448-1451`). أما `net/http` فيضيف `gzip` ضمنيًا في الطلبات الكاملة غير المحدودة بنطاق، ويفك الضغط بشفافية، ويضبط `res.Uncompressed`. عندها يُلغى فحص CRC [I، net/http]، و`http_client.go:1594` [V].
 
-**توصية v0.3:** لا تضغط الردود ديناميكيًا أبدًا. أرسل البايتات كما خُزّنت، مع `Content-Encoding` المخزّن في الكائن إن وُجد. وأرسل دائمًا `x-goog-stored-content-encoding: identity|gzip` و`x-goog-hash: crc32c=…,md5=…` الصحيحين.
+**توصية v0.3 (مصحّحة بعد المراجعة):** لا تضغط الردود ديناميكيًا أبدًا. لكن الكائن المخزّن بـ `Content-Encoding: gzip` يخضع لـ **decompressive transcoding** كما في GCS، على سطح GCS وعلى `/v0` معًا:
+- إن لم يحمل الطلب `Accept-Encoding: gzip`: تُفك البايتات وتُرسل **بلا** `Content-Encoding` ولا `Content-Length`، ويُتجاهل `Range` فيُرد 200 كاملًا. الوثيقة: "the response containing the object does not contain a Content-Encoding or Content-Length header"، و`Range` "is silently ignored" (cloud.google.com/storage/docs/transcoding). واختبار المطابقة `should serve gunzipped file by default` يؤكده على `/v0` (firebase-tools 4e6eb923، `scripts/storage-emulator-integration/conformance/firebase.endpoints.test.ts:481-514`، ليس `emulatorOnly`).
+- إن حمله: تُرسل البايتات كما خُزّنت مع `Content-Encoding: gzip` (الاختبار نفسه، `:516-550`).
+- `Cache-Control: no-transform` في الكائن يمنع التحويل (الوثيقة نفسها).
+- وأرسل دائمًا `x-goog-stored-content-encoding: identity|gzip` و`x-goog-hash: crc32c=…,md5=…` للبايتات **المخزّنة**. Node يتحقق فقط حين `stored=identity`، أو `stored=gzip` مع `content-encoding: gzip` (§6.1)، فلا يتحقق خطأً من رد مفكوك.
+- Node وGo يرسلان `Accept-Encoding: gzip` في الحالات العادية (TEENY، وnet/http ضمنيًا)، فيصلهما المضغوط ويفكّانه بأنفسهما.
 
 ## 7. شكل object resource كما يحلّله العميلان
 
