@@ -47,3 +47,31 @@ rtdb:
     outbox_bytes: 67108864         # unsent data per connection before it is dropped
     read_rows: 1000000             # stored rows one read may load (a get, a listen's first
                                    # data); more is refused with too_big before loading
+rules:                             # Firestore and Storage security rules (ADR-021)
+  limits:
+    # Firebase's limits: a value may lower one; a value above Firebase's is refused at startup.
+    call_depth: 20                 # the longest chain of function calls
+    function_lets: 10              # let bindings in one function
+    function_args: 7               # parameters of one function
+    expression_depth: 98           # the deepest nesting of parentheses, operators, lists, ?:
+    match_depth: 10                # nested match blocks
+    match_segments: 100            # path segments of nested match blocks together
+    match_variables: 20            # path variables of nested match blocks together
+    source_bytes: 262144           # the size of a rules file
+    expressions: 1000              # expressions evaluated for one request
+    lookups_per_operation: 10      # documents one Firestore operation reads (get, exists)
+    lookups_per_request: 20        # documents a Firestore batch or transaction reads
+    storage_lookups: 2             # Firestore documents one Storage request reads
+    # Aruma's limits: they protect the server from hostile rules, and may be set freely.
+    member_chain: 2000             # a chain of .field and [index]
+    work: 67108864                 # work units of one evaluation (patterns, collections)
+    value_bytes: 2097152           # one string or bytes value
+    value_elements: 1048576        # one list, map or set
+    alloc_bytes: 16777216          # the values one evaluation builds
+    inflight_bytes: 536870912      # the values every evaluation builds together; past it,
+                                   # requests get UNAVAILABLE, which the SDKs retry
+    regex_instructions: 10000      # the compiled program of one pattern
+    request_segments: 1024         # the segments of a request path
+    regex_cache_entries: 256       # patterns built during evaluation that a ruleset keeps
+    regex_cache_bytes: 4194304     # their estimated programs
+    compiled_rulesets_bytes: 134217728  # compiled rulesets kept in memory, by weight
