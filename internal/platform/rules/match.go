@@ -16,9 +16,10 @@ package rules
 //     one statement grants); it compiles without a warning, and nothing in it is evaluated;
 //   - a block nested in one whose own statement ends in {x=**} matches at any depth in version
 //     2, and never in version 1 (or without a version line);
-//   - a second {x=**} along one path, in a nested block, does not compile.
+//   - a second {x=**} along one path, in a nested block, does not compile in version 2; in
+//     version 1 it compiles with a warning, the nested block being dead.
 //
-// So a pattern holds at most one {x=**}, and matching is linear: the segments before it take
+// So a live pattern holds at most one {x=**}, and matching is linear: the segments before it take
 // the start of the path, those after it the end, and it takes the run between. Its binding is
 // fixed by the length; no backtracking or table is needed whatever the nesting.
 
@@ -84,15 +85,20 @@ func methodsNamed(name string) (s methodSet, ok bool) {
 }
 
 // binding is the value of a path variable for one request. A variable that took an unknown
-// segment has none (ok false): reading it is an error without a message (ADR-021 §2.4).
+// segment has none (ok false): reading it is an error without a message (ADR-021 §2.4). A
+// {x=**} keeps the run it took as a part of the request's path (run); its Path value is built,
+// and charged to the evaluation, only when the condition reads it (evaluator.pathVar).
 type binding struct {
-	v  Value
-	ok bool
+	v    Value
+	ok   bool
+	run  []Segment
+	lazy bool // a {x=**} whose Path is not built yet
 }
 
-// match reports whether the block's pattern takes the whole path, and what its variables hold.
-// It is linear in the pattern.
-func (b *compiledBlock) match(path []Segment, version int) ([]binding, bool) {
+// match reports whether the block's pattern takes the whole path, and what its variables hold,
+// in vars, which it reuses (one evaluation tries block after block). It is linear in the
+// pattern and builds nothing: matching thousands of blocks against a long path costs no memory.
+func (b *compiledBlock) match(path []Segment, version int, vars []binding) ([]binding, bool) {
 	if b.dead || b.globs > 1 { // more than one {x=**} does not compile; refuse it all the same
 		return nil, false
 	}
@@ -105,19 +111,27 @@ func (b *compiledBlock) match(path []Segment, version int) ([]binding, bool) {
 		return nil, false
 	}
 	run := m - n + 1 // the segments the {x=**} takes, when there is one
-	vars := make([]binding, b.nvars)
-	at := 0 // where in the path the segment takes its place
-	for _, s := range b.segs {
+	// where returns the part of the path that segment s, placed at at, takes.
+	where := func(s matchSeg, at int) (int, int) {
 		if s.kind == patternRest {
-			bind(vars, s, path[at:at+run])
-			at += run
-			continue
+			return at, at + run
 		}
-		if !takes(s, path[at]) {
+		return at, at + 1
+	}
+	at := 0
+	for _, s := range b.segs {
+		from, to := where(s, at)
+		if s.kind != patternRest && !takes(s, path[from]) {
 			return nil, false
 		}
-		bind(vars, s, path[at:at+1])
-		at++
+		at = to
+	}
+	vars = append(vars[:0], make([]binding, b.nvars)...)
+	at = 0
+	for _, s := range b.segs {
+		from, to := where(s, at)
+		bind(vars, s, path[from:to])
+		at = to
 	}
 	return vars, true
 }
@@ -134,23 +148,36 @@ func takes(s matchSeg, p Segment) bool {
 	return false
 }
 
-// bind sets the variable of s, if it has one, to the segments it took: a string for {x}, a path
-// for {x=**}, and no value when one of them is unknown.
+// bind sets the variable of s, if it has one, to the segments it took: a string for {x}, the
+// run for {x=**}, and no value when one of them is unknown.
 func bind(vars []binding, s matchSeg, took []Segment) {
 	if s.kind == patternLiteral {
 		return
 	}
-	names := make([]string, len(took))
-	for i, p := range took {
+	for _, p := range took {
 		if p.kind != segmentLiteral {
 			vars[s.slot] = binding{}
 			return
 		}
-		names[i] = p.name
 	}
 	if s.kind == patternVariable {
-		vars[s.slot] = binding{v: String(names[0]), ok: true}
+		vars[s.slot] = binding{v: String(took[0].name), ok: true}
 		return
 	}
-	vars[s.slot] = binding{v: Value{kind: KindPath, x: names}, ok: true}
+	vars[s.slot] = binding{ok: true, run: took, lazy: true}
+}
+
+// pathOf builds the Path value of a {x=**} run, charging it to m.
+func pathOf(m *meter, run []Segment) (Value, error) {
+	if err := m.value(0, int64(len(run))); err != nil {
+		return Value{}, err
+	}
+	if err := m.alloc(int64(len(run))*16 + 24); err != nil {
+		return Value{}, err
+	}
+	names := make([]string, len(run))
+	for i, p := range run {
+		names[i] = p.name
+	}
+	return Value{kind: KindPath, x: names}, nil
 }

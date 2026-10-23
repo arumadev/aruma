@@ -180,10 +180,7 @@ func (ev *evaluator) ident(e *identExpr, fr *frame) (Value, error) {
 		}
 	case identPathVar:
 		if e.slot >= 0 && e.slot < len(ev.vars) {
-			if b := ev.vars[e.slot]; b.ok {
-				return b.v, nil
-			}
-			return Value{}, &evalError{} // took an unknown segment: no value, no message
+			return ev.pathVar(e.slot)
 		}
 	case identGlobal:
 		if v, ok := ev.req.Variables[e.name]; ok {
@@ -191,6 +188,23 @@ func (ev *evaluator) ident(e *identExpr, fr *frame) (Value, error) {
 		}
 	}
 	return Value{}, errorf("Null value error.")
+}
+
+// pathVar reads a path variable: a {x=**} builds its Path the first time it is read, charged to
+// the meter.
+func (ev *evaluator) pathVar(slot int) (Value, error) {
+	b := &ev.vars[slot]
+	switch {
+	case !b.ok:
+		return Value{}, &evalError{} // took an unknown segment: no value, no message
+	case b.lazy:
+		v, err := pathOf(ev.m, b.run)
+		if err != nil {
+			return Value{}, err
+		}
+		*b = binding{v: v, ok: true}
+	}
+	return b.v, nil
 }
 
 // logical evaluates && and ||, which absorb an error when the other side decides.

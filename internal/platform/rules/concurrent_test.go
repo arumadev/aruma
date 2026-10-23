@@ -81,7 +81,7 @@ func TestInflightIsBounded(t *testing.T) {
 		allowb("get", and(or(list(elems...), tru()), call("exists", ident("all")))),
 	}})}}
 	rs := compile(t, Firestore, rulesFile("2", Firestore, body))
-	perEval := int64(len(elems)) * valueBytes
+	perEval := int64(len(elems))*valueBytes + 5*16 + 24 // the list, and the path {all=**} took
 	inflight := NewInflight(holding * perEval)
 
 	release := make(chan struct{})
@@ -104,7 +104,7 @@ func TestInflightIsBounded(t *testing.T) {
 	case <-holdingAll:
 	case <-time.After(10 * time.Second):
 		close(release)
-		t.Fatalf("the evaluations did not reach their lookups: %v", results)
+		t.Fatal("the evaluations did not reach their lookups")
 	}
 
 	req := request(MethodGet, docPath("c", "x"), &memDocs{})

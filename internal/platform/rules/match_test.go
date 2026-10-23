@@ -2,6 +2,7 @@ package rules
 
 import (
 	"fmt"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -190,9 +191,11 @@ func flatBlock(t *testing.T, version string, nested ...string) *compiledBlock {
 	return rs.blocks[len(rs.blocks)-1]
 }
 
+var showLimits = DefaultLimits()
+
 // show writes bindings as name=value: a string, a path in slashes, or ? for none.
 func show(b *compiledBlock, version int, path []Segment) string {
-	vars, ok := b.match(path, version)
+	vars, ok := b.match(path, version, nil)
 	if !ok {
 		return "no match"
 	}
@@ -202,9 +205,13 @@ func show(b *compiledBlock, version int, path []Segment) string {
 			names[s.slot] = s.text
 		}
 	}
+	m := newMeter(&showLimits, NewInflight(1<<20), nil)
 	var out []string
 	for i, v := range vars {
 		val := "?"
+		if v.lazy {
+			v.v, _ = pathOf(m, v.run)
+		}
 		if v.ok {
 			if s, ok := v.v.AsString(); ok {
 				val = s
@@ -241,6 +248,8 @@ func TestMatchBindings(t *testing.T) {
 		{2, []string{"/{p=**}/items/{id}"}, []Segment{UnknownRun, Literal("items"), UnknownSegment}, "p=? id=?"},
 		{2, []string{"/{c}/items/{id}"}, []Segment{UnknownRun, Literal("items"), UnknownSegment}, "no match"},
 		{2, []string{"/x/items/{id}"}, []Segment{UnknownRun, Literal("items"), UnknownSegment}, "no match"},
+		// A second {x=**} nested in version 1 compiles (production warns only), and is dead.
+		{1, []string{"/a/{x=**}", "/b/{y=**}"}, lit("a/1/b/2"), "no match"},
 	} {
 		b := flatBlock(t, fmt.Sprint(c.version), c.nested...)
 		if got := show(b, c.version, c.path); got != c.want {
@@ -249,7 +258,7 @@ func TestMatchBindings(t *testing.T) {
 	}
 	// A pattern with two {x=**} never compiles; were one to reach the matcher, it refuses.
 	b := &compiledBlock{segs: []matchSeg{{kind: patternRest}, {kind: patternRest, slot: 1}}, globs: 2, nvars: 2}
-	if _, ok := b.match(Literals("a", "b"), 2); ok {
+	if _, ok := b.match(Literals("a", "b"), 2, nil); ok {
 		t.Error("a pattern with two {x=**} matched")
 	}
 }
@@ -294,9 +303,41 @@ func TestMatchIsLinear(t *testing.T) {
 	if elapsed > 2*time.Second {
 		t.Fatalf("20 evaluations against %d blocks took %v", siblings*depth, elapsed)
 	}
-	vars, ok := rs.blocks[len(rs.blocks)-1].match(path, 2)
-	if p, _ := vars[0].v.AsPath(); !ok || len(p) != len(path)-1-2*(depth-2)-1 {
+	vars, ok := rs.blocks[len(rs.blocks)-1].match(path, 2, nil)
+	if p := vars[0].run; !ok || len(p) != len(path)-1-2*(depth-2)-1 {
 		t.Fatalf("g took %d segments", len(p))
+	}
+}
+
+// Matching builds nothing: thousands of blocks against the longest path cost no memory, and a
+// {x=**} read by a condition is charged to the evaluation, past whose allocation limit it denies.
+func TestMatchBuildsNothing(t *testing.T) {
+	var blocks []*match
+	for i := range 7000 {
+		blocks = append(blocks, matchb(fmt.Sprintf("/{g=**}/x%d", i), block{allows: []*allow{allowb("read", fls())}}))
+	}
+	blocks = append(blocks, matchb("/{all=**}", block{allows: []*allow{allowb("read", ident("all"))}}))
+	rs := compile(t, Storage, rulesFile("2", Storage, block{matches: blocks}))
+	path := make([]Segment, rs.lim.RequestSegments)
+	for i := range path {
+		path[i] = Literal("a")
+	}
+	path[len(path)-1] = Literal("x6999")
+	var before, after runtime.MemStats
+	runtime.GC()
+	runtime.ReadMemStats(&before)
+	d := evaluate(t, rs, request(MethodGet, path, nil))
+	runtime.ReadMemStats(&after)
+	if d.Allow || len(d.Statements) != 2 {
+		t.Fatalf("%+v", d)
+	}
+	if n := after.TotalAlloc - before.TotalAlloc; n > 1<<20 {
+		t.Errorf("an evaluation against 7,000 blocks allocated %d bytes", n)
+	}
+	rs.lim.AllocBytes = 1024 // below a path of 1,024 segments
+	d = evaluate(t, rs, request(MethodGet, path, nil))
+	if d.Allow || !strings.Contains(d.Statements[len(d.Statements)-1].Message, "allocation limit") {
+		t.Fatalf("reading the {x=**} was not charged: %+v", d.Statements[len(d.Statements)-1])
 	}
 }
 

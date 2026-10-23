@@ -38,15 +38,16 @@ func (rs *Ruleset) Evaluate(ctx context.Context, req *Request) (Decision, error)
 	trace := req.Trace != TraceNone
 
 	var d Decision
+	var buf []binding // the variables of the block tried, reused from block to block
 	for _, b := range rs.blocks {
 		if !b.methods.has(req.Method) {
 			continue
 		}
-		vars, ok := b.match(req.Path, rs.version)
+		vars, ok := b.match(req.Path, rs.version, buf[:0])
 		if !ok {
 			continue
 		}
-		ev.vars = vars
+		buf, ev.vars = vars, vars
 		for _, a := range b.allows {
 			if !a.methods.has(req.Method) {
 				continue
@@ -86,6 +87,6 @@ func (rs *Ruleset) Evaluate(ctx context.Context, req *Request) (Decision, error)
 			}
 		}
 	}
-	// Nothing granted: msgNoMatch when no statement covered the request.
+	// Nothing granted. Production gives no message when no statement covers the request.
 	return d, nil
 }
