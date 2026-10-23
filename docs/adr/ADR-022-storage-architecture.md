@@ -384,22 +384,76 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
 
 ### 16. مسار الإنتاج: رابط موحّد وتبديل النطاق وقت البناء
 
-- **الرابط الموحّد الوحيد:** `https://<aruma-host>/v0/b/<bucket>/o/<path مرمَّز>?alt=media&token=<uuid>`، يخدمه Aruma من **جذر** نطاقه. هو شكل الإنتاج (Pyric `downloadURL`، E §5) على مضيف Aruma، ويفهمه iOS والويب (بعد تبديل النطاق) بلا تعديل (P، «شكل رابط التنزيل»). **ولا يُستعمل الشكل المسبوق** `<aruma>/firebasestorage.googleapis.com/v0/…` في أي رابط: لا تفهمه أي منصة، ويفسده الويب بصمت (P:342، :354).
-- **تبديل النطاق وقت البناء في كل منصة (قرار المالك)،** فتبني المكتبة نفسها الرابط الموحّد، ولا يتسرّب من أي حمّال (`<img>`، و`dart:io`، وCoil، وAVPlayer …). والتحويل وقت التشغيل يبقى **احتياطًا** لمن لم يضبط البناء:
+- **الرابط الموحّد الوحيد:** `https://<aruma-host>/v0/b/<bucket>/o/<path مرمَّز>?alt=media&token=<uuid>`، يخدمه Aruma من **جذر** نطاقه. هو شكل الإنتاج (Pyric `downloadURL`، E §5) على مضيف Aruma، ويُحلَّل في iOS والويب (بعد تبديل النطاق) (P، «شكل رابط التنزيل»). **ويجب أن تنتجه كل منصة حرفيًا:** بلا `:443` (16.3)، وبمضيف lowercase (16.2). **ولا يُستعمل الشكل المسبوق** `<aruma>/firebasestorage.googleapis.com/v0/…` في أي رابط: لا تفهمه أي منصة، ويفسده الويب بصمت (P:342، :354).
+- **تبديل النطاق وقت البناء في كل منصة (قرار المالك)،** فتبني المكتبة نفسها الرابط الموحّد، ولا يتسرّب من أي حمّال (`<img>`، و`dart:io`، وCoil، وAVPlayer …). والتحويل وقت التشغيل يبقى **احتياطًا** لمن لم يضبط البناء. وكل تبديل **يفشل البناء بصوت عالٍ** إن لم يجد هدفه، لا ينجح بصمت.
 
-  | المنصة | التبديل وقت البناء | الدليل | الاحتياط وقت التشغيل |
-  |---|---|---|---|
-  | الويب | `@aruma/web/vite` (وضع `build`) يبدّل تعريف `DEFAULT_HOST = 'firebasestorage.googleapis.com'` في `@firebase/storage` (بأي علامة اقتباس) إلى **نطاق Aruma وحده بلا بادئة**، و`_protocol` حين Aruma على http، ويفشل البناء إن لم يجد التعريف. نمط إضافة Auth القائمة (`sdk/web/aruma-web/src/vite.js:24-39`) | 11/11 على بناء معدَّل يدويًا بالتبديل نفسه (P، الويب). والتعريف في `dist/index.esm.js:27` و`index.node.cjs.js:31` (P) | `useArumaStorage(storage)` يضبط `storage.host` (مقيس، واجهة داخلية، P)، ولفّ `XMLHttpRequest.prototype.open` و`fetch` لنطاق Storage. وFlutter web (CDN) بهذا وحده |
-  | Android | إضافة Gradle (`dev.aruma.storage`) تبدّل النص الثابت `"https://firebasestorage.googleapis.com/v0"` في `<clinit>` الصنف `com.google.firebase.storage.network.NetworkRequest` إلى `"https://<aruma>/v0"`، بـ `AsmClassVisitorFactory` في AGP. ويفشل البناء إن لم يُحوَّل الصنف أو لم يوجد النص مرة واحدة | `PROD_BASE_URL` (`NetworkRequest.java:52`) يغذّي الطلبات (`:97-104`) والرابط (`StorageReferenceUri.java:38-46`) و`refFromURL` (`Util.java:86-101`)، فيصير كل شيء على Aruma (P:325) | `aruma-redirect` يضيف `firebasestorage.googleapis.com` إلى نطاقاته بفشله المغلق (12/12 مقيسًا، P)، و`fromArumaUrl` |
-  | iOS | **ترقيع المصدر:** `Storage.swift` يُعدَّل سطر `host = "firebasestorage.googleapis.com"` في `init` ليقرأ `ArumaURL` من `Info.plist` (المفتاح الذي تقرؤه `ArumaRedirect` أصلًا)، ومعه `scheme`/`port`. **CocoaPods:** مساعد `post_install` في `ArumaRedirect` يرقّع `Pods/FirebaseStorage/…/Storage.swift` ويفشل `pod install` إن لم يطابق السطر مرة واحدة. **SwiftPM:** مرآة `arumadev/firebase-ios-sdk` بوسوم `<upstream>-aruma.N` تبنيها أداة من الوسم الرسمي ورقعة واحدة، ويشير إليها التطبيق مكان المستودع الرسمي | `host` و`scheme` و`port` خصائص `internal` تُضبط في `init` (`Storage.swift:285-287` و`:310-312` في 12.19.2) فلا واجهة عامة لها، و`useEmulator` يفرض `http` (`:223`) فينزع iOS الرمز عن http غير loopback (A §2.3). وFirebaseStorage يُبنى من المصدر في SwiftPM (`Package.swift:1144`، `path: "FirebaseStorage/Sources"`) وCocoaPods (`FirebaseStorage.podspec:35-36`، `source_files`)، في firebase-ios-sdk 13.1.0 (P:326) | `ArumaRedirect` يضيف النطاق (11/11، والرفع في الخلفية بالرابط المطلق، P)، و`fromArumaUrl` |
-  | Flutter | الجوال يرث الأصلية: إضافة Gradle ومساعد Podfile نفساهما، فيصير الرابط على Aruma ويعمل في `Image.network` (`dart:io`) بلا تحويل | `firebase_storage` يستدعي المكتبة الأصلية (P، Flutter) | كالأصلية. والويب بـ `useArumaStorage` من JS |
-  | Admin | `@aruma/admin-storage` و`adminstorage` يبنيان الرابط الموحّد بأنفسهما (البند 14) | P، Admin | — |
+#### 16.1 الويب
 
-- **القيد القانوني والصيانة (Android وiOS):**
-  - **الرخصة تسمح:** firebase-storage لـ Android منشور بـ Apache-2.0 (POM الإصدار 23.0.0: «The Apache Software License, Version 2.0»)، وfirebase-ios-sdk كذلك (A §0). وApache-2.0 §4(b) يشترط «prominent notices stating that You changed the files»: الإضافة تضع ملف إشعار في `META-INF` في الـ APK، ورقعة iOS تضيف تعليق تعديل في رأس الملف، ودليل التطبيق يذكر التعديل في إشعارات المصادر المفتوحة. **ويبقى القرار القانوني للمالك** (android-production-redirect.md:201-202، P:325)، وقد اتخذه.
-  - **لا فك ثنائيات:** الإضافة تبدّل نصًا ثابتًا معروف الاسم والقيمة من المصدر المنشور (`NetworkRequest.java:52`)، ولا تقرأ كود Google لغرض آخر (قاعدة الـ brief 3).
-  - **الصيانة:** كل إصدار جديد من firebase-storage قد يغيّر الصنف أو النص، فيفشل البناء صراحةً لا بصمت. CI يبني تطبيق e2e على BoM مثبّت وعلى أحدث BoM أسبوعيًا (S7)، والمرآة تُبنى لكل وسم رسمي بأداة لا يدويًا.
-- **بعد التبديل، `refFromURL` يقبل الرابط الموحّد ويرفض رابط Google** في Android (`Util.java:101`) والويب. ومصفوفة `refFromURL` عبر المنصات اختبار في S6 (P:355).
+- **محوّل واحد بـ `unplugin`** يعمل في Vite وRollup وwebpack وRspack وesbuild، يبدّل تعريف `DEFAULT_HOST = 'firebasestorage.googleapis.com'` في `@firebase/storage` (بأي علامة اقتباس) إلى **نطاق Aruma وحده بلا بادئة**، و`_protocol = 'https'` حين Aruma على http. وهو تعريف واحد في كل ملف dist: `index.esm.js:27`، و`index.browser.cjs.js:29`، و`index.cjs.js:31` و`index.node.cjs.js:31`، و`node-esm/index.node.esm.js:27` (مراجعة البناء، 0.13.14 إلى 0.14.6). نمط إضافة Auth القائمة (`sdk/web/aruma-web/src/vite.js:24-39`).
+  - **Next.js** عبر webpack. وTurbopack بمحمّلات `turbopack.rules` **فقط إن قاسها S6-W عاملة**، وإلا يُوثَّق أن Turbopack يأخذ الاحتياط وحده.
+  - **Metro** (Expo وReact Native مع firebase-js) بمحوّل Metro خاص: Metro يحلّ `main` إلى `dist/index.node.cjs.js` حيث النص في `:31`.
+  - **Vite 5 إلى 7** اختياري، بـ `optimizeDeps.esbuildOptions.plugins` بدل الرفض الحالي (`vite.js:91`)، **إن قاسه S6-W**.
+- **لا نجاح صامت:** `vite.js:54` يعيد `null` حين لا وحدة رأى (`seen.modules === 0`)، ووضع `build` بلا كود وقت التشغيل (`:11`). ومع SSR تُخرج Vite الاعتماديات من التحويل افتراضيًا («Dependencies are 'externalized' from Vite's SSR transform module system by default»، دليل Vite SSR)، فتحمّل SvelteKit وNuxt وAstro `index.node.cjs.js` بلا تبديل. فـ:
+  - وضع Storage يضبط `ssr.noExternal` لـ `@firebase/storage` و`firebase`.
+  - **البناء يفشل** حين Storage مفعّل ولم تُحوَّل أي وحدة من `@firebase/storage`.
+  - **البناء يفشل** إن رأى استيرادًا من `https://www.gstatic.com/firebasejs/…`: لا يمر بالمحوّل أبدًا.
+- **الدليل، مصحَّحًا:** الـ 11/11 في P قيست على بناء CDN بُدّل فيه النص إلى **الشكل المسبوق** `"<host>/firebasestorage.googleapis.com"` (`test/experiments/storage-path/web/run.mjs:52`، P:112)، وهو الشكل الذي يمنعه هذا البند. **التبديل إلى النطاق وحده لم يُقَس في متصفح؛** قيس مُعدِّل `storage.host` في بناء Node وحده (P). فيقيسه S6-W.
+- **الاحتياط:** `useArumaStorage(storage)` يضبط `storage.host` (واجهة داخلية في `storage.d.ts:211-212`، ليست في الأنواع العامة، ولكل نسخة `getStorage(app, bucket)` على حدة، وما سبقها يذهب إلى Google)، ولفّ `XMLHttpRequest.prototype.open` و`fetch` لنطاق Storage.
+- **Flutter web: خطوة بناء (تُقاس في S6-W).** `firebase_core_web` يحقن `https://www.gstatic.com/firebasejs/$version/firebase-storage.js` بعد `initializeApp` في Dart (`firebase_core_web.dart:242`)، فسكربت قبل `flutter_bootstrap` لا يجد تطبيقًا ولا نسخة بعد. لكنه يتخطى الخدمات في `window.flutterfire_ignore_scripts` (`:118`، `:124`). فأداة في `@aruma/web` تجلب `firebase-storage.js` للإصدار المثبّت (`supportedFirebaseJsSdkVersion` = 13.1.0، `firebase_sdk_version.dart:9`)، وتبدّل النص بعلامتي الاقتباس المزدوجتين **مرة واحدة بالضبط وإلا تفشل**، وتكتبه تحت `web/`. ومقطع في `index.html` يضبط `flutterfire_ignore_scripts = ['storage']` و`window.firebase_storage = await import(…)`. والملف يستورد `firebase-app.js` من عنوان gstatic نفسه، فيتشارك نسخة التطبيق. وما لم يثبت هذا، يبقى لـ Flutter web الاحتياط وحده.
+
+#### 16.2 Android
+
+- **إضافة Gradle `dev.aruma.storage`** تبدّل النص الثابت `"https://firebasestorage.googleapis.com/v0"` في `<clinit>` الصنف `com.google.firebase.storage.network.NetworkRequest` إلى `"https://<aruma>/v0"`، بـ `AsmClassVisitorFactory` و`InstrumentationScope.ALL` في AGP.
+  - **الدليل:** `PROD_BASE_URL` (`NetworkRequest.java:52`) يغذّي الطلبات (`:97-104`) والرابط (`StorageReferenceUri.java:38-46`) و`refFromURL` (`Util.java:86-101`) (P:325). وتحققت المراجعة بـ javap: النص في `NetworkRequest.class` وحده، والحقل `static final Uri` بلا ConstantValue، و`<clinit>` يفعل `ldc_w` ثم `Uri.parse` ثم `putstatic`، والمستعملون يقرؤونه بـ `getstatic` فلا يُضمَّن، وR8 يعمل بعد التحويل.
+  - **النطاق بأحرف صغيرة:** الإضافة تكتب المضيف lowercase، لأن `Util.java:101` يقارن السلطة المحوّلة إلى lowercase بـ `baseUrl.getAuthority()` كما هو.
+- **الفشل المغلق بثلاث طبقات:** واجهة instrumentation في AGP بلا خطّاف نهاية بناء (javap على gradle-api 9.4.1: `transformClassesWith` و`setAsmFramesComputationMode` و`getExcludes` وحدها)، والجرارات تُحوَّل artifact transforms مخزّنة، فعدّاد في الـ factory لا يُعتمد عليه، و`excludes` قد يُسقط الصنف. فـ:
+  1. **الـ visitor يرمي** حين يزور `NetworkRequest` ولا يجد النص `ldc` مرة واحدة بالضبط.
+  2. **مهمة تحقق منفصلة** على الأصناف النهائية (`ScopedArtifacts` بنطاق ALL، و`toGet` لـ CLASSES) تفشل إن لم تجد الثابت المبدَّل.
+  3. **حارس وقت التشغيل:** `NetworkRequest.PROD_BASE_URL` عام، فيتحقق `aruma-redirect` عند الإقلاع من مضيفه، ويفشل مغلقًا (كما يفعل لـ Auth) إن كان مضيف Google ولا تحويل لـ Storage.
+- **الاحتياط:** `aruma-redirect` يضيف `firebasestorage.googleapis.com` إلى نطاقاته بفشله المغلق (12/12 مقيسًا، P)، و`fromArumaUrl`.
+
+#### 16.3 iOS
+
+- **الرقعة:** `Storage.swift` يُعدَّل في `init` ليقرأ `ArumaURL` من `Info.plist` (المفتاح الذي تقرؤه `ArumaRedirect` أصلًا) بدل `host = "firebasestorage.googleapis.com"` و`scheme`. و**`var port: Int` يصير `Int?`**، `nil` حين لا منفذ صريح في `ArumaURL`: اليوم `port = 443` (`Storage.swift:287`، و`var port: Int` في `:308`، 12.19.2) يُكتب دائمًا في الرابط (`components.port = reference.storage.port`، `Internal/StorageGetDownloadURLTask.swift:62-64`، و`StorageUtils.swift:31`)، فينتج `https://<aruma>:443/v0/…` لا الشكل الموحّد. ومحلل الويب يشترط `/` بعد المضيف مباشرة (`^https?://${host}/${version}/b/`، `index.esm.js:318-320`)، وDart يرفضه كذلك. ومواضع الإسناد الثلاثة تُترجم بلا تغيير مع `Int?`.
+  - **الدليل:** `host` و`scheme` و`port` خصائص `internal` غير `@objc` تُضبط في `init` (`Storage.swift:285-287`، والتعريف `:306-308` في 12.19.2)، و`Storage.init` داخلي فلا وراثة، و`useEmulator` يفرض `http` (`:223`) فينزع iOS الرمز عن http غير loopback (`StorageTokenAuthorizer.swift:41-48`، A §2.3). وFirebaseStorage يُبنى من المصدر في SwiftPM (`Package.swift:1144`، `path: "FirebaseStorage/Sources"`) وCocoaPods (`FirebaseStorage.podspec:35-36`)، في firebase-ios-sdk 13.1.0 (P:326).
+- **SwiftPM هو الطريق الأساسي:**
+  - **مرآة `arumadev/firebase-ios-sdk` لا تحمل إلا commits مرقّعة، موسومة بأسماء الإصدارات الرسمية نفسها بالضبط** (`12.4.0` يشير إلى commit مرقّع، ولا وسوم غير مرقّعة)، تبنيها أداة من الوسم الرسمي ورقعة واحدة. فمتطلبات `from:` و`exact:` تُحلّ بلا تغيير.
+  - **لماذا لا وسوم `<upstream>-aruma.N`:** أعاد المراجع إنتاجها بـ swift 6.1.2: `from: "12.4.0"` و`from: "12.4.0-aruma.1"` والمدى `"12.4.0"..<"13.0.0"` كلها تُحلّ إلى `12.4.0` غير المرقّع، و`exact: "12.4.0-aruma.1"` يفشل الحل إن احتاجت حزمة أخرى مدى. وFlutterFire يثبّت الرابط الرسمي بإصدار دقيق (`firebase_storage-14.0.1/ios/firebase_storage/Package.swift:22`، `exact: firebaseSdkVersion`).
+  - **التسليم بـ `swift package config set-mirror`** من الرابط الرسمي إلى المرآة، فلا يتغير `Package.swift` في التطبيق ولا في FlutterFire.
+  - **S6-I يقيس** أن Xcode و`flutter build ios` كليهما يحترمان المرآة. وإن لم يحترمها أحدهما يُكتب البديل: في Xcode، رابط المرآة مكان الرابط الرسمي (الوسوم بالأسماء نفسها فلا تتغير المتطلبات)؛ وFlutter iOS، إن لم يحترمها، يأخذ الاحتياط وحده ويُوثَّق.
+- **CocoaPods للإصدارات المجمّدة وحدها:** «Firebase will stop publishing new versions to CocoaPods in October 2026» (firebase.google.com/docs/ios/cocoapods-deprecation، حُدّثت 2026-10-22)، و«Updating Firebase on Unity or Flutter will automatically migrate» إلى SwiftPM. فمساعد `post_install` في `ArumaRedirect` يرقّع `Pods/FirebaseStorage/…/Storage.swift` ويفشل `pod install` إن لم يطابق السطر مرة واحدة، لآخر الإصدارات المنشورة هناك وحدها.
+- **مستعملو Firebase.zip وxcframework (التثبيت اليدوي)** يأخذون الاحتياط وحده: ثنائي جاهز لا يُرقَّع.
+- **الاحتياط:** `ArumaRedirect` يضيف النطاق (11/11، والرفع في الخلفية بالرابط المطلق، P)، و`fromArumaUrl`.
+
+#### 16.4 Flutter
+
+- **الجوال يرث الأصلية:** إضافة Gradle على Android، والمرآة (SwiftPM) على iOS. فيصير الرابط على Aruma ويعمل في `Image.network` (`dart:io`) بلا تحويل.
+- **لكن `refFromURL` يُحلَّل في Dart على كل المنصات:** `_firebaseStorageHost = 'firebasestorage.googleapis.com'` (`firebase_storage-14.0.1/lib/src/utils.dart:24`)، وفرع `/v0` لهذا المضيف أو localhost/10.0.2.2 وحدهما (`:49-56`)، وغيرهما يسقط إلى نمط GCS فيعيد `null`، ثم `parts!` يرمي (`firebase_storage.dart:124`). فـ `refFromURL(await ref.getDownloadURL())` يرمي، وFirebase لا يرمي. **فحزمة Dart صغيرة (`aruma_storage`) فيها `fromArumaUrl`** تحوّل الرابط الموحّد إلى `gs://<bucket>/<path>` قبل `refFromURL` (S6-F).
+- **الويب:** خطوة البناء في 16.1.
+
+#### 16.5 Admin
+
+`@aruma/admin-storage` و`adminstorage` يبنيان الرابط الموحّد بأنفسهما (البند 14).
+
+#### 16.6 الرخصة والصيانة (Android وiOS)
+
+- **الرخصة تسمح:** firebase-storage لـ Android منشور بـ Apache-2.0 (POM الإصدار 23.0.0: «The Apache Software License, Version 2.0»)، وfirebase-ios-sdk كذلك (A §0). وApache-2.0 §4(b) يشترط «prominent notices stating that You changed the files». **ويبقى القرار القانوني للمالك** (android-production-redirect.md:201-202، P:325)، وقد اتخذه.
+- **الإشعار يبقى بعد التغليف:** استثناءات الموارد الافتراضية في AGP قد تُسقط أسماء `META-INF/NOTICE` الشائعة (لم يُتحقق منها في الوثائق)، فالإضافة تكتب مسارًا فريدًا `META-INF/aruma/firebase-storage-MODIFIED.txt`، ويتحقق S6-A من وجوده في الـ APK النهائي **وفي APK مشتق من AAB**. وفي iOS: README المرآة، وتعليق التعديل في رأس الملف المرقّع. والاثنان في `NOTICE`.
+- **لا فك ثنائيات:** الإضافة تبدّل نصًا ثابتًا معروف الاسم والقيمة من المصدر المنشور (`NetworkRequest.java:52`)، ولا تقرأ كود Google لغرض آخر (قاعدة الـ brief 3).
+- **الصيانة:** كل إصدار جديد من firebase-storage قد يغيّر الصنف أو النص، فيفشل البناء صراحةً لا بصمت. CI يبني تطبيق e2e على BoM مثبّت وعلى أحدث BoM أسبوعيًا (S7)، والمرآة تُبنى لكل وسم رسمي بأداة لا يدويًا.
+
+#### 16.7 `refFromURL` عبر المنصات، لكل وضع
+
+| الوضع | ما يُقبل | المصدر |
+|---|---|---|
+| الويب بعد التبديل وقت البناء | الرابط الموحّد، **وصيغ GCS عند Google** (`storage.googleapis.com/<bucket>/…`) أيضًا: `cloudStorageHost` يُحسب بمقارنة `host === DEFAULT_HOST`، والطرفان مبدّلان فتبقى صحيحة | `index.esm.js:322-324` |
+| الويب بمُعدِّل `storage.host` وقت التشغيل | الرابط الموحّد وحده، وصيغ GCS مرفوضة | P (مقيس) |
+| Android بعد الإضافة | الرابط الموحّد بمضيف lowercase، ورابط Google مرفوض | `Util.java:101` |
+| iOS | أي مضيف، ومنه Google، ما دام `/v0/b/` أول المسار، و`fatalError` على خطأ تحليل أو bucket | `Internal/StoragePath.swift:86`، `Storage.swift:151`، `:156`، `:158` |
+| Flutter | عبر `fromArumaUrl` وحده | 16.4 |
+
+- **S6-X يمرر روابط iOS بفحص مسبق على نمط `fromArumaUrl`** (المضيف والـ bucket)، فلا يصل شيء إلى `fatalError`.
+- ومصفوفة `refFromURL` عبر المنصات (Flutter منها) اختبار في S6-X (P:355): الرابط من كل منصة يُحلَّل على كل أخرى، ويعطي الـ bucket والمسار نفسيهما أو يفشل صراحةً.
 
 ### 17. الحدود وحماية الخدمة
 
@@ -467,6 +521,10 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
 - **إملاء رابط الرفع من `Host`:** يخطئ خلف وكيل، وقطع iOS في الخلفية تتبعه حرفيًا (البند 6.1).
 - **iOS: swizzling أو KVC على `host`:** خصائص Swift `internal` غير `@objc`، فلا يصل إليها runtime Objective-C. **و`useEmulator`:** يفرض http (`Storage.swift:223`). **وترقيع الثنائي:** FirebaseStorage يُبنى من المصدر، فلا ثنائي يُرقَّع، وفك الثنائيات ممنوع أصلًا.
 - **التحويل وقت التشغيل وحده:** يتسرّب الرابط إلى Google من `<img>` و`dart:io` وجلسات الخلفية (P، جدول التسريب). يبقى احتياطًا فقط.
+- **وسوم المرآة `<upstream>-aruma.N`:** لا تختارها متطلبات SwiftPM العادية، ويفشل `exact:` مع أي مدى آخر (أعادها المراجع، 16.3).
+- **CocoaPods طريقًا أساسيًا لـ iOS:** Firebase توقف عن النشر هناك في تشرين الأول 2026، وFlutter ينتقل إلى SwiftPM تلقائيًا (16.3).
+- **Vite 8 وحده للويب:** «وقت البناء في كل منصة» كان سيصدق على Vite وحده، وwebpack وesbuild وMetro يأخذون الاحتياط (16.1).
+- **العدّاد في الـ factory لفشل Android المغلق:** artifact transforms مخزّنة، ولا خطّاف نهاية في AGP (16.2).
 
 ## العواقب
 
