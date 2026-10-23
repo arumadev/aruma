@@ -52,13 +52,17 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 
 | المنصة | الأساسي (وقت البناء) | الاحتياط (وقت التشغيل) |
 |---|---|---|
-| الويب (Vite 8) | `@aruma/web/vite` يبدّل `DEFAULT_HOST` في `@firebase/storage` | `useArumaStorage(storage)` ولفّ XHR و`fetch` |
-| الويب بلا Vite، وFlutter web | — | الاحتياط نفسه |
-| Android | إضافة Gradle `dev.aruma.storage` تبدّل `PROD_BASE_URL` | `aruma-redirect` لنطاق Storage |
-| iOS | رقعة `Storage.swift` تقرأ `ArumaURL`: مساعد Podfile، ومرآة SwiftPM | `ArumaRedirect` لنطاق Storage |
-| Flutter (الجوال) | الإضافة والمساعد الأصليان | كالأصلية |
+| الويب | محوّل `unplugin` واحد في `@aruma/web` لـ Vite وRollup وwebpack وRspack وesbuild (وNext.js عبر webpack) يبدّل `DEFAULT_HOST`، ومعه `ssr.noExternal`، ويفشل البناء إن لم يُحوَّل `@firebase/storage` أو رأى استيرادًا من gstatic | `useArumaStorage(storage)` ولفّ XHR و`fetch` |
+| Expo / React Native (firebase-js) | محوّل Metro | كالويب |
+| Turbopack، وVite 5 إلى 7 | محمّلات Turbopack، و`optimizeDeps.esbuildOptions` لـ Vite القديم: **إن قاسها S6-W**، وإلا الاحتياط وحده | كالويب |
+| Flutter web | خطوة بناء: `firebase-storage.js` المثبّت مبدَّلًا مرة واحدة تحت `web/`، و`flutterfire_ignore_scripts` (**تُقاس في S6-W**) | كالويب |
+| Android | إضافة Gradle `dev.aruma.storage` تبدّل `PROD_BASE_URL` (بمضيف lowercase)، وتفشل مغلقة بثلاث طبقات | `aruma-redirect` لنطاق Storage، ويتحقق من `PROD_BASE_URL` عند الإقلاع |
+| iOS (SwiftPM، الأساسي) | مرآة `arumadev/firebase-ios-sdk` بوسوم بأسماء الإصدارات الرسمية على commits مرقّعة (`ArumaURL`، و`port` اختياري)، بـ `swift package config set-mirror` | `ArumaRedirect` لنطاق Storage |
+| iOS (CocoaPods) | مساعد `post_install` للإصدارات المجمّدة وحدها (Firebase أوقف النشر هناك في تشرين الأول 2026) | كالسابق |
+| iOS (xcframework يدوي) | — | الاحتياط وحده |
+| Flutter (الجوال) | الإضافة والمرآة الأصليتان، وحزمة Dart `aruma_storage` بـ `fromArumaUrl` لـ `refFromURL` | كالأصلية |
 | Admin Node | `@aruma/admin-storage` (ومعه `getDownloadURL`) | — |
-| Admin Go | `adminstorage` (عميل منفصل بـ `WithEndpoint` و`WithJSONReads`) | — |
+| Admin Go | `adminstorage` (وحدة مستقلة، عميل منفصل بـ `WithEndpoint` و`WithJSONReads`) | — |
 
 **التحقق** (S7): مجموعة اختبارات Storage في firebase-js-sdk على Aruma عبر `test/compat/firebase-js`، واختبارات المطابقة في firebase-tools غير الموسومة `emulatorOnly` وغير المعتمدة على قواعدها (E §0: CT)، وإعادة تسجيلات `test/oracle/storage/emulator` على Aruma مع تصنيف كل فرق، وe2e على Android وiOS والويب بحارس شبكة يرفض أي طلب إلى Google، ومصفوفة المتصفحات (ADR-022 §10.6)، وعتبة أوراكل القواعد (98%، ADR-021 §6).
 
@@ -87,6 +91,9 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 | **معالجة الصور، وExtensions (resize)** | — | لا خطة |
 | **Admin SDKs لـ Python وJava و.NET، وUnity وC++** | لم تُقَس (P، «ما لم يُقَس»). وPython Admin غير مدعوم أصلًا في RTDB | لاحقًا |
 | **`Bearer <idToken>` على `/v0`** | غير مقيس في الإنتاج، والمكتبات ترسل `Firebase <idToken>` (E §7) | بدليل |
+| **نشر بلا انقطاع لنسخة فيها Storage** | كاتب واحد بقفل على `data_dir`، فالاستبدال إيقاف ثم تشغيل (ADR-022 §5.1) | مع تعدد الخوادم |
+| **`data_dir` على NFS أو نظام ملفات مشترك** | `flock` لا يُعتمد عليه هناك (ADR-022 §5.1) | مع S3 |
+| **تبديل وقت البناء لمستعملي xcframework اليدوي** | ثنائي جاهز لا يُرقَّع (ADR-022 §16.3) | لا خطة |
 
 ### 3. الفروق الموثّقة
 
@@ -95,8 +102,8 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 **قيود (أشد من Firebase عمدًا):**
 
 1. **PDF يُنزَّل ولا يُعرض** في المتصفح (`sandbox` و`attachment` قسرًا)، وكل الأنواع تحت `sandbox`، فـ HTML وSVG لا ينفّذان سكربتًا تصفحًا مباشرًا (ADR-022 §10.2).
-2. طلب تنزيل من Service Worker أو worker يُرفض 403 (ADR-022 §10.1).
-3. حدود Aruma: الحجم الأقصى للكائن، والحصة لكل مشروع شاملة staging، والمساحة الحرة الدنيا، وحدود الجلسات والمعدل، وأدنى معدل للطلب (ADR-022 §17). وحدود محرك القواعد (ADR-021 §4).
+2. طلب تنزيل من Service Worker أو worker يُرفض 403، وكذلك تحميل ملف كسكربت أو أسلوب من أصل اللوحة نفسه (`Sec-Fetch-Site: same-origin`) (ADR-022 §10.1).
+3. حدود Aruma: الحجم الأقصى للكائن، والحصة لكل مشروع شاملة staging، والمساحة الحرة الدنيا محجوزة، وحدود الجلسات والمعدل والطلبات المتزامنة لكل IP (IPv6 لكل /64)، وأدنى معدل للطلب، والانتهاء الخامل بعد ساعة بلا تقدم (ADR-022 §6.5، §17). وحدود محرك القواعد (ADR-021 §4).
 4. اسم كائن فيه NUL يُرفض 400 (Postgres، F §4.1)، وGCS قد يقبله.
 5. `maxResults` فوق 1000 يُقص إلى 1000، و`pageToken` غير صالح 400.
 6. لا تقييم مبكر عند `start`: الرفض يأتي عند الإنهاء، بعد نقل البايتات (محدود بالحصة لكل قطعة).
@@ -104,33 +111,39 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 8. ترويسات App Check وGMPID تُتجاهل.
 9. النشر فوري (Firebase: «several minutes»)، كما في ADR-021 §7.
 10. لا إصدارات: `?generation=` يُقبل إن طابق الإصدار الحالي، وغيره 404.
+11. مستخدم حُذف أو عُطّل أو أُبطلت رموزه بعد `start` لا يُكمل رفعه: 401 مع `final` عند الإنهاء (ADR-022 §7).
+12. نشر نسخة فيها Storage إيقاف ثم تشغيل، و`data_dir` محلي ومربوط بقاعدته (ADR-022 §5.1).
 
 **مؤقت (بلا دليل إنتاج):**
 
-11. **list يُقيَّم على أبناء البادئة** (`UnknownSegment`)، كما يقرر محرك المحاكي، لا على المسار نفسه كما في Test API (ADR-022 §8).
-12. **`request.method`** مربوط باسم الطريقة، و**`request.params`** خريطة فارغة (مرجع firebaserules؛ المحاكي لا يمررهما).
-13. `request.resource` في `get` و`list` و`delete`: `null` (المحاكي)؛ Test API تجعله غير معرّف.
-14. `crc32c` في `/v0` بصيغة GCS (base64)، والمحاكي يكتبه عددًا عشريًا.
-15. **`"metadata": null` في PATCH يمسح الـ metadata المخصّصة كلها** (المحاكي ودلالة GCS). وiOS قد يرسله حين يحدّث كائنًا جديدًا (A §8.1): طلب iOS الحقيقي يُسجَّل في S6.
-16. الرمز لا يفتح الـ metadata بلا `alt=media` (المحاكي يفتحها).
-17. `Cache-Control` الافتراضي على رابط الرمز `private, max-age=0`.
-18. نص رسالة 403 «Permission denied.»، وجسم الإنهاء المكرر الناجح (نعيد الـ metadata).
-19. على الإزاحة الخاطئة في الرفع المتقطع: 400 مع الحالة والحجم المستلَم؛ والإنهاء بحجم لا يطابق المعلن: 400.
-20. حصة GCS: 403 `quotaExceeded`.
-21. multipart باسم في `metadata.name` وحده يُقبل (المحاكي يرفضه).
-22. CORS على ردود الـ API: `*`، والـ preflight 204 بالطرق والترويسات التي يرسلها العملاء.
-23. `Content-Disposition` عند التنزيل لكائن بلا قيمة (رُفع عبر GCS): `attachment; filename*=utf-8''<اسم>`.
+13. **list يُقيَّم على أبناء البادئة** (`UnknownSegment`)، كما يقرر محرك المحاكي، لا على المسار نفسه كما في Test API (ADR-022 §8).
+14. **`request.method`** مربوط باسم الطريقة، و**`request.params`** خريطة فارغة (مرجع firebaserules؛ المحاكي لا يمررهما، وحالات Pyric تمرر `method` صراحةً فلا تثبت ربط الإنتاج له).
+15. `request.resource` في `get` و`list` و`delete`: `null` (المحاكي)؛ Test API تجعله غير معرّف.
+16. `crc32c` في `/v0` بصيغة GCS (base64)، والمحاكي يكتبه عددًا عشريًا.
+17. **`"metadata": null` في PATCH يمسح الـ metadata المخصّصة كلها** (المحاكي ودلالة GCS). وiOS قد يرسله حين يحدّث كائنًا جديدًا (A §8.1): طلب iOS الحقيقي يُسجَّل في S6-I.
+18. الرمز لا يفتح الـ metadata بلا `alt=media` (المحاكي يفتحها).
+19. **`token` موجود ولا يطابق: 403 بلا تقييم للقواعد** (الأشد؛ ملاحظة Pyric للإبطال أُخذت تحت قواعد مجهولة).
+20. **`md5Hash` يرسله العميل على `/v0` ويختلف عن المحسوب: 400 ولا كائن، ومع `final` في المتقطع.**
+21. `Cache-Control` الافتراضي على رابط الرمز `private, max-age=0`.
+22. نص رسالة 403 «Permission denied.»، وجسم الإنهاء المكرر الناجح (نعيد الـ metadata)، و`query` على جلسة انتهت برفض يعيد الرفض المحفوظ.
+23. على الإزاحة الخاطئة في الرفع المتقطع: 400 مع `active` والحجم المستلَم؛ وكل رفض نهائي آخر (402، والحجم المخالف للمعلن، و413، و401) مع `final`.
+24. `Authorization` على قطع الرفع يُتجاهل: رابط الرفع هو الصلاحية.
+25. الحصة: 402 على `/v0`، و403 `quotaExceeded` على GCS.
+26. multipart باسم في `metadata.name` وحده يُقبل (المحاكي يرفضه).
+27. CORS على ردود الـ API: `*`، والـ preflight 204 بالطرق والترويسات التي يرسلها العملاء.
+28. `Content-Disposition` عند التنزيل لكائن بلا قيمة (رُفع عبر GCS): `attachment; filename*=utf-8''<اسم>`. ومجموعة الهروب في الافتراضي المخزّن مأخوذة من حالة منشورة واحدة.
+29. ترويسة `ETag` على الوسائط من `generation` وحده (ثابتة للمحتوى)، وحقل `etag` في JSON يتغير مع PATCH.
 
 **أصح من المحاكي (نتبع الإنتاج أو الوثائق):**
 
-24. رموز المستخدمين تُتحقق توقيعًا وصلاحية، و`uid` من `sub`، ولا كلمة سحرية (`Bearer owner`) (E §7).
-25. bucket مجهول 404 بشكل الإنتاج (المحاكي ينشئه ضمنيًا ويرد 403).
-26. رموز التنزيل: لا يزرعها العميل، واستبدالها أو حذفها من Admin يُبطل الرابط القديم (المحاكي: اتحاد) (E §5).
-27. الإزاحات في الرفع المتقطع تُفحص (المحاكي يتجاهلها).
-28. بروتوكول GCS المتقطع كاملًا (308 والـ override)، والشروط المسبقة 412، و`bucket.exists()`، وPATCH وrewrite تحت `/storage/v1` (المحاكي: 501 أو يتجاهلها) (E §8).
-29. `contentDisposition` الافتراضي يُخزَّن `inline; filename*=utf-8''<اسم>` كما في Storage منشور (المحاكي: `inline`).
-30. `etag` يتغير مع PATCH، و`generation` بالميكروثانية، و`x-goog-metageneration` بالتهجئة الصحيحة.
-31. لا تقييم مزدوج للقواعد (ADR-021 §5.4).
+30. رموز المستخدمين تُتحقق توقيعًا وصلاحية، و`uid` من `sub`، ولا كلمة سحرية (`Bearer owner`) (E §7).
+31. bucket مجهول 404 بشكل الإنتاج (المحاكي ينشئه ضمنيًا ويرد 403).
+32. رموز التنزيل: لا يزرعها العميل، واستبدالها أو حذفها من Admin يُبطل الرابط القديم (المحاكي: اتحاد) (E §5).
+33. الإزاحات في الرفع المتقطع تُفحص (المحاكي يتجاهلها).
+34. بروتوكول GCS المتقطع كاملًا (308 والـ override)، والشروط المسبقة 412، و`bucket.exists()`، وPATCH وrewrite تحت `/storage/v1` (المحاكي: 501 أو يتجاهلها) (E §8).
+35. `contentDisposition` الافتراضي يُخزَّن `inline; filename*=utf-8''<اسم>` كما في Storage منشور (المحاكي: `inline`).
+36. `etag` يتغير مع PATCH، و`generation` بالميكروثانية، و`x-goog-metageneration` بالتهجئة الصحيحة.
+37. لا تقييم مزدوج للقواعد (ADR-021 §5.4).
 
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 
