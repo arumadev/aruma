@@ -172,9 +172,12 @@ func TestSelectIndex(t *testing.T) {
 		{"a string key on a list", index(list, vs("length")), Value{}, "Unsupported operation error. Received: list[string]. Expected: list[int]."},
 		{"'abc'[0]", index(vs("abc"), vi(0)), vs("a"), ""},
 		{"a string key on a string", index(vs("abc"), vs("length")), Value{}, "Received: string[string]. Expected: string[int]."},
-		// UTF-16 code units: 😀 is two, and either half alone is U+FFFD (hidane D022).
+		// UTF-16 code units: 😀 is two, and either half alone is a lone surrogate, not U+FFFD
+		// (the review's probes of the Rules Test API: '😀'[0] == '\ufffd' is denied). hidane
+		// (D022, emulator) gives U+FFFD; production wins.
 		{"after a surrogate pair", index(vs("😀a"), vi(2)), vs("a"), ""},
-		{"half a pair", index(vs("😀a"), vi(0)), vs("�"), ""},
+		{"the high half", index(vs("😀a"), vi(0)), vs(lone(0xD83D)), ""},
+		{"the low half", index(vs("😀a"), vi(1)), vs(lone(0xDE00)), ""},
 		{"Arabic", index(vs("نص"), vi(1)), vs("ص"), ""},
 		{"a path segment", index(vp("databases", "(default)"), vi(0)), vs("databases"), ""},
 		{"a path key", index(vp("databases"), vs("segments")), Value{}, "Property segments is undefined on object."},

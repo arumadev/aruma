@@ -37,17 +37,19 @@ func TestSplit(t *testing.T) {
 	runValueCases(t, []valueCase{
 		{"split", vCall(vs("a/b/c"), "split", vs("/")), vl(vs("a"), vs("b"), vs("c")), ""},
 		{"a pattern", vCall(vs("a1b22c"), "split", vs("[0-9]+")), vl(vs("a"), vs("b"), vs("c")), ""},
-		{"a dot is a pattern", vCall(vs("a.b"), "split", vs(".")), vl(), ""},
+		{"a dot is a pattern: nothing left is ['']", vCall(vs("a.b"), "split", vs(".")), vl(vs("")), ""},
 		{"an escaped dot", vCall(vs("a.b"), "split", vs("[.]")), vl(vs("a"), vs("b")), ""},
-		// production (Rules Test API, S0-A): split() drops trailing empty strings, as Java does.
+		// production (Rules Test API, S0-A): split() drops trailing empty strings, and with
+		// nothing left gives [''] (RE2J's Pattern.split; S0-A aruma/followups/split_only_separators).
 		{"trailing empties dropped", vCall(vs("a,b,,"), "split", vs(",")), vl(vs("a"), vs("b")), ""},
-		{"only separators", vCall(vs(",,"), "split", vs(",")), vl(), ""},
+		{"only separators", vCall(vs(",,"), "split", vs(",")), vl(vs("")), ""},
 		{"a leading empty part stays", vCall(vs(",a"), "split", vs(",")), vl(vs(""), vs("a")), ""},
 		{"inner empties stay", vCall(vs("a,,b"), "split", vs(",")), vl(vs("a"), vs(""), vs("b")), ""},
 		{"no match: the whole string", vCall(vs("abc"), "split", vs(",")), vl(vs("abc")), ""},
 		{"the empty string", vCall(vs(""), "split", vs(",")), vl(vs("")), ""},
-		// Java: a match of nothing at the start makes no empty first part.
-		{"split into characters", vCall(vs("abc"), "split", vs("")), vl(vs("a"), vs("b"), vs("c")), ""},
+		// RE2J: a match of nothing at the start makes an empty first part (S0-A
+		// aruma/strings/split_empty_sep).
+		{"split into characters", vCall(vs("abc"), "split", vs("")), vl(vs(""), vs("a"), vs("b"), vs("c")), ""},
 		{"split(1)", vCall(vs("a"), "split", vi(1)), Value{}, "Received: string.split(int). Expected: string.split(string)."},
 		{"an invalid pattern", vCall(vs("a"), "split", vs("[")), Value{}, "Invalid regular expression pattern. Pattern: [."},
 	})

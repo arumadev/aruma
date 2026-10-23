@@ -7,41 +7,34 @@ import (
 	"time"
 )
 
-// intClaims are the token's claims that are whole numbers of seconds, which request.auth.token
-// holds as ints; every other number is a float (ADR-021 §2.3; the oracle checks it).
-var intClaims = map[string]bool{"exp": true, "iat": true, "auth_time": true}
-
 // Auth returns request.auth for a signed-in user: a map of uid and token, the token's claims
-// converted to values. exp, iat and auth_time are ints when they are whole numbers, and every
-// other number is a float. Claims are what a decoded JWT holds: nil, bools, strings, numbers
-// (any Go integer or float type, or json.Number), []any and map[string]any, at any depth;
-// a time.Time is a timestamp; a claim of any other type is left out. A request without a user
-// has Null() instead.
+// converted to values. A number that is whole and fits an int64 is an int, 2 and 2.0 alike, and
+// any other number a float: so the Rules Test API reads a token (the review's probes,
+// 2026-10-24: a claim level of 2 or 2.0 is int, 2.5 float, nested ones alike), and so exp, iat
+// and auth_time are ints. Deployed rules, which read a real ID token, are not measured yet: the
+// rule is provisional (docs/compat). Claims are what a decoded JWT holds: nil, bools, strings,
+// numbers (any Go integer or float type, or json.Number), []any and map[string]any, at any
+// depth; a time.Time is a timestamp; a claim of any other type is left out. A request without a
+// user has Null() instead.
 func Auth(uid string, token map[string]any) Value {
 	claims := make(map[string]Value, len(token))
 	for k, v := range token {
-		val, ok := claimValue(v, intClaims[k])
-		if ok {
+		if val, ok := claimValue(v); ok {
 			claims[k] = val
 		}
 	}
 	return Map(map[string]Value{"uid": String(uid), "token": Map(claims)})
 }
 
-// claimValue converts one claim; asInt makes a whole number an int.
-func claimValue(v any, asInt bool) (Value, bool) {
+// claimValue converts one claim.
+func claimValue(v any) (Value, bool) {
 	number := func(f float64) (Value, bool) {
-		if asInt && f == math.Trunc(f) && f >= math.MinInt64 && f < math.MaxInt64 {
+		if f == math.Trunc(f) && f >= math.MinInt64 && f < math.MaxInt64 {
 			return Int(int64(f)), true
 		}
 		return Float(f), true
 	}
-	integer := func(i int64) (Value, bool) {
-		if asInt {
-			return Int(i), true
-		}
-		return Float(float64(i)), true
-	}
+	integer := func(i int64) (Value, bool) { return Int(i), true }
 	switch x := v.(type) {
 	case nil:
 		return Null(), true
@@ -80,7 +73,7 @@ func claimValue(v any, asInt bool) (Value, bool) {
 	case []any:
 		out := make([]Value, 0, len(x))
 		for _, e := range x {
-			if ev, ok := claimValue(e, false); ok {
+			if ev, ok := claimValue(e); ok {
 				out = append(out, ev)
 			}
 		}
@@ -94,7 +87,7 @@ func claimValue(v any, asInt bool) (Value, bool) {
 	case map[string]any:
 		out := make(map[string]Value, len(x))
 		for k, e := range x {
-			if ev, ok := claimValue(e, false); ok {
+			if ev, ok := claimValue(e); ok {
 				out[k] = ev
 			}
 		}

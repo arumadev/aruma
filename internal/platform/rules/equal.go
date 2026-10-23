@@ -17,8 +17,8 @@ import (
 //	    (1 in [1.0] is false), ±0 are one value (-0.0 in [0.0]), NaN is in nothing; an element
 //	    that is a list or a map compares by E2 ([0.0] in [[-0.0]] is false).
 //	E4, the members of a set, for toSet(), in, the set methods, == between sets, and diff():
-//	    numbers by value at any depth (1 in [1.0].toSet()), ±0 are one member, and so are two
-//	    NaN.
+//	    numbers by value at any depth (1 in [1.0].toSet()), exactly (2^53+1 is not 2^53 as a
+//	    float), ±0 are one member, and so are two NaN.
 //
 // Evidence, all from Pyric's recordings of the Rules Test API (production) where they exist:
 //   - E1 and E2: cross-type-operator-overloads "equalityIdentity", list-map-literals-and-slice
@@ -81,7 +81,14 @@ func equal(m *meter, rel relation, a, b Value) (bool, error) {
 	case KindBool:
 		return a.boolean() == b.boolean(), nil
 	case KindString, KindBytes:
-		return a.str() == b.str(), nil
+		x, y := a.str(), b.str()
+		if len(x) != len(y) {
+			return false, nil
+		}
+		if err := m.work(scanWork(len(x))); err != nil {
+			return false, err
+		}
+		return x == y, nil
 	case KindList:
 		x, y := a.items(), b.items()
 		if len(x) != len(y) {
@@ -99,6 +106,9 @@ func equal(m *meter, rel relation, a, b Value) (bool, error) {
 			return false, nil
 		}
 		for k, v := range x {
+			if err := m.work(scanWork(len(k))); err != nil {
+				return false, err
+			}
 			w, ok := y[k]
 			if !ok {
 				return false, nil
@@ -133,7 +143,13 @@ func numbersEqual(rel relation, a, b Value) bool {
 	case relTop:
 		return a.number() == b.number()
 	case relSet:
-		x, y := a.number(), b.number()
+		switch {
+		case a.kind == KindInt:
+			return intIsFloat(a.integer(), b.float())
+		case b.kind == KindInt:
+			return intIsFloat(b.integer(), a.float())
+		}
+		x, y := a.float(), b.float()
 		return x == y || math.IsNaN(x) && math.IsNaN(y)
 	}
 	if a.kind != b.kind {
@@ -144,6 +160,17 @@ func numbersEqual(rel relation, a, b Value) bool {
 		return x == y && math.Signbit(x) == math.Signbit(y)
 	}
 	return x == y // E3
+}
+
+// intIsFloat reports whether i and f are the same number exactly, as members of a set (E4):
+// 2^53+1 is not 2^53 as a float, nor MaxInt64 2^63 (production, the review's probes of the Rules
+// Test API, 2026-10-24), though == at the top compares them as floats and finds them equal.
+func intIsFloat(i int64, f float64) bool {
+	// float64(math.MinInt64) is -2^63 exactly, float64(math.MaxInt64) rounds up to 2^63.
+	if f != math.Trunc(f) || f < math.MinInt64 || f >= math.MaxInt64 {
+		return false
+	}
+	return int64(f) == i
 }
 
 // setsEqual reports whether two sets have the same members (E4).
@@ -218,8 +245,11 @@ func (ix *valueIndex) contains(m *meter, v Value) (bool, error) {
 	return false, nil
 }
 
-// add appends v to the index's items.
+// add appends v to the index's items, charging its place in them.
 func (ix *valueIndex) add(m *meter, v Value) error {
+	if err := m.alloc(elemBytes); err != nil {
+		return err
+	}
 	ix.items = append(ix.items, v)
 	if ix.buckets == nil {
 		if len(ix.items) <= smallIndex {
@@ -244,21 +274,31 @@ func (ix *valueIndex) add(m *meter, v Value) error {
 	return nil
 }
 
-// distinct returns the members of items distinct by E4, the first of equal ones kept in its
-// place: toSet(), union() and the rest.
-func distinct(m *meter, items []Value) ([]Value, error) {
+// distinct returns the members of the lists distinct by E4, the first of equal ones kept in its
+// place: toSet(), union() and the rest. It charges the set it builds, as large as the lists
+// together, and the index it builds as it goes (add).
+func distinct(m *meter, lists ...[]Value) ([]Value, error) {
+	n := 0
+	for _, l := range lists {
+		n += len(l)
+	}
+	if err := chargeList(m, n); err != nil {
+		return nil, err
+	}
 	ix := &valueIndex{rel: relSet}
-	out := make([]Value, 0, len(items))
-	for _, v := range items {
-		found, err := ix.contains(m, v)
-		if err != nil {
-			return nil, err
-		}
-		if !found {
-			if err := ix.add(m, v); err != nil {
+	out := make([]Value, 0, n)
+	for _, l := range lists {
+		for _, v := range l {
+			found, err := ix.contains(m, v)
+			if err != nil {
 				return nil, err
 			}
-			out = append(out, v)
+			if !found {
+				if err := ix.add(m, v); err != nil {
+					return nil, err
+				}
+				out = append(out, v)
+			}
 		}
 	}
 	return out, nil
@@ -304,6 +344,9 @@ func hashValue(m *meter, rel relation, v Value) (uint64, error) {
 		}
 		return mix(k, 0), nil
 	case KindString, KindBytes:
+		if err := m.work(scanWork(len(v.str()))); err != nil {
+			return 0, err
+		}
 		return mix(k, maphash.String(hashSeed, v.str())), nil
 	case KindList:
 		h := k
@@ -321,6 +364,9 @@ func hashValue(m *meter, rel relation, v Value) (uint64, error) {
 		for key, e := range v.mapv().entries {
 			eh, err := hashValue(m, inner, e)
 			if err != nil {
+				return 0, err
+			}
+			if err := m.work(scanWork(len(key))); err != nil {
 				return 0, err
 			}
 			sum += mix(maphash.String(hashSeed, key), eh)
@@ -355,6 +401,9 @@ func hashValue(m *meter, rel relation, v Value) (uint64, error) {
 	case KindPath:
 		h := k
 		for _, s := range v.segments() {
+			if err := m.work(scanWork(len(s))); err != nil {
+				return 0, err
+			}
 			h = mix(h, maphash.String(hashSeed, s))
 		}
 		return h, nil

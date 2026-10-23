@@ -83,7 +83,7 @@ type Value struct {
 	//	KindBool                 bool
 	//	KindInt                  int64
 	//	KindFloat                float64
-	//	KindString               string, UTF-8
+	//	KindString               string, WTF-8 (wtf8.go)
 	//	KindBytes                string, the raw bytes
 	//	KindList, KindSet        []Value; a set's members are distinct by E4, in the order added
 	//	KindMap                  *mapValue
@@ -128,7 +128,8 @@ func Int(i int64) Value { return Value{kind: KindInt, x: i} }
 // Float returns a float.
 func Float(f float64) Value { return Value{kind: KindFloat, x: f} }
 
-// String returns a string. s is UTF-8; lengths and indexes count UTF-16 code units.
+// String returns a string. s is WTF-8: UTF-8, or UTF-8 holding lone surrogates in their three-byte
+// form (wtf8.go); lengths and indexes count UTF-16 code units.
 func String(s string) Value { return Value{kind: KindString, x: s} }
 
 // Bytes returns a bytes value holding a copy of b.

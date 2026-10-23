@@ -281,9 +281,11 @@ func TestConversions(t *testing.T) {
 		{"string()", vFn("string"), Value{}, "Incorrect number of arguments. Received: 0."},
 		// Pyric bool-function: there is no bool().
 		{"bool('true')", vFn("bool", vs("true")), Value{}, "Function not found error: Name: [bool]."},
-		// debug() is the identity (ADR-021 §1, rules.debug: no effect in production).
-		{"debug", vFn("debug", vm("a", vi(1))), vm("a", vi(1)), ""},
-		{"debug of two", vFn("debug", vi(1), vi(2)), Value{}, "Incorrect number of arguments. Received: 2. Expected: debug(any)."},
+		// debug() does not exist in production's only recording, the Rules Test API (S0-A
+		// aruma/errors/debug_function, aruma/storage/debug); provisional until deployed rules
+		// are measured.
+		{"debug", vFn("debug", vm("a", vi(1))), Value{}, "Function not found error: Name: [debug]."},
+		{"debug of two", vFn("debug", vi(1), vi(2)), Value{}, "Function not found error: Name: [debug]."},
 	})
 }
 

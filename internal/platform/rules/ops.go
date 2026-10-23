@@ -43,7 +43,7 @@ func binary(m *meter, op token, x, y Value) (Value, error) {
 		}
 		return Bool(eq == (op == tokEQ)), nil
 	case tokLT, tokLE, tokGT, tokGE:
-		return compare(op, x, y)
+		return compare(m, op, x, y)
 	case tokIn:
 		return member(m, x, y)
 	case tokPlus:
@@ -66,13 +66,19 @@ func unsupportedOp(op token, x, y Value, forms ...[2]string) *evalError {
 }
 
 // compare orders x and y. NaN is neither less nor more than anything.
-func compare(op token, x, y Value) (Value, error) {
+func compare(m *meter, op token, x, y Value) (Value, error) {
 	var c int
 	nan := false
 	switch {
 	case x.kind == KindString && y.kind == KindString:
+		if err := m.work(walkWork(min(len(x.str()), len(y.str())))); err != nil {
+			return Value{}, err
+		}
 		c = compareUTF16(x.str(), y.str())
 	case x.kind == KindBytes && y.kind == KindBytes:
+		if err := m.work(scanWork(min(len(x.str()), len(y.str())))); err != nil {
+			return Value{}, err
+		}
 		c = compareStrings(x.str(), y.str())
 	case x.kind == KindInt && y.kind == KindInt:
 		c = compareInts(x.integer(), y.integer())
@@ -160,6 +166,9 @@ func member(m *meter, x, y Value) (Value, error) {
 		if x.kind != KindString {
 			return Value{}, errUnsupported(fmt.Sprintf("map.in(%s)", x.kind), []string{"map.in(string)"})
 		}
+		if err := m.work(scanWork(len(x.str()))); err != nil {
+			return Value{}, err
+		}
 		_, ok := y.mapv().entries[x.str()]
 		return Bool(ok), nil
 	case KindNull:
@@ -181,10 +190,15 @@ func add(m *meter, x, y Value) (Value, error) {
 		return Float(x.number() + y.number()), nil
 	case x.kind == KindString && y.kind == KindString:
 		a, b := x.str(), y.str()
-		if err := chargeString(m, len(a)+len(b)); err != nil {
+		// A high surrogate ending a and a low one starting b join into their pair (wtf8.go).
+		size := len(a) + len(b)
+		if joins(a, b) {
+			size -= 2
+		}
+		if err := chargeString(m, size); err != nil {
 			return Value{}, err
 		}
-		return String(a + b), nil
+		return String(joinWTF8(a, b)), nil
 	case x.kind == KindDuration && y.kind == KindDuration:
 		return addDurations(x.dur(), y.dur(), 1)
 	case x.kind == KindTimestamp && y.kind == KindDuration:
@@ -385,17 +399,15 @@ func selectIndex(m *meter, x, i Value) (Value, error) {
 		if i.kind != KindString {
 			return Value{}, unsupported("string")
 		}
+		if err := m.work(scanWork(len(i.str()))); err != nil {
+			return Value{}, err
+		}
 		return entry(x, i.str())
 	case KindString:
 		if i.kind != KindInt {
 			return Value{}, unsupported("int")
 		}
-		s := x.str()
-		n, err := checkIndex(i.integer(), utf16Len(s))
-		if err != nil {
-			return Value{}, err
-		}
-		return sliceString(m, s, n, n+1)
+		return stringIndex(m, x.str(), i.integer())
 	case KindPath:
 		switch i.kind {
 		case KindInt:
@@ -436,7 +448,11 @@ func selectSlice(m *meter, x Value, lo, hi *Value) (Value, error) {
 	case KindList:
 		size = len(x.items())
 	case KindString:
-		size = utf16Len(x.str())
+		n, err := stringUnits(m, x.str())
+		if err != nil {
+			return Value{}, err
+		}
+		size = n
 	case KindPath:
 		size = len(x.segments())
 	case KindNull:

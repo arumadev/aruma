@@ -18,7 +18,10 @@ func TestBuildPath(t *testing.T) {
 		{"%20 and +", build(text("a%20b"), text("c+d")), vp("a b", "c d"), ""},
 		{"%2F is one segment", build(text("a%2Fb")), vp("a/b"), ""},
 		{"UTF-8 escapes", build(text("%C3%A9")), vp("é"), ""},
-		{"a lone %", build(text("100%"), text("%zz")), vp("100%", "%zz"), ""},
+		// An escape that is not two hex digits is an error (production, the review's probes).
+		{"a trailing %", build(text("100%")), Value{}, "Unable to decode 100% to url. Error: URLDecoder: Incomplete trailing escape (%) pattern"},
+		{"%zz", build(text("%zz")), Value{}, `Unable to decode %zz to url. Error: URLDecoder: Illegal hex characters in escape (%) pattern - not a hexadecimal digit: "z" = 122`},
+		{"bytes that are not UTF-8, one by one", build(text("%FF%FF")), vp("\uFFFD\uFFFD"), ""},
 		// A $(x) string is not decoded: it is one segment as it is.
 		{"$(x) is not decoded", build(val(vs("a%20b/c"))), vp("a%20b/c"), ""},
 		// A $(p) path inserts all of its segments (hidane interp.rs, library.rs).

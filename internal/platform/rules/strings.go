@@ -2,78 +2,96 @@ package rules
 
 import (
 	"encoding/base64"
-	"encoding/hex"
 	"errors"
 	"math"
 	"strconv"
 	"strings"
-	"unicode/utf16"
-	"unicode/utf8"
+	"unicode"
 )
 
-// Strings are UTF-8 in memory, but their sizes, indexes and slices count UTF-16 code units, and
-// they order by code unit, as Java's String does (ADR-021 §2.3, hidane). A slice that cuts a
-// surrogate pair in half holds U+FFFD in its place (hidane D022): Go's strings cannot hold half
-// a pair either.
+// The units of strings (wtf8.go): sizes, indexes and slices count UTF-16 units, and every
+// walk over a string is charged to the meter's work by its length.
 
-// utf16Len returns the length of s in UTF-16 code units.
-func utf16Len(s string) int {
-	n := 0
-	for i := 0; i < len(s); {
-		if s[i] < utf8.RuneSelf {
-			n++
-			i++
-			continue
-		}
-		r, size := utf8.DecodeRuneInString(s[i:])
-		n += utf16.RuneLen(r) // a byte that is not UTF-8 decodes as U+FFFD: one unit
-		i += size
+// stringUnits charges a walk over s and returns its length in UTF-16 units.
+func stringUnits(m *meter, s string) (int, error) {
+	if err := m.work(walkWork(len(s))); err != nil {
+		return 0, err
 	}
-	return n
+	return utf16Len(s), nil
 }
 
-// sliceString returns code units from to to of s, which the caller has checked.
-func sliceString(m *meter, s string, from, to int) (Value, error) {
-	if len(s) == utf16Len(s) {
-		// ASCII: code units are bytes.
-		if err := chargeString(m, to-from); err != nil {
+// stringIndex is s[i]: the walk to unit i is charged before it runs, a unit being three bytes
+// at most, and the whole string's only when i is past its end, for the message's size.
+func stringIndex(m *meter, s string, i int64) (Value, error) {
+	if i >= 0 && i < int64(len(s)) {
+		if err := m.work(walkWork(min(len(s), 3*int(i)+4))); err != nil {
 			return Value{}, err
 		}
-		return String(s[from:to]), nil
+		a, b, ok := unitOffsets(s, int(i), int(i)+1)
+		if ok {
+			return sliceAtCharged(m, s, a, b)
+		}
 	}
-	units := utf16.Encode([]rune(s))
-	part := string(utf16.Decode(units[from:to]))
-	if err := chargeString(m, len(part)); err != nil {
+	size, err := stringUnits(m, s)
+	if err != nil {
 		return Value{}, err
 	}
-	return String(part), nil
+	return Value{}, errIndex(i, size)
 }
 
-// compareUTF16 orders two strings by UTF-16 code unit, as Java's compareTo does. It differs from
-// Go's byte order only between a character past U+FFFF, whose first unit is a surrogate, and one
-// from U+E000 to U+FFFF.
+// sliceString returns units from to to of s, which the caller has checked, charging the walk to
+// them and the bytes of the result before it builds it.
+func sliceString(m *meter, s string, from, to int) (Value, error) {
+	if err := m.work(walkWork(len(s))); err != nil {
+		return Value{}, err
+	}
+	a, b, _ := unitOffsets(s, from, to)
+	return sliceAtCharged(m, s, a, b)
+}
+
+// sliceAtCharged is sliceAt, its result charged before it is built.
+func sliceAtCharged(m *meter, s string, a, b unitPos) (Value, error) {
+	size := b.b - a.b
+	if a.mid {
+		size -= 1 // the four bytes of the pair become the three of its low half
+	}
+	if b.mid {
+		size += 3
+	}
+	if err := chargeString(m, size); err != nil {
+		return Value{}, err
+	}
+	return String(sliceAt(s, a, b)), nil
+}
+
+// compareUTF16 orders two strings by UTF-16 unit, as Java's compareTo does. Past their common
+// bytes, which are whole characters of both, it compares unit by unit: that differs from byte
+// order only between a character past U+FFFF, whose first unit is a surrogate, and one from
+// U+E000 to U+FFFF, and where a lone surrogate meets a pair. The caller charges
+// walkWork(min(len(a), len(b))).
 func compareUTF16(a, b string) int {
-	for a != "" && b != "" {
-		ra, na := utf8.DecodeRuneInString(a)
-		rb, nb := utf8.DecodeRuneInString(b)
-		if ra != rb {
-			ua, ub := firstUnit(ra), firstUnit(rb)
-			if ua != ub {
-				return compareInts(int64(ua), int64(ub))
-			}
-			return compareInts(int64(ra), int64(rb)) // the same high surrogate: by the low one
+	i := 0
+	for i < len(a) && i < len(b) && a[i] == b[i] {
+		i++
+	}
+	for i > 0 && i < len(a) && a[i]&0xC0 == 0x80 {
+		i-- // back to the start of the character that differs
+	}
+	x, y := unitIter{s: a, i: i}, unitIter{s: b, i: i}
+	for {
+		u, okA := x.next()
+		v, okB := y.next()
+		switch {
+		case !okA && !okB:
+			return 0
+		case !okA:
+			return -1
+		case !okB:
+			return 1
+		case u != v:
+			return compareInts(int64(u), int64(v))
 		}
-		a, b = a[na:], b[nb:]
 	}
-	return compareInts(int64(len(a)), int64(len(b)))
-}
-
-func firstUnit(r rune) rune {
-	if r >= 0x10000 {
-		hi, _ := utf16.EncodeRune(r)
-		return hi
-	}
-	return r
 }
 
 // stringMethod calls s.name(args).
@@ -89,7 +107,11 @@ func stringMethod(m *meter, s string, name string, args []Value) (Value, error) 
 		if err := noArgs(); err != nil {
 			return Value{}, err
 		}
-		return Int(int64(utf16Len(s))), nil
+		n, err := stringUnits(m, s)
+		if err != nil {
+			return Value{}, err
+		}
+		return Int(int64(n)), nil
 	case "lower", "upper":
 		// Only ASCII letters change case (hidane, the emulator; production records only ASCII).
 		if err := noArgs(); err != nil {
@@ -113,10 +135,14 @@ func stringMethod(m *meter, s string, name string, args []Value) (Value, error) 
 		if err := noArgs(); err != nil {
 			return Value{}, err
 		}
+		// A lone surrogate is '?', as Java's getBytes(UTF_8) writes it.
+		if err := m.work(scanWork(len(s))); err != nil {
+			return Value{}, err
+		}
 		if err := chargeString(m, len(s)); err != nil {
 			return Value{}, err
 		}
-		return Value{kind: KindBytes, x: s}, nil
+		return Value{kind: KindBytes, x: toUTF8(s)}, nil
 	case "matches", "split":
 		if len(args) != 1 || args[0].kind != KindString {
 			return Value{}, mismatch("string."+name, args, []string{"string"})
@@ -162,13 +188,23 @@ func bytesMethod(m *meter, b string, name string, args []Value) (Value, error) {
 		if err := chargeString(m, n); err != nil {
 			return Value{}, err
 		}
+		if err := m.alloc(int64(len(b))); err != nil { // the bytes, copied for the encoder
+			return Value{}, err
+		}
 		return String(base64.URLEncoding.EncodeToString([]byte(b))), nil
 	case "toHexString":
 		// Upper case (Pyric bytes-toutf8-and-hashing: "md5 uppercase production representation").
 		if err := chargeString(m, 2*len(b)); err != nil {
 			return Value{}, err
 		}
-		return String(strings.ToUpper(hex.EncodeToString([]byte(b)))), nil
+		const digits = "0123456789ABCDEF"
+		var out strings.Builder
+		out.Grow(2 * len(b))
+		for i := 0; i < len(b); i++ {
+			out.WriteByte(digits[b[i]>>4])
+			out.WriteByte(digits[b[i]&0x0F])
+		}
+		return String(out.String()), nil
 	}
 	return Value{}, errNotFound(name)
 }
@@ -337,16 +373,48 @@ func javaNumber(s string) bool {
 }
 
 // parseJavaLong reads s as Java's Long.parseLong does: a sign and decimal digits, nothing else.
+// A digit is any Unicode decimal digit, as Character.digit reads it (production, the review's
+// probes of the Rules Test API, 2026-10-24: int('١٢') == 12, int('１') == 1).
 func parseJavaLong(s string) (int64, bool) {
-	digits := strings.TrimPrefix(strings.TrimPrefix(s, "+"), "-")
-	if len(digits) == len(s)-2 || digits == "" { // two signs, or none of the digits
+	body := s
+	neg := false
+	if body != "" && (body[0] == '+' || body[0] == '-') {
+		neg = body[0] == '-'
+		body = body[1:]
+	}
+	if body == "" {
 		return 0, false
 	}
-	for i := 0; i < len(digits); i++ {
-		if digits[i] < '0' || digits[i] > '9' {
+	// Accumulated negatively, as Java does, so the smallest int64 fits.
+	var n int64
+	for _, r := range body {
+		d, ok := digitValue(r)
+		if !ok || n < (math.MinInt64+int64(d))/10 {
 			return 0, false
 		}
+		n = n*10 - int64(d)
 	}
-	i, err := strconv.ParseInt(strings.TrimPrefix(s, "+"), 10, 64)
-	return i, err == nil
+	if !neg {
+		if n == math.MinInt64 {
+			return 0, false
+		}
+		n = -n
+	}
+	return n, true
+}
+
+// digitValue is Character.digit(r, 10): the value of a Unicode decimal digit (category Nd).
+// Unicode encodes those in runs of ten from zero, so r's value is its place in its run.
+func digitValue(r rune) (int, bool) {
+	if r >= '0' && r <= '9' {
+		return int(r - '0'), true
+	}
+	if r < 0x80 || !unicode.IsDigit(r) {
+		return 0, false
+	}
+	k := 0
+	for unicode.IsDigit(r-rune(k)-1) && k < 100 {
+		k++
+	}
+	return k % 10, true
 }

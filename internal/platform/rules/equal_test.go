@@ -143,6 +143,14 @@ func TestEqualitySetMembers(t *testing.T) {
 		{"NaN is in a Set of NaN", vOp(vf(nan), tokIn, vset(vf(nan))), vb(true), ""},
 		{"hasAny() finds NaN", vCall(vset(vf(nan)), "hasAny", vl(vf(nan))), vb(true), ""},
 		{"two NaN Lists are one element", vThen(vCall(vl(vl(vf(nan)), vl(vf(nan))), "toSet"), "size"), vi(1), ""},
+		// Exactly, not through float64 (the review's probes of production, 2026-10-24); hidane's
+		// loose_eq converts the int, and production wins.
+		{"2^53+1 is not in a set of 2^53.0", vOp(vi(1<<53+1), tokIn, vset(vf(1<<53))), vb(false), ""},
+		{"2^53+1 and 2^53.0 are two members", vThen(vCall(vl(vi(1<<53+1), vf(1<<53)), "toSet"), "size"), vi(2), ""},
+		{"MaxInt64 is not 2^63.0", vOp(vset(vi(math.MaxInt64)), tokEQ, vset(vf(1<<63))), vb(false), ""},
+		{"MinInt64 is -2^63.0", vOp(vset(vi(math.MinInt64)), tokEQ, vset(vf(-1<<63))), vb(true), ""},
+		{"diff() of 2^53+1 and 2^53.0 is changed", diffHas(vm("a", vi(1<<53+1)), vm("a", vf(1<<53)), "changedKeys", "a"), vb(true), ""},
+		{"but == at the top converts", vOp(vi(1<<53+1), tokEQ, vf(1<<53)), vb(true), ""},
 		{"sets ignore order", vOp(vset(vs("a"), vs("b")), tokEQ, vset(vs("b"), vs("a"))), vb(true), ""},
 		{"a set is not its list", vOp(vset(vs("a")), tokEQ, vl(vs("a"))), vb(false), ""},
 		// diff() by E4 (Pyric keyOrder and "value identity").

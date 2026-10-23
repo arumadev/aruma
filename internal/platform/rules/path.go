@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"unicode/utf8"
@@ -45,7 +46,11 @@ func buildPath(m *meter, parts []pathPart) (Value, error) {
 	for _, p := range parts {
 		switch {
 		case !p.isVal:
-			segs = append(segs, urlDecode(p.text))
+			seg, err := urlDecode(p.text)
+			if err != nil {
+				return Value{}, err
+			}
+			segs = append(segs, seg)
 		case p.value.kind == KindPath:
 			segs = append(segs, p.value.segments()...)
 		default:
@@ -62,28 +67,62 @@ func buildPath(m *meter, parts []pathPart) (Value, error) {
 	return pathOf(segs), nil
 }
 
-// urlDecode decodes a segment as Java's URLDecoder reads it: %XX is a byte and + a space. A %
-// not followed by two hex digits stays as it is (hidane; Java would throw).
-func urlDecode(s string) string {
+// urlDecode decodes a segment as Java's URLDecoder does: + is a space, and each run of %XX
+// escapes is bytes decoded as UTF-8, a byte that is not UTF-8 becoming U+FFFD by itself
+// (path('%FF%FF')[0].size() == 2). An escape that is not two hex digits, or that the segment
+// ends before, is an error with production's text (the review's probes of the Rules Test API,
+// 2026-10-24: path('a%zz'), path('a%'), path('a%2')). hidane, the emulator, keeps them as they
+// are; production wins. The result is never longer than s.
+func urlDecode(s string) (string, error) {
 	if !strings.ContainsAny(s, "%+") {
-		return s
+		return s, nil
+	}
+	fail := func(why string) error {
+		return errorf("Unable to decode %s to url. Error: URLDecoder: %s", s, why)
 	}
 	out := make([]byte, 0, len(s))
-	for i := 0; i < len(s); i++ {
-		switch c := s[i]; {
-		case c == '+':
+	var run []byte
+	for i := 0; i < len(s); {
+		switch s[i] {
+		case '+':
 			out = append(out, ' ')
-		case c == '%' && i+2 < len(s) && isHex(s[i+1]) && isHex(s[i+2]):
-			out = append(out, unhex(s[i+1])<<4|unhex(s[i+2]))
-			i += 2
+			i++
+		case '%':
+			run = run[:0]
+			for i < len(s) && s[i] == '%' {
+				// Two characters must follow, then both must be hex digits; the first that is not
+				// is named.
+				var chars [2]rune
+				at := i + 1
+				for k := range 2 {
+					if at >= len(s) {
+						return "", fail("Incomplete trailing escape (%) pattern")
+					}
+					r, n := decodeWTF8(s[at:])
+					chars[k] = r
+					at += n
+				}
+				var digits [2]byte
+				for k, r := range chars {
+					if r >= utf8.RuneSelf || !isHex(byte(r)) {
+						return "", fail(fmt.Sprintf("Illegal hex characters in escape (%%) pattern - not a hexadecimal digit: \"%c\" = %d", r, r))
+					}
+					digits[k] = byte(r)
+				}
+				run = append(run, unhex(digits[0])<<4|unhex(digits[1]))
+				i = at
+			}
+			for j := 0; j < len(run); {
+				r, n := utf8.DecodeRune(run[j:])
+				out = utf8.AppendRune(out, r) // U+FFFD for each byte that is not UTF-8
+				j += n
+			}
 		default:
-			out = append(out, c)
+			out = append(out, s[i])
+			i++
 		}
 	}
-	if !utf8.Valid(out) {
-		return strings.ToValidUTF8(string(out), "�")
-	}
-	return string(out)
+	return string(out), nil
 }
 
 func isHex(c byte) bool {
@@ -109,18 +148,24 @@ func parsePath(m *meter, s string) (Value, error) {
 		return Value{}, errorf("Empty Path Template is not allowed.")
 	}
 	body := strings.TrimPrefix(s, "/")
-	parts := strings.Split(body, "/")
-	if err := chargeList(m, len(parts)); err != nil {
+	if err := chargeList(m, strings.Count(body, "/")+1); err != nil {
 		return Value{}, err
 	}
 	if err := m.alloc(int64(len(body))); err != nil {
 		return Value{}, err
 	}
-	for i, p := range parts {
+	parts := strings.Split(body, "/")
+	for _, p := range parts {
 		if p == "" {
 			return Value{}, errorf("Invalid Path Template %s. Empty segment is not allowed.", s)
 		}
-		parts[i] = urlDecode(p)
+	}
+	for i, p := range parts {
+		seg, err := urlDecode(p)
+		if err != nil {
+			return Value{}, err
+		}
+		parts[i] = seg
 	}
 	return pathOf(parts), nil
 }

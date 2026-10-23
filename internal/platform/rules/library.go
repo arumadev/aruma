@@ -3,6 +3,7 @@ package rules
 import (
 	"crypto/md5"
 	"crypto/sha256"
+	"hash"
 	"hash/crc32"
 	"math"
 	"strings"
@@ -31,7 +32,8 @@ var libraryNamespaces = map[string]bool{
 // (S1-C) resolves calls with isLibraryFunction. math.isInfinite is in the reference but not in
 // production (Pyric math-namespace, time-math-and-casts, ast-strictness: "Function not found
 // error: Name: [math.isInfinite]."), so it is unknown here too; so is bool(), which is in
-// neither (Pyric bool-function).
+// neither (Pyric bool-function). debug is a name the checker resolves (S1-0's contract), but
+// calling it is an error (callFunction).
 var libraryFunctions = map[string]bool{
 	"debug": true, "float": true, "int": true, "path": true, "string": true,
 	"duration.abs": true, "duration.time": true, "duration.value": true,
@@ -109,11 +111,12 @@ func callFunction(m *meter, name string, args []Value) (Value, error) {
 	}
 	switch name {
 	case "debug":
-		// debug() has no effect in production (rules.debug): it returns its argument.
-		if len(args) != 1 {
-			return Value{}, errArity(len(args), []string{"debug(any)"})
-		}
-		return args[0], nil
+		// The reference says debug() "has no effect in production", but the only production
+		// recording, the Rules Test API, has no such function ("Function not found error: Name:
+		// [debug].": S0-A aruma/errors/debug_function and aruma/storage/debug; hidane D113).
+		// Deployed rules are not measured; until they are, the stricter answer holds (ADR-021
+		// §4), recorded as provisional in docs/compat. The emulator returns the argument.
+		return Value{}, errNotFound("debug")
 	case "int":
 		return toInt(args)
 	case "float":
@@ -245,34 +248,49 @@ func hashFunction(m *meter, name string, args []Value) (Value, error) {
 	if len(args) != 1 || args[0].kind != KindString && args[0].kind != KindBytes {
 		return Value{}, mismatch(name, args, []string{"bytes"}, []string{"string"})
 	}
-	data := []byte(args[0].str())
+	data := args[0].str()
 	if err := m.work(int64(len(data))); err != nil {
 		return Value{}, err
 	}
-	if err := chargeString(m, sha256.Size); err != nil {
+	if args[0].kind == KindString && hasLoneSurrogate(data) {
+		// A string hashes as its UTF-8, a lone surrogate as '?' (toUTF8), copied.
+		if err := m.alloc(int64(len(data))); err != nil {
+			return Value{}, err
+		}
+		data = toUTF8(data)
+	}
+	if err := chargeString(m, sha256.Size+hashChunk); err != nil {
 		return Value{}, err
 	}
-	var sum []byte
+	var h hash.Hash
 	switch name {
 	case "hashing.md5":
-		s := md5.Sum(data)
-		sum = s[:]
+		h = md5.New()
 	case "hashing.sha256":
-		s := sha256.Sum256(data)
-		sum = s[:]
+		h = sha256.New()
 	case "hashing.crc32":
-		sum = littleEndian(crc32.ChecksumIEEE(data))
+		h = crc32.NewIEEE()
 	default:
-		sum = littleEndian(crc32.Checksum(data, castagnoli))
+		h = crc32.New(castagnoli)
 	}
-	return Bytes(sum), nil
+	// In chunks, so a long string is not copied whole into bytes.
+	buf := make([]byte, min(len(data), hashChunk))
+	for i := 0; i < len(data); i += hashChunk {
+		n := copy(buf, data[i:])
+		h.Write(buf[:n])
+	}
+	sum := h.Sum(nil)
+	if strings.HasPrefix(name, "hashing.crc32") {
+		// crc32 sums are big-endian in Go; production gives the bytes little-endian.
+		sum[0], sum[1], sum[2], sum[3] = sum[3], sum[2], sum[1], sum[0]
+	}
+	return Value{kind: KindBytes, x: string(sum)}, nil
 }
+
+// hashChunk is the size of the pieces hashFunction feeds a hash.
+const hashChunk = 4096
 
 var castagnoli = crc32.MakeTable(crc32.Castagnoli)
-
-func littleEndian(x uint32) []byte {
-	return []byte{byte(x), byte(x >> 8), byte(x >> 16), byte(x >> 24)}
-}
 
 // earthRadius is the mean radius of the Earth in meters that distance() uses (hidane, measured
 // on the emulator).

@@ -6,12 +6,14 @@ import (
 	"time"
 )
 
-// request.auth: uid and token; exp, iat and auth_time ints, other numbers floats (ADR-021 §2.3).
+// request.auth: uid and token; a whole number that fits an int64 is an int, any other number a
+// float, as the Rules Test API reads a token (the review's probes, 2026-10-24; provisional until
+// deployed rules are measured).
 func TestAuth(t *testing.T) {
 	var claims map[string]any
 	if err := json.Unmarshal([]byte(`{
 		"exp": 1761300000, "iat": 1761296400, "auth_time": 1761296000,
-		"email": "a@example.com", "email_verified": true, "level": 2, "ratio": 0.5,
+		"email": "a@example.com", "email_verified": true, "level": 2, "level2": 2.0, "ratio": 0.5,
 		"roles": ["admin", 1], "nothing": null,
 		"firebase": {"sign_in_provider": "password", "identities": {"email": ["a@example.com"]}, "n": 3}
 	}`), &claims); err != nil {
@@ -37,15 +39,16 @@ func TestAuth(t *testing.T) {
 		{[]string{"auth_time"}, vi(1761296000)},
 		{[]string{"email"}, vs("a@example.com")},
 		{[]string{"email_verified"}, vb(true)},
-		{[]string{"level"}, vf(2)},
+		{[]string{"level"}, vi(2)},
+		{[]string{"level2"}, vi(2)},
 		{[]string{"ratio"}, vf(0.5)},
-		{[]string{"roles"}, vl(vs("admin"), vf(1))},
+		{[]string{"roles"}, vl(vs("admin"), vi(1))},
 		{[]string{"nothing"}, vn()},
 		{[]string{"firebase", "sign_in_provider"}, vs("password")},
 		{[]string{"firebase", "identities", "email"}, vl(vs("a@example.com"))},
-		{[]string{"firebase", "n"}, vf(3)},
+		{[]string{"firebase", "n"}, vi(3)},
 		{[]string{"when"}, vts("2025-01-02T03:04:05Z")},
-		{[]string{"typed"}, vf(7)},
+		{[]string{"typed"}, vi(7)},
 	} {
 		if got := token(c.path...); !sameValue(got, c.want) {
 			t.Errorf("token.%v = %s, want %s", c.path, showValue(got), showValue(c.want))
@@ -57,10 +60,10 @@ func TestAuth(t *testing.T) {
 	if _, err := selectField(newTestMeter(), token(), "skipped"); err == nil {
 		t.Error("a claim of an unknown type is kept")
 	}
-	// exp that is not whole stays a float; json.Number reads as the JSON wrote it.
-	other := Auth("bob", map[string]any{"exp": 1.5, "iat": json.Number("12"), "n": json.Number("1.25"), "u": uint64(1 << 63)})
+	// A number that is not whole, or past int64, is a float; json.Number reads as its value.
+	other := Auth("bob", map[string]any{"exp": 1.5, "iat": json.Number("12"), "n": json.Number("1.25"), "u": uint64(1 << 63), "w": json.Number("2.0"), "big": 1e19})
 	tok, _ := selectField(newTestMeter(), other, "token")
-	for k, want := range map[string]Value{"exp": vf(1.5), "iat": vi(12), "n": vf(1.25), "u": vf(1 << 63)} {
+	for k, want := range map[string]Value{"exp": vf(1.5), "iat": vi(12), "n": vf(1.25), "u": vf(1 << 63), "w": vi(2), "big": vf(1e19)} {
 		if got, _ := selectField(newTestMeter(), tok, k); !sameValue(got, want) {
 			t.Errorf("%s = %s, want %s", k, showValue(got), showValue(want))
 		}

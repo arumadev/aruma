@@ -110,7 +110,7 @@ func TestConcatIsBounded(t *testing.T) {
 // within bounded time too.
 func TestMatchesIsBounded(t *testing.T) {
 	lim := DefaultLimits()
-	pattern := strings.Repeat("[a-z]?", 1500) + strings.Repeat("[a-z]", 1500) + "x"
+	pattern := "(?:[a-z]?){1000}(?:[a-z]?){500}[a-z]{1000}[a-z]{500}x"
 	m := newMeter(&lim, NewInflight(lim.InflightBytes), newRegexCache(&lim))
 	p, err := m.regexes.get(m, pattern)
 	if err != nil {

@@ -2,7 +2,6 @@ package rules
 
 import (
 	"slices"
-	"strings"
 )
 
 // The methods of lists, sets, maps and map diffs. Each charges a unit of work for every element
@@ -36,9 +35,6 @@ func listMethod(m *meter, l []Value, name string, args []Value) (Value, error) {
 		}
 		members, err := distinct(m, l)
 		if err != nil {
-			return Value{}, err
-		}
-		if err := chargeList(m, len(members)); err != nil {
 			return Value{}, err
 		}
 		return setOf(members), nil
@@ -81,6 +77,13 @@ func listMembership(m *meter, name string, l, other []Value) (Value, error) {
 		return Value{}, err
 	}
 	var kept []Value
+	if name == "removeAll" {
+		// What is kept is at most the whole list: charged before it is built.
+		if err := chargeList(m, len(l)); err != nil {
+			return Value{}, err
+		}
+		kept = make([]Value, 0, len(l))
+	}
 	for _, v := range probes {
 		found, err := ix.contains(m, v)
 		if err != nil {
@@ -99,9 +102,6 @@ func listMembership(m *meter, name string, l, other []Value) (Value, error) {
 	case "hasAny":
 		return Bool(false), nil
 	case "removeAll":
-		if err := chargeList(m, len(kept)); err != nil {
-			return Value{}, err
-		}
 		return List(kept), nil
 	}
 	return Bool(true), nil
@@ -111,6 +111,10 @@ func listMembership(m *meter, name string, l, other []Value) (Value, error) {
 // keeps its fraction; a list, a map, bytes or a duration is an error (Pyric listMethod join).
 func join(m *meter, l []Value, sep string) (Value, error) {
 	if err := m.work(int64(len(l))); err != nil {
+		return Value{}, err
+	}
+	// The parts, and each element's string: a number's is a few bytes, anything else is its own.
+	if err := m.alloc(int64(len(l)) * 2 * elemBytes); err != nil {
 		return Value{}, err
 	}
 	parts := make([]string, len(l))
@@ -129,7 +133,16 @@ func join(m *meter, l []Value, sep string) (Value, error) {
 	if err := chargeString(m, size); err != nil {
 		return Value{}, err
 	}
-	return String(strings.Join(parts, sep)), nil
+	// Joined as + joins, a high surrogate and a low one meeting as their pair (wtf8.go).
+	var w wtf8Builder
+	w.grow(size)
+	for i, p := range parts {
+		if i > 0 {
+			w.add(sep)
+		}
+		w.add(p)
+	}
+	return String(w.String()), nil
 }
 
 // setMethod calls s.name(args).
@@ -187,31 +200,41 @@ func setAlgebra(m *meter, name string, s, other []Value) (Value, error) {
 	if err := m.work(int64(len(s) + len(other))); err != nil {
 		return Value{}, err
 	}
-	var members []Value
 	if name == "union" {
-		var err error
-		if members, err = distinct(m, slices.Concat(s, other)); err != nil {
-			return Value{}, err
-		}
-	} else {
-		ix, err := newIndex(m, relSet, other)
+		members, err := distinct(m, s, other)
 		if err != nil {
 			return Value{}, err
 		}
-		for _, v := range s {
-			found, err := ix.contains(m, v)
-			if err != nil {
-				return Value{}, err
-			}
-			if found == (name == "intersection") {
-				members = append(members, v)
-			}
-		}
+		return setOf(members), nil
 	}
-	if err := chargeList(m, len(members)); err != nil {
+	// What is kept is at most s: charged before it is built.
+	if err := chargeList(m, len(s)); err != nil {
 		return Value{}, err
 	}
+	ix, err := newIndex(m, relSet, other)
+	if err != nil {
+		return Value{}, err
+	}
+	members := make([]Value, 0, len(s))
+	for _, v := range s {
+		found, err := ix.contains(m, v)
+		if err != nil {
+			return Value{}, err
+		}
+		if found == (name == "intersection") {
+			members = append(members, v)
+		}
+	}
 	return setOf(members), nil
+}
+
+// sortWork is the work of sorting n items.
+func sortWork(n int) int64 {
+	w := int64(1)
+	for k := n; k > 1; k >>= 1 {
+		w += int64(n)
+	}
+	return w
 }
 
 // mapMethod calls mv.name(args).
@@ -231,7 +254,14 @@ func mapMethod(m *meter, mv *mapValue, name string, args []Value) (Value, error)
 			if err := m.work(int64(len(mv.keys))); err != nil {
 				return Value{}, err
 			}
-			if err := chargeList(m, len(mv.keys)); err != nil {
+			if err := chargeList(m, 2*len(mv.keys)); err != nil { // the keys sorted, then the list
+				return Value{}, err
+			}
+			keyBytes := 0
+			for _, k := range mv.keys {
+				keyBytes += len(k)
+			}
+			if err := m.work(sortWork(len(mv.keys)) + scanWork(keyBytes)); err != nil {
 				return Value{}, err
 			}
 			keys := slices.Clone(mv.keys)
@@ -353,6 +383,13 @@ func mapDiffMethod(m *meter, d *mapDiff, name string, args []Value) (Value, erro
 	case "unchangedKeys":
 		keys = d.unchanged
 	case "affectedKeys":
+		n := len(d.added) + len(d.removed) + len(d.changed)
+		if err := chargeList(m, n); err != nil {
+			return Value{}, err
+		}
+		if err := m.work(sortWork(n)); err != nil {
+			return Value{}, err
+		}
 		keys = slices.Concat(d.added, d.removed, d.changed)
 		slices.Sort(keys)
 	default:
