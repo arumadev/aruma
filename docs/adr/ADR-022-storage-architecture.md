@@ -23,8 +23,8 @@ Storage ثالث خدمة بيانات في Aruma، وأول خدمة تخدم *
 - **رابط التنزيل صلاحية حاملة (bearer):** يفتح الملف دون القواعد (E §5)، وتبنيه المكتبة من نطاقها الثابت، فيتسرّب إلى Google افتراضيًا من `<img>` و`dart:io` وجلسات الخلفية (P، قسم «رابط التنزيل»). قرر المالك: تبديل النطاق **وقت البناء** في كل منصة.
 - **القرص المحلي خطر صامت:** `gocloud.dev/blob/fileblob` لا يستدعي fsync إطلاقًا، وفيه ثغرتا عبور مسارات في 2026 (#3667، #3794 = GHSA-hj6x-2356-cmv5)، و`IfNotExist` غير ذري (#3809) (F §1.2).
 - **الخدمة من أصل اللوحة:** الترويسات العامة `Cross-Origin-Resource-Policy: same-origin` و`Content-Security-Policy: default-src 'none'` (`server.go:140-141`) تكسر `<img src=downloadURL>` من أي تطبيق، ورفع ملف HTML يُخدم بلا حماية يصير XSS على أصل اللوحة (F §2.2).
-- **العزل** كما في ADR-017: `project_number` وفحص `scopecheck` واختبارات العزل، بلا RLS. **والمشاريع لا تُحذف صفوفها أبدًا:** الحذف الفعلي عبر hooks تسجّلها الخدمات (`projects.go:378-381`، `:433-437`؛ RTDB في `app.go:163`).
-- **خادم واحد** يملك الكتابة، كما في 0.2 (ADR-019:34).
+- **العزل** كما في ADR-017: `project_number` وفحص `scopecheck` واختبارات العزل. **والمشاريع لا تُحذف صفوفها أبدًا:** الحذف الفعلي عبر hooks تسجّلها الخدمات (`projects.go:378-381`، `:433-437`؛ RTDB في `app.go:163`).
+- **خادم واحد** يملك الكتابة، كما في 0.2 (ADR-019:34). لكن ADR-015:105 يقول «old instances serve until replaced» (وكذلك `server.go:170-172`)، فنسختان تتداخلان عند الاستبدال، ولا شيء اليوم يمنع نسختين من مشاركة مجلد بيانات واحد (البند 5.1).
 
 ## القرار
 
@@ -32,9 +32,11 @@ Storage ثالث خدمة بيانات في Aruma، وأول خدمة تخدم *
 
 خدمة جديدة `internal/services/storage` بحزم `core` و`blob` و`wire` و`media` و`api` (واجهة `/v0`) و`gcs` (واجهة GCS) و`console` و`queries`. الشجرة والملفات وتقسيم العمل في [storage-layout.md](../research/storage-layout.md). القواعد الملزمة هنا:
 
-- **`core` لا تعرف HTTP ولا صيغة سلك.** تستورد `blob` و`queries` و`platform/rules` و`tenancy`، ولا تستورد `api` ولا `gcs` ولا `console` ولا `platform/httpx` (قاعدة archtest القائمة `internal/services/*/core`).
+- **`core` لا تعرف HTTP ولا صيغة سلك.** تستورد `blob` و`queries` و`platform/rules` و`tenancy`، ولا تستورد `api` ولا `gcs` ولا `console` ولا `media` ولا `platform/httpx`. القاعدة القائمة `internal/services/*/core` (`archtest_test.go:56`) تمنع `api` و`console` و`httpx` وحدها، فتُضاف إليها `internal/services/*/gcs` و`internal/services/*/media`. **و`api` و`gcs` و`console` و`media` لا يستورد أحدها الآخر** (`media` تحت الثلاث فقط)، بقواعد منع جديدة لكل منها، ولكل قاعدة حالة في `TestRulesThemselves`.
 - **`blob` و`wire` تستوردان Go القياسية وحدها،** وتُضافان إلى archtest كما `rtdb/rules` و`rtdb/wire` (`archtest_test.go:31-33`). فلا يصل اسم كائن ولا ترويسة إلى كود القرص إلا عبر `core`.
 - **`api` و`gcs` واجهتان فوق `core` نفسها،** ويتشاركان `media` (خدمة البايتات بأمان، البند 10). Storage لا يستورد أي خدمة أخرى (ADR-015).
+- **فحص الإعداد في `internal/config`:** archtest يسمح له باستيراد `internal/platform` وحده (`archtest_test.go:23`)، فلا يستدعي `core.Limits.Validate`. فكما فعل RTDB والقواعد: `config.StorageLimits` بحقول `core.Limits` نفسها، والتحويل بينهما تحويل نوع يفرض المترجم تطابقه، والفحص (ومعه الفحوص المتقاطعة في البند 17) في `config` عند التحميل.
+- **`sdk/go/adminstorage` وحدة Go مستقلة** (`go.mod` خاص)، ولها قاعدة archtest فارغة كـ `sdk/go/adminauth` (`archtest_test.go:47`).
 - **القواعد من `platform/rules` (ADR-021).** و`internal/app` يعطي Storage `rules.NoDocuments{}` و`Inflight` العملية (rules-layout.md:109). فكل `firestore.get()` في قواعد Storage خطأ تقييم حتى v0.4.
 - **المسارات في `internal/server`** (جدول ADR-008):
 
@@ -54,18 +56,23 @@ Storage ثالث خدمة بيانات في Aruma، وأول خدمة تخدم *
 - **الحل من الاسم إلى المشروع** في `tenancy` (`ProjectForBucket`): يُفصل اللاحق `.<project_domain>`، ويُبحث عن المشروع بمعرّفه، ولا يُقبل إلا مشروع `ACTIVE`. أي اسم آخر، أو مشروع محذوف، يُرد عليه **404 بشكل الإنتاج** `{"error":{"code":404,"message":"Not Found."}}` على `/v0` (E §1، `production/bucket_probe.json`)، لا 403 كالمحاكي الذي ينشئ الـ bucket ضمنيًا (D §7.2).
 - **Storage مفعّل للنسخة كلها** بـ `storage.enabled` كما `rtdb.enabled`. حين يكون معطّلًا لا تُركَّب المسارات، و`defaultBucket` يرد 404 برسالة الأداة (C §1.3).
 - **تغيير `project_domain` يغيّر أسماء الـ buckets:** البيانات مفتاحها `project_number` فلا تضيع، لكن الروابط المخزّنة تنكسر. يُوثَّق في دليل التشغيل.
+- **والقواعد لا تضيع معه:** إصدارة Storage تُحفظ في `control.rules_releases` باسم منطقي ثابت (`firebase.storage/default`)، لا باسم الـ bucket. وواجهة firebaserules تحوّل `firebase.storage/<bucket>` من وإلى هذا الاسم بـ `ProjectForBucket` واسم الـ bucket الحالي. فتغيير النطاق يغيّر الاسم المعروض وحده، ولا تعود كل الطلبات إلى القاعدة المقفلة الافتراضية حتى يعيد المالك النشر. وطلب بإصدارة على bucket ليس لمشروعها 404.
+- **وجداول القواعد تُحذف مع المشروع:** `PurgeExpired` يحذف التطبيقات وحسابات الخدمة والمفاتيح وحدها (`projects.go:406-414`). فيضاف `control.rules_releases` ثم `control.rulesets` إلى معاملته نفسها في `tenancy` (لا hook، فـ `tenancy` يملكهما).
 
 ### 3. الجداول والعزل والحذف
 
-مخطط جديد `storage` (`internal/store/migrations/storage/00001_init.sql`، وسطره في `migrations.Schemas` و`sqlc.yaml` و`released.lock`، ADR-015). **كل جدول** فيه `project_number bigint NOT NULL REFERENCES control.projects (project_number) ON DELETE CASCADE`، بلا RLS (ADR-017):
+مخطط جديد `storage` (`internal/store/migrations/storage/00001_init.sql`، وسطره في `migrations.Schemas` و`sqlc.yaml` و`released.lock`، ADR-015). **كل جدول يخص مشروعًا** فيه `project_number bigint NOT NULL REFERENCES control.projects (project_number) ON DELETE CASCADE` (ADR-017):
 
 | الجدول | المفتاح | ما فيه |
 |---|---|---|
-| `storage.objects` | `(project_number, name)` | `name text COLLATE "C"`، و`generation bigint` (ميكروثانية، البند 12)، و`metageneration bigint`، و`blob_key text`، و`size`، و`md5 bytea`، و`crc32c bigint`، وحقول المحتوى الخمسة (`content_type`، `content_encoding`، `content_disposition`، `content_language`، `cache_control`، كلها `text` تقبل NULL)، و`metadata jsonb` (نص إلى نص)، و`download_tokens text[]`، و`time_created`، و`updated` |
-| `storage.upload_sessions` | `id_hash bytea` | المشروع، والاسم، والبروتوكول (`firebase`/`gcs`)، والحالة (`active`/`final`/`cancelled`)، والهوية المربوطة (البند 7)، والحجم المعلن (NULL إن لم يُعلن)، والـ metadata الواردة بعد التنقية، و`received`، و`staging_key`، و`blob_key` (يُملأ قبل نقل الملف، البند 5)، والشروط المسبقة وchecksums العميل (GCS)، ونتيجة الإنهاء (`final_status`، و`result_generation`) لتكرار الإنهاء، و`reserved_bytes`، و`created_at`، و`expires_at` |
+| `storage.objects` | `(project_number, name)` | `name text COLLATE "C"`، و`generation bigint` (ميكروثانية، البند 12)، و`metageneration bigint`، و`blob_key text UNIQUE`، و`size`، و`md5 bytea`، و`crc32c bigint`، وحقول المحتوى الخمسة (`content_type`، `content_encoding`، `content_disposition`، `content_language`، `cache_control`، كلها `text` تقبل NULL)، و`metadata jsonb` (نص إلى نص)، و`download_tokens bytea` (**مختومة بـ KEK**، البند 9)، و`time_created`، و`updated` |
+| `storage.upload_sessions` | `id_hash bytea` | المشروع، والاسم، والبروتوكول (`firebase`/`gcs`)، والحالة (`active`/`final`/`cancelled`)، والهوية المربوطة (البند 7)، والحجم المعلن (NULL إن لم يُعلن)، والـ metadata الواردة بعد التنقية، و`received`، و`staging_key`، و`blob_key` (يُملأ قبل نقل الملف، البند 5)، والشروط المسبقة وchecksums العميل (GCS)، ونتيجة الإنهاء (`final_status` و`final_body` و`result_generation`) لتكرار الإنهاء و`query`، و`reserved_bytes`، و`created_at`، و`progressed_at` (آخر بايت متين، للانتهاء الخامل، البند 6.5)، و`expires_at` |
 | `storage.blob_gc` | `blob_key` | outbox الحذف: كل ملف لم يعد صف يشير إليه، يُدرج في معاملة الكتابة نفسها (F §1.3) |
 | `storage.usage` | `project_number` | `used_bytes` و`reserved_bytes` و`object_count`، للحصة (البند 6.5) |
 | `storage.buckets` | `project_number` | إعداد الـ bucket القابل للتعديل: `cors jsonb NOT NULL DEFAULT '[]'` (البند 11). صف واحد يُنشأ عند أول تعديل |
+| `storage.instance` | `id uuid` | **صف واحد، لا يخص مشروعًا:** معرّف النسخة الذي يربط القاعدة بمجلد البيانات (البند 5.1). استعلاماته `-- scope: global` بسببها |
+
+- **صف `storage.usage` يُنشأ بـ upsert** (`INSERT … ON CONFLICT (project_number) DO UPDATE`) في أول حجز، لا افتراضًا بوجوده: `UPDATE … WHERE` على صف غائب لا يطابق شيئًا، فيُرفض كل رفع.
 
 - **الأسماء نص معتم:** `text COLLATE "C"` بلا تطبيع NFC ولا طي حالة، فالترتيب بالبايتات كترتيب GCS في القوائم، كما فعلنا في RTDB (F §4.1، `migrations/rtdb/00001_init.sql:26-31`).
 - **`scopecheck`:** كل الجداول في قائمة `TestQueriesAreProjectScoped` في `internal/services/storage/queries/scope_test.go`. واستعلامات عامل GC والمسح عند الإقلاع والانتهاء الدوري للجلسات تعمل عبر المشاريع، فتُعلَّم `-- scope: global` بسببها المكتوب («عامل GC يعمل على مفاتيح ملفات، لا على بيانات مستخدمين»).
@@ -87,6 +94,7 @@ Storage ثالث خدمة بيانات في Aruma، وأول خدمة تخدم *
   - السائق يرفض أي مفتاح لا يطابق `^(p|s)/[0-9]+/[0-9a-f-]{36}$`. فعبور المسارات مستحيل بالبناء، لا بالهروب النصي الذي أخطأ فيه fileblob مرتين (#3667، #3794).
   - ولا تصادم بحالة الأحرف (APFS) ولا بمحارف ممنوعة (NTFS)، ولا يُكتب فوق ملف يقرؤه طلب جارٍ (F §4.1، S1).
   - على القرص يتفرع المجلد بأول حرفين من UUID (`p/<n>/ab/<uuid>`) حتى لا يكبر مجلد واحد. المفتاح المنطقي لا يتغير.
+  - **كل مجلد جديد متين في أبيه:** نص fsync(2) أعلاه ينطبق على مدخل المجلد الجديد في أبيه أيضًا، وإلا قد يختفي مجلد شظية كاملًا بعد انقطاع الكهرباء والصفوف تشير إليه. فدالة واحدة `mkdirDurable` تنشئ الناقص من السلسلة وتستدعي fsync لأب كل مجلد أنشأته، حتى الجذر. وتمر بها `Create` و`Staging` و`Promote` في `p/` و`s/` معًا.
 - **S3 ليس في v0.3** (ADR-023). الواجهة مصممة له: staging محلي دائمًا (قطع العملاء من 256 KiB أصغر من حد S3 الأدنى للجزء، 5 MiB، F §3.2)، و`Put` من ملف، و`Delete`، و`Open` بـ Seek. ومعه تأتي صفوف النية (البند 5).
 
 ### 5. ترتيب الكتابة وسلامة الانهيار
@@ -95,17 +103,34 @@ Storage ثالث خدمة بيانات في Aruma، وأول خدمة تخدم *
 
 1. مفتاح جديد `p/<n>/<uuid>`. لا يشير إليه أي صف بعد.
 2. الكتابة مباشرة إلى المفتاح النهائي، ثم `Commit()` (fsync للملف وللمجلد). أو نقل ملف staging إليه بـ `rename` على القرص نفسه، ثم fsync للمجلدين.
-3. معاملة واحدة: صف الكائن (generation جديد)، وللملف القديم إن وُجد صف في `storage.blob_gc`، وتحويل الحصة من محجوز إلى مستعمل. وأول جملة فيها `SET LOCAL synchronous_commit TO on`.
+3. معاملة واحدة (`commitObject`): صف الكائن (generation جديد)، وللملف القديم إن وُجد صف في `storage.blob_gc`، وتحويل الحصة من محجوز إلى مستعمل. **والـ `COMMIT` نفسه يُرسل تحت `context.WithoutCancel`**: عميل يقطع الاتصال عند الإنهاء يلغي سياق الطلب، ولا يجوز أن يلغي `COMMIT` جاريًا. و`xid` المعاملة (`pg_current_xact_id()`) يُقرأ قبل `COMMIT`.
 4. بعد الـ commit: عامل GC يحذف ملفات `blob_gc` ثم صفوفها. الحذف idempotent.
-5. مسار خطأ بلا انهيار (فشل checksum أو القواعد أو الـ commit): يُحذف الملف الجديد متزامنًا قبل الرد، ويُسجَّل الفشل ويُعدّ إن لم ينجح الحذف.
+5. **مسار الخطأ يميّز ما قبل `COMMIT` مما بعده:**
+   - **خطأ قبل إرسال `COMMIT`** (القواعد، والـ checksums، والشروط المسبقة، والقيود): يُحذف الملف الجديد متزامنًا قبل الرد، ويُعدّ الفشل إن لم ينجح الحذف.
+   - **خطأ أثناء `COMMIT` أو بعده** (انقطاع الاتصال، أو مهلة): النتيجة **ملتبسة**، فقد التزمت المعاملة. لا يُحذف شيء قبل أن تُحسم بـ `pg_xact_status(xid)` على اتصال جديد: `committed` = نجاح (الرد 200)، و`aborted` = يُحذف الملف الجديد، وغير ذلك (لا اتصال) = يُترك الملف ويرد الطلب 503، والإنهاء التالي يحسمه (صف الجلسة يحمل `blob_key`)، والمسح عند الإقلاع يحذفه إن لم يشر إليه صف. وثائق Postgres: `pg_xact_status` وُجد «to determine whether their transaction committed or aborted after the application and database server become disconnected while a COMMIT is in progress».
+   - **لماذا:** المعاملة التي التزمت تشير إلى الملف الجديد، ووضعت القديم في `blob_gc`. فحذف الجديد بعد التزام ملتبس يضيّع النسختين، والعميل قيل له إن الرفع فشل (مراجعة المعمارية).
 
-- **`synchronous_commit` مفروض في المعاملة، لا متروك للمشغّل:** الترتيب كله يفترض أن الـ commit متين عند عودته. ومع `off` «there can be a delay between when success is reported to the client and when the transaction is later guaranteed to be safe» (F §1.3). `SET LOCAL` يلغي اعتمادنا على إعداد الخادم.
+- **`synchronous_commit=on` لكل اتصال، و`fsync` يبقى مفعّلًا:** الترتيب كله يفترض أن الـ commit متين عند عودته. ومع `off` «there can be a delay between when success is reported to the client and when the transaction is later guaranteed to be safe» (F §1.3). فيُضبط `synchronous_commit=on` في `RuntimeParams` لمجمّع الاتصالات (`store.Open`)، فيشمل **كل** معاملات Storage: `start`، وتحديث `received`، وكتابة `blob_key`، و`commitObject`. أما `fsync` فسياقه `sighup` ولا يُضبط لكل جلسة، وإطفاؤه «can result in unrecoverable data corruption»: الإقلاع يقرأ `SHOW fsync` ويحذّر في السجل إن كان `off`، ودليل التشغيل يشترطه. فلا ندّعي أننا مستقلون عن إعداد الخادم.
 - **الحذف دائمًا بعد الـ commit،** فلا يرى قارئ صفًا ملفه محذوف. والقارئ الذي فتح ملف generation قديم يكمل عليه ولو حُذف، لأن حذف ملف مفتوح لا يمس بياناته على POSIX (unlink). وعامل GC ينتظر مهلة (`storage.gc_grace`، دقيقة افتراضيًا) تغطي ما بين قراءة الصف وفتح الملف. وعلى Windows يفشل حذف الملف المفتوح، فيعيده العامل لاحقًا.
-- **الإنهاء قابل للاستئناف بعد انهيار:** قبل نقل staging يُكتب `blob_key` في صف الجلسة (معاملة صغيرة). فإن انهار الخادم بين النقل والـ commit، يجد الإنهاء التالي الملف على `blob_key` بحجمه الصحيح فيكمل الـ commit.
+- **الإنهاء قابل للاستئناف بعد انهيار:** قبل نقل staging يُكتب `blob_key` في صف الجلسة (معاملة صغيرة). فإن انهار الخادم بين النقل والـ commit، يجد الإنهاء التالي الملف على `blob_key` بحجمه الصحيح فيكمل الـ commit. وإن وجد صف كائن يشير إلى `blob_key` نفسه (التزام ملتبس سبق)، فالنتيجة نجاح تُحفظ في الجلسة.
+- **`commitObject` يقرأ الصف المستبدَل بالجملة التي تكتبه** (Postgres 18): `INSERT INTO storage.objects … ON CONFLICT (project_number, name) DO UPDATE SET …, generation = GREATEST($now_us, storage.objects.generation + 1) RETURNING old.blob_key, old.size`. فمنه مفتاح `blob_gc` والحجم القديم للحصة، بلا قراءة ثم كتابة. قيس في المراجعة: كتابتان متزامنتان فوق الاسم نفسه بقراءة ثم upsert تحت READ COMMITTED تقرآن المفتاح القديم نفسه، فتفشل الثانية بتكرار مفتاح `blob_gc` أو يتسرّب ملف وتنحرف الحصة؛ و`RETURNING old.*` يعطي النتيجة الصحيحة.
+  - **`ifGenerationMatch=0`:** `ON CONFLICT DO NOTHING`، وصفر صفوف = 412. فإنشاءان متزامنان لا ينجحان معًا.
+  - **بقية الشروط المسبقة:** `SELECT … FOR UPDATE` على الصف في المعاملة نفسها، ثم الفحص، ثم الكتابة.
 
-**المسح عند الإقلاع، لا صفوف نية، في v0.3:**
+#### 5.1 مالك واحد لمجلد البيانات
 
-- **القرار:** خادم واحد يكتب (ADR-019:34)، فكل ملف تحت `p/` أو `s/` **أقدم من لحظة إقلاع العملية** ولا يشير إليه صف كائن ولا `staging_key` ولا `blob_key` لجلسة حية هو يتيم بيقين: لا كاتب آخر في منتصف كتابته. فالمسح عند الإقلاع **يحذفه**، في الخلفية بعد بدء الخدمة، ولا يمس ملفًا أحدث من الإقلاع (F §1.3).
+دليل المسح عند الإقلاع («أقدم مني وبلا صف = يتيم») صحيح فقط إن لم يكتب غيرنا في المجلد. فيُفرض ذلك، لا يُفترض:
+
+- **`storage.data_dir` إلزامي حين Storage مفعّل،** مسار مطلق على نظام ملفات محلي، يُنشأ إن غاب، ويُرفض إن لم يُكتب فيه. وNFS غير مدعوم (القفل أدناه لا يُعتمد عليه هناك)، ويُوثَّق.
+- **قفل حصري:** `flock(LOCK_EX)` على `<data_dir>/LOCK` قبل أي عمل على المجلد، يُمسك طوال عمر العملية.
+- **ربط المجلد بالقاعدة:** `<data_dir>/INSTANCE` فيه UUID، وصف `storage.instance` فيه الـ UUID نفسه. عند أول إقلاع بمجلد فارغ وقاعدة بلا صف يُنشآن معًا. وأي عدم تطابق (مجلد لقاعدة أخرى، أو قاعدة لمجلد آخر، أو أحدهما بلا الآخر) **يرفض الإقلاع** برسالة تقول ما يُستعاد. ففي نسختين على قاعدتين تتشاركان مجلدًا (`p/1/…` موجود في الاثنتين لأن أرقام المشاريع من تسلسل كل قاعدة) لا تحذف الثانية ملفات الأولى.
+- **الاستبدال (قرار):** نسخة جديدة وStorage مفعّل **تنتظر القفل قبل أن تفتح أي مستمع**، وتكتب في السجل كل 10 ثوانٍ أنها تنتظر. فلا تراها موازنة الحمل جاهزة (لا تجيب أصلًا) حتى تخرج القديمة وتحرر القفل عند إغلاقها المنظم. أي أن نشر نسخة فيها Storage **إيقاف ثم تشغيل**، وانقطاعه بقدر إغلاق القديمة وإقلاع الجديدة. وما يقوله ADR-015 عن نسخ قديمة تخدم حتى تُستبدل يبقى صحيحًا للنسخ التي لا تشغّل Storage. وهذا تطبيق لـ ADR-019:34 (كاتب واحد)، لا استثناء منه. وتعدد الخوادم ADR جديد (البند 4).
+- **قائمة المرشحين تُؤخذ قبل فتح المستمع:** بعد القفل يمشي الإقلاع على `p/` و`s/` ويحفظ المفاتيح، ثم يفتح المستمع. وكل مفتاح في القائمة سابق لأي كتابة في هذه العملية، والقفل يمنع غيرها، فلا يُعتمد على `mtime` أصلًا (قيس في المراجعة: `rename` يُبقي `mtime` ملف staging، فمفتاح نُقل بعد الإقلاع قد يبدو أقدم منه). **والتحقق من الإشارات بجملة واحدة لكل دفعة:** مفتاح بلا صف كائن (`objects.blob_key`) ولا جلسة (`staging_key` أو `blob_key`) يُحذف، في الخلفية بعد فتح المستمع.
+- **وقبل فتح المستمع أيضًا تُصالح الحصة** (البند 6.5).
+
+#### 5.2 المسح عند الإقلاع، لا صفوف نية، في v0.3
+
+- **القرار:** كاتب واحد مفروض بالقفل (5.1)، فكل ملف تحت `p/` أو `s/` **موجود قبل أن تكتب العملية شيئًا** ولا يشير إليه صف كائن ولا `staging_key` ولا `blob_key` لجلسة حية هو يتيم بيقين: لا كاتب آخر في منتصف كتابته. فالمسح عند الإقلاع **يحذفه**، بقائمة المرشحين التي أُخذت قبل فتح المستمع (5.1)، ولا يمس غيرها (F §1.3).
 - **المسح الدوري يبلّغ ولا يحذف** (مقياس وسجل): ملف بلا صف أحدث من الإقلاع، أو صف بلا ملف. حالاته غير مؤكدة، ودرس `rgw-orphan-list` (Ceph) و`volume.fsck` (SeaweedFS) أن أداة الحذف بلا يقين تحذف بيانات حية (F §1.1).
 - **لماذا لا صفوف نية الآن:** تضيف معاملة قبل كل كتابة وعاملًا ثالثًا، ولا تشتري شيئًا على خادم واحد بقرص محلي. تلزم حين تتحقق إحدى ثلاث (F §1.3): أكثر من عملية تكتب، أو S3 تصير قائمته الكاملة عند الإقلاع مكلفة، أو تسرّب متراكم بين الإقلاعات. **S3 وتعدد الخوادم يأتيان معها بـ ADR** (المطالبة بـ `DELETE ... RETURNING`، والمنظّف يلتزم قبل حذف الملف، F §1.3).
 
@@ -120,6 +145,7 @@ Storage ثالث خدمة بيانات في Aruma، وأول خدمة تخدم *
 - **الحجم المعلن اختياري:** `X-Goog-Upload-Header-Content-Length` (الويب) أو `X-Goog-Upload-Content-Length` (iOS)، أو لا شيء (Android). والنوع من `contentType` في الجسم، ثم `X-Goog-Upload-Header-Content-Type` أو `X-Goog-Upload-Content-Type`، ثم `application/octet-stream` (A §7).
 - **رد `start`:** 200، وجسم فارغ (iOS يشترطه، A §3.10)، و`X-Goog-Upload-Status: active`، و`X-Goog-Upload-URL` **مطلق من `public_url`** لا من ترويسة `Host` (D §7.2: المحاكي يبنيه من `Host`، فيخطئ خلف وكيل). شكله `https://<aruma>/v0/b/<bucket>/o?name=<enc>&upload_id=<id>&upload_protocol=resumable`. **ولا `X-Goog-Upload-Chunk-Granularity`** (iOS يقرّب به الإزاحة إلى أسفل، A §6.5).
   - المطلق شرط لا تحسين: قطع `putFile` في جلسة الخلفية على iOS لا تمر بأي URLProtocol، فتذهب حيث يقول الرابط (P، قسم iOS، «تجربتا الخلفية»).
+- **طلب واحد على الجلسة في كل لحظة:** قفل في الذاكرة لكل جلسة (خريطة بعدّاد مراجع)، يُمسك عبر الإلحاق والـ `Sync` وتحديث `received`، ويأخذه الإنهاء والإلغاء والانتهاء أيضًا. وبعد أخذه تُقرأ حالة الجلسة من جديد. وملف staging يُنشأ عند `start` وحده، فطلب على جلسة ملغاة لا يعيد إنشاءه. السبب: Go يعيد الجزء كاملًا بالإزاحة نفسها (6.2)، وخلف وكيل يخزّن الطلب قد يتداخل الأصل وإعادته. و`Promote` بـ `rename` يُبقي الـ inode (قيس في المراجعة)، فقطعة متأخرة بمقبض مفتوح كانت ستلحق بايتاتها بملف الكائن خارج حجمه وهاشه وحصته. والقفل في الذاكرة يكفي لأن العملية واحدة بالقفل (5.1).
 - **القطع:** `POST` أو `PUT` على رابط الجلسة. `X-Goog-Upload-Command` قائمة بفواصل ومسافات (`upload, finalize`)، و`finalize` منفردًا بجسم فارغ مقبول (Android، A §3.11). الجسم خام مهما كان `Content-Type`.
 - **الإزاحة (لا نقلّد المحاكي):**
   - `offset == received`: إلحاق.
@@ -159,14 +185,17 @@ Storage ثالث خدمة بيانات في Aruma، وأول خدمة تخدم *
 #### 6.4 حدود كل طلب
 
 - **لا حد ثابت للقطعة:** iOS يرسل ملف `putFile` كله في طلب واحد (P:187)، وAndroid حتى 32 MiB، والويب حتى 16 MiB (F §3.2). فحد الطلب = `min(object_bytes − received، المعلن − received إن أُعلن)` بـ `http.MaxBytesReader`، والجسم يتدفق إلى القرص بمخزن 32 KiB، ولا يُحمل في الذاكرة أبدًا.
-- **المهلات متدرجة لا صفرية:** الخادم يبقي `ReadTimeout`/`WriteTimeout` 60 ثانية (`server.go:198-199`). معالج الرفع لا يصفّرها كما في WebSocket (`rtdb/api/ws.go:45-46`)، بل يمدّها بعد كل قراءة ناجحة إلى الآن + 30 ثانية عبر `http.ResponseController`، ويقطع الطلب إن نزل المعدل عن `storage.limits.min_bytes_per_second` (4 KiB/s) على نافذة 30 ثانية. فيكمل رفع بطيء متقدم، ويُقطع slowloris (F §3.5).
+- **المهلات متدرجة لا صفرية:** الخادم يبقي `ReadTimeout`/`WriteTimeout` 60 ثانية (`server.go:198-199`). معالج الرفع لا يصفّرها كما في WebSocket (`rtdb/api/ws.go:45-46`)، بل يمدّ **مهلتي القراءة والكتابة معًا** بعد كل قراءة ناجحة إلى الآن + 30 ثانية عبر `http.ResponseController`، **ويضبط مهلة الكتابة مرة أخرى قبل كتابة الرد مباشرة**، ويقطع الطلب إن نزل المعدل عن `storage.limits.min_bytes_per_second` (4 KiB/s) على نافذة 30 ثانية. فيكمل رفع بطيء متقدم، ويُقطع slowloris (F §3.5). ومد القراءة وحدها لا يكفي: قيس في المراجعة أن `WriteTimeout` ينتهي فيضيع رد طلب أطول من 60 ثانية بعد أن التزم الخادم (`extendWrite=false: EOF`، و`true: 200`)، فيرى العميل خطأً لكائن محفوظ.
 
 #### 6.5 الحصص: محجوزة لكل قطعة
 
 - **حصة بايتات لكل مشروع** (`storage.limits.project_bytes`، 5 GiB افتراضيًا، 0 بلا حد)، **تشمل staging**، وتُحجز **قبل كتابة كل قطعة**:
   `UPDATE storage.usage SET reserved_bytes = reserved_bytes + $n WHERE project_number = $1 AND used_bytes + reserved_bytes + $n <= $quota`. صفر صفوف = رفض القطعة قبل قراءة جسمها. و`$n` هو `Content-Length` إن عُرف، وإلا يُحجز تدفقًا بخطوات 8 MiB ويُرد الفائض عند انتهاء الطلب (Node يرسل chunked بلا طول، B §5.4).
-- **الطول المعلن عند `start` (الويب وiOS) يُحجز كله عندها،** فيُرفض مبكرًا. وبلا إعلان (Android) لا شيء يُحجز عند `start` (F §4.3).
+- **`start` لا يحجز إلا قليلًا:** `min(المعلن، storage.limits.start_reserve_bytes)` (8 MiB، قطعة واحدة)، والباقي مع وصول القطع. أما المعلن كله فـ**يُفحص ولا يُحجز**: إن تجاوز `quota − used − reserved` فـ 402 عند `start`، رفضًا مبكرًا بلا قفل. فلو حُجز المعلن كله، لحجز طلب `start` واحد بلا هوية (`X-Goog-Upload-Header-Content-Length: 5368709120`) حصة المشروع كلها سبعة أيام، حتى تحت القواعد المقفلة، واسم الـ bucket عام في إعداد التطبيق (مراجعة المعمارية). وبلا إعلان (Android) لا شيء يُحجز عند `start` (F §4.3).
+- **الانتهاء الخامل منفصل عن العمر:** جلسة لم يتقدم فيها بايت متين منذ `storage.limits.upload_idle_ttl` (ساعة) تُحرَّر حجوزاتها غير المستعملة (`reserved − received`)، وإن كانت `received = 0` تنتهي كلها. والبايتات المحفوظة تبقى محسوبة ما دامت الجلسة حية (7 أيام)، وتُعاد المحاولة بحجز جديد مع القطعة التالية، فيبقى استئناف Android بعد ساعات ممكنًا.
 - يتحول المحجوز إلى مستعمل في معاملة الإنهاء، ويُحرَّر عند الإلغاء والانتهاء والفشل. بلا حجز، مئة رفع متوازٍ يمر كل منها من الفحص.
+- **الحصة لا تتسرب بالانهيار:** قبل فتح المستمع (5.1) تُصالَح كل المشاريع: `reserved = Σ reserved_bytes` للجلسات الحية، و`used = Σ size` للكائنات، و`object_count`. وحجوزات `Insert` (media وmultipart) في الذاكرة وحدها، فلا تبقى بعد انهيار. و**`rewrite` يُحسب على الحصة** كأي كتابة. والانتهاء يحذف ملف staging و`blob_key` إن وُجد ولم يشر إليه صف.
+- **أرضية القرص محجوزة لا مفحوصة فقط:** عدّاد بايتات جارية للعملية كلها، وكل خطوة حجز (قطعة، أو خطوة 8 MiB، أو `Insert`، أو `rewrite`) تشترط `free − inflight − n ≥ min_free_bytes`، وإلا 503. فحص البدء وحده لا يكفي: طلب واحد قد يبلغ 5 GiB، والطلبات المتزامنة تمر كلها من الفحص نفسه، والقرص مشترك مع WAL في Postgres («If the disk holding the WAL files grows full, database server panic and consequent shutdown might occur»، وثائق Postgres).
 - **حجم أقصى للكائن** `storage.limits.object_bytes` (5 GiB افتراضيًا).
 - **الرد:** على `/v0` **402** (JS: `storage/quota-exceeded`، iOS: `quotaExceeded`، A §5.2). وعلى GCS 403 بسبب `quotaExceeded` (مؤقت، لا دليل على رد GCS). وتُذكر في `docs/compat`.
 
@@ -226,7 +255,8 @@ Storage ثالث خدمة بيانات في Aruma، وأول خدمة تخدم *
 - **`?create_token=true` و`?delete_token=<t>` على `/v0` لـ Admin وحده** (`Bearer` حساب خدمة)، و403 لغيره، و400 لقيمة غير `true`، وحذف آخر رمز يولّد رمزًا جديدًا فورًا (CT، E §5).
 - **الرمز يفتح `alt=media` وحده،** لا الـ metadata بلا `alt=media` (أضيق من المحاكي، E §5، مؤقت).
 - **`token` موجود ولا يطابق: 403، بلا تقييم للقواعد** (قرار المسؤول: الأشد). الملاحظة المنشورة الوحيدة، Pyric `revokedUrlStatus: 403` (`admin-storage-metadata-download-url.json`)، أُخذت تحت قواعد مشروع مجهولة، فلا تفرّق بين «الرمز الخاطئ يُرفض» و«القواعد رفضت». والأشد لا يكون أكثر تساهلًا من أيهما. **مؤقت، ويُوثَّق** (ADR-023 §3).
-- **المقارنة بزمن ثابت** (`crypto/subtle`)، **ولا يُسجَّل الرمز**. والنسخ (rewrite) ينسخ الرموز ما لم تُستبدل الـ metadata (CT، E §5).
+- **مختومة في القاعدة:** ADR-010 S-15 يمنع أي رمز خام في القاعدة (فنسخة من القاعدة لا تحمل رموزًا). فقائمة رموز الكائن تُختم بـ `crypto.Keys.Seal` (الـ KEK، `envelope.go:27`)، والبيانات الإضافية `(project_number, name)`. تُفتح عند قراءة الـ metadata (لتظهر في `downloadTokens`)، وعند `alt=media` بعد البحث عن الكائن باسمه، ثم تُقارن بزمن ثابت (`crypto/subtle`). وrewrite يختمها من جديد لاسم الوجهة.
+- **لا يُسجَّل الرمز**. والنسخ (rewrite) ينسخ الرموز ما لم تُستبدل الـ metadata (CT، E §5).
 
 ### 10. خدمة البايتات بأمان (`media`)
 
@@ -251,6 +281,10 @@ x-goog-generation ، x-goog-metageneration ، x-goog-hash: crc32c=<b64>,md5=<b64
 - **`x-goog-hash` في ترويسة واحدة بلا مسافة بعد الفاصلة** (Node يقسم على `,` دون حذف المسافات، B §6.1)، و`x-goog-stored-content-encoding: identity|gzip` دائمًا، وإلا تخطى Node التحقق بصمت أو فشل (B §6.1، F §3.4). و`x-goog-metageneration` بالتهجئة الصحيحة (المحاكي يكتب `metadatageneration`، E §4).
 - **لا ترويسة فارغة** (المحاكي يرسل `cache-control: ''`، E §4).
 - **رفض العمّال:** طلب تنزيل فيه `Service-Worker: script`، أو `Sec-Fetch-Dest` = `serviceworker` أو `sharedworker` أو `worker`، يُرد **403**. ملف JS مرفوع يُسجَّل Service Worker على أصل اللوحة (بثغرة XSS في أي صفحة) يعترض كل تنزيلات الـ bucket ويبقى بعد إصلاح الثغرة (F §2.2-3).
+- **ورفض التحميل كسكربت من أصل اللوحة نفسه (قرار المسؤول):** CSP اللوحة `script-src 'self'` و`style-src 'self'` (`internal/admin/web/web.go:152-161`)، وملف مرفوع بـ `text/javascript` يمر بـ nosniff، و`sandbox` في CSP الرد لا ينطبق على سكربت يُحمَّل موردًا فرعيًا. فأي حقن HTML في اللوحة كان سيصير تنفيذ سكربت كامل على أصلها (يُبطل ADR-010 S-9). لذلك طلب على مسار وسائط فيه `Sec-Fetch-Site: same-origin` و`Sec-Fetch-Dest` من `script` أو `style` أو `worker` أو `sharedworker` أو `serviceworker` أو `audioworklet` أو `paintworklet` أو `xslt` يُرد **403**.
+  - التضمين من أصول التطبيقات (`cross-site` و`same-site`) لا يتأثر، ولا `<img>` و`<video>` من اللوحة نفسها (`image` و`video`).
+  - **وحيث أمكن تضيق CSP اللوحة** إلى مصادر بمسار (`<origin>/_next/static/` بدل `'self'`) في S5-C، فتغطي المتصفحات التي لا ترسل Fetch Metadata.
+  - **الثمن:** متصفح لا يرسل `Sec-Fetch-*` لا تحميه القاعدة الأولى، فتبقى له CSP المضيَّقة إن اعتُمدت. ولا يتأثر أي استعمال مشروع لرابط تنزيل.
 
 #### 10.2 CSP حسب النوع: `sandbox` لكل نوع في v0.3
 
@@ -322,7 +356,7 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
   - الأسماء ذات المقطع الفارغ (`a//b`، `/x`) تُحذف من `/v0` (CT `should not include show invalid prefixes and items`، E §6)، وتبقى في GCS.
   - `maxResults` بين 1 و1000، والأكبر يُقص إلى 1000، والافتراضي 1000 (A §3.7؛ المحاكي بلا حد، E §6).
 - **GCS:** المعاملات الفارغة (`delimiter=` و`prefix=` و`pageToken=` …) تُعامل كغائبة، و`versions=false` و`includeTrailingDelimiter=false` و`includeFoldersAsPrefixes=false` مقبولة، و`projection` و`fields` و`prettyPrint` و`alt=json` و`userProject` تُتجاهل (Go يرسلها دائمًا، B §4.2). و`startOffset`/`endOffset` مدعومان. و`matchGlob` وقيم `true` لتلك الأعلام 400 صريح (B §10.3).
-- **`pageToken` معتم وموقّع:** HMAC بمفتاح مشتق من `crypto.Keys` على `(project، bucket، prefix، delimiter، آخر اسم أُعيد)`. رمز غير صالح أو لطلب آخر: **400** (GCS؛ المحاكي يعيد من الأول، E §6). فلا يُستعمل رمز مشروع على مشروع آخر (البند 3).
+- **`pageToken` معتم وموقّع:** HMAC بمفتاح جديد له غرض خاص يُشتق في `crypto.NewKeys` (`aruma/v1/storage-page-token`)، لأن «every purpose gets its own key» و`Keys` لا يحمل اليوم إلا `tokenMAC` و`csrfMAC` والـ KEK (`keys.go:16-41`). يُضاف في S2-0. والموقَّع `(project، bucket، prefix، delimiter، آخر اسم أُعيد)`. رمز غير صالح أو لطلب آخر: **400** (GCS؛ المحاكي يعيد من الأول، E §6). فلا يُستعمل رمز مشروع على مشروع آخر (البند 3).
 - **البادئات تُرقَّم مع العناصر** بترتيب واحد بالبايتات، كما في GCS (المحاكي يعيدها كاملة في كل صفحة، E §6).
 - **القائمة مشي على الفهرس، لا مسح للـ bucket:** مع `delimiter`، كل بادئة تُستخرج بقفزة فهرس واحدة إلى ما بعدها (`name >= prefix || delimiter-incremented`). فالصفحة الواحدة ≤ `maxResults + 1` بحثًا في الفهرس مهما كان حجم الـ bucket.
 
@@ -344,6 +378,7 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
 - **`getIamPolicy` للقواعد العابرة** لا يُخدم: الأداة تحوّل الخطأ تحذيرًا وتكمل النشر (C §1.6). و`firestore.get` يرفض حتى v0.4 على أي حال.
 - **اللوحة** (`internal/services/storage/console` عبر `consolemount`، و`dashboard/src/features/storage`): متصفح الملفات (تصفح بالبادئات، ورفع، وتنزيل، وحذف، وتعديل الـ metadata، وإنشاء الرموز وإلغاؤها)، ومحرر القواعد (أخطاء `issues[]` على أسطره، ويرفض الحفظ بخطأ، ADR-021 §7)، وإعداد CORS، والاستعمال والحصة.
   - **تنزيل اللوحة بكعكة جلسة على أصل اللوحة،** فهو أخطر من رابط الرمز: `attachment` دائمًا، وترويسات `media` كاملة. والمعاينة للصور النقطية وحدها داخل `<img>`.
+  - **الرفع من اللوحة جلسة رفع تصدرها اللوحة (قرار):** مسارات الكونسول تحت `httpx.Common` بحد 1 MiB (`server.go:76`، `:91`؛ `json.go:16`)، واللوحة بكعكة جلسة فلا تصل إلى مسارات `/v0` ولا GCS بمصادقتها. فطلب JSON صغير `POST /console/v1/projects/{p}/storage/uploads` (بكعكة الجلسة وCSRF) يبدأ جلسة رفع متقطع بهوية Admin (المالك، تتجاوز القواعد) ويعيد رابطها، ثم ترسل اللوحة القطع إلى رابط `/v0` نفسه ببروتوكول `X-Goog-Upload-*` وحدوده، بلا كعكة. فلا مسار كونسول بحد جسم كبير، ولا كعكة على مسار بايتات، ويُكتب البدء في سجل التدقيق. والبديل (فرع `CommonWithLimit` لمسارات الكونسول) يضع كعكة الجلسة على طلبات غيغابايتات، فرُفض.
   - إجراءات الكتابة من اللوحة تُكتب في سجل التدقيق كما في RTDB.
 - **`storageBucket` في ملفات الإعداد موجود اليوم** (`configgen.go`، `mgmt/resources.go:27`، `adminSdkConfig`). لا تغيير.
 
@@ -374,7 +409,9 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
 |---|---|---|
 | `object_bytes` | 5 GiB | حجم الكائن، وحد الطلب، وسقف فك الضغط (10.7) |
 | `project_bytes` | 5 GiB (0 بلا حد) | الحصة شاملة staging، محجوزة لكل قطعة (6.5) |
-| `min_free_bytes` | 2 GiB | تحتها يُرد `start` والقطع 503: القرص مشترك مع Postgres (F §4.3) |
+| `min_free_bytes` | 2 GiB | محجوزة مع العدّاد الجاري للعملية عند كل خطوة حجز، وإلا 503 (6.5): القرص مشترك مع Postgres (F §4.3) |
+| `start_reserve_bytes` | 8 MiB | ما يحجزه `start` من الطول المعلن (6.5) |
+| `upload_idle_ttl` | ساعة | 6.5 |
 | `metadata_bytes` | 8 KiB | مجموع مفاتيح الـ metadata المخصّصة وقيمها، كـ GCS (F §4.2) |
 | `json_body_bytes` | 64 KiB | جسم PATCH و`start` وجزء JSON في multipart، قبل فك JSON |
 | `header_field_bytes` | 1 KiB | `contentType` و`cacheControl` و`contentDisposition` و`contentEncoding` و`contentLanguage`، بلا CR/LF ولا محارف تحكم (تصير ترويسات، F §4.2) |
@@ -382,6 +419,11 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
 | `upload_session_ttl` | 7 أيام | 6.3 |
 | `upload_sessions_per_project` | 1,000 جلسة حية | ومعه حد لكل `uid` (50) ولكل IP (100) |
 | `upload_starts_per_minute` | لكل IP ولكل مشروع، عبر `internal/platform/ratelimit` | البدء المتكرر |
+| `requests_per_ip` | 32 طلب Storage متزامنًا لكل IP | كحد الاتصالات لكل IP في RTDB (`rtdb/api/api.go:86`) |
+
+- **IPv6 يُعدّ لكل /64** في كل حد لكل IP: عنوان واحد لكل مضيف IPv6 لا يمنع شيئًا، فمضيف واحد يملك /64 كاملة.
+- **الفحوص المتقاطعة في `config` عند التحميل:** `object_bytes ≤ project_bytes` حين الحصة محدودة، و`start_reserve_bytes ≤ object_bytes`، و`upload_idle_ttl < upload_session_ttl`، وكل حد موجب، و`data_dir` مسار مطلق.
+
 | `min_bytes_per_second` | 4 KiB/s على 30 ثانية | 6.4 |
 | `list_max_results` | 1,000 | 13 |
 | `gc_grace` | دقيقة | 5 |
@@ -392,9 +434,9 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
 
 ### 18. المراقبة
 
-- **المقاييس** (`internal/platform/metrics`): الطلبات بالسطح (`v0`/`gcs`/`console`) والعملية والحالة، والبايتات الواردة والصادرة، والجلسات الحية وبايتات staging، ورفض الحصة والقرص، وقرارات القواعد (سماح، رفض، `ErrOverloaded`) وزمنها، وطول طابور GC وعمره، وما حذفه المسح عند الإقلاع وما بلّغ عنه المسح الدوري، وفك الضغط المقطوع، وفشل الحذف المتزامن.
+- **المقاييس** (`internal/platform/metrics`): الطلبات بالسطح (`v0`/`gcs`/`console`) والعملية والحالة، والبايتات الواردة والصادرة، والجلسات الحية وبايتات staging، ورفض الحصة والقرص، وقرارات القواعد (سماح، رفض، `ErrOverloaded`) وزمنها، وطول طابور GC وعمره، وما حذفه المسح عند الإقلاع وما بلّغ عنه المسح الدوري، وفك الضغط المقطوع، وفشل الحذف المتزامن، **والالتزامات الملتبسة** (5) وكيف حُسمت، وانتظار القفل عند الإقلاع (5.1)، والفرق الذي صالحته الحصة عند الإقلاع.
 - **السجلات:** المسار والحالة كما في كل الخدمات، **بلا الاستعلام** (`middleware.go:66-71`)، فلا يُكتب `token` ولا `upload_id`. ولا `Authorization`. وتحذير عند كل إصدارة قواعد لا تُترجم (ADR-021 §7).
-- **`/readyz`** لا يتغير. والمسح عند الإقلاع يعمل في الخلفية ولا يؤخر الجاهزية.
+- **`/readyz`** لا يتغير. والقفل وقائمة المرشحين ومصالحة الحصة قبل فتح المستمع، وحذف المرشحين في الخلفية بعده.
 
 ### 19. App Check وGMPID
 
@@ -404,7 +446,12 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
 
 - **`gocloud.dev/blob/fileblob` للقرص:** بلا fsync (`fileblob.go:836-871`)، وعبور مسارات مرتين في 2026 (#3667، #3794)، و`.tmp` يتيمة (#3286)، و`rename` عبر الأجهزة (#3294)، و`IfNotExist` غير ذري (#3809) (F §1.2). سائقنا أصغر من ثمن هذه.
 - **S3 عبر `s3blob` في v0.3:** اعتماد ثقيل، ويحتاج MinIO في الاختبار، ويجعل المسح عند الإقلاع قائمة LIST مدفوعة فيستلزم صفوف النية من اليوم الأول (F §1.3). والواجهة جاهزة له. ADR-023 يؤجله.
-- **صفوف النية الآن:** معاملة قبل كل كتابة وعامل ثالث لا يشتري شيئًا على خادم واحد (البند 5).
+- **صفوف النية الآن:** معاملة قبل كل كتابة وعامل ثالث لا يشتري شيئًا على خادم واحد بقفل (البند 5).
+- **المسح بمقارنة `mtime` بوقت الإقلاع:** `rename` يحفظ `mtime`، فالمقياس يخطئ. وبلا قفل يحذف ملفات نسخة أخرى (البند 5.1).
+- **تداخل نسختين فيهما Storage أثناء الاستبدال:** كاتبان على مجلد واحد. الإيقاف ثم التشغيل بالقفل (5.1).
+- **حجز الطول المعلن كله عند `start`:** طلب واحد بلا هوية يحجز حصة المشروع أيامًا (6.5).
+- **رموز التنزيل نصًا في القاعدة:** ADR-010 S-15 (البند 9).
+- **حذف الملف الجديد على أي خطأ في `commitObject`:** يضيّع النسختين بعد التزام ملتبس (البند 5).
 - **ملف مؤقت ثم `rename` فوق المفتاح النهائي:** المفتاح الجديد لكل generation يجعل الكتابة فوق ملف قائم مستحيلة أصلًا، والقارئ القديم يكمل على ملفه.
 - **مفتاح ملف من اسم الكائن:** عبور المسارات وتصادم الحالة (F §4.1).
 - **تقليد المحاكي في الإزاحات** (يتجاهلها): إعادة المحاولة تفسد الملف (F §3.1).
