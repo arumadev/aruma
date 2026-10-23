@@ -22,6 +22,8 @@
 | [ADR-019](ADR-019-rtdb-storage-and-ordering.md) | تخزين Realtime Database وترتيب الكتابة وحدودها | معتمد (RTDB، R0) |
 | [ADR-020](ADR-020-rtdb-v02-scope.md) | نطاق RTDB في 0.2: الاستعلامات والقواعد وREST والاستطلاع الطويل | معتمد (RTDB، R0) |
 | [ADR-021](ADR-021-rules-language.md) | محرك قواعد Firestore وStorage: لغة واحدة مكتوبة يدويًا في `platform/rules` | معتمد (v0.3، S0) |
+| [ADR-022](ADR-022-storage-architecture.md) | Cloud Storage for Firebase: المعمارية | مقترح (v0.3، S0) |
+| [ADR-023](ADR-023-v03-scope.md) | نطاق 0.3: لغة القواعد وCloud Storage | مقترح (v0.3، S0) |
 
 ## الصيغة
 
