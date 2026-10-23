@@ -14,6 +14,7 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/arumadev/aruma/internal/app"
 	"github.com/arumadev/aruma/internal/services/rtdb/wire"
 )
 
@@ -135,81 +136,84 @@ func (c *slowConn) Read(p []byte) (int, error) {
 	return n, err
 }
 
-// A large first sync reaches a slow client whole. Aruma bounds what waits for a client in
-// bytes (rtdb.limits.outbox_bytes), not in messages, so a sync of over a thousand frames, with
-// over a thousand pushes queued behind it, does not cut the client off mid-sync, which would
-// make it reconnect and ask again forever; and
-// the write timeout applies to one frame, at most 49152 bytes, so a client on a slow link
-// that keeps reading is not dropped however long the whole message takes.
+// A large first sync reaches a client on a slow link whole: the write timeout bounds each
+// frame, at most 49152 bytes, never the whole message, so a client that keeps reading is not
+// dropped however long the message takes. Lark 0.3.0 dropped such clients with a flat
+// deadline. Here the timeout is 1 s and the client reads at 1 MB/s: a frame takes about 30 ms
+// at most, the 4 MB message about 4 s, far past what the kernel's buffers hold.
 func TestRTDBSlowClientLargeSync(t *testing.T) {
+	const timeout = time.Second
+	e := newEnv(t, rtdbSettings(false, nil), app.WithRTDBWriteTimeout(timeout))
+	ns := e.owner().projectNS("chat-app")
+	value := strings.Repeat("abcdefghij", 300_000) + strings.Repeat("مرحبا بكم ", 50_000)
+	if r := restAs(t, e, "PUT", "/sync.json?ns="+ns, string(mustJSON(value)), "", nil); r.status != 200 {
+		t.Fatalf("seed: %d %s", r.status, r.body)
+	}
+	c := e.dial(ns, dialOpts{readRate: 1 << 20})
+	start := time.Now()
+	got := c.get("/sync")
+	took := time.Since(start)
+	if got != string(mustJSON(value)) {
+		t.Fatal("the sync differs")
+	}
+	if took < 3*timeout {
+		t.Fatalf("the sync took %v: the server never waited long for the client", took)
+	}
+	t.Logf("%d bytes in %d frames at 1 MB/s in %v, with a %v write timeout", len(got), len(c.frames), took.Round(time.Millisecond), timeout)
+	// Still the same connection.
+	c.put("/after", true)
+}
+
+// Over a thousand pushes queued behind a large message do not cut the client off: the outbox
+// is bounded in bytes (rtdb.limits.outbox_bytes), never in messages. Lark 0.3.0 dropped a
+// client at 1000 queued messages, which a large first sync reached on its own, and the client
+// reconnected and asked again forever. The client here reads nothing until a burst of writes
+// is acked, so every push of the burst waits in its outbox at once, behind a 6 MB sync that
+// the kernel's buffers cannot hold.
+func TestRTDBManyQueuedPushes(t *testing.T) {
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("chat-app")
-	// 20 children of 950000 code units each, 19 million in all: about 1160 frames.
-	chunk := strings.Repeat("abcdefghij", 65000) + strings.Repeat("مرحبا بكم ", 30000)
-	want := map[string]string{}
-	for i := range 20 {
-		k := fmt.Sprintf("c%02d", i)
-		want[k] = k + chunk
-		if r := restAs(t, e, "PUT", "/sync/"+k+".json?ns="+ns, string(mustJSON(want[k])), "", nil); r.status != 200 {
-			t.Fatalf("seed %s: %d %s", k, r.status, r.body)
-		}
+	value := strings.Repeat("abcdefghij", 400_000) + strings.Repeat("مرحبا بكم ", 100_000)
+	if r := restAs(t, e, "PUT", "/sync.json?ns="+ns, string(mustJSON(value)), "", nil); r.status != 200 {
+		t.Fatalf("seed: %d %s", r.status, r.body)
 	}
-
-	c := e.dial(ns, dialOpts{readRate: 16 << 20})
-	start := time.Now()
+	c := e.dial(ns, dialOpts{})
 	listen := c.request("q", map[string]any{"p": "/sync", "h": ""})
 	c.request("q", map[string]any{"p": "/burst", "h": ""})
-	// While the sync is on its way, 1500 small writes queue behind it, one push each.
+	// The listens are registered before the burst starts: a read on another connection,
+	// answered by the database's writer, follows them.
 	w := e.dial(ns, dialOpts{})
-	const burst = 1500
-	reqs := make([][]any, burst)
-	for i := range reqs {
-		reqs[i] = []any{"p", map[string]any{"p": fmt.Sprintf("/burst/k%04d", i), "d": "ب"}}
+	w.call("g", map[string]any{"p": "/burst", "q": map[string]any{}}).mustOK(t)
+	const burst = 1200
+	ids := make([]int64, burst)
+	for i := range ids {
+		ids[i] = w.request("p", map[string]any{"p": fmt.Sprintf("/burst/k%04d", i), "d": "ب"})
 	}
-	pipeline(t, w, reqs...)
-	c.await(listen).mustOK(t)
-	var got struct {
-		D struct {
-			B struct {
-				D map[string]string `json:"d"`
-			} `json:"b"`
-		} `json:"d"`
-	}
-	data := c.queue[0]
-	c.queue = c.queue[1:]
-	if err := json.Unmarshal([]byte(data), &got); err != nil {
-		t.Fatal(err)
-	}
-	if len(got.D.B.D) != len(want) {
-		t.Fatalf("synced %d children, want %d", len(got.D.B.D), len(want))
-	}
-	for k, v := range want {
-		if got.D.B.D[k] != v {
-			t.Fatalf("child %s differs", k)
+	for _, id := range ids {
+		if r, err := w.awaitQuiet(id, time.Minute); err != nil || r.Status != "ok" {
+			t.Fatalf("burst write %d: %+v %v", id, r, err)
 		}
 	}
-	if n := len(c.frames); n < 1100 {
-		t.Fatalf("%d frames, want over 1100", n)
-	}
-	t.Logf("%d bytes in %d frames to a slow client in %v", len(data), len(c.frames), time.Since(start).Round(time.Millisecond))
-	// The connection is still the same one, and has every write of the burst.
+
+	// Now the client reads: the sync, then every push.
+	c.await(listen).mustOK(t)
 	var keys map[string]string
 	if err := json.Unmarshal([]byte(c.get("/burst")), &keys); err != nil || len(keys) != burst {
-		t.Fatalf("burst after the sync: %d keys, %v", len(keys), err)
+		t.Fatalf("burst: %d keys, %v", len(keys), err)
 	}
-	if got := c.get("/sync/c00"); got != string(mustJSON(want["c00"])) {
-		t.Fatal("the connection after the sync")
+	synced, pushes := 0, 0
+	want := string(mustJSON(value))
+	for _, m := range c.queue {
+		switch {
+		case strings.Contains(m, `"p":"sync"`) && strings.Contains(m, want):
+			synced++
+		case strings.Contains(m, `"p":"burst/k`):
+			pushes++
+		}
 	}
-
-	// A client so slow that one frame of three-byte characters takes seconds still gets it.
-	cjk := strings.Repeat("中", 2*wire.MaxFrameChars)
-	c.put("/cjk", cjk)
-	slow := e.dial(ns, dialOpts{readRate: 24 << 10})
-	start = time.Now()
-	if got := slow.get("/cjk"); got != string(mustJSON(cjk)) {
-		t.Fatal("the slow read differs")
+	if synced != 1 || pushes != burst {
+		t.Fatalf("received the sync %d times and %d pushes, want 1 and %d", synced, pushes, burst)
 	}
-	t.Logf("%d bytes at 24 KB/s in %v", len(cjk), time.Since(start).Round(time.Millisecond))
 }
 
 // Paths reach the database in their canonical form whatever the spelling: with or without the
@@ -226,7 +230,12 @@ func TestRTDBPathSpellings(t *testing.T) {
 	if m := l.next(); !sameJSON(m, `{"t":"d","d":{"a":"d","b":{"p":"a/b","d":{"w":0}}}}`) {
 		t.Fatalf("first data: %s", m)
 	}
+	// A sibling whose key starts with b reaches no listener of a/b, set or updated from a,
+	// where a/b's listener is below the write and only the children decide: the next push it
+	// gets is the write to a/b itself.
 	c.put("/a/bc", "other")
+	c.call("m", map[string]any{"p": "/a", "d": map[string]any{"bc": "other", "bcd/e": 1}}).mustOK(t)
+	c.call("m", map[string]any{"p": "/", "d": map[string]any{"a/bc": "other"}}).mustOK(t)
 	c.put("a//b/", map[string]any{"x": 1})
 	if m := l.next(); !sameJSON(m, `{"t":"d","d":{"a":"d","b":{"p":"a/b","d":{"x":1}}}}`) {
 		t.Fatalf("after the write: %s", m)
@@ -241,7 +250,7 @@ func TestRTDBPathSpellings(t *testing.T) {
 			t.Errorf("get %q: %s", p, got)
 		}
 	}
-	if got := c.get("/a"); !sameJSON(got, `{"b":{"x":1,"y":2,"z":3},"bc":"other"}`) {
+	if got := c.get("/a"); !sameJSON(got, `{"b":{"x":1,"y":2,"z":3},"bc":"other","bcd":{"e":1}}`) {
 		t.Errorf("get /a: %s", got)
 	}
 	for _, p := range []string{"/a/b.json", "/a/b/.json"} {
@@ -321,7 +330,7 @@ func authRace(c *wsClient, i int, tokens map[string]string, pat string) error {
 		ids = append(ids, c.requestQuiet("g", map[string]any{"p": "/users/" + deny, "q": map[string]any{}}))
 		var got []string
 		for _, id := range ids {
-			r, err := c.awaitQuiet(id)
+			r, err := c.awaitQuiet(id, 10*time.Second)
 			if err != nil {
 				return fmt.Errorf("connection %d round %d: %v", i, round, err)
 			}
@@ -350,10 +359,11 @@ func (c *wsClient) requestQuiet(action string, body any) int64 {
 	return c.rid
 }
 
-// awaitQuiet is await for another goroutine than the test's.
-func (c *wsClient) awaitQuiet(r int64) (reply, error) {
+// awaitQuiet is await for another goroutine than the test's, waiting up to timeout for each
+// message.
+func (c *wsClient) awaitQuiet(r int64, timeout time.Duration) (reply, error) {
 	for {
-		m, err := c.read(10 * time.Second)
+		m, err := c.read(timeout)
 		if err != nil {
 			return reply{}, err
 		}

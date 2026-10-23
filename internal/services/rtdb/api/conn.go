@@ -15,7 +15,9 @@ const (
 	// idleTimeout closes a connection the client has been silent on. The SDKs send a "0"
 	// frame after 45 seconds of silence; the emulator closes at about 120 seconds.
 	idleTimeout = 120 * time.Second
-	// writeTimeout bounds one frame's write; a client that stops reading is dropped.
+	// writeTimeout bounds one frame's write, by default (Options.WriteTimeout): a client that
+	// stops reading is dropped. It applies to each frame, at most 49152 bytes, never to a
+	// whole message, so a client on a slow link that keeps reading gets a message of any size.
 	writeTimeout = 30 * time.Second
 )
 
@@ -118,7 +120,7 @@ func (c *wsConn) runSecondary() {
 // writeNow writes one message at once, beside the outbox: the frames of an upgrade that
 // belong to this WebSocket alone.
 func (c *wsConn) writeNow(msg []byte) {
-	ctx, cancel := context.WithTimeout(c.ctx, writeTimeout)
+	ctx, cancel := context.WithTimeout(c.ctx, c.api.opts.WriteTimeout)
 	defer cancel()
 	if err := c.ws.Write(ctx, websocket.MessageText, msg); err != nil {
 		c.cancel()
@@ -136,7 +138,7 @@ func (c *wsConn) writeLoop() {
 		msgs, closed, overflowed := out.take()
 		for _, m := range msgs {
 			for _, f := range wire.Split(m) {
-				ctx, cancel := context.WithTimeout(c.ctx, writeTimeout)
+				ctx, cancel := context.WithTimeout(c.ctx, c.api.opts.WriteTimeout)
 				err := c.ws.Write(ctx, websocket.MessageText, f)
 				cancel()
 				if err != nil {
