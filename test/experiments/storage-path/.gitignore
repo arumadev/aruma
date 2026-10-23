@@ -1,0 +1,9 @@
+# Run outputs: the stub's log, results, throwaway keys and certificates.
+.generated/
+# Android and iOS build outputs.
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/google-services.json
+ios/.generated/
