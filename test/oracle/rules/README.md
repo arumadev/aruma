@@ -29,7 +29,7 @@
 
 ```
 production/<topic>.json        حالاتنا: ما قرّرته Rules Test API (provenance: rules-test-api)
-production/raw/<topic>.json    كل طلب أُرسل وردّه كما هو (بلا أي اعتماد أو token)
+production/raw/<topic>.json    كل طلب كما أُرسل، وردّه كما جاء (لا اعتماد ولا token فيهما)
 emulator/<topic>.json          الحالات نفسها على المحاكيات الرسمية (provenance: emulator)
 parity-exceptions.md           كل حالة اختلف فيها المحاكي عن Rules Test API، وآثار Test API
 imported/hidane/original/      ملفات hidane كما هي (انظر أدناه عن ملف النتائج)
@@ -55,6 +55,7 @@ tools/                         أدوات التسجيل والاستيراد و
 | `storage` | storage | حقول `resource` و`request.resource`، claims، الطرق، `firestore.get/exists`، أساسيات اللغة |
 | `storage-paths` | storage | `{name=**}` في 1 و2، صفر مقاطع، match متداخل، bucket |
 | `followups` | firestore | جولة ثانية حسمت ما تركته الأولى غامضًا (crc32، `lower`، `split('')`، `{rest=**}` في v1…) |
+| `nesting`، `nesting-storage` | firestore، storage | match متداخل تحت كتلة ينتهي مسارها بـ `{x=**}` أو يتبع الـ glob فيها مقاطع، في 1 و2، وما يربطه الـ glob (أُضيف بعد المراجعة) |
 | `hidane-conditions` | firestore | كل شرط من شروط hidane عبر Test API، لمقارنته بما قرّره المحاكي له |
 
 ## المخطط الموحّد `aruma.rules-oracle/v1`
@@ -81,6 +82,9 @@ tools/                         أدوات التسجيل والاستيراد و
 | `visited` | قيم التعبيرات العليا التي زارتها Test API (`visitedExpressions`) |
 | `emulator` | `skip: <السبب>` إن لم يكن تشغيلها على المحاكي ممكنًا |
 
+هذا مخطط `production/` و`imported/*/normalised/`. ملفات `emulator/` نتائج مقارنة لا حالات، وشكلها
+(`{id, production, emulator}` وحقول الأصل على مستوى الملف) موصوف في قسم `emulator/` أدناه.
+
 `error` يعني أن القرار رفضٌ سببه خطأ تقييم (أو ruleset لا يُترجم، أو طلب رفضته الـ API نفسها). `deny`
 رفض لأن الشرط `false` أو لأن لا عبارة `allow` تطابق. ملاحظة: Test API تُرجع الرسالة نفسها لخطأ في
 أي عبارة، فالمرجع هو `outcome`؛ الرسائل وأرقام الأسطر للقراءة والتشخيص.
@@ -96,7 +100,15 @@ tools/                         أدوات التسجيل والاستيراد و
   تُخرج من الحزمة وتُسجّل وحدها؛ وحالات الحدود والحجم وقواعد match تُسجّل وحدها من البداية.
 - `projects.test` يقيّم المصدر المعطى دون نشره ودون قراءة أي بيانات: **لم تُنشر أي قواعد** على المشروع.
 - الـ token: من تسجيل دخول firebase CLI على هذا الجهاز، عبر وحدة `lib/auth.js` في firebase-tools نفسها
-  (`tools/rulesapi.mjs`). لا يُطبع ولا يُكتب في أي ملف، وطلبات `production/raw/` لا تحويه.
+  (`tools/rulesapi.mjs`). لا يُطبع ولا يُكتب في أي ملف؛ يُرسل في ترويسة `Authorization` وحدها، فجسم الطلب
+  لا يحويه.
+- `production/raw/<topic>.json`: لكل نداء `request` و`status` و`response`. ‏`request.body` هو جسم الطلب كما
+  أُرسل؛ وإن كان فيه رقم لا يبقى كما هو بعد `JSON.parse` (مثل `2.0` أو `9223372036854775807`) فالجسم في
+  `request.bodyText` نصًّا حرفيًّا بدلًا منه. ‏`request.requestSha256` بصمة الجسم المرسل كله. حالات الحجم
+  وحدها يُستبدل فيها نصّ الـ ruleset بمولّده وحجمه وبصمته (`content: {generated, sha256, bytes}`).
+  النداءات المسجّلة قبل 2026-10-24 حُفظت أولًا ببصمة الـ ruleset ومسارات الحالات فقط؛ أعاد
+  `tools/rebuild-raw.mjs` بناء أجسامها من الحالات المطبّعة بالطريقة التي يبنيها بها المسجّل، وتحقّق أن بصمة
+  كل ruleset تطابق البصمة المسجّلة وقتها (لم يفشل منها نداء)، ووسمها `rebuilt: true`.
 - كل حالة تُرسل بـ `expectation: ALLOW`؛ `SUCCESS` = ‏`allow`. ما سواه: `error` إن جاء
   `errorPosition` أو رسالة `Error:`، وإلا `deny`.
 - القيم الافتراضية: `request.auth` هو `alice` بـ claims ثابتة (`ALICE` في `tools/oracle.mjs`)،
@@ -119,14 +131,22 @@ tools/                         أدوات التسجيل والاستيراد و
   يستعمله محاكي Storage في firebase-tools 13.23.0 (`tools/storagert.mjs`)، والمتغيرات (`request`،
   `resource`) مبنية كما يبنيها firebase-tools، بقيم الحالة.
 - `tools/compare.mjs` يكتب جداول [parity-exceptions.md](parity-exceptions.md).
+- شكل `emulator/<topic>.json` غير شكل الحالات المطبّعة: على مستوى الملف `schema` و`topic` و`service` و`set`
+  و`source` (‏`aruma`) و`provenance` (‏`emulator`) و`recordedAt` و`version` (المحاكي وإصدار Java)، وهي تسري على
+  كل حالاته؛ وكل حالة `{id, production, emulator}`: ‏`id` معرّف الحالة في `production/<topic>.json`،
+  و`production` نسخة من `expected` هناك، و`emulator` ما قرّره المحاكي بالحقول نفسها (`outcome`، `reason` أو
+  `errorKind`، `message`، ومعها أحيانًا `lookups` لمسارات `firestore.get/exists` التي طلبها محاكي Storage، و`note`)،
+  أو `{skip: <السبب>}` إن لم تُشغّل.
+- المحاكي يُشغَّل ويُوقف بمعرّف عمليته (pid)، لا بنمط اسم.
 
 ### `imported/hidane/` (‏github.com/hidane-dev/hidane، ‏MIT أو Apache-2.0؛ نستعمله بـ Apache-2.0)
 
 - commit ‏`abd4664b0d610781eb3f0fec45642e7bc9953533`. استورده `tools/import-hidane.mjs`.
 - `original/results/rules-conditions-official-v1.22.0.development.json`: ملف hidane
-  `results/rules-conditions-official-v1.22.0.json` (ما قرّره محاكي Firestore الرسمي v1.22.0 لكل شرط) كما
-  هو، بعد إخراج أسطر `heldout/*` منه إلى الفرع المحجوب (سطر لكل نتيجة، فالباقي بايتات الأصل نفسها،
-  مع تصحيح الفاصلة الأخيرة فقط). سجّلته hidane في 2026-10-11 بمحاكي تحت لغة إنجليزية.
+  `results/rules-conditions-official-v1.22.0.json` (ما قرّره محاكي Firestore الرسمي v1.22.0 لكل شرط)
+  **معدَّلًا**: أُخرجت منه أسطر `heldout/*` الـ 106 إلى الفرع المحجوب (سطر لكل نتيجة، فالباقي بايتات الأصل
+  نفسها، ولم يتغيّر شيء آخر؛ وهو موسوم معدَّلًا في [NOTICE](../../../NOTICE)). سجّلته hidane في 2026-10-11
+  بمحاكي تحت لغة إنجليزية.
 - `original/cases/rules.json` و`cel-spec.json` كما هما. `cel-spec.json` مأخوذ من
   google/cel-spec (‏v0.25.3، ‏Apache-2.0) كما يذكر الملف نفسه.
 - `original/tools/conditions.py` و`rules_conditions.py`: الأداتان اللتان أنتجتا الملف، للأثر.
@@ -166,6 +186,9 @@ node record-production.mjs --dev ../production --heldout <heldout>/production <c
 # المحاكيات (محاكي Firestore يعمل على 127.0.0.1:8840):
 node record-emulator.mjs --firestore 127.0.0.1:8840 --out ../emulator ../production/<topic>.json …
 node compare.mjs ../emulator ../production
+
+# أجسام الطلبات القديمة في raw/ (مرة واحدة؛ لا يمسّ ما سُجّل كما أُرسل):
+node rebuild-raw.mjs ../production
 
 # الاستيراد:
 node import-hidane.mjs <hidane checkout> <commit> <heldout dir>
