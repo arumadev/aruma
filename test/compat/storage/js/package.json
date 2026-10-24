@@ -1,0 +1,31 @@
+{
+  "name": "aruma-storage-compat-js",
+  "private": true,
+  "description": "What the Storage suites of firebase-js-sdk (packages/storage and packages/storage-compat at firebase@13.0.0) need to run from source: the @firebase packages at the versions firebase@13.0.0 ships, and the test tools at the versions its yarn.lock pins, except Playwright, which is the version whose browsers are in .cache/ms-playwright. run.sh installs it with npm ci --ignore-scripts next to the extracted sources.",
+  "dependencies": {
+    "@firebase/app": "0.16.3",
+    "@firebase/app-compat": "0.5.19",
+    "@firebase/app-types": "0.9.6",
+    "@firebase/auth": "1.13.7",
+    "@firebase/auth-compat": "0.6.12",
+    "@firebase/component": "0.7.5",
+    "@firebase/logger": "0.5.2",
+    "@firebase/storage": "0.14.6",
+    "@firebase/storage-types": "0.8.5",
+    "@firebase/util": "1.15.3",
+    "tslib": "2.8.1"
+  },
+  "devDependencies": {
+    "@types/chai": "4.3.20",
+    "@types/mocha": "10.0.10",
+    "@types/node": "24.1.0",
+    "@vitest/browser-playwright": "4.1.10",
+    "chai": "4.5.0",
+    "mocha": "11.8.0",
+    "playwright": "1.64.1",
+    "ts-node": "10.9.2",
+    "typescript": "5.5.4",
+    "vite": "8.2.2",
+    "vitest": "4.1.10"
+  }
+}

@@ -1,0 +1,11 @@
+rules_version = '2';
+// The rules the firebase-js-sdk Storage suites run under on Aruma (run.sh publishes them). The
+// suites sign in anonymously and work under public/; Firebase's own test project and its rules
+// are not published, so these grant exactly that and nothing else.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /public/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

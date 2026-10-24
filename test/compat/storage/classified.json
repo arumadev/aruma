@@ -1,0 +1,21 @@
+{
+  "tests": {},
+  "captures": [
+    {
+      "key": "* | x*.header.content-type", "emulator": "application/json; charset=utf-8", "aruma": "application/json; charset=UTF-8",
+      "class": "c", "note": "JSON replies say charset=UTF-8, as production does (production/bucket_probe.json); the emulator writes utf-8"
+    },
+    {
+      "key": "* | x*.header.access-control-allow-origin", "emulator": "(absent)", "aruma": "*",
+      "class": "b", "item": "27", "note": "Access-Control-Allow-Origin: * on every /v0 reply, Origin or not, as production does on its error replies (bucket_probe.json); the emulator only answers an Origin"
+    },
+    {
+      "key": "* | x*.header.cache-control", "emulator": "(absent)", "aruma": "private, max-age=0",
+      "class": "c", "note": "Cache-Control: private, max-age=0 on /v0 JSON, as production (bucket_probe.json, E §1); the emulator sends none"
+    },
+    {
+      "key": "* | x*.header.cache-control", "emulator": "(absent)", "aruma": "no-cache, no-store, max-age=0, must-revalidate",
+      "class": "c", "note": "Cache-Control: no-cache, no-store, max-age=0, must-revalidate on GCS JSON, as production (bucket_probe.json, ADR-023 §3-79); the emulator sends none"
+    }
+  ]
+}
