@@ -231,14 +231,14 @@ func TestStorageWiring(t *testing.T) {
 			t.Errorf("%s: %d %s, want /v0's 400", path, rec.Code, rec.Body)
 		}
 	}
-	for _, path := range []string{"/storage/v1/b/x", "/upload/storage/v1/b/x/o"} {
+	// The GCS surface is routed (S4-A): its own error shape, not the server's 404, shows it is
+	// mounted, on the JSON API and on its upload and download paths.
+	const gcsError = `"errors":[{"domain":"global"`
+	for _, path := range []string{"/storage/v1/b/x", "/upload/storage/v1/b/x/o", "/download/storage/v1/b/x/o/y"} {
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
-		// The GCS surface routes since S4-A: its own error shape, not the server's 404, shows it
-		// is mounted.
-		gcs := strings.Contains(path, "/storage/v1/") && strings.Contains(rec.Body.String(), `"errors":[{"domain":"global"`)
-		if rec.Code != http.StatusNotImplemented && !gcs {
-			t.Errorf("%s: %d %s, want the contract's 501", path, rec.Code, rec.Body)
+		if !strings.Contains(rec.Body.String(), gcsError) {
+			t.Errorf("%s: %d %s, want the GCS surface's error", path, rec.Code, rec.Body)
 		}
 	}
 	off, err := New(load(nil), slog.New(slog.NewTextHandler(io.Discard, nil)), "test", pool)
@@ -250,10 +250,12 @@ func TestStorageWiring(t *testing.T) {
 	}
 	rec = httptest.NewRecorder()
 	off.Server.Handler().ServeHTTP(rec, httptest.NewRequest("GET", "/storage/v1/b/x", nil))
-	if rec.Code == http.StatusNotImplemented {
+	if strings.Contains(rec.Body.String(), gcsError) {
 		t.Error("Storage disabled, but its API answers")
 	}
+	// The console's Storage routes are mounted either way, and answer FAILED_PRECONDITION while
+	// Storage is off (S5-B).
 	if len(on.Console.Routes()) != len(off.Console.Routes()) {
-		t.Error("Storage adds console routes before S5-B")
+		t.Error("the console's Storage routes depend on storage.enabled")
 	}
 }
