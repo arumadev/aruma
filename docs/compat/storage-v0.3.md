@@ -91,3 +91,21 @@
 | 66 | `create_token` يغلب `delete_token` حين يجتمعان، وقيمته غير `true` 400 قبل فحص صلاحية Admin | مؤقت | `tokens.json` | `api.tokens` |
 | 67 | `maxResults` غير عدد صحيح موجب 400، و`startOffset`/`endOffset` تُتجاهل | مؤقت | A §3.7 | `api.list` |
 | 68 | جسم PATCH بقيمة غير نصية 400، وفوق الحد 413، والفارغ لا يغيّر إلا الـ metageneration | مؤقت | A §3.5 | `api.readPatch` |
+
+### التنزيل ومصفوفة المتصفحات (S3-C)
+
+`alt=media` على `/v0` يفتح الكائن بـ `core.Open` (الرمز وحده، أو القواعد) ثم `media.Serve`. يختبره `test/acceptance/storage_download_test.go` (من يفتح البايتات، والترويسات وCache-Control بالوضع، وRange، ورفض العمّال وسكربتات أصل اللوحة، وCORS الـ bucket على الرد ورفضه والـ preflight، وgzip كما خُزّن أو مفكوكًا، وقنبلة تُقطع عند `object_bytes` وتُعدّ).
+
+ومصفوفة المتصفحات (ADR-022 §10.6) في `test/e2e/browser-matrix/run.sh`: حالات F §2.4 على Chromium وFirefox وWebKit (Playwright 1.64.1)، 14 من 14 على كل محرك، ولكل حماية حالة ضابطة تثبت أن الفحص يرى فشلها. والنتائج التي تحسم ما علّقه ADR-022 على المصفوفة:
+
+- **HTML وSVG تحت `sandbox`** لا ينفّذان سكربتًا تصفحًا مباشرًا في المحركات الثلاثة، و`window.origin === "null"`، ولا كعكة اللوحة ولا `localStorage`. وSVG يُرسم، وفي `<img>` من أصل آخر أيضًا.
+- **الفيديو والصوت تحت `sandbox` و`media-src 'self'`** يُعرضان ويُقفز فيهما تصفحًا مباشرًا وفي `<video>`/`<audio>` من أصل آخر، ومع COEP `require-corp`، في الثلاثة. فلا حاجة لرفع `sandbox` عن الوسائط. وWebKit يطلب بـ `Range` ويأخذ 206.
+- **PDF يُنزَّل** تصفحًا مباشرًا، ولا يُعرض في `<iframe>` ولا `<embed>` من أصل آخر (`X-Frame-Options: DENY`).
+- **CORS:** bucket بلا إعداد يرفض `fetch` و`getBytes` و`getBlob` من أصل آخر، و`cors.json` الموثّق (`{origin: ["*"], method: ["GET"], maxAgeSeconds: 3600}`) يسمح بها ومعها الـ preflight. المكتبة هي `firebase` 13.1.0 (بناء CDN) بـ `connectStorageEmulator` للمضيف وحده، لأن مسار الإنتاج للويب في S6.
+- **Service Worker** من أصل اللوحة يُرفض، وكذلك `<script>` من أصلها، ويُحمَّل `<script>` من أصل تطبيق.
+- **حدود المصفوفة:** H.264 غير موجود في Chromium الذي يوزعه Playwright، فيُفحص فيه WebM (VP9)؛ وWebKit يعلن VP9 ولا يفك منه إطارًا (من Aruma ومن خادم ملفات عادي سواء)، فيُفحص فيه MP4 وحده. والحالة 11 (قنبلة gzip) في اختبارات `media` والقبول لا في المتصفح، والحالة 12 (`file.download()` في Node) لمسار GCS في S4-C.
+
+| # (ADR-023 §3) | الفرق | التصنيف | المصدر | الموضع |
+|---|---|---|---|---|
+| 69 | `?token=` الفارغ لا رمز، فتقرر القواعد | مؤقت | ADR-022 §13 | `api.download` |
+| 70 | تنزيل قررته القواعد بلا `Authorization` يحمل `private` أيضًا | مؤقت | ADR-022 §10.5 | `api.download` |
