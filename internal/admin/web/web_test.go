@@ -48,12 +48,12 @@ func TestServing(t *testing.T) {
 		body   string
 		cache  string
 	}{
-		{"/", 200, "__next_f", "no-cache"},
-		{"/projects/", 200, "projects", "no-cache"},
-		{"/projects/?id=chat-app", 200, "projects", "no-cache"},
+		{"/", 200, "__next_f", "no-store"},
+		{"/projects/", 200, "projects", "no-store"},
+		{"/projects/?id=chat-app", 200, "projects", "no-store"},
 		{"/_next/static/chunks/main-abc.js", 200, "console.log", "public, max-age=31536000, immutable"},
 		{"/favicon.ico", 200, "", "public, max-age=3600"},
-		{"/nope/", 404, "not found", "no-cache"},
+		{"/nope/", 404, "not found", "no-store"},
 		{"/.DS_Store", 404, "not found", ""},
 		{"/../../etc/passwd", 404, "not found", ""},
 	}
@@ -136,14 +136,20 @@ func TestCSPCodeOnlyFromStaticDir(t *testing.T) {
 	}{
 		{"console.example.com", "console.example.com/_next/static/"},
 		{"127.0.0.1:9360", "127.0.0.1:9360/_next/static/"},
-		{"[::1]:9360", "[::1]:9360/_next/static/"},
 		{"localhost", "localhost/_next/static/"},
-		// A Host that would add a source or a directive loads nothing.
-		{"evil.example; script-src *", "'none'"},
-		{"a.example *", "'none'"},
-		{"", "'none'"},
-		{"a.example/x", "'none'"},
-		{"'self'", "'none'"},
+		{"xn--mgbh0fb.example:8443", "xn--mgbh0fb.example:8443/_next/static/"},
+		// A Host no host-source can name gets the page that says so ("" below): an IPv6
+		// literal, an underscore, an empty label or a trailing dot would be an invalid source,
+		// which browsers drop, and a space or a ';' would add a source or a directive.
+		{"[::1]:9360", ""},
+		{"a_b.example", ""},
+		{"a..example", ""},
+		{"a.example.", ""},
+		{"evil.example; script-src *", ""},
+		{"a.example *", ""},
+		{"", ""},
+		{"a.example/x", ""},
+		{"'self'", ""},
 	}
 	for _, c := range cases {
 		r := httptest.NewRequest("GET", "/", nil)
@@ -151,6 +157,15 @@ func TestCSPCodeOnlyFromStaticDir(t *testing.T) {
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, r)
 		csp := rec.Header().Get("Content-Security-Policy")
+		if c.static == "" {
+			body := rec.Body.String()
+			if rec.Code != 400 || csp != "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" ||
+				rec.Header().Get("Cache-Control") != "no-store" || strings.Contains(body, "<script") ||
+				!strings.Contains(body, "through a host name") || !strings.Contains(body, "افتح اللوحة باسم مضيف") {
+				t.Errorf("Host %q: %d %q %q %s", c.host, rec.Code, csp, rec.Header().Get("Cache-Control"), body)
+			}
+			continue
+		}
 		want := "default-src 'none'; script-src " + c.static + " " + scripts + "; style-src " + c.static + " " + style +
 			"; font-src " + c.static + "; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
 			"form-action 'self'; frame-ancestors 'none'"
@@ -171,6 +186,60 @@ func TestCSPCodeOnlyFromStaticDir(t *testing.T) {
 			if got := strings.Join(d[name], " "); got != "'none'" {
 				t.Errorf("Host %q: %s %s", c.host, name, got)
 			}
+		}
+	}
+}
+
+// TestPagesNeverCached: a page's policy names the request's Host, so no cache may keep a page
+// and serve it under another Host; the build's hashed files stay cacheable.
+func TestPagesNeverCached(t *testing.T) {
+	h, _ := New(export())
+	for _, c := range []struct{ path, host, cache string }{
+		{"/", "a.example", "no-store"},
+		{"/projects/", "b.example:8080", "no-store"},
+		{"/nope/", "a.example", "no-store"},
+		{"/", "[::1]", "no-store"},
+		{"/_next/static/chunks/main-abc.js", "a.example", "public, max-age=31536000, immutable"},
+		{"/_next/static/chunks/main-abc.js", "[::1]", "public, max-age=31536000, immutable"},
+	} {
+		r := httptest.NewRequest("GET", c.path, nil)
+		r.Host = c.host
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, r)
+		if got := rec.Header().Get("Cache-Control"); got != c.cache {
+			t.Errorf("%s on %s: Cache-Control %q, want %q", c.path, c.host, got, c.cache)
+		}
+	}
+}
+
+// TestStaticDirNeverRedirects: CSP checks a script's path before a redirect only, so a path
+// under /_next/static/ (raw or decoded) is one of the build's files there, named exactly, or a
+// plain 404. Never a redirect, and never a page or a file elsewhere in the export.
+func TestStaticDirNeverRedirects(t *testing.T) {
+	h, _ := New(export())
+	if rec := get(t, h, "/_next/static/chunks/main-abc.js"); rec.Code != 200 || rec.Body.String() != "console.log(1)" {
+		t.Fatalf("the build's file: %d %q", rec.Code, rec.Body)
+	}
+	for _, p := range []string{
+		"/_next/static/..%2f..%2fprojects",
+		"/_next/static/..%2f..%2fprojects/",
+		"/_next/static/..%2F..%2Fv0/b/x/o/e.js",
+		"/_next/static/%2e%2e/%2e%2e/index.html",
+		"/_next/static/../../index.html",
+		"/_next/static/..%2f..%2ffavicon.ico",
+		"/_next/static//x",
+		"/_next/static//chunks/main-abc.js",
+		"/_next/static/chunks/",
+		"/_next/static/chunks",
+		"/_next/static/chunks/main-abc.js/",
+		"/_next/static/chunks/./main-abc.js",
+		"/_next/static/",
+	} {
+		rec := get(t, h, p)
+		body := rec.Body.String()
+		if rec.Code != 404 || rec.Header().Get("Location") != "" || strings.Contains(body, "<html") || strings.Contains(body, "console.log") ||
+			rec.Header().Get("Content-Security-Policy") != "" {
+			t.Errorf("%s: %d Location %q body %q", p, rec.Code, rec.Header().Get("Location"), body)
 		}
 	}
 }

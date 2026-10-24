@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"mime"
 	"net/http"
@@ -164,26 +165,27 @@ type pagePolicy struct {
 // staticDir is where the build's own files are, each named by its content's hash.
 const staticDir = "/_next/static/"
 
-// validHost matches a Host header that can stand in a CSP host-source as it is: a name or an
-// IPv4 address, or a bracketed IPv6 address, with an optional port. Any other (a space or a ';'
-// would start another source or directive) gets a policy that loads nothing.
-var validHost = regexp.MustCompile(`^(?:[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?|\[[0-9A-Fa-f:.]{2,45}\])(?::[0-9]{1,5})?$`)
+// nameableHost matches a Host header a CSP host-source can name as it is: dot-separated labels
+// of letters, digits and hyphens (a name or an IPv4 address), with an optional port. The CSP
+// grammar has no IPv6 literal, underscore, empty label or trailing dot, and a browser drops a
+// source it cannot parse; a path-only source (/_next/static/) is refused by Firefox and WebKit
+// (measured 2026-10-24, Playwright 1.64.1). A space or a ';' would start another source or
+// directive.
+var nameableHost = regexp.MustCompile(`^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*(?::[0-9]{1,5})?$`)
 
-// policy builds a page's CSP for a request to host. Scripts, stylesheets and fonts load from
-// host + /_next/static/ alone, never 'self': a file Storage serves on this origin, under /v0
-// or as a console download, is never the dashboard's script or stylesheet (ADR-022 §10.1).
-// The source has no scheme, so it matches the page's own (and its upgrade to https). It is the
-// Host the browser sent, so the dashboard works under every name it is reached by; a proxy in
-// front must pass the Host on, as the console's cross-origin check already needs.
+// policy builds a page's CSP for a request to host, which nameableHost must match. Scripts,
+// stylesheets and fonts load from host + /_next/static/ alone, never 'self': a file Storage
+// serves on this origin, under /v0 or as a console download, is never the dashboard's script
+// or stylesheet (ADR-022 §10.1). The source has no scheme, so it matches the page's own (and
+// its upgrade to https). It is the Host the browser sent, so the dashboard works under every
+// name it is reached by; a proxy in front must pass the Host on, as the console's cross-origin
+// check already needs.
 //
 // The rest stays on the origin: the console API, /v0 for uploads and the prefetched pages
 // (connect-src), and images, an object's preview among them (img-src). Nothing frames the
 // dashboard or is framed by it, and nothing runs as a worker or a plugin.
 func (pp *pagePolicy) policy(host string) string {
-	static := "'none'"
-	if validHost.MatchString(host) {
-		static = host + staticDir
-	}
+	static := host + staticDir
 	scripts := strings.Join(append([]string{static}, pp.scripts...), " ")
 	styles := strings.Join(append([]string{static}, pp.styles...), " ")
 	return "default-src 'none'; script-src " + scripts + "; style-src " + styles + "; font-src " + static +
@@ -203,6 +205,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		http.NotFound(w, r)
+		return
+	}
+	if strings.HasPrefix(r.URL.EscapedPath(), staticDir) || strings.HasPrefix(r.URL.Path, staticDir) {
+		h.serveStatic(w, r)
 		return
 	}
 	p := strings.TrimPrefix(path.Clean("/"+r.URL.Path), "/")
@@ -230,8 +236,28 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
+// serveStatic answers a path under /_next/static/, raw or decoded: one of the build's own files
+// there, named exactly, or 404. Never a redirect: CSP checks only the host of a redirect's
+// target, so a redirect from here would let a script source under /_next/static/ (such as
+// /_next/static/..%2f..%2fv0/…, whose decoded path passes the source's path) load anything on
+// the origin. Nor a path that cleans to another one ("..", "//", a trailing "/"), which could
+// lead out of the directory.
+func (h *Handler) serveStatic(w http.ResponseWriter, r *http.Request) {
+	name, ok := strings.CutPrefix(r.URL.Path, "/")
+	f := h.files[name]
+	if !ok || f == nil || !f.immutable || path.Clean(r.URL.Path) != r.URL.Path || !strings.HasPrefix(r.URL.Path, staticDir) {
+		http.NotFound(w, r)
+		return
+	}
+	h.serve(w, r, f, http.StatusOK)
+}
+
 func (h *Handler) serve(w http.ResponseWriter, r *http.Request, f *file, status int) {
 	hd := w.Header()
+	if f.page != nil && !nameableHost.MatchString(r.Host) {
+		unnameableHost(w, r)
+		return
+	}
 	hd.Set("Content-Type", f.contentType)
 	hd.Set("ETag", f.etag)
 	if f.page != nil {
@@ -240,8 +266,9 @@ func (h *Handler) serve(w http.ResponseWriter, r *http.Request, f *file, status 
 	switch {
 	case f.immutable:
 		hd.Set("Cache-Control", "public, max-age=31536000, immutable")
-	case strings.HasPrefix(f.contentType, "text/html"):
-		hd.Set("Cache-Control", "no-cache")
+	case f.page != nil:
+		// The policy names the request's Host: no shared cache may keep a page for another.
+		hd.Set("Cache-Control", "no-store")
 	default:
 		hd.Set("Cache-Control", "public, max-age=3600")
 	}
@@ -253,6 +280,29 @@ func (h *Handler) serve(w http.ResponseWriter, r *http.Request, f *file, status 
 	w.WriteHeader(status)
 	if r.Method != http.MethodHead {
 		_, _ = w.Write(f.body)
+	}
+}
+
+// hostPage is what a page request gets on a Host the policy cannot name (an IPv6 literal, say):
+// a page with no script and no style, under a policy that loads nothing, in both of the
+// dashboard's languages. The dashboard itself would load no script there and stay blank.
+const hostPage = `<!doctype html><html lang="en"><meta charset="utf-8"><title>Aruma</title>` +
+	`<h1>Open the dashboard through a host name</h1>` +
+	`<p>The dashboard cannot run at this address. Open it through a host name, such as ` +
+	`<code>localhost</code> or a DNS name, or through an IPv4 address.</p>` +
+	`<div lang="ar" dir="rtl"><h1>افتح اللوحة باسم مضيف</h1>` +
+	`<p>لا تعمل اللوحة على هذا العنوان. افتحها باسم مضيف، مثل <code>localhost</code> أو اسم DNS، أو بعنوان IPv4.</p></div></html>`
+
+// unnameableHost answers a page request whose Host the policy cannot name: 400, never cached.
+func unnameableHost(w http.ResponseWriter, r *http.Request) {
+	hd := w.Header()
+	hd.Set("Content-Type", "text/html; charset=utf-8")
+	hd.Set("Content-Security-Policy", "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
+	hd.Set("Cache-Control", "no-store")
+	hd.Set("Content-Length", strconv.Itoa(len(hostPage)))
+	w.WriteHeader(http.StatusBadRequest)
+	if r.Method != http.MethodHead {
+		_, _ = io.WriteString(w, hostPage)
 	}
 }
 
