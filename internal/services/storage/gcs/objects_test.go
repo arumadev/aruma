@@ -269,6 +269,12 @@ func TestRewrite(t *testing.T) {
 	if r.Resource.ContentType != "application/json" || r.Resource.CacheControl != "" || !maps.Equal(r.Resource.Metadata, map[string]string{"x": "y"}) {
 		t.Errorf("Go's copy with attributes: %+v", r.Resource)
 	}
+	// A null custom value of the new object is stored empty (CT, gcs-js-sdk.test.ts:637-670;
+	// ADR-023 §3-92), where a PATCH's deletes the key.
+	r, _ = rw("nulls.txt", "?", `{"metadata":{"foo":"bar","nullMetadata":null},"cacheControl":"private,max-age=10,immutable"}`)
+	if !maps.Equal(r.Resource.Metadata, map[string]string{"foo": "bar", "nullMetadata": ""}) || r.Resource.CacheControl != "private,max-age=10,immutable" {
+		t.Errorf("null custom value on a copy: %+v", r.Resource)
+	}
 	gen := strconv.FormatInt(src.Generation, 10)
 	rw("three.txt", "?sourceGeneration="+gen+"&ifSourceMetagenerationMatch=1", "")
 	target := objA + "src.txt/rewriteTo/b/" + bucketA + "/o/"
