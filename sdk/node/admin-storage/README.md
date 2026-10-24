@@ -47,7 +47,8 @@ request to any other origin, port or scheme fails before it is sent, a resumable
 URL is elsewhere included, and uploads follow no redirect. One limit remains: the JSON
 requests (metadata, list, copy, delete, downloads) are sent by `teeny-request`, which gives no
 way to turn redirects off, so a redirect that the Aruma origin itself answered to another port
-of the same host would carry the token (Aruma answers none on these paths).
+of the same host would carry the token. Aruma answers none on these paths, and its tests hold it
+to that (`internal/services/storage/gcs/redirect_test.go`).
 
 **How it reaches Aruma.** The client's `apiEndpoint` is the Aruma origin with
 `useAuthWithCustomEndpoint`, and its `universeDomain` is the Aruma host: without it, `save()` and
