@@ -140,7 +140,8 @@ final class StorageE2ETests: XCTestCase {
       guard url.absoluteString == expected else {
         throw Failure("downloadURL \(Self.redact(url)) is not the unified form \(Self.redact(URL(string: expected)!))")
       }
-      guard !url.absoluteString.contains(":443"), url.host == url.host?.lowercased() else {
+      // An explicit :443, not any port that starts with 443 (a loopback port can).
+      guard url.port != 443, url.host == url.host?.lowercased() else {
         throw Failure("downloadURL \(Self.redact(url))")
       }
       return Self.redact(url)
