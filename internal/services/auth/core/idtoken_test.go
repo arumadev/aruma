@@ -200,6 +200,46 @@ func TestVerifyIDToken(t *testing.T) {
 	}
 }
 
+// Developer claims keep their numbers' text from the user record to the verified claims, as
+// Firebase's tokens do: deployed rules read 9007199254740993 as that int (S7-R,
+// test/oracle/rules/production/deployed-firestore.json), which a float64 cannot hold.
+func TestIDTokenClaimNumbers(t *testing.T) {
+	ctx := context.Background()
+	e := newIDEnv(t)
+	e.user(t, e.a, "u1")
+	claims := json.RawMessage(`{"n_two":2.0,"n_frac":2.5,"n_big":9007199254740993,"m":{"n":3,"big":-9007199254740993},"l":[3,9007199254740995]}`)
+	u, err := e.s.UpdateUser(ctx, e.a, AdminUser{UID: "u1", CustomClaims: &claims})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tok := e.token(t, e.a, u, time.Now())
+	payload, err := base64.RawURLEncoding.DecodeString(strings.Split(tok, ".")[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{`"n_big":9007199254740993`, `"n_frac":2.5`, `"big":-9007199254740993`, `[3,9007199254740995]`} {
+		if !strings.Contains(string(payload), want) {
+			t.Errorf("payload %s: no %s", payload, want)
+		}
+	}
+	c, err := e.verify(e.a, tok)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, _ := c.Token["m"].(map[string]any)
+	l, _ := c.Token["l"].([]any)
+	if c.Token["n_big"] != json.Number("9007199254740993") || c.Token["n_frac"] != json.Number("2.5") ||
+		m["big"] != json.Number("-9007199254740993") || len(l) != 2 || l[1] != json.Number("9007199254740995") {
+		t.Fatalf("auth.token %v", c.Token)
+	}
+	if n, ok := c.Token["n_two"].(json.Number); !ok || (n != "2.0" && n != "2") {
+		t.Fatalf("n_two %#v", c.Token["n_two"])
+	}
+	if c.Token["role"] != "admin" {
+		t.Fatalf("token claims %v", c.Token)
+	}
+}
+
 // A normal rotation keeps the retired key's tokens valid for their lifetime; an emergency one
 // ends the active key's tokens at once.
 func TestVerifyIDTokenAcrossRotation(t *testing.T) {
