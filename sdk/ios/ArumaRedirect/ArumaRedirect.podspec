@@ -7,7 +7,8 @@ Pod::Spec.new do |s|
   s.summary      = 'Sends the official Firebase iOS Auth SDK to an Aruma server, with no app code.'
   s.description  = <<-DESC
     A URLProtocol that rewrites the Firebase Auth endpoints (identitytoolkit, securetoken and the
-    v3 relyingparty paths) to the Aruma server named by ArumaURL in Info.plist. Other hosts are untouched.
+    v3 relyingparty paths), and Cloud Storage as a fallback, to the Aruma server named by ArumaURL
+    in Info.plist. Other hosts are untouched. Scripts/aruma_storage.rb patches the FirebaseStorage pod.
   DESC
   s.homepage     = 'https://github.com/arumadev/aruma/tree/main/sdk/ios/ArumaRedirect'
   s.license      = { :type => 'Apache-2.0', :file => 'LICENSE' }
@@ -23,4 +24,5 @@ Pod::Spec.new do |s|
   s.source_files        = 'Sources/ArumaRedirect/**/*.swift', 'Sources/ArumaRedirectLoader/**/*.{h,m}'
   s.public_header_files = 'Sources/ArumaRedirectLoader/include/*.h'
   s.frameworks          = 'Foundation'
+  s.preserve_paths      = 'Scripts/aruma_storage.rb'
 end

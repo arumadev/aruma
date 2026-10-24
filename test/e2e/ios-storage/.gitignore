@@ -1,0 +1,8 @@
+.generated/
+# Written by run.sh: they name this machine's mirror and its revisions.
+StorageE2E.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/configuration/
+StorageE2E.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+cocoapods/StorageE2EPods.xcodeproj/
+cocoapods/Pods/
+cocoapods/Podfile.lock
+cocoapods/*.xcworkspace/
