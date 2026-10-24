@@ -192,6 +192,16 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 72. **مؤقت: أشكال لم تُقس:** Ruleset بلا `metadata`، والقائمة الفارغة `{}`، والأوقات بست خانات، و`defaultBucket` بـ `US-CENTRAL1`، و`buckets` برقم المشروع، وService Usage `ENABLED` لكل اسم. `mgmt/storage.go`، و`mgmt/rules.go`.
 73. **قيد: جسم فوق 1 MiB على `:test` و`rulesets` 400 برسالة الحجم من الإنتاج** لا 413. `mgmt/rules.go` (`decodeSource`).
 
+**أضافها S3-A** (واجهة `/v0`، تفصيلها في `docs/compat/storage-v0.3.md`):
+
+62. **مؤقت: الاعتماد الذي لا يُقبل 401.** مخطط غير `Firebase` و`Bearer`، و`Bearer` ليس رمز وصول Admin (ومنه رمز هوية مستخدم، E §7)، و`Firebase` برمز لا يُتحقق منه، وحساب خدمة أو رمز CLI على bucket مشروع آخر: 401، كما في RTDB. والـ bucket يُحل قبل الاعتماد، فـ bucket مجهول 404 مهما كان (`bucket_probe.json`). `api/auth.go`.
+63. **مؤقت: رمز CLI لمالك المشروع على `/v0` يتجاوز القواعد** كحساب الخدمة، ويُربط بالحساب (`Principal.ConsoleAccount`)، فرفع متقطع بدأه يُرفض عند الإنهاء إن لم يعد الحساب يملك المشروع، ويُكتب في سجل التدقيق كرفع اللوحة. `api/auth.go`.
+64. **مؤقت: الـ preflight.** على bucket مجهول 404 بشكل الإنتاج (`bucket_probe.json`)، وعلى موجود 204 بقائمة ثابتة للطرق والترويسات (البند 27). وpreflight التنزيل (`alt=media`) من قواعد CORS للـ bucket وحدها: الأصل يُعاد كما أُرسل، و`Vary: Origin` دائمًا، و`responseHeader` للقاعدة `Expose-Headers` وحده، والترويسات المطلوبة في `Access-Control-Request-Headers` تُعاد في `Allow-Headers` كما يفعل GCS JSON (فـ `cors.json` الموثّق بلا `responseHeader` يسمح بـ `X-Firebase-Storage-Version` الذي يرسله الويب دائمًا)، والطريقة المسموحة هي المطلوبة. `api/cors.go`.
+65. **مؤقت: تجاوز `upload_requests_per_ip` 503 مع `Retry-After`** (ضغط عابر، وiOS لا يعيد على 429)، ويحسبه الموجّه لكل طلب كتابة (الرفع وطلبات الجلسة وPATCH وDELETE والرموز). و`ErrTooManyUploads` عند `start` 429. **و`Retry-After` على ضغط عابر وحده:** هذا الحد، و`ErrOverloaded`، ورفض `AllowUploadStart`، بين ثانية وستين (5 افتراضيًا). ولا `Retry-After` على 503 غيرها (`ErrUnavailable`: القاعدة، وأرضية القرص)، لأن iOS يتخطى حده الأقصى ومدته الكلية مع الترويسة (`GTMSessionFetcher.m:3682`، `:3854`) فيعيد بلا نهاية. `api/api.go`، `api/errors.go`.
+66. **مؤقت: `create_token` و`delete_token` معًا: `create_token` وحده**، والمحاكي يرد 200 بتغيير واحد (`tokens.json`). وقيمة `create_token` غير `true` 400 قبل فحص صلاحية Admin، كالمحاكي (والاعتماد غير الصالح 401 قبلها، البند 62). `api/objects.go`.
+67. **مؤقت: `maxResults` غير عدد صحيح موجب 400** (المكتبات تفحص 1 إلى 1000 بنفسها، A §3.7)، والقيمة الفارغة غائبة، و`startOffset`/`endOffset` على `/v0` تُتجاهل. `api/list.go`.
+68. **مؤقت: جسم PATCH.** قيمة ليست نصًا ولا `null` لحقل قابل للكتابة أو لمفتاح metadata 400، وجسم ليس كائن JSON واحدًا 400، وفوق `json_body_bytes` 413، والجسم الفارغ لا يغيّر إلا الـ metageneration. `api/objects.go`.
+
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 
 ## البدائل المرفوضة
