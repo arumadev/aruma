@@ -412,23 +412,34 @@ func TestResumableSessionRefusals(t *testing.T) {
 	}
 }
 
-// A start is taken from the client's address against upload_starts_per_minute_per_ip.
+// A service account's starts, every start here, are not held to upload_starts_per_minute_per_ip
+// (an Admin SDK import from one address goes past it), and are held to the process's
+// upload_starts_per_second: 429 with Retry-After past it.
 func TestUploadStartRate(t *testing.T) {
-	e := newEnv(t)
-	for i := range 100 {
+	start := func(e *env) *httptest.ResponseRecorder {
 		r := httptest.NewRequest("POST", upload+"?uploadType=media&name=r", strings.NewReader("x"))
 		r.RemoteAddr = "192.0.2.7:4000"
 		r.Header.Set("Authorization", "Bearer "+tokenA)
-		rec := e.send(r)
+		return e.send(r)
+	}
+	e := newEnv(t, func(l *core.Limits) { l.UploadStartsPerMinutePerIP = 3 })
+	for i := range 10 {
+		if rec := start(e); rec.Code != http.StatusOK {
+			t.Fatalf("admin start %d: %d %s", i, rec.Code, rec.Body)
+		}
+	}
+	e = newEnv(t, func(l *core.Limits) { l.UploadStartsPerSecond = 2 })
+	for i := range 1000 {
+		rec := start(e)
 		if rec.Code == http.StatusTooManyRequests {
 			gcsErr(t, rec, 429, "rateLimitExceeded")
-			if rec.Header().Get("Retry-After") == "" || i < e.svc.Limits().UploadStartsPerMinutePerIP {
+			if rec.Header().Get("Retry-After") == "" || i < 2 {
 				t.Fatalf("refused at %d: %v", i, rec.Header())
 			}
 			return
 		}
 	}
-	t.Fatal("no start was refused")
+	t.Fatal("upload_starts_per_second refused no start")
 }
 
 // The body's read error says why an upload failed: over the entry point's cap 413, any other

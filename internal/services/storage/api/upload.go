@@ -117,7 +117,7 @@ func (a *API) start(w http.ResponseWriter, r *http.Request, b core.Bucket, name 
 		}
 	}
 	ip := a.clientIP(r)
-	if !a.allowStart(w, r, ip) {
+	if !a.allowStart(w, r, ip, p) {
 		return
 	}
 	id, err := a.svc.StartUpload(r.Context(), b, p, core.UploadSpec{
@@ -145,7 +145,7 @@ func (a *API) media(w http.ResponseWriter, r *http.Request, b core.Bucket, name 
 		res.setField(core.FieldContentType, t)
 	}
 	ip := a.clientIP(r)
-	if !a.allowStart(w, r, ip) {
+	if !a.allowStart(w, r, ip, p) {
 		return
 	}
 	body := a.pace(w, r)
@@ -162,15 +162,26 @@ func (a *API) media(w http.ResponseWriter, r *http.Request, b core.Bucket, name 
 }
 
 // allowStart takes an upload start from the client's address (upload_starts_per_minute_per_ip,
-// then the process's upload_starts_per_second), and answers 503 with a Retry-After when it is
-// refused: iOS retries a 503 and not a 429 (A §5.3).
-func (a *API) allowStart(w http.ResponseWriter, r *http.Request, ip netip.Addr) bool {
-	ok, wait := a.svc.AllowUploadStart(ip)
+// then the process's upload_starts_per_second; an admin's under the second alone), and answers
+// 503 with a Retry-After when it is refused: iOS retries a 503 and not a 429 (A §5.3).
+func (a *API) allowStart(w http.ResponseWriter, r *http.Request, ip netip.Addr, p core.Principal) bool {
+	ok, wait := a.svc.AllowUploadStart(startAddr(ip, p))
 	if !ok {
 		a.svc.Metrics().Rejections.WithLabelValues("start_rate").Inc()
 		a.writeRetry(w, r, http.StatusServiceUnavailable, wait)
 	}
 	return ok
+}
+
+// startAddr is the address a start is counted on: the client's, or none for an admin (a
+// service account, or the owner's CLI token), whose starts upload_starts_per_second alone
+// bounds. An Admin SDK import runs from one address, and Node's save() without a precondition
+// does not retry, so the clients' per-address rate would fail it (ADR-022 §17, ADR-023 §3-81).
+func startAddr(ip netip.Addr, p core.Principal) netip.Addr {
+	if p.Kind == core.PrincipalAdmin {
+		return netip.Addr{}
+	}
+	return ip
 }
 
 // received counts n object bytes in from this surface.
