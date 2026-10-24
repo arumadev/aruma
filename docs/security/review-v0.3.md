@@ -50,10 +50,10 @@
 | # | الخطورة | النتيجة | الحالة |
 |---|---|---|---|
 | SR3-01 | major | مجلد بيانات فارغ يُتبنّى ولو كانت في القاعدة كائنات، أي قرص غير مركَّب: كل قراءة 503 وكل رفع جديد يضيع | **مُصلحة في `0add0c6`** |
-| SR3-02 | blocker | مجموع كلفة أنماط regex الحرفية في ruleset بلا حد، وruleset أثقل من الذاكرة المؤقتة يُترجم من جديد مع كل طلب | للمنسّق |
-| SR3-03 | blocker | رسائل أخطاء التقييم تنسخ نصوصًا بحجم يختاره المهاجم دون أن تُحسب على العدّاد، والمفسِّر يبقيها حية | للمنسّق |
-| SR3-04 | major | أخطاء دورات الدوال تكبر تربيعيًا | للمنسّق |
-| SR3-05 | minor | ترجمة القواعد من الكونسول خارج سيمافور الترجمة | للمنسّق |
+| SR3-02 | blocker | مجموع كلفة أنماط regex الحرفية في ruleset بلا حد، وruleset أثقل من الذاكرة المؤقتة يُترجم من جديد مع كل طلب | **مُصلحة في S7-B1** (`58bbedd`) |
+| SR3-03 | blocker | رسائل أخطاء التقييم تنسخ نصوصًا بحجم يختاره المهاجم دون أن تُحسب على العدّاد، والمفسِّر يبقيها حية | **مُصلحة في S7-B1** (`58bbedd`) |
+| SR3-04 | major | أخطاء دورات الدوال تكبر تربيعيًا | **مُصلحة في S7-B1** (`58bbedd`) |
+| SR3-05 | minor | ترجمة القواعد من الكونسول خارج سيمافور الترجمة | **مُصلحة في S7-B1** (`58bbedd`)، وتكدّس التحميل بالنشر مؤجَّل وموثّق |
 | SR3-06 | major | إعداد الويب لـ Auth وحده يرسل رمز هوية Aruma إلى `firebasestorage.googleapis.com` بلا تحذير | **مُصلحة في `s7-sdk-fixes`** |
 | SR3-07 | minor | Android مع `ArumaStorageRedirect=false` يمرر طلبات Storage إلى Google، وiOS يرفضها | **مُصلحة في `s7-sdk-fixes`** |
 | SR3-08 | minor | المخاطرة المقبولة لإعادة توجيه Node أوسع مما يقوله README | **وُثّقت في `s7-sdk-fixes`** |
@@ -248,26 +248,36 @@
 
 ## قائمة الإصدار
 
-- [ ] دمج `0add0c6` (SR3-01).
-- [ ] **SR3-02 وSR3-03 مُصلحتان باختبار حدود** (blocker): ترجمة مصدر بالحد الأقصى تحت سقف ذاكرة مقيس، وتقييم بأسوأ الرسائل تحت `Inflight`.
-- [ ] SR3-04 مُصلحة (major)، أو قرار مكتوب من المالك بقبولها.
-- [x] SR3-06 مُصلحة (major): `install()` يرفض و`vite` يُفشل البناء (`s7-sdk-fixes`).
-- [ ] SR3-05 مُصلحة، أو مذكورة في `docs/compat` أو README.
+أُغلقت في S7-C (2026-10-24) على `main` عند `d9391be`، ومعها فرع `s7-c-close`. أدلة CI من التشغيل [40111454561](https://github.com/arumadev/aruma/actions/runs/40111454561)، وكل وظائفه خضراء.
+
+- [x] دمج [`0add0c6`](https://github.com/arumadev/aruma/commit/0add0c6) (SR3-01): على `main`.
+- [x] **SR3-02 وSR3-03 مُصلحتان باختبار حدود** (blocker)، في دمج S7-B1 [`58bbedd`](https://github.com/arumadev/aruma/commit/58bbedd):
+  - SR3-02: [`f5e68e5`](https://github.com/arumadev/aruma/commit/f5e68e5) و[`aad792b`](https://github.com/arumadev/aruma/commit/aad792b) و[`ccff9a5`](https://github.com/arumadev/aruma/commit/ccff9a5)؛ `TestLiteralPatternsHaveABudget`، و`TestRulesetWeightIsBounded`، و`TestClassTablesAreCounted` (ما يحمله ملف عند `regex_bytes` مقيسًا: 0.63 إلى 0.84 مما تحسبه الميزانيات)، و`TestCorpusFitsTheBudgets`.
+  - SR3-03: [`eead850`](https://github.com/arumadev/aruma/commit/eead850)؛ `TestErrorMessagesAreBounded`.
+- [x] SR3-04 مُصلحة (major): [`db6d084`](https://github.com/arumadev/aruma/commit/db6d084)؛ `TestCallCycleErrorsAreBounded`.
+- [x] SR3-06 مُصلحة (major): `install()` يرفض و`vite` يُفشل البناء (`s7-sdk-fixes`، [`d9391be`](https://github.com/arumadev/aruma/commit/d9391be)).
+- [x] SR3-05 مُصلحة: [`a67de58`](https://github.com/arumadev/aruma/commit/a67de58) و[`6e7b526`](https://github.com/arumadev/aruma/commit/6e7b526)؛ `TestEveryCompilationTakesASlot`. وتكدّس التحميل بالنشر (SR3-05-publish-pileup) مؤجَّل وموثّق في `docs/compat/rules-v0.3.md` (القيود) و`docs/releases/v0.3.0.md`.
 - [x] SR3-07 وSR3-09 مُصلحتان (`s7-sdk-fixes`).
-- [ ] SR3-10 (major): مؤجلة إلى v0.4 بقرار المنسّق، وموثّقة في README `@aruma/web`. تُغلق حين يخدم Aruma Firestore (والدوال).
+- [x] SR3-10 (major): مؤجلة إلى v0.4 بقرار المنسّق، وموثّقة في README `@aruma/web` (`sdk/web/aruma-web/README.md:43-47`، وبالعربية) وفي `docs/releases/v0.3.0.md`. تُغلق حين يخدم Aruma Firestore (والدوال).
 - [x] README حزمة Node بنطاق إعادة التوجيه الصحيح (SR3-08، `s7-sdk-fixes`).
-- [ ] `govulncheck ./...` نظيف، ومعه `npm audit` على الحزم الثلاث يوم الوسم.
-- [ ] `docs/guides/storage.md`:
+- [x] `govulncheck ./...` نظيف، ومعه `npm audit` على الحزم الثلاث (2026-10-24):
+  - govulncheck 1.9.0 (قاعدة 2026-10-21) وجد GO-2026-6809 (`crypto/x509`، مُصلحة في go1.27.3) قابلة للوصول عبر مصافحة TLS. سطر `toolchain go1.27.3` في `go.mod` ([`ee609d6`](https://github.com/arumadev/aruma/commit/ee609d6)) يصلحها: «Your code is affected by 0 vulnerabilities». والباقي GO-2026-5932 (`x/crypto/openpgp`) غير مستورد. و`sdk/go/adminauth` و`sdk/go/adminstorage` نظيفتان بـ go1.27.3؛ وهما مكتبتان، فالمكتبة القياسية فيهما من Go المستعمِل.
+  - `npm audit --package-lock-only` (npm 11.19.0، مع dev وبدونه): admin-storage وadmin-auth وaruma-web، «found 0 vulnerabilities». يُعاد إن تأخر الوسم عن هذا اليوم.
+- [ ] `docs/guides/storage.md`: **لم يُكتب بعد**، ومرجع الإعداد (`docs/configuration.md`) بلا مفاتيح `storage.*`. والنقاط الثلاث مذكورة مؤقتًا في «Upgrading from v0.2» في `docs/releases/v0.3.0.md`:
   - `data_dir` على قرص يُركَّب قبل الخدمة (systemd `RequiresMountsFor=`)، وما تقوله رسالة SR3-01.
   - وhttps شرط للنسخ غير المحلية.
   - و`strategy: Recreate`.
-- [ ] `make lint` و`make sqlc-check` و`make test` نظيفة على الوسم.
-- [ ] مصفوفة المتصفحات (ADR-022 §10.6)، وe2e الأجهزة بحارس الشبكة، وأوراكل القواعد 98% (أعمال S7 الأخرى).
-- [ ] قائمة ADR-010 S-1 إلى S-15 باختباراتها السلبية خضراء، ومعها الاختبارات الجديدة هنا.
+- [ ] `make lint` و`make sqlc-check` و`make test` نظيفة على الوسم: نظيفة على `d9391be` (وظيفة Go في [40111454561](https://github.com/arumadev/aruma/actions/runs/40111454561))، و`make lint` و`go build ./...` على `s7-c-close`. **تبقى للمالك:** CI أخضر على commit الوسم.
+- [x] مصفوفة المتصفحات (ADR-022 §10.6): 14/14 على Chromium وFirefox وWebKit في [40111454561](https://github.com/arumadev/aruma/actions/runs/40111454561).
+- [x] أوراكل القواعد 98%: مجموعة التطوير 87/87 و3643/3643 و1985/1985 بلا سماح زائد، بعد S7-B1 (`docs/compat/rules-v0.3.md`)، و`TestOracle` في وظيفة Go.
+- [ ] e2e الأجهزة بحارس الشبكة: Android وiOS لـ Storage شغّلهما S6-A وS6-I محليًا (`test/e2e/android-storage`، و`test/e2e/ios-storage/README.md`)، وليسا في CI على `main`. **تبقى للمالك:** دمج `s6-f-flutter` (iOS في GitHub Actions وCodemagic، وFlutter و`aruma_storage`)، وتشغيل أخضر لـ Codemagic/iOS. وإن لم يُدمج قبل الوسم يُحذف صف Flutter (الجوال) من ملاحظات الإصدار.
+- [x] قائمة ADR-010 S-1 إلى S-15 باختباراتها السلبية خضراء، ومعها الاختبارات الجديدة هنا: `test/acceptance` (ومنه `isolation_test.go`) في `make test`، وظيفة Go في [40111454561](https://github.com/arumadev/aruma/actions/runs/40111454561).
+
+**ما يبقى للمالك:** الوسم `v0.3.0` (رسالته الفقرة الأولى من `docs/releases/v0.3.0.md`، كالوسمين السابقين)؛ وCI أخضر على commit الوسم؛ ودمج `s6-f-flutter` وتشغيل Codemagic/iOS الأخضر؛ و`docs/guides/storage.md`.
 
 ## ما لم يُتحقق منه
 
-- **`govulncheck`:** غير مثبت، ورُفض تشغيله من ذاكرة الوحدات لأنه يجلب قاعدة الثغرات من الشبكة. يبقى في قائمة الإصدار.
+- **`govulncheck`:** لم يعمل في المراجعة (يجلب قاعدة الثغرات من الشبكة). شغّله S7-C (قائمة الإصدار أعلاه).
 - SR3-02 بالحجم الكامل وSR3-03 بأقصى عدد عناصر: استقراء خطي، أُبقي تحت 1 GB عمدًا.
 - اختبارات Go لـ `sdk/go/adminstorage`: وحدات غير موجودة في الذاكرة المحلية، ولم تُجلب. واختبارات حزم Node: لا `node_modules`.
 - لا بناء Android ولا iOS ولا تشغيل محاكيات، لقاعدة الذاكرة.
