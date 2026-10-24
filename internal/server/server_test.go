@@ -297,3 +297,93 @@ func TestMetricsMethodLabelIsBounded(t *testing.T) {
 		}
 	}
 }
+
+// ADR-022 §1: Storage's prefixes, with bodies as large as an object, and the firebase CLI's
+// management paths.
+func TestStorageRouting(t *testing.T) {
+	cfg, err := config.Load("", func(k string) string {
+		return map[string]string{
+			"ARUMA_DATABASE_URL":          "postgres://unused",
+			"ARUMA_PUBLIC_URL":            "https://aruma.test",
+			"ARUMA_MASTER_KEY":            "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+			"ARUMA_RTDB_DOMAIN":           "rtdb.aruma.test",
+			"ARUMA_STORAGE_OBJECT_BYTES":  "3145728",
+			"ARUMA_STORAGE_PROJECT_BYTES": "0",
+		}[k]
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var hits []string
+	record := func(name string) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			hits = append(hits, name)
+			n, err := io.Copy(io.Discard, r.Body)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
+				return
+			}
+			w.Write([]byte(strconv.FormatInt(n, 10)))
+		})
+	}
+	s := New(cfg, slog.New(slog.NewTextHandler(io.Discard, nil)), nil, metrics.New("test"), Handlers{
+		Storage: record("storage"), GCS: record("gcs"), Mgmt: record("mgmt"), RTDB: record("rtdb"), Static: record("static"),
+	})
+	h := s.Handler()
+	for _, c := range []struct{ host, path, want string }{
+		{"aruma.test", "/v0/b/chat-app.aruma.test/o/a%2F%2Fb.png?alt=media&token=t", "storage"},
+		{"aruma.test", "/v0/b/chat-app.aruma.test/o/..%2Fx", "storage"},
+		{"aruma.test", "/firebasestorage.googleapis.com/v0/b/chat-app.aruma.test/o", "storage"},
+		{"aruma.test", "/storage/v1/b/chat-app.aruma.test/o", "gcs"},
+		{"aruma.test", "/upload/storage/v1/b/chat-app.aruma.test/o?uploadType=resumable", "gcs"},
+		{"aruma.test", "/download/storage/v1/b/chat-app.aruma.test/o/a?alt=media", "gcs"},
+		{"aruma.test", "/v1/projects/chat-app:test", "mgmt"},
+		{"aruma.test", "/v1/projects/chat-app/services/firebasestorage.googleapis.com", "mgmt"},
+		{"aruma.test", "/v1alpha/projects/chat-app/defaultBucket", "mgmt"},
+		{"aruma.test", "/v0", "static"},
+		{"aruma.test", "/v0x/b", "static"},
+		{"aruma.test", "/storage/v2/b", "static"},
+		{"aruma.test", "/v1/other", "static"},
+		// A database host belongs to the Realtime Database, whatever its path.
+		{"chat-default-rtdb.rtdb.aruma.test", "/v0/b/x/o", "rtdb"},
+	} {
+		hits = nil
+		r := httptest.NewRequest("GET", c.path, nil)
+		r.Host = c.host
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, r)
+		if len(hits) != 1 || hits[0] != c.want {
+			t.Errorf("%s%s: routed to %v, want %s", c.host, c.path, hits, c.want)
+		}
+		if c.want == "storage" && rec.Code != http.StatusOK {
+			t.Errorf("%s: %d, the path was cleaned or redirected", c.path, rec.Code)
+		}
+	}
+
+	// Bodies up to object_bytes and the slack pass; beyond, the cap holds.
+	for _, c := range []struct {
+		path string
+		size int
+		ok   bool
+	}{
+		{"/v0/b/x/o?name=a", 3<<20 + 1<<19, true},
+		{"/upload/storage/v1/b/x/o?uploadType=media&name=a", 4 << 20, true},
+		{"/v0/b/x/o?name=a", 4<<20 + 1, false},
+	} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest("POST", c.path, strings.NewReader(strings.Repeat("x", c.size))))
+		if ok := rec.Code == http.StatusOK && rec.Body.String() == strconv.Itoa(c.size); ok != c.ok {
+			t.Errorf("%s with %d bytes: %d %s", c.path, c.size, rec.Code, rec.Body)
+		}
+	}
+
+	// Disabled, the paths fall through to the rest of the entry point.
+	off := New(cfg, slog.New(slog.NewTextHandler(io.Discard, nil)), nil, metrics.New("test"), Handlers{Static: record("static")})
+	for _, p := range []string{"/v0/b/x/o", "/storage/v1/b/x"} {
+		hits = nil
+		off.Handler().ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", p, nil))
+		if len(hits) != 1 || hits[0] != "static" {
+			t.Errorf("Storage disabled: %s routed to %v", p, hits)
+		}
+	}
+}

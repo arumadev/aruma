@@ -31,6 +31,10 @@ var allowed = map[string][]string{
 	"internal/services/rtdb/rules": {},
 	// So does the wire protocol, tested on frames recorded from the emulator (rtdb-layout.md).
 	"internal/services/rtdb/wire": {},
+	// Storage's bytes on disk and its wire formats import Go's standard library alone, so no
+	// object name or header reaches the disk except through core (ADR-022 §1).
+	"internal/services/storage/blob": {},
+	"internal/services/storage/wire": {},
 	// The Firestore and Storage rules language imports nothing internal: the services feed it
 	// values and documents through its own types, and app wires it (ADR-021, rules-layout.md).
 	"internal/platform/rules": {},
@@ -44,7 +48,8 @@ var allowed = map[string][]string{
 	"pkg":             {},
 	// The published Go library stands alone: it may import itself (its helper commands), never
 	// the server.
-	"sdk/go/adminauth": {},
+	"sdk/go/adminauth":    {},
+	"sdk/go/adminstorage": {},
 }
 
 // denied narrows a layer: a package under a key may not import anything under the prefixes
@@ -53,7 +58,15 @@ var denied = map[string][]string{
 	// A service's domain logic knows nothing of HTTP routing or of the transports above it, so
 	// one core serves its API, its console screens and any later protocol. net/http itself
 	// stays allowed: core maps errors to status codes and calls Google and Apple.
-	"internal/services/*/core": {"internal/services/*/api", "internal/services/*/console", "internal/platform/httpx"},
+	"internal/services/*/core": {"internal/services/*/api", "internal/services/*/console", "internal/services/*/gcs",
+		"internal/services/*/media", "internal/platform/httpx"},
+	// Storage's transports stand side by side on core and media, none on another (ADR-022 §1):
+	// the Firebase REST API, the GCS JSON API and the console, and media below the three. Auth's
+	// console builds on its own API, so the console's rule is Storage's alone.
+	"internal/services/*/api":           {"internal/services/*/gcs", "internal/services/*/console"},
+	"internal/services/*/gcs":           {"internal/services/*/api", "internal/services/*/console"},
+	"internal/services/storage/console": {"internal/services/storage/api", "internal/services/storage/gcs"},
+	"internal/services/*/media":         {"internal/services/*/api", "internal/services/*/gcs", "internal/services/*/console", "internal/services/*/core"},
 }
 
 func TestDependencyRules(t *testing.T) {
@@ -215,6 +228,55 @@ func TestRulesThemselves(t *testing.T) {
 		{"internal/admin/mgmt", "internal/platform/rules", true},
 		{"internal/config", "internal/platform/rules", true},
 		{"internal/app", "internal/platform/rules", true},
+		// Storage (ADR-022 §1): blob and wire stand alone; core knows no transport; the three
+		// transports and media do not import one another; media stays below core's callers.
+		{"internal/services/storage/blob", "internal/platform/log", false},
+		{"internal/services/storage/blob", "internal/services/storage/core", false},
+		{"internal/services/storage/wire", "internal/services/storage/core", false},
+		{"internal/services/storage/wire", "internal/platform/httpx", false},
+		{"internal/services/storage/core", "internal/services/storage/blob", true},
+		{"internal/services/storage/core", "internal/services/storage/queries", true},
+		{"internal/services/storage/core", "internal/platform/idtoken", true},
+		{"internal/services/storage/core", "internal/platform/crypto", true},
+		{"internal/services/storage/core", "internal/tenancy/core", true},
+		{"internal/services/storage/core", "internal/store", true},
+		{"internal/services/storage/core", "internal/services/storage/wire", true},
+		{"internal/services/storage/core", "internal/services/storage/api", false},
+		{"internal/services/storage/core", "internal/services/storage/gcs", false},
+		{"internal/services/storage/core", "internal/services/storage/console", false},
+		{"internal/services/storage/core", "internal/services/storage/media", false},
+		{"internal/services/storage/core", "internal/platform/httpx", false},
+		{"internal/services/storage/media", "internal/services/storage/wire", true},
+		{"internal/services/storage/media", "internal/services/storage/core", false},
+		{"internal/services/storage/media", "internal/services/storage/api", false},
+		{"internal/services/storage/media", "internal/services/storage/gcs", false},
+		{"internal/services/storage/media", "internal/services/storage/console", false},
+		{"internal/services/storage/api", "internal/services/storage/core", true},
+		{"internal/services/storage/api", "internal/services/storage/media", true},
+		{"internal/services/storage/api", "internal/services/storage/wire", true},
+		{"internal/services/storage/api", "internal/platform/httpx", true},
+		{"internal/services/storage/api", "internal/services/storage/gcs", false},
+		{"internal/services/storage/api", "internal/services/storage/console", false},
+		{"internal/services/storage/gcs", "internal/services/storage/core", true},
+		{"internal/services/storage/gcs", "internal/services/storage/media", true},
+		{"internal/services/storage/gcs", "internal/services/storage/api", false},
+		{"internal/services/storage/gcs", "internal/services/storage/console", false},
+		{"internal/services/storage/console", "internal/services/storage/core", true},
+		{"internal/services/storage/console", "internal/services/storage/media", true},
+		{"internal/services/storage/console", "internal/platform/consolemount", true},
+		{"internal/services/storage/console", "internal/services/storage/api", false},
+		{"internal/services/storage/console", "internal/services/storage/gcs", false},
+		{"internal/services/storage/core", "internal/services/rtdb/core", false},
+		{"internal/services/storage/api", "internal/services/auth/core", false},
+		{"internal/admin/mgmt", "internal/services/storage/core", false},
+		{"internal/config", "internal/services/storage/core", false},
+		{"internal/app", "internal/services/storage/core", true},
+		// Auth's console keeps building on its API.
+		{"internal/services/auth/console", "internal/services/auth/api", true},
+		// The published Go libraries stand alone.
+		{"sdk/go/adminstorage", "internal/services/storage/core", false},
+		{"sdk/go/adminstorage", "internal/platform/log", false},
+		{"sdk/go/adminauth", "internal/platform/log", false},
 		// Only app wires services into the console and the admin APIs.
 		{"internal/admin/console", "internal/services/auth/core", false},
 		{"internal/admin/console", "internal/services/auth/console", false},
@@ -231,10 +293,10 @@ func TestRulesThemselves(t *testing.T) {
 	}
 }
 
-// stdlibOnly lists the packages that import Go's standard library alone (ADR-021 §1, §2): no
+// stdlibOnly lists the packages that import Go's standard library alone (ADR-021 §1, §2, ADR-022 §1): no
 // module outside the standard library, whose first path element has no dot. TestDependencyRules
 // sees only this module's imports, so this test covers the rest. Test files are held to it too.
-var stdlibOnly = []string{"internal/platform/rules"}
+var stdlibOnly = []string{"internal/platform/rules", "internal/services/storage/blob", "internal/services/storage/wire"}
 
 func TestStandardLibraryOnly(t *testing.T) {
 	root := repoRoot(t)

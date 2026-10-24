@@ -35,6 +35,9 @@ type Options struct {
 	// RTDB is set when the Realtime Database is served: projects then name their default
 	// database, and its management API answers.
 	RTDB bool
+	// Storage is set when Cloud Storage is served: defaultBucket and the firebaserules API
+	// answer for it (S5-A, ADR-022 §15).
+	Storage bool
 }
 
 var policy = authn.Policy{AccessToken: true, ServiceToken: true}

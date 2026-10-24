@@ -29,6 +29,11 @@ import (
 	rtdbapi "github.com/arumadev/aruma/internal/services/rtdb/api"
 	rtdbconsole "github.com/arumadev/aruma/internal/services/rtdb/console"
 	rtdb "github.com/arumadev/aruma/internal/services/rtdb/core"
+	storageapi "github.com/arumadev/aruma/internal/services/storage/api"
+	"github.com/arumadev/aruma/internal/services/storage/blob"
+	storageconsole "github.com/arumadev/aruma/internal/services/storage/console"
+	storage "github.com/arumadev/aruma/internal/services/storage/core"
+	"github.com/arumadev/aruma/internal/services/storage/gcs"
 	"github.com/arumadev/aruma/internal/store"
 	"github.com/arumadev/aruma/internal/tenancy/core"
 )
@@ -38,16 +43,19 @@ type App struct {
 	Config  *config.Config
 	Service *core.Service
 	Auth    *identity.Service
-	RTDB    *rtdb.Service // nil while Realtime Database is disabled
+	RTDB    *rtdb.Service    // nil while Realtime Database is disabled
+	Storage *storage.Service // nil while Cloud Storage is disabled
 
 	// Auth's side of the ID token contract (platform/idtoken), for the services that accept
-	// its tokens: the Realtime Database.
+	// its tokens: the Realtime Database, and Storage, which also asks for a user's live state
+	// when an upload finalizes (Users).
 	IDTokens    idtoken.Verifier
 	Revocations idtoken.Revocations
+	Users       idtoken.Users
 
 	// The Firestore and Storage rules engine's limits, and the one cap on the memory of every
-	// evaluation in the process (ADR-021 §4). Storage takes both in S2 with rules.NoDocuments{},
-	// the rules API's :test the same Inflight in S5.
+	// evaluation in the process (ADR-021 §4). Storage takes both with rules.NoDocuments{}, the
+	// rules API's :test the same Inflight in S5.
 	RulesLimits   rules.Limits
 	RulesInflight *rules.Inflight
 
@@ -117,7 +125,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	if st.idp != nil {
 		st.idp(authSvc)
 	}
-	idTokens, revocations := authSvc.IDTokenVerifier(), authSvc.Revocations()
+	idTokens, revocations, users := authSvc.IDTokenVerifier(), authSvc.Revocations(), authSvc.Users()
 	rulesLimits := cfg.RulesEngineLimits()
 	rulesInflight := rules.NewInflight(rulesLimits.InflightBytes)
 	var rtdbSvc *rtdb.Service
@@ -137,14 +145,38 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 			Revocations: revocations,
 		}, logger)
 	}
+	var storageSvc *storage.Service
+	if cfg.Storage.Enabled {
+		disk, err := blob.NewDisk(cfg.Storage.DataDir)
+		if err != nil {
+			return nil, fmt.Errorf("storage: %w", err)
+		}
+		// Storage resolves buckets, rulesets and ownership through the control plane, reads no
+		// Firestore document until v0.4, shares the process's one cap on rules memory, and asks
+		// Auth for a user's live state when an upload finalizes (ADR-022 §7, §8). It opens
+		// nothing here: Boot takes the data directory before the listener opens (Serve).
+		storageSvc, err = storage.New(context.Background(), pool, disk, storage.Options{
+			Limits:    storage.Limits(cfg.Storage.Limits),
+			Keys:      keys,
+			Projects:  svc,
+			Documents: rules.NoDocuments{},
+			Inflight:  rulesInflight,
+			Users:     users,
+			GCGrace:   cfg.Storage.GCGrace,
+		}, logger)
+		if err != nil {
+			return nil, fmt.Errorf("storage: %w", err)
+		}
+	}
 	consoleAPI := console.New(svc, auth, logger, console.Options{
 		Version: version, SecureCookies: cfg.SecureCookies(),
 		Mounts: []func(*consolemount.Mount){
 			authconsole.Routes(authSvc),
 			rtdbconsole.Routes(rtdbSvc, rtdbconsole.Options{DatabaseURL: svc.DatabaseURL, DevOpenRules: cfg.RTDB.DevOpenRules}),
+			storageconsole.Routes(storageSvc),
 		},
 	})
-	mgmtAPI := mgmt.New(svc, auth, logger, mgmt.Options{RTDB: rtdbSvc != nil})
+	mgmtAPI := mgmt.New(svc, auth, logger, mgmt.Options{RTDB: rtdbSvc != nil, Storage: storageSvc != nil})
 	dashboard, err := web.New(web.Embedded())
 	if err != nil {
 		return nil, fmt.Errorf("dashboard: %w", err)
@@ -170,9 +202,23 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		// A purged project's databases go with it.
 		svc.OnProjectPurged(rtdbSvc.PurgeProject)
 	}
+	if storageSvc != nil {
+		publicURL := strings.TrimSuffix(cfg.PublicBaseURL().String(), "/")
+		handlers.Storage = storageapi.New(storageSvc, storageapi.Options{
+			PublicURL:      publicURL,
+			TrustedProxies: cfg.TrustedProxyPrefixes(),
+			Credentials:    svc,
+			Projects:       svc,
+			IDTokens:       idTokens,
+		}, logger).Handler()
+		handlers.GCS = gcs.New(storageSvc, gcs.Options{PublicURL: publicURL, Credentials: svc, Projects: svc}, logger).Handler()
+		// A purged project's objects, sessions and files go with it.
+		svc.OnProjectPurged(storageSvc.PurgeProject)
+	}
 
 	srv := server.New(cfg, logger, pool, metrics.New(version), handlers)
-	return &App{Config: cfg, Service: svc, Auth: authSvc, RTDB: rtdbSvc, IDTokens: idTokens, Revocations: revocations,
+	return &App{Config: cfg, Service: svc, Auth: authSvc, RTDB: rtdbSvc, Storage: storageSvc,
+		IDTokens: idTokens, Revocations: revocations, Users: users,
 		RulesLimits: rulesLimits, RulesInflight: rulesInflight,
 		Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
 }
@@ -216,6 +262,21 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 	}
 	if err := a.AnnounceSetup(ctx); err != nil {
 		return err
+	}
+	if a.Storage != nil {
+		// Before the listener opens (ADR-022 §5.1): the data directory's lock, which a new
+		// instance waits for while the old one runs, its binding to this database, the list of
+		// files that may be orphans, and the quota reconciled. A load balancer sees the instance
+		// only once it holds the directory.
+		if err := a.Storage.Boot(ctx); err != nil {
+			return fmt.Errorf("storage: %w", err)
+		}
+		// After: the orphans deleted, the GC, the expiry of sessions and the periodic sweep.
+		go func() {
+			if err := a.Storage.Run(ctx); err != nil && ctx.Err() == nil {
+				logger.Error("storage", "error", err)
+			}
+		}()
 	}
 	go a.housekeeping(ctx)
 	go a.Auth.RunMailer(ctx)

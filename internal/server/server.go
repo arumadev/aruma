@@ -38,7 +38,23 @@ type Handlers struct {
 	// proxy that issues the database hosts' certificates on demand (ADR-018 §5). Nil while the
 	// Realtime Database is disabled.
 	TLSAsk http.Handler
+	// Storage is Cloud Storage's Firebase REST API, under StoragePrefixes, and GCS its GCS JSON
+	// API, under GCSPrefixes (ADR-022 §1). Their bodies may be as large as an object. Nil while
+	// Storage is disabled: the paths then fall through to the rest of the entry point.
+	Storage http.Handler
+	GCS     http.Handler
 }
+
+// StoragePrefixes are the paths routed to Handlers.Storage: the unified download URL's /v0, and
+// the prefixed form a runtime redirect of firebasestorage.googleapis.com sends (ADR-022 §1).
+var StoragePrefixes = []string{"/v0/", "/firebasestorage.googleapis.com/v0/"}
+
+// GCSPrefixes are the paths routed to Handlers.GCS: the Admin SDKs' apiEndpoint (ADR-022 §1).
+var GCSPrefixes = []string{"/storage/v1/", "/upload/storage/v1/", "/download/storage/v1/"}
+
+// storageBodySlack is what a Storage request may carry beyond the largest object: a multipart
+// upload's JSON part and boundaries. Each handler enforces its exact limit (ADR-022 §6.4).
+const storageBodySlack = 1 << 20
 
 // shutdowner is a handler that holds connections of its own.
 type shutdowner interface {
@@ -77,6 +93,9 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("/v1beta1/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
 	// The Realtime Database's management API (internal/admin/mgmt/rtdb.go).
 	mux.Handle("/v1beta/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
+	// firebaserules, Service Usage and defaultBucket for the firebase CLI (ADR-022 §1, §15).
+	mux.Handle("/v1/projects/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
+	mux.Handle("/v1alpha/projects/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
 	mux.Handle("/oauth2/", s.metrics.Instrument("oauth", apiOnly(s.handlers.OAuth)))
 	for _, prefix := range AuthPrefixes {
 		mux.Handle(prefix, s.metrics.Instrument("auth", apiOnly(s.handlers.Auth)))
@@ -89,20 +108,73 @@ func (s *Server) Handler() http.Handler {
 	}
 	mux.Handle("/", s.metrics.Instrument("static", static))
 	main := httpx.Common(s.securityHeaders(mux), s.log, s.cfg.TrustedProxyPrefixes())
-	if s.handlers.RTDB == nil {
+	storage := s.storageMux()
+	if s.handlers.RTDB == nil && storage == nil {
 		return main
 	}
 	// The Realtime Database is routed by host before path (ADR-018), and its bodies may be
 	// larger than other APIs' (ADR-019).
-	rtdb := httpx.CommonWithLimit(s.securityHeaders(s.metrics.Instrument("rtdb", s.handlers.RTDB)),
-		s.log, s.cfg.TrustedProxyPrefixes(), s.cfg.RTDB.Limits.RESTWriteBytes)
+	var rtdb http.Handler
+	if s.handlers.RTDB != nil {
+		rtdb = httpx.CommonWithLimit(s.securityHeaders(s.metrics.Instrument("rtdb", s.handlers.RTDB)),
+			s.log, s.cfg.TrustedProxyPrefixes(), s.cfg.RTDB.Limits.RESTWriteBytes)
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s.isRTDB(r) {
+		switch {
+		case rtdb != nil && s.isRTDB(r):
 			rtdb.ServeHTTP(w, r)
-			return
+		case storage != nil && storage.owns(r.URL.Path):
+			storage.ServeHTTP(w, r)
+		default:
+			main.ServeHTTP(w, r)
 		}
-		main.ServeHTTP(w, r)
 	})
+}
+
+// storageRoutes are Storage's paths, which skip the other APIs' 1 MiB body cap: their cap is
+// object_bytes and the slack of a multipart upload (ADR-022 §1). They dispatch on the prefix
+// alone, without a ServeMux, which would clean or redirect a path carrying an object's name.
+type storageRoutes struct {
+	http.Handler
+	apis []storageAPI
+}
+
+type storageAPI struct {
+	h        http.Handler
+	prefixes []string
+}
+
+// route returns the API a path belongs to, or nil.
+func (sr *storageRoutes) route(path string) http.Handler {
+	for _, api := range sr.apis {
+		for _, p := range api.prefixes {
+			if strings.HasPrefix(path, p) {
+				return api.h
+			}
+		}
+	}
+	return nil
+}
+
+// owns reports whether a path belongs to a mounted Storage API.
+func (sr *storageRoutes) owns(path string) bool { return sr.route(path) != nil }
+
+// storageMux returns Storage's routes, or nil while Storage is disabled.
+func (s *Server) storageMux() *storageRoutes {
+	sr := &storageRoutes{}
+	if h := s.handlers.Storage; h != nil {
+		sr.apis = append(sr.apis, storageAPI{s.metrics.Instrument("storage", h), StoragePrefixes})
+	}
+	if h := s.handlers.GCS; h != nil {
+		sr.apis = append(sr.apis, storageAPI{s.metrics.Instrument("gcs", h), GCSPrefixes})
+	}
+	if sr.apis == nil {
+		return nil
+	}
+	dispatch := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { sr.route(r.URL.Path).ServeHTTP(w, r) })
+	limit := s.cfg.Storage.Limits.ObjectBytes + storageBodySlack
+	sr.Handler = httpx.CommonWithLimit(s.securityHeaders(dispatch), s.log, s.cfg.TrustedProxyPrefixes(), limit)
+	return sr
 }
 
 // isRTDB reports whether a request belongs to the Realtime Database (ADR-018).
