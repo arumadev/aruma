@@ -205,13 +205,15 @@ func TestNotExpressibleMustBeListed(t *testing.T) {
 	if res.NotExpressible == "" || res.Excluded != "" || res.Agree || len(Faults(&Report{Results: []Result{res}})) != 1 {
 		t.Errorf("%+v", res)
 	}
-	var ne *NotExpressibleError
-	listed := testAPICase(`{"method": "write", "path": "/databases/(default)/documents/c/d"}`, "")
-	listed.Ruleset = c.Ruleset
-	if _, _, err := listed.Build(nil); !errors.As(err, &ne) {
-		t.Fatal(err)
-	}
-	if res := NewRunner().Run(context.Background(), listed); res.Excluded == "" || len(Faults(&Report{Results: []Result{res}})) != 0 {
-		t.Errorf("a listed exclusion is a fault: %+v", res)
+	for _, verb := range []string{"write", "read"} {
+		var ne *NotExpressibleError
+		listed := testAPICase(`{"method": "`+verb+`", "path": "/databases/(default)/documents/c/d"}`, "")
+		listed.Ruleset = c.Ruleset
+		if _, _, err := listed.Build(nil); !errors.As(err, &ne) {
+			t.Fatal(err)
+		}
+		if res := NewRunner().Run(context.Background(), listed); res.Excluded == "" || len(Faults(&Report{Results: []Result{res}})) != 0 {
+			t.Errorf("%s: a listed exclusion is a fault: %+v", verb, res)
+		}
 	}
 }

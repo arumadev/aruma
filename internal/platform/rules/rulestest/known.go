@@ -26,8 +26,11 @@ func Exclusion(c *Case) string {
 		return "no request: " + c.NoRequest
 	case c.Expected.Outcome == Error && c.Expected.ErrorKind == "request" && !c.Expected.SourceTooLarge():
 		return "the Test API refused the request itself, which is not a rules verdict: " + firstLine(c.Expected.Message)
-	case c.Request.Method == "write":
-		return "Test API artefact: it takes the method write, which no real request has"
+	case c.Request.Method == "write" || c.Request.Method == "read":
+		// The abstract verbs: allow read and allow write name them, but a real request is get,
+		// list, create, update or delete. read was added after the one held-out run, where
+		// aruma/methods/method_read_verb met it (docs/compat/rules-v0.3.md).
+		return "Test API artefact: it takes the method " + c.Request.Method + ", which no real request has"
 	}
 	if c.Provenance == TestAPI {
 		if strings.Contains(c.Expected.Message, "Function not found error: Name: [debug]") {
