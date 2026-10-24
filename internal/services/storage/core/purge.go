@@ -17,6 +17,11 @@ import (
 // project number is never used again. A purged project's bucket resolves to nothing, so no
 // request writes in it meanwhile.
 func (s *Service) PurgeProject(ctx context.Context, project int64) error {
+	leave, err := s.enter()
+	if err != nil {
+		return err
+	}
+	defer leave()
 	if err := s.store.DeletePrefix(blob.StagingPrefix(project)); err != nil {
 		return fmt.Errorf("storage: purge the staging files of project %d: %w", project, err)
 	}
@@ -25,7 +30,7 @@ func (s *Service) PurgeProject(ctx context.Context, project int64) error {
 		return fmt.Errorf("storage: purge the files of project %d: %w", project, err)
 	}
 	hook("purge.files")
-	err := s.inTx(ctx, func(q *queries.Queries) error {
+	err = s.inTx(ctx, func(q *queries.Queries) error {
 		if err := q.PurgeUploadSessions(ctx, project); err != nil {
 			return err
 		}

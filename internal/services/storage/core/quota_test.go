@@ -70,7 +70,7 @@ func TestQuotaUnderConcurrency(t *testing.T) {
 						_, err = e.s.Insert(ctx, e.a, asUser("u1"), uploadSpec(name, SurfaceFirebase), bytes.NewReader(data), size)
 					} else {
 						var id string
-						if id, err = e.s.StartUpload(ctx, e.a, asUser("u1"), uploadSpec(name, SurfaceFirebase)); err == nil {
+						if id, err = e.s.StartUpload(ctx, e.a, asUser(name), uploadSpec(name, SurfaceFirebase)); err == nil {
 							length := int64(size)
 							if mode == "unknown length" {
 								length = -1 // Node's single request
@@ -139,22 +139,25 @@ func TestAnonymousShare(t *testing.T) {
 	e.checkUsage(projectA)
 }
 
-// Empty sessions do not count against the limits and are gone after empty_session_ttl, so a
-// client starting many without sending a byte fills nothing.
+// Empty sessions count at start against the address's cap, so one client cannot make rows and
+// files without bound, and are gone after empty_session_ttl, so they hold nothing for long.
 func TestEmptySessions(t *testing.T) {
 	e := newEnv(t, func(o *Options) { o.Limits.UploadSessionsPerIP = 3 })
 	ctx := context.Background()
 	ip := netip.MustParseAddr("2001:db8::1")
 	sp := uploadSpec("a", SurfaceFirebase)
 	sp.IP = ip
-	for range 20 {
+	for range 3 {
 		e.start(e.a, Principal{Kind: PrincipalAnonymous}, sp)
 	}
+	if _, err := e.s.StartUpload(ctx, e.a, Principal{Kind: PrincipalAnonymous}, sp); !errors.Is(err, ErrTooManyUploads) {
+		t.Errorf("a fourth empty session from one address: %v", err)
+	}
 	e.clock.add(10*time.Minute + time.Second)
-	if n, err := e.s.expireSessions(ctx); err != nil || n != 20 {
+	if n, err := e.s.expireSessions(ctx); err != nil || n != 3 {
 		t.Fatalf("expired %d, %v", n, err)
 	}
-	if e.count(`SELECT count(*) FROM storage.upload_sessions`) != 0 || e.count(`SELECT count(*) FROM storage.blob_gc`) != 20 {
+	if e.count(`SELECT count(*) FROM storage.upload_sessions`) != 0 || e.count(`SELECT count(*) FROM storage.blob_gc`) != 3 {
 		t.Error("the empty sessions or their files stay")
 	}
 	// The per-IP cap counts sessions that hold a byte, per project, by /64.

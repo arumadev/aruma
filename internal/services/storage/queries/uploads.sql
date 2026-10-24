@@ -13,15 +13,23 @@ VALUES (@id_hash, @project_number, @name, @surface, @principal_kind, @principal,
     sqlc.narg('client_ip'), sqlc.narg('declared_size'), @attrs, @download_tokens, @preconditions, @checksums, @staging_key,
     @now, @now, @expires_at);
 
--- name: CountLiveUploads :one
--- The live sessions that received a byte, in the project, of one uid and from one address (the
--- per-IP cap counts per project). Empty sessions do not count, so sessions that never send a
--- byte cannot fill the limits (ADR-022 §6.5).
-SELECT count(*) AS project,
+-- name: LockUploadCaps :exec
+-- Serialises the session caps of one project, for the transaction: a start, and a session's
+-- first durable byte, count and write under it, so two never pass one count together.
+SELECT pg_advisory_xact_lock(hashtext('storage.upload_sessions'), mod(sqlc.arg(project_number)::bigint, 2147483647)::int);
+
+-- name: CountUploads :one
+-- A project's active sessions other than one: those that received a byte (live), in the project,
+-- of one uid and from one address (the per-IP cap counts per project); and every one of the uid
+-- and of the address, empty ones included, which a start counts so that one client cannot make
+-- rows and files without bound (ADR-022 §6.5).
+SELECT count(*) FILTER (WHERE received > 0) AS project,
     count(*) FILTER (WHERE principal ->> 'uid' = sqlc.narg('uid')::text) AS by_user,
-    count(*) FILTER (WHERE client_ip = sqlc.narg('client_ip')::inet) AS by_ip
+    count(*) FILTER (WHERE principal ->> 'uid' = sqlc.narg('uid')::text AND received > 0) AS by_user_live,
+    count(*) FILTER (WHERE client_ip = sqlc.narg('client_ip')::inet) AS by_ip,
+    count(*) FILTER (WHERE client_ip = sqlc.narg('client_ip')::inet AND received > 0) AS by_ip_live
 FROM storage.upload_sessions
-WHERE project_number = @project_number AND state = 'active' AND received > 0;
+WHERE project_number = @project_number AND state = 'active' AND id_hash <> @exclude;
 
 -- name: ReserveUploadSession :execrows
 -- Quota a chunk takes for the bytes on their way in, held by the session (Boot reconciles the

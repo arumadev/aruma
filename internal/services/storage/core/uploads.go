@@ -187,6 +187,11 @@ func (s *Service) StartUpload(ctx context.Context, b Bucket, p Principal, spec U
 	if err := checkPre(spec.Surface, spec.Pre); err != nil {
 		return "", err
 	}
+	leave, err := s.enter()
+	if err != nil {
+		return "", err
+	}
+	defer leave()
 	if err := validateName(spec.Name); err != nil {
 		return "", err
 	}
@@ -224,9 +229,6 @@ func (s *Service) StartUpload(ctx context.Context, b Bucket, p Principal, spec U
 		return "", err
 	}
 	ip := limitAddr(spec.IP)
-	if err := s.checkSessionLimits(ctx, b.Project, p, ip); err != nil {
-		return "", err
-	}
 	id = crypto.RandomString(16)
 	idHash := s.keys.HashToken(id)
 	var tokens []byte
@@ -253,6 +255,9 @@ func (s *Service) StartUpload(ctx context.Context, b Bucket, p Principal, spec U
 	hook("start.staging")
 	now := s.now()
 	err = s.inTx(ctx, func(q *queries.Queries) error {
+		if err := s.checkSessionLimits(ctx, q, b.Project, idHash, p, ip, true); err != nil {
+			return err
+		}
 		return q.InsertUploadSession(ctx, queries.InsertUploadSessionParams{
 			IDHash: idHash, ProjectNumber: b.Project, Name: spec.Name, Surface: spec.Surface.String(),
 			PrincipalKind: kind, Principal: principal, ClientIp: ip, DeclaredSize: declared, Attrs: attrs,
@@ -262,30 +267,49 @@ func (s *Service) StartUpload(ctx context.Context, b Bucket, p Principal, spec U
 	})
 	if err != nil {
 		_ = s.store.Delete(staging)
+		if errors.Is(err, ErrTooManyUploads) {
+			return "", err
+		}
 		return "", fmt.Errorf("%w: start the session: %w", ErrUnavailable, err)
 	}
 	return id, nil
 }
 
-// checkSessionLimits refuses a start over the live sessions allowed in the project, for the uid
-// and for the address (per project). Sessions without a durable byte do not count.
-func (s *Service) checkSessionLimits(ctx context.Context, project int64, p Principal, ip *netip.Addr) error {
+// checkSessionLimits checks the session caps in the caller's transaction, under the project's
+// advisory lock, so two starts or two first bytes never pass one count together: the sessions
+// that hold a byte in the project, of the uid and from the address (per project), not counting
+// the session itself. At a start (atStart) every session of the uid and of the address counts,
+// empty ones too, so one client cannot make rows and staging files without bound; at a
+// session's first durable byte the live ones count. Over a cap is ErrTooManyUploads.
+func (s *Service) checkSessionLimits(ctx context.Context, q *queries.Queries, project int64, self []byte, p Principal,
+	ip *netip.Addr, atStart bool) error {
 	var uid *string
 	if p.Kind == PrincipalUser {
 		uid = &p.UID
 	}
-	c, err := s.reads.CountLiveUploads(ctx, queries.CountLiveUploadsParams{Uid: uid, ClientIp: ip, ProjectNumber: project})
+	if err := q.LockUploadCaps(ctx, project); err != nil {
+		return fmt.Errorf("%w: lock the session caps: %w", ErrUnavailable, err)
+	}
+	c, err := q.CountUploads(ctx, queries.CountUploadsParams{Uid: uid, ClientIp: ip, ProjectNumber: project, Exclude: self})
 	if err != nil {
 		return fmt.Errorf("%w: count the sessions: %w", ErrUnavailable, err)
 	}
+	byUser, byIP := c.ByUserLive, c.ByIpLive
+	if atStart {
+		byUser, byIP = c.ByUser, c.ByIp
+	}
 	if c.Project >= int64(s.limits.UploadSessionsPerProject) ||
-		(uid != nil && c.ByUser >= int64(s.limits.UploadSessionsPerUser)) ||
-		(ip != nil && c.ByIp >= int64(s.limits.UploadSessionsPerIP)) {
+		(uid != nil && byUser >= int64(s.limits.UploadSessionsPerUser)) ||
+		(ip != nil && byIP >= int64(s.limits.UploadSessionsPerIP)) {
 		s.metrics.Rejections.WithLabelValues("too_many_uploads").Inc()
 		return ErrTooManyUploads
 	}
 	return nil
 }
+
+// errTooManyLive is a session's first durable byte over the caps: terminal, as 402, so the
+// client stops instead of retrying a session that cannot become live.
+var errTooManyLive = fmt.Errorf("%w: %w", ErrQuotaExceeded, ErrTooManyUploads)
 
 // WriteUpload applies one request to a session: append the chunk (an overlap is ignored, a gap
 // is an OffsetError), and finalize when asked. p is the request's principal, nil when it has
@@ -293,6 +317,11 @@ func (s *Service) checkSessionLimits(ctx context.Context, project int64, p Princ
 // errors (finalError) make the session final; their state, or the committed object's snapshot,
 // answers every repeat.
 func (s *Service) WriteUpload(ctx context.Context, b Bucket, name, id string, p *Principal, c Chunk) (UploadState, error) {
+	leave, err := s.enter()
+	if err != nil {
+		return UploadState{}, err
+	}
+	defer leave()
 	idHash := s.keys.HashToken(id)
 	unlock := s.sessions.lock(idHash)
 	defer unlock()
@@ -354,10 +383,7 @@ func (s *Service) WriteUpload(ctx context.Context, b Bucket, name, id string, p 
 					err = ErrSizeMismatch
 				}
 			}
-			if _, terminal := finalError(err); terminal {
-				return s.failSession(ctx, sess, err)
-			}
-			return UploadState{Status: UploadActive, Received: sess.Received}, err
+			return s.failSession(ctx, sess, err)
 		}
 	}
 	if !c.Finalize {
@@ -454,6 +480,16 @@ func (s *Service) appendChunk(ctx context.Context, sess *queries.StorageUploadSe
 	// durable bytes.
 	release := sess.Received + res.n - received
 	err = s.inTx(context.WithoutCancel(ctx), func(q *queries.Queries) error {
+		if sess.Received == 0 && received > 0 {
+			// The session becomes live: the caps count it from now on.
+			p, err := decodePrincipal(sess.PrincipalKind, sess.Principal)
+			if err != nil {
+				return err
+			}
+			if err := s.checkSessionLimits(ctx, q, sess.ProjectNumber, sess.IDHash, p, sess.ClientIp, false); err != nil {
+				return err
+			}
+		}
 		rows, err := q.RecordUploadProgress(ctx, queries.RecordUploadProgressParams{
 			Received: received, HashState: state, ReservedBytes: received, Now: progressed, ExpiresAt: expires,
 			IDHash: sess.IDHash, ProjectNumber: sess.ProjectNumber,
@@ -466,6 +502,9 @@ func (s *Service) appendChunk(ctx context.Context, sess *queries.StorageUploadSe
 		}
 		return unreserve(ctx, q, sess.ProjectNumber, release, res.anonymous)
 	})
+	if errors.Is(err, ErrTooManyUploads) {
+		return errTooManyLive
+	}
 	if err != nil {
 		return fmt.Errorf("%w: record the upload's progress: %w", ErrUnavailable, err)
 	}
@@ -558,12 +597,9 @@ func (s *Service) finalize(ctx context.Context, b Bucket, sess queries.StorageUp
 	obj, err := s.commitObject(ctx, objectWrite{bucket: b, object: o, blobKey: key, pre: pre,
 		reserved: sess.ReservedBytes, session: sess.IDHash})
 	if err != nil {
-		// The session keeps blob_key: its next finalize commits the moved file, or finds the
-		// commit that happened.
-		if _, terminal := finalError(err); terminal {
-			return s.failSession(ctx, sess, err)
-		}
-		return active, err
+		// Unless terminal, the session keeps blob_key: its next finalize commits the moved file,
+		// or finds the commit that happened.
+		return s.failSession(ctx, sess, err)
 	}
 	if p.ConsoleAccount != "" {
 		s.auditConsole(ctx, b, p, obj)
@@ -656,13 +692,6 @@ func (s *Service) placeBlob(ctx context.Context, sess *queries.StorageUploadSess
 	return key, nil
 }
 
-// errPromotedEarlier is blob.ErrPromotedEarlier: Promote found no staging file and the file of
-// an earlier move at the key, and made it durable (S2-A's resumable Promote).
-//
-// S2-A: until blob.ErrPromotedEarlier is merged this is a stand-in that only the tests' store
-// returns; the merge replaces it with `var errPromotedEarlier = blob.ErrPromotedEarlier`.
-var errPromotedEarlier = errors.New("blob: the staging file was promoted earlier")
-
 // promote cuts the staging file to received, what a crash after an append may have left beyond
 // it, and moves it to key. When the file at the key was not moved by this call (a resume, where
 // the staging file may be gone, or Promote saying it was moved earlier), its bytes are checked
@@ -682,7 +711,7 @@ func (s *Service) promote(sess *queries.StorageUploadSession, key string, resume
 		return fmt.Errorf("%w: open %s: %w", ErrUnavailable, sess.StagingKey, err)
 	}
 	err = s.store.Promote(sess.StagingKey, key)
-	earlier := errors.Is(err, errPromotedEarlier)
+	earlier := errors.Is(err, blob.ErrPromotedEarlier)
 	if err != nil && !earlier {
 		return fmt.Errorf("%w: move %s: %w", ErrUnavailable, sess.StagingKey, err)
 	}
@@ -748,11 +777,11 @@ func (s *Service) finishSession(ctx context.Context, q *queries.Queries, sess qu
 // active and is returned as it is. When the refusal cannot be recorded, the request fails with
 // ErrUnavailable and the session stays active, so its next request refuses again.
 func (s *Service) failSession(ctx context.Context, sess queries.StorageUploadSession, cause error) (UploadState, error) {
-	e, ok := finalError(cause)
+	e, ok := sessionFinal(cause, sess.Surface)
 	if !ok {
 		return UploadState{Status: UploadActive, Received: sess.Received}, cause
 	}
-	code, msg, _ := encodeError(e)
+	code, msg := e.code, e.msg
 	ctx = context.WithoutCancel(ctx)
 	err := s.inTx(ctx, func(q *queries.Queries) error {
 		cur, err := q.GetUploadSession(ctx, queries.GetUploadSessionParams{IDHash: sess.IDHash, ProjectNumber: sess.ProjectNumber})
@@ -773,6 +802,28 @@ func (s *Service) failSession(ctx context.Context, sess queries.StorageUploadSes
 		return UploadState{Status: UploadActive, Received: sess.Received}, fmt.Errorf("%w: record the refusal: %w", ErrUnavailable, err)
 	}
 	return UploadState{Status: UploadFinal, Received: sess.Received, Err: e}, e
+}
+
+// sessionFinal is finalError for a session of surface: on GCS a precondition that fails at
+// finalize is terminal too (ADR-023 §3-50), so its staged bytes and reservation go at once.
+// /v0 and the dashboard never carry preconditions (checkPre).
+func sessionFinal(err error, surface string) (*Error, bool) {
+	if e, ok := finalError(err); ok {
+		return e, true
+	}
+	if surface == "gcs" && errors.Is(err, ErrPreconditionFailed) {
+		return ErrPreconditionFailed, true
+	}
+	return nil, false
+}
+
+// decodeSessionError is decodeError for a final session of surface, with sessionFinal's GCS
+// precondition.
+func decodeSessionError(code, surface string) error {
+	if surface == "gcs" && code == ErrPreconditionFailed.code {
+		return ErrPreconditionFailed
+	}
+	return decodeError(code)
 }
 
 // dropSessionFiles gives back what a session that ends without an object holds, in the caller's
@@ -810,7 +861,7 @@ func (s *Service) replay(b Bucket, sess queries.StorageUploadSession) (UploadSta
 		o.Bucket = b.Name
 		return UploadState{Status: UploadFinal, Received: sess.Received, Object: &o}, nil
 	}
-	e := decodeError(unsetIfNil(sess.FinalStatus))
+	e := decodeSessionError(unsetIfNil(sess.FinalStatus), sess.Surface)
 	return UploadState{Status: UploadFinal, Received: sess.Received, Err: e}, e
 }
 
@@ -833,6 +884,11 @@ func (s *Service) QueryUpload(ctx context.Context, b Bucket, name, id string) (U
 // CancelUpload cancels a session and frees its staging file and reservation; cancelling twice
 // is not an error, cancelling a final session is ErrUploadFinal.
 func (s *Service) CancelUpload(ctx context.Context, b Bucket, name, id string) (UploadState, error) {
+	leave, err := s.enter()
+	if err != nil {
+		return UploadState{}, err
+	}
+	defer leave()
 	idHash := s.keys.HashToken(id)
 	unlock := s.sessions.lock(idHash)
 	defer unlock()

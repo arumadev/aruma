@@ -61,3 +61,26 @@ func TestResumeVerifiesThePlacedFile(t *testing.T) {
 		})
 	}
 }
+
+// A Promote that renamed and then failed to sync is called again by the next finalize, which
+// must not take the file at the key for durable because it is there (the review's case).
+func TestResumeCallsPromoteAgain(t *testing.T) {
+	e := newEnv(t)
+	id := e.start(e.a, asUser("u1"), uploadSpec("a.txt", SurfaceFirebase))
+	if _, err := e.chunk(e.a, "a.txt", id, 0, "hello", false); err != nil {
+		t.Fatal(err)
+	}
+	e.store.promoteErr = errors.New("fsync: input/output error")
+	if got, err := e.chunk(e.a, "a.txt", id, 5, "", true); !errors.Is(err, ErrUnavailable) || got.Status != UploadActive {
+		t.Fatalf("a failed move: %+v, %v", got, err)
+	}
+	before := e.store.promotes
+	got, err := e.chunk(e.a, "a.txt", id, 5, "", true)
+	if err != nil || got.Status != UploadFinal || e.read(e.a, "a.txt") != "hello" {
+		t.Fatalf("the resumed finalize: %+v, %v", got, err)
+	}
+	if e.store.promotes != before+1 {
+		t.Errorf("the resumed finalize called Promote %d times", e.store.promotes-before)
+	}
+	e.checkUsage(projectA)
+}

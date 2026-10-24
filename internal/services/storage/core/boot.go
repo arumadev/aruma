@@ -194,6 +194,11 @@ func (s *Service) Close() error {
 	if s.lock == nil {
 		return nil
 	}
+	if !s.shut() {
+		s.log.Error("storage: writes still run after the shutdown wait; the data directory's lock stays until the process exits",
+			"waited", closeWait)
+		return fmt.Errorf("storage: writes still run after %v; the lock stays until the process exits", closeWait)
+	}
 	err := s.lock.Release()
 	s.lock = nil
 	return err

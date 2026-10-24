@@ -30,33 +30,50 @@ func (q *Queries) CancelUploadSession(ctx context.Context, arg CancelUploadSessi
 	return result.RowsAffected(), nil
 }
 
-const countLiveUploads = `-- name: CountLiveUploads :one
-SELECT count(*) AS project,
+const countUploads = `-- name: CountUploads :one
+SELECT count(*) FILTER (WHERE received > 0) AS project,
     count(*) FILTER (WHERE principal ->> 'uid' = $1::text) AS by_user,
-    count(*) FILTER (WHERE client_ip = $2::inet) AS by_ip
+    count(*) FILTER (WHERE principal ->> 'uid' = $1::text AND received > 0) AS by_user_live,
+    count(*) FILTER (WHERE client_ip = $2::inet) AS by_ip,
+    count(*) FILTER (WHERE client_ip = $2::inet AND received > 0) AS by_ip_live
 FROM storage.upload_sessions
-WHERE project_number = $3 AND state = 'active' AND received > 0
+WHERE project_number = $3 AND state = 'active' AND id_hash <> $4
 `
 
-type CountLiveUploadsParams struct {
+type CountUploadsParams struct {
 	Uid           *string
 	ClientIp      *netip.Addr
 	ProjectNumber int64
+	Exclude       []byte
 }
 
-type CountLiveUploadsRow struct {
-	Project int64
-	ByUser  int64
-	ByIp    int64
+type CountUploadsRow struct {
+	Project    int64
+	ByUser     int64
+	ByUserLive int64
+	ByIp       int64
+	ByIpLive   int64
 }
 
-// The live sessions that received a byte, in the project, of one uid and from one address (the
-// per-IP cap counts per project). Empty sessions do not count, so sessions that never send a
-// byte cannot fill the limits (ADR-022 §6.5).
-func (q *Queries) CountLiveUploads(ctx context.Context, arg CountLiveUploadsParams) (CountLiveUploadsRow, error) {
-	row := q.db.QueryRow(ctx, countLiveUploads, arg.Uid, arg.ClientIp, arg.ProjectNumber)
-	var i CountLiveUploadsRow
-	err := row.Scan(&i.Project, &i.ByUser, &i.ByIp)
+// A project's active sessions other than one: those that received a byte (live), in the project,
+// of one uid and from one address (the per-IP cap counts per project); and every one of the uid
+// and of the address, empty ones included, which a start counts so that one client cannot make
+// rows and files without bound (ADR-022 §6.5).
+func (q *Queries) CountUploads(ctx context.Context, arg CountUploadsParams) (CountUploadsRow, error) {
+	row := q.db.QueryRow(ctx, countUploads,
+		arg.Uid,
+		arg.ClientIp,
+		arg.ProjectNumber,
+		arg.Exclude,
+	)
+	var i CountUploadsRow
+	err := row.Scan(
+		&i.Project,
+		&i.ByUser,
+		&i.ByUserLive,
+		&i.ByIp,
+		&i.ByIpLive,
+	)
 	return i, err
 }
 
@@ -298,6 +315,17 @@ func (q *Queries) ListIdleUploads(ctx context.Context, arg ListIdleUploadsParams
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockUploadCaps = `-- name: LockUploadCaps :exec
+SELECT pg_advisory_xact_lock(hashtext('storage.upload_sessions'), mod($1::bigint, 2147483647)::int)
+`
+
+// Serialises the session caps of one project, for the transaction: a start, and a session's
+// first durable byte, count and write under it, so two never pass one count together.
+func (q *Queries) LockUploadCaps(ctx context.Context, projectNumber int64) error {
+	_, err := q.db.Exec(ctx, lockUploadCaps, projectNumber)
+	return err
 }
 
 const recordUploadProgress = `-- name: RecordUploadProgress :execrows

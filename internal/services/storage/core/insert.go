@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/services/storage/blob"
@@ -23,6 +25,11 @@ func (s *Service) Insert(ctx context.Context, b Bucket, p Principal, spec Upload
 	if err := checkPre(spec.Surface, spec.Pre); err != nil {
 		return Object{}, err
 	}
+	leave, err := s.enter()
+	if err != nil {
+		return Object{}, err
+	}
+	defer leave()
 	if err := validateName(spec.Name); err != nil {
 		return Object{}, err
 	}
@@ -99,6 +106,11 @@ func (s *Service) Rewrite(ctx context.Context, src Bucket, srcName string, dst B
 	if src.Project != dst.Project {
 		return Object{}, ErrPermissionDenied
 	}
+	leave, err := s.enter()
+	if err != nil {
+		return Object{}, err
+	}
+	defer leave()
 	if err := validateName(dstName); err != nil {
 		return Object{}, err
 	}
@@ -191,56 +203,67 @@ func (s *Service) dropNew(ctx context.Context, key string, res *reservation, cau
 // fields and custom metadata checked against the limits (ADR-022 §17), the defaults of the
 // surface, and its download tokens: a new one on Firebase REST and the dashboard, the admin's
 // own on GCS, none otherwise (ADR-022 §9).
+//
+// The checks are S2-C's checkPatch and checkObjectMetadata (metadata.go), the same rules
+// written here until the two merge: a content field known, at most header_field_bytes, valid
+// UTF-8 without control characters; a custom metadata key non-empty, valid UTF-8 without control
+// characters; a value valid UTF-8 without NUL; and the custom metadata with the tokens, as GCS
+// holds them, within metadata_bytes. Bad input is 400, never a database error.
 func (s *Service) incomingObject(b Bucket, name string, attrs Patch, sf Surface) (Object, error) {
 	o := Object{Bucket: b.Name, Name: name}
 	for k, v := range attrs.Fields {
+		var f *string
+		switch k {
+		case FieldContentType:
+			f = &o.ContentType
+		case FieldContentEncoding:
+			f = &o.ContentEncoding
+		case FieldContentDisposition:
+			f = &o.ContentDisposition
+		case FieldContentLanguage:
+			f = &o.ContentLanguage
+		case FieldCacheControl:
+			f = &o.CacheControl
+		default:
+			return Object{}, invalid("The metadata field " + strconv.Quote(k) + " cannot be set.")
+		}
 		if v == nil {
 			continue
 		}
-		if err := s.checkHeaderField(k, *v); err != nil {
-			return Object{}, err
+		if len(*v) > s.limits.HeaderFieldBytes {
+			return Object{}, invalid(fmt.Sprintf("The %s is longer than %d bytes.", k, s.limits.HeaderFieldBytes))
 		}
-		switch k {
-		case FieldContentType:
-			o.ContentType = *v
-		case FieldContentEncoding:
-			o.ContentEncoding = *v
-		case FieldContentDisposition:
-			o.ContentDisposition = *v
-		case FieldContentLanguage:
-			o.ContentLanguage = *v
-		case FieldCacheControl:
-			o.CacheControl = *v
-		default:
-			return Object{}, invalid("Unknown metadata field " + k + ".")
+		if !uploadHeaderSafe(*v) {
+			return Object{}, invalid("The " + k + " may not contain control characters.")
 		}
+		*f = *v
 	}
-	total := 0
 	for k, v := range attrs.Metadata {
 		if k == TokensKey {
 			return Object{}, invalid("The custom metadata may not hold " + TokensKey + ".")
 		}
+		if k == "" || !uploadHeaderSafe(k) {
+			return Object{}, invalid("A custom metadata key must be non-empty, without control characters.")
+		}
 		if v == nil {
 			continue
 		}
-		if k == "" || strings.ContainsFunc(k, isControl) || strings.ContainsRune(*v, 0) {
-			// jsonb keeps no NUL, and a key with control characters is no header GCS shows.
-			return Object{}, invalid("A custom metadata key may not be empty or hold control characters, nor a value NUL.")
+		if !utf8.ValidString(*v) || strings.IndexByte(*v, 0) >= 0 {
+			return Object{}, invalid("The custom metadata value of " + strconv.Quote(k) + " is not valid UTF-8 without NUL.")
 		}
 		if o.Metadata == nil {
 			o.Metadata = map[string]string{}
 		}
 		o.Metadata[k] = *v
-		total += len(k) + len(*v)
-	}
-	if total > s.limits.MetadataBytes {
-		return Object{}, invalid("The custom metadata is larger than the limit.")
 	}
 	switch {
 	case sf == SurfaceFirebase || sf == SurfaceConsole:
 		o.DownloadTokens = []string{newDownloadToken()}
 	case sf == SurfaceGCS && attrs.Tokens != nil:
 		o.DownloadTokens = append([]string(nil), (*attrs.Tokens)...)
+	}
+	if n := uploadMetadataSize(o); n > s.limits.MetadataBytes {
+		return Object{}, invalid(fmt.Sprintf("The custom metadata is %d bytes, over the limit of %d.", n, s.limits.MetadataBytes))
 	}
 	if _, err := s.sealTokens(b.Project, name, o.DownloadTokens); err != nil {
 		return Object{}, err
@@ -249,21 +272,31 @@ func (s *Service) incomingObject(b Bucket, name string, attrs Patch, sf Surface)
 	return o, nil
 }
 
-// checkHeaderField checks a content field, which becomes a response header: at most
-// header_field_bytes, without CR, LF or other control characters.
-func (s *Service) checkHeaderField(name, v string) error {
-	if len(v) > s.limits.HeaderFieldBytes {
-		return invalid("The field " + name + " is longer than the limit.")
+// uploadHeaderSafe is S2-C's headerSafe: valid UTF-8 without a character below U+0020 or DEL.
+func uploadHeaderSafe(v string) bool {
+	if !utf8.ValidString(v) {
+		return false
 	}
 	for i := 0; i < len(v); i++ {
-		if c := v[i]; c < 0x20 || c == 0x7f {
-			return invalid("The field " + name + " may not contain control characters.")
+		if v[i] < 0x20 || v[i] == 0x7f {
+			return false
 		}
 	}
-	return nil
+	return true
 }
 
-func isControl(r rune) bool { return r < 0x20 || r == 0x7f }
+// uploadMetadataSize is S2-C's metadataSize: the custom metadata's keys and values, and the
+// download tokens as GCS holds them, under firebaseStorageDownloadTokens.
+func uploadMetadataSize(o Object) int {
+	n := 0
+	for k, v := range o.Metadata {
+		n += len(k) + len(v)
+	}
+	if len(o.DownloadTokens) > 0 {
+		n += len(TokensKey) + len(strings.Join(o.DownloadTokens, ","))
+	}
+	return n
+}
 
 // reservation is the quota one request holds for the bytes it brings: n bytes in
 // storage.usage, and in its session's row when it writes to one.

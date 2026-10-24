@@ -323,6 +323,10 @@ type memStore struct {
 	appendErr error
 	// lock is the process's hold on the directory, which a crash releases.
 	lock *memLock
+	// promoteErr, when set, makes the next Promote rename and then fail, once; promotes counts
+	// the calls.
+	promoteErr error
+	promotes   int
 }
 
 type memFile struct {
@@ -386,12 +390,13 @@ func (m *memStore) Promote(staging, key string) error {
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.promotes++
 	f, ok := m.files[staging]
 	if !ok {
 		if _, done := m.files[key]; done {
 			// S2-A's resumable Promote: the move happened before; the file is made durable.
 			m.files[key].synced = len(m.files[key].data)
-			return errPromotedEarlier
+			return fmt.Errorf("blob: promote %s: %w", key, blob.ErrPromotedEarlier)
 		}
 		return fs.ErrNotExist
 	}
@@ -399,8 +404,13 @@ func (m *memStore) Promote(staging, key string) error {
 		return fs.ErrExist
 	}
 	delete(m.files, staging)
-	f.synced = len(f.data) // durable on return
 	m.files[key] = f
+	if err := m.promoteErr; err != nil {
+		// Renamed, then the directories' sync failed: not yet durable.
+		m.promoteErr = nil
+		return err
+	}
+	f.synced = len(f.data) // durable on return
 	return nil
 }
 
