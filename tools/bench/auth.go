@@ -159,7 +159,7 @@ func seedAuth(ctx context.Context, hc *http.Client, c *apiClient, base, project,
 	a := &AuthFixture{Base: base, Key: key.KeyString, Run: run, Password: "bench-" + randomHex(8),
 		Emails: make([]string, users), IDTokens: make([]string, users), RefreshTokens: make([]string, users)}
 
-	err := parallel(ctx, users, 4, func(i int) error {
+	err := parallel(ctx, users, 4, func(ctx context.Context, i int) error {
 		a.Emails[i] = fmt.Sprintf("user-%s-%04d@bench.example", run, i)
 		var out struct {
 			IDToken      string `json:"idToken"`
@@ -191,7 +191,7 @@ func seedAuth(ctx context.Context, hc *http.Client, c *apiClient, base, project,
 		a.CustomTokens[i] = tok
 	}
 	// The first sign-in creates the user; the measured ones find it.
-	err = parallel(ctx, len(a.CustomTokens), 8, func(i int) error {
+	err = parallel(ctx, len(a.CustomTokens), 8, func(ctx context.Context, i int) error {
 		if err := authCall(ctx, hc, a.url(itkPath+"signInWithCustomToken"), map[string]any{"token": a.CustomTokens[i], "returnSecureToken": true}, nil); err != nil {
 			return fmt.Errorf("custom token sign-in: %w", err)
 		}
@@ -200,8 +200,11 @@ func seedAuth(ctx context.Context, hc *http.Client, c *apiClient, base, project,
 	return a, err
 }
 
-// parallel runs fn(0..n-1) on up to workers goroutines and returns the first error.
-func parallel(ctx context.Context, n, workers int, fn func(i int) error) error {
+// parallel runs fn(0..n-1) on up to workers goroutines and returns the first error. The first
+// error cancels the context fn is given: no index starts after it, and the calls under way end.
+func parallel(ctx context.Context, n, workers int, fn func(ctx context.Context, i int) error) error {
+	runCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	var (
 		next     atomic.Int64
 		wg       sync.WaitGroup
@@ -214,16 +217,16 @@ func parallel(ctx context.Context, n, workers int, fn func(i int) error) error {
 			defer wg.Done()
 			for {
 				i := int(next.Add(1) - 1)
-				if i >= n || ctx.Err() != nil {
+				if i >= n || runCtx.Err() != nil {
 					return
 				}
-				if err := fn(i); err != nil {
+				if err := fn(runCtx, i); err != nil {
 					mu.Lock()
 					if firstErr == nil {
 						firstErr = err
 					}
 					mu.Unlock()
-					next.Store(int64(n)) // stop the others
+					cancel() // stop the others
 					return
 				}
 			}
