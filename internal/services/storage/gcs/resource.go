@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"maps"
+	"math"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/arumadev/aruma/internal/services/storage/core"
@@ -190,9 +192,17 @@ func decodeMetadata(v json.RawMessage, p *core.Patch) error {
 		p.ClearMetadata = true
 		return nil
 	}
-	var md map[string]*string
-	if err := json.Unmarshal(v, &md); err != nil || md == nil {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(v, &raw); err != nil || raw == nil {
 		return invalidf("Invalid value for metadata: an object of strings.")
+	}
+	md := make(map[string]*string, len(raw))
+	for k, rv := range raw {
+		s, ok := metadataValue(rv)
+		if !ok {
+			return invalidf("Invalid value for metadata: an object of strings.")
+		}
+		md[k] = s
 	}
 	if t, ok := md[core.TokensKey]; ok {
 		delete(md, core.TokensKey)
@@ -210,6 +220,51 @@ func decodeMetadata(v json.RawMessage, p *core.Patch) error {
 		p.Metadata = md
 	}
 	return nil
+}
+
+// metadataValue reads one custom metadata value: a string, null (nil), or a boolean or number,
+// stored as the text JSON.stringify gives it ("true", "-1"): @google-cloud/storage types the
+// values string | boolean | number | null, and GCS stores them as strings (CT,
+// gcs-js-sdk.test.ts:942-951; ADR-023 §3-77). An object or an array is not a value.
+func metadataValue(v json.RawMessage) (*string, bool) {
+	v = bytes.TrimSpace(v)
+	switch {
+	case len(v) == 0:
+		return nil, false
+	case isNull(v):
+		return nil, true
+	case v[0] == '"':
+		var s string
+		if json.Unmarshal(v, &s) != nil {
+			return nil, false
+		}
+		return &s, true
+	case string(v) == "true" || string(v) == "false":
+		return new(string(v)), true
+	case v[0] == '-' || ('0' <= v[0] && v[0] <= '9'):
+		f, err := strconv.ParseFloat(string(v), 64)
+		if err != nil || math.IsInf(f, 0) {
+			return nil, false
+		}
+		return new(jsNumber(f)), true
+	}
+	return nil, false
+}
+
+// jsNumber writes f as JavaScript's Number#toString does: the shortest digits that read back
+// to f, in decimal from 1e-6 to below 1e21 and with an exponent outside it (1e+21, 1.5e-7),
+// and -0 as 0.
+func jsNumber(f float64) string {
+	if f == 0 {
+		return "0"
+	}
+	if a := math.Abs(f); a >= 1e-6 && a < 1e21 {
+		return strconv.FormatFloat(f, 'f', -1, 64)
+	}
+	s := strconv.FormatFloat(f, 'e', -1, 64) // 1e+21, 1.5e-07
+	mant, exp, _ := strings.Cut(s, "e")
+	sign, digits := exp[:1], strings.TrimLeft(exp[1:], "0")
+	return mant + "e" + sign + digits
 }
 
 func isNull(v json.RawMessage) bool { return bytes.Equal(bytes.TrimSpace(v), []byte("null")) }

@@ -49,11 +49,6 @@
       "class": "c",
       "note": "the same timeFinalized, in the exact key list of a PATCH's reply"
     },
-    "ct | GCS Javascript SDK conformance tests .file() #setMetadata() should convert non-string fields under .metadata to strings": {
-      "class": "b",
-      "item": "77",
-      "note": "a custom metadata value that is not a string or null is 400, not turned into a string"
-    },
     "ct | GCS Javascript SDK conformance tests .file() #copy() should not support the use of a rewriteToken": {
       "class": "b",
       "item": "78",

@@ -42,7 +42,21 @@ func TestDecodeAttrs(t *testing.T) {
 		{`{"md5Hash":"AAAA"}`, nil, 400},
 		{`{"name":3}`, nil, 400},
 		{`{"metadata":"x"}`, nil, 400},
-		{`{"metadata":{"a":true}}`, nil, 400},
+		// A boolean or number is stored as JSON.stringify writes it (CT, gcs-js-sdk.test.ts:942-951;
+		// ADR-023 §3-77); an object or an array is not a value.
+		{`{"metadata":{"booleanValue":true,"numberValue":-1,"f":false,"x":1.50,"big":1e21,"small":0.0000001,"tiny":1.5E-7,"z":-0}}`, func(a objectAttrs) bool {
+			want := map[string]string{"booleanValue": "true", "numberValue": "-1", "f": "false", "x": "1.5", "big": "1e+21",
+				"small": "1e-7", "tiny": "1.5e-7", "z": "0"}
+			for k, v := range want {
+				if got := a.Patch.Metadata[k]; got == nil || *got != v {
+					return false
+				}
+			}
+			return len(a.Patch.Metadata) == len(want)
+		}, 0},
+		{`{"metadata":{"a":{"b":"c"}}}`, nil, 400},
+		{`{"metadata":{"a":["b"]}}`, nil, 400},
+		{`{"metadata":{"a":1e400}}`, nil, 400},
 		{`{"contentType":["x"]}`, nil, 400},
 		{`"x"`, nil, 400},
 		{`{"acl":[{"entity":"allUsers"}]}`, nil, 501},

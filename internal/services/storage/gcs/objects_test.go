@@ -198,7 +198,11 @@ func TestPatchObject(t *testing.T) {
 	gcsErr(t, e.do("PATCH", objA+"p.txt?generation=1", tokenA, strings.NewReader(`{}`)), 404, "notFound")
 	gcsErr(t, e.do("PATCH", objA+"p.txt?generation=1&ifGenerationMatch=1", tokenA, strings.NewReader(`{}`)), 404, "notFound")
 	gcsErr(t, e.do("PATCH", objA+"missing", tokenA, strings.NewReader(`{}`)), 404, "notFound")
-	for _, body := range []string{`[1]`, `{"contentType":5}`, `{"metadata":{"a":1}}`, `{"metadata":[]}`, `not json`} {
+	// A boolean or number custom value is stored as its text (CT, gcs-js-sdk.test.ts:942-951).
+	if o = patch(`{"metadata":{"booleanValue":true,"numberValue":-1}}`, ""); o.Metadata["booleanValue"] != "true" || o.Metadata["numberValue"] != "-1" {
+		t.Errorf("non-string custom values: %+v", o.Metadata)
+	}
+	for _, body := range []string{`[1]`, `{"contentType":5}`, `{"metadata":{"a":{}}}`, `{"metadata":[]}`, `not json`} {
 		gcsErr(t, e.do("PATCH", objA+"p.txt", tokenA, strings.NewReader(body)), 400, "invalid")
 	}
 	for _, body := range []string{`{"acl":[{"entity":"allUsers","role":"READER"}]}`, `{"temporaryHold":true}`,
