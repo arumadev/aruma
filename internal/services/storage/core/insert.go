@@ -291,7 +291,8 @@ func (s *Service) releaseReservation(ctx context.Context, r *reservation) {
 	if r.n == 0 {
 		return
 	}
-	err := s.inTx(context.WithoutCancel(ctx), func(q *queries.Queries) error {
+	ctx = context.WithoutCancel(ctx)
+	err := s.inTx(ctx, func(q *queries.Queries) error {
 		return unreserve(ctx, q, r.project, r.n, r.anonymous)
 	})
 	if err != nil {
