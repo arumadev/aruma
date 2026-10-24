@@ -6,13 +6,14 @@
 #
 #   vite5 vite6 vite7 vite8  `vite build` and the dev server (its dependency optimizer: esbuild's
 #                            before Vite 8, Rolldown's from 8), each in the browser
-#   next                     Next.js with webpack (next build --webpack) and with Turbopack
+#   next                     Next.js: next build --webpack, next build (Turbopack) and next dev
+#                            (Turbopack), each with its server under the netguard
 #   expo                     an Expo app's web export through Metro, in the browser, and its
 #                            Android bundle, checked for the rewritten host
 #   flutter                  a Flutter web app after `aruma-web flutter-web`, in the browser
-#   fallback                 no build plugin: installStorage() and useArumaStorage() at run time
+#                            (needs Flutter, and PUB_CACHE with firebase_storage 14.0.1)
 #
-# Default: all. The apps are copied from apps/ and installed under ARUMA_E2E_APPS_DIR (default
+# Default: all. (The run-time fallback is in run.sh.) The apps are copied from apps/ and installed under ARUMA_E2E_APPS_DIR (default
 # <repo>/.cache/web-storage-apps), outside the repository. Results: one line per target and app,
 # then the Playwright output.
 set -euo pipefail
@@ -29,7 +30,7 @@ dev_port=${ARUMA_E2E_DEV_PORT:-9426}
 export NEXT_TELEMETRY_DISABLED=1
 
 targets=("$@")
-[[ ${#targets[@]} -gt 0 ]] || targets=(vite5 vite6 vite7 vite8 next expo flutter fallback)
+[[ ${#targets[@]} -gt 0 ]] || targets=(vite5 vite6 vite7 vite8 next expo flutter)
 
 start_aruma
 cd "$here"
@@ -115,8 +116,11 @@ netguarded() {
 
 # guard_clean <log> <what>: a note when the netguard blocked anything.
 guard_clean() {
-  if grep -q BLOCK "$1" 2>/dev/null; then
-    note "FAILED  $2: the server tried to leave the machine: $(grep BLOCK "$1" | sort -u | head -3 | tr '\n' ' ')"
+  local google='googleapis\.com|gstatic\.com|google\.com|firebaseio\.com|firebasedatabase\.app|firebaseapp\.com'
+  if grep BLOCK "$1" 2>/dev/null | grep -qE "$google"; then
+    note "FAILED  $2: the server tried to reach Google: $(grep BLOCK "$1" | grep -E "$google" | cut -d' ' -f2 | sort -u | head -3 | tr '\n' ' ')"
+  elif grep -q BLOCK "$1" 2>/dev/null; then
+    note "ok      $2: nothing to Google; blocked elsewhere: $(grep BLOCK "$1" | cut -d' ' -f2 | sort -u | head -3 | tr '\n' ' ')"
   else
     note "ok      $2: the server connected to $(grep -c ALLOW "$1" 2>/dev/null || echo 0) local addresses and nothing else"
   fi
@@ -152,6 +156,14 @@ next_app() {
     stop_dev
     guard_clean "$gen/netguard-next-$b.log" "next-$b server"
   done
+  # The dev server compiles with Turbopack too, page by page.
+  (cd "$dir" && ARUMA_E2E_DIST=.next-dev ARUMA_E2E_NAME=next-dev netguarded "$gen/netguard-next-dev.log" \
+    exec npx next dev -p "$dev_port" -H 127.0.0.1) >"$gen/dev-next.log" 2>&1 &
+  dev_pid=$!
+  wait_http "http://127.0.0.1:$dev_port/"
+  playwright "next-dev@http://127.0.0.1:$dev_port/" "" "next-dev"
+  stop_dev
+  guard_clean "$gen/netguard-next-dev.log" "next-dev server"
 }
 
 # literals <files…>: "<n> with Google's host literal, <m> with Aruma's" over the given files.

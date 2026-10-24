@@ -172,3 +172,20 @@ firebase-tools 15.34.0 نفسها (مثبّتة في `test/acceptance/testdata/f
 |---|---|---|---|---|
 | 89 | `?token=` الفارغ لا رمز، فتقرر القواعد | مؤقت | ADR-022 §13 | `api.download` |
 | 90 | تنزيل قررته القواعد بلا `Authorization` يحمل `private` أيضًا | مؤقت | ADR-022 §10.5 | `api.download` |
+
+### مسار الإنتاج على الويب (S6-W)
+
+تبديل النطاق وقت البناء (ADR-022 §16.1) في `@aruma/web` (`sdk/web/aruma-web`، والتفصيل في README هناك)، مقيسًا في `test/e2e/web-storage`: المكتبة الرسمية في وضع الإنتاج، مبنية من npm، أمام Aruma حقيقي بالقواعد، في Chromium بحارس الشبكة. والعمليات هي الإحدى عشرة في S0-B، والنتيجة 11/11 بلا ⚠ في كل سطر، والرابط الموحّد في `<img>` من جذر Aruma، وكل طلب للمكتبة على `/v0` بـ `Authorization: Firebase`، ولا طلب بالبادئة.
+
+| الأداة | النتيجة | ملاحظة |
+|---|---|---|
+| Vite 8.3.5، webpack 5.112.2، esbuild 0.28.2 | 11/11 | `run.sh`. والبناء يفشل برسالة `@aruma/web` حين لا وحدة Storage، وحين يُستورد SDK من gstatic، في الثلاثة |
+| SvelteKit 3.1.0 (adapter-node) | الخادم والمتصفح | الخادم تحت netguard يرسم الرابط الموحّد ولا يتصل إلا بـ Aruma |
+| Vite 5.4.21 و6.4.5 و7.3.7 | `vite build` وخادم التطوير: 11/11 | `optimizeDeps.esbuildOptions.plugins` يعمل، فلا رفض لما قبل Vite 8 في Storage |
+| Next.js 16.4.3 | webpack وTurbopack (`next build` و`next dev`): 11/11، والمكوّن على الخادم يرسم الرابط الموحّد | محمّل `turbopack.rules` بشرط المسار يصل إلى `node_modules`. ولا نهاية بناء في Turbopack: لا يفشل بناء لم يصل إلى المكتبة |
+| Expo 58.0.19 (Metro 0.87.1) | تصدير الويب 11/11، وحزمة Android بلا نص نطاق Google | ولا نهاية بناء في Metro كذلك |
+| Flutter 3.44.2 web | 11/11 من Dart | `firebase-storage.js` 13.1.0 من npm مبدَّلًا مرة واحدة، و`flutterfire_ignore_scripts`. ولم يُطلب `firebase-storage.js` من gstatic |
+| الاحتياط (`installStorage` و`useArumaStorage`) | 11/11 | من حزمة تبقي نطاق Google |
+
+- **لم يُقَس:** Rollup وRolldown وRspack منفردة (الخطافات نفسها)، وwebpack في وضع المراقبة، وFirefox وWebKit، وmetro على جهاز. والبناء من npm وحده: لم يُقارن `firebase-storage.js` في npm بنسخة gstatic بايتًا ببايت (لا طلب إلى Google).
+- **قيود مقصودة:** عنوان Aruma لـ Storage جذر النطاق (بلا مسار)، وبناء الخادم لا يفشل لغياب Storage، وتطبيق Flutter web التجريبي يوجّه خطوط المحرك بعيدًا عن `fonts.gstatic.com` (ليس من Storage).
