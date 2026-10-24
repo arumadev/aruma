@@ -52,14 +52,16 @@ playwright() {
   fi
 }
 
-# package <dir> <json>: writes dir/package.json from a JSON fragment of dependencies.
+# package <dir> <json> [fields]: writes dir/package.json from a JSON fragment of dependencies (and
+# of other fields).
 package() {
   node -e '
-    const [dir, deps, sdk] = process.argv.slice(1);
+    const [dir, deps, sdk, fields] = process.argv.slice(1);
     const d = JSON.parse(deps);
     d["@aruma/web"] = "file:" + sdk;
-    require("fs").writeFileSync(dir + "/package.json", JSON.stringify({ name: "aruma-measure", private: true, type: "module", dependencies: d }, null, 2));
-  ' "$1" "$2" "$sdk"
+    const p = { name: "aruma-measure", private: true, type: "module", ...JSON.parse(fields || "{}"), dependencies: d };
+    require("fs").writeFileSync(dir + "/package.json", JSON.stringify(p, null, 2));
+  ' "$1" "$2" "$sdk" "${3:-}"
 }
 
 # install_app <dir>: npm install, with @aruma/web copied in (not linked: Turbopack and Metro do not
@@ -152,8 +154,48 @@ next_app() {
   done
 }
 
+# literals <files…>: "<n> with Google's host literal, <m> with Aruma's" over the given files.
+literals() {
+  local google aruma
+  google=$(grep -l -a -E "[\"']firebasestorage\.googleapis\.com[\"']" "$@" 2>/dev/null | wc -l | tr -d ' ')
+  aruma=$(grep -l -a -E "[\"']${addr//./\\.}[\"']" "$@" 2>/dev/null | wc -l | tr -d ' ')
+  echo "$google with Google's host literal, $aruma with Aruma's"
+}
+
+expo_app() {
+  local dir=$apps/expo
+  log "Expo: Metro, the web export in the browser, the Android bundle"
+  rm -rf "$dir/dist" "$dir/dist-android" "$dir/.expo"
+  mkdir -p "$dir"
+  package "$dir" '{"expo": "^58", "firebase": "^13"}' '{"main": "index.js", "type": "commonjs"}'
+  cp apps/expo/metro.config.js apps/expo/app.json apps/expo/index.js "$dir/"
+  cp src/ops.js "$dir/ops.js"
+  install_app "$dir"
+  # React, React Native and the web packages at the versions this Expo bundles (what `expo install`
+  # would pick, without asking Expo's servers).
+  local peers
+  peers=$(cd "$dir" && node -p 'const b = require("expo/bundledNativeModules.json"); ["react", "react-dom", "react-native", "react-native-web", "@expo/metro-runtime"].map((k) => `${k}@${b[k]}`).join(" ")')
+  # shellcheck disable=SC2086
+  (cd "$dir" && npm install --no-audit --no-fund --silent --install-links $peers)
+  note "expo: $(cd "$dir" && node -p 'require("expo/package.json").version'), react-native $(cd "$dir" && node -p 'require("react-native/package.json").version'), metro $(cd "$dir" && node -p 'require("metro/package.json").version')"
+  if (cd "$dir" && EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 CI=1 npx expo export -p web --output-dir dist --clear >"$gen/build-expo-web.log" 2>&1); then
+    note "        expo web bundle: $(literals $(find "$dir/dist" -name '*.js'))"
+    playwright expo "expo=$dir/dist" expo-web
+  else
+    note "FAILED  expo-web: expo export failed (see $gen/build-expo-web.log)"
+    grep -m5 -i "aruma\|error" "$gen/build-expo-web.log" | sed 's/^/          /'
+  fi
+  if (cd "$dir" && EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 CI=1 npx expo export -p android --output-dir dist-android --no-bytecode --clear >"$gen/build-expo-android.log" 2>&1); then
+    note "ok      expo-android bundle: $(literals $(find "$dir/dist-android" -name '*.js' -o -name '*.hbc'))"
+  else
+    note "FAILED  expo-android: expo export failed (see $gen/build-expo-android.log)"
+    grep -m5 -i "aruma\|error" "$gen/build-expo-android.log" | sed 's/^/          /'
+  fi
+}
+
 for t in "${targets[@]}"; do
   case $t in
+    expo) expo_app ;;
     vite5 | vite6 | vite7 | vite8) vite_app "${t#vite}" ;;
     next) next_app ;;
     *) echo "unknown target $t" >&2; exit 2 ;;
