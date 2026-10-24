@@ -78,3 +78,28 @@ rules:                             # Firestore and Storage security rules (ADR-0
     regex_bytes: 4194304           # the estimated programs of one ruleset's literal patterns
     compiled_rulesets_bytes: 134217728  # compiled rulesets kept in memory, by weight; one
                                    # ruleset may weigh a quarter of it
+storage:                           # Cloud Storage for Firebase (ADR-022); see docs/configuration.md
+  enabled: false                   # off by default
+  # data_dir: /srv/aruma/storage   # required when enabled: an absolute path on a local disk,
+                                   # mounted before Aruma starts; back it up with the database
+  gc_grace: 1m                     # an unreferenced file waits this long before it is deleted
+  limits:
+    object_bytes: 5368709120       # one object (at most 5 TiB and at most project_bytes)
+    project_bytes: 5368709120      # a project's quota, unfinished uploads included; 0 is unlimited
+    min_free_bytes: 2147483648     # disk space no write may take
+    empty_session_ttl: 10m         # an upload session that received no byte
+    upload_idle_ttl: 1h            # without progress, its unused reservation is freed
+    upload_session_ttl: 168h       # an upload session's life
+    console_session_ttl: 1h        # an upload session the dashboard issues
+    anonymous_staged_fraction: 0.2 # the share of project_bytes anonymous uploads may hold
+    metadata_bytes: 8192           # custom metadata, keys and values together
+    json_body_bytes: 65536         # a metadata update or upload start body (at most 1 MiB)
+    header_field_bytes: 1024       # contentType, cacheControl and the other header fields
+    upload_sessions_per_project: 1000
+    upload_sessions_per_user: 50
+    upload_sessions_per_ip: 100
+    upload_starts_per_minute_per_ip: 60
+    upload_starts_per_second: 1000 # in the whole server
+    upload_requests_per_ip: 64     # concurrent upload and write requests
+    min_bytes_per_second: 4096     # slower over 30 seconds, an upload is cut
+    list_max_results: 1000         # the largest page of a listing (at most 1000)

@@ -263,7 +263,7 @@
 - [x] `govulncheck ./...` نظيف، ومعه `npm audit` على الحزم الثلاث (2026-10-24):
   - govulncheck 1.9.0 (قاعدة 2026-10-21) وجد GO-2026-6809 (`crypto/x509`، مُصلحة في go1.27.3) قابلة للوصول عبر مصافحة TLS. سطر `toolchain go1.27.3` في `go.mod` ([`ee609d6`](https://github.com/arumadev/aruma/commit/ee609d6)) يصلحها: «Your code is affected by 0 vulnerabilities». والباقي GO-2026-5932 (`x/crypto/openpgp`) غير مستورد. و`sdk/go/adminauth` و`sdk/go/adminstorage` نظيفتان بـ go1.27.3؛ وهما مكتبتان، فالمكتبة القياسية فيهما من Go المستعمِل.
   - `npm audit --package-lock-only` (npm 11.19.0، مع dev وبدونه): admin-storage وadmin-auth وaruma-web، «found 0 vulnerabilities». يُعاد إن تأخر الوسم عن هذا اليوم.
-- [ ] `docs/guides/storage.md`: **لم يُكتب بعد**، ومرجع الإعداد (`docs/configuration.md`) بلا مفاتيح `storage.*`. والنقاط الثلاث مذكورة مؤقتًا في «Upgrading from v0.2» في `docs/releases/v0.3.0.md`:
+- [ ] `docs/guides/storage.md`: **لم يُكتب بعد، ويأتي بعد الإصدار.** والنقاط الثلاث في قسم Storage من `docs/configuration.md` (ومعه كل مفاتيح `storage.*` و`rules.limits`)، وفي «Upgrading from v0.2» في `docs/releases/v0.3.0.md`:
   - `data_dir` على قرص يُركَّب قبل الخدمة (systemd `RequiresMountsFor=`)، وما تقوله رسالة SR3-01.
   - وhttps شرط للنسخ غير المحلية.
   - و`strategy: Recreate`.
@@ -273,7 +273,7 @@
 - [ ] e2e الأجهزة بحارس الشبكة: Android وiOS لـ Storage شغّلهما S6-A وS6-I محليًا (`test/e2e/android-storage`، و`test/e2e/ios-storage/README.md`)، وليسا في CI على `main`. **تبقى للمالك:** دمج `s6-f-flutter` (iOS في GitHub Actions وCodemagic، وFlutter و`aruma_storage`)، وتشغيل أخضر لـ Codemagic/iOS. وإن لم يُدمج قبل الوسم يُحذف صف Flutter (الجوال) من ملاحظات الإصدار.
 - [x] قائمة ADR-010 S-1 إلى S-15 باختباراتها السلبية خضراء، ومعها الاختبارات الجديدة هنا: `test/acceptance` (ومنه `isolation_test.go`) في `make test`، وظيفة Go في [40111454561](https://github.com/arumadev/aruma/actions/runs/40111454561).
 
-**ما يبقى للمالك:** الوسم `v0.3.0` (رسالته الفقرة الأولى من `docs/releases/v0.3.0.md`، كالوسمين السابقين)؛ وCI أخضر على commit الوسم؛ ودمج `s6-f-flutter` وتشغيل Codemagic/iOS الأخضر؛ و`docs/guides/storage.md`.
+**ما يبقى للمالك:** الوسم `v0.3.0` (رسالته الفقرة الأولى من `docs/releases/v0.3.0.md`، كالوسمين السابقين)؛ وCI أخضر على commit الوسم؛ ودمج `s6-f-flutter` وتشغيل Codemagic/iOS الأخضر. ودليل `docs/guides/storage.md` بعد الإصدار.
 
 ## ما لم يُتحقق منه
 
