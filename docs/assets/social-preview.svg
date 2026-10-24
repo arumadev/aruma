@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A1226"/><stop offset="1" stop-color="#060B1A"/></linearGradient></defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <g opacity="0.08" transform="translate(720 -120) scale(7.4)"><path d="M2 98 C-2 34 30 4 98 2 Z" fill="#1446D8"/><path d="M98 2 C98 66 70 98 2 98 Z" fill="#0FD8C6"/></g>
+  <g transform="translate(96 150) scale(1.9)"><path d="M2 98 C-2 34 30 4 98 2 Z" fill="#1446D8"/><path d="M98 2 C98 66 70 98 2 98 Z" fill="#0FD8C6"/></g>
+  <g font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif" fill="#EAF0FF">
+    <text x="330" y="244" font-size="112" font-weight="800" letter-spacing="-3">Aruma</text>
+    <text x="96" y="400" font-size="58" font-weight="700" letter-spacing="-1">Keep the Firebase SDK.</text>
+    <text x="96" y="470" font-size="58" font-weight="700" letter-spacing="-1" fill="#5EE6D8">Own your backend.</text>
+    <text x="96" y="552" font-size="28" fill="#9AA7C4">Self-hosted, open source. One Go binary and PostgreSQL.</text>
+  </g>
+</svg>
