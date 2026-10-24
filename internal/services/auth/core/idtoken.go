@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -86,7 +87,7 @@ func (v idTokenVerifier) Verify(ctx context.Context, project int64, token string
 	}
 	var c idTokenClaims
 	var all map[string]any
-	if json.Unmarshal(payload, &c) != nil || json.Unmarshal(payload, &all) != nil {
+	if json.Unmarshal(payload, &c) != nil || decodeNumbers(payload, &all) != nil {
 		return nil, idtoken.ErrInvalid
 	}
 	if c.Iss != s.Issuer(Project{Number: project, ID: id}) || c.Aud != id || !validUID(c.Sub) {
@@ -119,6 +120,21 @@ func (v idTokenVerifier) Verify(ctx context.Context, project int64, token string
 		IssuedAt: time.Unix(c.Iat, 0), AuthTime: time.Unix(c.AuthTime, 0), Expires: time.Unix(c.Exp, 0),
 		Token: all,
 	}, nil
+}
+
+// decodeNumbers decodes JSON keeping each number as its text (json.Number): a whole claim
+// beyond 2^53 stays exact, as it does in Firebase's security rules (S7-R: 9007199254740993 is
+// that int there).
+func decodeNumbers(b []byte, v any) error {
+	d := json.NewDecoder(bytes.NewReader(b))
+	d.UseNumber()
+	if err := d.Decode(v); err != nil {
+		return err
+	}
+	if d.More() {
+		return errors.New("trailing data")
+	}
+	return nil
 }
 
 // userChanged runs after a change to a user's revocation state has committed: it drops the

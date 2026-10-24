@@ -31,7 +31,7 @@ func TestSpreadAddrCyclesThroughThePool(t *testing.T) {
 
 func TestParallelRunsEveryIndexAndStopsAtTheFirstError(t *testing.T) {
 	var seen [100]atomic.Bool
-	if err := parallel(context.Background(), 100, 4, func(i int) error { seen[i].Store(true); return nil }); err != nil {
+	if err := parallel(t.Context(), 100, 4, func(_ context.Context, i int) error { seen[i].Store(true); return nil }); err != nil {
 		t.Fatal(err)
 	}
 	for i := range seen {
@@ -39,16 +39,23 @@ func TestParallelRunsEveryIndexAndStopsAtTheFirstError(t *testing.T) {
 			t.Fatalf("index %d never ran", i)
 		}
 	}
+	// The calls past the failing one wait for the stop, so however the workers are scheduled, no
+	// worker is free to start another index before index 10 has failed: 0-10 and at most one
+	// waiting call on each of the other three workers.
 	boom := errors.New("boom")
 	var ran atomic.Int64
-	err := parallel(context.Background(), 1000, 4, func(i int) error {
+	err := parallel(t.Context(), 1000, 4, func(ctx context.Context, i int) error {
 		ran.Add(1)
-		if i == 10 {
+		switch {
+		case i == 10:
 			return boom
+		case i > 10:
+			<-ctx.Done()
+			return ctx.Err()
 		}
 		return nil
 	})
-	if !errors.Is(err, boom) || ran.Load() > 100 {
+	if !errors.Is(err, boom) || ran.Load() > 14 {
 		t.Fatalf("err %v after %d calls", err, ran.Load())
 	}
 }

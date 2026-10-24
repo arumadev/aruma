@@ -423,7 +423,7 @@ func buildMap(m *meter, keys, vals []Value) (Value, error) {
 func errNull() *evalError { return errorf("Null value error.") }
 
 func errProperty(name string) *evalError {
-	return errorf("Property %s is undefined on object.", name)
+	return errorf("Property %s is undefined on object.", clip(name))
 }
 
 func errType(received, expected string) *evalError {
@@ -435,7 +435,7 @@ func errUnsupported(received string, expected []string) *evalError {
 }
 
 func errNotFound(name string) *evalError {
-	return errorf("Function not found error: Name: [%s].", name)
+	return errorf("Function not found error: Name: [%s].", clip(name))
 }
 
 func errArity(received int, expected []string) *evalError {
@@ -457,11 +457,11 @@ func errOverflow() *evalError {
 func errDivideByZero() *evalError { return errorf("Divide by zero error.") }
 
 func errConversion(argument string, from, to Kind) *evalError {
-	return errorf("Type conversion error. Argument: [%s], From type: [%s], To type: [%s].", argument, from, to)
+	return errorf("Type conversion error. Argument: [%s], From type: [%s], To type: [%s].", clip(argument), from, to)
 }
 
 func errRegex(pattern string) *evalError {
-	return errorf("Invalid regular expression pattern. Pattern: %s.", pattern)
+	return errorf("Invalid regular expression pattern. Pattern: %s.", clip(pattern))
 }
 
 func errTimestamp() *evalError {

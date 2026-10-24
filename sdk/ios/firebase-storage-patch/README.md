@@ -54,6 +54,21 @@ moved one: "Revision … does not match previously recorded value" (measured, Xc
 `make-mirror.sh` refuses to move a tag, and a fix to the patch ships with the next official
 release's tag.
 
+**Pinning.** That record is trust on first use, per machine: a fresh CI runner has none, so a
+moved tag or a mirror that serves other code would pass it. [`mirror.lock`](mirror.lock) pins
+each published tag to its commit and tree, and since the build is reproducible these are the same
+for every honest mirror, whoever built it. `make-mirror.sh` refuses a build that does not give the
+pinned commit and tree, and prints the line for a tag not pinned yet; the line is committed here
+before the tag is used. The gate below fails on a checkout whose `HEAD` is not pinned. Commit the
+app's `Package.resolved` (it records the mirror's revision) and resolve in CI with
+`xcodebuild -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile` (or
+`swift package resolve --force-resolved-versions`), so that SwiftPM checks out that revision or
+fails instead of re-pinning.
+
+| Tag | Commit | Tree |
+|---|---|---|
+| 12.19.3 | `f749478ff473cb2cdc741f99a68472b4eccf54f8` | `c2f1efee517c9d4847cf385d778f81cfbabab006` |
+
 ```sh
 ARUMA_MIRROR=git@github.com:arumadev/firebase-ios-sdk.git sdk/ios/firebase-storage-patch/make-mirror.sh 12.19.3
 ```
@@ -86,8 +101,9 @@ resolves afresh anyway.
 
 **The CI gate (recommended).** SwiftPM never refuses the official package, so check what it
 resolved: [`check-firebase-storage.sh`](check-firebase-storage.sh) fails when the
-firebase-ios-sdk checkout has no `ARUMA-NOTICE.md`. Run it in CI after resolution, or as the app
-target's first "Run Script" build phase (User Script Sandboxing off for that target):
+firebase-ios-sdk checkout has no `ARUMA-NOTICE.md`, or when its commit and tree are not a line of
+`mirror.lock` (`ARUMA_MIRROR_PINS` names another pin file). Run it in CI after resolution, or as
+the app target's first "Run Script" build phase (User Script Sandboxing off for that target):
 
 ```sh
 "${SRCROOT}/<aruma>/sdk/ios/firebase-storage-patch/check-firebase-storage.sh"            # Xcode's SourcePackages
@@ -144,8 +160,13 @@ FirebaseStorage مبنية من المصدر برقعة صغيرة، تُسلَ�
 - **الاستعمال:** `swift package config set-mirror --original https://github.com/firebase/firebase-ios-sdk --mirror
   https://github.com/arumadev/firebase-ios-sdk`، وفي مشروع Xcode ملف `mirrors.json` تحت
   `xcshareddata/swiftpm/configuration/`، وتُضاف `ArumaURL` إلى Info.plist. ويحترم `xcodebuild` و`flutter build ios` المرآة (مقيس).
-- **بوابة CI:** `check-firebase-storage.sh` يُفشل البناء إن لم يكن في نسخة firebase-ios-sdk المحلولة `ARUMA-NOTICE.md`، في CI
-  أو مرحلة "Run Script" أولى في هدف التطبيق. وفي التشغيل تبحث `ArumaRedirect` عن صنف العلامة `FIRArumaStorageBuild`.
+- **التثبيت:** سجل SwiftPM لمراجعة الوسم ثقة عند أول استعمال لكل جهاز، فمشغّل CI جديد بلا سجل. لذلك يثبّت `mirror.lock` كل
+  وسم منشور بـ commit وtree، وهما واحد في كل مرآة أمينة لأن البناء قابل للتكرار (`12.19.3`: `f749478f…` وtree `c2f1efee…`).
+  ويرفض `make-mirror.sh` بناءً يخالف التثبيت، ويطبع سطر الوسم الجديد ليُلتزم قبل استعماله. ويُلتزم `Package.resolved` للتطبيق،
+  ويُحل في CI بـ `-onlyUsePackageVersionsFromResolvedFile` (أو `swift package resolve --force-resolved-versions`).
+- **بوابة CI:** `check-firebase-storage.sh` يُفشل البناء إن لم يكن في نسخة firebase-ios-sdk المحلولة `ARUMA-NOTICE.md`، أو لم يكن
+  commit الـ `HEAD` وtree فيها سطرًا من `mirror.lock`، في CI أو مرحلة "Run Script" أولى في هدف التطبيق. وفي التشغيل تبحث
+  `ArumaRedirect` عن صنف العلامة `FIRArumaStorageBuild`.
 - **لا يُكتب رابط المرآة مكان الرسمي:** إن طلبت حزمة أخرى (FlutterFire) الرابط الرسمي، لا يرفض SwiftPM ولا يحذّر، بل يأخذ
   المستودع الرسمي غير المرقّع بصمت (مقيس بـ SwiftPM 6.1.2). فـ `set-mirror` وحده الطريق الآمن.
 - **CocoaPods** للإصدارات المجمّدة (آخرها 12.19.0) بـ `aruma_storage.rb`، و**Firebase.zip** يأخذ الاحتياط وحده.

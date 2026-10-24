@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 // Boot (ADR-022 §5.1): the lock, the binding of the directory to the database, the candidates
@@ -56,7 +57,8 @@ func TestBootWaitsForTheLock(t *testing.T) {
 }
 
 // The directory and the database are bound; a mismatch refuses to boot, and a half written on a
-// first boot is adopted only while the directory holds no file.
+// first boot is adopted only while the directory holds no file and the database expects none: an
+// empty directory under a database with objects or live uploads is a disk that is not mounted.
 func TestBootInstanceBinding(t *testing.T) {
 	ctx := context.Background()
 	other := uuid.NewString()
@@ -66,6 +68,8 @@ func TestBootInstanceBinding(t *testing.T) {
 		row      bool   // a storage.instance row
 		mismatch bool   // the two differ
 		data     bool   // p/ or s/ holds a file
+		objects  bool   // the database has an object, whose file the directory does not hold
+		upload   bool   // the database has a live upload session, whose staging file it does not hold
 		refuse   string // a piece of the refusal, "" to boot
 	}{
 		{name: "a first boot"},
@@ -76,12 +80,38 @@ func TestBootInstanceBinding(t *testing.T) {
 		{name: "the file without its row, with data", file: true, data: true, refuse: "no storage.instance row"},
 		{name: "the row without its file, with data", row: true, data: true, refuse: "holds files but no INSTANCE"},
 		{name: "neither, with data", data: true, refuse: "nothing binds them"},
+		{name: "the row without its file, on an empty directory, with objects", row: true, objects: true, refuse: "the disk is not mounted"},
+		{name: "both missing, on an empty directory, with objects", objects: true, refuse: "the disk is not mounted"},
+		{name: "the file without its row, on an empty directory, with an upload", file: true, upload: true, refuse: "the disk is not mounted"},
+		{name: "the row without its file, on an empty directory, with an upload", row: true, upload: true, refuse: "the disk is not mounted"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			e := newEnv(t)
+			if c.objects {
+				e.insert(e.a, "kept", "x")
+			}
+			if c.upload {
+				if _, err := e.s.StartUpload(ctx, e.a, asUser("u1"), uploadSpec("a.txt", SurfaceFirebase)); err != nil {
+					t.Fatal(err)
+				}
+			}
 			if err := e.s.Close(); err != nil {
 				t.Fatal(err)
+			}
+			// The disk that held those files is gone: its mount point is an empty directory.
+			rows, err := e.pool.Query(ctx, `SELECT blob_key FROM storage.objects UNION ALL SELECT staging_key FROM storage.upload_sessions`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			keys, err := pgx.CollectRows(rows, pgx.RowTo[string])
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, k := range keys {
+				if err := e.store.Delete(k); err != nil {
+					t.Fatal(err)
+				}
 			}
 			// Start from nothing, then lay out the case.
 			e.store.instance = nil
@@ -106,7 +136,7 @@ func TestBootInstanceBinding(t *testing.T) {
 				_ = w.Commit()
 			}
 			s := e.service()
-			err := s.Boot(ctx)
+			err = s.Boot(ctx)
 			if c.refuse != "" {
 				if err == nil || !strings.Contains(err.Error(), c.refuse) {
 					t.Fatalf("Boot = %v, want a refusal saying %q", err, c.refuse)

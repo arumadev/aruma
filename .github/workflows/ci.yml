@@ -164,6 +164,365 @@ jobs:
             test/e2e/web-rtdb/.generated/server.log
             test/e2e/web-rtdb/.generated/lp-browser.json
 
+  # The v0.3 Storage suites. Each job installs what its suite needs first, then runs the suite
+  # under test/ci/egress-guard.sh: a packet that would leave the machine is rejected and counted,
+  # and the job fails on any. The suites keep their own guards as well (netguard.cjs, the
+  # browsers' resolver rules, the Go programs' dialers).
+  storage-sdks:
+    name: Storage Admin SDKs and firebase-tools
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            test/acceptance/testdata/gcs-sdk/go/go.sum
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: |
+            test/acceptance/testdata/gcs-sdk/node/package-lock.json
+            test/acceptance/testdata/firebase-cli/package-lock.json
+      - name: Install (Go modules, the SDKs, firebase-tools; the test binary)
+        run: |
+          go mod download
+          (cd test/acceptance/testdata/gcs-sdk/go && GOWORK=off go build -o /dev/null .)
+          (cd test/acceptance/testdata/gcs-sdk/node && npm ci --no-audit --no-fund)
+          (cd test/acceptance/testdata/firebase-cli && npm ci --no-audit --no-fund)
+          go test -count=1 -run '^$' ./test/acceptance/
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: TestStorageGCSWithTheAdminSDKs and TestStorageWithTheFirebaseCLI (netguard alone in the CLI, no sandbox-exec on Linux)
+        env:
+          ARUMA_GCS_SDK: "1"
+          ARUMA_FIREBASE_CLI: "1"
+        run: >-
+          test/ci/egress-guard.sh run go test -count=1 -v
+          -run '^(TestStorageGCSWithTheAdminSDKs|TestStorageWithTheFirebaseCLI)$' ./test/acceptance/
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+
+  browser-matrix:
+    name: Browser matrix (${{ matrix.engine }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, firefox, webkit]
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: test/e2e/browser-matrix/package-lock.json
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ matrix.engine }}-${{ hashFiles('test/e2e/browser-matrix/package-lock.json') }}
+      - name: Install (Go modules, Playwright 1.64.1 and ${{ matrix.engine }})
+        working-directory: test/e2e/browser-matrix
+        run: |
+          go mod download
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps ${{ matrix.engine }}
+      # The runner has no sound device. Case 14 browses to the song, whose media document plays
+      # it aloud, and Firefox then fails the element with MEDIA_ERR_DECODE
+      # (NS_ERROR_DOM_MEDIA_MEDIASINK_ERR, OnMediaSinkAudioError) for MP3, Opus and WAV alike:
+      # it is the output, not the decoder. A null sink is the sound device a desktop has.
+      - name: A sound device (PulseAudio null sink)
+        run: |
+          sudo apt-get install -y --no-install-recommends pulseaudio
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=matrix
+          pactl set-default-sink matrix
+          echo "PULSE_SERVER=$(pactl info | sed -n 's/^Server String: //p')" >> "$GITHUB_ENV"
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: Aruma's download replies in ${{ matrix.engine }}
+        run: test/ci/egress-guard.sh run test/e2e/browser-matrix/run.sh ${{ matrix.engine }}
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: browser-matrix-${{ matrix.engine }}
+          include-hidden-files: true
+          path: |
+            test/e2e/browser-matrix/playwright-report
+            test/e2e/browser-matrix/test-results
+            test/e2e/browser-matrix/.generated/server.log
+
+  web-storage:
+    name: Web Storage e2e (bundlers, SvelteKit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: |
+            sdk/web/aruma-web/package-lock.json
+            test/e2e/web-storage/package-lock.json
+            test/e2e/web-storage/apps/sveltekit/package-lock.json
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-chromium-${{ hashFiles('test/e2e/web-storage/package-lock.json') }}
+      # @aruma/web is a file: link here, so its own dependency (unplugin) comes from its directory.
+      - name: Install (Go modules, @aruma/web, the bundlers, SvelteKit, Chromium)
+        working-directory: test/e2e/web-storage
+        run: |
+          go mod download
+          (cd ../../../sdk/web/aruma-web && npm ci --no-audit --no-fund)
+          npm ci --no-audit --no-fund
+          (cd apps/sveltekit && npm ci --no-audit --no-fund)
+          npx playwright install --with-deps chromium
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: Official SDK in production mode, Storage rewritten at build time
+        run: test/ci/egress-guard.sh run test/e2e/web-storage/run.sh
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: web-storage
+          include-hidden-files: true
+          path: |
+            test/e2e/web-storage/test-results
+            test/e2e/web-storage/.generated/*.log
+
+  web-storage-measure:
+    name: Web Storage measured (Vite 5-8, Next.js, Expo)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      ARUMA_E2E_APPS_DIR: ${{ github.workspace }}/.cache/web-storage-apps
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+      # The apps' installs are not in a lockfile: measure.sh pins their versions and the registry's
+      # date, so the npm cache is keyed on it.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: npm-measure-${{ runner.os }}-${{ hashFiles('test/e2e/web-storage/package-lock.json', 'test/e2e/web-storage/measure.sh') }}
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-chromium-${{ hashFiles('test/e2e/web-storage/package-lock.json') }}
+      - name: Install (Go modules, Chromium, the apps)
+        working-directory: test/e2e/web-storage
+        run: |
+          go mod download
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          ./measure.sh --install vite5 vite6 vite7 vite8 next expo
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: Build, serve and drive each app (measure.sh)
+        run: test/ci/egress-guard.sh run test/e2e/web-storage/measure.sh vite5 vite6 vite7 vite8 next expo
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: web-storage-measure
+          include-hidden-files: true
+          path: |
+            test/e2e/web-storage/test-results
+            test/e2e/web-storage/.generated/*.log
+
+  storage-compat:
+    name: Storage compat (Firebase's own tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ARUMA_CACHE_DIR: ${{ github.workspace }}/.cache
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            test/oracle/storage/capture/go-admin/go.sum
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+      # run.sh keeps its caches under ARUMA_CACHE_DIR unless told otherwise: these are the
+      # runner's, which setup-go and the caches below restore.
+      - name: Caches where the runner keeps them
+        id: paths
+        run: |
+          {
+            echo "GOCACHE=$(go env GOCACHE)"
+            echo "GOMODCACHE=$(go env GOMODCACHE)"
+            echo "npm_config_cache=$HOME/.npm"
+            echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright"
+          } >>"$GITHUB_ENV"
+          echo "upstream=$(grep -E '^(SDK_COMMIT|TOOLS_TAG|TOOLS_COMMIT|CDN_VERSIONS|CHROMIUM)=' test/compat/storage/run.sh | sha256sum | cut -c1-16)" >>"$GITHUB_OUTPUT"
+      # The upstream sources and their installs, keyed on the pinned commits and the lockfiles
+      # (run.sh's stamps install again on a change).
+      - uses: actions/cache@v6
+        with:
+          path: |
+            .cache/upstream/storage
+            !.cache/upstream/storage/results
+          key: storage-compat-${{ runner.os }}-${{ steps.paths.outputs.upstream }}-${{ hashFiles('test/compat/storage/js/package-lock.json', 'test/compat/storage/ct/package-lock.json', 'test/oracle/storage/capture/package-lock.json', 'test/oracle/storage/capture/go-admin/go.sum') }}
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-chromium-${{ hashFiles('test/compat/storage/js/package-lock.json') }}
+      # ct's puppeteer starts Chromium with its sandbox, which needs unprivileged user namespaces;
+      # Ubuntu 24.04's AppArmor refuses them by default ("No usable sandbox!"). Playwright, in
+      # the other suites, starts Chromium without the sandbox instead.
+      - name: Unprivileged user namespaces for Chromium's sandbox
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install (Go modules, Chromium 1248, the upstream sources and their installs)
+        run: |
+          go mod download
+          npx -y playwright@1.64.1 install --with-deps chromium
+          test/compat/storage/run.sh --prepare
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: js-node, js-browser, js-compat, ct and the captures; every difference classified
+        run: test/ci/egress-guard.sh run test/compat/storage/run.sh
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: storage-compat-results
+          include-hidden-files: true
+          path: .cache/upstream/storage/results
+
+  web-storage-flutter:
+    name: Web Storage measured (Flutter web)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ARUMA_E2E_APPS_DIR: ${{ github.workspace }}/.cache/web-storage-apps
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: |
+            sdk/web/aruma-web/package-lock.json
+            test/e2e/web-storage/package-lock.json
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: 3.44.2
+          channel: stable
+          cache: true
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-chromium-${{ hashFiles('test/e2e/web-storage/package-lock.json') }}
+      - name: Install (Go modules, Chromium, Flutter's web artifacts, the app's packages)
+        working-directory: test/e2e/web-storage
+        run: |
+          flutter config --no-analytics --no-cli-animations
+          dart --disable-analytics
+          flutter precache --web
+          go mod download
+          (cd ../../../sdk/web/aruma-web && npm ci --no-audit --no-fund)
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          ./measure.sh --install flutter
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: Build and drive the Flutter web app (measure.sh flutter)
+        run: test/ci/egress-guard.sh run test/e2e/web-storage/measure.sh flutter
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: web-storage-flutter
+          include-hidden-files: true
+          path: |
+            test/e2e/web-storage/test-results
+            test/e2e/web-storage/.generated/*.log
+
   dashboard:
     name: Dashboard (lint, unit, build, e2e in both directions)
     runs-on: ubuntu-latest

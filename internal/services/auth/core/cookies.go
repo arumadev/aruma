@@ -46,7 +46,8 @@ func (s *Service) CreateSessionCookie(ctx context.Context, p Project, idToken st
 	_, payload, _ := strings.Cut(idToken, ".")
 	payload, _, _ = strings.Cut(payload, ".")
 	raw, err := base64.RawURLEncoding.DecodeString(payload)
-	if err != nil || json.Unmarshal(raw, &claims) != nil {
+	// The claims' numbers as the token wrote them: a float64 would round 9007199254740993.
+	if err != nil || decodeNumbers(raw, &claims) != nil {
 		return "", ErrInvalidIDToken
 	}
 	now := s.now()

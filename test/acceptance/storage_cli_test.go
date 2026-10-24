@@ -241,6 +241,15 @@ service firebase.storage {
 }
 `
 
+// notUnderEgressGuard fails the test when it would install dir's packages under
+// test/ci/egress-guard.sh, where nothing is installed: the CI job installs them first.
+func notUnderEgressGuard(t *testing.T, dir string) {
+	t.Helper()
+	if os.Getenv("ARUMA_EGRESS_GUARD") != "" {
+		t.Fatalf("%s is not installed, and nothing is installed under the egress guard", dir)
+	}
+}
+
 // firebaseToolsBin installs testdata/firebase-cli once and returns its firebase.
 func firebaseToolsBin(t *testing.T) string {
 	t.Helper()
@@ -255,6 +264,7 @@ func firebaseToolsBin(t *testing.T) string {
 	}
 	bin := filepath.Join(dir, "node_modules", ".bin", "firebase")
 	if _, err := os.Stat(bin); err != nil {
+		notUnderEgressGuard(t, dir)
 		install := exec.Command("npm", "ci", "--no-audit", "--no-fund", "--prefer-offline")
 		install.Dir = dir
 		if out, err := install.CombinedOutput(); err != nil {

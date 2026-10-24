@@ -19,7 +19,9 @@ final class AuthEndpoints {
     static final String LEGACY_PATH_PREFIX = "/identitytoolkit/v3/relyingparty/";
     /**
      * Cloud Storage for Firebase: the run-time fallback of ADR-022 §16.2, on unless ArumaStorageRedirect is false. An
-     * app built with dev.aruma.storage sends nothing to this host, so the redirect only sees what that build missed.
+     * app built with dev.aruma.storage sends nothing to this host, so the redirect only sees what that build missed
+     * (an old download URL on Google's host, for one). With the fallback off such a request is refused, as on iOS,
+     * never passed to Google with its token, on https and on plain http alike.
      */
     static final String STORAGE_HOST = "firebasestorage.googleapis.com";
     static volatile boolean storageRedirect = true;
@@ -27,12 +29,25 @@ final class AuthEndpoints {
     private AuthEndpoints() {}
 
     /**
+     * A refused Cloud Storage request. The stream handler answers it with a {@link RefusedConnection} (403) instead of
+     * throwing, because firebase-storage retries an IOException for minutes.
+     */
+    static final class StorageRefusedException extends IOException {
+        StorageRefusedException(String message) {
+            super(message);
+        }
+    }
+
+    /**
      * Returns the Aruma URL for a request to one of these endpoints, or null when {@code url} is not one (it is then
      * passed through untouched). Throws when it is one in a shape that cannot be rewritten safely
-     * (explicit port, credentials, dot segments): refusing is safer than letting the request reach Google.
+     * (explicit port, credentials, dot segments), or a Storage request while the Storage redirect is off: refusing is
+     * safer than letting the request reach Google. A refused Storage request throws {@link StorageRefusedException}.
+     * Plain http is never rewritten; only a Storage request on it is refused, when the Storage redirect is off.
      */
     static String rewrite(URL url, ArumaBase base) throws IOException {
-        if (!"https".equalsIgnoreCase(url.getProtocol())) {
+        boolean https = "https".equalsIgnoreCase(url.getProtocol());
+        if (!https && !"http".equalsIgnoreCase(url.getProtocol())) {
             return null;
         }
         String host = url.getHost();
@@ -42,6 +57,12 @@ final class AuthEndpoints {
         host = host.toLowerCase(Locale.ROOT);
         if (host.endsWith(".")) {
             host = host.substring(0, host.length() - 1);
+        }
+        if (!https) {
+            if (host.equals(STORAGE_HOST) && !storageRedirect) {
+                throw refused(host, "ArumaStorageRedirect is false, so Cloud Storage requests to Google are refused");
+            }
+            return null;
         }
         String path = url.getPath() == null ? "" : url.getPath();
         switch (host) {
@@ -55,7 +76,7 @@ final class AuthEndpoints {
                 break;
             case STORAGE_HOST:
                 if (!storageRedirect) {
-                    return null;
+                    throw refused(host, "ArumaStorageRedirect is false, so Cloud Storage requests to Google are refused");
                 }
                 break;
             default:
@@ -82,6 +103,7 @@ final class AuthEndpoints {
     }
 
     private static IOException refused(String host, String why) {
-        return new IOException("ArumaRedirect refused a request to " + host + ": " + why);
+        String message = "ArumaRedirect refused a request to " + host + ": " + why;
+        return host.equals(STORAGE_HOST) ? new StorageRefusedException(message) : new IOException(message);
     }
 }

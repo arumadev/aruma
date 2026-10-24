@@ -122,3 +122,29 @@ describe('vite plugin, mode build', () => {
     assert.equal(typeof rewriter.transform, 'function');
   });
 });
+
+// SR3-06: Auth on Aruma with @firebase/storage left on Google stops the build.
+describe('vite plugin, Auth alone with Storage in the build', () => {
+  const STORAGE_ID = '/app/node_modules/@firebase/storage/dist/index.esm.js?v=1';
+
+  test('mode fetch: a @firebase/storage module fails the build, anything else passes', () => {
+    const p = aruma({ url: 'https://aruma.example.com' });
+    assert.equal(p.transform('x', '/app/src/main.js'), null);
+    assert.throws(() => p.transform('x', STORAGE_ID), /includes @firebase\/storage .* storage: true/);
+  });
+
+  test('mode build: in the build and in the dev optimizer', () => {
+    const p = aruma({ url: 'https://aruma.example.com', mode: 'build' });
+    assert.throws(() => p.transform('x', STORAGE_ID), /Storage is not enabled/);
+    const [optimizer] = p.config.call({ meta: { rolldownVersion: '1.0.0' } }).optimizeDeps.rolldownOptions.plugins;
+    assert.throws(() => optimizer.transform('x', STORAGE_ID), /Storage is not enabled/);
+    assert.match(optimizer.transform(AUTH_SNIPPET, AUTH_ID).code, /aruma\.example\.com\/identitytoolkit/);
+  });
+
+  test('with storage: true the Auth plugin leaves Storage to the Storage plugin', () => {
+    for (const mode of ['fetch', 'build']) {
+      const [authPlugin] = aruma({ url: 'https://aruma.example.com', mode, storage: true });
+      assert.doesNotThrow(() => authPlugin.transform('x', STORAGE_ID), mode);
+    }
+  });
+});

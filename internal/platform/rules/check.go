@@ -36,6 +36,8 @@ const (
 	msgGlobChildren      = "Glob(**) resource rules should not have child resource rules."
 	msgVariableInPattern = "Variable %s already exists in the PathTemplate."
 	msgSourceTooLarge    = "Total size of sources must be smaller than %d."
+	// Aruma's, for its limits (ADR-021 §4).
+	msgRulesetWeight = "The rules are too large to keep compiled: they would take about %d bytes, more than the %d one ruleset may."
 )
 
 // hierarchyLimit is how deep match blocks may nest before the checker stops descending, as the
@@ -85,6 +87,13 @@ func check(f *file, svc Service, lim Limits) (*Ruleset, []Issue) {
 	if !known {
 		c.rs.blocks = nil
 	}
+	// A ruleset the cache could not keep would be compiled again for every request that needs
+	// it (the review's SR3-02): it does not compile. Its patterns are bounded already
+	// (regex_bytes); what is left is the text and the tree, by its estimate of 96 bytes a node
+	// (the oracle's largest tree, size_functions_950, is 1.3 MB).
+	if w := c.rs.Weight(); w > c.lim.rulesetBytes() {
+		c.issues = append(c.issues, Issue{File: f.name, Severity: SeverityError, Description: fmt.Sprintf(msgRulesetWeight, w, c.lim.rulesetBytes())})
+	}
 
 	c.positions()
 	for _, is := range c.issues {
@@ -108,6 +117,9 @@ type checker struct {
 	fns   []*fnInfo // every function, in the order declared
 	info  map[*function]*fnInfo
 	nodes int64 // expressions seen, for Weight
+	// regexFull is set once a literal pattern is past regex_bytes: the patterns after it are
+	// not compiled, so the check of a hostile file stops building programs at the budget.
+	regexFull bool
 }
 
 // fnInfo is what the checker knows of a function.
@@ -577,10 +589,10 @@ func (c *checker) call(e *callExpr, cx exprCtx) {
 }
 
 // libraryArities and methodArities are the functions and methods whose number of arguments
-// production checks when it compiles, with a warning at the name; the call still fails when
+// production checks when it compiles, with a warning at the name; the call is still made when
 // evaluated. Only those measured on the Rules Test API are listed (S1-E probe arity.mjs,
-// 2026-10-24): debug(1, 2) and debug() warn, then fail as every debug() does ("Function not
-// found error: Name: [debug]."); math.abs(1, 2) warns at abs; 'a'.size(1), [1].size(1) and
+// 2026-10-24): debug(1, 2) and debug() warn (and deployed, debug(1, 2) is 1 and debug() an
+// error: callFunction); math.abs(1, 2) warns at abs; 'a'.size(1), [1].size(1) and
 // 'a'.lower(1) warn at the method, then fail "Incorrect number of arguments". A method is
 // listed only where every receiver that has it takes the same number, so the warning needs no
 // type of the receiver. Production warns about other calls the checker does not know
@@ -608,8 +620,12 @@ func (c *checker) methodArity(at span, name string, n int) {
 
 // literalRegex compiles the pattern a string literal passes to matches, split or replace, so
 // that an invalid one, or one whose program is too large, fails compilation; an invalid one of
-// replace() fails only when evaluated (below).
+// replace() fails only when evaluated (below). So does the first pattern that takes the file's
+// patterns past regex_bytes, at its literal, and the patterns after it are not compiled.
 func (c *checker) literalRegex(e *callExpr) {
+	if c.regexFull {
+		return
+	}
 	switch e.name {
 	case "matches", "split", "replace":
 	default:
@@ -634,13 +650,29 @@ func (c *checker) literalRegex(e *callExpr) {
 		if err != nil && !(e.name == "replace" && err.Error() == errRegex(pattern).Error()) {
 			c.issue(lit.span, SeverityError, err.Error())
 		}
+		if err != nil && err.Error() == errRegexBudget(pattern, c.lim.RegexBytes).Error() {
+			c.regexFull = true
+		}
 	}
 }
+
+// What the errors of the call graph name, so that their text stays linear in the source: a
+// file of 6,200 functions each calling f0 and the next made 6,200 errors naming the whole
+// stack, 104 MiB of text (the review's SR3-04).
+const (
+	// maxCycleNames is how many functions an error of a cycle names; it counts the others.
+	maxCycleNames = 32
+	// maxCycleErrors is how many cycles a check reports: the file fails at the first.
+	maxCycleErrors = 100
+)
 
 // calls checks the call graph: a function that calls itself, a cycle of calls, and a chain of
 // calls longer than the limit, which are errors whether or not the functions are used. As the
 // emulator measures (rules_compile.json, "calls 22 deep"), a chain of CallDepth+1 functions
 // compiles; one more fails at the function past the limit, naming the stack that reached it.
+//
+// Each cycle is reported once, at the function the search found it back at, naming the stack
+// from there (cycleNames); the search is linear in the calls.
 func (c *checker) calls() {
 	// Cycles, depth first from the functions in the order declared.
 	const (
@@ -648,12 +680,15 @@ func (c *checker) calls() {
 		onStack
 		done
 	)
-	state := map[*function]int{}
+	state := make(map[*function]int, len(c.fns))
+	at := make(map[*function]int, len(c.fns)) // where a function on the stack is in it
+	reported := map[*function]bool{}          // the functions a cycle was reported at
 	var stack []*function
 	cyclic := false
 	var visit func(f *function)
 	visit = func(f *function) {
 		state[f] = onStack
+		at[f] = len(stack)
 		stack = append(stack, f)
 		fi := c.info[f]
 		for _, g := range uniq(fi.calls) {
@@ -662,15 +697,15 @@ func (c *checker) calls() {
 				visit(g)
 			case onStack:
 				cyclic = true
-				cycle := stack[slices.Index(stack, g):]
+				if reported[g] || len(reported) >= maxCycleErrors {
+					continue
+				}
+				reported[g] = true
+				cycle := stack[at[g]:]
 				if len(cycle) == 1 {
 					c.errorf(g.name.span, msgRecursive)
 				} else {
-					names := make([]string, len(cycle))
-					for i, h := range cycle {
-						names[i] = h.name.text
-					}
-					c.errorf(g.name.span, msgCycle, strings.Join(names, ","))
+					c.errorf(g.name.span, msgCycle, cycleNames(cycle))
 				}
 			}
 		}
@@ -709,7 +744,7 @@ func (c *checker) calls() {
 		var names []string
 		f := fi.fn
 		for len(names) < allowed {
-			names = append(names, f.name.text)
+			names = append(names, clip(f.name.text))
 			next := c.info[f].calls[0]
 			for _, g := range c.info[f].calls {
 				if longest[g] > longest[next] {
@@ -723,11 +758,30 @@ func (c *checker) calls() {
 	}
 }
 
+// cycleNames lists the functions of a cycle for its error, comma-separated: all of them, or the
+// first maxCycleNames and how many more.
+func cycleNames(cycle []*function) string {
+	var b strings.Builder
+	for i, h := range cycle {
+		if i == maxCycleNames {
+			fmt.Fprintf(&b, " and %d more", len(cycle)-i)
+			break
+		}
+		if i > 0 {
+			b.WriteByte(',')
+		}
+		b.WriteString(clip(h.name.text))
+	}
+	return b.String()
+}
+
 // uniq returns fs without repeats, in order.
 func uniq(fs []*function) []*function {
-	var out []*function
+	seen := make(map[*function]bool, len(fs))
+	out := make([]*function, 0, len(fs))
 	for _, f := range fs {
-		if !slices.Contains(out, f) {
+		if !seen[f] {
+			seen[f] = true
 			out = append(out, f)
 		}
 	}

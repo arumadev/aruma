@@ -116,6 +116,27 @@ func (s *Service) bindInstance(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if empty {
+		// An empty directory is adopted only when this database expects no file in it. Objects
+		// or live sessions with an empty directory are a disk that is not mounted (its mount
+		// point is an empty directory) or a data_dir that names the wrong one: adopting it would
+		// fail every read, and put every new upload on whatever disk holds the mount point,
+		// hidden again once the real disk is back.
+		points, err := s.reads.PointsToFiles(ctx)
+		if err != nil {
+			return fmt.Errorf("storage: read storage.objects: %w", err)
+		}
+		if points {
+			lost := "write this database's instance id (storage.instance) to it"
+			if hasRow {
+				lost = "write " + row.ID.String() + " to it"
+			}
+			return fmt.Errorf("storage: the data directory %s holds no file and no INSTANCE that matches, while this "+
+				"database holds objects or uploads whose files belong in it: the disk is not mounted, or "+
+				"storage.data_dir names another directory. Mount the disk or correct storage.data_dir. If its "+
+				"files are lost for good, %s as %s to start with what is left", s.dataDir, lost, s.markerPath())
+		}
+	}
 	switch {
 	case hasFile && !empty:
 		return fmt.Errorf("storage: the data directory %s has an INSTANCE (%s) and files, but this database has no "+

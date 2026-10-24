@@ -18,8 +18,10 @@
 #   ARUMA_MIRROR_TESTS  macOS (default): run FirebaseStorage's unit tests (FirebaseStorageUnit, the
 #                       official ones and the patch's) before tagging; off: skip them.
 #
-# It fails, and tags nothing, when the patch does not apply exactly, when a test fails, or when the
-# mirror already has the tag on another commit. It needs git and Xcode.
+# It fails, and tags nothing, when the patch does not apply exactly, when a test fails, when the
+# mirror already has the tag on another commit, or when mirror.lock pins the tag to another commit
+# or tree. For a tag mirror.lock does not list yet it prints the line to commit there, which
+# check-firebase-storage.sh then requires. It needs git and Xcode.
 set -euo pipefail
 
 tag=${1:?usage: make-mirror.sh <upstream-tag>}
@@ -83,6 +85,12 @@ FirebaseStorage reads its server from ArumaURL in Info.plist, and its port is op
 Nothing else is changed. See ARUMA-NOTICE.md (Apache-2.0).
 EOF
 )
+# The pin: the build must give mirror.lock's commit and tree, or the patch or the build changed.
+pinned=$(awk -v t="$tag" '!/^#/ && $1 == t { print $2 " " $3; exit }' "$here/mirror.lock")
+if [[ -n "$pinned" && "$pinned" != "$commit $tree" ]]; then
+  echo "mirror.lock pins $tag to $pinned, but this build is $commit $tree; refusing to publish it" >&2
+  exit 1
+fi
 git -C "$src" tag -f -a "$tag" -m "FirebaseStorage $tag for Aruma (official $upstream_commit)" "$commit" >/dev/null
 # The tag must name a patched commit without a parent: never the official history.
 [[ -z "$(git -C "$src" rev-list --parents -n 1 "$commit" | cut -d' ' -f2-)" ]]
@@ -104,3 +112,4 @@ if [[ -n "$existing" ]]; then
 fi
 git -C "$src" push -q "$mirror" "refs/tags/$tag"
 echo "mirror tag $tag -> $commit (tree $tree)"
+[[ -n "$pinned" ]] || echo "not in mirror.lock yet; commit this line there: $tag $commit $tree"

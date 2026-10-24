@@ -1,0 +1,54 @@
+name: Bug report
+description: Something behaves differently from Firebase, or does not work
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. For a security problem, do not file an issue. Use the private reporting described in SECURITY.md.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead. If Firebase behaves differently, say how.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: Steps, a minimal snippet, or a failing test.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Aruma version or commit
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Client platform
+      options:
+        - Web
+        - iOS
+        - Android
+        - Flutter
+        - Admin SDK (Node)
+        - Admin SDK (Go)
+        - Console or CLI
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: sdk
+    attributes:
+      label: Firebase SDK and version
+      placeholder: firebase 12.x, firebase-admin 13.x, and so on
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Server log lines around the problem. Remove secrets first.
+      render: shell

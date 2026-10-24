@@ -82,10 +82,12 @@ public final class ArumaRedirect {
             // Before anything is installed: a Storage that would reach Google stops the app here.
             String storage = StorageGuard.check(storageRedirect);
             final URL context;
+            final URL httpContext;
             try {
                 context = new URL("https://aruma.invalid/");
+                httpContext = new URL("http://aruma.invalid/");
             } catch (java.net.MalformedURLException e) {
-                throw new ArumaRedirectException("ArumaRedirect could not obtain the platform https handler", e);
+                throw new ArumaRedirectException("ArumaRedirect could not obtain the platform http and https handlers", e);
             }
             ArumaStreamHandlerFactory.RequestLog log = logRequests ? new ArumaStreamHandlerFactory.RequestLog() {
                 @Override
@@ -94,7 +96,7 @@ public final class ArumaRedirect {
                 }
             } : null;
             try {
-                installer.install(new ArumaStreamHandlerFactory(base, context, log));
+                installer.install(new ArumaStreamHandlerFactory(base, context, httpContext, log));
             } catch (Error e) {
                 throw new ArumaRedirectException("ArumaRedirect cannot redirect Firebase Auth to " + base.url
                         + ": another component already called URL.setURLStreamHandlerFactory in this process ("

@@ -137,6 +137,23 @@ func (q *Queries) ListObjectKeys(ctx context.Context, arg ListObjectKeysParams) 
 	return items, nil
 }
 
+const pointsToFiles = `-- name: PointsToFiles :one
+SELECT EXISTS (
+    SELECT 1 FROM storage.objects
+    UNION ALL
+    SELECT 1 FROM storage.upload_sessions WHERE state = 'active'
+) AS points
+`
+
+// scope: global — Boot asks whether this database expects any file in data_dir, of any project:
+// an object's, or the staging file of a live upload session.
+func (q *Queries) PointsToFiles(ctx context.Context) (bool, error) {
+	row := q.db.QueryRow(ctx, pointsToFiles)
+	var points bool
+	err := row.Scan(&points)
+	return points, err
+}
+
 const purgeBlobGC = `-- name: PurgeBlobGC :exec
 DELETE FROM storage.blob_gc WHERE project_number = $1
 `

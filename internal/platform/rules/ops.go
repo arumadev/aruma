@@ -539,7 +539,7 @@ func typeIs(x Value, typ string) (Value, error) {
 		return Value{}, err
 	}
 	if !isTypes[typ] {
-		return Value{}, errorf("Unknown type name: %s.", typ)
+		return Value{}, errorf("Unknown type name: %s.", clip(typ))
 	}
 	switch typ {
 	case "number":
