@@ -7,19 +7,225 @@ package queries
 
 import (
 	"context"
+	"time"
+
+	"github.com/google/uuid"
 )
+
+const blobGCStats = `-- name: BlobGCStats :one
+SELECT count(*) AS queued, COALESCE(min(queued_at), $1::timestamptz)::timestamptz AS oldest FROM storage.blob_gc
+`
+
+type BlobGCStatsRow struct {
+	Queued int64
+	Oldest time.Time
+}
+
+// scope: global — the outbox's length and the age of its oldest row, for the gauges.
+func (q *Queries) BlobGCStats(ctx context.Context, now time.Time) (BlobGCStatsRow, error) {
+	row := q.db.QueryRow(ctx, blobGCStats, now)
+	var i BlobGCStatsRow
+	err := row.Scan(&i.Queued, &i.Oldest)
+	return i, err
+}
+
+const deleteBlobGC = `-- name: DeleteBlobGC :exec
+DELETE FROM storage.blob_gc WHERE blob_key = ANY($1::text[])
+`
+
+// scope: global — the outbox rows of files the GC worker deleted, by their unique keys.
+func (q *Queries) DeleteBlobGC(ctx context.Context, blobKeys []string) error {
+	_, err := q.db.Exec(ctx, deleteBlobGC, blobKeys)
+	return err
+}
 
 const getInstance = `-- name: GetInstance :one
 
 SELECT id, one_row, created_at FROM storage.instance
 `
 
-// The contract's queries (S2-0). S2-D adds the outbox, sweep and expiry statements here; those
-// that run across projects carry a scope annotation saying why.
+// The data directory's binding, the deletion outbox, the sweep and the purge (ADR-022 §3, §5).
+// The worker and the sweep run across projects on file keys, not on users' data, so their
+// statements carry a global scope.
 // scope: global — the one row binding this database to its data_dir belongs to no project.
 func (q *Queries) GetInstance(ctx context.Context) (StorageInstance, error) {
 	row := q.db.QueryRow(ctx, getInstance)
 	var i StorageInstance
 	err := row.Scan(&i.ID, &i.OneRow, &i.CreatedAt)
 	return i, err
+}
+
+const insertInstance = `-- name: InsertInstance :exec
+INSERT INTO storage.instance (id) VALUES ($1)
+`
+
+// scope: global — the one row binding this database to its data_dir belongs to no project.
+func (q *Queries) InsertInstance(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, insertInstance, id)
+	return err
+}
+
+const listDueBlobGC = `-- name: ListDueBlobGC :many
+SELECT g.blob_key, g.project_number FROM storage.blob_gc g
+WHERE g.queued_at <= $1
+    AND NOT EXISTS (SELECT 1 FROM storage.objects o WHERE o.blob_key = g.blob_key)
+    AND NOT EXISTS (SELECT 1 FROM storage.upload_sessions u WHERE u.staging_key = g.blob_key AND u.state = 'active')
+    AND NOT EXISTS (SELECT 1 FROM storage.upload_sessions u WHERE u.blob_key = g.blob_key AND u.state = 'active')
+ORDER BY g.queued_at LIMIT $2
+`
+
+type ListDueBlobGCParams struct {
+	Before time.Time
+	N      int32
+}
+
+type ListDueBlobGCRow struct {
+	BlobKey       string
+	ProjectNumber int64
+}
+
+// scope: global — the GC worker deletes files across projects once gc_grace has passed. A key a
+// row points to again is never due, so a bug that queued a live key deletes nothing.
+func (q *Queries) ListDueBlobGC(ctx context.Context, arg ListDueBlobGCParams) ([]ListDueBlobGCRow, error) {
+	rows, err := q.db.Query(ctx, listDueBlobGC, arg.Before, arg.N)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDueBlobGCRow{}
+	for rows.Next() {
+		var i ListDueBlobGCRow
+		if err := rows.Scan(&i.BlobKey, &i.ProjectNumber); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listObjectKeys = `-- name: ListObjectKeys :many
+SELECT blob_key FROM storage.objects WHERE blob_key > $1::text ORDER BY blob_key LIMIT $2
+`
+
+type ListObjectKeysParams struct {
+	After string
+	N     int32
+}
+
+// scope: global — the periodic sweep pages through every object's file key, to report rows whose
+// file is missing.
+func (q *Queries) ListObjectKeys(ctx context.Context, arg ListObjectKeysParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listObjectKeys, arg.After, arg.N)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var blob_key string
+		if err := rows.Scan(&blob_key); err != nil {
+			return nil, err
+		}
+		items = append(items, blob_key)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const purgeBlobGC = `-- name: PurgeBlobGC :exec
+DELETE FROM storage.blob_gc WHERE project_number = $1
+`
+
+func (q *Queries) PurgeBlobGC(ctx context.Context, projectNumber int64) error {
+	_, err := q.db.Exec(ctx, purgeBlobGC, projectNumber)
+	return err
+}
+
+const purgeBuckets = `-- name: PurgeBuckets :exec
+DELETE FROM storage.buckets WHERE project_number = $1
+`
+
+func (q *Queries) PurgeBuckets(ctx context.Context, projectNumber int64) error {
+	_, err := q.db.Exec(ctx, purgeBuckets, projectNumber)
+	return err
+}
+
+const purgeObjects = `-- name: PurgeObjects :exec
+DELETE FROM storage.objects WHERE project_number = $1
+`
+
+func (q *Queries) PurgeObjects(ctx context.Context, projectNumber int64) error {
+	_, err := q.db.Exec(ctx, purgeObjects, projectNumber)
+	return err
+}
+
+const purgeUploadSessions = `-- name: PurgeUploadSessions :exec
+DELETE FROM storage.upload_sessions WHERE project_number = $1
+`
+
+func (q *Queries) PurgeUploadSessions(ctx context.Context, projectNumber int64) error {
+	_, err := q.db.Exec(ctx, purgeUploadSessions, projectNumber)
+	return err
+}
+
+const purgeUsage = `-- name: PurgeUsage :exec
+DELETE FROM storage.usage WHERE project_number = $1
+`
+
+func (q *Queries) PurgeUsage(ctx context.Context, projectNumber int64) error {
+	_, err := q.db.Exec(ctx, purgeUsage, projectNumber)
+	return err
+}
+
+const queueUnreferencedBlob = `-- name: QueueUnreferencedBlob :exec
+INSERT INTO storage.blob_gc (blob_key, project_number)
+SELECT $1::text, $2::bigint
+WHERE NOT EXISTS (SELECT 1 FROM storage.objects o WHERE o.blob_key = $1::text AND o.project_number = $2::bigint)
+ON CONFLICT (blob_key) DO NOTHING
+`
+
+type QueueUnreferencedBlobParams struct {
+	BlobKey       string
+	ProjectNumber int64
+}
+
+// A file a session leaves behind (its staging file, or the object key it never committed), queued
+// unless an object points to it or it is queued already.
+func (q *Queries) QueueUnreferencedBlob(ctx context.Context, arg QueueUnreferencedBlobParams) error {
+	_, err := q.db.Exec(ctx, queueUnreferencedBlob, arg.BlobKey, arg.ProjectNumber)
+	return err
+}
+
+const unreferencedKeys = `-- name: UnreferencedKeys :many
+SELECT k::text AS blob_key FROM unnest($1::text[]) AS k
+WHERE NOT EXISTS (SELECT 1 FROM storage.objects o WHERE o.blob_key = k)
+    AND NOT EXISTS (SELECT 1 FROM storage.upload_sessions u WHERE u.staging_key = k OR u.blob_key = k)
+    AND NOT EXISTS (SELECT 1 FROM storage.blob_gc g WHERE g.blob_key = k)
+`
+
+// scope: global — the sweep checks file keys across projects: those no object, no session (its
+// staging file or its object key) and no outbox row points to. A queued file is the GC's.
+func (q *Queries) UnreferencedKeys(ctx context.Context, blobKeys []string) ([]string, error) {
+	rows, err := q.db.Query(ctx, unreferencedKeys, blobKeys)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var blob_key string
+		if err := rows.Scan(&blob_key); err != nil {
+			return nil, err
+		}
+		items = append(items, blob_key)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

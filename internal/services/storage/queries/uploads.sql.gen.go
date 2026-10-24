@@ -7,7 +7,131 @@ package queries
 
 import (
 	"context"
+	"encoding/json"
+	"net/netip"
+	"time"
 )
+
+const cancelUploadSession = `-- name: CancelUploadSession :execrows
+UPDATE storage.upload_sessions SET state = 'cancelled', reserved_bytes = 0
+WHERE id_hash = $1 AND project_number = $2 AND state = 'active'
+`
+
+type CancelUploadSessionParams struct {
+	IDHash        []byte
+	ProjectNumber int64
+}
+
+func (q *Queries) CancelUploadSession(ctx context.Context, arg CancelUploadSessionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, cancelUploadSession, arg.IDHash, arg.ProjectNumber)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const countLiveUploads = `-- name: CountLiveUploads :one
+SELECT count(*) AS project,
+    count(*) FILTER (WHERE principal ->> 'uid' = $1::text) AS by_user,
+    count(*) FILTER (WHERE client_ip = $2::inet) AS by_ip
+FROM storage.upload_sessions
+WHERE project_number = $3 AND state = 'active' AND received > 0
+`
+
+type CountLiveUploadsParams struct {
+	Uid           *string
+	ClientIp      *netip.Addr
+	ProjectNumber int64
+}
+
+type CountLiveUploadsRow struct {
+	Project int64
+	ByUser  int64
+	ByIp    int64
+}
+
+// The live sessions that received a byte, in the project, of one uid and from one address (the
+// per-IP cap counts per project). Empty sessions do not count, so sessions that never send a
+// byte cannot fill the limits (ADR-022 §6.5).
+func (q *Queries) CountLiveUploads(ctx context.Context, arg CountLiveUploadsParams) (CountLiveUploadsRow, error) {
+	row := q.db.QueryRow(ctx, countLiveUploads, arg.Uid, arg.ClientIp, arg.ProjectNumber)
+	var i CountLiveUploadsRow
+	err := row.Scan(&i.Project, &i.ByUser, &i.ByIp)
+	return i, err
+}
+
+const deleteUploadSession = `-- name: DeleteUploadSession :exec
+DELETE FROM storage.upload_sessions WHERE id_hash = $1 AND project_number = $2
+`
+
+type DeleteUploadSessionParams struct {
+	IDHash        []byte
+	ProjectNumber int64
+}
+
+func (q *Queries) DeleteUploadSession(ctx context.Context, arg DeleteUploadSessionParams) error {
+	_, err := q.db.Exec(ctx, deleteUploadSession, arg.IDHash, arg.ProjectNumber)
+	return err
+}
+
+const failUploadSession = `-- name: FailUploadSession :execrows
+UPDATE storage.upload_sessions SET state = 'final', final_status = $1, final_body = $2,
+    reserved_bytes = 0, expires_at = $3
+WHERE id_hash = $4 AND project_number = $5 AND state = 'active'
+`
+
+type FailUploadSessionParams struct {
+	FinalStatus   *string
+	FinalBody     *string
+	ExpiresAt     time.Time
+	IDHash        []byte
+	ProjectNumber int64
+}
+
+// A terminal refusal (ADR-022 §6.1): the core error every repeat answers with.
+func (q *Queries) FailUploadSession(ctx context.Context, arg FailUploadSessionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, failUploadSession,
+		arg.FinalStatus,
+		arg.FinalBody,
+		arg.ExpiresAt,
+		arg.IDHash,
+		arg.ProjectNumber,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const finishUploadSession = `-- name: FinishUploadSession :execrows
+UPDATE storage.upload_sessions SET state = 'final', result_object = $1,
+    download_tokens = $2, reserved_bytes = 0, expires_at = $3
+WHERE id_hash = $4 AND project_number = $5 AND state = 'active'
+`
+
+type FinishUploadSessionParams struct {
+	ResultObject   []byte
+	DownloadTokens []byte
+	ExpiresAt      time.Time
+	IDHash         []byte
+	ProjectNumber  int64
+}
+
+// A finalize that committed, in commitObject's own transaction: the object as the reply shows it,
+// for every repeat.
+func (q *Queries) FinishUploadSession(ctx context.Context, arg FinishUploadSessionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, finishUploadSession,
+		arg.ResultObject,
+		arg.DownloadTokens,
+		arg.ExpiresAt,
+		arg.IDHash,
+		arg.ProjectNumber,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
 
 const getUploadSession = `-- name: GetUploadSession :one
 
@@ -19,7 +143,9 @@ type GetUploadSessionParams struct {
 	ProjectNumber int64
 }
 
-// The contract's queries (S2-0). S2-D adds the upload session statements here.
+// The upload sessions (ADR-022 §6, §7). A session's id is a capability: only its HMAC is kept,
+// and every statement on one session names its project too, so an id of one project finds
+// nothing in another.
 func (q *Queries) GetUploadSession(ctx context.Context, arg GetUploadSessionParams) (StorageUploadSession, error) {
 	row := q.db.QueryRow(ctx, getUploadSession, arg.IDHash, arg.ProjectNumber)
 	var i StorageUploadSession
@@ -49,5 +175,240 @@ func (q *Queries) GetUploadSession(ctx context.Context, arg GetUploadSessionPara
 		&i.ProgressedAt,
 		&i.ExpiresAt,
 	)
+	return i, err
+}
+
+const insertUploadSession = `-- name: InsertUploadSession :exec
+INSERT INTO storage.upload_sessions (id_hash, project_number, name, surface, principal_kind, principal,
+    client_ip, declared_size, attrs, download_tokens, preconditions, checksums, staging_key,
+    created_at, progressed_at, expires_at)
+VALUES ($1, $2, $3, $4, $5, $6,
+    $7, $8, $9, $10, $11, $12, $13,
+    $14, $14, $15)
+`
+
+type InsertUploadSessionParams struct {
+	IDHash         []byte
+	ProjectNumber  int64
+	Name           string
+	Surface        string
+	PrincipalKind  string
+	Principal      json.RawMessage
+	ClientIp       *netip.Addr
+	DeclaredSize   *int64
+	Attrs          json.RawMessage
+	DownloadTokens []byte
+	Preconditions  json.RawMessage
+	Checksums      json.RawMessage
+	StagingKey     string
+	Now            time.Time
+	ExpiresAt      time.Time
+}
+
+func (q *Queries) InsertUploadSession(ctx context.Context, arg InsertUploadSessionParams) error {
+	_, err := q.db.Exec(ctx, insertUploadSession,
+		arg.IDHash,
+		arg.ProjectNumber,
+		arg.Name,
+		arg.Surface,
+		arg.PrincipalKind,
+		arg.Principal,
+		arg.ClientIp,
+		arg.DeclaredSize,
+		arg.Attrs,
+		arg.DownloadTokens,
+		arg.Preconditions,
+		arg.Checksums,
+		arg.StagingKey,
+		arg.Now,
+		arg.ExpiresAt,
+	)
+	return err
+}
+
+const listExpiredUploads = `-- name: ListExpiredUploads :many
+SELECT id_hash, project_number FROM storage.upload_sessions
+WHERE expires_at <= $1 ORDER BY expires_at LIMIT $2
+`
+
+type ListExpiredUploadsParams struct {
+	Now time.Time
+	N   int32
+}
+
+type ListExpiredUploadsRow struct {
+	IDHash        []byte
+	ProjectNumber int64
+}
+
+// scope: global — the expiry works across projects on sessions whose time is up, oldest first.
+func (q *Queries) ListExpiredUploads(ctx context.Context, arg ListExpiredUploadsParams) ([]ListExpiredUploadsRow, error) {
+	rows, err := q.db.Query(ctx, listExpiredUploads, arg.Now, arg.N)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListExpiredUploadsRow{}
+	for rows.Next() {
+		var i ListExpiredUploadsRow
+		if err := rows.Scan(&i.IDHash, &i.ProjectNumber); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listIdleUploads = `-- name: ListIdleUploads :many
+SELECT id_hash, project_number FROM storage.upload_sessions
+WHERE state = 'active' AND progressed_at <= $1 AND (reserved_bytes > received OR received = 0)
+ORDER BY progressed_at LIMIT $2
+`
+
+type ListIdleUploadsParams struct {
+	Before time.Time
+	N      int32
+}
+
+type ListIdleUploadsRow struct {
+	IDHash        []byte
+	ProjectNumber int64
+}
+
+// scope: global — the idle release works across projects on sessions without a durable byte since
+// the cutoff that hold more than they received, or received nothing.
+func (q *Queries) ListIdleUploads(ctx context.Context, arg ListIdleUploadsParams) ([]ListIdleUploadsRow, error) {
+	rows, err := q.db.Query(ctx, listIdleUploads, arg.Before, arg.N)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListIdleUploadsRow{}
+	for rows.Next() {
+		var i ListIdleUploadsRow
+		if err := rows.Scan(&i.IDHash, &i.ProjectNumber); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const recordUploadProgress = `-- name: RecordUploadProgress :execrows
+UPDATE storage.upload_sessions SET received = $1, hash_state = $2,
+    reserved_bytes = $3, progressed_at = $4, expires_at = $5
+WHERE id_hash = $6 AND project_number = $7 AND state = 'active'
+`
+
+type RecordUploadProgressParams struct {
+	Received      int64
+	HashState     []byte
+	ReservedBytes int64
+	Now           time.Time
+	ExpiresAt     time.Time
+	IDHash        []byte
+	ProjectNumber int64
+}
+
+// The durable bytes after a chunk, announced only once the staging file is synced, with the
+// hashes' state at that length and what the session still holds of the quota.
+func (q *Queries) RecordUploadProgress(ctx context.Context, arg RecordUploadProgressParams) (int64, error) {
+	result, err := q.db.Exec(ctx, recordUploadProgress,
+		arg.Received,
+		arg.HashState,
+		arg.ReservedBytes,
+		arg.Now,
+		arg.ExpiresAt,
+		arg.IDHash,
+		arg.ProjectNumber,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const releaseIdleUpload = `-- name: ReleaseIdleUpload :execrows
+UPDATE storage.upload_sessions SET reserved_bytes = received
+WHERE id_hash = $1 AND project_number = $2 AND state = 'active'
+`
+
+type ReleaseIdleUploadParams struct {
+	IDHash        []byte
+	ProjectNumber int64
+}
+
+// An idle session gives back what it holds beyond its durable bytes (upload_idle_ttl).
+func (q *Queries) ReleaseIdleUpload(ctx context.Context, arg ReleaseIdleUploadParams) (int64, error) {
+	result, err := q.db.Exec(ctx, releaseIdleUpload, arg.IDHash, arg.ProjectNumber)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const reserveUploadSession = `-- name: ReserveUploadSession :execrows
+UPDATE storage.upload_sessions SET reserved_bytes = reserved_bytes + $1::bigint
+WHERE id_hash = $2 AND project_number = $3 AND state = 'active'
+`
+
+type ReserveUploadSessionParams struct {
+	N             int64
+	IDHash        []byte
+	ProjectNumber int64
+}
+
+// Quota a chunk takes for the bytes on their way in, held by the session (Boot reconciles the
+// project's reserved bytes to the sum of these).
+func (q *Queries) ReserveUploadSession(ctx context.Context, arg ReserveUploadSessionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, reserveUploadSession, arg.N, arg.IDHash, arg.ProjectNumber)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const setUploadBlobKey = `-- name: SetUploadBlobKey :execrows
+UPDATE storage.upload_sessions SET blob_key = $1
+WHERE id_hash = $2 AND project_number = $3 AND state = 'active'
+`
+
+type SetUploadBlobKeyParams struct {
+	BlobKey       *string
+	IDHash        []byte
+	ProjectNumber int64
+}
+
+// The object key the staging file moves to, written before it moves, so a finalize after a crash
+// finds the file (ADR-022 §5).
+func (q *Queries) SetUploadBlobKey(ctx context.Context, arg SetUploadBlobKeyParams) (int64, error) {
+	result, err := q.db.Exec(ctx, setUploadBlobKey, arg.BlobKey, arg.IDHash, arg.ProjectNumber)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const uploadsSummary = `-- name: UploadsSummary :one
+SELECT count(*) AS sessions, COALESCE(sum(received), 0)::bigint AS staged
+FROM storage.upload_sessions WHERE state = 'active'
+`
+
+type UploadsSummaryRow struct {
+	Sessions int64
+	Staged   int64
+}
+
+// scope: global — the live sessions and their staged bytes in the process, for the gauges.
+func (q *Queries) UploadsSummary(ctx context.Context) (UploadsSummaryRow, error) {
+	row := q.db.QueryRow(ctx, uploadsSummary)
+	var i UploadsSummaryRow
+	err := row.Scan(&i.Sessions, &i.Staged)
 	return i, err
 }
