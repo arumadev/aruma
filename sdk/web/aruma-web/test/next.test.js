@@ -27,6 +27,10 @@ describe('Next.js and Turbopack', () => {
     assert.equal(out.touched, true);
     assert.equal(out.plugins.length, 1);
     assert.throws(() => withArumaStorage({}, { url: 'https://aruma.example.com/base' }), /root of its host/);
+    // The server bundles the SDK in both routers, and may not load it with require.
+    assert.deepEqual(withArumaStorage({ transpilePackages: ['ui', 'firebase'] }, { url: URL_ }).transpilePackages, ['ui', 'firebase', '@firebase/storage', '@firebase/storage-compat']);
+    assert.throws(() => withArumaStorage({ serverExternalPackages: ['sharp', 'firebase'] }, { url: URL_ }), /firebase in serverExternalPackages/);
+    assert.equal(withArumaStorage({ serverExternalPackages: ['sharp'] }, { url: URL_ }).serverExternalPackages[0], 'sharp');
   });
 
   test('the loader rewrites @firebase/storage and fails on a release it does not know', () => {

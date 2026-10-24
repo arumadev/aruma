@@ -134,25 +134,37 @@ next_app() {
   package "$dir" '{"firebase": "^13", "next": "^16", "react": "^19", "react-dom": "^19"}'
   cp apps/next/next.config.mjs "$dir/"
   cp apps/next/app/*.js "$dir/app/"
+  rm -rf "$dir/pages"
+  cp -R apps/next/pages "$dir/pages"
   cp src/ops.js "$dir/app/ops.js"
   install_app "$dir"
   note "next: $(cd "$dir" && node -p 'require("next/package.json").version')"
-  local b flag
-  for b in webpack turbopack; do
+  local b flag none
+  # turbopack-bare: the same build without the transpilePackages the line adds (the leak it closes).
+  for b in webpack turbopack turbopack-bare; do
     flag=
+    none=
     [[ $b == webpack ]] && flag=--webpack
-    if ! (cd "$dir" && ARUMA_E2E_DIST=.next-$b npx next build $flag >"$gen/build-next-$b.log" 2>&1); then
+    [[ $b == turbopack-bare ]] && none=1
+    if ! (cd "$dir" && ARUMA_E2E_DIST=.next-$b ARUMA_E2E_NO_TRANSPILE=$none npx next build $flag >"$gen/build-next-$b.log" 2>&1); then
       note "FAILED  next-$b: next build failed (see $gen/build-next-$b.log)"
       grep -m5 -i "aruma\|error" "$gen/build-next-$b.log" | sed 's/^/          /'
       continue
     fi
     # What the build left: the host literal must be gone from every chunk.
     note "        next-$b: chunks still naming Google's host: $(grep -rl '"firebasestorage.googleapis.com"' "$dir/.next-$b" --include='*.js' 2>/dev/null | wc -l | tr -d ' ')"
-    (cd "$dir" && ARUMA_E2E_DIST=.next-$b ARUMA_E2E_NAME=next-$b netguarded "$gen/netguard-next-$b.log" \
+    (cd "$dir" && ARUMA_E2E_DIST=.next-$b ARUMA_E2E_NAME=next-$b ARUMA_E2E_NO_TRANSPILE=$none netguarded "$gen/netguard-next-$b.log" \
       exec npx next start -p "$dev_port" -H 127.0.0.1) >"$gen/start-next-$b.log" 2>&1 &
     dev_pid=$!
     wait_http "http://127.0.0.1:$dev_port/"
+    if [[ $b == turbopack-bare ]]; then
+      note "        next-$b Pages Router: $(pages_check "http://127.0.0.1:$dev_port/pages-ssr") (without transpilePackages)"
+      stop_dev
+      note "        next-$b server: $(grep BLOCK "$gen/netguard-next-$b.log" | cut -d' ' -f2 | sort -u | tr '\n' ' ')"
+      continue
+    fi
     playwright "next-$b@http://127.0.0.1:$dev_port/" "" "next-$b"
+    pages_note "http://127.0.0.1:$dev_port/pages-ssr" "next-$b"
     stop_dev
     guard_clean "$gen/netguard-next-$b.log" "next-$b server"
   done
@@ -162,8 +174,28 @@ next_app() {
   dev_pid=$!
   wait_http "http://127.0.0.1:$dev_port/"
   playwright "next-dev@http://127.0.0.1:$dev_port/" "" "next-dev"
+  pages_note "http://127.0.0.1:$dev_port/pages-ssr" next-dev
   stop_dev
   guard_clean "$gen/netguard-next-dev.log" "next-dev server"
+}
+
+# pages_note <url> <name>: a note on the Pages Router page.
+pages_note() {
+  local r
+  r=$(pages_check "$1")
+  if [[ $r == ok ]]; then note "ok      $2 Pages Router (getServerSideProps)"; else note "FAILED  $2 Pages Router: $r"; fi
+}
+
+# pages_check <url>: "ok" when the page the server rendered names Aruma and links the unified URL,
+# else "FAILED" and what it rendered.
+pages_check() {
+  local html
+  html=$(curl -sS "$1" 2>/dev/null || true)
+  if grep -q "<p id=\"ssr-host\">$ARUMA_URL</p>" <<<"$html" && grep -q "<img id=\"ssr\" src=\"$ARUMA_URL/v0/b/" <<<"$html"; then
+    echo ok
+  else
+    echo "FAILED $(grep -o '<p id="ssr-host">[^<]*' <<<"$html" | head -1 | sed 's/.*>//') $(grep -o 'Internal Server Error\|Application error[^<]*' <<<"$html" | head -1)"
+  fi
 }
 
 # literals <files…>: "<n> with Google's host literal, <m> with Aruma's" over the given files.
