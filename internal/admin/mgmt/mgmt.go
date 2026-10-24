@@ -29,8 +29,6 @@ type API struct {
 	log    *slog.Logger
 	opts   Options
 	router *httpx.Router
-	// compiles bounds the rules compilations of :test and createRuleset running at once (rules.go).
-	compiles chan struct{}
 }
 
 // Options configure the API.
@@ -50,7 +48,7 @@ var policy = authn.Policy{AccessToken: true, ServiceToken: true}
 
 // New returns the Management API.
 func New(svc *core.Service, auth *authn.Authenticator, logger *slog.Logger, opts Options) *API {
-	a := &API{svc: svc, auth: auth, log: logger, opts: opts, compiles: make(chan struct{}, maxCompiles())}
+	a := &API{svc: svc, auth: auth, log: logger, opts: opts}
 	a.router = a.routes()
 	return a
 }

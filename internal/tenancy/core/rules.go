@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -78,7 +79,10 @@ func (s *Service) CreateRuleset(ctx context.Context, p *authn.Principal, project
 	if strings.ContainsRune(f.Name, 0) || strings.ContainsRune(f.Content, 0) {
 		return Ruleset{}, nil, apierr.New(apierr.InvalidArgument, "A rules source may not contain the NUL character.")
 	}
-	rs, issues := rules.Compile(svc, f, s.opts.RulesLimits)
+	rs, issues, err := s.CompileRules(ctx, svc, f)
+	if err != nil {
+		return Ruleset{}, nil, err
+	}
 	if rs == nil {
 		return Ruleset{}, issues, apierr.New(apierr.InvalidArgument, "The rules source does not compile.")
 	}
@@ -345,6 +349,37 @@ func (s *Service) PublishRelease(ctx context.Context, p *authn.Principal, projec
 	return toRelease(pr, row), nil
 }
 
+// maxCompiles is how many rules compilations run at once in the process. Every compilation
+// takes a turn, whoever asks: the firebaserules API's :test and createRuleset, the console's
+// validate and publish, and the loads of CompiledRelease, so that requests in parallel cannot
+// multiply what one hostile source costs (the review's SR3-05). One of the largest source
+// takes a fraction of a second and its tree's memory, its literal patterns bounded by
+// regex_bytes; the compilations past these wait their turn, or their request's end.
+func maxCompiles() int { return max(2, runtime.GOMAXPROCS(0)/2) }
+
+// compileSlot waits for a turn to compile. The caller calls done when its compilation ends.
+func (s *Service) compileSlot(ctx context.Context) (done func(), err error) {
+	select {
+	case s.compiles <- struct{}{}:
+		return func() { <-s.compiles }, nil
+	case <-ctx.Done():
+		return nil, apierr.Wrap(ctx.Err(), apierr.Canceled, "The request was cancelled.")
+	}
+}
+
+// CompileRules compiles a rules file for svc under the configured limits, in a turn of the
+// process's compilations (maxCompiles). The issues and the ruleset are rules.Compile's; the
+// error is the request's end while it waited for its turn, CANCELLED.
+func (s *Service) CompileRules(ctx context.Context, svc rules.Service, f rules.File) (*rules.Ruleset, rules.Issues, error) {
+	done, err := s.compileSlot(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer done()
+	rs, issues := rules.Compile(svc, f, s.opts.RulesLimits)
+	return rs, issues, nil
+}
+
 // CompiledRelease returns the compiled ruleset a project's release points to, for the services
 // that evaluate it. A project without its Storage release gets the locked default; a release
 // whose ruleset no longer compiles denies everything (ADR-021 §7).
@@ -362,7 +397,7 @@ func (s *Service) CompiledRelease(ctx context.Context, project int64, release st
 		case err != nil:
 			return nil, 0, internal(err)
 		}
-		rs, err := s.compileStored(project, release, row)
+		rs, err := s.compileStored(ctx, project, release, row)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -377,7 +412,7 @@ func (s *Service) CompiledRelease(ctx context.Context, project int64, release st
 // compileStored compiles a release's stored ruleset again. A ruleset that no longer compiles
 // (the limits or the language changed between two versions of Aruma), or whose service is not
 // the release's, is nil, which denies everything, with a warning in the log (ADR-021 §7).
-func (s *Service) compileStored(project int64, release string, row queries.GetReleaseSourceRow) (*rules.Ruleset, error) {
+func (s *Service) compileStored(ctx context.Context, project int64, release string, row queries.GetReleaseSourceRow) (*rules.Ruleset, error) {
 	var files []storedFile
 	if err := json.Unmarshal(row.Files, &files); err != nil {
 		return nil, internal(fmt.Errorf("rules: ruleset %s: %w", row.RulesetID, err))
@@ -395,7 +430,10 @@ func (s *Service) compileStored(project int64, release string, row queries.GetRe
 		deny("the ruleset does not hold one file", "files", len(files))
 		return nil, nil
 	}
-	rs, issues := rules.Compile(svc, rules.File{Name: files[0].Name, Content: files[0].Content}, s.opts.RulesLimits)
+	rs, issues, err := s.CompileRules(ctx, svc, rules.File{Name: files[0].Name, Content: files[0].Content})
+	if err != nil {
+		return nil, internal(err)
+	}
 	if rs == nil {
 		deny("the ruleset no longer compiles", "error", issues.Err())
 		return nil, nil

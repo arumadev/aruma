@@ -143,11 +143,8 @@ func (h *handlers) putRules(w http.ResponseWriter, r *http.Request) {
 }
 
 // validateRules compiles a source without saving it, and returns its issues: the editor's
-// check before it publishes.
-//
-// It compiles under the default limits: the routes are not given the configured ones
-// (console.Options), so a server whose rules limits are tighter than the defaults may refuse at
-// publish a source that passed here; publishing compiles it again under the configured limits.
+// check before it publishes. tenancy compiles it, under the configured limits and in a turn of
+// the process's compilations, as it does what putRules publishes (the review's SR3-05).
 func (h *handlers) validateRules(w http.ResponseWriter, r *http.Request) {
 	if _, err := h.target(r); err != nil {
 		h.m.Fail(w, r, err)
@@ -158,6 +155,10 @@ func (h *handlers) validateRules(w http.ResponseWriter, r *http.Request) {
 		h.m.Fail(w, r, err)
 		return
 	}
-	rs, issues := rules.Compile(rules.Storage, rules.File{Name: rulesFile, Content: in.Source}, rules.DefaultLimits())
+	rs, issues, err := h.opts.Rules.CompileRules(r.Context(), rules.Storage, rules.File{Name: rulesFile, Content: in.Source})
+	if err != nil {
+		h.m.Fail(w, r, err)
+		return
+	}
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{"valid": rs != nil, "issues": issuesJSON(issues)})
 }

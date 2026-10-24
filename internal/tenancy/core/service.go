@@ -57,11 +57,14 @@ type Service struct {
 	// compiled caches the compiled rulesets of the releases (rules.go), made on first use.
 	compiledOnce sync.Once
 	compiled     *releaseCache
+	// compiles bounds the rules compilations running at once in the process (CompileRules).
+	compiles chan struct{}
 }
 
 // New returns the service.
 func New(pool *pgxpool.Pool, keys *crypto.Keys, hasher *crypto.Hasher, opts Options, logger *slog.Logger) *Service {
-	return &Service{pool: pool, q: queries.New(pool), keys: keys, hasher: hasher, opts: opts, log: logger}
+	return &Service{pool: pool, q: queries.New(pool), keys: keys, hasher: hasher, opts: opts, log: logger,
+		compiles: make(chan struct{}, maxCompiles())}
 }
 
 // Options returns the service configuration.

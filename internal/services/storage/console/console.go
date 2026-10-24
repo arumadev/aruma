@@ -28,6 +28,9 @@ import (
 // Rules is the control plane's rulesets and releases, as the rules editor needs them; tenancy
 // implements it.
 type Rules interface {
+	// CompileRules compiles a source under the configured limits, in a turn of the process's
+	// compilations, as every compilation is (CreateRuleset's included).
+	CompileRules(ctx context.Context, svc rules.Service, f rules.File) (*rules.Ruleset, rules.Issues, error)
 	CreateRuleset(ctx context.Context, p *authn.Principal, project string, svc rules.Service, files []rules.File) (tcore.Ruleset, rules.Issues, error)
 	GetRuleset(ctx context.Context, p *authn.Principal, project, name string) (tcore.Ruleset, error)
 	GetRelease(ctx context.Context, p *authn.Principal, project, release string) (tcore.Release, error)
