@@ -113,8 +113,10 @@ func (s *Service) Rewrite(ctx context.Context, src Bucket, srcName string, dst B
 		return Object{}, err
 	}
 	defer leave()
-	if err := validateName(dstName); err != nil {
-		return Object{}, err
+	for _, name := range []string{srcName, dstName} {
+		if err := validateName(name); err != nil {
+			return Object{}, err
+		}
 	}
 	// One ruleset for each bucket: the source decides a get, the destination a create.
 	for _, b := range []Bucket{src, dst} {
