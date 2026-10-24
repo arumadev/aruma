@@ -151,7 +151,9 @@ func (e *v0Env) call(method, path, auth, body string, header map[string]string) 
 
 func (e *v0Env) obj(name string) string { return "/v0/b/" + e.bucket.Name + "/o/" + escapeName(name) }
 
-func escapeName(name string) string { return strings.ReplaceAll(strings.ReplaceAll(name, "/", "%2F"), " ", "%20") }
+func escapeName(name string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(name, "/", "%2F"), " ", "%20")
+}
 
 func (e *v0Env) expect(r v0Reply, status int, what string) {
 	e.t.Helper()
