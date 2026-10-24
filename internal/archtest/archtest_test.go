@@ -53,6 +53,8 @@ var allowed = map[string][]string{
 	// the server.
 	"sdk/go/adminauth":    {},
 	"sdk/go/adminstorage": {},
+	// The smoke tests use those libraries as a developer's server does.
+	"test/smoke": {"internal/", "pkg/", "sdk/go/"},
 }
 
 // denied narrows a layer: a package under a key may not import anything under the prefixes
@@ -287,6 +289,9 @@ func TestRulesThemselves(t *testing.T) {
 		{"sdk/go/adminstorage", "internal/services/storage/core", false},
 		{"sdk/go/adminstorage", "internal/platform/log", false},
 		{"sdk/go/adminauth", "internal/platform/log", false},
+		// The smoke tests may use them; the other tests may not.
+		{"test/smoke/admin-go/storage", "sdk/go/adminstorage", true},
+		{"test/acceptance", "sdk/go/adminstorage", false},
 		// Only app wires services into the console and the admin APIs.
 		{"internal/admin/console", "internal/services/auth/core", false},
 		{"internal/admin/console", "internal/services/auth/console", false},
