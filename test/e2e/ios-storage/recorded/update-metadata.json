@@ -1,0 +1,24 @@
+{
+  "about": "The PATCH bodies FirebaseStorage for iOS sends for updateMetadata (ADR-023 §3-17, A §8.1), recorded from its own GTMSessionFetcher requests (kGTMSessionFetcherStartedNotification) by StorageE2ETests.updateMetadata, and what Aruma made of them. The object had customMetadata {\"origin\": \"ios-e2e\"} and one download token before case 1. Key order in the bodies is NSJSONSerialization's and varies between runs.",
+  "provenance": {
+    "source": "test/e2e/ios-storage/run.sh against Aruma (s6-i-ios), 2026-10-24",
+    "sdk": "firebase-ios-sdk 12.19.3 (FirebaseStorage patched by sdk/ios/firebase-storage-patch, which does not touch StorageMetadata or StorageUpdateMetadataTask), GTMSessionFetcher 5.x",
+    "device": "iPhone 16 Pro Max simulator, iOS 18.5, Xcode 16.4"
+  },
+  "cases": [
+    {
+      "case": "updateMetadata(StorageMetadata()) with only cacheControl set",
+      "method": "PATCH",
+      "body": {"metadata": null, "bucket": "", "cacheControl": "no-cache"},
+      "after": {"cacheControl": "no-cache", "customMetadata": null},
+      "note": "\"metadata\": null is sent whenever customMetadata is nil (dictionaryRepresentation merges [\"metadata\": customMetadata]), and it cleared the object's custom metadata, as ADR-023 §3-17 decides. \"bucket\": \"\" is sent too and changes nothing."
+    },
+    {
+      "case": "getMetadata(), customMetadata changed, updateMetadata",
+      "method": "PATCH",
+      "body": {"storageClass": null, "metadata": {"origin": "ios-e2e", "step": "2"}, "downloadTokens": null, "crc32c": null, "etag": null, "size": 12},
+      "after": {"cacheControl": "no-cache", "customMetadata": {"origin": "ios-e2e", "step": "2"}, "downloadTokenKept": true},
+      "note": "null for every field the server returned that StorageMetadata does not model (A §8.1), downloadTokens among them; Aruma kept the download token. size is sent as a number although the server sent a string."
+    }
+  ]
+}

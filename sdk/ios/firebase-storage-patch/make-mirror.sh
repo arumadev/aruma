@@ -69,6 +69,10 @@ fi
 log "committing the patched tree as one commit with no parent"
 git -C "$src" add -- FirebaseStorage ARUMA-NOTICE.md
 tree=$(git -C "$src" write-tree)
+# Dated as the official commit, so that the same patch, tag and committer give the same revision
+# (Package.resolved pins it) when the mirror is rebuilt.
+upstream_date=$(git -C "$src" log -1 --format=%cI HEAD)
+export GIT_AUTHOR_DATE=$upstream_date GIT_COMMITTER_DATE=$upstream_date
 commit=$(git -C "$src" commit-tree "$tree" -F - <<EOF
 FirebaseStorage $tag for Aruma
 

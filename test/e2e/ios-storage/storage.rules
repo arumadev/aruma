@@ -1,0 +1,10 @@
+rules_version = '2';
+
+// Each signed-in user owns e2e/<uid>/; everything else is denied.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /e2e/{uid}/{rest=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

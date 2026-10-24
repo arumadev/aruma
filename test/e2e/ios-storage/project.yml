@@ -1,0 +1,79 @@
+# XcodeGen spec of StorageE2E.xcodeproj. The generated project is committed, so running the tests
+# needs only Xcode; after editing this file run `xcodegen generate` here and commit both.
+#
+# The app asks for the OFFICIAL firebase-ios-sdk URL at the official version, exactly as an app
+# would. run.sh points SwiftPM at the Aruma mirror with `swift package config set-mirror` (written
+# to the workspace's xcshareddata/swiftpm/configuration/mirrors.json), so the tag 12.19.3 resolves
+# to the patched FirebaseStorage and nothing here names the mirror.
+#
+# StorageE2EHost is an empty app, as in ios-auth: FirebaseAuth keeps the signed-in user in the
+# keychain, which only a signed app has on the simulator. Its Info.plist carries ArumaURL, which
+# both the patched FirebaseStorage and ArumaRedirect (Auth) read, and ArumaStorageRedirect=false,
+# so a Storage request to Google would fail instead of going through the run-time fallback.
+name: StorageE2E
+options:
+  bundleIdPrefix: com.aruma
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    exactVersion: 12.19.3
+  GTMSessionFetcher:
+    # Already in the graph through FirebaseStorage; named here because the tests observe its fetchers.
+    # FirebaseStorage's own range, so that the graph is the one an app gets without this line.
+    url: https://github.com/google/gtm-session-fetcher.git
+    minVersion: 3.4.1
+    maxVersion: 6.0.0
+  ArumaRedirect:
+    path: ../../../sdk/ios/ArumaRedirect
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    # Set by run.sh: the Aruma server, written into the app's Info.plist as ArumaURL.
+    ARUMA_URL: ""
+targets:
+  StorageE2EHost:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes: [Info.plist]
+      # Written by run.sh from the server it starts (not in git).
+      - path: .generated/GoogleService-Info.plist
+        optional: true
+        buildPhase: resources
+    settings:
+      base:
+        INFOPLIST_FILE: App/Info.plist
+        # The bundle ID of the iOS app Aruma's GoogleService-Info.plist was made for.
+        PRODUCT_BUNDLE_IDENTIFIER: com.aruma.smoke
+        GENERATE_INFOPLIST_FILE: NO
+  StorageE2ETests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: StorageE2EHost
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseStorage
+      - package: GTMSessionFetcher
+        product: GTMSessionFetcherCore
+      - package: ArumaRedirect
+        product: ArumaRedirect
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.aruma.smoke.tests
+schemes:
+  StorageE2E:
+    build:
+      targets:
+        StorageE2EHost: all
+        StorageE2ETests: [test]
+    test:
+      targets: [StorageE2ETests]
+      gatherCoverageData: false
