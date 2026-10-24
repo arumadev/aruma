@@ -69,7 +69,7 @@ const (
 	Allow Outcome = "allow"
 	Deny  Outcome = "deny"  // a condition was false, or no statement matched
 	Error Outcome = "error" // a denial caused by an error: evaluation, compile or request
-	Fact  Outcome = "fact"  // not a decision: a value observed on deployed Storage (Pyric)
+	Fact  Outcome = "fact"  // not a decision: a value observed on deployed rules (Pyric, S7-R)
 )
 
 // Expected is a case's recorded result.

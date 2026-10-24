@@ -79,14 +79,15 @@ func TestSyntaxErrorSkipsTheCheck(t *testing.T) {
 	}
 }
 
-// debug() with other than one argument compiles with production's warning at its name, and
-// fails when evaluated as every debug() does on the Rules Test API (S1-B review). Both are
-// provisional (docs/compat/rules-v0.3.md).
+// debug() with other than one argument compiles with production's warning at its name (Rules
+// Test API, S1-B review). Deployed, it returns its first argument and debug() is an error (S7-R,
+// production/deployed-firestore.json): debug(1, 2) == 1 allows and debug() == 1 does not.
 func TestDebugArity(t *testing.T) {
-	for cond, warns := range map[string]bool{
-		"debug(1, 2) == 1": true,
-		"debug() == 1":     true,
-		"debug(1) == 1":    false,
+	for cond, c := range map[string]struct{ warns, allows bool }{
+		"debug(1, 2) == 1": {true, true},
+		"debug(1, 2) == 2": {true, false},
+		"debug() == 1":     {true, false},
+		"debug(1) == 1":    {false, true},
 	} {
 		rs, issues := compileSource(t, grantingSource(cond))
 		var got []string
@@ -96,15 +97,18 @@ func TestDebugArity(t *testing.T) {
 			}
 		}
 		const want = "Incorrect number of arguments supplied to function: debug."
-		if warned := len(got) == 1 && got[0] == want; warned != warns || !warns && len(got) != 0 {
-			t.Errorf("%s: warnings %q, want %q: %v", cond, got, want, warns)
+		if warned := len(got) == 1 && got[0] == want; warned != c.warns || !c.warns && len(got) != 0 {
+			t.Errorf("%s: warnings %q, want %q: %v", cond, got, want, c.warns)
 		}
-		if warns && issues[0].Position.Column != len("      allow get: if ")+1 {
+		if c.warns && issues[0].Position.Column != len("      allow get: if ")+1 {
 			t.Errorf("%s: warned at %+v, want debug's name", cond, issues[0].Position)
 		}
 		d := evaluate(t, rs, request(MethodGet, docPath("c", "d"), nil))
-		if d.Allow || len(d.Statements) != 1 || d.Statements[0].Message != "Function not found error: Name: [debug]." {
-			t.Errorf("%s: %+v", cond, d.Statements)
+		if d.Allow != c.allows || len(d.Statements) != 1 {
+			t.Errorf("%s: allow %v, want %v: %+v", cond, d.Allow, c.allows, d.Statements)
+		}
+		if cond == "debug() == 1" && (d.Statements[0].Outcome != OutcomeError || !strings.HasPrefix(d.Statements[0].Message, "Incorrect number of arguments")) {
+			t.Errorf("%s: %+v, want an evaluation error", cond, d.Statements)
 		}
 	}
 	// Measured on the Rules Test API too (S1-E probe arity.mjs): the warning stands at the name.

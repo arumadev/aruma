@@ -1,0 +1,2380 @@
+{
+ "topic": "deployed-firestore",
+ "set": "development",
+ "project": "chatapp-8ae21",
+ "recordedAt": "2026-10-24T13:12:18.433Z",
+ "note": "No token, key or credential: requests carried a Firebase ID token (run 1) or none (runs 2 and 3). GET answers are for aruma-ref/s7r-20261024/<name>/d; create answers for aruma-ref/s7r-20261024/<name>?documentId=<doc>.",
+ "original": {
+  "release": "projects/chatapp-8ae21/releases/cloud.firestore",
+  "rulesetName": "projects/chatapp-8ae21/rulesets/0e8144c9-2df7-434f-9ba6-49c0d6128b43",
+  "file": "shared/rules/firestore.rules",
+  "sha256": "a5167771737a5bf12d3faf1bdc5d35decca9254be426759be14a0e4051f5c091"
+ },
+ "token": {
+  "method": "accounts:signUp (anonymous) + accounts:update customAttributes + securetoken refresh",
+  "customAttributesSent": "{\"n_int\":2,\"n_two\":2.0,\"n_frac\":2.5,\"n_neg\":-7,\"n_big\":9007199254740993,\"n_huge\":1e20,\"m\":{\"n\":3,\"f\":3.5},\"l\":[3,3.5]}",
+  "claimsRawInJwtPayload": {
+   "exp": "1792851134",
+   "iat": "1792847534",
+   "auth_time": "1792847533",
+   "n_int": "2",
+   "n_two": "2.0",
+   "n_frac": "2.5",
+   "n_neg": "-7",
+   "n_big": "9007199254740993",
+   "n_huge": "1e20",
+   "m": "{\"n\":3,\"f\":3.5}",
+   "l": "[3,3.5]"
+  },
+  "signInProvider": "anonymous"
+ },
+ "runs": [
+  {
+   "run": 1,
+   "testRuleset": "projects/chatapp-8ae21/rulesets/a5f851e7-95a0-4381-b27e-1c16acb8e7f8",
+   "deployedSourceSha256": "6ce7e1bf88947f578cd2306a816b65acde06719c084db836e8aff98dbb9cfd40",
+   "deployedAt": "2026-10-24T13:12:18.433Z",
+   "sentinelAllowedAfterSeconds": 7,
+   "restoredAt": "2026-10-24T13:13:17.410Z",
+   "restoreVerify": {
+    "rulesetName": "projects/chatapp-8ae21/rulesets/0e8144c9-2df7-434f-9ba6-49c0d6128b43",
+    "equalsSaved": true,
+    "sourceSha256": "a5167771737a5bf12d3faf1bdc5d35decca9254be426759be14a0e4051f5c091",
+    "shaEqualsSaved": true,
+    "files": [
+     "shared/rules/firestore.rules"
+    ]
+   },
+   "auth": "ID token of the temporary anonymous user",
+   "passes": {
+    "A": {
+     "sentinel": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/sentinel/d\" not found."
+     },
+     "dbg_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_true/d\" not found."
+     },
+     "dbg_eq1": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_eq1/d\" not found."
+     },
+     "dbg_ne1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg_str": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_str/d\" not found."
+     },
+     "dbg_map": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg_not_false": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_not_false/d\" not found."
+     },
+     "dbg_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_or_true/d\" not found."
+     },
+     "dbg0_eq_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg0_ne_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg0_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg0_or_true/d\" not found."
+     },
+     "dbg2_eq1": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg2_eq1/d\" not found."
+     },
+     "dbg2_eq2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg2_ne1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg2_eq_list": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_provider_anon": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_provider_anon/d\" not found."
+     },
+     "tok_n_int_eq2": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_int_eq2/d\" not found."
+     },
+     "tok_n_two_eq2": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_two_eq2/d\" not found."
+     },
+     "tok_n_frac_eq": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_frac_eq/d\" not found."
+     },
+     "tok_m_n_eq3": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_m_n_eq3/d\" not found."
+     },
+     "tok_n_big_eq_exact": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_big_eq_exact/d\" not found."
+     },
+     "tok_n_big_ne_rounded": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_big_ne_rounded/d\" not found."
+     },
+     "get_eq_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_ne_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_data_eq_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/get_or_true/d\" not found."
+     },
+     "get_is_map": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "exists_false": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/exists_false/d\" not found."
+     },
+     "exists_true": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_fixture": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/get_fixture/d\" not found."
+     },
+     "ord_read_src": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "ord_read_key": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "ord_read_keys_sorted": {
+      "status": 200
+     },
+     "tok_exp_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_exp_int/d\" not found."
+     },
+     "tok_exp_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_iat_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_iat_int/d\" not found."
+     },
+     "tok_iat_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_auth_time_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_auth_time_int/d\" not found."
+     },
+     "tok_auth_time_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_n_int_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_int_int/d\" not found."
+     },
+     "tok_n_int_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_n_two_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_two_int/d\" not found."
+     },
+     "tok_n_two_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_n_frac_int": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_n_frac_float": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_frac_float/d\" not found."
+     },
+     "tok_n_neg_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_neg_int/d\" not found."
+     },
+     "tok_n_neg_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_n_big_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_big_int/d\" not found."
+     },
+     "tok_n_big_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_n_huge_int": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_n_huge_float": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_huge_float/d\" not found."
+     },
+     "tok_m_n_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_m_n_int/d\" not found."
+     },
+     "tok_m_n_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_m_f_int": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_m_f_float": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_m_f_float/d\" not found."
+     },
+     "tok_l0_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_l0_int/d\" not found."
+     },
+     "tok_l0_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_l1_int": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_l1_float": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_l1_float/d\" not found."
+     },
+     "no_probe": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     }
+    },
+    "B": {
+     "sentinel": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/sentinel/d\" not found."
+     },
+     "dbg_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_true/d\" not found."
+     },
+     "dbg_eq1": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_eq1/d\" not found."
+     },
+     "dbg_ne1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg_str": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_str/d\" not found."
+     },
+     "dbg_map": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_map/d\" not found."
+     },
+     "dbg_not_false": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_not_false/d\" not found."
+     },
+     "dbg_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_or_true/d\" not found."
+     },
+     "dbg0_eq_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg0_ne_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg0_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg0_or_true/d\" not found."
+     },
+     "dbg2_eq1": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg2_eq1/d\" not found."
+     },
+     "dbg2_eq2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg2_ne1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg2_eq_list": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_provider_anon": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_provider_anon/d\" not found."
+     },
+     "tok_n_int_eq2": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_int_eq2/d\" not found."
+     },
+     "tok_n_two_eq2": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_two_eq2/d\" not found."
+     },
+     "tok_n_frac_eq": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_frac_eq/d\" not found."
+     },
+     "tok_m_n_eq3": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_m_n_eq3/d\" not found."
+     },
+     "tok_n_big_eq_exact": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_big_eq_exact/d\" not found."
+     },
+     "tok_n_big_ne_rounded": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_big_ne_rounded/d\" not found."
+     },
+     "get_eq_null": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/get_eq_null/d\" not found."
+     },
+     "get_ne_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_data_eq_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/get_or_true/d\" not found."
+     },
+     "get_is_map": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "exists_false": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/exists_false/d\" not found."
+     },
+     "exists_true": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_fixture": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/get_fixture/d\" not found."
+     },
+     "ord_read_src": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "ord_read_key": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "ord_read_keys_sorted": {
+      "status": 200
+     },
+     "tok_exp_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_exp_int/d\" not found."
+     },
+     "tok_exp_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_iat_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_iat_int/d\" not found."
+     },
+     "tok_iat_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_auth_time_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_auth_time_int/d\" not found."
+     },
+     "tok_auth_time_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_n_int_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_int_int/d\" not found."
+     },
+     "tok_n_int_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_n_two_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_two_int/d\" not found."
+     },
+     "tok_n_two_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_n_frac_int": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_n_frac_float": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_frac_float/d\" not found."
+     },
+     "tok_n_neg_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_neg_int/d\" not found."
+     },
+     "tok_n_neg_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_n_big_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_big_int/d\" not found."
+     },
+     "tok_n_big_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_n_huge_int": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_n_huge_float": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_huge_float/d\" not found."
+     },
+     "tok_m_n_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_m_n_int/d\" not found."
+     },
+     "tok_m_n_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_m_f_int": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_m_f_float": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_m_f_float/d\" not found."
+     },
+     "tok_l0_int": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_l0_int/d\" not found."
+     },
+     "tok_l0_float": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_l1_int": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "tok_l1_float": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/tok_l1_float/d\" not found."
+     },
+     "no_probe": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     }
+    }
+   },
+   "create": {
+    "ord_set/zamb": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "ord_set/bmaz": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"b\":{\"integerValue\":\"4\"},\"m\":{\"integerValue\":\"3\"},\"a\":{\"integerValue\":\"2\"},\"z\":{\"integerValue\":\"1\"}}}"
+    },
+    "ord_src/zamb": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "ord_src/bmaz": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"b\":{\"integerValue\":\"4\"},\"m\":{\"integerValue\":\"3\"},\"a\":{\"integerValue\":\"2\"},\"z\":{\"integerValue\":\"1\"}}}"
+    },
+    "ord_key/zamb": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "ord_key/bmaz": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"b\":{\"integerValue\":\"4\"},\"m\":{\"integerValue\":\"3\"},\"a\":{\"integerValue\":\"2\"},\"z\":{\"integerValue\":\"1\"}}}"
+    },
+    "ord_keys_sorted/zamb": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "ord_keys_sorted/bmaz": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"b\":{\"integerValue\":\"4\"},\"m\":{\"integerValue\":\"3\"},\"a\":{\"integerValue\":\"2\"},\"z\":{\"integerValue\":\"1\"}}}"
+    },
+    "ord_keys_src/zamb": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "ord_keys_src/bmaz": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"b\":{\"integerValue\":\"4\"},\"m\":{\"integerValue\":\"3\"},\"a\":{\"integerValue\":\"2\"},\"z\":{\"integerValue\":\"1\"}}}"
+    },
+    "ord_rev_src/zamb": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "ord_rev_src/bmaz": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"b\":{\"integerValue\":\"4\"},\"m\":{\"integerValue\":\"3\"},\"a\":{\"integerValue\":\"2\"},\"z\":{\"integerValue\":\"1\"}}}"
+    },
+    "ord_rev_key/zamb": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "ord_rev_key/bmaz": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"b\":{\"integerValue\":\"4\"},\"m\":{\"integerValue\":\"3\"},\"a\":{\"integerValue\":\"2\"},\"z\":{\"integerValue\":\"1\"}}}"
+    }
+   }
+  },
+  {
+   "run": 2,
+   "testRuleset": "projects/chatapp-8ae21/rulesets/0de4fa56-c953-41a8-85b6-e385a6420b93",
+   "deployedSourceSha256": "0915ea5aaf3c8dd0bd41b730b0c32e6591dcc3c18fc3c7f2ebcfa9979612154a",
+   "deployedAt": "2026-10-24T13:15:40.623Z",
+   "sentinelAllowedAfterSeconds": 7,
+   "settledUntilSeconds": 75,
+   "restoredAt": "2026-10-24T13:17:56.607Z",
+   "restoreVerify": {
+    "rulesetName": "projects/chatapp-8ae21/rulesets/0e8144c9-2df7-434f-9ba6-49c0d6128b43",
+    "equalsSaved": true,
+    "sourceSha256": "a5167771737a5bf12d3faf1bdc5d35decca9254be426759be14a0e4051f5c091",
+    "shaEqualsSaved": true
+   },
+   "sentinelAfterRestore": {
+    "status": 403,
+    "seconds": 13
+   },
+   "auth": "none",
+   "passes": {
+    "A": {
+     "sentinel": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/sentinel/d\" not found."
+     },
+     "dbg_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_true/d\" not found."
+     },
+     "dbg_eq1": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_eq1/d\" not found."
+     },
+     "dbg_ne1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg_str": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_str/d\" not found."
+     },
+     "dbg_map": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_map/d\" not found."
+     },
+     "dbg_not_false": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_not_false/d\" not found."
+     },
+     "dbg_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_or_true/d\" not found."
+     },
+     "dbg0_eq_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg0_ne_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg0_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg0_or_true/d\" not found."
+     },
+     "dbg2_eq1": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg2_eq1/d\" not found."
+     },
+     "dbg2_eq2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg2_ne1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg2_eq_list": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_eq_null": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/get_eq_null/d\" not found."
+     },
+     "get_ne_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_data_eq_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/get_or_true/d\" not found."
+     },
+     "get_is_map": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "exists_false": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/exists_false/d\" not found."
+     },
+     "exists_true": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_fixture": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/get_fixture/d\" not found."
+     },
+     "ord_read_src": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "ord_read_key": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "ord_read_keys_sorted": {
+      "status": 200
+     },
+     "rd1_p0_v1": {
+      "status": 200
+     },
+     "rd1_p0_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p0_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p0_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p1_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p1_v2": {
+      "status": 200
+     },
+     "rd1_p1_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p1_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p2_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p2_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p2_v3": {
+      "status": 200
+     },
+     "rd1_p2_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p3_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p3_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p3_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p3_v4": {
+      "status": 200
+     },
+     "rd1_keys_sorted": {
+      "status": 200
+     },
+     "rd2_p0_v1": {
+      "status": 200
+     },
+     "rd2_p0_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p0_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p0_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p0_v5": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p1_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p1_v2": {
+      "status": 200
+     },
+     "rd2_p1_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p1_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p1_v5": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p2_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p2_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p2_v3": {
+      "status": 200
+     },
+     "rd2_p2_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p2_v5": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p3_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p3_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p3_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p3_v4": {
+      "status": 200
+     },
+     "rd2_p3_v5": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v5": {
+      "status": 200
+     },
+     "rd2_keys_sorted": {
+      "status": 200
+     },
+     "no_probe": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     }
+    },
+    "B": {
+     "sentinel": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/sentinel/d\" not found."
+     },
+     "dbg_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_true/d\" not found."
+     },
+     "dbg_eq1": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_eq1/d\" not found."
+     },
+     "dbg_ne1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg_str": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_str/d\" not found."
+     },
+     "dbg_map": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_map/d\" not found."
+     },
+     "dbg_not_false": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_not_false/d\" not found."
+     },
+     "dbg_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_or_true/d\" not found."
+     },
+     "dbg0_eq_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg0_ne_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg0_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg0_or_true/d\" not found."
+     },
+     "dbg2_eq1": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg2_eq1/d\" not found."
+     },
+     "dbg2_eq2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg2_ne1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg2_eq_list": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_eq_null": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/get_eq_null/d\" not found."
+     },
+     "get_ne_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_data_eq_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/get_or_true/d\" not found."
+     },
+     "get_is_map": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "exists_false": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/exists_false/d\" not found."
+     },
+     "exists_true": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_fixture": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/get_fixture/d\" not found."
+     },
+     "ord_read_src": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "ord_read_key": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "ord_read_keys_sorted": {
+      "status": 200
+     },
+     "rd1_p0_v1": {
+      "status": 200
+     },
+     "rd1_p0_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p0_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p0_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p1_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p1_v2": {
+      "status": 200
+     },
+     "rd1_p1_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p1_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p2_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p2_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p2_v3": {
+      "status": 200
+     },
+     "rd1_p2_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p3_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p3_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p3_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p3_v4": {
+      "status": 200
+     },
+     "rd1_keys_sorted": {
+      "status": 200
+     },
+     "rd2_p0_v1": {
+      "status": 200
+     },
+     "rd2_p0_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p0_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p0_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p0_v5": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p1_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p1_v2": {
+      "status": 200
+     },
+     "rd2_p1_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p1_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p1_v5": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p2_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p2_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p2_v3": {
+      "status": 200
+     },
+     "rd2_p2_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p2_v5": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p3_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p3_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p3_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p3_v4": {
+      "status": 200
+     },
+     "rd2_p3_v5": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v5": {
+      "status": 200
+     },
+     "rd2_keys_sorted": {
+      "status": 200
+     },
+     "no_probe": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     }
+    },
+    "C": {
+     "sentinel": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/sentinel/d\" not found."
+     },
+     "dbg_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_true/d\" not found."
+     },
+     "dbg_eq1": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_eq1/d\" not found."
+     },
+     "dbg_ne1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg_str": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_str/d\" not found."
+     },
+     "dbg_map": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_map/d\" not found."
+     },
+     "dbg_not_false": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_not_false/d\" not found."
+     },
+     "dbg_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_or_true/d\" not found."
+     },
+     "dbg0_eq_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg0_ne_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg0_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg0_or_true/d\" not found."
+     },
+     "dbg2_eq1": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/dbg2_eq1/d\" not found."
+     },
+     "dbg2_eq2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg2_ne1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "dbg2_eq_list": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_eq_null": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/get_eq_null/d\" not found."
+     },
+     "get_ne_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_data_eq_null": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_or_true": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/get_or_true/d\" not found."
+     },
+     "get_is_map": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "exists_false": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/exists_false/d\" not found."
+     },
+     "exists_true": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "get_fixture": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/get_fixture/d\" not found."
+     },
+     "ord_read_src": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "ord_read_key": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "ord_read_keys_sorted": {
+      "status": 200
+     },
+     "rd1_p0_v1": {
+      "status": 200
+     },
+     "rd1_p0_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p0_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p0_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p1_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p1_v2": {
+      "status": 200
+     },
+     "rd1_p1_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p1_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p2_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p2_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p2_v3": {
+      "status": 200
+     },
+     "rd1_p2_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p3_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p3_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p3_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd1_p3_v4": {
+      "status": 200
+     },
+     "rd1_keys_sorted": {
+      "status": 200
+     },
+     "rd2_p0_v1": {
+      "status": 200
+     },
+     "rd2_p0_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p0_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p0_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p0_v5": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p1_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p1_v2": {
+      "status": 200
+     },
+     "rd2_p1_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p1_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p1_v5": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p2_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p2_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p2_v3": {
+      "status": 200
+     },
+     "rd2_p2_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p2_v5": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p3_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p3_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p3_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p3_v4": {
+      "status": 200
+     },
+     "rd2_p3_v5": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v1": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v2": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v3": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v4": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "rd2_p4_v5": {
+      "status": 200
+     },
+     "rd2_keys_sorted": {
+      "status": 200
+     },
+     "no_probe": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     }
+    }
+   },
+   "create": {
+    "cr1_p0_v1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p0_v2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p0_v3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p0_v4": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p1_v1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p1_v2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p1_v3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p1_v4": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p2_v1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p2_v2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p2_v3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p2_v4": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p3_v1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p3_v2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p3_v3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_p3_v4": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr1_keys_sorted": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "cr2_p0_v1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p0_v2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p0_v3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p0_v4": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p0_v5": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p1_v1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p1_v2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p1_v3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p1_v4": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p1_v5": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p2_v1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p2_v2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p2_v3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p2_v4": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p2_v5": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p3_v1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p3_v2": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p3_v3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p3_v4": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p3_v5": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p4_v1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p4_v2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p4_v3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p4_v4": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_p4_v5": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    },
+    "cr2_keys_sorted": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"name\":{\"integerValue\":\"1\"},\"age\":{\"integerValue\":\"2\"},\"city\":{\"integerValue\":\"3\"},\"zip\":{\"integerValue\":\"4\"},\"email\":{\"integerValue\":\"5\"}}}"
+    }
+   }
+  },
+  {
+   "run": 3,
+   "testRuleset": "projects/chatapp-8ae21/rulesets/8bfae103-1e1f-40ea-b9f8-468258502732",
+   "deployedSourceSha256": "9590dc4732debc34615c1c75d4f7bd6cb92ba4c83100b879a6d135ff433892a9",
+   "deployedAt": "2026-10-24T13:19:48.481Z",
+   "sentinelAllowedAfterSeconds": 7,
+   "settledUntilSeconds": 75,
+   "restoredAt": "2026-10-24T13:21:40.930Z",
+   "restoreVerify": {
+    "rulesetName": "projects/chatapp-8ae21/rulesets/0e8144c9-2df7-434f-9ba6-49c0d6128b43",
+    "equalsSaved": true,
+    "sourceSha256": "a5167771737a5bf12d3faf1bdc5d35decca9254be426759be14a0e4051f5c091",
+    "shaEqualsSaved": true
+   },
+   "sentinelAfterRestore": {
+    "status": 403,
+    "seconds": 18
+   },
+   "auth": "none",
+   "passes": {
+    "A": {
+     "sentinel": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/sentinel/d\" not found."
+     },
+     "r_v_eq_src": {
+      "status": 200
+     },
+     "r_v_eq_key": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "r_v_eq_self": {
+      "status": 200
+     },
+     "r_v_eq_fields_src": {
+      "status": 200
+     },
+     "r_fields_eq_lit": {
+      "status": 200
+     },
+     "r_v_size4": {
+      "status": 200
+     },
+     "r_v0_is_int": {
+      "status": 200
+     },
+     "r_v_is_list": {
+      "status": 200
+     },
+     "r_v_hasall": {
+      "status": 200
+     },
+     "r_v_set": {
+      "status": 200
+     },
+     "r_v_concat_src": {
+      "status": 200
+     },
+     "r_v_slice_src": {
+      "status": 200
+     },
+     "r_v_fn_src": {
+      "status": 200
+     },
+     "r_v_fn_key": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "r_v_and_src": {
+      "status": 200
+     },
+     "r_k_eq_sorted": {
+      "status": 200
+     },
+     "r_single_eq": {
+      "status": 200
+     },
+     "r_single_v0": {
+      "status": 200
+     },
+     "no_probe": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     }
+    },
+    "B": {
+     "sentinel": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/sentinel/d\" not found."
+     },
+     "r_v_eq_src": {
+      "status": 200
+     },
+     "r_v_eq_key": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "r_v_eq_self": {
+      "status": 200
+     },
+     "r_v_eq_fields_src": {
+      "status": 200
+     },
+     "r_fields_eq_lit": {
+      "status": 200
+     },
+     "r_v_size4": {
+      "status": 200
+     },
+     "r_v0_is_int": {
+      "status": 200
+     },
+     "r_v_is_list": {
+      "status": 200
+     },
+     "r_v_hasall": {
+      "status": 200
+     },
+     "r_v_set": {
+      "status": 200
+     },
+     "r_v_concat_src": {
+      "status": 200
+     },
+     "r_v_slice_src": {
+      "status": 200
+     },
+     "r_v_fn_src": {
+      "status": 200
+     },
+     "r_v_fn_key": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "r_v_and_src": {
+      "status": 200
+     },
+     "r_k_eq_sorted": {
+      "status": 200
+     },
+     "r_single_eq": {
+      "status": 200
+     },
+     "r_single_v0": {
+      "status": 200
+     },
+     "no_probe": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     }
+    },
+    "C": {
+     "sentinel": {
+      "status": 404,
+      "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref/s7r-20261024/sentinel/d\" not found."
+     },
+     "r_v_eq_src": {
+      "status": 200
+     },
+     "r_v_eq_key": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "r_v_eq_self": {
+      "status": 200
+     },
+     "r_v_eq_fields_src": {
+      "status": 200
+     },
+     "r_fields_eq_lit": {
+      "status": 200
+     },
+     "r_v_size4": {
+      "status": 200
+     },
+     "r_v0_is_int": {
+      "status": 200
+     },
+     "r_v_is_list": {
+      "status": 200
+     },
+     "r_v_hasall": {
+      "status": 200
+     },
+     "r_v_set": {
+      "status": 200
+     },
+     "r_v_concat_src": {
+      "status": 200
+     },
+     "r_v_slice_src": {
+      "status": 200
+     },
+     "r_v_fn_src": {
+      "status": 200
+     },
+     "r_v_fn_key": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     },
+     "r_v_and_src": {
+      "status": 200
+     },
+     "r_k_eq_sorted": {
+      "status": 200
+     },
+     "r_single_eq": {
+      "status": 200
+     },
+     "r_single_v0": {
+      "status": 200
+     },
+     "no_probe": {
+      "status": 403,
+      "message": "Missing or insufficient permissions."
+     }
+    }
+   },
+   "create": {
+    "c_v_eq_src/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_eq_key/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_eq_self/d1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_eq_fields_src/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_fields_eq_lit/d1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_size4/d1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v0_is_int/d1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_is_list/d1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_hasall/d1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_set/d1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_concat_src/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_slice_src/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_fn_src/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_fn_key/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_and_src/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_k_eq_sorted/d1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_single_eq/d1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"x\":{\"integerValue\":\"1\"}}}"
+    },
+    "c_single_v0/d1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"x\":{\"integerValue\":\"1\"}}}"
+    },
+    "c_p0_v1/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p0_v2/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p0_v3/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p0_v4/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p1_v1/d1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p1_v2/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p1_v3/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p1_v4/d1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p2_v1/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p2_v2/d1": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p2_v3/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p2_v4/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p3_v1/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p3_v2/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p3_v3/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p3_v4/d1": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_eq_src/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_eq_key/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_eq_self/d2": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_eq_fields_src/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_fields_eq_lit/d2": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_size4/d2": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v0_is_int/d2": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_is_list/d2": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_hasall/d2": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_set/d2": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_concat_src/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_slice_src/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_fn_src/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_fn_key/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_and_src/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_k_eq_sorted/d2": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_single_eq/d2": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"x\":{\"integerValue\":\"1\"}}}"
+    },
+    "c_single_v0/d2": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"x\":{\"integerValue\":\"1\"}}}"
+    },
+    "c_p0_v1/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p0_v2/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p0_v3/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p0_v4/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p1_v1/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p1_v2/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p1_v3/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p1_v4/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p2_v1/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p2_v2/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p2_v3/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p2_v4/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p3_v1/d2": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p3_v2/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p3_v3/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p3_v4/d2": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_eq_src/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_eq_key/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_eq_self/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_eq_fields_src/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_fields_eq_lit/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_size4/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v0_is_int/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_is_list/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_hasall/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_set/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_concat_src/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_slice_src/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_fn_src/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_fn_key/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_v_and_src/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_k_eq_sorted/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_single_eq/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"x\":{\"integerValue\":\"1\"}}}"
+    },
+    "c_single_v0/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"x\":{\"integerValue\":\"1\"}}}"
+    },
+    "c_p0_v1/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p0_v2/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p0_v3/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p0_v4/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p1_v1/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p1_v2/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p1_v3/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p1_v4/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p2_v1/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p2_v2/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p2_v3/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p2_v4/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p3_v1/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p3_v2/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p3_v3/d3": {
+     "status": 403,
+     "message": "Missing or insufficient permissions.",
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    },
+    "c_p3_v4/d3": {
+     "status": 200,
+     "bodySent": "{\"fields\":{\"z\":{\"integerValue\":\"1\"},\"a\":{\"integerValue\":\"2\"},\"m\":{\"integerValue\":\"3\"},\"b\":{\"integerValue\":\"4\"}}}"
+    }
+   }
+  }
+ ],
+ "cleanup": {
+  "documents": {
+   "at": "2026-10-24T13:27:15.717Z",
+   "deleted": 123,
+   "leftUnderRun": 0,
+   "arumaRefDocs": 0,
+   "runSubcollections": 0,
+   "topCollections": [
+    "reports",
+    "rooms",
+    "users"
+   ]
+  },
+  "rulesets": {
+   "at": "2026-10-24T13:27:34.302Z",
+   "out": [
+    {
+     "name": "projects/chatapp-8ae21/rulesets/a5f851e7-95a0-4381-b27e-1c16acb8e7f8",
+     "deleteStatus": 200,
+     "getAfter": 404
+    },
+    {
+     "name": "projects/chatapp-8ae21/rulesets/0de4fa56-c953-41a8-85b6-e385a6420b93",
+     "deleteStatus": 200,
+     "getAfter": 404
+    },
+    {
+     "name": "projects/chatapp-8ae21/rulesets/8bfae103-1e1f-40ea-b9f8-468258502732",
+     "deleteStatus": 200,
+     "getAfter": 404
+    }
+   ],
+   "originalStatus": 200
+  },
+  "user": {
+   "localId": "5jz6yzv45oSCsUeWVSkPa89uFx73",
+   "deleteStatus": 200,
+   "lookupUsers": 0,
+   "at": "2026-10-24T13:14:53.718Z"
+  },
+  "finalRelease": {
+   "at": "2026-10-24T13:27:50.146Z",
+   "releases": 1,
+   "rulesetName": "projects/chatapp-8ae21/rulesets/0e8144c9-2df7-434f-9ba6-49c0d6128b43",
+   "savedRulesetName": "projects/chatapp-8ae21/rulesets/0e8144c9-2df7-434f-9ba6-49c0d6128b43",
+   "sha256": "a5167771737a5bf12d3faf1bdc5d35decca9254be426759be14a0e4051f5c091",
+   "savedSha256": "a5167771737a5bf12d3faf1bdc5d35decca9254be426759be14a0e4051f5c091",
+   "bytesEqual": true
+  }
+ }
+}

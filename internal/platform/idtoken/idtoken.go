@@ -38,8 +38,9 @@ type Claims struct {
 	IssuedAt       time.Time
 	AuthTime       time.Time // the sign-in this token's session started with
 	Expires        time.Time
-	// Token is the whole payload as JSON decodes it (numbers are float64), developer claims
-	// included: auth.token in security rules.
+	// Token is the whole payload as JSON decodes it, developer claims included: auth.token in
+	// security rules. Numbers are json.Number, the token's text, so that a whole number beyond
+	// 2^53 stays exact.
 	Token map[string]any
 }
 

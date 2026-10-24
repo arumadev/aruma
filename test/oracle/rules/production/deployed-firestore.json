@@ -1,0 +1,4803 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "deployed-firestore",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "deployed",
+ "project": "chatapp-8ae21",
+ "recordedAt": "2026-10-24T13:12:18.433Z",
+ "version": "deployed cloud.firestore release; Firestore REST v1 (firestore.googleapis.com)",
+ "method": "S7-R, 2026-10-24: the cloud.firestore release of chatapp-8ae21 pointed for about a minute, three times, at its own rules plus one block, match /aruma-ref/{run}/{rest=**}, whose allow statements are each guarded by rest[0] (the rulesets below are that block alone: the rest of the deployed source matches no aruma-ref path). Requests: Firestore REST v1 get and createDocument on aruma-ref/s7r-20261024/<probe>/<doc>; a missing document answers 404 when allowed and 403 when denied. Run 1 with the ID token of a temporary anonymous user whose customAttributes were set through identitytoolkit accounts:update (auth below: the claims the probes read, numbers as the JWT payload wrote them); runs 2 and 3 without a token. Read fixtures were written with the owner's credentials (outside rules): run 1 by createDocument, runs 2 and 3 by commit. Raw requests and answers: raw/deployed-firestore.json.",
+ "orderNote": "values() order on deployed Firestore is the backend map's, not the source's nor the keys': on a REST createDocument it changed between identical requests; on a read it is the stored document's, which followed the write for documents written by commit and did not for documents written by createDocument",
+ "rulesets": {
+  "run1": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    // aruma-ref probe block (temporary, S7-R). Every allow is guarded by rest[0].\n    match /aruma-ref/{run}/{rest=**} {\n      allow get: if rest[0] == 'sentinel' && (true);\n      allow get: if rest[0] == 'dbg_true' && (debug(true));\n      allow get: if rest[0] == 'dbg_eq1' && (debug(1) == 1);\n      allow get: if rest[0] == 'dbg_ne1' && (debug(1) != 1);\n      allow get: if rest[0] == 'dbg_str' && (debug('s') == 's');\n      allow get: if rest[0] == 'dbg_map' && (debug({'a': 1}).a == 1);\n      allow get: if rest[0] == 'dbg_not_false' && (!debug(false));\n      allow get: if rest[0] == 'dbg_or_true' && (debug(true) || true);\n      allow get: if rest[0] == 'dbg0_eq_null' && (debug() == null);\n      allow get: if rest[0] == 'dbg0_ne_null' && (debug() != null);\n      allow get: if rest[0] == 'dbg0_or_true' && (debug() == null || true);\n      allow get: if rest[0] == 'dbg2_eq1' && (debug(1, 2) == 1);\n      allow get: if rest[0] == 'dbg2_eq2' && (debug(1, 2) == 2);\n      allow get: if rest[0] == 'dbg2_ne1' && (debug(1, 2) != 1);\n      allow get: if rest[0] == 'dbg2_eq_list' && (debug(1, 2) == [1, 2]);\n      allow get: if rest[0] == 'tok_provider_anon' && (request.auth.token.firebase.sign_in_provider == 'anonymous');\n      allow get: if rest[0] == 'tok_n_int_eq2' && (request.auth.token.n_int == 2);\n      allow get: if rest[0] == 'tok_n_two_eq2' && (request.auth.token.n_two == 2);\n      allow get: if rest[0] == 'tok_n_frac_eq' && (request.auth.token.n_frac == 2.5);\n      allow get: if rest[0] == 'tok_m_n_eq3' && (request.auth.token.m.n == 3);\n      allow get: if rest[0] == 'tok_n_big_eq_exact' && (request.auth.token.n_big == 9007199254740993);\n      allow get: if rest[0] == 'tok_n_big_ne_rounded' && (request.auth.token.n_big != 9007199254740992);\n      allow get: if rest[0] == 'get_eq_null' && (get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) == null);\n      allow get: if rest[0] == 'get_ne_null' && (get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) != null);\n      allow get: if rest[0] == 'get_data_eq_null' && (get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none).data == null);\n      allow get: if rest[0] == 'get_or_true' && (get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) == null || true);\n      allow get: if rest[0] == 'get_is_map' && (get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) is map);\n      allow get: if rest[0] == 'exists_false' && (exists(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) == false);\n      allow get: if rest[0] == 'exists_true' && (exists(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) == true);\n      allow get: if rest[0] == 'get_fixture' && (get(/databases/$(database)/documents/aruma-ref/$(run)/fixture/doc).data.v == 1);\n      allow get: if rest[0] == 'ord_read_src' && (resource.data.values() == [1, 2, 3, 4]);\n      allow get: if rest[0] == 'ord_read_key' && (resource.data.values() == [2, 4, 3, 1]);\n      allow get: if rest[0] == 'ord_read_keys_sorted' && (resource.data.keys() == ['a', 'b', 'm', 'z']);\n      allow get: if rest[0] == 'tok_exp_int' && (request.auth.token.exp is int);\n      allow get: if rest[0] == 'tok_exp_float' && (request.auth.token.exp is float);\n      allow get: if rest[0] == 'tok_iat_int' && (request.auth.token.iat is int);\n      allow get: if rest[0] == 'tok_iat_float' && (request.auth.token.iat is float);\n      allow get: if rest[0] == 'tok_auth_time_int' && (request.auth.token.auth_time is int);\n      allow get: if rest[0] == 'tok_auth_time_float' && (request.auth.token.auth_time is float);\n      allow get: if rest[0] == 'tok_n_int_int' && (request.auth.token.n_int is int);\n      allow get: if rest[0] == 'tok_n_int_float' && (request.auth.token.n_int is float);\n      allow get: if rest[0] == 'tok_n_two_int' && (request.auth.token.n_two is int);\n      allow get: if rest[0] == 'tok_n_two_float' && (request.auth.token.n_two is float);\n      allow get: if rest[0] == 'tok_n_frac_int' && (request.auth.token.n_frac is int);\n      allow get: if rest[0] == 'tok_n_frac_float' && (request.auth.token.n_frac is float);\n      allow get: if rest[0] == 'tok_n_neg_int' && (request.auth.token.n_neg is int);\n      allow get: if rest[0] == 'tok_n_neg_float' && (request.auth.token.n_neg is float);\n      allow get: if rest[0] == 'tok_n_big_int' && (request.auth.token.n_big is int);\n      allow get: if rest[0] == 'tok_n_big_float' && (request.auth.token.n_big is float);\n      allow get: if rest[0] == 'tok_n_huge_int' && (request.auth.token.n_huge is int);\n      allow get: if rest[0] == 'tok_n_huge_float' && (request.auth.token.n_huge is float);\n      allow get: if rest[0] == 'tok_m_n_int' && (request.auth.token.m.n is int);\n      allow get: if rest[0] == 'tok_m_n_float' && (request.auth.token.m.n is float);\n      allow get: if rest[0] == 'tok_m_f_int' && (request.auth.token.m.f is int);\n      allow get: if rest[0] == 'tok_m_f_float' && (request.auth.token.m.f is float);\n      allow get: if rest[0] == 'tok_l0_int' && (request.auth.token.l[0] is int);\n      allow get: if rest[0] == 'tok_l0_float' && (request.auth.token.l[0] is float);\n      allow get: if rest[0] == 'tok_l1_int' && (request.auth.token.l[1] is int);\n      allow get: if rest[0] == 'tok_l1_float' && (request.auth.token.l[1] is float);\n      allow create: if run == 's7r-20261024' && rest[0] == 'ord_set' && (request.resource.data.values().toSet() == [1, 2, 3, 4].toSet());\n      allow create: if run == 's7r-20261024' && rest[0] == 'ord_src' && (request.resource.data.values() == [1, 2, 3, 4]);\n      allow create: if run == 's7r-20261024' && rest[0] == 'ord_key' && (request.resource.data.values() == [2, 4, 3, 1]);\n      allow create: if run == 's7r-20261024' && rest[0] == 'ord_keys_sorted' && (request.resource.data.keys() == ['a', 'b', 'm', 'z']);\n      allow create: if run == 's7r-20261024' && rest[0] == 'ord_keys_src' && (request.resource.data.keys() == ['z', 'a', 'm', 'b']);\n      allow create: if run == 's7r-20261024' && rest[0] == 'ord_rev_src' && (request.resource.data.values() == [4, 3, 2, 1]);\n      allow create: if run == 's7r-20261024' && rest[0] == 'ord_rev_key' && (request.resource.data.values() == [2, 4, 3, 1]);\n    }\n  }\n}\n",
+  "run2": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    // aruma-ref probe block (temporary, S7-R run 2). Every allow is guarded by rest[0].\n    match /aruma-ref/{run}/{rest=**} {\n      allow get: if rest[0] == 'sentinel' && (true);\n      allow get: if rest[0] == 'dbg_true' && (debug(true));\n      allow get: if rest[0] == 'dbg_eq1' && (debug(1) == 1);\n      allow get: if rest[0] == 'dbg_ne1' && (debug(1) != 1);\n      allow get: if rest[0] == 'dbg_str' && (debug('s') == 's');\n      allow get: if rest[0] == 'dbg_map' && (debug({'a': 1}).a == 1);\n      allow get: if rest[0] == 'dbg_not_false' && (!debug(false));\n      allow get: if rest[0] == 'dbg_or_true' && (debug(true) || true);\n      allow get: if rest[0] == 'dbg0_eq_null' && (debug() == null);\n      allow get: if rest[0] == 'dbg0_ne_null' && (debug() != null);\n      allow get: if rest[0] == 'dbg0_or_true' && (debug() == null || true);\n      allow get: if rest[0] == 'dbg2_eq1' && (debug(1, 2) == 1);\n      allow get: if rest[0] == 'dbg2_eq2' && (debug(1, 2) == 2);\n      allow get: if rest[0] == 'dbg2_ne1' && (debug(1, 2) != 1);\n      allow get: if rest[0] == 'dbg2_eq_list' && (debug(1, 2) == [1, 2]);\n      allow get: if rest[0] == 'get_eq_null' && (get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) == null);\n      allow get: if rest[0] == 'get_ne_null' && (get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) != null);\n      allow get: if rest[0] == 'get_data_eq_null' && (get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none).data == null);\n      allow get: if rest[0] == 'get_or_true' && (get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) == null || true);\n      allow get: if rest[0] == 'get_is_map' && (get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) is map);\n      allow get: if rest[0] == 'exists_false' && (exists(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) == false);\n      allow get: if rest[0] == 'exists_true' && (exists(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) == true);\n      allow get: if rest[0] == 'get_fixture' && (get(/databases/$(database)/documents/aruma-ref/$(run)/fixture/doc).data.v == 1);\n      allow get: if rest[0] == 'ord_read_src' && (resource.data.values() == [1, 2, 3, 4]);\n      allow get: if rest[0] == 'ord_read_key' && (resource.data.values() == [2, 4, 3, 1]);\n      allow get: if rest[0] == 'ord_read_keys_sorted' && (resource.data.keys() == ['a', 'b', 'm', 'z']);\n      allow get: if rest[0] == 'rd1_p0_v1' && (resource.data.values()[0] == 1);\n      allow get: if rest[0] == 'rd1_p0_v2' && (resource.data.values()[0] == 2);\n      allow get: if rest[0] == 'rd1_p0_v3' && (resource.data.values()[0] == 3);\n      allow get: if rest[0] == 'rd1_p0_v4' && (resource.data.values()[0] == 4);\n      allow get: if rest[0] == 'rd1_p1_v1' && (resource.data.values()[1] == 1);\n      allow get: if rest[0] == 'rd1_p1_v2' && (resource.data.values()[1] == 2);\n      allow get: if rest[0] == 'rd1_p1_v3' && (resource.data.values()[1] == 3);\n      allow get: if rest[0] == 'rd1_p1_v4' && (resource.data.values()[1] == 4);\n      allow get: if rest[0] == 'rd1_p2_v1' && (resource.data.values()[2] == 1);\n      allow get: if rest[0] == 'rd1_p2_v2' && (resource.data.values()[2] == 2);\n      allow get: if rest[0] == 'rd1_p2_v3' && (resource.data.values()[2] == 3);\n      allow get: if rest[0] == 'rd1_p2_v4' && (resource.data.values()[2] == 4);\n      allow get: if rest[0] == 'rd1_p3_v1' && (resource.data.values()[3] == 1);\n      allow get: if rest[0] == 'rd1_p3_v2' && (resource.data.values()[3] == 2);\n      allow get: if rest[0] == 'rd1_p3_v3' && (resource.data.values()[3] == 3);\n      allow get: if rest[0] == 'rd1_p3_v4' && (resource.data.values()[3] == 4);\n      allow get: if rest[0] == 'rd1_keys_sorted' && (resource.data.keys() == ['a','b','m','z']);\n      allow get: if rest[0] == 'rd2_p0_v1' && (resource.data.values()[0] == 1);\n      allow get: if rest[0] == 'rd2_p0_v2' && (resource.data.values()[0] == 2);\n      allow get: if rest[0] == 'rd2_p0_v3' && (resource.data.values()[0] == 3);\n      allow get: if rest[0] == 'rd2_p0_v4' && (resource.data.values()[0] == 4);\n      allow get: if rest[0] == 'rd2_p0_v5' && (resource.data.values()[0] == 5);\n      allow get: if rest[0] == 'rd2_p1_v1' && (resource.data.values()[1] == 1);\n      allow get: if rest[0] == 'rd2_p1_v2' && (resource.data.values()[1] == 2);\n      allow get: if rest[0] == 'rd2_p1_v3' && (resource.data.values()[1] == 3);\n      allow get: if rest[0] == 'rd2_p1_v4' && (resource.data.values()[1] == 4);\n      allow get: if rest[0] == 'rd2_p1_v5' && (resource.data.values()[1] == 5);\n      allow get: if rest[0] == 'rd2_p2_v1' && (resource.data.values()[2] == 1);\n      allow get: if rest[0] == 'rd2_p2_v2' && (resource.data.values()[2] == 2);\n      allow get: if rest[0] == 'rd2_p2_v3' && (resource.data.values()[2] == 3);\n      allow get: if rest[0] == 'rd2_p2_v4' && (resource.data.values()[2] == 4);\n      allow get: if rest[0] == 'rd2_p2_v5' && (resource.data.values()[2] == 5);\n      allow get: if rest[0] == 'rd2_p3_v1' && (resource.data.values()[3] == 1);\n      allow get: if rest[0] == 'rd2_p3_v2' && (resource.data.values()[3] == 2);\n      allow get: if rest[0] == 'rd2_p3_v3' && (resource.data.values()[3] == 3);\n      allow get: if rest[0] == 'rd2_p3_v4' && (resource.data.values()[3] == 4);\n      allow get: if rest[0] == 'rd2_p3_v5' && (resource.data.values()[3] == 5);\n      allow get: if rest[0] == 'rd2_p4_v1' && (resource.data.values()[4] == 1);\n      allow get: if rest[0] == 'rd2_p4_v2' && (resource.data.values()[4] == 2);\n      allow get: if rest[0] == 'rd2_p4_v3' && (resource.data.values()[4] == 3);\n      allow get: if rest[0] == 'rd2_p4_v4' && (resource.data.values()[4] == 4);\n      allow get: if rest[0] == 'rd2_p4_v5' && (resource.data.values()[4] == 5);\n      allow get: if rest[0] == 'rd2_keys_sorted' && (resource.data.keys() == ['age','city','email','name','zip']);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p0_v1' && (request.resource.data.values()[0] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p0_v2' && (request.resource.data.values()[0] == 2);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p0_v3' && (request.resource.data.values()[0] == 3);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p0_v4' && (request.resource.data.values()[0] == 4);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p1_v1' && (request.resource.data.values()[1] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p1_v2' && (request.resource.data.values()[1] == 2);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p1_v3' && (request.resource.data.values()[1] == 3);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p1_v4' && (request.resource.data.values()[1] == 4);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p2_v1' && (request.resource.data.values()[2] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p2_v2' && (request.resource.data.values()[2] == 2);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p2_v3' && (request.resource.data.values()[2] == 3);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p2_v4' && (request.resource.data.values()[2] == 4);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p3_v1' && (request.resource.data.values()[3] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p3_v2' && (request.resource.data.values()[3] == 2);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p3_v3' && (request.resource.data.values()[3] == 3);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_p3_v4' && (request.resource.data.values()[3] == 4);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr1_keys_sorted' && (request.resource.data.keys() == ['a','b','m','z']);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p0_v1' && (request.resource.data.values()[0] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p0_v2' && (request.resource.data.values()[0] == 2);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p0_v3' && (request.resource.data.values()[0] == 3);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p0_v4' && (request.resource.data.values()[0] == 4);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p0_v5' && (request.resource.data.values()[0] == 5);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p1_v1' && (request.resource.data.values()[1] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p1_v2' && (request.resource.data.values()[1] == 2);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p1_v3' && (request.resource.data.values()[1] == 3);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p1_v4' && (request.resource.data.values()[1] == 4);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p1_v5' && (request.resource.data.values()[1] == 5);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p2_v1' && (request.resource.data.values()[2] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p2_v2' && (request.resource.data.values()[2] == 2);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p2_v3' && (request.resource.data.values()[2] == 3);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p2_v4' && (request.resource.data.values()[2] == 4);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p2_v5' && (request.resource.data.values()[2] == 5);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p3_v1' && (request.resource.data.values()[3] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p3_v2' && (request.resource.data.values()[3] == 2);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p3_v3' && (request.resource.data.values()[3] == 3);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p3_v4' && (request.resource.data.values()[3] == 4);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p3_v5' && (request.resource.data.values()[3] == 5);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p4_v1' && (request.resource.data.values()[4] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p4_v2' && (request.resource.data.values()[4] == 2);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p4_v3' && (request.resource.data.values()[4] == 3);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p4_v4' && (request.resource.data.values()[4] == 4);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_p4_v5' && (request.resource.data.values()[4] == 5);\n      allow create: if run == 's7r-20261024' && rest[0] == 'cr2_keys_sorted' && (request.resource.data.keys() == ['age','city','email','name','zip']);\n    }\n  }\n}\n",
+  "run3": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    // aruma-ref probe block (temporary, S7-R run 3). Every allow is guarded by rest[0].\n    match /aruma-ref/{run}/{rest=**} {\n      function srcOrder(v) { return v[0] == 1 && v[1] == 2 && v[2] == 3 && v[3] == 4; }\n      function keyOrder(v) { return v[0] == 2 && v[1] == 4 && v[2] == 3 && v[3] == 1; }\n      allow get: if rest[0] == 'sentinel' && (true);\n      allow get: if rest[0] == 'r_v_eq_src' && (resource.data.values() == [1, 2, 3, 4]);\n      allow get: if rest[0] == 'r_v_eq_key' && (resource.data.values() == [2, 4, 3, 1]);\n      allow get: if rest[0] == 'r_v_eq_self' && (resource.data.values() == resource.data.values());\n      allow get: if rest[0] == 'r_v_eq_fields_src' && (resource.data.values() == [resource.data.z, resource.data.a, resource.data.m, resource.data.b]);\n      allow get: if rest[0] == 'r_fields_eq_lit' && ([resource.data.z, resource.data.a, resource.data.m, resource.data.b] == [1, 2, 3, 4]);\n      allow get: if rest[0] == 'r_v_size4' && (resource.data.values().size() == 4);\n      allow get: if rest[0] == 'r_v0_is_int' && (resource.data.values()[0] is int);\n      allow get: if rest[0] == 'r_v_is_list' && (resource.data.values() is list);\n      allow get: if rest[0] == 'r_v_hasall' && (resource.data.values().hasAll([1, 2, 3, 4]));\n      allow get: if rest[0] == 'r_v_set' && (resource.data.values().toSet() == [1, 2, 3, 4].toSet());\n      allow get: if rest[0] == 'r_v_concat_src' && (resource.data.values().concat([]) == [1, 2, 3, 4]);\n      allow get: if rest[0] == 'r_v_slice_src' && (resource.data.values()[0:4] == [1, 2, 3, 4]);\n      allow get: if rest[0] == 'r_v_fn_src' && (srcOrder(resource.data.values()));\n      allow get: if rest[0] == 'r_v_fn_key' && (keyOrder(resource.data.values()));\n      allow get: if rest[0] == 'r_v_and_src' && (resource.data.values()[0] == 1 && resource.data.values()[1] == 2 && resource.data.values()[2] == 3 && resource.data.values()[3] == 4);\n      allow get: if rest[0] == 'r_k_eq_sorted' && (resource.data.keys() == ['a', 'b', 'm', 'z']);\n      allow get: if rest[0] == 'r_single_eq' && (resource.data.values() == [1]);\n      allow get: if rest[0] == 'r_single_v0' && (resource.data.values()[0] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_v_eq_src' && (request.resource.data.values() == [1, 2, 3, 4]);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_v_eq_key' && (request.resource.data.values() == [2, 4, 3, 1]);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_v_eq_self' && (request.resource.data.values() == request.resource.data.values());\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_v_eq_fields_src' && (request.resource.data.values() == [request.resource.data.z, request.resource.data.a, request.resource.data.m, request.resource.data.b]);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_fields_eq_lit' && ([request.resource.data.z, request.resource.data.a, request.resource.data.m, request.resource.data.b] == [1, 2, 3, 4]);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_v_size4' && (request.resource.data.values().size() == 4);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_v0_is_int' && (request.resource.data.values()[0] is int);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_v_is_list' && (request.resource.data.values() is list);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_v_hasall' && (request.resource.data.values().hasAll([1, 2, 3, 4]));\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_v_set' && (request.resource.data.values().toSet() == [1, 2, 3, 4].toSet());\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_v_concat_src' && (request.resource.data.values().concat([]) == [1, 2, 3, 4]);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_v_slice_src' && (request.resource.data.values()[0:4] == [1, 2, 3, 4]);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_v_fn_src' && (srcOrder(request.resource.data.values()));\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_v_fn_key' && (keyOrder(request.resource.data.values()));\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_v_and_src' && (request.resource.data.values()[0] == 1 && request.resource.data.values()[1] == 2 && request.resource.data.values()[2] == 3 && request.resource.data.values()[3] == 4);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_k_eq_sorted' && (request.resource.data.keys() == ['a', 'b', 'm', 'z']);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_single_eq' && (request.resource.data.values() == [1]);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_single_v0' && (request.resource.data.values()[0] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p0_v1' && (request.resource.data.values()[0] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p0_v2' && (request.resource.data.values()[0] == 2);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p0_v3' && (request.resource.data.values()[0] == 3);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p0_v4' && (request.resource.data.values()[0] == 4);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p1_v1' && (request.resource.data.values()[1] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p1_v2' && (request.resource.data.values()[1] == 2);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p1_v3' && (request.resource.data.values()[1] == 3);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p1_v4' && (request.resource.data.values()[1] == 4);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p2_v1' && (request.resource.data.values()[2] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p2_v2' && (request.resource.data.values()[2] == 2);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p2_v3' && (request.resource.data.values()[2] == 3);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p2_v4' && (request.resource.data.values()[2] == 4);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p3_v1' && (request.resource.data.values()[3] == 1);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p3_v2' && (request.resource.data.values()[3] == 2);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p3_v3' && (request.resource.data.values()[3] == 3);\n      allow create: if run == 's7r-20261024' && rest[0] == 'c_p3_v4' && (request.resource.data.values()[3] == 4);\n    }\n  }\n}\n"
+ },
+ "cases": [
+  {
+   "id": "aruma/deployed-firestore/run1/tok_provider_anon",
+   "description": "auth.token from a real ID token: request.auth.token.firebase.sign_in_provider == 'anonymous'",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_provider_anon/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_int_eq2",
+   "description": "auth.token from a real ID token: request.auth.token.n_int == 2",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_int_eq2/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_two_eq2",
+   "description": "auth.token from a real ID token: request.auth.token.n_two == 2",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_two_eq2/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_frac_eq",
+   "description": "auth.token from a real ID token: request.auth.token.n_frac == 2.5",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_frac_eq/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_m_n_eq3",
+   "description": "auth.token from a real ID token: request.auth.token.m.n == 3",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_m_n_eq3/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_big_eq_exact",
+   "description": "auth.token from a real ID token: request.auth.token.n_big == 9007199254740993",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_big_eq_exact/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_big_ne_rounded",
+   "description": "auth.token from a real ID token: request.auth.token.n_big != 9007199254740992",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_big_ne_rounded/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_exp_int",
+   "description": "auth.token from a real ID token: request.auth.token.exp is int",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_exp_int/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_exp_float",
+   "description": "auth.token from a real ID token: request.auth.token.exp is float",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_exp_float/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_iat_int",
+   "description": "auth.token from a real ID token: request.auth.token.iat is int",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_iat_int/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_iat_float",
+   "description": "auth.token from a real ID token: request.auth.token.iat is float",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_iat_float/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_auth_time_int",
+   "description": "auth.token from a real ID token: request.auth.token.auth_time is int",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_auth_time_int/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_auth_time_float",
+   "description": "auth.token from a real ID token: request.auth.token.auth_time is float",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_auth_time_float/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_int_int",
+   "description": "auth.token from a real ID token: request.auth.token.n_int is int",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_int_int/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_int_float",
+   "description": "auth.token from a real ID token: request.auth.token.n_int is float",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_int_float/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_two_int",
+   "description": "auth.token from a real ID token: request.auth.token.n_two is int",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_two_int/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_two_float",
+   "description": "auth.token from a real ID token: request.auth.token.n_two is float",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_two_float/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_frac_int",
+   "description": "auth.token from a real ID token: request.auth.token.n_frac is int",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_frac_int/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_frac_float",
+   "description": "auth.token from a real ID token: request.auth.token.n_frac is float",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_frac_float/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_neg_int",
+   "description": "auth.token from a real ID token: request.auth.token.n_neg is int",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_neg_int/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_neg_float",
+   "description": "auth.token from a real ID token: request.auth.token.n_neg is float",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_neg_float/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_big_int",
+   "description": "auth.token from a real ID token: request.auth.token.n_big is int",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_big_int/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_big_float",
+   "description": "auth.token from a real ID token: request.auth.token.n_big is float",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_big_float/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_huge_int",
+   "description": "auth.token from a real ID token: request.auth.token.n_huge is int",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_huge_int/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_n_huge_float",
+   "description": "auth.token from a real ID token: request.auth.token.n_huge is float",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_n_huge_float/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_m_n_int",
+   "description": "auth.token from a real ID token: request.auth.token.m.n is int",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_m_n_int/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_m_n_float",
+   "description": "auth.token from a real ID token: request.auth.token.m.n is float",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_m_n_float/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_m_f_int",
+   "description": "auth.token from a real ID token: request.auth.token.m.f is int",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_m_f_int/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_m_f_float",
+   "description": "auth.token from a real ID token: request.auth.token.m.f is float",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_m_f_float/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_l0_int",
+   "description": "auth.token from a real ID token: request.auth.token.l[0] is int",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_l0_int/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_l0_float",
+   "description": "auth.token from a real ID token: request.auth.token.l[0] is float",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_l0_float/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_l1_int",
+   "description": "auth.token from a real ID token: request.auth.token.l[1] is int",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_l1_int/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/tok_l1_float",
+   "description": "auth.token from a real ID token: request.auth.token.l[1] is float",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/tok_l1_float/d",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/sentinel",
+   "description": "true",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/sentinel/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/dbg_true",
+   "description": "debug(true)",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_true/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/dbg_eq1",
+   "description": "debug(1) == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_eq1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/dbg_ne1",
+   "description": "debug(1) != 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_ne1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/dbg_str",
+   "description": "debug('s') == 's'",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_str/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/dbg_map",
+   "description": "debug({'a': 1}).a == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_map/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/dbg_not_false",
+   "description": "!debug(false)",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_not_false/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/dbg_or_true",
+   "description": "debug(true) || true",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/dbg_or_true/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/dbg0_eq_null",
+   "description": "debug() == null",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/dbg0_eq_null/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "inferred: debug() == null and debug() != null both deny; Firestore REST answers 403 \"Missing or insufficient permissions.\" with no reason"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/dbg0_ne_null",
+   "description": "debug() != null",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/dbg0_ne_null/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "inferred: debug() == null and debug() != null both deny; Firestore REST answers 403 \"Missing or insufficient permissions.\" with no reason"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/dbg0_or_true",
+   "description": "debug() == null || true",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/dbg0_or_true/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/dbg2_eq1",
+   "description": "debug(1, 2) == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/dbg2_eq1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/dbg2_eq2",
+   "description": "debug(1, 2) == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/dbg2_eq2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/dbg2_ne1",
+   "description": "debug(1, 2) != 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/dbg2_ne1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/dbg2_eq_list",
+   "description": "debug(1, 2) == [1, 2]",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/dbg2_eq_list/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/get_eq_null",
+   "description": "get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) == null",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/get_eq_null/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/get_ne_null",
+   "description": "get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) != null",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/get_ne_null/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/get_data_eq_null",
+   "description": "get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none).data == null",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/get_data_eq_null/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "error",
+    "errorKind": "evaluation",
+    "message": "inferred: get() of a missing document is null (get_eq_null allows), and null has no data; Firestore REST answers 403 \"Missing or insufficient permissions.\" with no reason"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/get_or_true",
+   "description": "get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) == null || true",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/get_or_true/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/get_is_map",
+   "description": "get(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) is map",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/get_is_map/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/exists_false",
+   "description": "exists(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) == false",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/exists_false/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/exists_true",
+   "description": "exists(/databases/$(database)/documents/aruma-ref/$(run)/missing/none) == true",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/exists_true/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/get_fixture",
+   "description": "get(/databases/$(database)/documents/aruma-ref/$(run)/fixture/doc).data.v == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/get_fixture/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   },
+   "functionMocks": [
+    {
+     "function": "get",
+     "args": [
+      {
+       "exactValue": "/databases/(default)/documents/aruma-ref/s7r-20261024/fixture/doc"
+      }
+     ],
+     "result": {
+      "value": {
+       "data": {
+        "v": 1
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_v_eq_src",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values() == [1, 2, 3, 4]",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_v_eq_src/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_v_eq_key",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values() == [2, 4, 3, 1]",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_v_eq_key/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_v_eq_self",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values() == resource.data.values()",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_v_eq_self/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_v_eq_fields_src",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values() == [resource.data.z, resource.data.a, resource.data.m, resource.data.b]",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_v_eq_fields_src/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_fields_eq_lit",
+   "description": "read of a document written by commit in the order z, a, m, b: [resource.data.z, resource.data.a, resource.data.m, resource.data.b] == [1, 2, 3, 4]",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_fields_eq_lit/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_v_size4",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values().size() == 4",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_v_size4/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_v0_is_int",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[0] is int",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_v0_is_int/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_v_is_list",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values() is list",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_v_is_list/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_v_hasall",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values().hasAll([1, 2, 3, 4])",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_v_hasall/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_v_set",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values().toSet() == [1, 2, 3, 4].toSet()",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_v_set/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_v_concat_src",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values().concat([]) == [1, 2, 3, 4]",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_v_concat_src/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_v_slice_src",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[0:4] == [1, 2, 3, 4]",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_v_slice_src/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_v_fn_src",
+   "description": "read of a document written by commit in the order z, a, m, b: srcOrder(resource.data.values())",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_v_fn_src/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_v_fn_key",
+   "description": "read of a document written by commit in the order z, a, m, b: keyOrder(resource.data.values())",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_v_fn_key/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_v_and_src",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[0] == 1 && resource.data.values()[1] == 2 && resource.data.values()[2] == 3 && resource.data.values()[3] == 4",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_v_and_src/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_k_eq_sorted",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.keys() == ['a', 'b', 'm', 'z']",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_k_eq_sorted/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_single_eq",
+   "description": "read of a document written by commit in the order x: resource.data.values() == [1]",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_single_eq/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "x": 1
+    }
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/r_single_v0",
+   "description": "read of a document written by commit in the order x: resource.data.values()[0] == 1",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/r_single_v0/d",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z"
+   },
+   "resource": {
+    "data": {
+     "x": 1
+    }
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_v_eq_src",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values() == [1, 2, 3, 4]",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_v_eq_src/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_v_eq_key",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values() == [2, 4, 3, 1]",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_v_eq_key/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_v_eq_self",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values() == request.resource.data.values()",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_v_eq_self/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_v_eq_fields_src",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values() == [request.resource.data.z, request.resource.data.a, request.resource.data.m, request.resource.data.b]",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_v_eq_fields_src/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_fields_eq_lit",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): [request.resource.data.z, request.resource.data.a, request.resource.data.m, request.resource.data.b] == [1, 2, 3, 4]",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_fields_eq_lit/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_v_size4",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values().size() == 4",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_v_size4/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_v0_is_int",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[0] is int",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_v0_is_int/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_v_is_list",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values() is list",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_v_is_list/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_v_hasall",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values().hasAll([1, 2, 3, 4])",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_v_hasall/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_v_set",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values().toSet() == [1, 2, 3, 4].toSet()",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_v_set/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_v_concat_src",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values().concat([]) == [1, 2, 3, 4]",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_v_concat_src/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_v_slice_src",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[0:4] == [1, 2, 3, 4]",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_v_slice_src/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_v_fn_src",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): srcOrder(request.resource.data.values())",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_v_fn_src/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_v_fn_key",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): keyOrder(request.resource.data.values())",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_v_fn_key/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_v_and_src",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[0] == 1 && request.resource.data.values()[1] == 2 && request.resource.data.values()[2] == 3 && request.resource.data.values()[3] == 4",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_v_and_src/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_k_eq_sorted",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.keys() == ['a', 'b', 'm', 'z']",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_k_eq_sorted/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_single_eq",
+   "description": "create (REST createDocument, fields in the order x): request.resource.data.values() == [1]",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_single_eq/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "x": 1
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_single_v0",
+   "description": "create (REST createDocument, fields in the order x): request.resource.data.values()[0] == 1",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_single_v0/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "x": 1
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p0_v1",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[0] == 1",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p0_v1/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p0_v2",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[0] == 2",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p0_v2/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p0_v3",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[0] == 3",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p0_v3/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, ALLOW; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p0_v4",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[0] == 4",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p0_v4/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p1_v1",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[1] == 1",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p1_v1/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): ALLOW, DENY, ALLOW; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p1_v2",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[1] == 2",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p1_v2/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p1_v3",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[1] == 3",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p1_v3/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, ALLOW; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p1_v4",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[1] == 4",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p1_v4/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): ALLOW, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p2_v1",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[2] == 1",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p2_v1/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, ALLOW; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p2_v2",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[2] == 2",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p2_v2/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): ALLOW, DENY, ALLOW; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p2_v3",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[2] == 3",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p2_v3/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p2_v4",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[2] == 4",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p2_v4/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p3_v1",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[3] == 1",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p3_v1/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, ALLOW, ALLOW; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p3_v2",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[3] == 2",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p3_v2/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, ALLOW; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p3_v3",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[3] == 3",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p3_v3/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, DENY; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run3/c_p3_v4",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[3] == 4",
+   "recordedAt": "2026-10-24T13:19:48.481Z",
+   "rulesetRef": "run3",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/c_p3_v4/d1",
+    "auth": null,
+    "time": "2026-10-24T13:19:48.481Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "three identical requests (d1, d2, d3): DENY, DENY, ALLOW; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/ord_set_zamb",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values().toSet() == [1, 2, 3, 4].toSet()",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_set/zamb",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/ord_set_bmaz",
+   "description": "create (REST createDocument, fields in the order b, m, a, z): request.resource.data.values().toSet() == [1, 2, 3, 4].toSet()",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_set/bmaz",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z",
+    "resource": {
+     "data": {
+      "b": 4,
+      "m": 3,
+      "a": 2,
+      "z": 1
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/ord_src_zamb",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values() == [1, 2, 3, 4]",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_src/zamb",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/ord_src_bmaz",
+   "description": "create (REST createDocument, fields in the order b, m, a, z): request.resource.data.values() == [1, 2, 3, 4]",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_src/bmaz",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z",
+    "resource": {
+     "data": {
+      "b": 4,
+      "m": 3,
+      "a": 2,
+      "z": 1
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/ord_key_zamb",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values() == [2, 4, 3, 1]",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_key/zamb",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/ord_key_bmaz",
+   "description": "create (REST createDocument, fields in the order b, m, a, z): request.resource.data.values() == [2, 4, 3, 1]",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_key/bmaz",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z",
+    "resource": {
+     "data": {
+      "b": 4,
+      "m": 3,
+      "a": 2,
+      "z": 1
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/ord_keys_sorted_zamb",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.keys() == ['a', 'b', 'm', 'z']",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_keys_sorted/zamb",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/ord_keys_sorted_bmaz",
+   "description": "create (REST createDocument, fields in the order b, m, a, z): request.resource.data.keys() == ['a', 'b', 'm', 'z']",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_keys_sorted/bmaz",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z",
+    "resource": {
+     "data": {
+      "b": 4,
+      "m": 3,
+      "a": 2,
+      "z": 1
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/ord_keys_src_zamb",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.keys() == ['z', 'a', 'm', 'b']",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_keys_src/zamb",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/ord_keys_src_bmaz",
+   "description": "create (REST createDocument, fields in the order b, m, a, z): request.resource.data.keys() == ['z', 'a', 'm', 'b']",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_keys_src/bmaz",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z",
+    "resource": {
+     "data": {
+      "b": 4,
+      "m": 3,
+      "a": 2,
+      "z": 1
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "deny",
+    "reason": "false",
+    "message": "Firestore REST: 403 Missing or insufficient permissions."
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/ord_rev_src_zamb",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values() == [4, 3, 2, 1]",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_rev_src/zamb",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/ord_rev_src_bmaz",
+   "description": "create (REST createDocument, fields in the order b, m, a, z): request.resource.data.values() == [4, 3, 2, 1]",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_rev_src/bmaz",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z",
+    "resource": {
+     "data": {
+      "b": 4,
+      "m": 3,
+      "a": 2,
+      "z": 1
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/ord_rev_key_zamb",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values() == [2, 4, 3, 1]",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_rev_key/zamb",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run1/ord_rev_key_bmaz",
+   "description": "create (REST createDocument, fields in the order b, m, a, z): request.resource.data.values() == [2, 4, 3, 1]",
+   "recordedAt": "2026-10-24T13:12:18.433Z",
+   "rulesetRef": "run1",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_rev_key/bmaz",
+    "auth": {"uid":"5jz6yzv45oSCsUeWVSkPa89uFx73","token":{"exp":1792851134,"iat":1792847534,"auth_time":1792847533,"n_int":2,"n_two":2.0,"n_frac":2.5,"n_neg":-7,"n_big":9007199254740993,"n_huge":1e20,"m":{"n":3,"f":3.5},"l":[3,3.5],"firebase":{"sign_in_provider":"anonymous"}}},
+    "time": "2026-10-24T13:12:18.433Z",
+    "resource": {
+     "data": {
+      "b": 4,
+      "m": 3,
+      "a": 2,
+      "z": 1
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/ord_read_src",
+   "description": "read of a document written by createDocument in the order z, a, m, b: resource.data.values() == [1, 2, 3, 4]",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_read_src/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in runs 1 and 2 (five passes); order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/ord_read_key",
+   "description": "read of a document written by createDocument in the order z, a, m, b: resource.data.values() == [2, 4, 3, 1]",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_read_key/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in runs 1 and 2 (five passes); order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/ord_read_keys_sorted",
+   "description": "read of a document written by createDocument in the order z, a, m, b: resource.data.keys() == ['a', 'b', 'm', 'z']",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/ord_read_keys_sorted/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p0_v1",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[0] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p0_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p0_v2",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[0] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p0_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p0_v3",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[0] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p0_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p0_v4",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[0] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p0_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p1_v1",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[1] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p1_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p1_v2",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[1] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p1_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p1_v3",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[1] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p1_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p1_v4",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[1] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p1_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p2_v1",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[2] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p2_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p2_v2",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[2] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p2_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p2_v3",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[2] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p2_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p2_v4",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[2] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p2_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p3_v1",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[3] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p3_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p3_v2",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[3] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p3_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p3_v3",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[3] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p3_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_p3_v4",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.values()[3] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_p3_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr1_keys_sorted",
+   "description": "create (REST createDocument, fields in the order z, a, m, b): request.resource.data.keys() == ['a','b','m','z']",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr1_keys_sorted/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "z": 1,
+      "a": 2,
+      "m": 3,
+      "b": 4
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p0_v1",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[0] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p0_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p0_v2",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[0] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p0_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p0_v3",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[0] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p0_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p0_v4",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[0] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p0_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p0_v5",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[0] == 5",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p0_v5/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p1_v1",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[1] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p1_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p1_v2",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[1] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p1_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p1_v3",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[1] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p1_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p1_v4",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[1] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p1_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p1_v5",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[1] == 5",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p1_v5/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p2_v1",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[2] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p2_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p2_v2",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[2] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p2_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p2_v3",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[2] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p2_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p2_v4",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[2] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p2_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p2_v5",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[2] == 5",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p2_v5/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p3_v1",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[3] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p3_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p3_v2",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[3] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p3_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p3_v3",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[3] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p3_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p3_v4",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[3] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p3_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p3_v5",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[3] == 5",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p3_v5/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p4_v1",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[4] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p4_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p4_v2",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[4] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p4_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p4_v3",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[4] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p4_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p4_v4",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[4] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p4_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_p4_v5",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.values()[4] == 5",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_p4_v5/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "fact",
+    "message": "denied; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/cr2_keys_sorted",
+   "description": "create (REST createDocument, fields in the order name, age, city, zip, email): request.resource.data.keys() == ['age','city','email','name','zip']",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "create",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/cr2_keys_sorted/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z",
+    "resource": {
+     "data": {
+      "name": 1,
+      "age": 2,
+      "city": 3,
+      "zip": 4,
+      "email": 5
+     }
+    }
+   },
+   "resource": null,
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p0_v1",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[0] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p0_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p0_v2",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[0] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p0_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p0_v3",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[0] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p0_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p0_v4",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[0] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p0_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p1_v1",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[1] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p1_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p1_v2",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[1] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p1_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p1_v3",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[1] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p1_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p1_v4",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[1] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p1_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p2_v1",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[2] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p2_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p2_v2",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[2] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p2_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p2_v3",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[2] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p2_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p2_v4",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[2] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p2_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p3_v1",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[3] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p3_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p3_v2",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[3] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p3_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p3_v3",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[3] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p3_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_p3_v4",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.values()[3] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_p3_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd1_keys_sorted",
+   "description": "read of a document written by commit in the order z, a, m, b: resource.data.keys() == ['a','b','m','z']",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd1_keys_sorted/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "z": 1,
+     "a": 2,
+     "m": 3,
+     "b": 4
+    }
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p0_v1",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[0] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p0_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p0_v2",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[0] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p0_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p0_v3",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[0] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p0_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p0_v4",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[0] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p0_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p0_v5",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[0] == 5",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p0_v5/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p1_v1",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[1] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p1_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p1_v2",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[1] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p1_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p1_v3",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[1] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p1_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p1_v4",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[1] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p1_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p1_v5",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[1] == 5",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p1_v5/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p2_v1",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[2] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p2_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p2_v2",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[2] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p2_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p2_v3",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[2] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p2_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p2_v4",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[2] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p2_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p2_v5",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[2] == 5",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p2_v5/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p3_v1",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[3] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p3_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p3_v2",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[3] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p3_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p3_v3",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[3] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p3_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p3_v4",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[3] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p3_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p3_v5",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[3] == 5",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p3_v5/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p4_v1",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[4] == 1",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p4_v1/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p4_v2",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[4] == 2",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p4_v2/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p4_v3",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[4] == 3",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p4_v3/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p4_v4",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[4] == 4",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p4_v4/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "denied in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_p4_v5",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.values()[4] == 5",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_p4_v5/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "fact",
+    "message": "allowed in passes A, B and C; order of values(): see orderNote"
+   }
+  },
+  {
+   "id": "aruma/deployed-firestore/run2/rd2_keys_sorted",
+   "description": "read of a document written by commit in the order name, age, city, zip, email: resource.data.keys() == ['age','city','email','name','zip']",
+   "recordedAt": "2026-10-24T13:15:40.623Z",
+   "rulesetRef": "run2",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/aruma-ref/s7r-20261024/rd2_keys_sorted/d",
+    "auth": null,
+    "time": "2026-10-24T13:15:40.623Z"
+   },
+   "resource": {
+    "data": {
+     "name": 1,
+     "age": 2,
+     "city": 3,
+     "zip": 4,
+     "email": 5
+    }
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  }
+ ]
+}

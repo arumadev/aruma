@@ -577,10 +577,10 @@ func (c *checker) call(e *callExpr, cx exprCtx) {
 }
 
 // libraryArities and methodArities are the functions and methods whose number of arguments
-// production checks when it compiles, with a warning at the name; the call still fails when
+// production checks when it compiles, with a warning at the name; the call is still made when
 // evaluated. Only those measured on the Rules Test API are listed (S1-E probe arity.mjs,
-// 2026-10-24): debug(1, 2) and debug() warn, then fail as every debug() does ("Function not
-// found error: Name: [debug]."); math.abs(1, 2) warns at abs; 'a'.size(1), [1].size(1) and
+// 2026-10-24): debug(1, 2) and debug() warn (and deployed, debug(1, 2) is 1 and debug() an
+// error: callFunction); math.abs(1, 2) warns at abs; 'a'.size(1), [1].size(1) and
 // 'a'.lower(1) warn at the method, then fail "Incorrect number of arguments". A method is
 // listed only where every receiver that has it takes the same number, so the warning needs no
 // type of the receiver. Production warns about other calls the checker does not know

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -77,7 +78,9 @@ func encodePrincipal(p Principal) (string, json.RawMessage, error) {
 
 func decodePrincipal(kind string, raw json.RawMessage) (Principal, error) {
 	var v sessionPrincipal
-	if err := json.Unmarshal(raw, &v); err != nil {
+	d := json.NewDecoder(bytes.NewReader(raw))
+	d.UseNumber() // the claims' numbers as the token wrote them (idtoken.Claims.Token)
+	if err := d.Decode(&v); err != nil {
 		return Principal{}, fmt.Errorf("storage: an upload session's principal: %w", err)
 	}
 	p := Principal{UID: v.UID, Token: v.Token, AuthTime: v.AuthTime, IssuedAt: v.IssuedAt,

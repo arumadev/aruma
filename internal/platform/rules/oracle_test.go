@@ -51,7 +51,9 @@ func loadOracle(tb testing.TB) *rulestest.Set {
 // a change to the oracle, the reader or the binding that stops counting cases fails here. A
 // change of the oracle (S0-A) updates them, with the reason in its commit.
 var oracleCounts = map[rulestest.Provenance]rulestest.Count{
-	rulestest.Deployed: {Counted: 0, Excluded: 274}, // no request to replay yet: S2 binds Storage
+	// Deployed: S7-R's Firestore probes (production/deployed-firestore.json) count; their facts
+	// (the order of values()) and Pyric's Storage records, with no request to replay, do not.
+	rulestest.Deployed: {Counted: 87, Excluded: 398},
 	rulestest.TestAPI:  {Counted: 3643, Excluded: 55},
 	rulestest.Emulator: {Counted: 1985, Excluded: 49},
 }
@@ -116,7 +118,7 @@ func TestOracle(t *testing.T) {
 	if gate(t, &rep) {
 		return
 	}
-	for _, f := range rulestest.Accept(&rep, anchors, oracleThreshold, rulestest.TestAPI, rulestest.Emulator) {
+	for _, f := range rulestest.Accept(&rep, anchors, oracleThreshold, rulestest.Deployed, rulestest.TestAPI, rulestest.Emulator) {
 		t.Error(f)
 	}
 }

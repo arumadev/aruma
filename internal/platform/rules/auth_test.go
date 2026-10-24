@@ -68,6 +68,17 @@ func TestAuth(t *testing.T) {
 			t.Errorf("%s = %s, want %s", k, showValue(got), showValue(want))
 		}
 	}
+	// Deployed rules, a real ID token (S7-R, production/deployed-firestore.json): a whole claim
+	// is an int even beyond 2^53, exactly, when the verifier keeps its text (json.Number).
+	deployed := Auth("u", map[string]any{"big": json.Number("9007199254740993"), "huge": json.Number("1e20"), "neg": json.Number("-7"),
+		"m": map[string]any{"n": json.Number("3"), "f": json.Number("3.5")}, "l": []any{json.Number("3"), json.Number("3.5")}})
+	tok, _ = selectField(newTestMeter(), deployed, "token")
+	for k, want := range map[string]Value{"big": vi(9007199254740993), "huge": vf(1e20), "neg": vi(-7),
+		"m": vm("f", vf(3.5), "n", vi(3)), "l": vl(vi(3), vf(3.5))} {
+		if got, _ := selectField(newTestMeter(), tok, k); !sameValue(got, want) {
+			t.Errorf("%s = %s, want %s", k, showValue(got), showValue(want))
+		}
+	}
 	if empty := Auth("", nil); !sameValue(empty, vm("token", vm(), "uid", vs(""))) {
 		t.Errorf("Auth with no claims = %s", showValue(empty))
 	}
