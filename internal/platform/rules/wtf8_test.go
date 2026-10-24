@@ -57,8 +57,11 @@ func TestWTF8(t *testing.T) {
 	if got := toUTF8("a" + hi + "b"); got != "a?b" {
 		t.Errorf("toUTF8 = %q, want a?b", got)
 	}
-	if got := regexView("a" + hi); got != "a�" || len(got) != len("a"+hi) {
-		t.Errorf("regexView = % x", got)
+	if got, err := loneView("a" + hi); err != nil || got != "a\ue03d" || len(got) != len("a"+hi) {
+		t.Errorf("loneView = % x, %v", got, err)
+	}
+	if _, err := loneView(hi + "\ue000"); err == nil {
+		t.Error("a lone surrogate and a sentinel's character in one string read")
 	}
 	if r, n := decodeWTF8(lo + "x"); r != 0xDE00 || n != 3 {
 		t.Errorf("decodeWTF8 = %x, %d", r, n)

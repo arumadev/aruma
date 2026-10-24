@@ -260,10 +260,6 @@ func replaceLone(s string, with string) string {
 }
 
 // toUTF8 is the UTF-8 of a string, as Java's String.getBytes(UTF_8) writes it: a lone surrogate
-// is '?'. toUtf8() and hashing read strings this way (inferred from Java; not probed).
+// is '?'. toUtf8() and hashing read strings this way (production, the review's round 2 probes,
+// 2026-10-24: '😀'[0].toUtf8() == b'?', and hashing.md5 of it is hashing.md5('?')).
 func toUTF8(s string) string { return replaceLone(s, "?") }
-
-// regexView is s as the pattern matcher reads it: a lone surrogate is U+FFFD, three bytes as the
-// surrogate's own form, so offsets in either are offsets in both. RE2J reads a lone surrogate
-// as itself; only a pattern that names U+FFFD or a surrogate tells the two apart.
-func regexView(s string) string { return replaceLone(s, "�") }

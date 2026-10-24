@@ -13,7 +13,7 @@ import (
 // Patterns are RE2, as the docs require and Go's regexp is (ADR-021 §4). matches() matches the
 // whole string (Pyric matches-full-string-regex: 'hello world'.matches('world') is false);
 // split() and replace() find every match as RE2J does, production's matcher (matcher, below).
-// The matcher reads a lone surrogate as U+FFFD (wtf8.go regexView).
+// The matcher reads a lone surrogate as its own code point, as RE2J does (regexlone.go).
 //
 // A pattern's cost is bounded before it is compiled. A hostile pattern is cheap to write and
 // dear to compile: 27 KB of \pL{1000} compiles to 3,000,002 instructions and 742 MB (ADR-021
@@ -46,12 +46,26 @@ const (
 // compiledRegex is one compiled pattern, in the three forms the library runs.
 type compiledRegex struct {
 	text   string
-	insts  int            // the instructions of the pattern's own program
-	groups int            // its capture groups
-	whole  *regexp.Regexp // ^(?:p)$, for matches()
-	first  *regexp.Regexp // \A(?s:.*?)(p), the first search of split() and replace()
-	next   *regexp.Regexp // \A(?s:.)(?s:.*?)(p), each later one, a character of context first
-	weight int64          // estimated bytes held
+	insts  int // the instructions of the pattern's own program
+	groups int // its capture groups
+	regexForms
+	width     int    // the most bytes a match spans in the matcher's view, or -1 for no bound
+	literal   string // the pattern's text when it is a literal: no flags, groups or classes
+	isLiteral bool
+	weight    int64 // estimated bytes held
+
+	// The forms for strings that hold lone surrogates, compiled when one first comes
+	// (regexlone.go).
+	loneMu  sync.Mutex
+	lone    *regexForms
+	loneErr error
+}
+
+// regexForms are the three forms of a pattern the library runs.
+type regexForms struct {
+	whole *regexp.Regexp // ^(?:p)$, for matches()
+	first *regexp.Regexp // \A(?s:.*?)(p), the first search of split() and replace()
+	next  *regexp.Regexp // \A(?s:.)(?s:.*?)(p), each later one, a character of context first
 }
 
 // regexCache is a ruleset's patterns: the literal ones, compiled once when the file compiles,
@@ -304,20 +318,64 @@ func compilePattern(text string, limit int, charge func(alloc, work int64) error
 	if len(prog.Inst) > limit {
 		return nil, errTooComplex(text, len(prog.Inst), limit)
 	}
-	p := &compiledRegex{text: text, insts: len(prog.Inst), groups: re.MaxCap(), weight: weight}
-	for _, c := range []struct {
-		re   **regexp.Regexp
-		form string
-	}{
-		{&p.whole, `^(?:` + text + `)$`},
-		{&p.first, `\A(?s:.*?)(` + text + `)`},
-		{&p.next, `\A(?s:.)(?s:.*?)(` + text + `)`},
-	} {
-		if *c.re, err = regexp.Compile(c.form); err != nil {
-			return nil, errRegex(text)
+	forms, ferr := compileForms(text)
+	if ferr != nil {
+		return nil, ferr
+	}
+	p := &compiledRegex{text: text, insts: len(prog.Inst), groups: re.MaxCap(), regexForms: *forms,
+		width: matchWidth(re), weight: weight}
+	if re.Op == syntax.OpLiteral && re.Flags&syntax.FoldCase == 0 {
+		lit := string(re.Rune)
+		p.literal, p.isLiteral = lit, true
+		for _, r := range re.Rune {
+			if isSurrogate(r) || inSentinels(r) || r == utf8.RuneError {
+				p.literal, p.isLiteral = "", false
+			}
 		}
 	}
 	return p, nil
+}
+
+// matchWidth returns the most bytes a match of re can span, each character four at most, or
+// -1 when a repetition has no bound.
+func matchWidth(re *syntax.Regexp) int {
+	const unbounded = -1
+	const most = 1 << 20 // past this, as good as unbounded
+	sub := func(i int) int { return matchWidth(re.Sub[i]) }
+	switch re.Op {
+	case syntax.OpLiteral:
+		return utf8.UTFMax * len(re.Rune)
+	case syntax.OpCharClass, syntax.OpAnyChar, syntax.OpAnyCharNotNL:
+		return utf8.UTFMax
+	case syntax.OpCapture, syntax.OpQuest:
+		return sub(0)
+	case syntax.OpStar, syntax.OpPlus:
+		return unbounded
+	case syntax.OpRepeat:
+		w := sub(0)
+		if re.Max < 0 || w < 0 || w*re.Max > most {
+			return unbounded
+		}
+		return w * re.Max
+	case syntax.OpConcat, syntax.OpAlternate:
+		total := 0
+		for i := range re.Sub {
+			w := sub(i)
+			if w < 0 {
+				return unbounded
+			}
+			if re.Op == syntax.OpConcat {
+				total += w
+			} else {
+				total = max(total, w)
+			}
+			if total > most {
+				return unbounded
+			}
+		}
+		return total
+	}
+	return 0 // empty matches and assertions
 }
 
 // estimateInsts estimates the instructions syntax.Compile would make of re after Simplify, which
@@ -409,25 +467,31 @@ func matchString(m *meter, s, text string) (Value, error) {
 	if err := m.work((int64(len(s)) + 1) * int64(p.insts)); err != nil {
 		return Value{}, err
 	}
-	in, err := viewOf(m, s)
+	in, forms, err := viewOf(m, p, s)
 	if err != nil {
 		return Value{}, err
 	}
-	return Bool(p.whole.MatchString(in)), nil
+	return Bool(forms.whole.MatchString(in)), nil
 }
 
-// viewOf is regexView(s), its copy charged.
-func viewOf(m *meter, s string) (string, error) {
+// viewOf returns the matcher's view of s and the pattern's forms that read it: s itself, or,
+// when it holds lone surrogates, its lone view (regexlone.go), the copy charged.
+func viewOf(m *meter, p *compiledRegex, s string) (string, *regexForms, error) {
 	if err := m.work(scanWork(len(s))); err != nil {
-		return "", err
+		return "", nil, err
 	}
 	if !hasLoneSurrogate(s) {
-		return s, nil
+		return s, &p.regexForms, nil
+	}
+	forms, err := p.loneForms(m, m.regexes.insts)
+	if err != nil {
+		return "", nil, err
 	}
 	if err := m.alloc(int64(len(s))); err != nil {
-		return "", err
+		return "", nil, err
 	}
-	return regexView(s), nil
+	in, err := loneView(s)
+	return in, forms, err
 }
 
 // A found match: where it starts and ends, and where each of the pattern's groups does (an
@@ -442,81 +506,50 @@ type found struct {
 // 2026-10-24, and S0-A's oracle): each search starts where the last match ended, and after an
 // empty match one UTF-16 unit further, so an empty match right after a match counts
 // ('abbc'.replace('b*', '-') == '-a--c-'), and empty matches fall between the halves of a pair
-// ('a😀b'.split(”).size() == 5). Go's FindAll differs on both: it drops an empty match that
-// abuts the last match, and steps a whole character. RE2J is BSD-licensed; this follows its
-// design (Matcher.find, Pattern.split) without its code.
+// (splitting 'a😀b' on the empty pattern makes 5 pieces). Go's FindAll differs on both: it drops
+// an empty match that abuts the last match, and steps a whole character. RE2J is BSD-licensed;
+// this follows its design (Matcher.find, Pattern.split) without its code.
 //
 // Go's regexp cannot start a search in the middle of a string with what comes before in view
-// (^, \b), so each search runs p.next, \A(?s:.)(?s:.*?)(pattern), on the string from one
+// (^, \b), so each search runs the next form, \A(?s:.)(?s:.*?)(pattern), on the string from one
 // character before the start: the leading character is the context, and the lazy prefix finds
 // the leftmost match, by the pattern's own priorities, as an unanchored search would. In the
-// middle of a pair the search runs over U+FFFD for each half (wtf8.go) and the rest.
+// middle of a pair the search runs over the halves' sentinels and the rest (regexlone.go).
 //
-// A search may look past its match to settle the pattern's priorities, as far as the end of the
-// string, so each one is charged the rest of the string times the program, times the capture
-// groups Go copies at every step.
+// The cost of a search is charged before it runs, three ways (the review's round 2 found that
+// one way, the rest of the string per search, refused splits production allows: a MiB split
+// into 256 parts, 128 KiB into 1025, a MiB replace):
+//
+//   - A literal pattern is found with strings.Index, a window at a time, each window's bytes
+//     charged before it is read: linear, exact.
+//   - A pattern whose matches are at most w bytes is searched in a window that ends w and a
+//     character past the candidate, charged as the window's bytes times the program times the
+//     groups Go copies; a window without a match whose end it can trust moves on, and the next
+//     window is twice as long, so the charge stays within about twice the work.
+//   - A pattern with matches of any length may look as far as the end of the string to settle
+//     its priorities, so each search is charged the rest of the string.
 type matcher struct {
-	m    *meter
-	p    *compiledRegex
-	s    string // the string, WTF-8
-	in   string // regexView(s)
-	pos  unitPos
-	done bool
+	m     *meter
+	p     *compiledRegex
+	forms *regexForms
+	s     string // the string, WTF-8
+	in    string // the matcher's view of s (viewOf)
+	pos   unitPos
+	done  bool
 }
+
+// The first window of a bounded search, in bytes past the start.
+const firstWindow = 256
 
 // next returns the next match, or false when there is none.
 func (it *matcher) next() (found, bool, error) {
 	if it.done {
 		return found{}, false, nil
 	}
-	p, in, pos := it.p, it.in, it.pos
-	rest := len(in) - pos.b
-	if err := it.m.work((int64(rest) + 2) * int64(p.insts) * int64(p.groups+2)); err != nil {
-		return found{}, false, err
-	}
-	var hay string
-	var at func(t int) unitPos
-	re := p.next
-	switch {
-	case pos.b == 0 && !pos.mid:
-		re, hay = p.first, in
-		at = func(t int) unitPos { return unitPos{b: t} }
-	case !pos.mid:
-		_, k := utf8.DecodeLastRuneInString(in[:pos.b])
-		base := pos.b - k
-		hay = in[base:]
-		at = func(t int) unitPos { return unitPos{b: base + t} }
-	default:
-		if err := it.m.alloc(int64(rest) + 2); err != nil {
-			return found{}, false, err
-		}
-		after := pos.b + 4
-		hay = "��" + in[after:]
-		at = func(t int) unitPos {
-			if t <= 3 {
-				return unitPos{b: pos.b, mid: true}
-			}
-			return unitPos{b: after + t - 6}
-		}
-	}
-	if err := it.m.alloc(int64(16 * (p.groups + 2))); err != nil {
-		return found{}, false, err
-	}
-	loc := re.FindStringSubmatchIndex(hay)
-	if loc == nil {
+	f, ok, err := it.find()
+	if err != nil || !ok {
 		it.done = true
-		return found{}, false, nil
-	}
-	f := found{start: at(loc[2]), end: at(loc[3])}
-	if p.groups > 0 {
-		f.groups = make([]unitPos, 0, 2*p.groups)
-		for i := 4; i < len(loc); i++ {
-			if loc[i] < 0 {
-				f.groups = append(f.groups, unitPos{b: -1})
-			} else {
-				f.groups = append(f.groups, at(loc[i]))
-			}
-		}
+		return f, ok, err
 	}
 	// Where the next search starts: after an empty match, one unit on.
 	it.pos = f.end
@@ -537,17 +570,146 @@ func (it *matcher) next() (found, bool, error) {
 	return f, true, nil
 }
 
+// find returns the leftmost match at or after it.pos.
+func (it *matcher) find() (found, bool, error) {
+	p, in := it.p, it.in
+	if p.isLiteral && !it.pos.mid {
+		return it.findLiteral()
+	}
+	if p.width < 0 {
+		return it.search(it.pos, len(in))
+	}
+	start, window := it.pos, firstWindow
+	for {
+		from := start.b
+		if start.mid {
+			from += 4
+		}
+		end := min(len(in), from+window+p.width+utf8.UTFMax)
+		f, ok, err := it.search(start, end)
+		if err != nil {
+			return found{}, false, err
+		}
+		if end == len(in) {
+			return f, ok, nil
+		}
+		// A match ending w and a character before the window's end saw all it could need; any
+		// match starting earlier would have fitted too, and been found first.
+		if ok && f.start.b+p.width+utf8.UTFMax <= end {
+			return f, true, nil
+		}
+		if !ok {
+			// No match starts before end-w-1 character: the next window starts there.
+			q := end - p.width - utf8.UTFMax
+			for q > 0 && in[q]&0xC0 == 0x80 {
+				q--
+			}
+			if q > from {
+				start = unitPos{b: q}
+			}
+		}
+		window *= 2
+	}
+}
+
+// findLiteral finds the next occurrence of a literal pattern, which matches only whole
+// characters and never nothing.
+func (it *matcher) findLiteral() (found, bool, error) {
+	lit, in := it.p.literal, it.in
+	from, window := it.pos.b, firstWindow
+	for from < len(in) {
+		end := min(len(in), from+window+len(lit)-1)
+		if err := it.m.work(scanWork(end - from)); err != nil {
+			return found{}, false, err
+		}
+		if i := strings.Index(in[from:end], lit); i >= 0 {
+			if err := it.m.alloc(32); err != nil {
+				return found{}, false, err
+			}
+			a := from + i
+			return found{start: unitPos{b: a}, end: unitPos{b: a + len(lit)}}, true, nil
+		}
+		if end == len(in) {
+			break
+		}
+		from = end - len(lit) + 1
+		window *= 2
+	}
+	return found{}, false, nil
+}
+
+// search runs one search from start over the view up to end, charged before it runs.
+func (it *matcher) search(start unitPos, end int) (found, bool, error) {
+	p, in := it.p, it.in
+	if err := it.m.work((int64(end-start.b) + 4) * int64(p.insts) * int64(p.groups+2)); err != nil {
+		return found{}, false, err
+	}
+	forms := it.forms
+	var hay string
+	var at func(t int) unitPos
+	re := forms.next
+	switch {
+	case start.b == 0 && !start.mid:
+		re, hay = forms.first, in[:end]
+		at = func(t int) unitPos { return unitPos{b: t} }
+	case !start.mid:
+		_, k := utf8.DecodeLastRuneInString(in[:start.b])
+		base := start.b - k
+		hay = in[base:end]
+		at = func(t int) unitPos { return unitPos{b: base + t} }
+	default:
+		// In the middle of a pair: its halves are lone surrogates, read as their sentinels.
+		lone, err := it.p.loneForms(it.m, it.m.regexes.insts)
+		if err != nil {
+			return found{}, false, err
+		}
+		re = lone.next
+		after := start.b + 4
+		if err := it.m.alloc(int64(end-after) + 6); err != nil {
+			return found{}, false, err
+		}
+		r, _ := decodeWTF8(it.s[start.b:])
+		hi, lo := halves(r)
+		hay = string(utf8.AppendRune(utf8.AppendRune(nil, sentinel(hi)), sentinel(lo))) + in[after:end]
+		at = func(t int) unitPos {
+			if t <= 3 {
+				return unitPos{b: start.b, mid: true}
+			}
+			return unitPos{b: after + t - 6}
+		}
+	}
+	if err := it.m.alloc(int64(16 * (p.groups + 2))); err != nil {
+		return found{}, false, err
+	}
+	loc := re.FindStringSubmatchIndex(hay)
+	if loc == nil {
+		return found{}, false, nil
+	}
+	f := found{start: at(loc[2]), end: at(loc[3])}
+	if p.groups > 0 {
+		f.groups = make([]unitPos, 0, 2*p.groups)
+		for i := 4; i < len(loc); i++ {
+			if loc[i] < 0 {
+				f.groups = append(f.groups, unitPos{b: -1})
+			} else {
+				f.groups = append(f.groups, at(loc[i]))
+			}
+		}
+	}
+	return f, true, nil
+}
+
 // newMatcher returns a matcher of text in s.
 func newMatcher(m *meter, s, text string) (*matcher, error) {
 	p, err := m.regexes.get(m, text)
 	if err != nil {
 		return nil, err
 	}
-	in, err := viewOf(m, s)
+	in, forms, err := viewOf(m, p, s)
 	if err != nil {
 		return nil, err
 	}
-	return &matcher{m: m, p: p, s: s, in: in}, nil
+	return &matcher{m: m, p: p, forms: forms, s: s, in: in}, nil
 }
 
 // pieceBytes is the size of one piece of split's result before it is built: a string header
@@ -566,8 +728,8 @@ func pieceBytes(a, b unitPos) int {
 // splitString is s.split(pattern), as RE2J's Pattern.split with no limit (production, the
 // review's probes of the Rules Test API, 2026-10-24): an empty piece is held back and kept only
 // when a piece that is not empty follows, so the empty pieces at the end are dropped and those
-// at the start kept (',,a'.split(',') == [”, ”, 'a'], 'abc'.split(”) == [”, 'a', 'b', 'c']);
-// when nothing is left, the result is [”] (','.split(',') == [”]); and with no match, the
+// at the start kept (",,a".split(",") == ["", "", "a"], "abc".split("") == ["", "a", "b", "c"]);
+// when nothing is left, the result is [""] (",".split(",") == [""]); and with no match, the
 // whole string.
 func splitString(m *meter, s, text string) (Value, error) {
 	it, err := newMatcher(m, s, text)
@@ -646,12 +808,18 @@ type replacement struct {
 // observable; here it is an evaluation error, a denial.
 func parseReplacement(p *compiledRegex, repl string) ([]replacement, error) {
 	invalid := errorf("Invalid replacement string: %s.", repl)
-	var out []replacement
-	var lit strings.Builder
+	// Sized up front (replacementBytes): the literal text of every piece in one buffer, and
+	// at most a group and a text for every $.
+	out := make([]replacement, 0, replacementPieces(repl))
+	buf := make([]byte, 0, len(repl))
+	type span struct{ at, start, end int }
+	texts := make([]span, 0, cap(out)) // the pieces of text, by their place in out
+	start := 0
 	flush := func() {
-		if lit.Len() > 0 {
-			out = append(out, replacement{text: lit.String(), group: -1})
-			lit.Reset()
+		if len(buf) > start {
+			texts = append(texts, span{len(out), start, len(buf)})
+			out = append(out, replacement{group: -1})
+			start = len(buf)
 		}
 	}
 	for i := 0; i < len(repl); i++ {
@@ -661,7 +829,7 @@ func parseReplacement(p *compiledRegex, repl string) ([]replacement, error) {
 				return nil, invalid
 			}
 			i++
-			lit.WriteByte(repl[i])
+			buf = append(buf, repl[i])
 		case '$':
 			if i+1 >= len(repl) {
 				return nil, invalid
@@ -696,11 +864,25 @@ func parseReplacement(p *compiledRegex, repl string) ([]replacement, error) {
 			}
 			out = append(out, replacement{group: g})
 		default:
-			lit.WriteByte(c)
+			buf = append(buf, c)
 		}
 	}
 	flush()
+	text := string(buf)
+	for _, t := range texts {
+		out[t.at].text = text[t.start:t.end]
+	}
 	return out, nil
+}
+
+// replacementPieces bounds the pieces of a replacement: a group and a text for every $, and
+// the text after the last.
+func replacementPieces(repl string) int { return 2*strings.Count(repl, "$") + 1 }
+
+// replacementBytes is what parseReplacement allocates: its pieces and their places, and the
+// text twice, as bytes and as the string the pieces share.
+func replacementBytes(repl string) int64 {
+	return int64(replacementPieces(repl))*(elemBytes+24) + 2*int64(len(repl))
 }
 
 // replaceString is s.replace(pattern, replacement): every match replaced, as RE2J's
@@ -723,11 +905,10 @@ func replaceString(m *meter, s, text, repl string) (Value, error) {
 			break
 		}
 		if matches == nil {
-			// Reading the replacement allocates at most a piece for every byte of it.
 			if err := m.work(walkWork(len(repl))); err != nil {
 				return Value{}, err
 			}
-			if err := m.alloc(int64(len(repl)) * elemBytes); err != nil {
+			if err := m.alloc(replacementBytes(repl)); err != nil {
 				return Value{}, err
 			}
 			if pieces, err = parseReplacement(it.p, repl); err != nil {
@@ -753,7 +934,8 @@ func replaceString(m *meter, s, text, repl string) (Value, error) {
 		if err := m.value(int64(size), 0); err != nil {
 			return Value{}, err
 		}
-		if err := m.alloc(int64(len(f.groups)+2) * 16); err != nil { // the match, kept
+		// The match, kept in a list that doubles as it grows.
+		if err := m.alloc(2 * (int64(len(f.groups))*16 + 64)); err != nil {
 			return Value{}, err
 		}
 		matches = append(matches, f)
