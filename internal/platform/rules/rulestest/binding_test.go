@@ -48,3 +48,31 @@ func TestEmulatorDocumentsFollowTheRecorder(t *testing.T) {
 		t.Errorf("Test API auth number %d, want 2 (written 2.0)", v)
 	}
 }
+
+// TestTestAPIBindingKeepsOrderAndAfter: the Test API keeps the order of a request's maps, so
+// values() follows it (Pyric keyOrder, upload-primitives-boundaries); after the request's write
+// it reads its own document as the write leaves it, and others as their get() and exists()
+// mocks give them (Pyric get-after-and-exists-after, atomic-batch-sibling-merge).
+func TestTestAPIBindingKeepsOrderAndAfter(t *testing.T) {
+	src := "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{d}/documents {\n" +
+		"    match /u/{id} {\n" +
+		"      allow create: if request.resource.data.values() == ['y', 'x', 1]\n" +
+		"        && request.resource.data.keys() == ['a', 'b', 'n']\n" +
+		"        && getAfter(request.path).data.a == 'x'\n" +
+		"        && existsAfter(/databases/$(d)/documents/o/x)\n" +
+		"        && getAfter(/databases/$(d)/documents/o/x).data.k == 1;\n" +
+		"      allow delete: if existsAfter(request.path) == false;\n    }\n  }\n}\n"
+	rs, issues := rules.Compile(rules.Firestore, rules.File{Name: "firestore.rules", Content: src}, rules.DefaultLimits())
+	if rs == nil {
+		t.Fatal(issues)
+	}
+	for _, method := range []string{"create", "delete"} {
+		c := testAPICase(`{"method": "`+method+`", "path": "/databases/(default)/documents/u/new",
+			"resource": {"data": {"b": "y", "a": "x", "n": 1}}}`, "")
+		mocked(t, c, `[{"function": "get", "args": [{"exactValue": "/databases/(default)/documents/o/x"}], "result": {"value": {"data": {"k": 1}}}}]`)
+		d, err := rs.Evaluate(context.Background(), build(t, c))
+		if err != nil || !d.Allow {
+			t.Errorf("%s: %+v, %v", method, d, err)
+		}
+	}
+}

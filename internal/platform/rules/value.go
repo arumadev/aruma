@@ -157,6 +157,24 @@ func Map(m map[string]Value) Value {
 	return Value{kind: KindMap, x: &mapValue{keys: keys, entries: m}}
 }
 
+// MapInOrder returns a map of the keys and values given, in that order, which is the order
+// values() returns them in: a service whose source keeps an order gives it, as a Storage
+// object's metadata keeps the order the request sent (Rules Test API, Pyric
+// upload-primitives-boundaries "metadata values() keeps the order the request sent"). keys()
+// is sorted whatever the order. A key given twice keeps its first place and its last value.
+func MapInOrder(keys []string, vals []Value) Value {
+	n := min(len(keys), len(vals))
+	order := make([]string, 0, n)
+	entries := make(map[string]Value, n)
+	for i := range n {
+		if _, seen := entries[keys[i]]; !seen {
+			order = append(order, keys[i])
+		}
+		entries[keys[i]] = vals[i]
+	}
+	return orderedMap(order, entries)
+}
+
 // Timestamp returns a timestamp.
 func Timestamp(t time.Time) Value { return Value{kind: KindTimestamp, x: t.UTC()} }
 

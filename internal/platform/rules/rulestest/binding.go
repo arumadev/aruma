@@ -111,7 +111,7 @@ func (c *Case) Build(inflight *rules.Inflight) (rules.File, *rules.Request, erro
 	} else {
 		vars, err = b.testAPIVariables()
 		if err == nil {
-			docs, err = b.testAPIDocuments()
+			docs, err = b.testAPIDocuments(vars)
 		}
 	}
 	if err != nil {
@@ -191,21 +191,82 @@ func (b *binder) testAPIValue(v any) (rules.Value, error) {
 			out[i] = ev
 		}
 		return rules.List(out), nil
-	case map[string]any:
-		if lat, lng, ok := latLngOf(x); ok {
+	case *object:
+		if lat, lng, ok := latLngOf(x.vals); ok {
 			return rules.LatLng(lat, lng), nil
 		}
-		out := make(map[string]rules.Value, len(x))
-		for k, e := range x {
-			ev, err := b.testAPIValue(e)
+		// In the order sent: values() follows it (upload-primitives-boundaries).
+		vals := make([]rules.Value, len(x.keys))
+		for i, k := range x.keys {
+			ev, err := b.testAPIValue(x.vals[k])
 			if err != nil {
 				return rules.Value{}, err
 			}
-			out[k] = ev
+			vals[i] = ev
 		}
-		return rules.Map(out), nil
+		return rules.MapInOrder(x.keys, vals), nil
 	}
 	return rules.Value{}, fmt.Errorf("rulestest: unexpected JSON value %T", v)
+}
+
+// object is a JSON object with the order of its keys, as the Test API keeps it.
+type object struct {
+	keys []string
+	vals map[string]any
+}
+
+// decodeOrdered reads JSON as decode does, but an object as an *object in the order written.
+func decodeOrdered(raw []byte) (any, error) {
+	d := json.NewDecoder(bytes.NewReader(raw))
+	d.UseNumber()
+	v, err := orderedValue(d)
+	if err != nil {
+		return nil, err
+	}
+	if d.More() {
+		return nil, fmt.Errorf("rulestest: JSON value followed by more")
+	}
+	return v, nil
+}
+
+func orderedValue(d *json.Decoder) (any, error) {
+	t, err := d.Token()
+	if err != nil {
+		return nil, err
+	}
+	switch t {
+	case json.Delim('{'):
+		o := &object{vals: map[string]any{}}
+		for d.More() {
+			kt, err := d.Token()
+			if err != nil {
+				return nil, err
+			}
+			k, _ := kt.(string)
+			v, err := orderedValue(d)
+			if err != nil {
+				return nil, err
+			}
+			if _, seen := o.vals[k]; !seen {
+				o.keys = append(o.keys, k)
+			}
+			o.vals[k] = v
+		}
+		_, err := d.Token() // }
+		return o, err
+	case json.Delim('['):
+		out := []any{}
+		for d.More() {
+			v, err := orderedValue(d)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, v)
+		}
+		_, err := d.Token() // ]
+		return out, err
+	}
+	return t, nil
 }
 
 // testAPINumber reads a JSON number as the Test API does: as a double, which is an int when it
@@ -252,7 +313,7 @@ func latLngOf(m map[string]any) (lat, lng float64, ok bool) {
 }
 
 func (b *binder) testAPIField(f Field) (rules.Value, error) {
-	v, err := b.decode(f)
+	v, err := decodeOrdered(f.Raw())
 	if err != nil {
 		return rules.Value{}, err
 	}
@@ -313,9 +374,27 @@ func mockTarget(fn string) (get, after bool, err error) {
 	return false, false, fmt.Errorf("rulestest: unknown mocked function %q", fn)
 }
 
-func (b *binder) testAPIDocuments() (*MemoryDocuments, error) {
+func (b *binder) testAPIDocuments(vars map[string]rules.Value) (*MemoryDocuments, error) {
 	docs := NewMemoryDocuments()
 	docs.Missing = rules.ErrNoDocuments
+	// After the request's writes, the Test API reads its own document as the write leaves it
+	// (getAfter(request.path) is request.resource; existsAfter is true on a create, false on a
+	// delete), and any other as the mocks of get() and exists() give it (Pyric
+	// get-after-and-exists-after, atomic-batch-sibling-merge). Mocks of getAfter() and
+	// existsAfter() themselves come below, and win.
+	docs.AfterFallsBack = true
+	if b.c.Service == rules.Firestore {
+		path := b.c.Request.Path
+		req, _ := vars["request"].AsMap()
+		switch b.c.Request.Method {
+		case "create", "update":
+			if res, ok := req["resource"]; ok {
+				docs.Put(Project, path, true, res)
+			}
+		case "delete":
+			docs.Absent(Project, path, true)
+		}
+	}
 	// exists() mocks first, so that a get() mock of the same document decides its value.
 	for _, pass := range []bool{false, true} {
 		for _, m := range b.c.Mocks {
@@ -664,6 +743,11 @@ func (b *binder) emulatorVariables() (map[string]rules.Value, error) {
 			return nil, err
 		}
 		req["resource"] = document(r.Path, dv)
+	}
+	if r.Method == "delete" {
+		// A delete's request.resource is null on the Firestore emulator, a read's undefined
+		// (aruma/methods/delete_request_resource_null, aruma/encoding/request_resource_null_on_get).
+		req["resource"] = rules.Null()
 	}
 	res := rules.Null()
 	if b.c.Resource.Present() && !b.c.Resource.IsNull() {

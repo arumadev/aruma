@@ -19,6 +19,10 @@ type MemoryDocuments struct {
 	// for "not found", or an error such as rules.ErrNoDocuments.
 	Missing error
 
+	// AfterFallsBack makes a read after the request's writes, of a document not held as it is
+	// after them, read the document as it was before: the request writes its own document alone.
+	AfterFallsBack bool
+
 	mu    sync.Mutex
 	docs  map[docKey]docEntry
 	reads map[docKey]int
@@ -73,6 +77,9 @@ func (m *MemoryDocuments) Get(_ context.Context, project int64, path []string, a
 	defer m.mu.Unlock()
 	m.reads[k]++
 	e, ok := m.docs[k]
+	if !ok && after && m.AfterFallsBack {
+		e, ok = m.docs[docKey{project: project, path: k.path}]
+	}
 	if !ok {
 		return rules.Value{}, false, m.Missing
 	}
