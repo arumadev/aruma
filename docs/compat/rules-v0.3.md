@@ -1,7 +1,6 @@
 # توافق لغة قواعد الأمان (Firestore وCloud Storage): الإصدار 0.3
 
-- **الحالة:** هيكل كتبه S1-D، 2026-10-24، قبل دمج المحرك (S1-A وB وC). الأرقام يملؤها S1-E بعد الدمج، والمحجوزة
-  يقيسها S1-E مرة واحدة قبل أي إصلاح، ويكمله S7 بالقيود والنشر.
+- **الحالة:** كتب هيكله S1-D وملأ أرقامه S1-E بعد دمج المحرك، 2026-10-24. ويكمله S7 بالقيود والنشر.
 - **القرار:** [ADR-021](../adr/ADR-021-rules-language.md)، والقبول في §6: ‏98% أو أكثر على مجموعة التطوير، وعلى
   المحجوزة كلٌّ على حدة، لكل مصدر وحده، ولا فرق واحد نكون فيه أكثر تساهلًا من المصدر الأعلى.
 - **المرجع:** [test/oracle/rules/](../../test/oracle/rules/README.md) (S0-A)، ونتائجه في
@@ -52,30 +51,59 @@ go run ./tools/rules-diff -seed 1 -n 1000                                   # م
 
 ## نسبة التطابق
 
-*يملؤها S1-E بعد دمج A وB وC، بالجدول الذي يطبعه `TestOracle` كما هو. قبل الدمج النسبة صفر لكل مصدر:
-`Compile` هو عقد S1-0 الذي يذعر.*
+قاسها S1-E في 2026-10-24 على فرع `s1-e-integration` بعد دمج A وB وC وD، بالجدول الذي يطبعه `TestOracle` كما هو.
 
 ### مجموعة التطوير
 
 | provenance | source | cases | excluded | counted | agree | ratio | finer | permissive |
 |---|---|---|---|---|---|---|---|---|
-| deployed | pyric | 274 | 274 | 0 | | | | |
-| rules-test-api | aruma | 2034 | 15 | 2019 | | | | |
-| rules-test-api | pyric | 1649 | 39 | 1610 | | | | |
-| emulator | aruma | 689 | 49 | 640 | | | | |
-| emulator | hidane | 1345 | 0 | 1345 | | | | |
+| deployed | pyric | 274 | 274 | 0 | 0 | — | 0 | 0 |
+| rules-test-api | aruma | 2034 | 15 | 2019 | 2019 | 100.0% | 2019 | 0 |
+| rules-test-api | pyric | 1649 | 40 | 1609 | 1609 | 100.0% | 1601 | 0 |
+| emulator | aruma | 689 | 49 | 640 | 638 | 99.7% | 637 | 0 |
+| emulator | hidane | 1345 | 0 | 1345 | 1345 | 100.0% | 1345 | 0 |
+| **rules-test-api** | **all** | 3683 | 55 | 3628 | 3628 | 100.0% | 3620 | 0 |
+| **emulator** | **all** | 2034 | 49 | 1985 | 1983 | 99.9% | 1982 | 0 |
 
 - `finer`: من المعدودة، ما طابقت نتيجته الأدق أيضًا. `permissive`: سماح رفضه المصدر ومن فوقه؛ يجب أن يكون صفرًا.
-- حالات الترجمة وحدها (`TestGrammar`): *يملؤها S1-E.*
+- **الفرقان الباقيان** (`emulator`، كلاهما رفض حيث يسمح المحاكي، فليسا تساهلًا): `aruma/errors/debug_function`
+  و`aruma/storage/debug`: `debug()` قرار مؤقت يتبع Test API (أدناه).
+- **قبل الإصلاحات** كانت النسبة 96.0% لـ `rules-test-api`/`pyric`، و9 حالات سماح زائد. وما أُصلح، بالترتيب:
+  - المحرك: القوائم والخرائط الحرفية تبنيها المكتبة، فتبقى `values()` بترتيب الكتابة (`map_values_order`)؛ ونمط
+    حرفي غير صالح في `replace()` خطأ تقييم لا ترجمة، كما قاسه S1-E على Test API، و`matches()` و`split()` خطأ ترجمة
+    (37 حالة من `stdlib-string-bytes-hashing`)؛ وموضع خطأ «let» الزائدة.
+  - الربط: Test API تحفظ ترتيب الخرائط في الطلب (`keyOrder` وبيانات Storage الوصفية، ومنها 3 حالات سماح زائد)؛
+    و`getAfter()`/`existsAfter()` لمستند الطلب نفسه حالته بعد الكتابة، ولغيره محاكاة `get()`/`exists()` (5 حالات)؛
+    و`request.resource` في حذف على المحاكي `null`.
+  - الأداة: سطر `L0:0` في رسالة المحاكي تحذير للملف كله لا أول خطأ؛ وحالة تحاكي `get()` و`exists()` للمستند نفسه
+    بنتيجتين متعارضتين أثر من Test API (خارج النسبة)؛ والقالب الذي نشره مشغّل Pyric ليس ملف قواعد.
+- **حالات الترجمة وحدها (`TestGrammar`):** 1935 ملف قواعد مختلفًا، كلها تطابق في النجاح وموضع أول خطأ (100%)،
+  ونص الرسالة في 577 من 577، والنحو نفسه حين يُسمّي إعلانُ الخدمة الخدمةَ الأخرى في 1887 من 1887.
 
 ### المجموعة المحجوزة
 
-*يقيسها S1-E مرة واحدة على فرع القياس الذي يُدمج فيه `oracle-rules-heldout`، وتُسجَّل هنا قبل أي إصلاح، لكل
-مصدر وحده.*
+*يقيسها S1-E مرة واحدة بعد أن تمر مجموعة التطوير، وتُسجَّل هنا كما خرجت، لكل مصدر وحده.*
 
 ### `rules-diff`
 
-*البذرة وعدد الحالات والفروق بعد التقليص: يملؤها S1-E، ثم الجدول الأسبوعي في S7.*
+S1-E، 2026-10-24، `cloud-firestore-emulator` v1.22.0، `-n 1000 -depth 5` (والبذرة 1 بـ `-n 300 -depth 4`):
+
+| البذرة | الحالات | تخطاها المحاكي | الفروق |
+|---|---|---|---|
+| 1 | 300 | 0 | 0 |
+| 2 | 1000 | 0 | 1 |
+| 3 | 1000 | 1 | 0 |
+| 4 | 1000 | 0 | 0 |
+| 5 | 1000 | 0 | 0 |
+| 6 | 1000 | 0 | 0 |
+| 7 | 1000 | 2 | 0 |
+
+- **فرق البذرة 2** (`'x'[float(request.resource.data.s)]` بعد التقليص): المحاكي يجيب 500 عند الترجمة، **والإنتاج
+  كذلك:** Test API تعطي «500 Internal error encountered.» لـ `'x'[float('0')] == 'x'`، ولو مع `|| true` (مسبار S1-E).
+  أما `'x'[0.0]` فيُترجم بتحذير، وتقييمه «Unsupported operation error. Received: string[float]». المحرك يترجم الملف،
+  والتقييم خطأ يُرفض. فرق مقصود: لا نقلّد عطلًا داخليًا لا نعرف حدوده، والملف لا يُنشر على Firebase أصلًا.
+- **البذرتان 3 و7** كانتا تتوقفان: بعد بعض الطلبات التي تفشل في قواعدها يُبقي المحاكي قفل المستند («409
+  Transaction lock timeout.»)، فصار لكل حالة مستندها (`c/d<index>`).
 
 ## الفروق المعروفة
 
@@ -89,6 +117,9 @@ go run ./tools/rules-diff -seed 1 -n 1000                                   # م
 | حدّ القراءات في محاكي Firestore يعدّ تقييمَي الشرط معًا (firebase-tools #6252) | `aruma/limits/exists_get_same_6` | نتبع Test API والوثائق: القراءة نفسها لا تُعدّ مرتين |
 | محاكي Storage لا يطبّق حدّ القراءات: ثلاثة مستندات و11 تُسمح، وStorage المنشور يرفض الثالث | `aruma/storage/fs_lookups_3`، `aruma/storage/fs_lookups_11` | خارج النسبة، والحدّ تثبته حالات المرساة (`rulestest.Anchors`): 10 تُسمح و11 تُرفض في Firestore، و2 تُسمح و3 تُرفض في Storage |
 | `list` في Storage: المحاكي يطابق أبناء المسار لا المسار نفسه | `aruma/storage/read_list`، `aruma/storage/method_list`، `aruma/storage-paths/list_on_folder` | لم يُحسم على المنشور؛ S2 |
+| رسالة الترجمة في المحاكي بلا درجة، وتحذير الإصدار القديم فيها عند `L0:0` | `aruma/limits/let_rules_v1` | يُتخطى السطر `L0:0` حين يُبحث عن أول خطأ؛ الإنتاج لا يعطيه موضعًا |
+| `request.resource` في حذف على محاكي Firestore `null`، وفي قراءة غير معرّف | `aruma/methods/delete_request_resource_null`، `aruma/encoding/request_resource_null_on_get` | الربط يتبعه |
+| يُبقي المحاكي قفل المستند بعد بعض الطلبات التي تفشل في قواعدها: «409 Transaction lock timeout.» | `rules-diff`، البذرتان 3 و7 | مستند لكل حالة في `rules-diff` |
 
 ### قرارات مؤقتة
 
@@ -131,6 +162,11 @@ go run ./tools/rules-diff -seed 1 -n 1000                                   # م
 
 ### فروق مقصودة
 
+- **`'x'[float(…)]`:** الإنتاج والمحاكي يجيبان 500 عند الترجمة (مسبار S1-E و`rules-diff` البذرة 2)، والمحرك يترجم
+  ويرفض عند التقييم. لا نقلّد عطلًا داخليًا لا نعرف حدوده.
+- **نمط حرفي غير صالح في `replace()`** خطأ تقييم يمتصه `||`، وفي `matches()` و`split()` خطأ ترجمة، كما في الإنتاج
+  (مسبار S1-E: `'('` و`'(?=b)'` و`'(a)\\1'`). ونمط حرفي فوق حد Aruma للتعليمات في `replace()` كذلك خطأ تقييم.
+
 *يكتبها S1-E وS7: حدود Aruma (ADR-021 §4) حيث تمنع ما يقبله Firebase، والتحذيرات التي لا نصدرها، والنشر الفوري.*
 
 ## آثار Test API
@@ -144,6 +180,9 @@ go run ./tools/rules-diff -seed 1 -n 1000                                   # م
 | تأخذ `resource` حرفيًّا: بلا `resource` يكون `resource == null` خطأً، ولا `id` ولا `__name__` فيه | `aruma/encoding/resource_absent_is_null`، `aruma/encoding/resource_name`، `aruma/hidane-conditions/rules/138`…`149` | نعم |
 | الأرقام: الصحيح منها int ولو كُتب `2.0` أو `1e2`، وما فوق 2^53 يمر بـ double | `aruma/encoding/json_2_0_is_int`، `aruma/encoding/json_1e2_is_int`، `aruma/encoding/json_2pow53_plus1_is_int` | نعم: الربط يقرؤها كذلك |
 | نص بصيغة RFC 3339 يصير timestamp، ونص يبدأ بـ `/databases/` يصير path، و`{latitude, longitude}` يصير latlng | `aruma/encoding/json_ts_string_is_timestamp`، `aruma/hidane-conditions/rules/11`، `145`، `150` | نعم |
+| تحاكي `get()` و`exists()` كلًّا وحدها: `exists()` بـ `false` مع `get()` بمستند للمسار نفسه | `pyric/firestore/simcase-mock-and-path-fidelity/1` | لا: المستند الحقيقي موجود أو غائب، والمحرك يقرؤه مرة للاثنتين |
+| بعد الكتابة: `getAfter(request.path)` هو `request.resource`، و`existsAfter` صحيح في الإنشاء وخطأ في الحذف، وغيره من المستندات كما تحاكيه `get()`/`exists()` | Pyric `get-after-and-exists-after`، `atomic-batch-sibling-merge` | نعم: الربط يبنيه كذلك، وهو ما تعطيه الخدمة |
+| تحفظ ترتيب الخرائط كما أُرسلت، و`values()` يتبعه (و`keys()` مرتبة) | Pyric `required-fields-and-mapdiff` (keyOrder)، `upload-primitives-boundaries` 181-183 | نعم: الربط يقرأ JSON بترتيبه (`rules.MapInOrder`)؛ وعلى ربط Storage في S2 أن يحفظ ترتيب البيانات الوصفية |
 | نتيجة `get()` المحاكاة بلا `id` ولا `__name__` | `aruma/storage/fs_get_id`، `aruma/storage/fs_get_name` | لا: الإنتاج يسمّي المستند |
 | `get()`/`exists()` لمستند غير محاكى «Function not found»، والمحاكاة بنتيجة `undefined` «Service call error» | `aruma/limits/get_unmocked`، `aruma/limits/get_mock_null` | نعم: الربط يجعلهما `ErrNoDocuments`، وهو خطأ تقييم |
 | لا حدّ لعدد القراءات المحاكاة: 50 مستندًا في Firestore، و3 و11 في Storage | `aruma/limits/exists_11`…`exists_50`، `aruma/limits/get_11`، `aruma/storage/fs_lookups_3`، `aruma/storage/fs_lookups_11`، `pyric/storage/firestore-lookup-budget/6` | لا: نطبّق 10/20 و2 كما في الوثائق وStorage المنشور (`pyric/storage/stdlib-realstorage-p3-lookup-budget-iam-enabled/three`) |
