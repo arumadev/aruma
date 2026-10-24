@@ -9,7 +9,7 @@ import (
 // A list's page token (ADR-022 §13): opaque, and signed with the storage page-token key
 // (crypto.Keys.PageTokenMAC). It carries where the page ended, the last name or prefix it
 // returned; the signature binds that to the list it came from: the project, the bucket, the
-// prefix, the delimiter, the offsets and the surface (the last three: ADR-023 §3-39). A token
+// prefix, the delimiter, the offsets and the surface (the last three: ADR-023 §3-45). A token
 // that does not verify against the request it comes with, malformed, forged, or of another list
 // or project, is ErrInvalidPageToken (400), never a list from the start, as the emulator answers.
 

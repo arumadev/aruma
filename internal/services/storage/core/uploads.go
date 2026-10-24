@@ -805,7 +805,7 @@ func (s *Service) failSession(ctx context.Context, sess queries.StorageUploadSes
 }
 
 // sessionFinal is finalError for a session of surface: on GCS a precondition that fails at
-// finalize is terminal too (ADR-023 §3-50), so its staged bytes and reservation go at once.
+// finalize is terminal too (ADR-023 §3-55), so its staged bytes and reservation go at once.
 // /v0 and the dashboard never carry preconditions (checkPre).
 func sessionFinal(err error, surface string) (*Error, bool) {
 	if e, ok := finalError(err); ok {

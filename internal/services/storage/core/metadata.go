@@ -139,7 +139,7 @@ func (s *Service) checkObjectMetadata(o Object) error {
 // surfacePatch is a change as core applies it from a surface: on Firebase REST the client's
 // token key goes before anything sees the change (StripClientTokens, ADR-022 §9); on GCS the
 // key is how an admin sets the tokens, so it becomes Patch.Tokens (B §7), and "metadata": null
-// clears them with the rest of the custom metadata, as GCS keeps them there (ADR-023 §3-42).
+// clears them with the rest of the custom metadata, as GCS keeps them there (ADR-023 §3-48).
 // Tokens from any surface but GCS are ErrInvalidArgument: the surfaces never fill it.
 func surfacePatch(p Patch, sf Surface) (Patch, error) {
 	if p.Tokens != nil && sf != SurfaceGCS {

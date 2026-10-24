@@ -574,8 +574,8 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
       - جسم 416 بشكل السطح: «The requested range cannot be satisfied.»، وفي GCS `reason` = `requestedRangeNotSatisfiable`.
       - الرد المفكوك بلا `Content-Length` ومعه `Accept-Ranges: none`، و`Vary: Accept-Encoding` على كل كائن مخزّن gzip، و`ETag` كما هو. وكائن مخزّن gzip ليس gzip يُخدم كما خُزّن بترميزه، لا 500.
       - مهلة الكتابة نافذة 30 ثانية تُمدّ كلما حملت `min_bytes_per_second × 30` بايتًا، فتنزيل أطول من دقيقة يكمل، وعميل لا يقرأ يُقطع (البند 17). و`Serve` يمدّها بنفسه. **وكل فشل بعد سطر الحالة يقطعه `Serve` نفسه:** يبلّغ `Limits.Cut` ثم `panic(http.ErrAbortHandler)`، فلا يُختم رد مقطوع كأنه كامل ولو عاد المعالج عاديًا. ولا يعيد خطأ إلا قبل أول بايت، وترويسات `w` كما كانت.
-  19. **ترتيب `metadata` في القواعد بالمفتاح** (`rules.Map`): jsonb لا يحفظ ترتيبًا، والدليل الوحيد على حفظ ترتيب الطلب من Test API التي تأخذ `request` حرفيًا (البند 8؛ S2-E، ADR-023 §3-50).
-  20. **مفاتيح `resource` السبعة عشر وقيمه للحقول غير المضبوطة** (`contentEncoding` = `'identity'`)، و**list ببادئة بلا `/` أخيرة على مجلدها** (البند 8؛ S2-E، ADR-023 §3-51 و52).
+  19. **ترتيب `metadata` في القواعد بالمفتاح** (`rules.Map`): jsonb لا يحفظ ترتيبًا، والدليل الوحيد على حفظ ترتيب الطلب من Test API التي تأخذ `request` حرفيًا (البند 8؛ S2-E، ADR-023 §3-57).
+  20. **مفاتيح `resource` السبعة عشر وقيمه للحقول غير المضبوطة** (`contentEncoding` = `'identity'`)، و**list ببادئة بلا `/` أخيرة على مجلدها** (البند 8؛ S2-E، ADR-023 §3-58 و59).
 - **ما يُقاس في S6 قبل اعتماده** (وإلا يُكتب البديل): التبديل إلى النطاق وحده في متصفح حقيقي، وTurbopack، وVite 5 إلى 7، وخطوة بناء Flutter web، واحترام Xcode و`flutter build ios` للمرآة، وبقاء إشعار `META-INF/aruma/` في APK وفي APK من AAB. **وفي S2 وS4:** كلفة fsync على القرص المستهدف، و`universeDomain` على مفتاح فيه `universe_domain`.
 - **قطع العلاقة مع Google في الإنتاج يحتاج تعديل كود Google** على Android وiOS، بإذن الرخصة وإشعاراتها، وصيانة تفشل بصوت عالٍ مع كل إصدار جديد. ومستعملو xcframework اليدوي وما لا يمر بالمحوّل يأخذون الاحتياط وحده.
 - **`firestore.get()` في قواعد Storage يرفض حتى v0.4**، وv0.4 يغيّر سطرًا في `internal/app`.

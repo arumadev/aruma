@@ -37,7 +37,7 @@ func (s *Service) CreateToken(ctx context.Context, b Bucket, name string, p Prin
 
 // DeleteToken removes one of an object's download tokens (?delete_token= on /v0): admins only.
 // Removing the last one makes a new one at once (E §5). A token the object does not have
-// changes nothing but the metageneration, as the emulator answers (tokens.json; ADR-023 §3-40).
+// changes nothing but the metageneration, as the emulator answers (tokens.json; ADR-023 §3-46).
 func (s *Service) DeleteToken(ctx context.Context, b Bucket, name string, p Principal, token string) (Object, error) {
 	if p.Kind != PrincipalAdmin {
 		return Object{}, ErrPermissionDenied
