@@ -113,3 +113,34 @@ func TestDebugArity(t *testing.T) {
 		t.Errorf("math.abs(1, 2): %+v", issues)
 	}
 }
+
+// An invalid literal pattern fails compilation in matches() and split(), and only evaluation in
+// replace(), where || absorbs it (Rules Test API, S1-E probe, 2026-10-24).
+func TestInvalidLiteralPatterns(t *testing.T) {
+	for cond, compiles := range map[string]bool{
+		"'a'.matches('(')":                         false,
+		"'a(b'.split('(').size() == 2":             false,
+		"'ab'.split('(?=b)').size() == 2":          false,
+		"'abc'.replace('(', 'x') == 'abc'":         true,
+		"'abc'.replace('(', 'x') == 'abc' || true": true,
+	} {
+		rs, issues := Compile(Firestore, File{Name: "firestore.rules", Content: grantingSource(cond)}, DefaultLimits())
+		if (rs != nil) != compiles {
+			t.Errorf("%s: compiled %v, want %v: %v", cond, rs != nil, compiles, issues)
+			continue
+		}
+		if !compiles {
+			if len(issues) != 1 || !strings.HasPrefix(issues[0].Description, "Invalid regular expression pattern. Pattern: ") {
+				t.Errorf("%s: %v", cond, issues)
+			}
+			continue
+		}
+		d := evaluate(t, rs, request(MethodGet, docPath("c", "d"), nil))
+		if want := strings.HasSuffix(cond, "|| true"); d.Allow != want {
+			t.Errorf("%s: allow %v, want %v: %+v", cond, d.Allow, want, d.Statements)
+		}
+		if !d.Allow && d.Statements[0].Message != "Invalid regular expression pattern. Pattern: (." {
+			t.Errorf("%s: %+v", cond, d.Statements)
+		}
+	}
+}

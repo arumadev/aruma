@@ -224,10 +224,15 @@ func (c *checker) body(fi *fnInfo) {
 		}
 	}
 	// Production (the Rules Test API, S0-A) and the emulator compile one let more than the limit
-	// they name: 11 compile, 12 fail "of 10".
+	// they name: 11 compile, 12 fail "of 10". The error stands at what follows the twelfth let:
+	// the thirteenth let, or the return's expression when there is none (aruma/limits/lets_12 at
+	// L4:177, lets_21 at L4:170, on both).
 	if len(fn.lets) > c.lim.FunctionLets+1 {
 		at := fn.span
-		if fn.ret != nil {
+		switch next := c.lim.FunctionLets + 2; {
+		case next < len(fn.lets):
+			at = fn.lets[next].span
+		case fn.ret != nil:
 			at = fn.ret.pos()
 		}
 		c.errorf(at, msgTooManyLets, c.lim.FunctionLets)
@@ -565,7 +570,7 @@ func (c *checker) libraryArity(at span, name string, n int) {
 }
 
 // literalRegex compiles the pattern a string literal passes to matches, split or replace, so
-// that an invalid one, or one whose program is too large, fails compilation.
+// that an invalid one, or one whose program is too large, fails compilation (but replace's, below).
 func (c *checker) literalRegex(e *callExpr) {
 	switch e.name {
 	case "matches", "split", "replace":
@@ -580,7 +585,12 @@ func (c *checker) literalRegex(e *callExpr) {
 		return
 	}
 	if pattern, ok := lit.val.AsString(); ok {
-		if err := compileLiteralRegex(c.rs.regexes, pattern); err != nil {
+		// Production refuses an invalid literal of matches() and split() when it compiles, but
+		// one of replace() only when the call is evaluated, an error || absorbs (Rules Test API,
+		// S1-E probe 2026-10-24: '(' and '(?=b)' fail to compile in matches and split; '(' and
+		// '(a)\1' in replace give "Invalid regular expression pattern" at the call). A valid
+		// literal of replace() is still compiled once, here.
+		if err := compileLiteralRegex(c.rs.regexes, pattern); err != nil && e.name != "replace" {
 			c.issue(lit.span, SeverityError, err.Error())
 		}
 	}
