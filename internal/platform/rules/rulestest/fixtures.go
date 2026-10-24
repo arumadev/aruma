@@ -260,7 +260,15 @@ var ErrHeldOut = errors.New("rulestest: a held-out file is outside the developme
 
 // Load reads every case file under root: production/, emulator/ and imported/*/normalised/.
 // It never enters a directory named heldout.
-func Load(root string) (*Set, error) {
+func Load(root string) (*Set, error) { return load(root, false) }
+
+// LoadHeldOut reads the held-out set alone, from a directory outside the repository where its
+// branch is checked out (test/oracle/rules/heldout/ there): every file must declare itself
+// held out. It is for the one measurement of ADR-021 §6; the tests call it only when
+// ARUMA_RULES_HELDOUT names that directory (heldout_test.go).
+func LoadHeldOut(root string) (*Set, error) { return load(root, true) }
+
+func load(root string, heldOut bool) (*Set, error) {
 	set := &Set{Root: root}
 	var caseFiles, comparisonFiles []string
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
@@ -268,7 +276,7 @@ func Load(root string) (*Set, error) {
 			return err
 		}
 		if d.IsDir() {
-			if path != root && skipDirs[d.Name()] {
+			if path != root && skipDirs[d.Name()] && !(heldOut && d.Name() == "heldout") {
 				return filepath.SkipDir
 			}
 			return nil
@@ -290,7 +298,7 @@ func Load(root string) (*Set, error) {
 	sort.Strings(comparisonFiles)
 	byID := map[string]*Case{}
 	for _, p := range caseFiles {
-		cs, f, err := readCaseFile(root, p)
+		cs, f, err := readCaseFile(root, p, heldOut)
 		if err != nil {
 			return nil, err
 		}
@@ -307,7 +315,7 @@ func Load(root string) (*Set, error) {
 		}
 	}
 	for _, p := range comparisonFiles {
-		cs, f, err := readComparisonFile(root, p, byID)
+		cs, f, err := readComparisonFile(root, p, byID, heldOut)
 		if err != nil {
 			return nil, err
 		}
@@ -411,13 +419,21 @@ func readJSON(root, path string, v any) (rel, sum string, err error) {
 	return rel, hex.EncodeToString(h[:]), nil
 }
 
-// checkHeader rejects a held-out file and reports whether the file is an oracle file at all.
-func checkHeader(rel string, h *fileHeader) (bool, error) {
+// ErrNotHeldOut is what LoadHeldOut answers for a file that does not declare itself held out.
+var ErrNotHeldOut = errors.New("rulestest: a development file is outside the held-out set")
+
+// checkHeader rejects a held-out file (or, reading the held-out set, any other) and reports
+// whether the file is an oracle file at all.
+func checkHeader(rel string, h *fileHeader, heldOut bool) (bool, error) {
 	if h.Schema != Schema {
 		return false, nil
 	}
-	if strings.EqualFold(h.Set, "heldout") || strings.EqualFold(h.Set, "held-out") {
+	isHeldOut := strings.EqualFold(h.Set, "heldout") || strings.EqualFold(h.Set, "held-out")
+	switch {
+	case isHeldOut && !heldOut:
 		return false, fmt.Errorf("%w: %s", ErrHeldOut, rel)
+	case !isHeldOut && heldOut:
+		return false, fmt.Errorf("%w: %s", ErrNotHeldOut, rel)
 	}
 	return true, nil
 }
@@ -448,7 +464,7 @@ func category(topic, id string) string {
 	return id
 }
 
-func readCaseFile(root, path string) ([]*Case, *File, error) {
+func readCaseFile(root, path string, heldOut bool) ([]*Case, *File, error) {
 	var doc struct {
 		fileHeader
 		Cases []rawCase `json:"cases"`
@@ -457,7 +473,7 @@ func readCaseFile(root, path string) ([]*Case, *File, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	if ok, err := checkHeader(rel, &doc.fileHeader); !ok || err != nil {
+	if ok, err := checkHeader(rel, &doc.fileHeader, heldOut); !ok || err != nil {
 		return nil, nil, err
 	}
 	f := &File{Path: rel, Schema: doc.Schema, Shape: "cases", Set: doc.Set, Source: doc.Source,
@@ -585,7 +601,7 @@ func (m rawMock) mock() (Mock, error) {
 // readComparisonFile reads emulator/<topic>.json: for each case of production/<topic>.json, what
 // the emulator decided. A comparison case is the production case with the emulator's result as
 // its expected result, the Test API's as Higher, and the file's provenance.
-func readComparisonFile(root, path string, byID map[string]*Case) ([]*Case, *File, error) {
+func readComparisonFile(root, path string, byID map[string]*Case, heldOut bool) ([]*Case, *File, error) {
 	var doc struct {
 		fileHeader
 		Cases []struct {
@@ -598,7 +614,7 @@ func readComparisonFile(root, path string, byID map[string]*Case) ([]*Case, *Fil
 	if err != nil {
 		return nil, nil, err
 	}
-	if ok, err := checkHeader(rel, &doc.fileHeader); !ok || err != nil {
+	if ok, err := checkHeader(rel, &doc.fileHeader, heldOut); !ok || err != nil {
 		return nil, nil, err
 	}
 	if doc.Provenance.Rank() == 0 {

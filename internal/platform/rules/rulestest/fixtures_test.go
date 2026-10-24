@@ -75,6 +75,24 @@ func TestLoadSkipsHeldOut(t *testing.T) {
 	}
 }
 
+// TestLoadHeldOut: the held-out reader takes held-out files alone, under heldout/ too.
+func TestLoadHeldOut(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "heldout", "production", "t.json"), caseFile("heldout", "aruma/t/h1"))
+	writeFile(t, filepath.Join(root, "heldout", "imported", "x", "normalised", "t.json"), caseFile("heldout", "aruma/t/h2"))
+	set, err := LoadHeldOut(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(set.Cases) != 2 {
+		t.Fatalf("%d held-out cases, want 2", len(set.Cases))
+	}
+	writeFile(t, filepath.Join(root, "heldout", "production", "dev.json"), caseFile("development", "aruma/t/dev"))
+	if _, err := LoadHeldOut(root); !errors.Is(err, ErrNotHeldOut) {
+		t.Fatalf("LoadHeldOut with a development file: %v, want ErrNotHeldOut", err)
+	}
+}
+
 func loadOracle(t *testing.T) *Set {
 	t.Helper()
 	root, err := Root()
