@@ -58,12 +58,11 @@ function read(suite) {
     for (const t of r.failures) if (!r.tests.some((x) => x.fullTitle === t.fullTitle)) out.push({ suite, file: path.basename(t.file ?? ''), title: t.fullTitle, state: 'failed', error: firstLine(t.err?.message) });
   }
   for (const e of out) {
-    const short = e.title.split(' ').length > 0 ? e.title : e.title;
     e.emulatorOnly = [...emulatorOnly].some((k) => {
       const [f, t] = k.split('|');
       return f === e.file && e.title.endsWith(t);
     });
-    const c = classified[`${suite} | ${short}`];
+    const c = classified[`${suite} | ${e.title}`];
     if (c) e.class = c;
   }
   return out;

@@ -2,14 +2,14 @@
 // test/oracle/storage/emulator, step by step, and prints every difference with its class from
 // classified.json ("captures"):
 //
-//   node captures.mjs <emulator dir> <aruma dir> <classified.json> [--json out.json]
+//   node captures.mjs <emulator dir> <aruma dir> <classified.json> [--json out.json] [--verbose]
 //
 // Both sides ran the same script (test/oracle/storage/capture/capture.mjs) with the same
 // clients, bucket and rules, so a step of one has its twin in the other by name. What is compared
 // for each step, once the run ids, ports, ids and times are written alike:
 //
 //   result         what the SDK made of it: ok, its error code, or the raw request's status
-//   exchanges      how many requests the client sent, and each one's method and path
+//   exchanges      the requests the client sent, method and path, as a set
 //   x<i>.status    each response's status
 //   x<i>.header.H  the headers clients act on (HEADERS below), present or not, and their value
 //   x<i>.keys      the fields of a JSON response (and of its metadata, items[0], error) that one
@@ -27,6 +27,7 @@ import path from 'node:path';
 const args = process.argv.slice(2);
 const [emuDir, arumaDir, classifiedFile] = args;
 const jsonOut = args.includes('--json') ? args[args.indexOf('--json') + 1] : null;
+const verbose = args.includes('--verbose'); // every difference under its rule, not one
 const glob = (p) => new RegExp(`^${p.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`, 's');
 const patterns = (JSON.parse(fs.readFileSync(classifiedFile, 'utf8')).captures ?? []).map((r) => ({
   ...r,
@@ -83,7 +84,7 @@ function resultOf(step) {
   const r = step.result;
   if (!r) return 'none';
   if ('status' in r) return `status ${r.status}`;
-  if ('error' in r) return `error ${r.error?.code ?? r.error?.name ?? '?'}`;
+  if ('error' in r) return `error ${typeof r.error === 'string' ? norm(r.error).slice(0, 120) : (r.error?.code ?? r.error?.name ?? '?')}`;
   if ('remaining' in r) return `remaining ${r.remaining}`;
   return 'ok';
 }
@@ -100,16 +101,24 @@ function sortQuery(s) {
   return `${s.slice(0, i)}?${s.slice(i + 1).split('&').sort().join('&')}`;
 }
 
+// canonical is JSON with every object's keys in order: no client reads them in order.
+function canonical(v) {
+  if (Array.isArray(v)) return v.map(canonical);
+  if (v && typeof v === 'object') return Object.fromEntries(Object.keys(v).sort().map((k) => [k, canonical(v[k])]));
+  return v;
+}
+
 function show(v) {
   if (v === undefined) return '(absent)';
-  return sortQuery(norm(typeof v === 'string' ? v : JSON.stringify(v)));
+  return sortQuery(norm(typeof v === 'string' ? v : JSON.stringify(canonical(v))));
 }
 
 function compareStep(scenario, a, b, out) {
   const push = (aspect, emu, aru) => out.push({ key: `${scenario} | ${a.step} | ${aspect}`, emulator: emu, aruma: aru });
   if (resultOf(a) !== resultOf(b)) push('result', resultOf(a), resultOf(b));
-  const ea = a.exchanges.map(requestLine);
-  const eb = b.exchanges.map(requestLine);
+  // As a set: the Admin SDKs send a deleteFiles' DELETEs ten at a time, in no set order.
+  const ea = a.exchanges.map(requestLine).sort();
+  const eb = b.exchanges.map(requestLine).sort();
   if (ea.join('\n') !== eb.join('\n')) push('exchanges', ea.join(' ; '), eb.join(' ; '));
   const n = Math.min(a.exchanges.length, b.exchanges.length);
   for (let i = 0; i < n; i++) {
@@ -137,8 +146,10 @@ function compareStep(scenario, a, b, out) {
       if (onlyA.length || onlyB.length) push(`x${i}.keys${sub ? '.' + sub : ''}`, onlyA.join(',') || '-', onlyB.join(',') || '-');
     }
     for (const f of FIELDS) {
-      const va = get(ja, f);
-      const vb = get(jb, f);
+      // A listing's items by name: their fields are compared on items[0] above.
+      const pick = (j) => (f === 'items' && Array.isArray(j.items) ? j.items.map((o) => o?.name) : get(j, f));
+      const va = pick(ja);
+      const vb = pick(jb);
       if (va !== undefined && vb !== undefined && show(va) !== show(vb)) push(`x${i}.field.${f}`, show(va), show(vb));
     }
   }
@@ -194,7 +205,8 @@ for (const [p, ds] of hits) {
     console.log(`  [rule matched nothing] ${p.key}`);
     continue;
   }
-  console.log(`  [${p.class}${p.item ? ' ' + p.item : ''}] ${ds.length}x ${p.note}\n      e.g. ${ds[0].key}`);
+  console.log(`  [${p.class}${p.item ? ' ' + p.item : ''}] ${ds.length}x ${p.note}`);
+  for (const d of verbose ? ds : ds.slice(0, 1)) console.log(`      ${verbose ? '' : 'e.g. '}${d.key}${verbose ? `: ${String(d.emulator).slice(0, 80)} => ${String(d.aruma).slice(0, 80)}` : ''}`);
 }
 for (const d of unclassified) {
   console.log(`  [UNCLASSIFIED] ${d.key}\n      emulator: ${String(d.emulator).slice(0, 300)}\n      aruma:    ${String(d.aruma).slice(0, 300)}`);

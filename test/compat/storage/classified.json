@@ -1,21 +1,489 @@
 {
-  "tests": {},
+  "comment": "The classification of every difference the Storage compat run finds (summarize.mjs for the suites, captures.mjs for the captures). Classes: a, a bug in Aruma (fixed, with a test, or listed); b, a difference ADR-023 §3 lists (item is its number); c, a bug in the emulator, with the evidence that production differs. A capture rule names one kind of difference: its key and values are patterns, * any run of characters, and the first rule that matches classifies it, so the rules about one step come before the general ones.",
+  "tests": {
+    "ct | Firebase Storage JavaScript SDK conformance tests .ref() #getDownloadURL() serves the right content": {
+      "class": "b",
+      "item": "28",
+      "note": "an object stored over GCS without Content-Disposition downloads with attachment; filename*=utf-8''testFile; the test wants filename*=testFile, without the charset RFC 8187 requires"
+    },
+    "ct | GCS endpoint conformance tests Headers should set default response headers on object download": {
+      "class": "b",
+      "item": "28",
+      "note": "the same default Content-Disposition, on the GCS download"
+    },
+    "ct | Firebase Storage endpoint conformance tests resumable upload upload should handle resumable uploads with an empty buffer": {
+      "class": "b",
+      "item": "88",
+      "note": "supertest's .send({}) makes the finalize carry the two bytes {} without X-Goog-Upload-Offset; a finalize alone must have an empty body (400)"
+    },
+    "ct | Firebase Storage endpoint conformance tests tokens should return a 403 for create_token if auth header is invalid": {
+      "class": "b",
+      "item": "67",
+      "note": "Authorization: Bearer somethingElse is a credential that is not accepted: 401, as in RTDB; the test wants 403"
+    },
+    "ct | Firebase Storage endpoint conformance tests tokens should return a 403 for delete_token if auth header is invalid": {
+      "class": "b",
+      "item": "67",
+      "note": "the same, on delete_token"
+    },
+    "ct | GCS Javascript SDK conformance tests .file() #copy() should copy the file to a different bucket": {
+      "class": "b",
+      "item": "93",
+      "note": "one bucket per project: the test's other-bucket does not exist, 404 The specified bucket does not exist."
+    },
+    "ct | GCS Javascript SDK conformance tests .file() #makePublic() should no-op": {
+      "class": "b",
+      "item": "78",
+      "note": "makePublic patches the object's ACL: 501 notImplemented"
+    },
+    "ct | GCS Javascript SDK conformance tests .file() #makePublic() should not interfere with downloading of bytes via public URL": {
+      "class": "b",
+      "item": "78",
+      "note": "the same makePublic, before a read through the XML API path"
+    },
+    "ct | GCS Javascript SDK conformance tests .file() #getMetadata() should return generated metadata for new upload": {
+      "class": "c",
+      "note": "the object resource has timeFinalized, as GCS's own API description does (google.golang.org/api storage/v1 Object.TimeFinalized, which cloud.google.com/go/storage 1.62.1 reads as ObjectAttrs.Finalized); the test's exact key list, the emulator's, lacks it"
+    },
+    "ct | GCS Javascript SDK conformance tests .file() #setMetadata() should allow overriding of default metadata": {
+      "class": "c",
+      "note": "the same timeFinalized, in the exact key list of a PATCH's reply"
+    },
+    "ct | GCS Javascript SDK conformance tests .file() #setMetadata() should convert non-string fields under .metadata to strings": {
+      "class": "b",
+      "item": "77",
+      "note": "a custom metadata value that is not a string or null is 400, not turned into a string"
+    },
+    "ct | GCS Javascript SDK conformance tests .file() #copy() should not support the use of a rewriteToken": {
+      "class": "b",
+      "item": "78",
+      "note": "emulatorOnly, outside the count: a rewriteToken sent is 400 here, 501 in the emulator"
+    },
+    "ct | GCS endpoint conformance tests Upload protocols multipart upload should handle signed post policy uploads via the emulator endpoint": {
+      "class": "b",
+      "item": "93",
+      "note": "emulatorOnly, outside the count: POST policy uploads are the XML API, which v0.3 does not serve (ADR-023 §2)"
+    }
+  },
   "captures": [
     {
-      "key": "* | x*.header.content-type", "emulator": "application/json; charset=utf-8", "aruma": "application/json; charset=UTF-8",
-      "class": "c", "note": "JSON replies say charset=UTF-8, as production does (production/bucket_probe.json); the emulator writes utf-8"
+      "key": "* | x*.field.nextPageToken",
+      "class": "b",
+      "item": "45",
+      "note": "a pageToken is opaque and signed, bound to the listing (ADR-022 §13); the emulator's is the last name"
     },
     {
-      "key": "* | x*.header.access-control-allow-origin", "emulator": "(absent)", "aruma": "*",
-      "class": "b", "item": "27", "note": "Access-Control-Allow-Origin: * on every /v0 reply, Origin or not, as production does on its error replies (bucket_probe.json); the emulator only answers an Origin"
+      "key": "* | x*.header.content-type",
+      "emulator": "application/json; charset=utf-8",
+      "aruma": "application/json; charset=UTF-8",
+      "class": "c",
+      "note": "JSON replies say charset=UTF-8, as production does (production/bucket_probe.json); the emulator writes utf-8"
     },
     {
-      "key": "* | x*.header.cache-control", "emulator": "(absent)", "aruma": "private, max-age=0",
-      "class": "c", "note": "Cache-Control: private, max-age=0 on /v0 JSON, as production (bucket_probe.json, E §1); the emulator sends none"
+      "key": "* | x*.header.access-control-allow-origin",
+      "emulator": "(absent)",
+      "aruma": "*",
+      "class": "b",
+      "item": "27",
+      "note": "Access-Control-Allow-Origin: * on every /v0 reply, Origin or not, as production does on its error replies (bucket_probe.json); the emulator only answers an Origin"
     },
     {
-      "key": "* | x*.header.cache-control", "emulator": "(absent)", "aruma": "no-cache, no-store, max-age=0, must-revalidate",
-      "class": "c", "note": "Cache-Control: no-cache, no-store, max-age=0, must-revalidate on GCS JSON, as production (bucket_probe.json, ADR-023 §3-79); the emulator sends none"
+      "key": "* | x*.header.cache-control",
+      "emulator": "(absent)",
+      "aruma": "private, max-age=0",
+      "class": "c",
+      "note": "Cache-Control: private, max-age=0 on /v0 JSON, as production (bucket_probe.json, E §1); the emulator sends none"
+    },
+    {
+      "key": "* | x*.header.cache-control",
+      "emulator": "(absent)",
+      "aruma": "no-cache, no-store, max-age=0, must-revalidate",
+      "class": "c",
+      "note": "Cache-Control: no-cache, no-store, max-age=0, must-revalidate on GCS JSON, as production (bucket_probe.json, ADR-023 §3-79); the emulator sends none"
+    },
+    {
+      "key": "* | x*.keys*",
+      "emulator": "metadata",
+      "aruma": "-",
+      "class": "b",
+      "item": "40",
+      "note": "empty custom metadata left out of a /v0 resource; the emulator writes \"metadata\": {}"
+    },
+    {
+      "key": "* | x*.keys*",
+      "emulator": "-",
+      "aruma": "timeFinalized",
+      "class": "c",
+      "note": "timeFinalized in a GCS object resource: GCS's own API description has it (google.golang.org/api storage/v1 TimeFinalized, read by cloud.google.com/go/storage 1.62.1 as Finalized); the emulator leaves it out"
+    },
+    {
+      "key": "* | x*.field.contentDisposition",
+      "emulator": "inline",
+      "aruma": "inline; filename*=utf-8''*",
+      "class": "c",
+      "item": "35",
+      "note": "the stored default contentDisposition is inline; filename*=utf-8''<name>, as a deployed bucket stores it (PY-RR); the emulator stores inline"
+    },
+    {
+      "key": "* | x*.header.content-disposition",
+      "emulator": "inline; filename*=*",
+      "aruma": "inline; filename*=utf-8''*",
+      "class": "c",
+      "item": "35",
+      "note": "a download carries the stored inline; filename*=utf-8''<name> (PY-RR); the emulator writes filename*=<name> without the charset RFC 8187 requires"
+    },
+    {
+      "key": "* | x*.header.content-disposition",
+      "emulator": "attachment; filename*=*",
+      "aruma": "attachment; filename*=utf-8''*",
+      "class": "b",
+      "item": "28",
+      "note": "a download with no stored Content-Disposition is attachment; filename*=utf-8''<name>; the emulator writes filename*=<name> without the charset"
+    },
+    {
+      "key": "* | x*.header.content-encoding",
+      "emulator": "",
+      "aruma": "(absent)",
+      "class": "c",
+      "note": "no Content-Encoding on an identity download; the emulator sends an empty one, which names no content coding (RFC 9110 §8.4), where GCS marks such an object with x-goog-stored-content-encoding: identity (below)"
+    },
+    {
+      "key": "* | x*.header.x-goog-stored-content-encoding",
+      "emulator": "(absent)",
+      "aruma": "*",
+      "class": "c",
+      "note": "x-goog-stored-content-encoding on every download, as GCS sends it: @google-cloud/storage reads it to decide whether to check the hashes (file.js safeToValidate), Go's reader to tell server decompression (B §6.3); the emulator sends none"
+    },
+    {
+      "key": "* | x*.header.cache-control",
+      "emulator": "",
+      "aruma": "private, max-age=0",
+      "class": "b",
+      "item": "21",
+      "note": "a download with no stored Cache-Control is private, max-age=0 (token link; a rules-decided one is private too, §3-42 and §3-90); the emulator sends an empty one"
+    },
+    {
+      "key": "* | x*.header.cache-control",
+      "emulator": "public, max-age=*",
+      "aruma": "private, max-age=0",
+      "class": "c",
+      "note": "the emulator copies an object's stored Cache-Control onto the JSON reply about it (a PATCH's); a JSON reply is not the object, and production's JSON replies are private, max-age=0 (bucket_probe.json)"
+    },
+    {
+      "key": "* | x*.header.content-disposition",
+      "emulator": "*",
+      "aruma": "(absent)",
+      "class": "c",
+      "note": "the emulator copies an object's Content-Disposition onto JSON replies about it (PATCH, admin reads); production's JSON replies carry none (bucket_probe.json)"
+    },
+    {
+      "key": "* | x*.field.error.message",
+      "emulator": "Permission denied. No * permission.",
+      "aruma": "Permission denied.",
+      "class": "b",
+      "item": "22",
+      "note": "the 403 text is Permission denied.; the emulator names the permission; no SDK reads it (A §5.1)"
+    },
+    {
+      "key": "admin_go | New*Reader* | *",
+      "class": "b",
+      "item": "7",
+      "note": "Go's readers, without WithJSONReads, read through the XML API path (/<bucket>/<object>), which Aruma does not serve: Go needs WithJSONReads (adminstorage)"
+    },
+    {
+      "key": "admin_go | Writer small, default ChunkSize (16 MiB) | x0.field.contentType",
+      "class": "c",
+      "note": "a multipart upload whose JSON part has no contentType takes the media part's (the type Go sniffs), as GCS documents for multipart uploads and B §5.2 reads from the SDKs; the emulator ignores the media part's type"
+    },
+    {
+      "key": "admin_gcs_endpoint | file.save 9 MiB chunkSize 4 MiB (resumable, chunked) | *",
+      "class": "c",
+      "item": "34",
+      "note": "the GCS resumable protocol whole: Node's chunks get 308 with Range and the upload ends whole; the emulator ends a session on its first chunk (B §9), so Node's chunked save fails"
+    },
+    {
+      "key": "admin_go | Writer 9 MiB, ChunkSize 4 MiB (resumable, 3 chunks) | *",
+      "class": "c",
+      "item": "34",
+      "note": "the same for Go: its chunks get 200 with X-Http-Status-Code-Override: 308 and the upload ends whole; the emulator ends the session on the first chunk and Go fails on its OK body"
+    },
+    {
+      "key": "admin_*e* | file.save * (*resumable*) | x0.header.content-type",
+      "emulator": "text/plain; charset=utf-8",
+      "aruma": "(absent)",
+      "class": "c",
+      "item": "34",
+      "note": "a GCS resumable start has no body, as GCS documents it (a 200 with Location); the emulator's says OK in text/plain"
+    },
+    {
+      "key": "admin_* | file.save small (default*) | x0.header.content-type",
+      "emulator": "text/plain; charset=utf-8",
+      "aruma": "(absent)",
+      "class": "c",
+      "item": "34",
+      "note": "the same bodiless start for a one-request resumable save"
+    },
+    {
+      "key": "admin_* | *Update* | *",
+      "class": "c",
+      "item": "34",
+      "note": "objects.patch over GCS is served; the emulator answers 501 Not Implemented to Go's Update"
+    },
+    {
+      "key": "admin_* | *setMetadata | *",
+      "class": "c",
+      "item": "34",
+      "note": "objects.patch under /storage/v1 with useAuthWithCustomEndpoint is served; the emulator answers 501"
+    },
+    {
+      "key": "admin_* | *CopierFrom* | *",
+      "class": "c",
+      "item": "34",
+      "note": "rewriteTo is served; the emulator answers Go's CopierFrom 501"
+    },
+    {
+      "key": "admin_* | *DoesNotExist precondition* | *",
+      "class": "c",
+      "item": "34",
+      "note": "ifGenerationMatch=0 on an existing object is 412 conditionNotMet; the emulator ignores the precondition and overwrites"
+    },
+    {
+      "key": "admin_* | *ifGenerationMatch=0* | *",
+      "class": "c",
+      "item": "34",
+      "note": "the same 412 for Node's save with ifGenerationMatch=0; the emulator overwrites"
+    },
+    {
+      "key": "admin_node | bucket.exists | *",
+      "class": "c",
+      "item": "34",
+      "note": "buckets.get answers for the project's bucket, so bucket.exists() is true; the emulator answers 404"
+    },
+    {
+      "key": "admin_node | bucket.getMetadata | *",
+      "class": "c",
+      "item": "34",
+      "note": "the same buckets.get for bucket.getMetadata()"
+    },
+    {
+      "key": "admin_go | Bucket Attrs | *",
+      "class": "c",
+      "item": "34",
+      "note": "the same buckets.get for Go's Bucket.Attrs"
+    },
+    {
+      "key": "admin_go | Delete * | *",
+      "class": "c",
+      "item": "34",
+      "note": "follows from the emulator's failures above: big.bin and copy.txt exist here (the resumable upload and the copy worked), so their deletes are 204"
+    },
+    {
+      "key": "admin_* | * | x0.field.items",
+      "class": "c",
+      "item": "34",
+      "note": "follows from the emulator's failed resumable uploads: big.bin is in the listing here"
+    },
+    {
+      "key": "admin_gcs_endpoint | cleanup | *",
+      "class": "c",
+      "item": "34",
+      "note": "the same big.bin, deleted at the cleanup"
+    },
+    {
+      "key": "sdk_list | raw list invalid pageToken | *",
+      "class": "b",
+      "item": "5",
+      "note": "a pageToken that is not one is 400; the emulator lists from it"
+    },
+    {
+      "key": "sdk_list | raw list prefix without trailing slash | *",
+      "class": "b",
+      "item": "59",
+      "note": "a list prefix without a trailing / is served, decided on its folder; the emulator refuses it 400"
+    },
+    {
+      "key": "sdk_list | list maxResults=2* | *",
+      "class": "c",
+      "note": "maxResults counts items and prefixes together and a page holds them in name order (GCS objects.list: \"Maximum combined number of entries in items[] and prefixes[]\"), so a third page holds what was left; the emulator returns every prefix on every page"
+    },
+    {
+      "key": "sdk_read | GET metadata with Bearer instead of Firebase | *",
+      "class": "b",
+      "item": "67",
+      "note": "Bearer <ID token> on /v0 is a credential that is not accepted: 401; the emulator takes it"
+    },
+    {
+      "key": "rules | raw: garbage token | *",
+      "class": "b",
+      "item": "67",
+      "note": "Firebase not-a-token is a credential that is not accepted: 401; the emulator ignores it and lets the rules deny, 403"
+    },
+    {
+      "key": "rules | raw: forged alg=none token | *",
+      "class": "c",
+      "item": "30",
+      "note": "an unsigned ID token is refused, 401: production checks the signature (E §7); the emulator believes it"
+    },
+    {
+      "key": "rules | token on the metadata URL (no alt=media), no auth | *",
+      "class": "b",
+      "item": "18",
+      "note": "a download token opens the bytes, not the metadata; the emulator opens both"
+    },
+    {
+      "key": "tokens | * | x0.field.downloadTokens",
+      "class": "c",
+      "item": "32",
+      "note": "a client cannot plant a download token by PATCH (E §5); the emulator adds mine-1 to the tokens"
+    },
+    {
+      "key": "tokens | download with token mine-1 | *",
+      "class": "c",
+      "item": "32",
+      "note": "so the planted token opens nothing, 403; it opens the object in the emulator"
+    },
+    {
+      "key": "tokens | * | x0.field.error.message",
+      "emulator": "Missing admin credentials.",
+      "aruma": "Permission denied.",
+      "class": "b",
+      "item": "22",
+      "note": "create_token and delete_token without the admin's credential are 403 Permission denied.; the emulator says Missing admin credentials."
+    },
+    {
+      "key": "raw_resumable | upload with a gap (offset 15) | *",
+      "class": "c",
+      "item": "33",
+      "note": "a chunk at an offset past the size received is 400 with the size; the emulator ignores offsets and appends"
+    },
+    {
+      "key": "raw_resumable | query after * | x0.header.x-goog-upload-size-received",
+      "emulator": "*0",
+      "aruma": "*0",
+      "class": "c",
+      "item": "33",
+      "note": "follows: the emulator appended the gap's and the overlap's bytes too, so its sizes are 10 more"
+    },
+    {
+      "key": "raw_resumable | upload, finalize (rest) | x0.field.size",
+      "class": "c",
+      "item": "33",
+      "note": "the same: the object is the 20 bytes sent in order, the emulator's 30 with the misplaced ones"
+    },
+    {
+      "key": "raw_resumable | upload, finalize with 4 bytes | *",
+      "class": "b",
+      "item": "23",
+      "note": "a finalize short of the size announced at start is 400 with final, no object; the emulator stores the 4 bytes"
+    },
+    {
+      "key": "raw_resumable | finalize again (empty) | *",
+      "class": "b",
+      "item": "86",
+      "note": "a finalize that brings no byte past the end of a finished session is a repeat: 200 with final and the saved metadata; the emulator answers 400"
+    },
+    {
+      "key": "raw_resumable | upload after final | *",
+      "class": "b",
+      "item": "86",
+      "note": "a byte past the end of a finished session is 400 with final and the size; the emulator's 400 has no status"
+    },
+    {
+      "key": "raw_resumable | query after final | *",
+      "class": "b",
+      "item": "22",
+      "note": "a query on a finished session answers with the object's metadata; the emulator with OK"
+    },
+    {
+      "key": "raw_resumable | cancel | *",
+      "class": "b",
+      "item": "85",
+      "note": "cancel answers X-Goog-Upload-Status: cancelled (E §3.1); the emulator sends no status"
+    },
+    {
+      "key": "raw_resumable | upload after cancel | *",
+      "class": "b",
+      "item": "85",
+      "note": "a chunk or finalize on a cancelled session is 400 with final; the emulator's 400 has no status"
+    },
+    {
+      "key": "raw_upload | multipart by hand, name in metadata only | *",
+      "class": "b",
+      "item": "26",
+      "note": "a multipart upload named in metadata.name alone is taken; the emulator refuses it 400"
+    },
+    {
+      "key": "raw_upload | unknown bucket * | *",
+      "class": "c",
+      "item": "31",
+      "note": "an unknown bucket is 404 Not Found. as production answers (bucket_probe.json, where a multipart upload's 404 has no X-Goog-Upload-Status); the emulator creates the bucket and lets the rules deny, 403 with final"
+    },
+    {
+      "key": "raw_upload | multipart, wrong boundary | *",
+      "class": "c",
+      "note": "a body whose boundary is not the Content-Type's is 400 with a JSON body, as production's errors are (bucket_probe.json); the emulator's is a text body"
+    },
+    {
+      "key": "raw_upload | * | x0.header.access-control-allow-origin",
+      "emulator": "https://app.example.com",
+      "aruma": "*",
+      "class": "b",
+      "item": "27",
+      "note": "the API's CORS is *, whatever the Origin, as production's (bucket_probe.json, sent with an Origin); the emulator echoes the Origin"
+    },
+    {
+      "key": "sdk_metadata | raw PATCH: invalid JSON | *",
+      "class": "c",
+      "note": "a PATCH body that is not JSON is 400 with a JSON error, as production's errors are (bucket_probe.json); the emulator answers an HTML stack trace"
+    },
+    {
+      "key": "cleanup | deleteFiles | exchanges",
+      "class": "b",
+      "item": "23",
+      "note": "the objects left at the end follow from two outcomes above: open/raw/short.txt is not stored here (§3-23, the short finalize), and open/rawup/mp.txt is (§3-26, named in its metadata alone)"
+    },
+    {
+      "key": "rules | * | x0.header.x-goog-upload-status",
+      "emulator": "final",
+      "aruma": "(absent)",
+      "class": "c",
+      "note": "a one-request upload (multipart) denied by the rules is 403 without X-Goog-Upload-Status, as production's multipart replies carry none (bucket_probe.json); the emulator adds final"
+    },
+    {
+      "key": "* | x*.header.content-type",
+      "emulator": "text/plain; charset=utf-8",
+      "aruma": "(absent)",
+      "class": "b",
+      "item": "94",
+      "note": "the /v0 resumable start, chunk, query and cancel replies have no body; the emulator's say OK in text/plain"
+    },
+    {
+      "key": "* | x*.header.x-goog-upload-size-received",
+      "emulator": "(absent)",
+      "class": "b",
+      "item": "94",
+      "note": "every chunk and finalize reply carries X-Goog-Upload-Size-Received, not only a query's; the emulator sends it on query alone"
+    },
+    {
+      "key": "* | x*.header.content-type",
+      "emulator": "text/plain; charset=utf-8",
+      "aruma": "application/json; charset=UTF-8",
+      "class": "c",
+      "note": "errors are JSON {\"error\":{\"code\",\"message\"}}, as production's (bucket_probe.json, E §1); the emulator answers some with plain text"
+    },
+    {
+      "key": "* | x*.body",
+      "emulator": "Not Found",
+      "aruma": "json",
+      "class": "c",
+      "note": "a missing object is 404 with production's JSON body (bucket_probe.json); the emulator's is the text Not Found"
+    },
+    {
+      "key": "* | x*.body",
+      "emulator": "Bad Request",
+      "aruma": "json",
+      "class": "c",
+      "note": "a 400 has a JSON body as production's errors do (bucket_probe.json); the emulator's is the text Bad Request"
     }
   ]
 }

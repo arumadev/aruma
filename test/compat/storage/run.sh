@@ -37,9 +37,11 @@
 #   ARUMA_TEST_DATABASE_URL  Postgres admin URL (default postgres://postgres@127.0.0.1:5432/postgres)
 #   ARUMA_PG_BIN             directory of psql, when it is not on PATH
 #   PLAYWRIGHT_BROWSERS_PATH the browsers (default $ARUMA_CACHE_DIR/ms-playwright, Chromium 1248)
+#   STORAGE_COMPAT_LIMITS    "default" keeps Aruma's per-address upload limits, which the suites'
+#                            pace meets (429); otherwise they are raised for the run
 #
 # It needs Go, Node 24.12 or newer, curl, tar, openssl, psql and Postgres, and the network the
-# first time. It is heavy (two browsers in a row, about 400 MB of installs) and not part of CI.
+# first time. It is heavy (two browsers in a row, about 650 MB of installs) and not part of CI.
 set -euo pipefail
 
 SDK_COMMIT=0c331cc7fd9c4671a33baca9bd20c02a08899820 # firebase@13.0.0
@@ -394,8 +396,9 @@ run_captures() {
   (cd "$capture" && NODE_OPTIONS="$guard" HOME=$work/home GO_ADMIN=$capture/go-admin \
     node capture.mjs "$work/capture.json" "$results/captures") >"$results/captures.log" 2>&1 || true
   node "$here/captures.mjs" "$root/test/oracle/storage/emulator" "$results/captures" "$here/classified.json" \
-    >"$results/captures-diff.txt" || true
+    --json "$results/captures-diff.json" >"$results/captures-diff.txt" || captures_unclassified=1
 }
+captures_unclassified=
 
 rm -f "$results/netguard.log"
 for s in "${suites[@]}"; do rm -f "$results/$s.json" "$results/$s.log"; done
@@ -434,4 +437,8 @@ fi
 } >"$results/versions.txt"
 log "results ($results)"
 cat "$results/versions.txt"
-ARUMA_CT_SOURCES=$tools/scripts/storage-emulator-integration/conformance node "$here/summarize.mjs" "$results" "$here/classified.json" "${suites[@]}"
+rc=0
+ARUMA_CT_SOURCES=$tools/scripts/storage-emulator-integration/conformance \
+  node "$here/summarize.mjs" "$results" "$here/classified.json" "${suites[@]}" || rc=$?
+[[ -z $captures_unclassified ]] || rc=1
+exit "$rc"
