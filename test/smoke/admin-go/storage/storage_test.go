@@ -40,6 +40,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -58,9 +59,43 @@ var (
 	remotes []string
 	front   string // the TLS front of the running test, for host:443
 	genBin  string
+
+	// metadataHits counts the connections to the GCE metadata server's stand-in, and
+	// metadataProbed those the test made on purpose (the official SignedURL).
+	metadataHits, metadataProbed atomic.Int64
 )
 
+// standInMetadata listens for cloud.google.com/go/compute/metadata, which dials through a
+// transport of its own, not http.DefaultTransport: GCE_METADATA_HOST sends it here, where every
+// connection is counted and closed, instead of to 169.254.169.254 (and it skips the DNS probe).
+func standInMetadata() (func(), error) {
+	ln, err := net.Listen("tcp", env("ARUMA_SMOKE_METADATA_ADDR", "127.0.0.1:0"))
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		for {
+			c, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			metadataHits.Add(1)
+			_ = c.Close()
+		}
+	}()
+	if err := os.Setenv("GCE_METADATA_HOST", ln.Addr().String()); err != nil {
+		return nil, err
+	}
+	return func() { _ = ln.Close() }, nil
+}
+
 func TestMain(m *testing.M) {
+	stopMetadata, err := standInMetadata()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "metadata stand-in:", err)
+		os.Exit(1)
+	}
+	defer stopMetadata()
 	t := http.DefaultTransport.(*http.Transport)
 	dial := (&net.Dialer{Timeout: 10 * time.Second}).DialContext
 	t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
@@ -99,6 +134,11 @@ func TestMain(m *testing.M) {
 		fmt.Fprintln(os.Stderr, "network access beyond loopback attempted:", remotes)
 		code = 1
 	}
+	if hits, probed := metadataHits.Load(), metadataProbed.Load(); hits != probed {
+		fmt.Fprintf(os.Stderr, "the GCE metadata server was asked %d times beyond the %d probes\n", hits-probed, probed)
+		code = 1
+	}
+	stopMetadata()
 	os.Exit(code)
 }
 
@@ -326,6 +366,21 @@ func scenario(t *testing.T, s *server) {
 		t.Fatal(err)
 	}
 	castagnoli := crc32.MakeTable(crc32.Castagnoli)
+
+	t.Run("signed URLs", func(t *testing.T) {
+		if _, err := c.SignedURL(s.bucket, "smoke/small.txt", &storage.SignedURLOptions{Method: http.MethodGet}); !errors.Is(err, adminstorage.ErrSignedURLsUnsupported) {
+			t.Errorf("SignedURL: %v", err)
+		}
+		// The official one, without GoogleAccessID, asks the metadata server for the signer:
+		// the guard must see it, so the count at the end proves no other request did.
+		before := metadataHits.Load()
+		_, err := bkt.SignedURL("smoke/small.txt", &storage.SignedURLOptions{Method: http.MethodGet, Expires: time.Now().Add(time.Hour)})
+		got := metadataHits.Load() - before
+		metadataProbed.Add(got)
+		if err == nil || got == 0 {
+			t.Errorf("BucketHandle.SignedURL: %v, %d connections to the metadata stand-in; want an error after one at least", err, got)
+		}
+	})
 
 	t.Run("emulator variables", func(t *testing.T) {
 		for _, name := range []string{"STORAGE_EMULATOR_HOST", "FIREBASE_STORAGE_EMULATOR_HOST"} {

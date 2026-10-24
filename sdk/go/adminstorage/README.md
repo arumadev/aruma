@@ -60,6 +60,11 @@ which gives an object without a download token its first one, and returns
 `encodeURIComponent` does: the form every platform's SDK resolves. A missing object is
 `storage.ErrObjectNotExist`, one without a token `ErrNoDownloadToken`.
 
+**Signed URLs are not supported** in Aruma v0.3: `Client.SignedURL` returns
+`ErrSignedURLsUnsupported`. Do not call `BucketHandle.SignedURL` or `GenerateSignedPostPolicyV4`
+on the handles either: Aruma does not verify their signatures, and without `GoogleAccessID` the
+official client asks the GCE metadata server for the signer. Use `DownloadURL` for a link.
+
 ## Tests
 
 `go test ./...` runs the unit tests against a fake server. The live scenario is
@@ -90,6 +95,8 @@ Aruma غير تابع لـ Google ولا معتمد منها. Firebase علام�
 - **الاعتماد:** تبادل المفتاح عند نقطة رموز Aruma، والرمز على كل طلب إلى أصل Aruma ومنه قطع الرفع
   المتقطع، ورفض أي أصل آخر. لا يقرأ `cloud.google.com/go/auth` ملف المفتاح، فلا يغيّر `universe_domain`
   شيئًا، ولا بحث عن اعتمادات افتراضية.
+- **الروابط الموقّعة غير مدعومة** في v0.3: `Client.SignedURL` يعيد `ErrSignedURLsUnsupported`، ولا
+  تُستدعَ `BucketHandle.SignedURL`، فهي تسأل خادم metadata في GCE عن الموقّع.
 - **حارس المحاكي:** يفشل `NewClient` إن وُجد `STORAGE_EMULATOR_HOST` أو `FIREBASE_STORAGE_EMULATOR_HOST`.
 - **`DownloadURL`** يقرأ الـ metadata من Aruma ويعيد الرابط الموحّد
   `<server>/v0/b/<bucket>/o/<الاسم مرمَّزًا>?alt=media&token=<الرمز>`.

@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"cloud.google.com/go/storage"
 )
 
 // testKey is a throwaway service account key, made for the run: never a real one.
@@ -146,6 +148,9 @@ func TestBuckets(t *testing.T) {
 	}
 	if _, err := c.Bucket(""); err == nil {
 		t.Error("an empty bucket name was accepted")
+	}
+	if _, err := c.SignedURL("b", "o", &storage.SignedURLOptions{Method: http.MethodGet}); !errors.Is(err, ErrSignedURLsUnsupported) {
+		t.Errorf("SignedURL: %v", err)
 	}
 	none, err := NewClient(t.Context(), WithCredentialsJSON(keyJSON(t, "https://aruma.example.com/oauth2/v1/token", nil)))
 	if err != nil {

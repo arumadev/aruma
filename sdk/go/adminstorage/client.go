@@ -212,6 +212,18 @@ func (c *Client) DefaultBucket() (*storage.BucketHandle, error) {
 	return c.Bucket(c.bucket)
 }
 
+// ErrSignedURLsUnsupported is what SignedURL returns: Aruma v0.3 serves no signed URLs
+// (ADR-023), and DownloadURL gives the link the Firebase SDKs use instead.
+var ErrSignedURLsUnsupported = errors.New("adminstorage: signed URLs are not supported in Aruma v0.3: use DownloadURL")
+
+// SignedURL refuses with ErrSignedURLsUnsupported. Do not call BucketHandle.SignedURL or
+// GenerateSignedPostPolicyV4 on the handles either: Aruma does not verify their signatures, and
+// without SignedURLOptions.GoogleAccessID the official client asks the GCE metadata server for
+// the signer.
+func (c *Client) SignedURL(bucket, object string, opts *storage.SignedURLOptions) (string, error) {
+	return "", ErrSignedURLsUnsupported
+}
+
 // Storage is the cloud.google.com/go/storage client underneath, already pointed at Aruma.
 func (c *Client) Storage() *storage.Client { return c.gcs }
 
