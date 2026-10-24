@@ -726,3 +726,64 @@ func TestObjectFromRow(t *testing.T) {
 		t.Errorf("%+v, %v", o, err)
 	}
 }
+
+// Updates of one object at once wait on its row's lock, and none is lost or refused: 32
+// writers of 32 keys leave the 32 keys and metageneration 33.
+func TestUpdateConcurrentWriters(t *testing.T) {
+	ctx := context.Background()
+	f := newObjectsFixture(t)
+	f.put(t, "a.txt", seed{body: "a"})
+	const writers = 32
+	errs := make([]error, writers)
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	for i := range writers {
+		wg.Go(func() {
+			<-start
+			p := alice
+			if i%2 == 0 {
+				p = admin
+			}
+			_, errs[i] = f.s.Update(ctx, f.b, "a.txt", p, SurfaceFirebase,
+				Patch{Metadata: map[string]*string{"k" + strconv.Itoa(i): ptr(strconv.Itoa(i))}}, Preconditions{})
+		})
+	}
+	close(start)
+	wg.Wait()
+	for i, err := range errs {
+		if err != nil {
+			t.Errorf("writer %d: %v", i, err)
+		}
+	}
+	o, err := f.s.Stat(ctx, f.b, "a.txt", admin, SurfaceGCS, 0)
+	if err != nil || len(o.Metadata) != writers || o.Metageneration != writers+1 {
+		t.Fatalf("after %d writers: %d keys, metageneration %d, %v", writers, len(o.Metadata), o.Metageneration, err)
+	}
+	for i := range writers {
+		if o.Metadata["k"+strconv.Itoa(i)] != strconv.Itoa(i) {
+			t.Errorf("key %d lost", i)
+		}
+	}
+}
+
+// The rules decide a change on the row it locks: a refusal there writes nothing, and the mint
+// asks them again under the lock.
+func TestChangesDecideOnTheLockedRow(t *testing.T) {
+	ctx := context.Background()
+	f := newObjectsFixture(t)
+	f.put(t, "a.txt", seed{body: "a"})
+	calls := 0
+	f.allow(func(op ruleOp) error {
+		calls++
+		if calls == 2 {
+			return ErrPermissionDenied // the second ask, on the locked row
+		}
+		return nil
+	})
+	if _, err := f.s.Stat(ctx, f.b, "a.txt", alice, SurfaceFirebase, 0); err != ErrPermissionDenied {
+		t.Errorf("a mint refused under the lock: %v", err)
+	}
+	if r := f.row(t, "a.txt"); r.DownloadTokens != nil || r.Metageneration != 1 {
+		t.Errorf("a refused mint wrote: metageneration %d", r.Metageneration)
+	}
+}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/jackc/pgx/v5"
 
@@ -13,9 +14,8 @@ import (
 	"github.com/arumadev/aruma/internal/services/storage/queries"
 )
 
-// maxRaces bounds how many times an operation reads an object again because another request
-// changed it between the read the operation decided on and its write. Past it the operation is
-// ErrUnavailable, which the client retries (503; ADR-023 §3-45).
+// maxRaces bounds how many times Open reads an object again because its file went with a row
+// replaced in between. The changes take no such loop: they decide on the row they lock.
 const maxRaces = 8
 
 // Stat returns an object's metadata after the rules allow a get. On SurfaceFirebase an object
@@ -23,36 +23,43 @@ const maxRaces = 8
 // a generation the caller pins (GCS ?generation=); 0 is the current one, and any other than the
 // current is ErrNotFound.
 //
-// The rules decide on the object as it is read, and the token is written only if the row is
-// still that one: readers that race on an object without a token read one metageneration, one
-// of them writes, and the others read again and find its token.
+// A read takes no lock. The mint does: it locks the row, asks the rules again on the locked
+// object, and writes a token only if it still has none, so of the readers that race on an
+// object without a token the first writes one and the others find it.
 func (s *Service) Stat(ctx context.Context, b Bucket, name string, p Principal, sf Surface, gen int64) (Object, error) {
 	if err := validateName(name); err != nil {
 		return Object{}, err
 	}
-	for range maxRaces {
-		cur, err := s.current(ctx, b, name)
-		if err != nil {
-			return Object{}, err
-		}
+	get := func(cur *Object) error {
 		if err := s.authorize(ctx, b, p, ruleOp{Method: rules.MethodGet, Name: name, Resource: cur, Surface: sf}); err != nil {
-			return Object{}, err
+			return err
 		}
 		if cur == nil || (gen != 0 && gen != cur.Generation) {
-			return Object{}, ErrNotFound
+			return ErrNotFound
 		}
-		if sf != SurfaceFirebase || len(cur.DownloadTokens) > 0 {
-			return *cur, nil
+		return nil
+	}
+	cur, err := s.current(ctx, b, name)
+	if err != nil {
+		return Object{}, err
+	}
+	if err := get(cur); err != nil {
+		return Object{}, err
+	}
+	if sf != SurfaceFirebase || len(cur.DownloadTokens) > 0 {
+		return *cur, nil
+	}
+	return s.change(ctx, b, name, func(cur *Object) (*Object, error) {
+		if err := get(cur); err != nil {
+			return nil, err
+		}
+		if len(cur.DownloadTokens) > 0 {
+			return nil, nil // another reader minted it
 		}
 		next := *cur
 		next.DownloadTokens = []string{newDownloadToken()}
-		o, err := s.write(ctx, b, *cur, next)
-		if errors.Is(err, errRaced) {
-			continue
-		}
-		return o, err
-	}
-	return Object{}, raced(name)
+		return &next, nil
+	})
 }
 
 // Open opens an object's bytes. A token that matches one of the object's opens it without the
@@ -143,7 +150,7 @@ func (s *Service) Update(ctx context.Context, b Bucket, name string, p Principal
 	if err := s.checkPatch(u); err != nil {
 		return Object{}, err
 	}
-	return s.change(ctx, b, name, func(cur *Object) (Object, error) {
+	return s.change(ctx, b, name, func(cur *Object) (*Object, error) {
 		var next *Object
 		if cur != nil {
 			n := applyPatch(*cur, u)
@@ -151,23 +158,24 @@ func (s *Service) Update(ctx context.Context, b Bucket, name string, p Principal
 		}
 		op := ruleOp{Method: rules.MethodUpdate, Name: name, Resource: cur, Incoming: next, Patch: &u, Surface: sf}
 		if err := s.authorize(ctx, b, p, op); err != nil {
-			return Object{}, err
+			return nil, err
 		}
 		if cur == nil {
-			return Object{}, ErrNotFound
+			return nil, ErrNotFound
 		}
 		if err := checkPreconditions(*cur, pre); err != nil {
-			return Object{}, err
+			return nil, err
 		}
 		if err := s.checkObjectMetadata(*next); err != nil {
-			return Object{}, err
+			return nil, err
 		}
-		return *next, nil
+		return next, nil
 	})
 }
 
 // Delete removes an object after the rules allow a delete; its file goes to blob_gc in the same
-// transaction (releaseObject). Preconditions come from the GCS surface alone.
+// transaction (releaseObject). Preconditions come from the GCS surface alone. The rules and the
+// preconditions decide on the row locked for the delete.
 func (s *Service) Delete(ctx context.Context, b Bucket, name string, p Principal, sf Surface, pre Preconditions) error {
 	if err := checkPre(sf, pre); err != nil {
 		return err
@@ -175,8 +183,8 @@ func (s *Service) Delete(ctx context.Context, b Bucket, name string, p Principal
 	if err := validateName(name); err != nil {
 		return err
 	}
-	for range maxRaces {
-		cur, err := s.current(ctx, b, name)
+	err := s.inTx(ctx, func(q *queries.Queries) error {
+		cur, err := s.lockObject(ctx, q, b, name)
 		if err != nil {
 			return err
 		}
@@ -189,26 +197,15 @@ func (s *Service) Delete(ctx context.Context, b Bucket, name string, p Principal
 		if err := checkPreconditions(*cur, pre); err != nil {
 			return err
 		}
-		err = s.inTx(ctx, func(q *queries.Queries) error {
-			gone, err := q.DeleteObject(ctx, queries.DeleteObjectParams{
-				ProjectNumber: b.Project, Name: name, Generation: cur.Generation, Metageneration: cur.Metageneration,
-			})
-			if err != nil {
-				return err
-			}
-			return releaseObject(ctx, q, b.Project, gone.BlobKey, gone.Size)
+		gone, err := q.DeleteObject(ctx, queries.DeleteObjectParams{
+			ProjectNumber: b.Project, Name: name, Generation: cur.Generation, Metageneration: cur.Metageneration,
 		})
-		switch {
-		case errors.Is(err, pgx.ErrNoRows):
-			continue
-		case errors.Is(err, ErrUnavailable):
-			return err
-		case err != nil:
+		if err != nil {
 			return fmt.Errorf("%w: delete %q: %w", ErrUnavailable, name, err)
 		}
-		return nil
-	}
-	return raced(name)
+		return releaseObject(ctx, q, b.Project, gone.BlobKey, gone.Size)
+	})
+	return failure(err, "delete "+strconv.Quote(name))
 }
 
 // checkPreconditions checks GCS's preconditions on the object they apply to (B §10.2-8):
@@ -224,12 +221,21 @@ func checkPreconditions(o Object, pre Preconditions) error {
 	return nil
 }
 
-// errRaced is a write whose row changed after it was read: the caller reads it again.
-var errRaced = errors.New("storage: the object changed in between")
-
-// raced is the error of an operation that lost maxRaces races in a row.
+// raced is the error of an Open that found the object's file gone maxRaces times in a row, each
+// time with a new row in between.
 func raced(name string) error {
 	return fmt.Errorf("%w: %q changed %d times during one request", ErrUnavailable, name, maxRaces)
+}
+
+// failure returns err as a surface maps it: a named error or an InvalidError as it is, anything
+// else (the database) as ErrUnavailable.
+func failure(err error, what string) error {
+	var named *Error
+	var bad *InvalidError
+	if err == nil || errors.As(err, &named) || errors.As(err, &bad) {
+		return err
+	}
+	return fmt.Errorf("%w: %s: %w", ErrUnavailable, what, err)
 }
 
 // current reads an object's row as an Object, nil when there is none.
@@ -248,66 +254,87 @@ func (s *Service) current(ctx context.Context, b Bucket, name string) (*Object, 
 	return &o, nil
 }
 
-// change runs a change of an object's metadata or tokens: decide receives the object as it is
-// (nil when there is none) and returns what to store, or the refusal; the result is written if
-// the row is still the one decide saw, else decided again.
-func (s *Service) change(ctx context.Context, b Bucket, name string, decide func(cur *Object) (Object, error)) (Object, error) {
-	for range maxRaces {
-		cur, err := s.current(ctx, b, name)
-		if err != nil {
-			return Object{}, err
-		}
-		next, err := decide(cur)
-		if err != nil {
-			return Object{}, err
-		}
-		if cur == nil {
-			return Object{}, ErrNotFound
-		}
-		o, err := s.write(ctx, b, *cur, next)
-		if errors.Is(err, errRaced) {
-			continue
-		}
-		return o, err
+// lockObject reads an object's row in the caller's transaction and locks it until the
+// transaction ends (the contract's LockObject, FOR UPDATE); nil when there is none. A change
+// decides on the locked row, the rules included, so nothing changes it between the decision and
+// the write; the rules' budget bounds how long the lock is held.
+func (s *Service) lockObject(ctx context.Context, q *queries.Queries, b Bucket, name string) (*Object, error) {
+	row, err := q.LockObject(ctx, queries.LockObjectParams{ProjectNumber: b.Project, Name: name})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
 	}
-	return Object{}, raced(name)
+	if err != nil {
+		return nil, fmt.Errorf("%w: lock %q: %w", ErrUnavailable, name, err)
+	}
+	o, err := s.objectFromRow(b, row)
+	if err != nil {
+		return nil, err
+	}
+	return &o, nil
 }
 
-// write stores next's content fields, custom metadata and tokens over cur's row, with a new
-// metageneration, if the row still has cur's generation and metageneration; errRaced if not.
-func (s *Service) write(ctx context.Context, b Bucket, cur, next Object) (Object, error) {
-	sealed, err := s.sealTokens(b.Project, cur.Name, next.DownloadTokens)
-	if err != nil {
-		return Object{}, err
-	}
-	md, err := encodeMetadata(next.Metadata)
-	if err != nil {
-		return Object{}, fmt.Errorf("storage: encode the metadata of %q: %w", cur.Name, err)
-	}
-	var row queries.StorageObject
-	err = s.inTx(ctx, func(q *queries.Queries) error {
-		var err error
-		row, err = q.UpdateObject(ctx, queries.UpdateObjectParams{
-			ProjectNumber: b.Project, Name: cur.Name, Generation: cur.Generation, Metageneration: cur.Metageneration,
+// change runs a change of an object's metadata or tokens in one transaction: decide receives the
+// locked object (nil when there is none) and returns what to store, nil to store nothing, or
+// the refusal. A refusal of a missing object is decide's to give; ErrNotFound otherwise.
+func (s *Service) change(ctx context.Context, b Bucket, name string, decide func(cur *Object) (*Object, error)) (Object, error) {
+	var out Object
+	err := s.inTx(ctx, func(q *queries.Queries) error {
+		cur, err := s.lockObject(ctx, q, b, name)
+		if err != nil {
+			return err
+		}
+		next, err := decide(cur)
+		switch {
+		case err != nil:
+			return err
+		case cur == nil:
+			return ErrNotFound
+		case next == nil:
+			out = *cur
+			return nil
+		}
+		sealed, err := s.sealTokens(b.Project, name, next.DownloadTokens)
+		if err != nil {
+			return err
+		}
+		md, err := encodeMetadata(next.Metadata)
+		if err != nil {
+			return fmt.Errorf("storage: encode the metadata of %q: %w", name, err)
+		}
+		row, err := q.UpdateObject(ctx, queries.UpdateObjectParams{
+			ProjectNumber: b.Project, Name: name, Generation: cur.Generation, Metageneration: cur.Metageneration,
 			ContentType: nullable(next.ContentType), ContentEncoding: nullable(next.ContentEncoding),
 			ContentDisposition: nullable(next.ContentDisposition), ContentLanguage: nullable(next.ContentLanguage),
 			CacheControl: nullable(next.CacheControl), Metadata: md, DownloadTokens: sealed, Now: s.now(),
 		})
+		if err != nil {
+			// The row is locked: no row back is not a race but a fault.
+			return fmt.Errorf("%w: update %q: %w", ErrUnavailable, name, err)
+		}
+		out, err = s.objectFromRow(b, row)
 		return err
 	})
-	switch {
-	case errors.Is(err, pgx.ErrNoRows):
-		return Object{}, errRaced
-	case errors.Is(err, ErrUnavailable):
-		return Object{}, err
-	case err != nil:
-		return Object{}, fmt.Errorf("%w: update %q: %w", ErrUnavailable, cur.Name, err)
-	}
-	return s.objectFromRow(b, row)
+	return out, failure(err, "change "+strconv.Quote(name))
 }
 
 // objectFromRow returns an object's row as an Object, its tokens opened from their seal.
 func (s *Service) objectFromRow(b Bucket, r queries.StorageObject) (Object, error) {
+	o, err := rowObject(b, r)
+	if err != nil {
+		return Object{}, err
+	}
+	tokens, err := s.openTokens(b.Project, r.Name, r.DownloadTokens)
+	if err != nil {
+		s.log.Error("storage: an object's download tokens do not open", "project", b.Project, "name", r.Name, "err", err)
+		return Object{}, fmt.Errorf("%w: %w", ErrUnavailable, err)
+	}
+	o.DownloadTokens = tokens
+	return o, nil
+}
+
+// rowObject returns an object's row as an Object without its tokens. When the metadata does not
+// read, the error comes with the object as far as it reads, its metadata nil.
+func rowObject(b Bucket, r queries.StorageObject) (Object, error) {
 	o := Object{
 		Bucket: b.Name, Name: r.Name, Generation: r.Generation, Metageneration: r.Metageneration, Size: r.Size,
 		CRC32C: uint32(r.Crc32c), ContentType: deref(r.ContentType), ContentEncoding: deref(r.ContentEncoding),
@@ -316,14 +343,9 @@ func (s *Service) objectFromRow(b Bucket, r queries.StorageObject) (Object, erro
 	}
 	copy(o.MD5[:], r.Md5)
 	if err := json.Unmarshal(r.Metadata, &o.Metadata); err != nil {
-		return Object{}, fmt.Errorf("%w: the metadata of %q: %w", ErrUnavailable, r.Name, err)
+		o.Metadata = nil
+		return o, fmt.Errorf("%w: the metadata of %q: %w", ErrUnavailable, r.Name, err)
 	}
-	tokens, err := s.openTokens(b.Project, r.Name, r.DownloadTokens)
-	if err != nil {
-		s.log.Error("storage: an object's download tokens do not open", "project", b.Project, "name", r.Name, "err", err)
-		return Object{}, fmt.Errorf("%w: %w", ErrUnavailable, err)
-	}
-	o.DownloadTokens = tokens
 	return o, nil
 }
 

@@ -22,16 +22,16 @@ func (s *Service) CreateToken(ctx context.Context, b Bucket, name string, p Prin
 	if err := validateName(name); err != nil {
 		return Object{}, err
 	}
-	return s.change(ctx, b, name, func(cur *Object) (Object, error) {
+	return s.change(ctx, b, name, func(cur *Object) (*Object, error) {
 		if cur == nil {
-			return Object{}, ErrNotFound
+			return nil, ErrNotFound
 		}
 		next := *cur
 		next.DownloadTokens = append(slices.Clone(cur.DownloadTokens), newDownloadToken())
 		if err := s.checkObjectMetadata(next); err != nil {
-			return Object{}, err
+			return nil, err
 		}
-		return next, nil
+		return &next, nil
 	})
 }
 
@@ -48,16 +48,16 @@ func (s *Service) DeleteToken(ctx context.Context, b Bucket, name string, p Prin
 	if token == "" {
 		return Object{}, &InvalidError{Reason: "required", Message: "The download token to delete is required."}
 	}
-	return s.change(ctx, b, name, func(cur *Object) (Object, error) {
+	return s.change(ctx, b, name, func(cur *Object) (*Object, error) {
 		if cur == nil {
-			return Object{}, ErrNotFound
+			return nil, ErrNotFound
 		}
 		next := *cur
 		next.DownloadTokens = slices.DeleteFunc(slices.Clone(cur.DownloadTokens), func(t string) bool { return t == token })
 		if len(next.DownloadTokens) == 0 {
 			next.DownloadTokens = []string{newDownloadToken()}
 		}
-		return next, nil
+		return &next, nil
 	})
 }
 
