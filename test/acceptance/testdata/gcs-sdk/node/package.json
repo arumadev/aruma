@@ -1,0 +1,10 @@
+{
+  "name": "aruma-acceptance-gcs-sdk-node",
+  "private": true,
+  "type": "module",
+  "description": "S4-B and S4-C scenarios with @google-cloud/storage against a live Aruma; run by TestStorageGCSWithTheAdminSDKs.",
+  "dependencies": {
+    "@google-cloud/storage": "8.4.0",
+    "google-auth-library": "11.3.1"
+  }
+}
