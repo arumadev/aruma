@@ -99,6 +99,11 @@ func TestUploadMedia(t *testing.T) {
 		t.Fatalf("content type %q", o.ContentType)
 	}
 	gcsErr(t, e.do("POST", upload+"?uploadType=media", tokenA, strings.NewReader("x")), 400, wire.ReasonRequired)
+	// Without uploadType the upload is media (CT, gcs.endpoints.test.ts:158-173; ADR-023 §3-91).
+	if o = gcsObject(t, e.do("POST", upload+"?name=plain.txt", tokenA, strings.NewReader("hello world")), "hello world"); o.Name != "plain.txt" {
+		t.Fatalf("name %q", o.Name)
+	}
+	gcsErr(t, e.do("POST", upload, tokenA, strings.NewReader("x")), 400, wire.ReasonRequired)
 }
 
 func TestUploadMultipart(t *testing.T) {
@@ -129,7 +134,23 @@ func TestUploadMultipart(t *testing.T) {
 	ct, body = related(`{}`, "", "cut", false)
 	rec = e.do("POST", upload+"?name=cut.txt&uploadType=multipart", tokenA, strings.NewReader(body[:len(body)-10]), "Content-Type", ct)
 	gcsErr(t, rec, 400, wire.ReasonInvalid)
-	gcsErr(t, e.do("POST", upload+"?name=x&uploadType=multipart", tokenA, strings.NewReader("x"), "Content-Type", "text/plain"), 400, wire.ReasonInvalid)
+	// A Content-Type that is not multipart/related with a boundary is "Bad content type." (CT,
+	// gcs.endpoints.test.ts:320-330), whichever way multipart was asked for.
+	for _, rec := range []*httptest.ResponseRecorder{
+		e.do("POST", upload+"?name=x&uploadType=multipart", tokenA, strings.NewReader("x"), "Content-Type", "text/plain"),
+		e.do("POST", upload+"?name=x", tokenA, strings.NewReader("x"), "Content-Type", "foo", wire.UploadProtocol, "multipart"),
+		e.do("POST", upload+"?name=x&uploadType=multipart", tokenA, strings.NewReader("x"), "Content-Type", "multipart/related"),
+	} {
+		if b := gcsErr(t, rec, 400, wire.ReasonInvalid); !strings.HasPrefix(b.Message, "Bad content type.") {
+			t.Errorf("message %q", b.Message)
+		}
+	}
+	// With X-Goog-Upload-Protocol: multipart and no uploadType, the body is multipart (CT,
+	// gcs.endpoints.test.ts:306-318).
+	ct, body = related(`{"name":"by-header.txt"}`, "text/plain", "hello there!", false)
+	if o = gcsObject(t, e.do("POST", upload, tokenA, strings.NewReader(body), "Content-Type", ct, wire.UploadProtocol, "multipart"), "hello there!"); o.Name != "by-header.txt" {
+		t.Fatalf("name %q", o.Name)
+	}
 	if e.stored(e.a, "cut.txt") != nil || e.stored(e.a, "x") != nil {
 		t.Fatal("a malformed multipart body left an object")
 	}
