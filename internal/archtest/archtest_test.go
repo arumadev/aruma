@@ -234,12 +234,19 @@ func TestRulesThemselves(t *testing.T) {
 // stdlibOnly lists the packages that import Go's standard library alone (ADR-021 §1, §2): no
 // module outside the standard library, whose first path element has no dot. TestDependencyRules
 // sees only this module's imports, so this test covers the rest. Test files are held to it too.
-var stdlibOnly = []string{"internal/platform/rules"}
+// What a package may import of this module besides is listed with it, exactly:
+//   - rulestest, the oracle's reader, imports the contract and nothing else;
+//   - the external tests of the rules package (package rules_test: the oracle, grammar and fuzz
+//     tests, which use the public contract alone) import the package and rulestest.
+var stdlibOnly = map[string]struct{ files, externalTests []string }{
+	"internal/platform/rules":           {externalTests: []string{"internal/platform/rules", "internal/platform/rules/rulestest"}},
+	"internal/platform/rules/rulestest": {files: []string{"internal/platform/rules"}},
+}
 
 func TestStandardLibraryOnly(t *testing.T) {
 	root := repoRoot(t)
 	fset := token.NewFileSet()
-	for _, pkg := range stdlibOnly {
+	for pkg, allowed := range stdlibOnly {
 		files, err := filepath.Glob(filepath.Join(root, filepath.FromSlash(pkg), "*.go"))
 		if err != nil {
 			t.Fatal(err)
@@ -252,10 +259,20 @@ func TestStandardLibraryOnly(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			ok := allowed.files
+			if strings.HasSuffix(path, "_test.go") && strings.HasSuffix(f.Name.Name, "_test") {
+				ok = append(append([]string{}, ok...), allowed.externalTests...)
+			}
+		imports:
 			for _, imp := range f.Imports {
 				p := strings.Trim(imp.Path.Value, `"`)
+				for _, a := range ok {
+					if p == module+a {
+						continue imports
+					}
+				}
 				if first, _, _ := strings.Cut(p, "/"); strings.Contains(first, ".") {
-					t.Errorf("%s imports %s; the package imports the standard library alone", filepath.Base(path), p)
+					t.Errorf("%s/%s imports %s; the package imports the standard library alone", pkg, filepath.Base(path), p)
 				}
 			}
 		}
