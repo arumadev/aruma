@@ -1,0 +1,60 @@
+{
+  "source": "S2 integration: inputs of objectETag (core, the etag the rules see) and wire.ETag (the etag the surfaces send), and the etag both must give. (1, 1) is CAEQAQ== as GCS shows it (B §7); the rest follow the same varint encoding.",
+  "cases": [
+    {
+      "generation": 1,
+      "metageneration": 1,
+      "etag": "CAEQAQ=="
+    },
+    {
+      "generation": 1,
+      "metageneration": 2,
+      "etag": "CAEQAg=="
+    },
+    {
+      "generation": 0,
+      "metageneration": 0,
+      "etag": "CAAQAA=="
+    },
+    {
+      "generation": 127,
+      "metageneration": 1,
+      "etag": "CH8QAQ=="
+    },
+    {
+      "generation": 128,
+      "metageneration": 1,
+      "etag": "CIABEAE="
+    },
+    {
+      "generation": 16383,
+      "metageneration": 127,
+      "etag": "CP9/EH8="
+    },
+    {
+      "generation": 16384,
+      "metageneration": 128,
+      "etag": "CICAARCAAQ=="
+    },
+    {
+      "generation": 1700000000000000,
+      "metageneration": 1,
+      "etag": "CICA+cDBxIIDEAE="
+    },
+    {
+      "generation": 1784647629568292,
+      "metageneration": 2,
+      "etag": "CKTyicCK5JUDEAI="
+    },
+    {
+      "generation": 1784647629568292,
+      "metageneration": 33,
+      "etag": "CKTyicCK5JUDECE="
+    },
+    {
+      "generation": 9223372036854775807,
+      "metageneration": 9223372036854775807,
+      "etag": "CP//////////fxD//////////38="
+    }
+  ]
+}
