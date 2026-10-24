@@ -10,6 +10,15 @@ SELECT * FROM storage.instance;
 -- scope: global — the one row binding this database to its data_dir belongs to no project.
 INSERT INTO storage.instance (id) VALUES (@id);
 
+-- name: PointsToFiles :one
+-- scope: global — Boot asks whether this database expects any file in data_dir, of any project:
+-- an object's, or the staging file of a live upload session.
+SELECT EXISTS (
+    SELECT 1 FROM storage.objects
+    UNION ALL
+    SELECT 1 FROM storage.upload_sessions WHERE state = 'active'
+) AS points;
+
 -- name: QueueUnreferencedBlob :exec
 -- A file a session leaves behind (its staging file, or the object key it never committed), queued
 -- unless an object points to it or it is queued already.

@@ -216,8 +216,9 @@ func TestGrammar(t *testing.T) {
 	}
 }
 
-// grammarFiles pins the distinct rules files TestGrammar counts (see oracleCounts).
-const grammarFiles = 1937
+// grammarFiles pins the distinct rules files TestGrammar counts (see oracleCounts): S7-R added
+// the three probe rulesets of production/deployed-firestore.json.
+const grammarFiles = 1940
 
 // pct is n of of in percent, and 0 when there is nothing: no case is not 100%.
 func pct(n, of int) float64 {

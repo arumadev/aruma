@@ -57,6 +57,7 @@ tools/                         أدوات التسجيل والاستيراد و
 | `followups` | firestore | جولة ثانية حسمت ما تركته الأولى غامضًا (crc32، `lower`، `split('')`، `{rest=**}` في v1…) |
 | `nesting`، `nesting-storage` | firestore، storage | match متداخل تحت كتلة ينتهي مسارها بـ `{x=**}` أو يتبع الـ glob فيها مقاطع، في 1 و2، وما يربطه الـ glob (أُضيف بعد المراجعة) |
 | `hidane-conditions` | firestore | كل شرط من شروط hidane عبر Test API، لمقارنته بما قرّره المحاكي له |
+| `deployed-firestore` | firestore | **قواعد منشورة وطلبات حقيقية** (provenance `deployed`، S7-R، 2026-10-24): `debug()`، أعداد `request.auth.token` من رمز ID حقيقي، `get()`/`exists()` لمستند غائب، ترتيب `keys()`/`values()`. الطريقة في حقل `method`، والطلبات والردود في `raw/` (لا token فيها)، ولا ملف له في `emulator/` |
 
 ## المخطط الموحّد `aruma.rules-oracle/v1`
 

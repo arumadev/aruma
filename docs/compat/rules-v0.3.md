@@ -57,17 +57,21 @@ go run ./tools/rules-diff -seed 1 -n 1000                                   # م
 
 | provenance | source | cases | excluded | counted | agree | ratio | finer | permissive |
 |---|---|---|---|---|---|---|---|---|
+| deployed | aruma | 211 | 124 | 87 | 87 | 100.0% | 87 | 0 |
 | deployed | pyric | 274 | 274 | 0 | 0 | — | 0 | 0 |
 | rules-test-api | aruma | 2049 | 15 | 2034 | 2034 | 100.0% | 2034 | 0 |
 | rules-test-api | pyric | 1649 | 40 | 1609 | 1609 | 100.0% | 1601 | 0 |
-| emulator | aruma | 689 | 49 | 640 | 638 | 99.7% | 637 | 0 |
+| emulator | aruma | 689 | 49 | 640 | 640 | 100.0% | 639 | 0 |
 | emulator | hidane | 1345 | 0 | 1345 | 1345 | 100.0% | 1345 | 0 |
+| **deployed** | **all** | 485 | 398 | 87 | 87 | 100.0% | 87 | 0 |
 | **rules-test-api** | **all** | 3698 | 55 | 3643 | 3643 | 100.0% | 3635 | 0 |
-| **emulator** | **all** | 2034 | 49 | 1985 | 1983 | 99.9% | 1982 | 0 |
+| **emulator** | **all** | 2034 | 49 | 1985 | 1985 | 100.0% | 1984 | 0 |
 
 - `finer`: من المعدودة، ما طابقت نتيجته الأدق أيضًا. `permissive`: سماح رفضه المصدر ومن فوقه؛ يجب أن يكون صفرًا.
-- **الفرقان الباقيان** (`emulator`، كلاهما رفض حيث يسمح المحاكي، فليسا تساهلًا): `aruma/errors/debug_function`
-  و`aruma/storage/debug`: `debug()` قرار مؤقت يتبع Test API (أدناه).
+- **`deployed`/`aruma`** (S7-R، 2026-10-24): مسابير على قواعد منشورة فعلًا (`production/deployed-firestore.json`،
+  و«محسومة بالإنتاج» أدناه). 124 منها «حقائق» لا قرارات: ترتيب `values()`، وليس للإنتاج فيه ترتيب ثابت.
+- **لا فرق باقٍ.** كان الفرقان الأخيران (`emulator`) `aruma/errors/debug_function` و`aruma/storage/debug`: `debug()`
+  كانت خطأً تبعًا لـ Test API، والمنشور يعيد وسيطها كما يفعل المحاكي، فطابقاه.
 - **قبل الإصلاحات** كانت النسبة 96.0% لـ `rules-test-api`/`pyric`، و9 حالات سماح زائد. وما أُصلح، بالترتيب:
   - المحرك: القوائم والخرائط الحرفية تبنيها المكتبة، فتبقى `values()` بترتيب الكتابة (`map_values_order`)؛ ونمط
     حرفي غير صالح في `replace()` خطأ تقييم لا ترجمة، كما قاسه S1-E على Test API، و`matches()` و`split()` خطأ ترجمة
@@ -77,7 +81,7 @@ go run ./tools/rules-diff -seed 1 -n 1000                                   # م
     و`request.resource` في حذف على المحاكي `null`.
   - الأداة: سطر `L0:0` في رسالة المحاكي تحذير للملف كله لا أول خطأ؛ وحالة تحاكي `get()` و`exists()` للمستند نفسه
     بنتيجتين متعارضتين أثر من Test API (خارج النسبة)؛ والقالب الذي نشره مشغّل Pyric ليس ملف قواعد.
-- **حالات الترجمة وحدها (`TestGrammar`):** 1937 ملف قواعد مختلفًا، كلها تطابق في النجاح وموضع أول خطأ (100%)،
+- **حالات الترجمة وحدها (`TestGrammar`):** 1940 ملف قواعد مختلفًا (منها ثلاثة S7-R)، كلها تطابق في النجاح وموضع أول خطأ (100%)،
   ونص الرسالة في 577 من 577، والنحو نفسه حين يُسمّي إعلانُ الخدمة الخدمةَ الأخرى في 1889 من 1889.
 - **بعد القياس على المحجوزة** أُضيفت 15 حالة تطوير من مسبار S1-E (`production/s1e-paths-*.json`) تثبت ما وجده:
   Test API تفك ترميز URL في كل مقطع من مسار الطلب، و`string()` لمسار `{x=**}` نصه. والجدول أعلاه بعدها.
@@ -153,19 +157,40 @@ S1-E، 2026-10-24، `cloud-firestore-emulator` v1.22.0، `-n 1000 -depth 5` (و�
 
 ### قرارات مؤقتة
 
-حسمها المصدر الوحيد المقيس، Rules Test API (`projects.test` على `chatapp-8ae21`، مراجعة S1-B في 2026-10-24).
-أما القواعد المنشورة (`deployed`)، وهي المصدر الأعلى، فلم تُقس فيها بعد. فإن خالفها المنشور تغيّر الحكم في موضع
-واحد من الكود.
+قاس S7-R قرارات هذا الجدول الأربعة على القواعد المنشورة (2026-10-24، أدناه)، فخرجت منه. بقي ما لم يُقس على
+Storage المنشور:
 
 | السلوك | ما يفعله Aruma | الدليل | ما يغيّره القياس |
 |---|---|---|---|
-| `debug(x)` | خطأ تقييم «Function not found error: Name: [debug].»، أي رفض ما لم يمتصه `\|\|` | Test API: حالتا S0-A `aruma/errors/debug_function` و`aruma/storage/debug`، وhidane D113. المرجع يقول «has no effect in production»، والمحاكي يعيد وسيطه | إن أعاد المنشور وسيطه صارت `debug` في `callFunction` (`library.go`) دالة هوية |
-| الأعداد في `request.auth.token` | العدد الصحيح الذي يتسع له int64 يصير `int`، سواء كُتب `2` أو `2.0`، والباقي `float`. ومنه `exp` و`iat` و`auth_time` | Test API (مسابير المراجعة، 2026-10-24): `level: 2` و`2.0` و`m.n: 3` و`l[0]: 3` كلها `is int`، و`2.5` `is float`. وTest API يأخذ `request` كما يُرسل، لا من رمز حقيقي | قياس بطلب حقيقي برمز ID من مكتبة Firebase. إن جعل المنشور الأعداد المخصّصة `float` تغيّرت `claimValue` (`auth.go`) |
-| `debug()` بعدد وسائط غير واحد | يُترجم بتحذير «Incorrect number of arguments supplied to function: debug.» عند اسمها، ثم خطأ التقييم نفسه | مقيس على Test API (مسبار S1-E `arity.mjs`): `debug(1, 2)` و`debug()` يحذّران عند L5:21، و`debug(1)` لا، والثلاثة «Function not found» عند التقييم | يتبع حكم `debug(x)` أعلاه |
-| ترتيب الخريطة في قيم الخدمة | `values()` بترتيب المصدر، والربط يبنيها بـ `rules.MapInOrder` | Test API وحدها (`keyOrder`، و`upload-primitives-boundaries` 181-183)، وهي تأخذ `request` حرفيًّا، فلا يثبت ما تفعله الخدمة | **على S2:** ترتيب بيانات Storage الوصفية مؤقت حتى يقيسه تسجيل من المحاكي (أو المنشور). إن رتّبها المصدر صارت `rules.Map`. **قرار S2-E:** ربط Storage يبنيها بـ `rules.Map` (بالمفتاح)، لأن jsonb وPatch لا يحفظان ترتيبًا (ADR-023 §3-57) |
-| `get()` لمستند غائب | `null`، و`exists()` له `false` | مرجع `rules.firestore` والمحاكي، لا الإنتاج (`parity-exceptions.md`) | تسجيل منشور يفصل بين `null` والخطأ |
+| ترتيب بيانات Storage الوصفية (`metadata`) | `values()` بترتيب المفتاح: ربط Storage يبنيها بـ `rules.Map`، لأن jsonb وPatch لا يحفظان ترتيبًا (ADR-023 §3-57، قرار S2-E) | Test API تأخذ `request` حرفيًّا. ولم يُقس Storage المنشور؛ وFirestore المنشور لا ترتيب ثابتًا له (أدناه) | تسجيل من Storage المنشور |
+| `debug()` في Storage | كما في Firestore: يعيد وسيطه الأول (المحرك واحد) | قيس على Firestore المنشور وحده: لا إصدار `firebase.storage` في المشروع | تسجيل من Storage المنشور |
 
 ### محسومة بالإنتاج
+
+**على القواعد المنشورة (S7-R، 2026-10-24).** أُشير إصدار `cloud.firestore` في `chatapp-8ae21` ثلاث مرات، دقيقة أو
+اثنتين كل مرة، إلى قواعد المشروع نفسها مع كتلة واحدة `match /aruma-ref/{run}/{rest=**}`، كل `allow` فيها محروس بـ
+`rest[0]` (لا شيء في قواعد المشروع يطابق `aruma-ref`، فالقرار للمسبار وحده). والطلبات حقيقية بـ Firestore REST v1:
+قراءة مستند غائب تجيب 404 إن سُمح و403 إن رُفض. ثم أُعيد الإصدار إلى ruleset الأصلي نفسه بالاسم، وطابق SHA-256
+للمصدر المحفوظ. والحالات في `test/oracle/rules/production/deployed-firestore.json` (provenance `deployed`)،
+والطلبات والردود في `raw/deployed-firestore.json`. 403 لا تقول السبب، فحيث رُفض الشرط ونقيضه معًا فهو خطأ تقييم.
+
+- **`debug(x)` يعيد وسيطه:** `debug(true)` و`debug(1) == 1` و`debug('s') == 's'` و`debug({'a': 1}).a == 1` و`!debug(false)`
+  تسمح، و`debug(1) != 1` ترفض. **و`debug(1, 2)` وسيطه الأول:** `== 1` يسمح، و`== 2` و`!= 1` و`== [1, 2]` ترفض.
+  **و`debug()` خطأ تقييم:** `== null` و`!= null` كلاهما رفض، و`|| true` يسمح. فـ `callFunction` (`library.go`) يعيد
+  الوسيط الأول، و`debug()` خطأ («Incorrect number of arguments. Received: 0.»: نص الإنتاج لا يُرى). والتحذير عند
+  الترجمة باقٍ (`:test` على المصدر المنشور حذّر عند `debug()` و`debug(1, 2)`). أما Test API فلا `debug()` فيها، وهذا
+  أثر منها (أدناه).
+- **الأعداد في `request.auth.token` من رمز ID حقيقي** (مستخدم مجهول مؤقت، `customAttributes` بـ
+  `accounts:update`، ثم رمز جديد): `exp` و`iat` و`auth_time` `int`. والمخصّصة كما كتبها الرمز: `2` و`2.0` و`-7`
+  و`m.n: 3` و`l[0]: 3` `int`؛ و`2.5` و`m.f: 3.5` و`l[1]: 3.5` و`1e20` `float`. و`9007199254740993` (2^53+1) `int`
+  بالضبط: `== 9007199254740993` و`!= 9007199254740992` تسمحان، والرمز كتب الأعداد بنصها (`2.0` و`1e20`
+  و`9007199254740993`). وهو حكم `claimValue` (`auth.go`) فلم يتغيّر، لكن Aruma كان يفقد الدقة قبله: يكتب المطالبات
+  في الرمز بعد float64 (`mint`) ويقرؤها كذلك (`idtoken.Claims.Token`)، فـ `== 9007199254740992` كان يسمح حيث يرفض
+  الإنتاج. صار `mint` (`auth/core/sessions.go`) يكتب كل مطالبة بنصها، والمتحقق (`auth/core/idtoken.go`) وجلسة الرفع
+  في Storage (`decodePrincipal`) يقرآن الأعداد `json.Number`. وRTDB يحوّلها إلى double كما كان.
+- **`get()` لمستند غائب `null`، و`exists()` له `false`:** `get(…) == null` يسمح، و`!= null` و`is map` ترفضان،
+  و`get(…).data` خطأ (`== null` يرفض و`|| true` يسمح)؛ و`exists(…) == false` يسمح. وهو ما يفعله المحرك.
+- **`keys()` مرتبة دائمًا**، و`values()` بلا ترتيب ثابت: انظر «فروق مقصودة».
 
 قرارات من مراجعة المكتبة (S1-B) قاسها Test API، فليست مؤقتة:
 
@@ -194,6 +219,14 @@ S1-E، 2026-10-24، `cloud-firestore-emulator` v1.22.0، `-n 1000 -depth 5` (و�
 
 ### فروق مقصودة
 
+- **ترتيب `values()` في Firestore المنشور ليس ترتيب المصدر ولا ترتيب المفتاح، ولا هو ثابت** (S7-R): في الكتابة
+  (REST `createDocument`، الحقول `z, a, m, b`) تغيّر بين ثلاثة طلبات متطابقة: `values()[1] == 1` سمح في الأول والثالث
+  ورفض في الثاني، و`values() == values()` يسمح دائمًا (ثابت داخل التقييم). وفي القراءة هو ترتيب المستند المخزّن:
+  ما كُتب بـ `commit` جاء بترتيب الكتابة (61 مستندًا، ثلاث قراءات لكل منها)، وما كُتب بـ `createDocument` لم يأتِ بترتيبها ولا
+  بترتيب المفتاح. و`keys()` مرتبة، و`toSet()` و`hasAll()` و`size()` لا تتأثر. فالقاعدة التي تعتمد على ترتيب `values()`
+  قرارها في الإنتاج غير محدد، ولا يقلّد Aruma العشوائية: يبقى ترتيب المصدر (`rules.MapInOrder`، وهو ما تعطيه Test
+  API وأحد ما يعطيه الإنتاج). والحالات «حقائق» خارج النسبة. وعلى v0.4 (ربط Firestore) أن يبقى على هذا ولا يعد
+  بترتيب.
 - **تحذيرات عدد الوسائط:** الإنتاج يحذّر من عدد وسائط خاطئ في كل دالة وطريقة يعرف نوعها، والمحرك في المقيس وحده:
   `debug` و`math.abs` و`size` و`lower` (مسبار S1-E). التحذير لا يغيّر الترجمة ولا القرار.
 - **`'x'[float(…)]`:** الإنتاج والمحاكي يجيبان 500 عند الترجمة (مسبار S1-E و`rules-diff` البذرة 2)، والمحرك يترجم
@@ -216,11 +249,11 @@ S1-E، 2026-10-24، `cloud-firestore-emulator` v1.22.0، `-n 1000 -depth 5` (و�
 | نص بصيغة RFC 3339 يصير timestamp، ونص يبدأ بـ `/databases/` يصير path، و`{latitude, longitude}` يصير latlng | `aruma/encoding/json_ts_string_is_timestamp`، `aruma/hidane-conditions/rules/11`، `145`، `150` | نعم |
 | تحاكي `get()` و`exists()` كلًّا وحدها: `exists()` بـ `false` مع `get()` بمستند للمسار نفسه | `pyric/firestore/simcase-mock-and-path-fidelity/1` | لا: المستند الحقيقي موجود أو غائب، والمحرك يقرؤه مرة للاثنتين |
 | بعد الكتابة: `getAfter(request.path)` هو `request.resource`، و`existsAfter` صحيح في الإنشاء وخطأ في الحذف، وغيره من المستندات كما تحاكيه `get()`/`exists()` | Pyric `get-after-and-exists-after`، `atomic-batch-sibling-merge` | نعم: الربط يبنيه كذلك، وهو ما تعطيه الخدمة |
-| تحفظ ترتيب الخرائط كما أُرسلت، و`values()` يتبعه (و`keys()` مرتبة) | Pyric `required-fields-and-mapdiff` (keyOrder)، `upload-primitives-boundaries` 181-183 | نعم: الربط يقرأ JSON بترتيبه (`rules.MapInOrder`). وما تفعله الخدمة مؤقت («قرارات مؤقتة») |
+| تحفظ ترتيب الخرائط كما أُرسلت، و`values()` يتبعه (و`keys()` مرتبة) | Pyric `required-fields-and-mapdiff` (keyOrder)، `upload-primitives-boundaries` 181-183 | نعم: الربط يقرأ JSON بترتيبه (`rules.MapInOrder`). والمنشور لا ترتيب ثابتًا له («فروق مقصودة») |
 | نتيجة `get()` المحاكاة بلا `id` ولا `__name__` | `aruma/storage/fs_get_id`، `aruma/storage/fs_get_name` | لا: الإنتاج يسمّي المستند |
 | `get()`/`exists()` لمستند غير محاكى «Function not found»، والمحاكاة بنتيجة `undefined` «Service call error» | `aruma/limits/get_unmocked`، `aruma/limits/get_mock_null` | نعم: الربط يجعلهما `ErrNoDocuments`، وهو خطأ تقييم |
 | لا حدّ لعدد القراءات المحاكاة: 50 مستندًا في Firestore، و3 و11 في Storage | `aruma/limits/exists_11`…`exists_50`، `aruma/limits/get_11`، `aruma/storage/fs_lookups_3`، `aruma/storage/fs_lookups_11`، `pyric/storage/firestore-lookup-budget/6` | لا: نطبّق 10/20 و2 كما في الوثائق وStorage المنشور (`pyric/storage/stdlib-realstorage-p3-lookup-budget-iam-enabled/three`) |
-| `debug()` غير موجودة | `aruma/errors/debug_function`، `aruma/storage/debug` | لا (والمحرك يوافقها): المحاكي فيه `debug()`، والمرجع يقول إن المنشور كذلك ولم يُقس. فالمحرك يتبع Test API مؤقتًا («قرارات مؤقتة») |
+| `debug()` غير موجودة | `aruma/errors/debug_function`، `aruma/storage/debug` | لا: المنشور يعيد وسيطها كما يفعل المحاكي (S7-R)، والمحرك يتبعه |
 | تقبل الطريقتين `write` و`read` في الطلب | `aruma/methods/method_write_verb`، و`aruma/methods/method_read_verb` (المحجوزة، صُنّفت بعد قياسها) | لا: لا طلب حقيقي طريقته `write` أو `read` |
 | تقسم مسار الطلب على `/` ثم تفك ترميز URL في كل مقطع: `+` مسافة، و`%2F` يبقى داخل مقطعه | `aruma/s1e-paths/*` | نعم: الربط يفكها كذلك. وهذه حقائق عن مدخل Test API وحده، لا قاعدة للخدمة: **الخدمة تفك ترميز اسم الكائن مرة واحدة ثم تقسمه على `/`، ولا تفكه مرتين** (`B-admin-gcs-protocol.md:86`، و`A-client-protocol.md:86`: مكتبة JS ترسل `+` بالشكل `%2B`) |
 | ترفض طلبًا لا قواعد: وقت بغير صيغته، ومسار Storage ينتهي بـ `/`، و`503` لـ ruleset كبير | `aruma/encoding/time_bad_format`، `aruma/storage-paths/list_on_prefix`، `aruma/limits/size_functions_2000` | لا |

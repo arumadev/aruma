@@ -1,80 +1,127 @@
-# Aruma
+<div align="center">
 
-خادم ذاتي الاستضافة متوافق مع مكتبات Firebase الرسمية. تشغّله على خادمك، وتطبيقاتك على Web وiOS وAndroid وFlutter تعمل عليه بتغيير ملف الإعداد وحده.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
+  <img alt="Aruma: keep the Firebase SDK, own your backend" src="docs/assets/banner-light.svg" width="100%">
+</picture>
 
-> A self-hosted server compatible with the official Firebase SDKs: one Go binary and PostgreSQL. Apps keep their official SDKs and only swap their configuration file. Not affiliated with or endorsed by Google.
+<br>
 
-## الحالة
+**A self-hosted backend that speaks the official Firebase SDKs.**
+One Go binary and PostgreSQL. Your apps keep the official SDKs and your application code does not change.
 
-**المرحلة 1 من 7: المنصة.** هي الحاوية التي تُبنى فوقها الخدمات:
-- حسابات أصحاب المشاريع ولوحة التحكم.
-- المشاريع والتطبيقات لكل منصة.
-- مفاتيح API وحسابات الخدمة.
-- ملفات الإعداد التي تقبلها المكتبات الرسمية.
-- Management API التي تحتاجها أداة `firebase`.
+<br>
 
-خدمات البيانات (Auth وقاعدة البيانات اللحظية وFirestore وStorage وFunctions) تأتي في المراحل القادمة، وأولها Auth في المرحلة 2.
+[![License](https://img.shields.io/badge/license-Apache%202.0-1446D8?style=flat-square)](LICENSE)
+[![Go](https://img.shields.io/badge/Go-1.26+-0FD8C6?style=flat-square&logo=go&logoColor=white)](go.mod)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-1446D8?style=flat-square&logo=postgresql&logoColor=white)](#quick-start)
+[![Status](https://img.shields.io/badge/status-pre--1.0-0A7D73?style=flat-square)](#status)
 
-| ما يعمل اليوم | كيف ثبت |
-|---|---|
-| ملفات إعداد Web وAndroid وiOS وFlutter وAdmin | المكتبات الرسمية تقبلها دون أي اتصال شبكة ([اختبارات الدخان](test/smoke)) |
-| Management API (M-01 إلى M-18) | اختبارات القبول، وأداة `firebase` |
-| حسابات الخدمة ورموزها | تبديل الرمز عبر `golang.org/x/oauth2`، المكتبة التي يستخدمها Admin SDK للغة Go |
-| العزل بين المشاريع | ست حالات عزل في CI |
+[English](README.md) · [العربية](README.ar.md)
 
-## التشغيل المحلي (بلا Docker)
+[Quick start](#quick-start) · [Status](#status) · [How it works](#how-it-works) · [Configuration](docs/configuration.md) · [Docs](#documentation) · [Contributing](CONTRIBUTING.md)
 
-المتطلبات:
-- Go 1.26 أو أحدث.
-- PostgreSQL 18، مثلًا عبر [DBngin](https://dbngin.com) أو Postgres.app.
-- Node 24، لبناء اللوحة فقط.
+</div>
 
-```sh
-make dashboard   # يبني اللوحة ويضمّنها في الثنائي (مرة واحدة)
-make dev         # ينشئ .env بمفتاح عشوائي عند أول تشغيل، ثم القاعدة والـ migrations، ثم الخادم
+<br>
+
+## Why Aruma
+
+Firebase gives you excellent client SDKs and a managed backend you can't leave. Aruma keeps the first part and replaces the second.
+
+- **Keep the official SDKs.** Web, iOS, Android, Flutter and the Admin SDKs run in their normal production mode, with no emulator mode. You swap the configuration file, and on some platforms add one line of build configuration (see [`sdk/`](sdk)). Your application code stays the same.
+- **Own your data.** Run it on a cheap VPS, on your own servers, or wherever PostgreSQL runs. One binary, one database, no per-operation billing.
+- **Open source.** Apache 2.0. Read the code, run the tests, send a patch.
+- **Built to be verified.** Behavior is checked against real Firebase and the official emulators, and the official Firebase test suites are run against Aruma. See [Status](#status) for the numbers.
+
+> Aruma is not affiliated with or endorsed by Google. Firebase is a trademark of Google LLC.
+
+## Status
+
+Aruma is pre-1.0 and under active development. Services land one at a time, each closed with a compatibility report before the next one starts.
+
+| Service | State | Evidence |
+|---|---|---|
+| **Platform**: projects, apps, API keys, service accounts, console, Management API | Available | Acceptance tests, project-isolation tests in CI, the `firebase` CLI works against it |
+| **Authentication** | Released in [v0.1.0](docs/compat/auth-v0.1.md) | 27/27 P0 scenarios, 180 passing official Firebase JS Auth tests, Web, iOS, Android and Node verified |
+| **Realtime Database** | Released in [v0.2.0](docs/compat/rtdb-v0.2.md), opt-in with `ARUMA_RTDB_ENABLED` | 332/332 official Firebase RTDB tests against a production-style `databaseURL` |
+| **Security Rules** and **Cloud Storage** | In development for v0.3 ([storage](docs/compat/storage-v0.3.md), [rules](docs/compat/rules-v0.3.md)) | Official Storage suites and iOS, Android and Web production paths in progress |
+| **Firestore** | Planned | |
+| **Cloud Messaging, App Check, Remote Config, Functions** | Planned, after the core services | |
+
+Every difference from Firebase is documented, with its source and classification, in the compatibility reports under [`docs/compat`](docs/compat) and the [architecture decisions](docs/adr).
+
+## How it works
+
+```mermaid
+flowchart LR
+    subgraph Apps["Your apps, official Firebase SDKs"]
+        W[Web]
+        I[iOS]
+        A[Android]
+        F[Flutter]
+        N[Admin: Node, Go]
+    end
+    Apps -- "same SDK, new config file" --> E
+    subgraph Aruma["Aruma, one Go binary"]
+        E[Single entry point] --> Auth
+        E --> RTDB[Realtime Database]
+        E --> Storage[Storage, in development]
+        E --> Console[Console and Management API]
+    end
+    Auth --> PG[(PostgreSQL)]
+    RTDB --> PG
+    Storage --> PG
+    Console --> PG
 ```
 
-- افتح http://localhost:8080.
-- أول تشغيل يطبع في السجل رمز إعداد لمرة واحدة (`"code"`). أدخله في صفحة الإعداد لإنشاء حسابك الأول.
-- إن كانت أدوات Postgres خارج `PATH`، فاضبط `ARUMA_PG_BIN`، مثلًا `ARUMA_PG_BIN=/Users/Shared/DBngin/postgresql/18.1/bin`.
+1. Create a project and an app from the console or with `arumactl`.
+2. Download the app's configuration file (`google-services.json`, `GoogleService-Info.plist`, or the Web and Flutter equivalents).
+3. Put it in your app in place of the Firebase one. Your application code does not change. Where a platform needs it, add the one build line described in [`sdk/`](sdk).
 
-## الإعداد
+Projects are isolated from each other, enforced by PostgreSQL row-level security and tested in CI. The design is in [ADR-008](docs/adr/ADR-008-single-entry.md), [ADR-015](docs/adr/ADR-015-services-layout.md) and [ADR-017](docs/adr/ADR-017-postgres-rls.md).
 
-ملف YAML اختياري (`--config` أو `ARUMA_CONFIG`)، ومتغيرات `ARUMA_*` تتقدّم عليه.
+## Quick start
 
-| المتغير | إلزامي | الافتراضي | المعنى |
-|---|---|---|---|
-| `ARUMA_DATABASE_URL` | نعم | | عنوان Postgres |
-| `ARUMA_PUBLIC_URL` | نعم | | العنوان الذي تصل منه المكتبات، مثل `https://aruma.example.com` |
-| `ARUMA_MASTER_KEY` | نعم | | 32 بايت عشوائية بـ base64 (`openssl rand -base64 32`). منه تُشتق كل المفاتيح |
-| `ARUMA_LISTEN` | | `:8080` | المدخل الواحد العام |
-| `ARUMA_METRICS_LISTEN` | | `127.0.0.1:9464` | عنوان خاص لـ `/metrics`. القيمة `-` تعطّله |
-| `ARUMA_SIGNUP_OPEN` | | `false` | السماح بإنشاء حسابات من اللوحة |
-| `ARUMA_PROJECT_DOMAIN` | | مضيف `public_url` | أساس `authDomain` وأسماء الحاويات وبريد حسابات الخدمة |
-| `ARUMA_TRUSTED_PROXIES` | | | عناوين CIDR التي تُصدَّق منها `X-Forwarded-For` |
-| `ARUMA_SESSION_IDLE_TIMEOUT` / `ARUMA_SESSION_ABSOLUTE_TIMEOUT` | | `30m` / `8h` | عمر جلسة اللوحة |
-| `ARUMA_MAIL_DEV_MAILBOX` | | `true` إن كان `public_url` على loopback، وإلا `false` | صندوق بريد التطوير: رسائل Auth للمشاريع التي بلا SMTP تُحفظ في اللوحة بدل إرسالها. خادم SMTP يُضبط لكل مشروع من اللوحة |
-| `ARUMA_RTDB_ENABLED` | | `false` | تشغيل قاعدة البيانات اللحظية (Realtime Database) |
-| `ARUMA_RTDB_DOMAIN` | | | النطاق الأب لمضيفات القواعد: `https://<project_id>-default-rtdb.<domain>`. يحتاج سجل DNS عامًا وشهادة ووكيلًا يحفظ المضيف، انظر [دليل التشغيل](docs/guides/rtdb-operator.md). بلا قيمة تُخدم القواعد بـ `?ns=` على `public_url`، للتطوير المحلي فقط |
-| `ARUMA_MAIL_SMTP_ALLOW_PRIVATE` | | `true` إن كان `public_url` على loopback، وإلا `false` | السماح بخادم SMTP على عنوان loopback أو خاص أو link-local (مثل Postfix على الجهاز نفسه). مغلق، لا تصل إعدادات SMTP في اللوحة إلى شبكة الخادم الداخلية ولا إلى عنوان metadata السحابي. فعّله إن كان مرحّل البريد محليًا |
+Requirements: Go 1.26+, PostgreSQL 18 (for example through [DBngin](https://dbngin.com) or [Postgres.app](https://postgresapp.com)), and Node 24 to build the console.
 
-## أوامر المشغّل: `aruma`
+```bash
+make dashboard   # build the console and embed it in the binary (once)
+make dev         # create .env with a random key on first run, then the database, migrations and the server
+```
 
-```sh
-aruma migrate up|status                    # الخادم لا ينفّذ DDL أبدًا، ويرفض الإقلاع على مخطط قديم
+Open <http://localhost:8080>. The first start prints a one-time setup `code` in the log. Enter it on the setup page to create your first account.
+
+If the Postgres tools are not on your `PATH`, set `ARUMA_PG_BIN`, for example `ARUMA_PG_BIN=/Users/Shared/DBngin/postgresql/18.1/bin`.
+
+### Configure a server
+
+Three settings are required. Everything else has a default.
+
+| Variable | Meaning |
+|---|---|
+| `ARUMA_DATABASE_URL` | PostgreSQL connection URL |
+| `ARUMA_PUBLIC_URL` | The address your SDKs reach, for example `https://aruma.example.com` |
+| `ARUMA_MASTER_KEY` | 32 random bytes in base64 (`openssl rand -base64 32`). All other keys are derived from it |
+
+Configuration is an optional YAML file (`--config` or `ARUMA_CONFIG`) with `ARUMA_*` environment variables taking precedence. The full reference is in [docs/configuration.md](docs/configuration.md), and [`aruma.example.yaml`](aruma.example.yaml) shows every key.
+
+### Operate it
+
+```bash
+aruma migrate up|status                 # the server never runs DDL and refuses to start on an old schema
 aruma serve
-aruma accounts create --email you@example.com   # كلمة المرور من الطرفية دون عرض، أو من stdin
-aruma accounts disable|enable|reset-password --email you@example.com
-aruma backup --out aruma.dump              # pg_dump بالصيغة المخصّصة
-aruma restore --in aruma.dump --yes        # بعد إيقاف الخادم، وفي معاملة واحدة
+aruma accounts create --email you@example.com
+aruma backup --out aruma.dump           # pg_dump, custom format
+aruma restore --in aruma.dump --yes     # with the server stopped, in a single transaction
 aruma config check
 ```
 
-## أداة المطوّر: `arumactl`
+### Use it from the command line
 
-أنشئ رمز CLI من اللوحة (حسابي ← رموز CLI)، ثم:
+Create a CLI token in the console (My account, CLI tokens), then:
 
-```sh
+```bash
 arumactl login --server https://aruma.example.com
 arumactl projects create chat-app --name "Chat App"
 arumactl apps create --project chat-app --platform android --package com.example.chat
@@ -83,45 +130,55 @@ arumactl sa create --project chat-app backend
 arumactl sa keys create --project chat-app backend@chat-app.sa.aruma.example.com --out key.json
 ```
 
-أداة `firebase` الرسمية تعمل أيضًا عبر المتغيرات `FIREBASE_API_URL` و`FIREBASE_TOKEN_URL` و`FIREBASE_TOKEN`. التفاصيل في [docs/research/experiments.md](docs/research/experiments.md).
+The official `firebase` tool works too, through `FIREBASE_API_URL`, `FIREBASE_TOKEN_URL` and `FIREBASE_TOKEN`. Details are in [docs/research/experiments.md](docs/research/experiments.md).
 
-## البنية
+## Repository layout
 
-```
-cmd/aruma, cmd/arumactl     الثنائيان
-internal/server             المدخل الواحد: التوجيه بالمسار، وترويسات الأمان، ولا CORS
-internal/admin              console (واجهة اللوحة)، وmgmt (Management API)، وoauth (الرموز)، وweb (اللوحة المضمّنة)
-internal/tenancy            core (منطق المنصة وبوابة الملكية)، وqueries (sqlc)
-internal/configgen          مولّدات ملفات الإعداد (نقية)
-internal/platform           apierr، وauthn، وcrypto، وhttpx، وids، وlog، وmetrics، وratelimit
-internal/store              الاتصال، والمعاملات، والـ migrations (قسم لكل خدمة)، والنسخ الاحتياطي
-dashboard/                  Next.js بتصدير ثابت، عربي RTL افتراضيًا
-test/acceptance, test/smoke حالات القبول والعزل، واختبارات الدخان على المكتبات الرسمية
-```
+| Path | What lives there |
+|---|---|
+| `cmd/aruma`, `cmd/arumactl` | The server and the developer CLI |
+| `internal/server` | The single public entry point: path routing and security headers |
+| `internal/services` | `auth`, `rtdb` and `storage` |
+| `internal/admin` | The console backend, the Management API and OAuth tokens |
+| `internal/tenancy` | Platform logic, ownership gate and generated queries (sqlc) |
+| `internal/store` | Connections, transactions, migrations and backups |
+| `internal/platform` | Shared building blocks: errors, authn, crypto, HTTP, logging, metrics, rate limiting |
+| `dashboard/` | The console: Next.js, static export, Arabic RTL by default |
+| `sdk/` | Small packages that point the official SDKs at Aruma: Web, iOS, Android, Go and Node |
+| `test/` | Acceptance, isolation, compatibility, oracle and smoke tests |
+| `docs/` | Architecture decisions, compatibility reports, security reviews and research |
 
-القرارات المعمارية مكتوبة في [docs/adr](docs/adr):
-- [ADR-007](docs/adr/ADR-007-projects-and-keys.md): المعرّفات.
-- [ADR-008](docs/adr/ADR-008-single-entry.md): المدخل الواحد.
-- [ADR-009](docs/adr/ADR-009-data-tooling.md): أدوات البيانات.
-- [ADR-010](docs/adr/ADR-010-secure-defaults.md): الافتراضيات الآمنة.
+The package dependency rule is enforced by a test in CI.
 
-وقاعدة الاعتماد بين الحزم يفرضها اختبار في CI.
+## Testing
 
-## الاختبارات
-
-```sh
-make test        # الوحدات والقبول والعزل (يحتاج Postgres محليًا، وكل اختبار يأخذ قاعدة جديدة)
-make lint        # gofmt وvet وقواعد الاعتماد
-make smoke       # المكتبات الرسمية على ملفات حقيقية: web وadmin-node وadmin-go وandroid وios وflutter
+```bash
+make test    # unit, acceptance and isolation tests (needs a local Postgres; each test gets a fresh database)
+make lint    # gofmt, vet and the dependency rules
+make smoke   # the official SDKs against real config files: web, admin-node, admin-go, android, ios, flutter
 ```
 
-## الأمان
+## Security
 
-- لا حساب افتراضي. أول حساب يحتاج رمزًا لمرة واحدة من السجل، والتسجيل مغلق افتراضيًا.
-- كلمات المرور بـ argon2id. والرموز تُخزَّن HMAC فقط، والمفتاح الخاص لحساب الخدمة لا يُخزَّن أبدًا.
-- ما لا تملكه يرجع `NOT_FOUND`.
-- القائمة الكاملة واختباراتها في [ADR-010](docs/adr/ADR-010-secure-defaults.md) و[نموذج التهديد](docs/security/threat-model.md).
+- No default account. The first one needs a one-time code from the log, and sign-up is closed by default.
+- Passwords use argon2id. Tokens are stored as HMACs only, and a service account's private key is never stored.
+- What a caller does not own returns `NOT_FOUND`.
 
-## الترخيص
+The full list and its tests are in [ADR-010](docs/adr/ADR-010-secure-defaults.md) and the [threat model](docs/security/threat-model.md). To report a vulnerability, read [SECURITY.md](SECURITY.md).
 
-[Apache License 2.0](LICENSE). Firebase علامة تجارية لـ Google LLC، وAruma غير تابع لـ Google ولا معتمد منها.
+## Documentation
+
+- [Architecture decisions](docs/adr/README.md)
+- [Compatibility reports](docs/compat)
+- [Guides](docs/guides): Web auth, Admin auth, Realtime Database and operating it
+- [Security reviews](docs/security)
+- [Performance baselines](docs/performance)
+- [Research notes](docs/research)
+
+## Contributing
+
+Issues and pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+Apache License 2.0, see [LICENSE](LICENSE) and [NOTICE](NOTICE). Firebase is a trademark of Google LLC. Aruma is not affiliated with Google and is not endorsed by it.

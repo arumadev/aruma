@@ -163,7 +163,8 @@ test('getDownloadURL returns the unified link, which serves the bytes', async ()
     const re = new RegExp(`^${origin.replace(/\./g, '\\.')}/v0/b/${bucket.name.replace(/\./g, '\\.')}/o/` +
       `${encodeURIComponent(name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\?alt=media&token=[0-9a-f-]{36}$`);
     assert.match(url, re);
-    assert.ok(!url.includes(':443'), url);
+    // An explicit :443 after the host, not any port that starts with 443 (a loopback port can).
+    assert.ok(!/^[a-z]+:\/\/[^/]*:443(\/|$)/.test(url), url);
     assertBearer(since(from), { resumable: false });
     // Anyone with the link reads the file, with no credential.
     const res = await fetch(url);

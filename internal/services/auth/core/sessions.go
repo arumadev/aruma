@@ -42,8 +42,11 @@ type IDClaims struct {
 }
 
 // mint signs an ID token for the user. Developer claims (from the user record and, for custom
-// tokens, from the token) sit at the top level as in Firebase; they never override the standard
-// claims, which validClaims already forbids. It is never issued before its sign-in: a session
+// tokens, from the token) sit at the top level as in Firebase, each as its JSON was stored:
+// a number never passes through a float64, so 9007199254740993 stays exact, as in Firebase's
+// tokens (S7-R). Custom-token claims keep their text; the user record's pass through Postgres
+// jsonb, which writes a number in its own form (1e20 as 100000000000000000000), the same value
+// in the rules. They never override the standard claims, which validClaims already forbids. It is never issued before its sign-in: a session
 // started by a revocation is dated at the revocation point, up to a second ahead.
 func (s *Service) mint(sg *tokens.Signer, p Project, u User, provider string, tokenClaims json.RawMessage, authTime time.Time) (string, error) {
 	now := s.now()
@@ -55,7 +58,7 @@ func (s *Service) mint(sg *tokens.Signer, p Project, u User, provider string, to
 		if len(raw) == 0 {
 			continue
 		}
-		var m map[string]any
+		var m map[string]json.RawMessage
 		if json.Unmarshal(raw, &m) == nil {
 			for k, v := range m {
 				if !reservedClaims[k] {
