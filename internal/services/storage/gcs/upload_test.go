@@ -499,3 +499,65 @@ func TestUploadTooSlowIs408(t *testing.T) {
 		t.Fatal("the slow upload was stored")
 	}
 }
+
+// dropAfter sends a request with a chunked body on a real connection, then closes it mid-body.
+func dropAfter(t *testing.T, addr, head, chunk string) {
+	t.Helper()
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.WriteString(conn, head+"Transfer-Encoding: chunked\r\n\r\n"+
+		strconv.FormatInt(int64(len(chunk)), 16)+"\r\n"+chunk+"\r\n"); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(50 * time.Millisecond) // the server reads the chunk before the connection goes
+	_ = conn.Close()
+}
+
+// A connection that drops mid-body: a media upload leaves nothing reserved and no object, and a
+// resumable session keeps the bytes it synced, announced in Range, and goes on from them.
+func TestUploadDroppedConnection(t *testing.T) {
+	e := newEnv(t)
+	srv := httptest.NewServer(e.h)
+	defer srv.Close()
+	addr := srv.Listener.Addr().String()
+	reserved := func() int64 {
+		u, err := e.svc.Usage(context.Background(), e.a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return u.ReservedBytes
+	}
+
+	dropAfter(t, addr, "POST "+upload+"?uploadType=media&name=dropped.bin HTTP/1.1\r\nHost: aruma.example\r\n"+
+		"Authorization: Bearer "+tokenA+"\r\n", strings.Repeat("m", 64<<10))
+	for deadline := time.Now().Add(10 * time.Second); reserved() != 0; time.Sleep(10 * time.Millisecond) {
+		if time.Now().After(deadline) {
+			t.Fatalf("the dropped media upload still reserves %d bytes", reserved())
+		}
+	}
+	if e.stored(e.a, "dropped.bin") != nil {
+		t.Fatal("the dropped media upload was stored")
+	}
+
+	loc := e.start(t, "dropped-session.bin", "", `{}`)
+	dropAfter(t, addr, "PUT "+loc+" HTTP/1.1\r\nHost: aruma.example\r\nContent-Range: bytes 0-*/*\r\n", "abcdef")
+	var rec *httptest.ResponseRecorder
+	for deadline := time.Now().Add(10 * time.Second); ; time.Sleep(10 * time.Millisecond) {
+		rec = e.chunk(t, "PUT", loc, "bytes */*", "", nil)
+		if rec.Code == http.StatusPermanentRedirect && rec.Header().Get("Range") == "bytes=0-5" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("after the drop: %d Range %q %s", rec.Code, rec.Header().Get("Range"), rec.Body)
+		}
+	}
+	if got := reserved(); got != 6 {
+		t.Fatalf("the session reserves %d bytes, want its 6 synced", got)
+	}
+	gcsObject(t, e.chunk(t, "PUT", loc, "bytes 6-8/9", "ghi", nil), "abcdefghi")
+	if got := reserved(); got != 0 {
+		t.Fatalf("after the finalize %d bytes stay reserved", got)
+	}
+}
