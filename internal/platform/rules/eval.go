@@ -146,7 +146,7 @@ func (ev *evaluator) eval(e expr, fr *frame) (Value, error) {
 		// An error new here is a value the evaluation built, and may hold until it ends (the
 		// operands and arguments keep theirs): its message is charged like any other (the
 		// review's SR3-03), once, where it is placed.
-		if ee, ok := err.(*evalError); ok && ee.at == (span{}) {
+		if ee, ok := errors.AsType[*evalError](err); ok && ee.at == (span{}) {
 			if aerr := ev.m.alloc(errorBytes + int64(len(ee.msg))); aerr != nil {
 				return Value{}, aerr
 			}
