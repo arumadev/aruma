@@ -1,7 +1,9 @@
 package migrations_test
 
 import (
+	"bytes"
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -102,4 +104,33 @@ func TestUniqueViolationIsDetected(t *testing.T) {
 	if c, ok := store.UniqueViolation(err); !ok || c != "accounts_email_lower_key" {
 		t.Fatalf("UniqueViolation = %q, %v (err %v)", c, ok, err)
 	}
+}
+
+// ADR-022 §3, ADR-017: the storage schema's own guarantees.
+func TestStorageSchemaConstraints(t *testing.T) {
+	pool := storetest.NewPool(t)
+	seed(t, pool)
+	const key = "p/482915736204/0b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f"
+	insert := `INSERT INTO storage.objects (project_number, name, generation, blob_key, size, md5, crc32c, time_created, updated)
+		VALUES ($1, $2, 1784647629568292, $3, 0, decode('d41d8cd98f00b204e9800998ecf8427e', 'hex'), 0, now(), now())`
+	mustFail(t, pool, "an object belongs to a project", insert, 582915736204, "a.txt", key)
+	mustFail(t, pool, "a file key is never an object name", insert, 482915736204, "a.txt", "p/482915736204/../../etc/passwd")
+	mustFail(t, pool, "an object's file is under p/", insert, 482915736204, "a.txt", "s/482915736204/0b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f")
+	mustFail(t, pool, "a name has a byte", insert, 482915736204, "", key)
+	mustFail(t, pool, "a name has at most 1024 bytes", insert, 482915736204, strings.Repeat("é", 513), key)
+	mustExec(t, pool, insert, 482915736204, "a.txt", key)
+	mustFail(t, pool, "a file backs one object", insert, 482915736204, "b.txt", key)
+
+	session := `INSERT INTO storage.upload_sessions (id_hash, project_number, name, surface, principal_kind, staging_key, state, final_status, expires_at)
+		VALUES ($1, 482915736204, 'a.txt', 'firebase', 'anonymous', $2, $3, $4, now() + interval '7 days')`
+	mustFail(t, pool, "only a final session has an outcome", session, bytes.Repeat([]byte{1}, 32),
+		"s/482915736204/1b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f", "active", "permission_denied")
+	mustFail(t, pool, "an upload id hash is 32 bytes", session, []byte{1},
+		"s/482915736204/1b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f", "active", nil)
+	mustExec(t, pool, session, bytes.Repeat([]byte{1}, 32), "s/482915736204/1b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f", "final", "permission_denied")
+
+	mustFail(t, pool, "anonymous bytes are part of the reserved bytes",
+		`INSERT INTO storage.usage (project_number, reserved_bytes, anonymous_reserved_bytes) VALUES (482915736204, 1, 2)`)
+	mustExec(t, pool, `INSERT INTO storage.instance (id) VALUES ('00000000-0000-4000-8000-000000000001')`)
+	mustFail(t, pool, "one instance row", `INSERT INTO storage.instance (id) VALUES ('00000000-0000-4000-8000-000000000002')`)
 }
