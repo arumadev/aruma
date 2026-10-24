@@ -339,3 +339,113 @@ func TestRulesLimitsRejectBadValues(t *testing.T) {
 		t.Errorf("raised Aruma limits: %v", err)
 	}
 }
+
+func TestStorageDefaultsOff(t *testing.T) {
+	c, err := Load("", env(required()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Storage.Enabled || c.Storage.DataDir != "" || c.Storage.GCGrace != time.Minute {
+		t.Errorf("Storage must be off by default: %+v", c.Storage)
+	}
+	if l := c.Storage.Limits; l.ObjectBytes != 5<<30 || l.ProjectBytes != 5<<30 || l.UploadSessionTTL != 7*24*time.Hour ||
+		l.AnonymousStagedFraction != 0.2 || l.ListMaxResults != 1000 {
+		t.Errorf("Storage limits do not follow ADR-022 §17: %+v", l)
+	}
+}
+
+// Every Storage limit has a file key and an ARUMA_STORAGE_* variable named after it, and the
+// variable wins. The file halves every limit, and the variables halve every other one again,
+// which keeps the cross checks: the sessions' lifetimes stay in order.
+func TestStorageSettings(t *testing.T) {
+	fields := reflect.VisibleFields(reflect.TypeFor[StorageLimits]())
+	def := reflect.ValueOf(Defaults().Storage.Limits)
+	format := func(v reflect.Value, div int64) string {
+		switch v.Interface().(type) {
+		case time.Duration:
+			return (time.Duration(v.Int() / div)).String()
+		case float64:
+			return strconv.FormatFloat(v.Float()/float64(div), 'g', -1, 64)
+		}
+		return strconv.FormatInt(v.Int()/div, 10)
+	}
+	var yaml strings.Builder
+	yaml.WriteString("database_url: postgres://file/aruma\npublic_url: https://aruma.example.com\nmaster_key: " + testKey +
+		"\nstorage:\n  enabled: true\n  data_dir: /srv/aruma/storage\n  gc_grace: 2m\n  limits:\n")
+	vars := map[string]string{}
+	for i, f := range fields {
+		key := f.Tag.Get("yaml")
+		fmt.Fprintf(&yaml, "    %s: %s\n", key, format(def.Field(i), 2))
+		if i%2 == 0 {
+			vars["ARUMA_STORAGE_"+strings.ToUpper(key)] = format(def.Field(i), 4)
+		}
+	}
+	path := filepath.Join(t.TempDir(), "aruma.yaml")
+	if err := os.WriteFile(path, []byte(yaml.String()), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	c, err := Load(path, env(vars))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := reflect.ValueOf(c.Storage.Limits)
+	for i, f := range fields {
+		div := int64(2)
+		if i%2 == 0 {
+			div = 4
+		}
+		if g, w := format(got.Field(i), 1), format(def.Field(i), div); g != w {
+			t.Errorf("%s (ARUMA_STORAGE_%s) = %s, want %s", f.Tag.Get("yaml"), strings.ToUpper(f.Tag.Get("yaml")), g, w)
+		}
+	}
+	if !c.Storage.Enabled || c.Storage.DataDir != "/srv/aruma/storage" || c.Storage.GCGrace != 2*time.Minute {
+		t.Errorf("storage settings not applied: %+v", c.Storage)
+	}
+	m := required()
+	m["ARUMA_STORAGE_ENABLED"] = "true"
+	m["ARUMA_STORAGE_DATA_DIR"] = "/var/lib/aruma"
+	m["ARUMA_STORAGE_GC_GRACE"] = "30s"
+	if c, err := Load("", env(m)); err != nil || !c.Storage.Enabled || c.Storage.DataDir != "/var/lib/aruma" || c.Storage.GCGrace != 30*time.Second {
+		t.Errorf("Storage from the environment: %+v, %v", c, err)
+	}
+}
+
+func TestStorageRejectsBadValues(t *testing.T) {
+	for _, c := range []struct {
+		vars map[string]string
+		want string
+	}{
+		{map[string]string{"ARUMA_STORAGE_ENABLED": "true"}, "storage.data_dir (ARUMA_STORAGE_DATA_DIR) is required"},
+		{map[string]string{"ARUMA_STORAGE_ENABLED": "true", "ARUMA_STORAGE_DATA_DIR": "data"}, `storage.data_dir "data" must be an absolute path`},
+		{map[string]string{"ARUMA_STORAGE_GC_GRACE": "-1s"}, "storage.gc_grace must be positive"},
+		{map[string]string{"ARUMA_STORAGE_OBJECT_BYTES": "0"}, "storage.limits.object_bytes must be positive"},
+		{map[string]string{"ARUMA_STORAGE_PROJECT_BYTES": "-1"}, "storage.limits.project_bytes must not be negative"},
+		{map[string]string{"ARUMA_STORAGE_PROJECT_BYTES": "1048576"}, "storage.limits.object_bytes must not exceed project_bytes"},
+		{map[string]string{"ARUMA_STORAGE_EMPTY_SESSION_TTL": "2h"}, "must increase in that order"},
+		{map[string]string{"ARUMA_STORAGE_UPLOAD_SESSION_TTL": "30m"}, "must increase in that order"},
+		{map[string]string{"ARUMA_STORAGE_CONSOLE_SESSION_TTL": "200h"}, "console_session_ttl must not exceed upload_session_ttl"},
+		{map[string]string{"ARUMA_STORAGE_ANONYMOUS_STAGED_FRACTION": "1.5"}, "anonymous_staged_fraction must lie between 0 and 1"},
+		{map[string]string{"ARUMA_STORAGE_ANONYMOUS_STAGED_FRACTION": "NaN"}, "anonymous_staged_fraction must lie between 0 and 1"},
+		{map[string]string{"ARUMA_STORAGE_ANONYMOUS_STAGED_FRACTION": "a fifth"}, "ARUMA_STORAGE_ANONYMOUS_STAGED_FRACTION"},
+		{map[string]string{"ARUMA_STORAGE_LIST_MAX_RESULTS": "5000"}, "list_max_results must not exceed 1000"},
+		{map[string]string{"ARUMA_STORAGE_UPLOAD_REQUESTS_PER_IP": "0"}, "storage.limits.upload_requests_per_ip must be positive"},
+		{map[string]string{"ARUMA_STORAGE_UPLOAD_IDLE_TTL": "soon"}, "ARUMA_STORAGE_UPLOAD_IDLE_TTL"},
+	} {
+		m := required()
+		for k, v := range c.vars {
+			m[k] = v
+		}
+		_, err := Load("", env(m))
+		if err == nil || !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%v: error %v, want one containing %q", c.vars, err, c.want)
+		}
+	}
+	// An unlimited quota takes any object size, and the anonymous share may be 0 or 1.
+	m := required()
+	m["ARUMA_STORAGE_PROJECT_BYTES"] = "0"
+	m["ARUMA_STORAGE_OBJECT_BYTES"] = "1099511627776"
+	m["ARUMA_STORAGE_ANONYMOUS_STAGED_FRACTION"] = "0"
+	if _, err := Load("", env(m)); err != nil {
+		t.Errorf("an unlimited quota: %v", err)
+	}
+}

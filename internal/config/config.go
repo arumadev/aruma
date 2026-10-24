@@ -10,6 +10,7 @@ import (
 	"net/netip"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -48,6 +49,7 @@ type Config struct {
 	Mail    Mail    `yaml:"mail"`
 	RTDB    RTDB    `yaml:"rtdb"`
 	Rules   Rules   `yaml:"rules"`
+	Storage Storage `yaml:"storage"`
 
 	masterKey      []byte
 	publicURL      *url.URL
@@ -156,7 +158,74 @@ func Defaults() Config {
 			ReadRows:                    1_000_000,
 		}},
 		Rules: Rules{Limits: RulesLimits(rules.DefaultLimits())},
+		Storage: Storage{
+			GCGrace: time.Minute,
+			// storage/core.DefaultLimits, which config may not import; a test in internal/app
+			// keeps the two equal.
+			Limits: StorageLimits{
+				ObjectBytes:                5 << 30,
+				ProjectBytes:               5 << 30,
+				MinFreeBytes:               2 << 30,
+				EmptySessionTTL:            10 * time.Minute,
+				UploadIdleTTL:              time.Hour,
+				UploadSessionTTL:           7 * 24 * time.Hour,
+				ConsoleSessionTTL:          time.Hour,
+				AnonymousStagedFraction:    0.2,
+				MetadataBytes:              8 << 10,
+				JSONBodyBytes:              64 << 10,
+				HeaderFieldBytes:           1 << 10,
+				UploadSessionsPerProject:   1000,
+				UploadSessionsPerUser:      50,
+				UploadSessionsPerIP:        100,
+				UploadStartsPerMinutePerIP: 60,
+				UploadStartsPerSecond:      1000,
+				UploadRequestsPerIP:        64,
+				MinBytesPerSecond:          4 << 10,
+				ListMaxResults:             1000,
+			},
+		},
 	}
+}
+
+// Storage holds the Cloud Storage for Firebase settings (ADR-022).
+type Storage struct {
+	// Enabled serves Storage. Off by default until v0.3 ships.
+	Enabled bool `yaml:"enabled"`
+	// DataDir holds the objects' bytes: an absolute path on a local file system, required when
+	// Storage is enabled. One server owns it, under an exclusive lock, and it is bound to one
+	// database (ADR-022 §5.1). NFS is not supported.
+	DataDir string `yaml:"data_dir"`
+	// GCGrace is how long a file no row points to any more waits before it is deleted, covering
+	// a read between its row and its file (ADR-022 §5).
+	GCGrace time.Duration `yaml:"gc_grace"`
+	// Limits bound what Storage accepts and holds (ADR-022 §17).
+	Limits StorageLimits `yaml:"limits"`
+}
+
+// StorageLimits are Storage's limits (ADR-022 §17). It mirrors storage/core.Limits field for
+// field, so each converts to the other and the compiler keeps the two in step; internal/config
+// may not import a service, so the checks are made here, the same as core.Limits.Validate makes
+// them.
+type StorageLimits struct {
+	ObjectBytes                int64         `yaml:"object_bytes"`                    // one object, one request body, and what decompression may produce
+	ProjectBytes               int64         `yaml:"project_bytes"`                   // a project's quota, staging included; 0 is unlimited
+	MinFreeBytes               int64         `yaml:"min_free_bytes"`                  // disk space no write may take, shared with Postgres
+	EmptySessionTTL            time.Duration `yaml:"empty_session_ttl"`               // the life of an upload session that received no byte
+	UploadIdleTTL              time.Duration `yaml:"upload_idle_ttl"`                 // after it without progress, a session's unused reservation is freed
+	UploadSessionTTL           time.Duration `yaml:"upload_session_ttl"`              // an upload session's life
+	ConsoleSessionTTL          time.Duration `yaml:"console_session_ttl"`             // the life of an upload session the dashboard issues
+	AnonymousStagedFraction    float64       `yaml:"anonymous_staged_fraction"`       // the share of project_bytes uploads without an identity may hold
+	MetadataBytes              int           `yaml:"metadata_bytes"`                  // custom metadata, keys and values together
+	JSONBodyBytes              int64         `yaml:"json_body_bytes"`                 // a PATCH body, an upload start body, a multipart JSON part
+	HeaderFieldBytes           int           `yaml:"header_field_bytes"`              // one of contentType, cacheControl, contentDisposition, contentEncoding, contentLanguage
+	UploadSessionsPerProject   int           `yaml:"upload_sessions_per_project"`     // live upload sessions per project
+	UploadSessionsPerUser      int           `yaml:"upload_sessions_per_user"`        // live upload sessions per user
+	UploadSessionsPerIP        int           `yaml:"upload_sessions_per_ip"`          // live upload sessions per client address
+	UploadStartsPerMinutePerIP int           `yaml:"upload_starts_per_minute_per_ip"` // upload starts per client address
+	UploadStartsPerSecond      int           `yaml:"upload_starts_per_second"`        // upload starts in the whole server
+	UploadRequestsPerIP        int           `yaml:"upload_requests_per_ip"`          // concurrent upload and write requests per client address
+	MinBytesPerSecond          int64         `yaml:"min_bytes_per_second"`            // below it over 30 seconds, an upload request is cut
+	ListMaxResults             int           `yaml:"list_max_results"`                // the largest list page, at most 1000
 }
 
 // Rules holds the settings of the Firestore and Storage security rules engine (ADR-021).
@@ -343,6 +412,40 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	count("ARUMA_RULES_REGEX_CACHE_ENTRIES", &rl.RegexCacheEntries)
 	integer("ARUMA_RULES_REGEX_CACHE_BYTES", &rl.RegexCacheBytes)
 	integer("ARUMA_RULES_COMPILED_RULESETS_BYTES", &rl.CompiledRulesetsBytes)
+
+	fraction := func(name string, dst *float64) {
+		if v := getenv(name); v != "" {
+			f, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("%s: %w", name, err))
+				return
+			}
+			*dst = f
+		}
+	}
+	boolean("ARUMA_STORAGE_ENABLED", &c.Storage.Enabled)
+	str("ARUMA_STORAGE_DATA_DIR", &c.Storage.DataDir)
+	duration("ARUMA_STORAGE_GC_GRACE", &c.Storage.GCGrace)
+	sl := &c.Storage.Limits
+	integer("ARUMA_STORAGE_OBJECT_BYTES", &sl.ObjectBytes)
+	integer("ARUMA_STORAGE_PROJECT_BYTES", &sl.ProjectBytes)
+	integer("ARUMA_STORAGE_MIN_FREE_BYTES", &sl.MinFreeBytes)
+	duration("ARUMA_STORAGE_EMPTY_SESSION_TTL", &sl.EmptySessionTTL)
+	duration("ARUMA_STORAGE_UPLOAD_IDLE_TTL", &sl.UploadIdleTTL)
+	duration("ARUMA_STORAGE_UPLOAD_SESSION_TTL", &sl.UploadSessionTTL)
+	duration("ARUMA_STORAGE_CONSOLE_SESSION_TTL", &sl.ConsoleSessionTTL)
+	fraction("ARUMA_STORAGE_ANONYMOUS_STAGED_FRACTION", &sl.AnonymousStagedFraction)
+	count("ARUMA_STORAGE_METADATA_BYTES", &sl.MetadataBytes)
+	integer("ARUMA_STORAGE_JSON_BODY_BYTES", &sl.JSONBodyBytes)
+	count("ARUMA_STORAGE_HEADER_FIELD_BYTES", &sl.HeaderFieldBytes)
+	count("ARUMA_STORAGE_UPLOAD_SESSIONS_PER_PROJECT", &sl.UploadSessionsPerProject)
+	count("ARUMA_STORAGE_UPLOAD_SESSIONS_PER_USER", &sl.UploadSessionsPerUser)
+	count("ARUMA_STORAGE_UPLOAD_SESSIONS_PER_IP", &sl.UploadSessionsPerIP)
+	count("ARUMA_STORAGE_UPLOAD_STARTS_PER_MINUTE_PER_IP", &sl.UploadStartsPerMinutePerIP)
+	count("ARUMA_STORAGE_UPLOAD_STARTS_PER_SECOND", &sl.UploadStartsPerSecond)
+	count("ARUMA_STORAGE_UPLOAD_REQUESTS_PER_IP", &sl.UploadRequestsPerIP)
+	integer("ARUMA_STORAGE_MIN_BYTES_PER_SECOND", &sl.MinBytesPerSecond)
+	count("ARUMA_STORAGE_LIST_MAX_RESULTS", &sl.ListMaxResults)
 	return errors.Join(errs...)
 }
 
@@ -427,6 +530,7 @@ func (c *Config) validate() error {
 
 	errs = append(errs, c.validateRTDB()...)
 	errs = append(errs, c.validateRules()...)
+	errs = append(errs, c.validateStorage()...)
 
 	if c.Session.IdleTimeout <= 0 || c.Session.AbsoluteTimeout <= 0 {
 		errs = append(errs, errors.New("session timeouts must be positive"))
@@ -497,6 +601,70 @@ func (c *Config) validateRules() []error {
 		return errs
 	}
 	return []error{fmt.Errorf("rules.limits: %w", err)}
+}
+
+// validateStorage checks the storage section (ADR-022 §5.1, §17): data_dir when Storage is
+// enabled, and the limits with their cross checks, as storage/core.Limits.Validate checks them.
+func (c *Config) validateStorage() []error {
+	var errs []error
+	st := &c.Storage
+	if st.Enabled {
+		switch {
+		case st.DataDir == "":
+			errs = append(errs, errors.New("storage.data_dir (ARUMA_STORAGE_DATA_DIR) is required when Storage is enabled: an absolute path on a local file system"))
+		case !filepath.IsAbs(st.DataDir):
+			errs = append(errs, fmt.Errorf("storage.data_dir %q must be an absolute path", st.DataDir))
+		}
+	}
+	if st.GCGrace <= 0 {
+		errs = append(errs, errors.New("storage.gc_grace must be positive"))
+	}
+	l := st.Limits
+	for _, f := range []struct {
+		name string
+		v    int64
+	}{
+		{"object_bytes", l.ObjectBytes},
+		{"min_free_bytes", l.MinFreeBytes},
+		{"empty_session_ttl", int64(l.EmptySessionTTL)},
+		{"upload_idle_ttl", int64(l.UploadIdleTTL)},
+		{"upload_session_ttl", int64(l.UploadSessionTTL)},
+		{"console_session_ttl", int64(l.ConsoleSessionTTL)},
+		{"metadata_bytes", int64(l.MetadataBytes)},
+		{"json_body_bytes", l.JSONBodyBytes},
+		{"header_field_bytes", int64(l.HeaderFieldBytes)},
+		{"upload_sessions_per_project", int64(l.UploadSessionsPerProject)},
+		{"upload_sessions_per_user", int64(l.UploadSessionsPerUser)},
+		{"upload_sessions_per_ip", int64(l.UploadSessionsPerIP)},
+		{"upload_starts_per_minute_per_ip", int64(l.UploadStartsPerMinutePerIP)},
+		{"upload_starts_per_second", int64(l.UploadStartsPerSecond)},
+		{"upload_requests_per_ip", int64(l.UploadRequestsPerIP)},
+		{"min_bytes_per_second", l.MinBytesPerSecond},
+		{"list_max_results", int64(l.ListMaxResults)},
+	} {
+		if f.v < 1 {
+			errs = append(errs, fmt.Errorf("storage.limits.%s must be positive", f.name))
+		}
+	}
+	if l.ProjectBytes < 0 {
+		errs = append(errs, errors.New("storage.limits.project_bytes must not be negative (0 is unlimited)"))
+	}
+	if l.ProjectBytes > 0 && l.ObjectBytes > l.ProjectBytes {
+		errs = append(errs, errors.New("storage.limits.object_bytes must not exceed project_bytes"))
+	}
+	if !(l.EmptySessionTTL < l.UploadIdleTTL && l.UploadIdleTTL < l.UploadSessionTTL) {
+		errs = append(errs, errors.New("storage.limits: empty_session_ttl, upload_idle_ttl and upload_session_ttl must increase in that order"))
+	}
+	if l.ConsoleSessionTTL > l.UploadSessionTTL {
+		errs = append(errs, errors.New("storage.limits.console_session_ttl must not exceed upload_session_ttl"))
+	}
+	if !(l.AnonymousStagedFraction >= 0 && l.AnonymousStagedFraction <= 1) {
+		errs = append(errs, errors.New("storage.limits.anonymous_staged_fraction must lie between 0 and 1"))
+	}
+	if l.ListMaxResults > 1000 {
+		errs = append(errs, errors.New("storage.limits.list_max_results must not exceed 1000"))
+	}
+	return errs
 }
 
 // loopbackListen reports whether the listen address accepts connections from this machine
