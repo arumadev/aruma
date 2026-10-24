@@ -58,6 +58,7 @@
 | SR3-07 | minor | Android مع `ArumaStorageRedirect=false` يمرر طلبات Storage إلى Google، وiOS يرفضها | **مُصلحة في `s7-sdk-fixes`** |
 | SR3-08 | minor | المخاطرة المقبولة لإعادة توجيه Node أوسع مما يقوله README | **وُثّقت في `s7-sdk-fixes`** |
 | SR3-09 | minor | لا شيء يثبّت محتوى مرآة iOS (بند S6-I المفتوح) | **مُصلحة في `s7-sdk-fixes`** |
+| SR3-10 | major | Auth على Aruma في الويب: Firestore والدوال القابلة للاستدعاء ما زالت ترسل رمز هوية Aruma إلى Google | **مؤجلة إلى v0.4** (Firestore)، موثّقة في README |
 
 ### SR3-01: مجلد بيانات فارغ تحت قاعدة فيها كائنات
 
@@ -149,17 +150,17 @@
   - حين لا يعمل `installStorage`، تحجب أغلفة `fetch` و`XHR` في `install()` مضيفَ Storage طلبًا مرفوضًا.
   - ويفشل بناء Vite أو unplugin لـ Auth إن رأى وحدة من `@firebase/storage` والخيار مطفأ.
 - **الإصلاح (`s7-sdk-fixes`):** طبقتان، لأن الإضافة لا ترى في البناء إلا وحداتها، وAuth يُضبط بإضافة Vite أو في التشغيل (`install()` و`/auto`):
-  - في التشغيل: `install()` يرفض طلب مكتبة Storage إلى نطاق Google (فيه `Authorization` أو `X-Firebase-Storage-Version`)، في XHR بعد ترويساته فلا يُرسل ولا يوضع الرمز عليه، وفي fetch (بناء Node). إلا إن كان احتياط `installStorage` مثبّتًا فيأخذه. ورسالة واحدة في الكونسول. و`fetch` لرابط تنزيل بلا رمز هوية يمر. فالمسار مغطّى مع أي bundler وفي خادم تطوير Vite. `index.js` (`guardXHR`، `refusedFetch`).
+  - في التشغيل: `install()` يرفض طلب مكتبة Storage إلى نطاق Google (فيه `Authorization` أو `X-Firebase-Storage-Version`)، في XHR بعد ترويساته فلا يُرسل ولا يوضع الرمز عليه، وفي fetch (بناء Node). إلا إن كان احتياط `installStorage` مثبّتًا فيأخذه. ويُجاب الطلب محليًا بـ 403: المكتبة تعيد خطأ الشبكة و5xx و408 و429 حتى تنفد ميزانيتها (دقيقتان، و10 للرفع؛ `isRetryStatusCode` في `implementation/utils.ts:24-40`، وفحص `!hitServer` في `implementation/request.ts:127-139`)، أما 403 فيصير `storage/unauthorized` في الحال (`sharedErrorHandler`، `implementation/requests.ts:122-124`) والسبب في `serverResponse`. ورسالة واحدة في الكونسول تقول لماذا. و`fetch` لرابط تنزيل بلا رمز هوية يمر. فالمسار مغطّى مع أي bundler وفي خادم تطوير Vite. `index.js` (`guardXHR`، `refusedFetch`).
   - في البناء: إضافة Vite بلا `storage: true` تُفشل البناء على أي وحدة `@firebase/storage`، في البناء وفي مُحسّن خادم التطوير لوضع `build` (الذي لا كود تشغيل فيه). `vite.js` (`refuseStorage`).
   - الأساس في المكتبة: `_getAuthToken` يأخذ الرمز من Auth التطبيق أيًّا كان نطاق Storage (`packages/storage/src/service.ts:266-277`، 0.14.6)، و`addAuthHeader_` يضعه (`implementation/request.ts:237`)، وبناء المتصفح يرسل بـ `open` ثم `setRequestHeader` ثم `send` (`platform/browser/connection.ts:77-88`).
-  - الاختبارات: `test/redirect.test.js` (الحارس، والترتيبان مع `installStorage`)، و`test/vite.test.js`، وفي `test/e2e/web-storage` تطبيق Auth وحده بلا إضافة لا يصل إلى Google (`tests/auth-only.spec.mjs`) وبناء Vite له يجب أن يفشل (`build.mjs`).
+  - الاختبارات: `test/redirect.test.js` (الحارس، والترتيبان مع `installStorage`)، و`test/vite.test.js`، وفي `test/e2e/web-storage` تطبيق Auth وحده بلا إضافة، بميزانية المكتبة الافتراضية، يفشل رفعه و`getMetadata` بـ `storage/unauthorized` في أقل من 5 ثوانٍ ولا يصل إلى Google (`tests/auth-only.spec.mjs`)، وبناء Vite له يجب أن يفشل (`build.mjs`).
 
 ### SR3-07: وضع Android الصارم لا يرفض Storage
 
 - **الموضع:** `aruma-redirect/…/AuthEndpoints.java:56-59` يعيد `null`، فيفتح `ArumaStreamHandlerFactory.java:62` رابط Google الأصلي. أما iOS (`ArumaRedirectURLProtocol.swift:45-52`) فيفشل الطلب. وREADME Android (`:102-104`) يوحي بالفشل المغلق.
 - **العاقبة:** رابط تنزيل قديم بمضيف Google يُفتح بـ `HttpURLConnection` في تطبيق مبني بالإضافة، فيذهب رمز التنزيل إليها.
 - **الإصلاح المقترح:** `refused(host, "ArumaStorageRedirect is false")` لمضيف Storage بدل `null`، مع اختبار.
-- **الإصلاح (`s7-sdk-fixes`):** `AuthEndpoints.rewrite` يرمي `refused(host, "ArumaStorageRedirect is false, …")` لمضيف Storage، فلا يُفتح رابط Google. واختبار `storageIsRefusedWhenTheRedirectIsOff`، وREADME بالعربية والإنجليزية.
+- **الإصلاح (`s7-sdk-fixes`):** `AuthEndpoints.rewrite` يرفض مضيف Storage (`StorageRefusedException`)، على https وعلى http العادي (المعالج يأخذ http أيضًا لهذا وحده)، فلا يُفتح رابط Google. ويجيب المعالج الرفض بـ `RefusedConnection`: 403 على الجهاز بلا اتصال، لأن firebase-storage تحوّل `IOException` إلى `NETWORK_UNAVAILABLE` (`NetworkRequest.performRequestStart`) وتعيدها مع 5xx و408 و429 (`ExponentialBackoffSender.isRetryableError`، لم يتغيرا منذ 2024، فهما في 23.0.0)، أما 403 فيصير `ERROR_NOT_AUTHORIZED` في الحال. والاختباران `storageIsRefusedWhenTheRedirectIsOff` و`refusedStorageIsAnsweredLocallyWith403`، وREADME بالعربية والإنجليزية.
 
 ### SR3-08: نطاق إعادة توجيه Node
 
@@ -176,6 +177,16 @@
 - **العاقبة:** وسم منقول، أو مرآة مخترقة، يمر من البوابة ويشحن كودًا يحمل رموز الهوية. و`make-mirror.sh:95-104` يمنع أداتنا وحدها من نقل وسم، وحماية SwiftPM ثقة عند أول استعمال لكل جهاز، فمشغّلات CI الجديدة بلا بصمات.
 - **الإصلاح المقترح:** `make-mirror.sh` يبني بشكل قابل للتكرار، فيُلتزم بجدول `وسم → commit/tree`، ويقارن سكربت الفحص `rev-parse HEAD^{tree}` به.
 - **الإصلاح (`s7-sdk-fixes`):** `sdk/ios/firebase-storage-patch/mirror.lock` يثبّت `وسم → commit tree` (`12.19.3` → `f749478f…`، tree `c2f1efee…`، وهو ما حلّته مرآة e2e ونسخة Flutter كلتاهما). و`check-firebase-storage.sh` يقارن `rev-parse HEAD` و`HEAD^{tree}` به ويفشل على غيره، و`make-mirror.sh` يرفض بناءً يخالف التثبيت ويطبع سطر الوسم الجديد. وREADME يطلب التزام `Package.resolved` والحل بـ `-onlyUsePackageVersionsFromResolvedFile`. لم يُنقل وسم.
+
+### SR3-10: Auth وحده في الويب يرسل رمز الهوية إلى Firestore والدوال عند Google
+
+- **المصدر:** مراجعة PR #20 (`.cache/briefs/reviews/s7-sdk-review.md`). نطاق جديد، لا تراجع في إصلاح SR3-06.
+- **الموضع:**
+  - `@firebase/firestore` 4.19.0: `dist/common-DE1gv9M5.esm.js:8009` يضع `Authorization: Bearer <idToken>`، و`:8664-8672` يرمّز الترويسات في جسم طلب WebChannel (`encodeInitMessageHeaders = true`)، و`:10251` المضيف `firestore.googleapis.com`.
+  - `@firebase/functions` 0.14.0: `dist/esm/index.esm.js:593` يضع `Authorization: Bearer <authToken>`، و`:488` العنوان `https://<region>-<project>.cloudfunctions.net/<name>`.
+  - و`sdk/web/aruma-web/README.md:43` كان يقول إن هذه الطلبات تمر، دون أن يقول إنها تحمل الرمز.
+- **العاقبة:** ما قيّم SR3-06 major عليه، عبر مسار أشيع: كل طلب Firestore ودالة من تطبيق على Auth في Aruma يحمل رمز هوية Aruma حيًّا إلى Google. ولا يمسكه حارس بالترويسات، لأن رمز Firestore في الجسم.
+- **القرار: مؤجلة إلى v0.4 (Firestore)،** حين تنتقل هذه الخدمات إلى Aruma. وحتى ذلك README (بالإنجليزية والعربية) يقول إن هذه الطلبات تذهب إلى Google ومعها الرمز، وإن التطبيق على Auth في Aruma لا يستعملها.
 
 ## ما فُحص ووُجد سليمًا
 
@@ -242,6 +253,7 @@
 - [x] SR3-06 مُصلحة (major): `install()` يرفض و`vite` يُفشل البناء (`s7-sdk-fixes`).
 - [ ] SR3-05 مُصلحة، أو مذكورة في `docs/compat` أو README.
 - [x] SR3-07 وSR3-09 مُصلحتان (`s7-sdk-fixes`).
+- [ ] SR3-10 (major): مؤجلة إلى v0.4 بقرار المنسّق، وموثّقة في README `@aruma/web`. تُغلق حين يخدم Aruma Firestore (والدوال).
 - [x] README حزمة Node بنطاق إعادة التوجيه الصحيح (SR3-08، `s7-sdk-fixes`).
 - [ ] `govulncheck ./...` نظيف، ومعه `npm audit` على الحزم الثلاث يوم الوسم.
 - [ ] `docs/guides/storage.md`:
