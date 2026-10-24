@@ -223,7 +223,15 @@ func TestStorageWiring(t *testing.T) {
 		}
 	}
 	h := on.Server.Handler()
-	for _, path := range []string{"/v0/b/chat-app.aruma.test/o", "/firebasestorage.googleapis.com/v0/b/x/o", "/storage/v1/b/x", "/upload/storage/v1/b/x/o"} {
+	// /v0 is routed (S3-A): a path that names no operation is its 400, never the entry point's.
+	for _, path := range []string{"/v0/b/", "/firebasestorage.googleapis.com/v0/b/"} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "Invalid HTTP method/URL pair.") {
+			t.Errorf("%s: %d %s, want /v0's 400", path, rec.Code, rec.Body)
+		}
+	}
+	for _, path := range []string{"/storage/v1/b/x", "/upload/storage/v1/b/x/o"} {
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
 		if rec.Code != http.StatusNotImplemented {
