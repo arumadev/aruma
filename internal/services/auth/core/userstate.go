@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"time"
 
 	"github.com/arumadev/aruma/internal/platform/idtoken"
 )
@@ -13,7 +14,14 @@ func (s *Service) Users() idtoken.Users { return userStates{s} }
 
 type userStates struct{ s *Service }
 
-// State implements idtoken.Users from the revocation state the Verifier caches.
+// State implements idtoken.Users from the revocation state the Verifier caches, so a change made
+// through this Service shows at once and any other within stateCacheTTL. v0.3 has no tenants: the
+// user is the project's own.
 func (u userStates) State(ctx context.Context, project int64, uid string) (idtoken.UserState, error) {
-	panic("S2-D: Users.State")
+	st, err := u.s.states.get(ctx, u.s, project, "", uid)
+	if err != nil || !st.exists {
+		return idtoken.UserState{}, err
+	}
+	return idtoken.UserState{Exists: true, Disabled: st.disabled, TokensValidAfter: time.Unix(st.validAfter, 0),
+		Created: time.Unix(st.createdAt, 0)}, nil
 }
