@@ -44,6 +44,13 @@ func AcquireLock(ctx context.Context, root string, log func(waited time.Duration
 	if err != nil {
 		return nil, fmt.Errorf("blob: open the data directory: %w", err)
 	}
+	fsys := wrapLockFS(rootFS{dir})
+	// os.Root follows a symlink that stays inside the root, and O_CREATE would make its
+	// target: a LOCK that is not a regular file is refused before the open and after it.
+	if fi, err := fsys.Lstat(lockName); err == nil && !fi.Mode().IsRegular() {
+		dir.Close()
+		return nil, fmt.Errorf("blob: open the lock: %s: %w", lockName, errNotRegular)
+	}
 	f, err := dir.OpenFile(lockName, os.O_RDWR|os.O_CREATE, 0o600)
 	if err != nil {
 		dir.Close()
@@ -54,6 +61,9 @@ func AcquireLock(ctx context.Context, root string, log func(waited time.Duration
 		dir.Close()
 		return nil, err
 	}
+	if _, err := regular(fsys, f, lockName); err != nil {
+		return fail(fmt.Errorf("blob: open the lock: %w", err))
+	}
 	start := time.Now()
 	next := lockLogEvery
 	tick := time.NewTicker(lockPoll)
@@ -61,7 +71,13 @@ func AcquireLock(ctx context.Context, root string, log func(waited time.Duration
 	for {
 		err := tryLock(f)
 		if err == nil {
-			return &dirLock{dir: dir, fs: rootFS{dir}, f: f}, nil
+			// The holder before this process may have stopped between writing INSTANCE and
+			// syncing the directory: the marker is not trusted before the directory is synced.
+			if err := syncDir(fsys, "."); err != nil {
+				unlock(f)
+				return fail(fmt.Errorf("blob: sync the data directory: %w", err))
+			}
+			return &dirLock{dir: dir, fs: fsys, f: f}, nil
 		}
 		if !errors.Is(err, errLocked) {
 			return fail(fmt.Errorf("blob: lock %s: %w", filepath.Join(root, lockName), err))
@@ -82,6 +98,9 @@ func AcquireLock(ctx context.Context, root string, log func(waited time.Duration
 
 // errLocked is tryLock's answer when another open file holds the lock.
 var errLocked = errors.New("locked")
+
+// wrapLockFS is the file system calls of a lock, on its data directory. The tests record them.
+var wrapLockFS = func(f fsys) fsys { return f }
 
 // dirLock is the lock on a data directory and the access to its INSTANCE marker.
 type dirLock struct {
@@ -111,6 +130,9 @@ func (l *dirLock) Instance() (string, bool, error) {
 		return "", false, fmt.Errorf("blob: read %s: %w", instanceName, err)
 	}
 	defer f.Close()
+	if _, err := regular(l.fs, f, instanceName); err != nil {
+		return "", false, fmt.Errorf("blob: read %s: %w", instanceName, err)
+	}
 	b, err := io.ReadAll(io.LimitReader(f, maxInstance+2))
 	if err != nil {
 		return "", false, fmt.Errorf("blob: read %s: %w", instanceName, err)
@@ -122,7 +144,7 @@ func (l *dirLock) Instance() (string, bool, error) {
 	return id, true, nil
 }
 
-// SetInstance implements Lock: the id goes to INSTANCE.tmp, which is synced, then renamed to
+// SetInstance implements Lock: the id goes to a new INSTANCE.tmp, which is synced, then renamed to
 // INSTANCE, then the directory synced. After a power loss at any point the marker is absent
 // or whole, never empty or cut. It refuses to replace a marker: a directory is bound to one
 // database for good.
@@ -141,7 +163,11 @@ func (l *dirLock) SetInstance(id string) error {
 	} else if !errors.Is(err, fs.ErrNotExist) {
 		return wrap(err)
 	}
-	f, err := l.fs.OpenFile(instanceTemp, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
+	// A leftover of a call cut short goes first: O_EXCL then opens no symlink planted there.
+	if err := l.fs.Remove(instanceTemp); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return wrap(err)
+	}
+	f, err := l.fs.OpenFile(instanceTemp, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
 		return wrap(err)
 	}

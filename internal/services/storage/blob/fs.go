@@ -98,3 +98,17 @@ func regular(fsys fsys, f file, name string) (fs.FileInfo, error) {
 }
 
 var errNotRegular = errors.New("not a regular file")
+
+// fsName returns the name of the type of the file system that holds path (statfs). The tests
+// replace it.
+var fsName = statfsName
+
+// networkFS reports whether a file system type, as fsName names it, is a network one: NFS and
+// SMB on Linux (by f_type), and NFS, SMB, AFP and WebDAV on darwin (by f_fstypename).
+func networkFS(name string) bool {
+	switch name {
+	case "nfs", "cifs", "smb", "smb2", "smbfs", "afpfs", "webdav":
+		return true
+	}
+	return false
+}

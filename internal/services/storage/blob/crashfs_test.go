@@ -22,12 +22,21 @@ type recFS struct {
 	ops    []string
 	calls  int // every call, the reads included
 	model  *crashModel
-	failAt int  // the failAt-th recorded call fails with errInjected; 0 fails none
-	failed bool // a call failed
+	failAt int    // the failAt-th recorded call fails with errInjected; 0 fails none
+	failOp string // the first call that records as failOp fails with errInjected
+	failed bool   // a call failed
+	// killAt stops the process at the killAt-th recorded call: it and every call after it, the
+	// reads included, fail with errKilled, and the disk stays as it is (a new Disk on the same
+	// root, with a recorder on the same model, is the next process).
+	killAt int
+	dead   bool
 	onOp   func(op string)
 }
 
-var errInjected = errors.New("injected failure")
+var (
+	errInjected = errors.New("injected failure")
+	errKilled   = errors.New("the process is dead")
+)
 
 // record installs a recorder on d, with the model built from what is on disk now, all of it
 // taken as durable.
@@ -43,7 +52,14 @@ func record(t *testing.T, d *Disk) *recFS {
 func (r *recFS) step(op string, call func() error, apply func()) error {
 	r.mu.Lock()
 	r.calls++
-	if r.failAt > 0 && len(r.ops)+1 == r.failAt {
+	if r.killAt > 0 && len(r.ops)+1 == r.killAt {
+		r.dead = true
+	}
+	if r.dead {
+		r.mu.Unlock()
+		return errKilled
+	}
+	if r.failAt > 0 && len(r.ops)+1 == r.failAt || r.failOp == op && !r.failed {
 		r.ops = append(r.ops, op+" (failed)")
 		r.failed = true
 		r.mu.Unlock()
@@ -64,10 +80,14 @@ func (r *recFS) step(op string, call func() error, apply func()) error {
 	return err
 }
 
-func (r *recFS) read() {
+func (r *recFS) read() error {
 	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.calls++
-	r.mu.Unlock()
+	if r.dead {
+		return errKilled
+	}
+	return nil
 }
 
 // trace returns the recorded calls and starts a new trace.
@@ -81,7 +101,9 @@ func (r *recFS) trace() []string {
 
 func (r *recFS) OpenFile(name string, flag int, perm fs.FileMode) (file, error) {
 	if flag&os.O_CREATE == 0 {
-		r.read()
+		if err := r.read(); err != nil {
+			return nil, err
+		}
 		f, err := r.inner.OpenFile(name, flag, perm)
 		if err != nil {
 			return nil, err
@@ -125,12 +147,16 @@ func (r *recFS) Remove(name string) error {
 }
 
 func (r *recFS) ReadDir(name string) ([]fs.DirEntry, error) {
-	r.read()
+	if err := r.read(); err != nil {
+		return nil, err
+	}
 	return r.inner.ReadDir(name)
 }
 
 func (r *recFS) Lstat(name string) (fs.FileInfo, error) {
-	r.read()
+	if err := r.read(); err != nil {
+		return nil, err
+	}
 	return r.inner.Lstat(name)
 }
 

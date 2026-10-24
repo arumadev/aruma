@@ -9,6 +9,9 @@ import (
 	"syscall"
 )
 
+// supportedPlatform: v0.3 runs Storage on darwin and Linux.
+func supportedPlatform() error { return nil }
+
 // tryLock takes flock(LOCK_EX|LOCK_NB) on f, or returns errLocked while another open file
 // holds it.
 func tryLock(f *os.File) error {

@@ -34,14 +34,29 @@ var _ Store = (*Disk)(nil)
 const maxDurableDirs = 1 << 16
 
 // NewDisk returns the store rooted at root, an absolute path. It creates root when missing,
-// with the parent of each directory it creates synced, and refuses one it cannot write to.
+// with the parent of each directory it creates synced; syncs root's parent when it finds root
+// (as mkdirDurable does with a directory it finds); and refuses one it cannot write to.
+//
+// It refuses a system other than darwin and Linux (ErrUnsupported: v0.3 runs Storage there
+// alone), and a data directory on a network file system (NFS, SMB, AFP, WebDAV), where flock
+// and the order of the syncs are not to be relied on (ADR-022 §5.1).
 func NewDisk(root string) (*Disk, error) {
+	if err := supportedPlatform(); err != nil {
+		return nil, err
+	}
 	if !filepath.IsAbs(root) {
 		return nil, errors.New("blob: the data directory must be an absolute path")
 	}
 	root = filepath.Clean(root)
 	if err := mkdirAllDurable(root); err != nil {
 		return nil, fmt.Errorf("blob: create the data directory: %w", err)
+	}
+	name, err := fsName(root)
+	if err != nil {
+		return nil, fmt.Errorf("blob: the file system of %s: %w", root, err)
+	}
+	if networkFS(name) {
+		return nil, fmt.Errorf("blob: the data directory %s is on %s, a network file system; Storage needs a local one (ADR-022 §5.1)", root, name)
 	}
 	if err := writable(root); err != nil {
 		return nil, fmt.Errorf("blob: the data directory %s is not writable: %w", root, err)
@@ -113,8 +128,11 @@ func (d *Disk) Delete(key string) error {
 // at key, and both keys must be of the same project. After a power loss at any point, one of
 // the two names holds the whole file.
 //
-// On an error the file is at staging if the rename did not happen, and at key if a sync after
-// it failed: the session's blob_key, written before Promote, finds it there (ADR-022 §5).
+// It may be called again after it failed, or after the process stopped, at any step: the
+// session's blob_key, written before the first call, names the key (ADR-022 §5). When the
+// staging file is gone and a file is at key, the rename happened and its entry may not be
+// durable yet, so Promote syncs that file, the key's directories and the staging directory,
+// and returns nil. Only then may the row that points to key be committed.
 func (d *Disk) Promote(staging, key string) error {
 	sdir, sname, err := keyPath(staging, "s")
 	if err != nil {
@@ -130,17 +148,15 @@ func (d *Disk) Promote(staging, key string) error {
 	wrap := func(err error) error { return fmt.Errorf("blob: promote %s to %s: %w", staging, key, err) }
 	// Staging.Sync made the appended bytes durable, but not a Truncate after it: this sync
 	// keeps "durable on return" from depending on the caller.
-	f, err := d.fs.OpenFile(sname, os.O_RDONLY, 0)
-	if err != nil {
-		return wrap(err)
-	}
-	if _, err := regular(d.fs, f, sname); err != nil {
-		f.Close()
-		return wrap(err)
-	}
-	err = f.Sync()
-	if cerr := f.Close(); err == nil {
-		err = cerr
+	err = d.syncFile(sname)
+	if errors.Is(err, fs.ErrNotExist) {
+		// An earlier call renamed it: finish that call's syncs.
+		if err := d.syncFile(dname); errors.Is(err, fs.ErrNotExist) {
+			return wrap(fs.ErrNotExist)
+		} else if err != nil {
+			return wrap(err)
+		}
+		return d.syncPromoted(sdir, ddir, wrap)
 	}
 	if err != nil {
 		return wrap(err)
@@ -158,13 +174,40 @@ func (d *Disk) Promote(staging, key string) error {
 	if err := d.fs.Rename(sname, dname); err != nil {
 		return wrap(err)
 	}
+	return d.syncPromoted(sdir, ddir, wrap)
+}
+
+// syncPromoted makes a rename from sdir into ddir durable: ddir's chain of directories (found
+// ones get their parents synced once per process), ddir's entries, then sdir's. A missing
+// sdir has no entry left to sync.
+func (d *Disk) syncPromoted(sdir, ddir string, wrap func(error) error) error {
+	if err := d.mkdirDurable(ddir); err != nil {
+		return wrap(err)
+	}
 	if err := syncDir(d.fs, ddir); err != nil {
 		return wrap(err)
 	}
-	if err := syncDir(d.fs, sdir); err != nil {
+	if err := syncDir(d.fs, sdir); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return wrap(err)
 	}
 	return nil
+}
+
+// syncFile syncs the regular file at name.
+func (d *Disk) syncFile(name string) error {
+	f, err := d.fs.OpenFile(name, os.O_RDONLY, 0)
+	if err != nil {
+		return err
+	}
+	if _, err := regular(d.fs, f, name); err != nil {
+		f.Close()
+		return err
+	}
+	err = f.Sync()
+	if cerr := f.Close(); err == nil {
+		err = cerr
+	}
+	return err
 }
 
 // mkdirDurable creates the missing directories of dir down from the root and fsyncs the parent
@@ -239,28 +282,38 @@ func keyPath(key, kinds string) (dir, name string, err error) {
 // keyProject returns the project number of a valid key, as text.
 func keyProject(key string) string { return key[2:strings.LastIndexByte(key, '/')] }
 
-// mkdirAllDurable is mkdirDurable for the data directory itself, before its os.Root exists.
+// mkdirAllDurable is mkdirDurable for the data directory itself, before its os.Root exists:
+// the parent of path is synced whether path was made or found, since a process that stopped
+// between its mkdir and that sync may have left it visible but not durable.
 func mkdirAllDurable(path string) error {
+	parent := filepath.Dir(path)
 	fi, err := os.Stat(path)
-	if err == nil {
+	switch {
+	case err == nil:
 		if !fi.IsDir() {
 			return &fs.PathError{Op: "mkdir", Path: path, Err: errNotDir}
 		}
-		return nil
-	}
-	if !errors.Is(err, fs.ErrNotExist) {
+	case !errors.Is(err, fs.ErrNotExist):
 		return err
-	}
-	parent := filepath.Dir(path)
-	if parent != path {
-		if err := mkdirAllDurable(parent); err != nil {
+	default:
+		if parent != path {
+			if err := mkdirAllDurable(parent); err != nil {
+				return err
+			}
+		}
+		if err := os.Mkdir(path, 0o700); err != nil && !errors.Is(err, fs.ErrExist) {
 			return err
 		}
 	}
-	if err := os.Mkdir(path, 0o700); err != nil && !errors.Is(err, fs.ErrExist) {
-		return err
+	if parent == path {
+		return nil // the file system's root
 	}
-	f, err := os.Open(parent)
+	return syncPath(parent)
+}
+
+// syncPath syncs the directory at path, outside any os.Root. The tests record its calls.
+var syncPath = func(path string) error {
+	f, err := os.Open(path)
 	if err != nil {
 		return err
 	}
