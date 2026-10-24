@@ -1,7 +1,7 @@
 // The Storage part of the console API: /projects/{project}/storage/… (ADR-022 §15). Objects are
 // named by ?name=, folders by ?prefix=; the bytes of an upload never go through these routes,
 // only the small request that issues its session (see upload.ts).
-import { apiUrl, downloadFile, request } from '@/lib/api/client';
+import { apiUrl, downloadFile, request, send } from '@/lib/api/client';
 
 export interface StorageLimits {
   objectBytes: number;
@@ -126,8 +126,17 @@ export const downloadPath = (p: string, name: string) => apiUrl(`${storage(p)}/o
 export const downloadObject = (p: string, name: string) =>
   downloadFile(`${storage(p)}/object:download`, { query: { name }, fallbackName: name.split('/').pop() || 'download' });
 
-export const issueUpload = (p: string, req: UploadRequest, signal?: AbortSignal) =>
-  request<UploadSession>(`${storage(p)}/uploads`, { method: 'POST', body: req, signal });
+/** An issued session, with the server's clock when it answered (its Date header), if it said. */
+export interface IssuedSession extends UploadSession {
+  serverTime?: number;
+}
+
+export async function issueUpload(p: string, req: UploadRequest, signal?: AbortSignal): Promise<IssuedSession> {
+  const res = await send(`${storage(p)}/uploads`, { method: 'POST', body: req, signal });
+  const date = Date.parse(res.headers.get('Date') ?? '');
+  const session = (await res.json()) as UploadSession;
+  return Number.isFinite(date) ? { ...session, serverTime: date } : session;
+}
 
 export const getUsage = (p: string, signal?: AbortSignal) => request<Usage>(`${storage(p)}/usage`, { signal });
 

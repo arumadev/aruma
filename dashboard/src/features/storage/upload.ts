@@ -3,7 +3,7 @@
 // protocol (X-Goog-Upload-*), in chunks that grow while they succeed, as the Firebase web SDK
 // sends them. The chunks carry no cookie and no CSRF token: the URL is the session's
 // credential, and the session cookie never rides a request of gigabytes.
-import type { UploadRequest, UploadSession } from './api';
+import type { IssuedSession, UploadRequest } from './api';
 
 /** The first chunk, and the size a chunk falls back to after a failure: the web SDK's 256 KiB. */
 export const BASE_CHUNK = 256 * 1024;
@@ -44,7 +44,7 @@ export interface UploadOptions {
   /** Called while a failed request waits to be retried. */
   onRetry?: (failures: number) => void;
   /** Issues a session; the console API's POST …/storage/uploads. */
-  issue: (req: UploadRequest, signal: AbortSignal) => Promise<UploadSession>;
+  issue: (req: UploadRequest, signal: AbortSignal) => Promise<IssuedSession>;
   fetch?: typeof fetch;
   now?: () => number;
   sleep?: (ms: number, signal: AbortSignal) => Promise<void>;
@@ -96,11 +96,16 @@ export async function resumableUpload(opts: UploadOptions): Promise<unknown> {
 
   let url = '';
   let issued = 0;
-  const issue = async (): Promise<UploadSession> => {
+  // When, on this browser's clock, the session stops taking a first byte: startBy as a duration
+  // from the server's clock when it answered, from when the answer arrived here. The two clocks
+  // may disagree by hours. Undefined without the server's clock: the server's 404 decides then.
+  let startBy: number | undefined;
+  const issue = async (): Promise<void> => {
     issued++;
     const session = await opts.issue(request, signal);
     url = sessionTarget(session.uploadUrl, origin);
-    return session;
+    const lead = Date.parse(session.startBy) - (session.serverTime ?? NaN);
+    startBy = Number.isFinite(lead) ? now() + lead : undefined;
   };
 
   // One request on the session, without the cookie. Status 0 is a network failure.
@@ -120,7 +125,7 @@ export async function resumableUpload(opts: UploadOptions): Promise<unknown> {
   };
 
   try {
-    let session = await issue();
+    await issue();
     let offset = 0;
     let chunk = BASE_CHUNK;
     let failures = 0;
@@ -137,9 +142,10 @@ export async function resumableUpload(opts: UploadOptions): Promise<unknown> {
 
     for (;;) {
       if (signal.aborted) throw new UploadError('cancelled');
-      if (now() >= Date.parse(session.expireTime)) throw new UploadError('expired');
-      // A session gets no byte after startBy: before the first one, take a new session instead.
-      if (offset === 0 && now() >= Date.parse(session.startBy)) session = await issue();
+      // A session takes no first byte after startBy: past it, before the first byte, take a new
+      // session rather than learn it from a 404. Only a hint: the server alone decides when a
+      // session has expired (a 404, or final), never this browser's clock.
+      if (offset === 0 && startBy !== undefined && now() >= startBy && issued < 3) await issue();
 
       const end = Math.min(offset + chunk, size);
       const { status, state, res } = await post({ [COMMAND]: end === size ? 'upload, finalize' : 'upload', [OFFSET]: String(offset) }, file.slice(offset, end));
@@ -156,7 +162,7 @@ export async function resumableUpload(opts: UploadOptions): Promise<unknown> {
       if (status === 404) {
         // The session is gone. One that never got a byte expired at startBy: issue another.
         if (offset === 0 && issued < 3) {
-          session = await issue();
+          await issue();
           continue;
         }
         throw new UploadError('expired', status);

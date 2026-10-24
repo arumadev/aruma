@@ -39,7 +39,7 @@ function policy(html, host) {
     if (attrs.includes('src=') || !body.trim()) continue;
     scripts.add(`'sha256-${createHash('sha256').update(body).digest('base64')}'`);
   }
-  const statics = /^[A-Za-z0-9.-]+(:\d{1,5})?$/.test(host ?? '') ? `${host}/_next/static/` : "'none'";
+  const statics = `${host}/_next/static/`;
   return [
     "default-src 'none'",
     `script-src ${statics} ${[...scripts].join(' ')}`,
@@ -54,9 +54,18 @@ function policy(html, host) {
   ].join('; ');
 }
 
+// A Host a CSP host-source can name (an IPv6 literal cannot be one); any other gets a page with
+// no script, as from the Go server.
+const NAMEABLE = /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*(:\d{1,5})?$/;
+
 async function sendHtml(req, res, file, status) {
+  const host = req.headers.host ?? '';
+  if (!NAMEABLE.test(host)) {
+    res.writeHead(400, { 'Content-Type': TYPES['.html'], 'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'none'" });
+    return res.end('<!doctype html><title>Aruma</title><p>Open the dashboard through a host name.</p>');
+  }
   const html = await readFile(file, 'utf8');
-  res.writeHead(status, { 'Content-Type': TYPES['.html'], 'Cache-Control': 'no-store', 'Content-Security-Policy': policy(html, req.headers.host) });
+  res.writeHead(status, { 'Content-Type': TYPES['.html'], 'Cache-Control': 'no-store', 'Content-Security-Policy': policy(html, host) });
   res.end(html);
 }
 

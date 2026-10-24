@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { UploadRequest, UploadSession } from './api';
+import type { IssuedSession, UploadRequest } from './api';
 import { backoff, BASE_CHUNK, MAX_CHUNK, MAX_FAILURES, resumableUpload, sessionTarget, UploadError } from './upload';
 
 const ORIGIN = 'http://127.0.0.1:9360';
@@ -96,7 +96,8 @@ class FakeSession {
   finished = false;
 }
 
-function session(id = 's1', at = NOW): UploadSession {
+/** A session issued at `at` on the server's clock, which its Date header says. */
+function session(id = 's1', at = NOW): IssuedSession {
   return {
     uploadUrl: `${ORIGIN}/v0/b/chat-app.example.com/o?name=big.bin&upload_id=${id}&upload_protocol=resumable`,
     bucket: 'chat-app.example.com',
@@ -104,12 +105,13 @@ function session(id = 's1', at = NOW): UploadSession {
     size: 0,
     startBy: new Date(at + 10 * 60_000).toISOString(),
     expireTime: new Date(at + 60 * 60_000).toISOString(),
+    serverTime: at,
   };
 }
 
 const bytes = (n: number) => new Blob([Uint8Array.from({ length: n }, (_, i) => i % 251)]);
 
-function run(server: FakeSession, file: Blob, opts: { issue?: (req: UploadRequest) => Promise<UploadSession>; now?: () => number; signal?: AbortSignal } = {}) {
+function run(server: FakeSession, file: Blob, opts: { issue?: (req: UploadRequest) => Promise<IssuedSession>; now?: () => number; signal?: AbortSignal } = {}) {
   const progress: number[] = [];
   const issue = vi.fn(opts.issue ?? (async () => session()));
   const sleep = vi.fn(async () => undefined);
@@ -218,27 +220,52 @@ describe('resumableUpload', () => {
     await expect(promise).resolves.toEqual({ name: 'done' });
     expect(issue).toHaveBeenCalledTimes(2);
 
-    // Past startBy, before any byte: a new session first, without trying the old one.
+    // Past startBy (11 minutes after the session arrived, on this clock, which runs two hours
+    // behind the server's), before any byte: a new session first, without trying the old one.
     const late = new FakeSession(BASE_CHUNK);
     late.known = new Set(['s2']);
-    let clock = NOW;
+    const skew = -2 * 3_600_000;
+    let clock = NOW + skew;
     const again = [session('s1', NOW), session('s2', NOW + 11 * 60_000)];
     const second = run(late, bytes(BASE_CHUNK), {
-      issue: async () => {
-        const s = again.shift()!;
-        clock = NOW + 11 * 60_000;
-        return s;
+      issue: async () => again.shift()!,
+      now: () => {
+        const t = clock;
+        clock = NOW + skew + 11 * 60_000;
+        return t;
       },
-      now: () => clock,
     });
     await expect(second.promise).resolves.toEqual({ name: 'done' });
     expect(late.requests.every((r) => r.url.includes('upload_id=s2'))).toBe(true);
   });
 
-  it('fails as expired past the session’s end, and on a lost session with bytes', async () => {
-    const server = new FakeSession(BASE_CHUNK);
-    await expect(run(server, bytes(BASE_CHUNK), { now: () => NOW + 61 * 60_000 }).promise).rejects.toMatchObject({ kind: 'expired' });
+  it.each([
+    ['an hour ahead', 61 * 60_000],
+    ['a day ahead', 24 * 3_600_000],
+    ['an hour behind', -61 * 60_000],
+  ])('uploads with a browser clock %s of the server’s', async (_, skew) => {
+    // The deadlines are the server's, as durations from when its answer arrived: a skewed
+    // browser clock neither expires a live session nor issues needless new ones.
+    const server = new FakeSession(4 * BASE_CHUNK);
+    let t = NOW + skew;
+    const { promise, issue } = run(server, bytes(4 * BASE_CHUNK), { now: () => (t += 1000) });
+    await expect(promise).resolves.toEqual({ name: 'done' });
+    expect(issue).toHaveBeenCalledTimes(1);
+  });
 
+  it('without the server’s clock, lets the server decide when a session expired', async () => {
+    // No Date header: no hint at all. The empty session the server dropped answers 404, and
+    // another is issued.
+    const server = new FakeSession(BASE_CHUNK);
+    server.known = new Set(['s2']);
+    const sessions = [{ ...session('s1'), serverTime: undefined }, { ...session('s2'), serverTime: undefined }];
+    const { promise, issue } = run(server, bytes(BASE_CHUNK), { issue: async () => sessions.shift()!, now: () => NOW + 30 * 24 * 3_600_000 });
+    await expect(promise).resolves.toEqual({ name: 'done' });
+    expect(issue).toHaveBeenCalledTimes(2);
+    expect(server.requests.map((r) => r.url.includes('upload_id=s1'))).toEqual([true, false]);
+  });
+
+  it('fails as expired on a lost session with bytes', async () => {
     // A session that had bytes and is gone cannot be resumed, nor replaced.
     const lost = new FakeSession(3 * BASE_CHUNK);
     const real = lost.fetch.getMockImplementation()!;
