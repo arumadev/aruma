@@ -12,6 +12,7 @@
 package gcs
 
 import (
+	"cmp"
 	"io"
 	"log/slog"
 	"net/http"
@@ -19,7 +20,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 
 	"github.com/arumadev/aruma/internal/platform/authn"
@@ -39,6 +39,10 @@ type Options struct {
 	TrustedProxies []netip.Prefix
 	// Credentials verifies the Bearer access tokens of service accounts.
 	Credentials authn.Verifier
+	// Writes counts the write requests in flight per client address under
+	// upload_requests_per_ip (ADR-022 §17). It is one budget per address, which /v0 shares
+	// (app.go gives both the same); nil gives this API a count of its own.
+	Writes *ratelimit.InFlight
 }
 
 // API is the GCS JSON endpoint.
@@ -47,8 +51,8 @@ type API struct {
 	opts Options
 	log  *slog.Logger
 	// writes counts the write requests in flight per client address (upload_requests_per_ip,
-	// ADR-022 §17), as /v0 does.
-	writes *ipCounter
+	// ADR-022 §17): opts.Writes, or a count of its own.
+	writes *ratelimit.InFlight
 	// warnedForwarded is set once an X-Forwarded-For from an untrusted peer was logged.
 	warnedForwarded atomic.Bool
 }
@@ -59,7 +63,7 @@ func New(svc *core.Service, opts Options, log *slog.Logger) *API {
 		log = slog.New(slog.DiscardHandler)
 	}
 	opts.PublicURL = strings.TrimSuffix(opts.PublicURL, "/")
-	return &API{svc: svc, opts: opts, log: log, writes: &ipCounter{n: map[string]int{}}}
+	return &API{svc: svc, opts: opts, log: log, writes: cmp.Or(opts.Writes, new(ratelimit.InFlight))}
 }
 
 // Handler returns the handler of every request under the three GCS prefixes.
@@ -327,7 +331,7 @@ func (a *API) route(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if t.route.writes() {
-		release, ok := a.writes.acquire(a.clientIP(r), a.svc.Limits().UploadRequestsPerIP)
+		release, ok := a.writes.Acquire(a.clientIP(r), a.svc.Limits().UploadRequestsPerIP)
 		if !ok {
 			a.writeError(w, errTooManyWrites, "", "")
 			return
@@ -382,34 +386,6 @@ func (a *API) clientIP(r *http.Request) netip.Addr {
 		}
 	}
 	return ip
-}
-
-// ipCounter counts requests in flight per client address, IPv6 per /64 (ratelimit.AddrKey).
-type ipCounter struct {
-	mu sync.Mutex
-	n  map[string]int
-}
-
-// acquire takes a place for a request from ip, under limit; the caller calls release once the
-// request is done. The zero Addr, and a limit of 0, are never limited.
-func (c *ipCounter) acquire(ip netip.Addr, limit int) (release func(), ok bool) {
-	if !ip.IsValid() || limit <= 0 {
-		return func() {}, true
-	}
-	key := ratelimit.AddrKey(ip)
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.n[key] >= limit {
-		return nil, false
-	}
-	c.n[key]++
-	return sync.OnceFunc(func() {
-		c.mu.Lock()
-		defer c.mu.Unlock()
-		if c.n[key]--; c.n[key] <= 0 {
-			delete(c.n, key)
-		}
-	}), true
 }
 
 // hasEncryptionHeaders reports a customer-supplied encryption key (CSEK), which v0.3 defers.

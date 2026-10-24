@@ -337,7 +337,7 @@ func TestWritesPerIP(t *testing.T) {
 		return rec
 	}
 	// One place for 2001:db8::/64, held as by a request in flight.
-	release, ok := e.api.writes.acquire(netip.MustParseAddr("2001:db8::1"), 1)
+	release, ok := e.api.writes.Acquire(netip.MustParseAddr("2001:db8::1"), 1)
 	if !ok {
 		t.Fatal("the first place")
 	}
@@ -362,7 +362,7 @@ func TestWritesPerIP(t *testing.T) {
 		t.Errorf("after the release: %d %s", rec.Code, rec.Body)
 	}
 	// Behind a proxy: X-Forwarded-For counts only from a trusted one.
-	release, _ = e.api.writes.acquire(netip.MustParseAddr("198.51.100.7"), 1)
+	release, _ = e.api.writes.Acquire(netip.MustParseAddr("198.51.100.7"), 1)
 	defer release()
 	trusted := New(e.svc, Options{PublicURL: baseURL, Credentials: testCredentials{},
 		TrustedProxies: []netip.Prefix{netip.MustParsePrefix("192.0.2.0/24")}}, nil)

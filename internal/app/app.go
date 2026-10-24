@@ -21,6 +21,7 @@ import (
 	"github.com/arumadev/aruma/internal/platform/crypto"
 	"github.com/arumadev/aruma/internal/platform/idtoken"
 	"github.com/arumadev/aruma/internal/platform/metrics"
+	"github.com/arumadev/aruma/internal/platform/ratelimit"
 	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/server"
 	authapi "github.com/arumadev/aruma/internal/services/auth/api"
@@ -214,17 +215,22 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		svc.OnProjectPurged(rtdbSvc.PurgeProject)
 	}
 	if storageSvc != nil {
+		// upload_requests_per_ip is one budget per address across both surfaces (ADR-022 §17):
+		// a client cannot double it by sending writes to /v0 and GCS at once.
+		writes := new(ratelimit.InFlight)
 		handlers.Storage = storageapi.New(storageSvc, storageapi.Options{
 			PublicURL:      publicURL,
 			TrustedProxies: cfg.TrustedProxyPrefixes(),
 			Credentials:    svc,
 			Projects:       svc,
 			IDTokens:       idTokens,
+			Writes:         writes,
 		}, logger).Handler()
 		handlers.GCS = gcs.New(storageSvc, gcs.Options{
 			PublicURL:      publicURL,
 			TrustedProxies: cfg.TrustedProxyPrefixes(),
 			Credentials:    svc,
+			Writes:         writes,
 		}, logger).Handler()
 		// A purged project's objects, sessions and files go with it.
 		svc.OnProjectPurged(storageSvc.PurgeProject)

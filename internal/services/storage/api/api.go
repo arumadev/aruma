@@ -18,7 +18,6 @@ import (
 	"net/netip"
 	"net/url"
 	"strings"
-	"sync"
 	"sync/atomic"
 
 	"github.com/arumadev/aruma/internal/platform/authn"
@@ -49,6 +48,10 @@ type Options struct {
 	Projects Projects
 	// IDTokens verifies the "Authorization: Firebase <idToken>" of signed-in users.
 	IDTokens idtoken.Verifier
+	// Writes counts the write requests in flight per client address under
+	// upload_requests_per_ip (ADR-022 §17). It is one budget per address, which the GCS surface
+	// shares (app.go gives both the same); nil gives this API a count of its own.
+	Writes *ratelimit.InFlight
 }
 
 // API is the Firebase REST endpoint.
@@ -59,8 +62,8 @@ type API struct {
 
 	// writes counts the write requests in flight per client address (upload_requests_per_ip,
 	// ADR-022 §17): uploads, upload session requests, PATCH, DELETE and the token calls, never
-	// the reads.
-	writes ipCounter
+	// the reads. It is opts.Writes, or a count of its own.
+	writes *ratelimit.InFlight
 	// warnedForwarded is set once the log has warned of an X-Forwarded-For from a peer that is
 	// not a trusted proxy (ADR-022 §17).
 	warnedForwarded atomic.Bool
@@ -71,7 +74,7 @@ func New(svc *core.Service, opts Options, log *slog.Logger) *API {
 	if log == nil {
 		log = slog.New(slog.DiscardHandler)
 	}
-	return &API{svc: svc, opts: opts, log: log, writes: ipCounter{n: map[string]int{}}}
+	return &API{svc: svc, opts: opts, log: log, writes: cmp.Or(opts.Writes, new(ratelimit.InFlight))}
 }
 
 // Handler returns the handler of every request under the two /v0 prefixes.
@@ -226,7 +229,7 @@ func (a *API) serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if rt.writes() {
-		release, ok := a.writes.acquire(a.clientIP(r), a.svc.Limits().UploadRequestsPerIP)
+		release, ok := a.writes.Acquire(a.clientIP(r), a.svc.Limits().UploadRequestsPerIP)
 		if !ok {
 			a.writeError(w, r, errTooManyWrites)
 			return
@@ -284,32 +287,4 @@ func (a *API) clientIP(r *http.Request) netip.Addr {
 		}
 	}
 	return ip
-}
-
-// ipCounter counts requests in flight per client address, IPv6 per /64 (ratelimit.AddrKey).
-type ipCounter struct {
-	mu sync.Mutex
-	n  map[string]int
-}
-
-// acquire takes a place for a request from ip, under limit; the caller calls release once the
-// request is done. The zero Addr is never limited.
-func (c *ipCounter) acquire(ip netip.Addr, limit int) (release func(), ok bool) {
-	if !ip.IsValid() || limit <= 0 {
-		return func() {}, true
-	}
-	key := ratelimit.AddrKey(ip)
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.n[key] >= limit {
-		return nil, false
-	}
-	c.n[key]++
-	return sync.OnceFunc(func() {
-		c.mu.Lock()
-		defer c.mu.Unlock()
-		if c.n[key]--; c.n[key] <= 0 {
-			delete(c.n, key)
-		}
-	}), true
 }

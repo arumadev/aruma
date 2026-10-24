@@ -272,35 +272,6 @@ func TestUploadName(t *testing.T) {
 	}
 }
 
-// upload_requests_per_ip: the writes in flight from one address, IPv6 per /64; a release frees
-// its place once, however often it is called.
-func TestWritesPerIP(t *testing.T) {
-	c := ipCounter{n: map[string]int{}}
-	a := netip.MustParseAddr("2001:db8::1")
-	b := netip.MustParseAddr("2001:db8::2") // the same /64
-	r1, ok1 := c.acquire(a, 2)
-	r2, ok2 := c.acquire(b, 2)
-	_, ok3 := c.acquire(a, 2)
-	if !ok1 || !ok2 || ok3 {
-		t.Fatalf("acquire: %v %v %v", ok1, ok2, ok3)
-	}
-	if _, ok := c.acquire(netip.MustParseAddr("192.0.2.1"), 2); !ok {
-		t.Error("another address is limited")
-	}
-	r1()
-	r1()
-	if _, ok := c.acquire(a, 2); !ok {
-		t.Error("a released place is not free")
-	}
-	if _, ok := c.acquire(a, 2); ok {
-		t.Error("a double release freed two places")
-	}
-	r2()
-	if _, ok := c.acquire(netip.Addr{}, 1); !ok {
-		t.Error("the zero address is limited")
-	}
-}
-
 // The router holds upload_requests_per_ip on every write route, before any handler, and on no
 // read: with a limit of 1 and one write of the address in flight, each write is refused 503 and
 // each read passes; once the write is done its place is free. X-Forwarded-For counts only from a
@@ -325,7 +296,7 @@ func TestRouterWritesPerIP(t *testing.T) {
 			reached + " " + rec.Body.String()
 	}
 
-	release, ok := a.writes.acquire(netip.MustParseAddr("192.0.2.1"), 1) // the write held open
+	release, ok := a.writes.Acquire(netip.MustParseAddr("192.0.2.1"), 1) // the write held open
 	if !ok {
 		t.Fatal("acquire")
 	}
@@ -359,7 +330,7 @@ func TestRouterWritesPerIP(t *testing.T) {
 	}
 	// Behind a trusted proxy, the client is the one X-Forwarded-For names.
 	trusted := New(svc, Options{TrustedProxies: []netip.Prefix{netip.MustParsePrefix("192.0.2.0/24")}}, nil)
-	trusted.writes.acquire(netip.MustParseAddr("192.0.2.1"), 1)
+	trusted.writes.Acquire(netip.MustParseAddr("192.0.2.1"), 1)
 	if ok, got := refused(trusted.Handler(), "POST", obj+"?create_token=true", map[string]string{"X-Forwarded-For": "198.51.100.7"}); ok {
 		t.Errorf("a trusted proxy's client counted as the proxy: %s", got)
 	}
