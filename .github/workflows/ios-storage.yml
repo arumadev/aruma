@@ -87,7 +87,10 @@ jobs:
           key: ios-mirror-${{ hashFiles('sdk/ios/firebase-storage-patch/storage-host.patch', 'sdk/ios/firebase-storage-patch/mirror.lock', 'sdk/ios/firebase-storage-patch/MIRROR-NOTICE.md', 'sdk/ios/firebase-storage-patch/make-mirror.sh') }}
       - name: Build the mirror (12.19.3)
         if: steps.mirror.outputs.cache-hit != 'true'
-        run: ARUMA_MIRROR_WORK=$RUNNER_TEMP/mirror-work sdk/ios/firebase-storage-patch/make-mirror.sh 12.19.3
+        # make-mirror.sh creates only its default mirror; this one is made empty first.
+        run: |
+          git init -q --bare "$ARUMA_MIRROR"
+          ARUMA_MIRROR_WORK=$RUNNER_TEMP/mirror-work sdk/ios/firebase-storage-patch/make-mirror.sh 12.19.3
       - name: Save the mirror
         if: steps.mirror.outputs.cache-hit != 'true'
         uses: actions/cache/save@v6
@@ -119,9 +122,11 @@ jobs:
           echo "ARUMA_IOS_SIMULATOR=$udid" >>"$GITHUB_ENV"
 
       - name: Swift (test/e2e/ios-storage/run.sh)
+        id: swift
         run: test/e2e/ios-storage/run.sh
       - name: Flutter (test/e2e/flutter-storage/run.sh ios)
-        if: ${{ !cancelled() }}
+        # Also after the Swift suite failed, not after a setup step did.
+        if: ${{ !cancelled() && (steps.swift.outcome == 'success' || steps.swift.outcome == 'failure') }}
         run: test/e2e/flutter-storage/run.sh ios
 
       - name: Save the Swift packages

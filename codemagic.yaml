@@ -156,7 +156,7 @@ workflows:
           ARUMA_MIRROR=$CM_BUILD_DIR/.cache/mirror/firebase-ios-sdk.git
           echo "ARUMA_MIRROR=$ARUMA_MIRROR" >> $CM_ENV
           git ls-remote --tags "$ARUMA_MIRROR" refs/tags/12.19.3 2>/dev/null | grep -q . \
-            || ARUMA_MIRROR_WORK=$CM_BUILD_DIR/.cache/mirror-work sdk/ios/firebase-storage-patch/make-mirror.sh 12.19.3
+            || { git init -q --bare "$ARUMA_MIRROR" && ARUMA_MIRROR_WORK=$CM_BUILD_DIR/.cache/mirror-work sdk/ios/firebase-storage-patch/make-mirror.sh 12.19.3; }
       - name: Swift (test/e2e/ios-storage)
         script: test/e2e/ios-storage/run.sh
       - name: Flutter (test/e2e/flutter-storage ios)
