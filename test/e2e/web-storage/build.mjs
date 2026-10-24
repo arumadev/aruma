@@ -1,13 +1,16 @@
 // Builds the suite's app with each bundler's real npm package, from its config file (the one line
 // of @aruma/web in each), one at a time, then the builds that must fail:
 //
-//   node build.mjs [vite|webpack|esbuild|rollup|rspack|fallback …]     (default: all)
+//   node build.mjs [vite|webpack|esbuild|rollup|rspack|fallback|auth-only …]     (default: all)
 //
 // - dist/<bundler>/: the app, served under /<bundler>/ by serve.mjs.
 // - dist/fallback/: src/fallback.js bundled by esbuild with no plugin: the run-time fallback.
 // - For each bundler, src/no-storage.js (no @firebase/storage module) and src/gstatic.js (the SDK
 //   from www.gstatic.com) must fail with @aruma/web's error, not with the bundler's own; and so must
 //   src/ssr.js with the SDK left external (a Vite SSR build with ssr.external, webpack externals).
+// - dist/auth-only/: src/auth-only.js bundled by esbuild with no plugin: Auth on Aruma, Storage left
+//   on Google (SR3-06), whose requests install() must refuse. The Vite plugin without storage: true
+//   must refuse to build it.
 //
 // It prints one line per build ("ok vite", "fails as it must: webpack no-storage: …") and exits 1
 // on anything else. ARUMA_URL is the server the rewrite targets.
@@ -90,6 +93,16 @@ const builders = {
     const storage = { ...storagePlugin({ url: process.env.ARUMA_URL }), config: undefined };
     await build({ configFile: false, root: here, logLevel: 'silent', base: '/x/', plugins: [storage], build: { outDir, emptyOutDir: true } });
   },
+  // Only as a build that must fail: the Vite plugin for Auth alone (no storage: true) on an app
+  // that uses Storage (SR3-06).
+  async 'vite-auth-only'(entry, outDir) {
+    const { build } = await import('vite');
+    const { default: aruma } = await import('@aruma/web/vite');
+    await build({
+      configFile: false, root: here, logLevel: 'silent', plugins: [aruma({ url: process.env.ARUMA_URL })],
+      build: { outDir, emptyOutDir: true, rolldownOptions: { input: entry } },
+    });
+  },
   // Only as a build that must fail: webpack with the Storage SDK in `externals`.
   async 'webpack-externals'(entry, outDir) {
     const config = await fresh('webpack.config.mjs');
@@ -107,6 +120,13 @@ const builders = {
     }
     writeFileSync(`${here}dist/fallback/index.html`, html('main.js'));
   },
+  async 'auth-only'() {
+    const esbuild = await import('esbuild');
+    const config = await fresh('esbuild.config.mjs');
+    delete config.outdir;
+    await esbuild.build({ ...config, entryPoints: ['./src/auth-only.js'], outfile: 'dist/auth-only/main.js', plugins: [], logLevel: 'silent' });
+    writeFileSync(`${here}dist/auth-only/index.html`, html('main.js'));
+  },
 };
 
 // The builds that must fail, and the start of @aruma/web's message each must fail with.
@@ -116,9 +136,10 @@ const failures = [
   ['ssr-external', './src/ssr.js', /is external to this bundle/, 'vite-ssr'],
   ['externals', './src/ssr.js', /is external to this bundle/, 'webpack-externals'],
   ['worker', 'index.html', /worker-[^ ]*\.js holds a copy of the Storage SDK that still names/, 'vite-worker'],
+  ['auth-only', './src/auth-only.js', /includes @firebase\/storage .* but Storage is not enabled/, 'vite-auth-only'],
 ];
 
-const names = process.argv.slice(2).length ? process.argv.slice(2) : ['vite', 'webpack', 'esbuild', 'rollup', 'rspack', 'fallback'];
+const names = process.argv.slice(2).length ? process.argv.slice(2) : ['vite', 'webpack', 'esbuild', 'rollup', 'rspack', 'fallback', 'auth-only'];
 let bad = 0;
 for (const name of names) {
   mkdirSync(`${here}dist`, { recursive: true });
@@ -129,7 +150,7 @@ for (const name of names) {
     bad++;
     console.log(`FAILED ${name}: ${e.message}`);
   }
-  for (const [what, entry, want, only] of name === 'fallback' ? [] : failures) {
+  for (const [what, entry, want, only] of name === 'fallback' || name === 'auth-only' ? [] : failures) {
     if (only && !only.startsWith(name)) continue;
     try {
       await builders[only ?? name](entry, `${here}dist/fail/${name}-${what}`);

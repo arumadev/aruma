@@ -11,12 +11,21 @@
 // Firebase Auth on the web sends every request with fetch, which it looks up on each call
 // (FetchProvider: self.fetch, then globalThis.fetch). Wrapping globalThis.fetch therefore reaches
 // it whether this runs before or after firebase/auth is imported. Every other request passes
-// through untouched.
+// through untouched, but one: a Firebase Storage SDK request to Google's Storage host while Auth is
+// redirected (SR3-06). @firebase/storage takes the ID token from the app's Auth whatever its host
+// (FirebaseStorageImpl._getAuthToken) and sends it as `Authorization: Firebase <token>` with every
+// request (addAuthHeader_), so with Auth on Aruma and Storage left on Google that request would carry
+// an Aruma ID token to Google. It is refused instead (storageGuard below), unless the Storage
+// fallback of storage.js is installed and takes it.
 
 /** The hosts that are rewritten. Nothing else is. */
 export const AUTH_HOSTS = Object.freeze(['identitytoolkit.googleapis.com', 'securetoken.googleapis.com']);
 
 const STATE = Symbol.for('aruma.web.redirect');
+// storage.js's state: when its fallback is installed, it handles Storage requests to Google's host.
+const STORAGE_STATE = Symbol.for('aruma.web.storage');
+const XHR_WRAPPED = Symbol.for('aruma.web.redirect.xhr');
+const XHR_GUARD = Symbol('aruma.web.redirect.xhr.guard');
 const LOG_PREFIX = '[aruma]';
 
 /** An Aruma URL that was refused. The message never contains the URL itself. */
@@ -137,9 +146,96 @@ async function forwardRequest(original, global, input, init, dest) {
   return original.call(global, out);
 }
 
+// ---------------------------------------------------------------------------------------------
+// The Storage guard (SR3-06).
+
+/** Google's Storage host. Not the bare quoted literal, which the build's output check looks for. */
+const STORAGE_HOST = new URL('https://firebasestorage.googleapis.com/').hostname;
+
+// The headers every @firebase/storage request carries (X-Firebase-Storage-Version) or the token
+// rides in (Authorization). A plain fetch of a download link has neither and is left alone.
+const SDK_HEADERS = new Set(['authorization', 'x-firebase-storage-version']);
+
+const storageBlocked = `a Firebase Storage request to ${STORAGE_HOST} was blocked: Firebase Auth is redirected to Aruma but Storage is not, and the request would carry the Aruma ID token to Google. Enable Storage too (Vite: aruma({ url, storage: true }); other bundlers: arumaStorage from @aruma/web/unplugin; or the fallback, installStorage from @aruma/web/storage)`;
+
+function onGoogleStorage(href) {
+  try {
+    return stripDot(new URL(String(href)).hostname) === STORAGE_HOST;
+  } catch {
+    return false;
+  }
+}
+
+// Whether the guard is on in this global: Auth redirected (or refused), and storage.js not taking
+// Storage requests to Google's host itself.
+function guarding(global) {
+  const auth = stateOf(global);
+  if (!auth || auth.mode === null) return false;
+  const storage = Object.prototype.hasOwnProperty.call(global, STORAGE_STATE) ? global[STORAGE_STATE] : null;
+  return !storage || storage.mode === null;
+}
+
+function reportBlocked(global) {
+  const state = stateOf(global);
+  if (state && !state.storageWarned) {
+    state.storageWarned = true;
+    console.error(`${LOG_PREFIX} ${storageBlocked}`);
+  }
+  return new TypeError(`${LOG_PREFIX} ${storageBlocked}`);
+}
+
+function hasSDKHeader(headers) {
+  if (headers === undefined || headers === null || typeof Headers === 'undefined') return false;
+  let h;
+  try {
+    h = new Headers(headers);
+  } catch {
+    return false;
+  }
+  for (const name of SDK_HEADERS) if (h.has(name)) return true;
+  return false;
+}
+
+/** A fetch the guard refuses: a Storage SDK request to Google's host. */
+function refusedFetch(global, href, input, init) {
+  if (href === null || !onGoogleStorage(href) || !guarding(global)) return false;
+  return hasSDKHeader(init?.headers) || (isRequest(input) && hasSDKHeader(input.headers));
+}
+
+// The browser build of @firebase/storage sends with XMLHttpRequest: open(method, url), then
+// setRequestHeader for each header, then send (platform/browser/connection.ts). An XHR opened on
+// Google's Storage host that gets one of the SDK's headers is never sent: the token header is
+// dropped, and send() fails it as a network error, which the SDK reports (a throw would escape its
+// retry timer). Wrapped once per prototype; the guard reads the global's state on each call.
+function guardXHR(global) {
+  const proto = global.XMLHttpRequest?.prototype;
+  if (!proto?.open || !proto.send || !proto.setRequestHeader || Object.prototype.hasOwnProperty.call(proto, XHR_WRAPPED)) return;
+  const { open, setRequestHeader, send } = proto;
+  Object.defineProperty(proto, XHR_WRAPPED, { value: true });
+  proto.open = function open_(method, href, ...rest) {
+    this[XHR_GUARD] = onGoogleStorage(href) && guarding(global) ? { refuse: false } : null;
+    return open.call(this, method, href, ...rest);
+  };
+  proto.setRequestHeader = function setRequestHeader_(name, value) {
+    const g = this[XHR_GUARD];
+    if (g && SDK_HEADERS.has(String(name).toLowerCase())) {
+      g.refuse = true;
+      if (String(name).toLowerCase() === 'authorization') return undefined;
+    }
+    return setRequestHeader.call(this, name, value);
+  };
+  proto.send = function send_(...args) {
+    if (!this[XHR_GUARD]?.refuse) return send.apply(this, args);
+    reportBlocked(global);
+    setTimeout(() => this.dispatchEvent(new (global.ProgressEvent ?? Event)('error')), 0);
+    return undefined;
+  };
+}
+
 function makeWrapper(global, state) {
   const wrapped = function fetch(input, init) {
     const href = inputURL(input);
+    if (refusedFetch(global, href, input, init)) return Promise.reject(reportBlocked(global));
     const m = href === null ? null : matchAuth(href);
     if (m === null || state.mode === null) return state.original.call(global, input, init);
     if (state.mode.error) {
@@ -174,6 +270,7 @@ function wrapOnce(global) {
   state.wrapper = makeWrapper(global, state);
   Object.defineProperty(global, STATE, { value: state, configurable: true });
   global.fetch = state.wrapper;
+  guardXHR(global);
   return state;
 }
 
@@ -186,6 +283,9 @@ function wrapOnce(global) {
  *   returns true.
  * - Refused (not https to a non-loopback host, query, credentials…): Auth requests are made to fail
  *   instead of reaching Google, and an ArumaConfigError is thrown.
+ *
+ * Either way, while it is installed, a Firebase Storage request to Google's Storage host fails
+ * instead of carrying the Aruma ID token there, unless Storage is rewritten or installStorage runs.
  *
  * @param {{ url?: string | URL, allowInsecure?: boolean, log?: boolean }} [options]
  */

@@ -106,6 +106,13 @@ the same literal, so it stays consistent. It also runs in the dev server's depen
   throws, and in every case Firebase Auth requests fail (`auth/network-request-failed`) instead of
   being sent to Google with the user's password.
 - **Does nothing when not configured.** No URL, no wrapper.
+- **Auth on Aruma never sends its ID token to Google Storage.** `@firebase/storage` takes the ID
+  token from the app's Auth whatever its own host, and sends it as `Authorization: Firebase <token>`
+  with every request. So while Auth is redirected, a Storage SDK request to
+  `firebasestorage.googleapis.com` fails instead of being sent (once, with an error in the console),
+  and the Vite plugin without `storage: true` stops a build that includes `@firebase/storage`. Turn
+  Storage on (see [Firebase Storage](#firebase-storage)). A plain `fetch` of a download link, which
+  carries no ID token, is left alone.
 - **Logs.** Logging is off by default. When on, it shows the method, host and path only: never the
   query (it holds the API key), headers, tokens or bodies.
 
@@ -153,6 +160,11 @@ https://aruma.example.com/v0/b/<bucket>/o/<path>?alt=media&token=<token>
 
 which works in any loader and on every platform. The URL must be the root of Aruma's host (no
 path). The app's code does not change.
+
+**An app that set up Auth alone must turn Storage on before it uses Storage.** Without it, every
+Storage request would go to Google with the user's Aruma ID token in it. So the Vite plugin without
+`storage: true` fails a build that includes `@firebase/storage`, and `install()` fails those
+requests in the browser (with any bundler, and in the Vite dev server).
 
 ### The one line, per bundler
 
@@ -314,6 +326,7 @@ install({ url: 'https://aruma.example.com' });
 - **يفشل مغلقًا:** إن وُجد عنوان ورُفض، توقف الإضافة البناء، و`install()` يرمي خطأ.
   وفي كل الأحوال تفشل طلبات Auth، ولا تذهب إلى Google بكلمة مرور المستخدم.
 - **بلا إعداد لا يفعل شيئًا.**
+- **Auth على Aruma لا يرسل رمز الهوية إلى Storage عند Google.** `@firebase/storage` يأخذ رمز الهوية من Auth التطبيق أيًّا كان نطاقه، ويرسله `Authorization: Firebase <token>` مع كل طلب. فما دام Auth محوَّلًا، يفشل طلب مكتبة Storage إلى `firebasestorage.googleapis.com` ولا يُرسل (برسالة خطأ واحدة في الكونسول)، وتوقف إضافة Vite بلا `storage: true` البناءَ الذي فيه `@firebase/storage`. فعّل Storage (انظر Firebase Storage أدناه). أما `fetch` لرابط تنزيل، وليس فيه رمز هوية، فيمر.
 - **السجل** مطفأ افتراضيًا. وإن فُعّل، فلا يحوي إلا الطريقة والنطاق والمسار: لا الاستعلام (فيه مفتاح API)، ولا الترويسات، ولا الرموز، ولا الأجسام.
 
 ## الحدود
@@ -330,6 +343,8 @@ install({ url: 'https://aruma.example.com' });
 - التعريف الوحيد `DEFAULT_HOST = 'firebasestorage.googleapis.com'` في كل ملف dist من `@firebase/storage` يصير نطاق Aruma، و`'https'` يصير `'http'` حين Aruma على http.
 - فترسل المكتبة كل طلب إلى Aruma، ويعيد `getDownloadURL()` الرابط الموحّد `https://aruma.example.com/v0/b/<bucket>/o/<path>?alt=media&token=<token>`، ويعمل في أي حمّال وعلى كل منصة.
 - العنوان جذر نطاق Aruma (بلا مسار). وكود التطبيق لا يتغير.
+
+**التطبيق الذي ضبط Auth وحده يفعّل Storage قبل أن يستعمله.** وإلا ذهب كل طلب Storage إلى Google ومعه رمز هوية Aruma للمستخدم. لذلك تُفشل إضافة Vite بلا `storage: true` البناءَ الذي فيه `@firebase/storage`، ويُفشل `install()` تلك الطلبات في المتصفح (مع أي bundler، وفي خادم تطوير Vite).
 
 ### السطر الواحد لكل bundler
 

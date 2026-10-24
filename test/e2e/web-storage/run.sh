@@ -35,7 +35,7 @@ if [[ -z ${ARUMA_EGRESS_GUARD:-} ]]; then
   npx playwright install chromium >/dev/null
 fi
 
-log "builds: Vite 8, webpack, esbuild, Rollup, Rspack and the fallback, and the builds that must fail"
+log "builds: Vite 8, webpack, esbuild, Rollup, Rspack, the fallback and Auth alone, and the builds that must fail"
 node build.mjs
 
 if [[ "${ARUMA_E2E_SSR:-on}" != off ]]; then
@@ -49,7 +49,7 @@ if [[ "${ARUMA_E2E_SSR:-on}" != off ]]; then
   wait_http "$ARUMA_E2E_SSR_URL/"
 fi
 
-log "Playwright: Vite 8, webpack, esbuild, Rollup, Rspack, the fallback${ARUMA_E2E_SSR_URL:+, SvelteKit}"
+log "Playwright: Vite 8, webpack, esbuild, Rollup, Rspack, the fallback, Auth alone${ARUMA_E2E_SSR_URL:+, SvelteKit}"
 ARUMA_E2E_APPS=vite,webpack,esbuild,rollup,rspack,fallback npx playwright test "$@"
 if [[ -n "${ARUMA_E2E_SSR_URL:-}" ]]; then
   if grep -q BLOCK "$gen/ssr-netguard.log" 2>/dev/null; then
