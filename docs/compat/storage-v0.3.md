@@ -91,3 +91,18 @@
 | 66 | `create_token` يغلب `delete_token` حين يجتمعان | مؤقت | `tokens.json` | `api.tokens` |
 | 67 | `maxResults` غير عدد صحيح موجب 400، و`startOffset`/`endOffset` تُتجاهل | مؤقت | A §3.7 | `api.list` |
 | 68 | جسم PATCH بقيمة غير نصية 400، وفوق الحد 413، والفارغ لا يغيّر إلا الـ metageneration | مؤقت | A §3.5 | `api.readPatch` |
+
+### الرفع على `/v0` (S3-B)
+
+يختبرها `api/upload_test.go` (جسم JSON للرفع، وحالة كل رد على رابط الجلسة، وما يُرفض قبل `core`، والمهلة المتدرجة على خادم بمهلات مصغّرة)، و`test/acceptance/storage_upload_test.go` (إعادة طلبات الويب المسجّلة في `sdk_upload.json`، وأشكال Android وiOS من A §3.10-3.13، وكل رفض نهائي، ورفع 64 ثانية وslowloris على مستمع الخادم نفسه بمهلاته الحقيقية).
+
+- **`X-Goog-Upload-Status`:** `final` مع كل رفض نهائي (403 و402 والحجم المخالف وmd5Hash و413 و401) ومع كل تكرار له و`query` بعده؛ و`active` مع 2xx لجلسة حية، ومع الفجوة (400 والحجم المستلَم)، ومع 503 وحدها؛ ولا شيء على جلسة مجهولة (404) ولا على طلب لا يُقرأ.
+- **المهلة:** مهلتا القراءة والكتابة تتحركان معًا نافذة 30 ثانية كلما جاءت النافذة بـ `min_bytes_per_second` × 30 بايتًا، ومهلة الكتابة تُضبط نافذة أخرى قبل الرد مباشرة، فيصل رد رفع أطول من 60 ثانية بعد الـ commit.
+
+| # (ADR-023 §3) | الفرق | التصنيف | المصدر | الموضع |
+|---|---|---|---|---|
+| 69 | جسم دون `min_bytes_per_second` في نافذة 30 ثانية يُقطع 408 بلا `X-Goog-Upload-Status`، وما وصل منه يُحفظ | مؤقت | ADR-022 §6.4، A §5.3 | `api.pacedBody`، `api.chunk` |
+| 70 | قطعة أو إنهاء على جلسة ملغاة 400 مع `final`، و`query` و`cancel` عليها 200 مع `cancelled` | مؤقت | ADR-022 §6.1، E §3.1 | `api.writeSession`، `api.uploadSession` |
+| 71 | `upload` على جلسة انتهت بنجاح يعيد النتيجة المحفوظة (200 و`final` والـ metadata)، والمحاكي 400 | مؤقت | ADR-022 §6.1، `raw_resumable.json` | `api.writeSession` |
+| 72 | نوع المحتوى في multipart من الـ JSON وحده و`?name=` يغلب اسم الـ JSON (كالمحاكي)؛ وقيمة `X-Goog-Upload-Protocol` أخرى 400؛ و`md5Hash` ليس base64 لستة عشر بايتًا 400 | مؤقت | `raw_upload.json` | `api.multipart`، `api.upload`، `api.parseResource` |
+| 73 | `X-Goog-Upload-Offset` إلزامي إلا لـ `finalize` منفردًا بجسم فارغ، و`X-Goog-Upload-Content-Length` على القطع لا يُقرأ (المعلن عند `start` هو الحكم) | مؤقت | A §3.11 | `api.chunk` |

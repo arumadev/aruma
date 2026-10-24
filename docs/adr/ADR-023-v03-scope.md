@@ -194,6 +194,14 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 67. **مؤقت: `maxResults` غير عدد صحيح موجب 400** (المكتبات تفحص 1 إلى 1000 بنفسها، A §3.7)، والقيمة الفارغة غائبة، و`startOffset`/`endOffset` على `/v0` تُتجاهل. `api/list.go`.
 68. **مؤقت: جسم PATCH.** قيمة ليست نصًا ولا `null` لحقل قابل للكتابة أو لمفتاح metadata 400، وجسم ليس كائن JSON واحدًا 400، وفوق `json_body_bytes` 413، والجسم الفارغ لا يغيّر إلا الـ metageneration. `api/objects.go`.
 
+**أضافها S3-B** (الرفع على `/v0`، تفصيلها في `docs/compat/storage-v0.3.md`):
+
+69. **مؤقت: جسم رفع دون `min_bytes_per_second` في نافذة 30 ثانية يُقطع 408** بلا `X-Goog-Upload-Status` (المكتبات الثلاث تعيد 408 بـ `query` ثم تستأنف، A §5.3)، وما وصل منه يُحفظ ويُعلن. `api/upload.go` (`pacedBody`).
+70. **مؤقت: قطعة أو إنهاء على جلسة ملغاة 400 مع `final`** لا `cancelled` (Android لا يوقف المهمة إلا على `final`، ADR-022 §6.1)، و`query` و`cancel` عليها 200 مع `cancelled` (E §3.1). `api/upload.go` (`writeSession`).
+71. **مؤقت: `upload` على جلسة انتهت بنجاح يعيد النتيجة المحفوظة** (200 و`final` والـ metadata) كالإنهاء المكرر، والمحاكي 400 (`raw_resumable.json`). `api/upload.go`.
+72. **مؤقت: multipart نوعه من الـ JSON وحده و`?name=` يغلب اسم الـ JSON** كالمحاكي (`raw_upload.json`)؛ وقيمة `X-Goog-Upload-Protocol` غير `multipart` و`resumable` 400؛ و`md5Hash` ليس base64 لستة عشر بايتًا 400. `api/multipart.go`، `api/upload.go` (`parseResource`).
+73. **مؤقت: `X-Goog-Upload-Offset` إلزامي إلا لـ `finalize` منفردًا بجسم فارغ،** و`X-Goog-Upload-Content-Length` على قطع iOS لا يُقرأ: المعلن عند `start` هو الحكم عند الإنهاء. `api/upload.go` (`chunk`).
+
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 
 ## البدائل المرفوضة
