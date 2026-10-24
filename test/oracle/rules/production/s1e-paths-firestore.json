@@ -1,0 +1,100 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "s1e-paths-firestore",
+ "service": "firestore",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "rules-test-api",
+ "project": "chatapp-8ae21",
+ "recordedAt": "2026-10-24T01:48:20.314Z",
+ "version": "firebaserules.googleapis.com v1 projects.test",
+ "note": "S1-E probe after the held-out run (paths.mjs in .cache/briefs/reviews/s1e-artifacts): how the Test API reads a percent-encoded request path, and string() of a {x=**} path. Nothing was deployed.",
+ "rulesets": {
+  "probe": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /enc_space/{id} { allow get: if id == 'a b'; }\n    match /enc_space_raw/{id} { allow get: if id == 'a%20b'; }\n    match /rest_string/{rest=**} { allow get: if string(rest) == '/a/b'; }\n  }\n}\n"
+ },
+ "resources": {},
+ "cases": [
+  {
+   "id": "aruma/s1e-paths/fs_enc_space",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "Firestore: a percent-encoded space in a document id is decoded",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/enc_space/a%20b",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/s1e-paths/fs_enc_space_raw",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "Firestore: the encoded form is not what {id} holds",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/enc_space_raw/a%20b",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/s1e-paths/fs_rest_string",
+   "service": "firestore",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "Firestore v2: string({rest=**}) is the path's text",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/databases/(default)/documents/rest_string/a/b",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  }
+ ]
+}

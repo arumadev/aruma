@@ -217,7 +217,7 @@ func TestGrammar(t *testing.T) {
 }
 
 // grammarFiles pins the distinct rules files TestGrammar counts (see oracleCounts).
-const grammarFiles = 1935
+const grammarFiles = 1937
 
 // pct is n of of in percent, and 0 when there is nothing: no case is not 100%.
 func pct(n, of int) float64 {

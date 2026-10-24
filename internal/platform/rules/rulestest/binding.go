@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -78,6 +79,23 @@ func Segments(path string) []string {
 	return strings.Split(strings.TrimPrefix(path, "/"), "/")
 }
 
+// testAPISegments splits a request path as the Test API reads it: each segment URL-decoded, +
+// a space and %2F a slash inside its segment, as a service hands the engine an object's name
+// decoded (S1-E probe, 2026-10-24: p/a%20b.txt matches {f} == 'a b.txt', p/a%2Fb.txt
+// matches {f} == 'a/b.txt' and not {a}/{b}, a+b.txt is 'a b.txt', %C3%A9 is é, in Storage
+// and Firestore; request.path holds the decoded segments too).
+func testAPISegments(path string) ([]string, error) {
+	segs := Segments(path)
+	for i, s := range segs {
+		d, err := url.QueryUnescape(s)
+		if err != nil {
+			return nil, notExpressible("the request path %q does not URL-decode: %v", path, err)
+		}
+		segs[i] = d
+	}
+	return segs, nil
+}
+
 // Build returns the rules file and the request the case gives the engine, with a fresh Budget, a
 // MemoryDocuments holding its mocks, the inflight cap given, and a trace of the statements.
 func (c *Case) Build(inflight *rules.Inflight) (rules.File, *rules.Request, error) {
@@ -97,7 +115,7 @@ func (c *Case) Build(inflight *rules.Inflight) (rules.File, *rules.Request, erro
 	}
 	// The Test API read the whole request as written, raw numbers included; the emulator
 	// recorder wrote them into the documents' data alone (record-emulator.mjs, applyRaw).
-	b := &binder{c: c, raw: c.Provenance != Emulator}
+	b := &binder{c: c, raw: c.Provenance != Emulator, segs: Segments(c.Request.Path)}
 	var (
 		vars map[string]rules.Value
 		docs *MemoryDocuments
@@ -109,6 +127,10 @@ func (c *Case) Build(inflight *rules.Inflight) (rules.File, *rules.Request, erro
 			docs, err = b.emulatorDocuments(vars)
 		}
 	} else {
+		b.segs, err = testAPISegments(c.Request.Path)
+		if err != nil {
+			return file, nil, err
+		}
 		vars, err = b.testAPIVariables()
 		if err == nil {
 			docs, err = b.testAPIDocuments(vars)
@@ -120,7 +142,7 @@ func (c *Case) Build(inflight *rules.Inflight) (rules.File, *rules.Request, erro
 	req := &rules.Request{
 		Project:   Project,
 		Method:    method,
-		Path:      rules.Literals(Segments(c.Request.Path)...),
+		Path:      rules.Literals(b.segs...),
 		Variables: vars,
 		Documents: docs,
 		Budget:    rules.NewBudget(),
@@ -131,8 +153,9 @@ func (c *Case) Build(inflight *rules.Inflight) (rules.File, *rules.Request, erro
 }
 
 type binder struct {
-	c   *Case
-	raw bool // apply the case's raw numbers: where the source read them as written
+	c    *Case
+	segs []string // the request path's segments, as the source read them
+	raw  bool     // apply the case's raw numbers: where the source read them as written
 }
 
 // decode reads a field's JSON, keeping numbers as their text.
@@ -324,7 +347,7 @@ func (b *binder) testAPIVariables() (map[string]rules.Value, error) {
 	r := b.c.Request
 	req := map[string]rules.Value{
 		"method": rules.String(r.Method),
-		"path":   rules.PathOf(Segments(r.Path)),
+		"path":   rules.PathOf(b.segs),
 	}
 	if r.Time.Present() {
 		var s string

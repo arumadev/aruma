@@ -43,6 +43,10 @@ func Exclusion(c *Case) string {
 			return "Test API artefact: it applies no lookup limit to mocked documents"
 		}
 	}
+	if c.Provenance == Emulator && strings.Contains(c.Expected.Message, "Unsupported operation error. Received: string(path).") {
+		// Found after the one held-out run (aruma/storage-paths/v2_rest_string there).
+		return "emulator artefact: the Storage rules runtime has no string() of a path; production gives the path's text (aruma/s1e-paths/rest_string)"
+	}
 	if why, ok := known[c.Provenance][c.ID]; ok {
 		return why
 	}
