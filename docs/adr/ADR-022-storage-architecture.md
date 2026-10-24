@@ -560,6 +560,8 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
   13. `Content-Disposition` عند التنزيل لكائن بلا قيمة: `attachment` (البند 10.4)، ومجموعة الهروب في الافتراضي المخزّن (حالة PY-RR واحدة، البند 10.4).
   14. `Authorization` على القطع يُتجاهل (البند 7).
   15. CORS `*` على ردود الـ API والـ preflight (البند 11).
+  16. `Range` غير صحيح الصيغة (وحدة أخرى، أو `a-b` و`b < a`، أو رقم ناقص) يُتجاهل فيُرد 200 كاملًا، و`bytes=-0` على كائن غير فارغ 416 (البند 10.3؛ RFC 9110 §14.2 يسمح بالتجاهل، والإنتاج غير مقيس). في `wire.ParseRange` (S2-B).
+  17. **صيغ السلك أشد من المقيس حيث لم يُقس الإنتاج** (S2-B): `multipart/related` جزءان بالضبط، أولهما `application/json`، وبلا `Content-Transfer-Encoding` غير `7bit`/`8bit`/`binary`، والحد حسب RFC 2046 (70 حرفًا)؛ و`X-Goog-Upload-Command` بأحرف صغيرة كما ترسلها المكتبات الثلاث؛ و`Content-Range` بأشكاله الستة وحدها. وكل خروج عنها 400. وكل الحالات في `wire` (`multipart.go` و`upload.go`).
 - **ما يُقاس في S6 قبل اعتماده** (وإلا يُكتب البديل): التبديل إلى النطاق وحده في متصفح حقيقي، وTurbopack، وVite 5 إلى 7، وخطوة بناء Flutter web، واحترام Xcode و`flutter build ios` للمرآة، وبقاء إشعار `META-INF/aruma/` في APK وفي APK من AAB. **وفي S2 وS4:** كلفة fsync على القرص المستهدف، و`universeDomain` على مفتاح فيه `universe_domain`.
 - **قطع العلاقة مع Google في الإنتاج يحتاج تعديل كود Google** على Android وiOS، بإذن الرخصة وإشعاراتها، وصيانة تفشل بصوت عالٍ مع كل إصدار جديد. ومستعملو xcframework اليدوي وما لا يمر بالمحوّل يأخذون الاحتياط وحده.
 - **`firestore.get()` في قواعد Storage يرفض حتى v0.4**، وv0.4 يغيّر سطرًا في `internal/app`.

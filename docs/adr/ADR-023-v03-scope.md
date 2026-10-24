@@ -145,6 +145,12 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 36. `etag` يتغير مع PATCH، و`generation` بالميكروثانية، و`x-goog-metageneration` بالتهجئة الصحيحة.
 37. لا تقييم مزدوج للقواعد (ADR-021 §5.4).
 
+**أُضيفت في S2-B (صيغ السلك، ADR-022 العواقب 16-17):**
+
+38. **مؤقت:** `Range` غير صحيح الصيغة يُتجاهل (200 كاملًا)، و`bytes=-0` 416.
+39. **قيد:** `multipart/related` جزءان بالضبط، أولهما `application/json` وبلا ترميز نقل، و`X-Goog-Upload-Command` بأحرف صغيرة، و`Content-Range` بأشكاله الستة وحدها: غيرها 400. المكتبات الرسمية كلها داخل هذه الحدود (`test/oracle/storage/emulator`).
+40. **مؤقت:** الـ metadata المخصّصة الفارغة تُحذف من رد `/v0` (المحاكي يكتب `"metadata":{}`)، والمكتبات الثلاث تقرأ الحالتين «بلا metadata» (Android يفحص `has("metadata")` في `StorageMetadata.parseJSON`، وiOS `as? [String: String]`، A §4).
+
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 
 ## البدائل المرفوضة
