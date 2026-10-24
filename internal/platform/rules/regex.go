@@ -45,13 +45,11 @@ const (
 	progBytesPerInst   = 64  // a compiled program's instruction
 	compiles           = 4   // syntax.Parse, and regexp.Compile of whole, first and next
 
-	// A class's table, per rune of its capacity, in the three forms together, and the copy of
-	// it each of its instructions may keep besides: x{n} shares one table among its n
-	// instructions, but a one-pass program copies the runes of each. With these, what a
-	// pattern holds after compiling is at most 1.3 times its weight on Go 1.27, 0.8 times for
-	// \pL, \PL, \p{Han}, [^\pL] and (?i) classes and their repetitions (TestClassTablesAreCounted).
+	// A class's table in the three forms together, per rune of its capacity. With it, what a
+	// pattern holds after compiling is at most 1.1 times its weight on Go 1.27, and at most 0.84
+	// times for \pL, \PL, \p{Han}, [^\pL], (?i) classes, alternations of categories and their
+	// repetitions (TestClassTablesAreCounted).
 	classBytesPerRune = 16
-	instBytesPerRune  = 8
 )
 
 // compiledRegex is one compiled pattern, in the three forms the library runs.
@@ -79,7 +77,7 @@ type compiledRegex struct {
 
 // regexForms are the three forms of a pattern the library runs.
 type regexForms struct {
-	whole *regexp.Regexp // ^(?:p)$, for matches()
+	whole *regexp.Regexp // (?:)^(?:p)$, for matches() (wholeForm)
 	first *regexp.Regexp // \A(?s:.*?)(p), the first search of split() and replace()
 	next  *regexp.Regexp // \A(?s:.)(?s:.*?)(p), each later one, a character of context first
 }
@@ -363,7 +361,7 @@ func compilePattern(text string, limit int, ch patternCharges) (*compiledRegex, 
 	if est > limit {
 		return nil, errTooComplex(text, limit+1, limit)
 	}
-	classes := classBytes(re, 1)
+	classes := classBytes(re)
 	weight := 3*int64(est+8)*progBytesPerInst + 3*int64(len(text)) + classes
 	if ch.programs != nil {
 		if err := ch.programs(weight, 4*int64(est)); err != nil {
@@ -437,25 +435,17 @@ func matchWidth(re *syntax.Regexp) int {
 	return 0 // empty matches and assertions
 }
 
-// classBytes estimates what the tables of re's classes hold in the three forms, where the
-// program makes times copies of re: each class's table once, by the capacity of its runes, and
-// a copy for each of the instructions syntax.Compile would make of it, x{n} n of them. It runs
-// once estimateInsts has bounded the instructions, so it cannot overflow: at most 10,000
-// instructions of classes of a few thousand runes.
-func classBytes(re *syntax.Regexp, times int64) int64 {
-	switch re.Op {
-	case syntax.OpCharClass:
-		return classBytesPerRune*int64(cap(re.Rune)) + times*instBytesPerRune*int64(len(re.Rune))
-	case syntax.OpRepeat:
-		n := int64(re.Max)
-		if re.Max == -1 {
-			n = int64(max(re.Min, 1))
-		}
-		return classBytes(re.Sub[0], times*n)
-	}
+// classBytes estimates what the tables of re's classes hold in the three forms: each class of
+// the parsed pattern, by the capacity of its runes. An instruction keeps its class's table
+// itself, not a copy: the x{n} that Simplify makes n copies of are one node, and so one table
+// (regexp/syntax compile.go, InstRune), and no form is one-pass (wholeForm).
+func classBytes(re *syntax.Regexp) int64 {
 	var n int64
+	if re.Op == syntax.OpCharClass {
+		n = classBytesPerRune * int64(cap(re.Rune))
+	}
 	for _, sub := range re.Sub {
-		n += classBytes(sub, times)
+		n += classBytes(sub)
 	}
 	return n
 }

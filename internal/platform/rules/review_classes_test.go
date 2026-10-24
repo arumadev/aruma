@@ -22,7 +22,9 @@ func held(f func()) int64 {
 // class is one instruction, and its table of runes is kept in each of the three forms. Counted
 // by instructions alone, 185 patterns of fifty \pL each in 44 KB compiled within regex_bytes
 // and the share, weighing 24.9 MB and holding 300 MiB; the cache of patterns built during
-// evaluation held 303 MiB under its 4 MiB.
+// evaluation held 303 MiB under its 4 MiB. And a one-pass program, which the whole form no
+// longer is (wholeForm), merged the classes of an alternation's branches into each of its
+// instructions: twelve times what was counted (the re-review, onepass-alternation-merge).
 var classShapes = []string{
 	strings.Repeat(`\pL`, 50),
 	strings.Repeat(`\PL`, 50),
@@ -33,6 +35,21 @@ var classShapes = []string{
 	`\pL{50}`,
 	`(?:\pL|\pN){50}`,
 	`a{1000}b{1000}c{1000}d{1000}e{1000}f{1000}g{1000}h{1000}i{1000}j`,
+	categories(28),
+	categories(28) + `{5}`,
+	categories(28) + `{8}`,
+	`^[\p{L} ]{1,100}$`,
+	`^[\p{L}\p{M}\p{N}\p{P}\p{Zs}]{1,500}$`,
+}
+
+// categories returns an alternation of n of Unicode's general categories, each followed by 0.
+func categories(n int) string {
+	all := strings.Fields("Lu Ll Lt Lm Lo Mn Mc Me Nd Nl No Pc Pd Ps Pe Pi Pf Po Sm Sc Sk So Zs Zl Zp Cc Cf Co")
+	parts := make([]string, n)
+	for i := range n {
+		parts[i] = `\p{` + all[i] + `}0`
+	}
+	return `(?:` + strings.Join(parts, "|") + `)`
 }
 
 // classFile returns a Storage file of n statements, each matching a distinct literal pattern of
@@ -47,15 +64,16 @@ func classFile(shape string, n int) string {
 
 // For each shape, the most patterns regex_bytes admits: the file compiles, what it holds is at
 // most twice what its weight counts of it, and still once its literal patterns keep their forms
-// for lone surrogates in every block they may.
+// for lone surrogates in every block they may (where the rewritten form compiles: a pattern of
+// many \p classes is too complex once rewritten, and keeps none).
 func TestClassTablesAreCounted(t *testing.T) {
 	if raceEnabled {
 		t.Skip("what the heap holds is measured without the race detector")
 	}
 	lim := DefaultLimits()
-	// The review's file: refused at its second pattern, which takes it past regex_bytes.
+	// The review's file: refused at its third pattern, which takes it past regex_bytes.
 	_, issues := Compile(Storage, File{Name: "storage.rules", Content: classFile(classShapes[0], 185)}, lim)
-	if first, _ := firstErrorOf(issues); first.Position == nil || first.Position.Line != 6 ||
+	if first, _ := firstErrorOf(issues); first.Position == nil || first.Position.Line != 7 ||
 		!strings.HasPrefix(first.Description, "Regular expressions are too complex") {
 		t.Errorf("185 patterns of fifty \\pL: %v", first)
 	}

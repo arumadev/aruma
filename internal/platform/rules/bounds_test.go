@@ -190,13 +190,7 @@ func TestRegexProgramIsBounded(t *testing.T) {
 		}
 	}
 	// Just under the limit compiles.
-	if err := compileLiteralRegex(newRegexCache(&lim), strings.Repeat(`a{1000}`, 9)); err != nil {
-		t.Errorf(`a{1000} nine times: %v`, err)
-	}
-	// Under the limit too, but its 9,000 instructions each keep a copy of \pL's 1,368 runes in
-	// the one-pass form, about 90 MB: past regex_bytes (the review of S7-B1).
-	if err := compileLiteralRegex(newRegexCache(&lim), strings.Repeat(`\pL{1000}`, 9)); err == nil ||
-		!strings.HasPrefix(err.Error(), "Regular expressions are too complex to compile safely: with ") {
+	if err := compileLiteralRegex(newRegexCache(&lim), strings.Repeat(`\pL{1000}`, 9)); err != nil {
 		t.Errorf(`\pL{1000} nine times: %v`, err)
 	}
 }

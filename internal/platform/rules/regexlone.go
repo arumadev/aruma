@@ -204,6 +204,15 @@ func (p *compiledRegex) loneForms(m *meter, limit int, base rune) (*regexForms, 
 	return f, nil
 }
 
+// wholeForm is the form matches() runs: the whole string, ^(?:p)$, after an empty group. The
+// empty group changes nothing a match can be, and the search is still anchored (the program's
+// start condition skips it), but Go builds no one-pass program for a form that does not start
+// with ^: one copies the runes of every instruction of a class, and merges those of every
+// branch of an alternation into each, so ^[\p{L} ]{1,100}$ held a hundred copies of \p{L} and
+// an alternation of 28 categories twelve times what its weight counts (the re-review of S7-B1).
+// The other two forms are never one-pass: they do not end in \z.
+func wholeForm(text string) string { return `(?:)^(?:` + text + `)$` }
+
 // compileForms compiles the three forms of a pattern's text.
 func compileForms(text string) (*regexForms, error) {
 	var f regexForms
@@ -212,7 +221,7 @@ func compileForms(text string) (*regexForms, error) {
 		re   **regexp.Regexp
 		form string
 	}{
-		{&f.whole, `^(?:` + text + `)$`},
+		{&f.whole, wholeForm(text)},
 		{&f.first, `\A(?s:.*?)(` + text + `)`},
 		{&f.next, `\A(?s:.)(?s:.*?)(` + text + `)`},
 	} {
