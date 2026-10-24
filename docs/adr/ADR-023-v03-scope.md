@@ -196,9 +196,9 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 **أضافها S4-BC** (الرفع والوسائط على GCS؛ تفصيلها في `docs/compat/storage-v0.3.md`):
 
 68. **مؤقت: `DELETE` على رابط الجلسة يلغيها بـ 499** (وثيقة GCS)، وطلب على الجلسة بلا `Content-Range` هو الكائن كله. `gcs/upload.go`.
-69. **مؤقت: بدء الرفع على GCS يُحسب على `upload_starts_per_minute_per_ip`** بعنوان النظير (لا `TrustedProxies` في `gcs.Options`)، والتجاوز 429 `rateLimitExceeded` مع `Retry-After`. `gcs/upload.go`.
+69. **مؤقت: بدء الرفع على GCS يُحسب على `upload_starts_per_minute_per_ip`** بعنوان العميل (`trusted_proxies`، كحد الطلبات لكل IP)، والتجاوز 429 `rateLimitExceeded` مع `Retry-After`. `gcs/upload.go`.
 70. **مؤقت: أسباب رفض الرفع حيث لا تسجيل:** البطء تحت `min_bytes_per_second` 408، والجسم المنقطع 400، و`Content-Length` يخالف `Content-Range` 400، وتناقض checksum بين JSON و`X-Goog-Hash` 400. `gcs/upload.go`.
-71. **قيد: لا `Retry-After` على 503 من عطل الخادم** (`core.ErrUnavailable`) في الرفع والتنزيل، بل على الضغط وحده. `gcs/upload.go` (`refuse`).
+71. **قيد: لا `Retry-After` على 503 من عطل الخادم** (`core.ErrUnavailable`) في الرفع والتنزيل، بل على الضغط وحده. `gcs/errors.go` (`writeError`).
 
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 

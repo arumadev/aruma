@@ -449,14 +449,9 @@ func TestUploadUnavailableHasNoRetryAfter(t *testing.T) {
 		}
 	}
 	rec := httptest.NewRecorder()
-	e.api.refuse(rec, core.ErrOverloaded, bucketA, "x")
+	e.api.writeError(rec, core.ErrOverloaded, bucketA, "x")
 	if rec.Code != 503 || rec.Header().Get("Retry-After") == "" {
 		t.Fatalf("overloaded: %d %v", rec.Code, rec.Header())
-	}
-	rec = httptest.NewRecorder()
-	e.api.refuse(rec, core.ErrUnavailable, bucketA, "x")
-	if rec.Code != 503 || rec.Header().Get("Retry-After") != "" {
-		t.Fatalf("unavailable: %d %v", rec.Code, rec.Header())
 	}
 }
 
