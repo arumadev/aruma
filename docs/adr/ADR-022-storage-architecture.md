@@ -221,7 +221,7 @@ Storage ثالث خدمة بيانات في Aruma، وأول خدمة تخدم *
 
 ### 8. القواعد: نقاط التقييم والربط
 
-**القواعد تُقيَّم مرة واحدة في كل عملية، وحسابات الخدمة (Admin) تتجاوزها كما في Firebase** (ADR-021 §7). والطلب الذي يتعطل فيه التقييم (`ErrOverloaded`، أو عطل) يُرد 503 مع `Retry-After`، لا 403 ولا 500 (iOS لا يعيد على 500 ولا 429، A §5.3؛ ADR-021 §2.2).
+**القواعد تُقيَّم مرة واحدة في كل عملية، وحسابات الخدمة (Admin) تتجاوزها كما في Firebase** (ADR-021 §7). والطلب الذي يتعطل فيه التقييم (`ErrOverloaded`، أو عطل) يُرد 503، لا 403 ولا 500 (iOS لا يعيد على 500 ولا 429، A §5.3؛ ADR-021 §2.2)، و`Retry-After` مع `ErrOverloaded` وحده، فهو ضغط عابر (البند 12). (تعديل S3-A: كان `Retry-After` على العطل أيضًا.)
 
 | العملية | `Method` | المسار للـ `match` | `resource` | `request.resource` |
 |---|---|---|---|---|
@@ -351,7 +351,7 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
 - **الأخطاء:**
   - `/v0`: `{"error":{"code":<الحالة>,"message":"…"}}`. 404 «Not Found.» (E §1)، و403 «Permission denied.» (PY-RR `diagnostics`)، و400 «Invalid HTTP method/URL pair.» لمسار مجهول (E §1). JSON مضغوط بـ `Content-Type: application/json; charset=UTF-8`. ولا 409 أبدًا (Android يعرضه `invalid-checksum`، A §5.2)، ولا 308.
   - GCS: `{"error":{"code","message","errors":[{"domain":"global","reason","message"}]}}`، و`code` **رقم يساوي حالة HTTP** وإلا لا يعرف `exists()` في Node أن الحالة 404 (B §8).
-  - الضغط المؤقت: 503 مع `Retry-After` محدود (iOS يعيد على 503 ويحترم `Retry-After`، ولا يعيد على 429 ولا 500، A §5.3؛ و`Retry-After` الدائم قد يعني إعادة بلا نهاية، فالقيمة محدودة).
+  - الضغط المؤقت: 503 مع `Retry-After` محدود (iOS يعيد على 503 ويحترم `Retry-After`، ولا يعيد على 429 ولا 500، A §5.3؛ و`Retry-After` الدائم قد يعني إعادة بلا نهاية، فالقيمة محدودة). **وعلى الضغط العابر وحده** (`ErrOverloaded`، والطلبات المتزامنة لكل IP، ومعدل البدء)؛ و503 العطل (`ErrUnavailable`) بلا `Retry-After`، فمعه يتخطى iOS حده الأقصى ومدته الكلية (`GTMSessionFetcher.m:3682`، `:3854`) ويعيد بلا نهاية، وبدونه تنتهي إعادته المعتادة (تعديل S3-A، ADR-023 §3-70).
 
 ### 13. القوائم
 
@@ -368,6 +368,7 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
 ### 14. سطح GCS ومسار Admin
 
 - **المصادقة إلزامية:** `Authorization: Bearer <access token>` لحساب خدمة أصدره Aruma (`/oauth2/v1/token`)، عبر `authn.Verifier` كما يفعل RTDB (`rtdb/api/api.go:41-44`). وحساب الخدمة مقيد بمشروعه (`Principal.ProjectNumber`)، فـ bucket مشروع آخر 403/404. **طلب GCS بلا مصادقة يُرفض**، ومنه وضع المحاكي (`STORAGE_EMULATOR_HOST`) في Node وGo الذي لا يرسل `Authorization` أبدًا (B §3، E §9). قبوله، أو قبوله من شبكة «موثوقة»، أكثر تساهلًا من Firebase (E §9، P الشرط 10).
+- **استثناء Storage من ADR-010 S-11** (قرار المسؤول في مراجعة S4-A): S-11 يرد `NOT_FOUND` على ما لا يملكه المستدعي، وStorage يرد على bucket مشروع آخر بالرفض لا بـ «غير موجود»: على GCS، اعتماد صالح لمشروع آخر 403 `forbidden` كما يفعل GCS في الإنتاج، وعلى `/v0` يبقى 401 من S3-A لاعتماد لا يُقبل على ذلك المشروع. **لماذا هو آمن:** وجود الـ bucket ليس سرًا، فاسمه معرّف المشروع الذي يحمله ملف إعداد كل تطبيق، والإنتاج يكشفه بالطريقة نفسها (`bucket_probe.json`: 404 للـ bucket غير الموجود لأي طالب). **وشرطه:** الرفض (403 أو 401) يأتي **قبل أي بحث عن كائن**، فلا يعرف حساب مشروع آخر هل في الـ bucket كائن باسم ما: الرد واحد بايتًا ببايت لكائن موجود وغائب، في get وpatch وdelete ومصدر rewrite ووجهته وlist (`TestServiceAccountIsBoundToItsProject` في `gcs/objects_test.go`).
 - **ما يُخدم في v0.3** (B §10.1، بالمسار تحت `/storage/v1` وحده): `buckets.get` و`buckets.patch` (`cors` وحده)، و`objects.get` و`list` و`patch` و`delete`، و`rewriteTo` في طلب واحد يرد `done:true` (ضمن المشروع نفسه)، والرفع (`/upload/storage/v1`: media وmultipart وresumable)، والوسائط (`alt=media` تحت `/storage/v1` و`/download/storage/v1`). ودلالة PATCH: `null` على حقل يحذفه، و`metadata` تُدمج مفتاحًا مفتاحًا و`"metadata": null` يمسحها (B §4.3). و`?generation=N` (Go يثبّت به القراءة بعد انقطاع، B §6.2) يُقبل إن طابق الإصدار الحالي، وغيره 404، فلا إصدارات.
 - **`@aruma/admin-storage` (Node، `sdk/node/admin-storage`)** على نمط `@aruma/admin-auth`:
   - تعيد `Storage` من `@google-cloud/storage` بـ `apiEndpoint` = أصل Aruma، و**`universeDomain`** = نطاق Aruma، و`useAuthWithCustomEndpoint: true`، و`authClient` يأخذ رمزه من `token_uri` Aruma. مع `universeDomain` وحده يحمل بدء `save()` المتقطع وقطعه `Bearer` (مقيس، P جدول Admin Node: «`Bearer` على الكل، والرفع المتقطع منه»).

@@ -184,6 +184,53 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 60. **قيد: اسم بمقاطع أكثر من `request_segments` للـ ruleset** (1024 افتراضيًا مع `b/<bucket>/o`) **يُرفض 403**، لا 503 تعيد المكتبات عليه بلا نهاية. `core/rules.go` (`ruleRequest`، و`Ruleset.RequestSegments`).
 61. **قيد: مصدر قواعد فيه NUL يُرفض 400** (jsonb لا يحفظه). وعدد الـ rulesets لكل مشروع `rules.limits.rulesets_per_project` (2,500 افتراضيًا، ولا يتجاوز حد Firebase، ADR-021 §7). `tenancy/core/rules.go`.
 
+**أضافها S5-A** (واجهات أداة `firebase`، ADR-022 §15؛ تفصيلها في `docs/compat/storage-v0.3.md`):
+
+62. **مؤقت: `:test` لا يشغّل `testSuite`:** خطأ الترجمة يُرد بـ `issues[]` أولًا، ومصدر يترجم مع `testCases` 400 لا نجاح مزعوم. `mgmt/rules.go` (`testRuleset`).
+63. **مؤقت: خدمة الـ ruleset من تصريح `service` في مصدره** (Storage، أو Firestore لـ `cloud.firestore`). `mgmt/rules.go` (`compile`).
+64. **مؤقت: حذف ruleset مُطلقة 400 `FAILED_PRECONDITION`، و`PATCH` لإصدارة غائبة 404، و`POST` لموجودة 409، و`filter` و`attachment_point` 400.** `mgmt/rules.go`، و`tenancy/core/rules.go` (`DeleteRuleset`).
+65. **مؤقت: أشكال لم تُقس:** Ruleset بلا `metadata`، والقائمة الفارغة `{}`، والأوقات بست خانات، و`defaultBucket` بـ `US-CENTRAL1`، و`buckets` برقم المشروع، وService Usage `ENABLED` لكل اسم. `mgmt/storage.go`، و`mgmt/rules.go`.
+66. **قيد: جسم فوق 1 MiB على `:test` و`rulesets` 400 برسالة الحجم من الإنتاج** لا 413. `mgmt/rules.go` (`decodeSource`).
+
+**أضافها S3-A** (واجهة `/v0`، تفصيلها في `docs/compat/storage-v0.3.md`):
+
+67. **مؤقت: الاعتماد الذي لا يُقبل 401.** مخطط غير `Firebase` و`Bearer`، و`Bearer` ليس رمز وصول Admin (ومنه رمز هوية مستخدم، E §7)، و`Firebase` برمز لا يُتحقق منه، وحساب خدمة أو رمز CLI على bucket مشروع آخر: 401، كما في RTDB. والـ bucket يُحل قبل الاعتماد، فـ bucket مجهول 404 مهما كان (`bucket_probe.json`). `api/auth.go`.
+68. **مؤقت: رمز CLI لمالك المشروع على `/v0` يتجاوز القواعد** كحساب الخدمة، ويُربط بالحساب (`Principal.ConsoleAccount`)، فرفع متقطع بدأه يُرفض عند الإنهاء إن لم يعد الحساب يملك المشروع، ويُكتب في سجل التدقيق كرفع اللوحة. `api/auth.go`.
+69. **مؤقت: الـ preflight.** على bucket مجهول 404 بشكل الإنتاج (`bucket_probe.json`)، وعلى موجود 204 بقائمة ثابتة للطرق والترويسات (البند 27). وpreflight التنزيل (`alt=media`) من قواعد CORS للـ bucket وحدها: الأصل يُعاد كما أُرسل، و`Vary: Origin` دائمًا، و`responseHeader` للقاعدة `Expose-Headers` وحده، والترويسات المطلوبة في `Access-Control-Request-Headers` تُعاد في `Allow-Headers` كما يفعل GCS JSON (فـ `cors.json` الموثّق بلا `responseHeader` يسمح بـ `X-Firebase-Storage-Version` الذي يرسله الويب دائمًا)، والطريقة المسموحة هي المطلوبة. `api/cors.go`.
+70. **مؤقت: تجاوز `upload_requests_per_ip` 503 مع `Retry-After`** (ضغط عابر، وiOS لا يعيد على 429)، ويحسبه الموجّه لكل طلب كتابة (الرفع وطلبات الجلسة وPATCH وDELETE والرموز)، **وهو عدّ واحد لكل عنوان على `/v0` وGCS معًا** (`ratelimit.InFlight` واحد يعطيه `app.go` للسطحين، تعديل الدمج)، فلا يضاعف عميل حده بتوزيع كتابته عليهما، ورابط جلسة GCS بلا اعتماد. و`ErrTooManyUploads` عند `start` 429. **و`Retry-After` على ضغط عابر وحده:** هذا الحد، و`ErrOverloaded`، ورفض `AllowUploadStart`، بين ثانية وستين (5 افتراضيًا). ولا `Retry-After` على 503 غيرها (`ErrUnavailable`: القاعدة، وأرضية القرص)، لأن iOS يتخطى حده الأقصى ومدته الكلية مع الترويسة (`GTMSessionFetcher.m:3682`، `:3854`) فيعيد بلا نهاية. `api/api.go`، `api/errors.go`، `app/app.go`.
+71. **مؤقت: `create_token` و`delete_token` معًا: `create_token` وحده**، والمحاكي يرد 200 بتغيير واحد (`tokens.json`). وقيمة `create_token` غير `true` 400 قبل فحص صلاحية Admin، كالمحاكي (والاعتماد غير الصالح 401 قبلها، البند 67). `api/objects.go`.
+72. **مؤقت: `maxResults` غير عدد صحيح موجب 400** (المكتبات تفحص 1 إلى 1000 بنفسها، A §3.7)، والقيمة الفارغة غائبة، و`startOffset`/`endOffset` على `/v0` تُتجاهل. `api/list.go`.
+73. **مؤقت: جسم PATCH.** قيمة ليست نصًا ولا `null` لحقل قابل للكتابة أو لمفتاح metadata 400، وجسم ليس كائن JSON واحدًا 400، وفوق `json_body_bytes` 413، والجسم الفارغ لا يغيّر إلا الـ metageneration. `api/objects.go`.
+
+**أضافها S4-A** (أساس GCS JSON؛ تفصيلها في `docs/compat/storage-v0.3.md`):
+
+74. **قيد: سطح GCS لحسابات الخدمة وحدها** (`aruma_sat_`): رمز CLI الشخصي ورمز المستخدم 401 `authError`، كما بلا رمز 401 `required`. وحساب مشروع على bucket غيره 403 `forbidden` بنص GCS، لا `NOT_FOUND`: استثناء Storage من ADR-010 S-11 (ADR-022 §14)، والرفض قبل أي بحث عن كائن. `gcs/auth.go`.
+75. **مؤقت: الـ bucket يُحل قبل الاعتماد،** فـ bucket غير موجود 404 لأي طالب، كما رد الإنتاج على المجهول (`bucket_probe.json`)، والموجود 401 بلا رمز و403 لحساب مشروع آخر (استثناء S-11، ADR-022 §14)، وكل ذلك قبل أي بحث عن كائن. `gcs/gcs.go` (`route`)، و`gcs/auth.go` (`admit`).
+76. **مؤقت: الشروط المسبقة كلها على الصف الذي تقع عليه العملية** (بعد مراجعة S4-A): `sourceGeneration` و`ifSource*` في rewrite على صف المصدر الذي يُنسخ ملفه (`core.SourceConditions`)، و`ifMetagenerationMatch`/`NotMatch` على صف إعدادات الـ bucket المقفل في معاملة `SetCORS` (`core.BucketConditions`)، و`?generation=` على PATCH وDELETE يصير `ifGenerationMatch` على الصف المقفل؛ والجيل غير الحالي 404 لا 412. `gcs/objects.go` (`pinned`)، و`core/insert.go` (`Rewrite`)، و`core/cors.go` (`SetCORS`).
+77. **قيد: حقول الكائن المؤجلة في الجسم 501** (`acl` و`temporaryHold` و`eventBasedHold` و`customTime` و`retention` و`contexts` و`kmsKeyName` و`customerEncryption` و`storageClass` غير `STANDARD`)، وقيمها الفارغة تُتجاهل؛ وقيمة `metadata` غير نصية 400. و`buckets.patch` بغير `cors` 400، و`ifGenerationMatch` على الـ bucket 400. `gcs/resource.go` (`decodeAttrs`)، و`gcs/buckets.go`.
+78. **مؤقت: ما ليس في v0.3 من الواجهة 501** (`copyTo` و`compose` و`moveTo` والـ ACL وIAM والإشعارات وقائمة الـ buckets وإنشاؤها وحذفها و`objects.update` بـ PUT وCSEK)، و`rewriteToken` مُرسَل 400 (لا نصدر رموزًا)، وما لا تعرفه الواجهة 404. `gcs/gcs.go`.
+79. **مؤقت: مورد الـ bucket** موقعه اسمي (`US`، `multi-region`)، و`timeCreated` إنشاء المشروع. وأسباب الأخطاء حيث لا تسجيل: 413 `uploadTooLarge`، و429 `rateLimitExceeded` لكثرة الجلسات ولتجاوز `upload_requests_per_ip` (العدّ نفسه الذي يحسبه `/v0`، البند 70)، و410 للجلسة الملغاة. و`Retry-After` على الضغط العابر وحده (تجاوز `upload_requests_per_ip`، و`core.ErrOverloaded`، وبدء رفع فوق معدله)، ولا يُرسل أبدًا على 503 الخادم نفسه (`core.ErrUnavailable`). `gcs/resource.go`، `gcs/errors.go`.
+
+**أضافها S4-BC** (الرفع والوسائط على GCS؛ تفصيلها في `docs/compat/storage-v0.3.md`):
+
+80. **مؤقت: `DELETE` على رابط الجلسة يلغيها بـ 499** (وثيقة GCS)، وطلب على الجلسة بلا `Content-Range` هو الكائن كله. `gcs/upload.go`.
+81. **مؤقت: بدء الرفع على GCS يُحسب على `upload_starts_per_minute_per_ip`** بعنوان العميل (`trusted_proxies`، كحد الطلبات لكل IP)، والتجاوز 429 `rateLimitExceeded` مع `Retry-After`. `gcs/upload.go`.
+82. **مؤقت: أسباب رفض الرفع حيث لا تسجيل:** البطء تحت `min_bytes_per_second` 408، والجسم المنقطع 400، و`Content-Length` يخالف `Content-Range` 400، وتناقض checksum بين JSON و`X-Goog-Hash` 400. `gcs/upload.go`.
+83. **قيد: لا `Retry-After` على 503 من عطل الخادم** (`core.ErrUnavailable`) في الرفع والتنزيل، بل على الضغط وحده. `gcs/errors.go` (`writeError`).
+
+**أضافها S3-B** (الرفع على `/v0`، تفصيلها في `docs/compat/storage-v0.3.md`):
+
+84. **مؤقت: جسم رفع دون `min_bytes_per_second` في نافذة 30 ثانية يُقطع 408** بلا `X-Goog-Upload-Status` (المكتبات الثلاث تعيد 408 بـ `query` ثم تستأنف، A §5.3)، وما وصل منه يُحفظ ويُعلن. `api/upload.go` (`pacedBody`).
+85. **مؤقت: قطعة أو إنهاء على جلسة ملغاة 400 مع `final`** لا `cancelled` (Android لا يوقف المهمة إلا على `final`، ADR-022 §6.1)، و`query` و`cancel` عليها 200 مع `cancelled` (E §3.1). `api/upload.go` (`writeSession`).
+86. **مؤقت: قطعة على جلسة انتهت بنجاح:** إن لم تأتِ ببايت بعد `received` (`offset + length ≤ received`، أو جسم فارغ) فهي تكرار يُعاد له المحفوظ (200 و`final` والـ metadata) كالإنهاء المكرر؛ وإلا 400 مع `final`، كالمحاكي (`raw_resumable.json`)، فلا تُسقط بايتات جديدة بصمت ويبلّغ JS وiOS رفعًا ناقصًا أنه اكتمل. `api/upload.go` (`pastReceived`).
+87. **مؤقت: multipart نوعه من الـ JSON وحده و`?name=` يغلب اسم الـ JSON** كالمحاكي (`raw_upload.json`)؛ وقيمة `X-Goog-Upload-Protocol` غير `multipart` و`resumable` 400؛ و`md5Hash` ليس base64 لستة عشر بايتًا 400. `api/multipart.go`، `api/upload.go` (`parseResource`).
+88. **مؤقت: `X-Goog-Upload-Offset` إلزامي إلا لـ `finalize` منفردًا بجسم فارغ،** و`X-Goog-Upload-Content-Length` على قطع iOS لا يُقرأ: المعلن عند `start` هو الحكم عند الإنهاء. `api/upload.go` (`chunk`).
+
+**أضافها S3-C** (التنزيل على `/v0`، تفصيلها في `docs/compat/storage-v0.3.md`):
+
+89. **مؤقت: `?token=` الفارغ على `alt=media` لا رمز**، فتقرر القواعد كما لو غاب المعامل، كالمعاملات الفارغة في GCS (ADR-022 §13). لا يمنح شيئًا لا يمنحه حذف المعامل، والرمز غير الفارغ الذي لا يطابق يبقى 403 بلا قواعد (البند 19). `api/download.go`.
+90. **مؤقت: تنزيل قررته القواعد بلا `Authorization`** (قاعدة تسمح للمجهول) **يحمل `private` أيضًا**، كتنزيل فيه `Authorization` (ADR-022 §10.5)، لا القيمة المخزّنة كرابط الرمز. سلوك الإنتاج غير مقيس، والأشد لا يكون أكثر تساهلًا. `api/download.go` (`media.RulesDecided`).
+
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 
 ## البدائل المرفوضة

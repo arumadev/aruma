@@ -1,6 +1,6 @@
 # توافق Cloud Storage for Firebase: الإصدار 0.3
 
-- **الحالة:** بدأه S2-B وS2-C وS2-E كلٌّ على فرعه (2026-10-24)، وجمعه دمج S2 في وثيقة واحدة بقسم لكل مجال. يملؤه S3-D بنتائج `test/compat/storage` (مجموعة Storage في firebase-js-sdk وإعادة تسجيلات المحاكي)، وS7 بأرقامه (storage-layout.md).
+- **الحالة:** بدأه S2-B وS2-C وS2-E كلٌّ على فرعه (2026-10-24)، وجمعه دمج S2 في وثيقة واحدة بقسم لكل مجال، وأضاف دمج S3 إلى S5 أقسام واجهاتها. يملؤه S3-D بنتائج `test/compat/storage` (مجموعة Storage في firebase-js-sdk وإعادة تسجيلات المحاكي)، وS7 بأرقامه (storage-layout.md).
 - **المرجع السلوكي:** الإنتاج حيث رُصد (`test/oracle/storage/production`، وملاحظات Pyric على Storage حقيقي)، ثم المحاكي الرسمي من firebase-tools 15.34.0 (`test/oracle/storage/emulator`)، ثم مجموعات Google.
 - **التصنيف:** الفروق كلها في ADR-023 §3 بأرقامها، كل منها بمصدره وتصنيفه: **قيد** (أشد من Firebase عمدًا)، أو **مؤقت** (بلا دليل إنتاج)، أو **أصح من المحاكي**. وكل قرار مؤقت موضع واحد في الكود، وكل صف أو بند هنا يحمل رقم بنده في ADR-023 §3.
 
@@ -10,7 +10,7 @@
 
 ## الفروق
 
-القائمة الكاملة في ADR-023 §3: البنود 1 إلى 37 من S0، وما بعدها أضافته مهام S2. ولكل مجال قسم واحد أدناه بالبنود التي تمسه وموضعها في الكود.
+القائمة الكاملة في ADR-023 §3: البنود 1 إلى 37 من S0، وما بعدها أضافته مهام S2 إلى S5، مرقّمة مرة واحدة بترتيب الدمج. ولكل مجال قسم واحد أدناه بالبنود التي تمسه وموضعها في الكود.
 
 ### صيغ السلك (`internal/services/storage/wire`)
 
@@ -74,3 +74,101 @@
 59. **مؤقت: list ببادئة لا تنتهي بـ `/` يُقرَّر على مجلدها** ومقطع مجهول، فلا تسمح قاعدة `p/a/{x}` بقائمة `p/a` التي تعيد `p/ab`. `core/rules.go` (`rulePaths`).
 60. **قيد: اسم بمقاطع أكثر من `request_segments` للـ ruleset** (1024 افتراضيًا) **يُرفض 403**، لا 503. `core/rules.go` (`ruleRequest`).
 61. **قيد: مصدر قواعد فيه NUL يُرفض 400**، والـ rulesets لكل مشروع حتى `rules.limits.rulesets_per_project` (2,500). `tenancy/core/rules.go`.
+
+### أداة `firebase`: الإدارة (S5-A)
+
+ما ترسله `firebase deploy --only storage` و`firebase init storage` (C §1.3 و§1.4 و§1.5): Service Usage، و`defaultBucket`، وواجهة firebaserules (R1 إلى R8)، وكل نجاح 200 حرفيًا، والحذف `{}`. يختبرها `test/acceptance/storage_mgmt_test.go`: الطلبات بترتيب النشر الأول والثاني («already up to date»)، و`:test` على **كل** خطأ ترجمة أعادته Rules Test API في `test/oracle/rules/production/raw` (337 مصدرًا لا يترجم، و9 فوق حد الحجم): أسطر الأخطاء كما تطبعها الأداة (`[E] line:column - description`) مطابقة إلا أربعًا يعطي فيها المحرك خطأ نحو زائدًا («Unexpected ')'.» بعد خريطة مفتاحها عدد عشري، `hidane-conditions.json`)، و329 من 346 ردًا مطابقة بايتًا ببايت؛ والباقي فروق المحرك في `endOffset` وتحذيرات المتغير غير المستعمل والإصدار 1 وتحذيرات الأنواع (ADR-021 §2.1، `internal/platform/rules`)، لا في شكل الواجهة. و`tenancy/core/rules_s5a_test.go` للقوائم والحذف، ومنه حذف يسابق نشرًا.
+
+62. **مؤقت: `:test` لا يشغّل `testSuite`.** مصدر لا يترجم يُرد بـ `issues[]` أولًا كالإنتاج، ومصدر يترجم مع `testCases` يُرفض 400 بدل أن يُرد كأنها نجحت. والأداة لا ترسل `testSuite`. `mgmt/rules.go` (`testRuleset`).
+63. **مؤقت: خدمة الـ ruleset من تصريح `service` في مصدره:** Storage، أو Firestore إن صرّح `cloud.firestore`، واسم غيرهما يُترجم لـ Storage بتحذير المحرك ولا يمنح شيئًا. `mgmt/rules.go` (`compile`).
+64. **مؤقت: الحالات التي لم تُقس:** حذف ruleset تشير إليه إصدارة 400 `FAILED_PRECONDITION` (ولو نُشرت الإصدارة أثناء الحذف)، و`PATCH` لإصدارة غير موجودة 404 فتنشئها الأداة بـ `POST`، و`POST` لإصدارة موجودة 409 `ALREADY_EXISTS`، و`filter` في القائمتين و`attachment_point` (قاعدة Firestore مسمّاة) 400 بدل التجاهل. `mgmt/rules.go`، و`tenancy/core/rules.go` (`DeleteRuleset`).
+65. **مؤقت: الأشكال التي لم تُقس:** الـ Ruleset بلا `metadata.services`، والقائمة بلا `source`، والقائمة الفارغة `{}` كـ proto3، و`createTime` و`updateTime` بست خانات عشرية ثابتة (الأداة ترتب بمقارنة النص). و`defaultBucket` بـ `location` = `US-CENTRAL1` واسم بمعرّف المشروع، و`/v1beta/projects/{p}/buckets` باسم برقم المشروع (`extensions/provisioningHelper.ts:127-129`)، وService Usage `ENABLED` لكل اسم وعملية `:enable` منتهية. `mgmt/storage.go`، و`mgmt/rules.go` (`rulesTime`).
+66. **قيد: جسم فوق 1 MiB على `:test` أو `rulesets`** يُرد برسالة الإنتاج للحجم 400 («Total size of sources must be smaller than 262144.»، `limits.json` `size_comment_1048576`) لا 413، فكل جسم بهذا الحجم مصدر فوق الحد. `mgmt/rules.go` (`decodeSource`).
+
+### أداة `firebase` من طرف إلى طرف (S5-D)
+
+firebase-tools 15.34.0 نفسها (مثبّتة في `test/acceptance/testdata/firebase-cli`) على خادم حي، يختبرها `TestStorageWithTheFirebaseCLI` في `test/acceptance/storage_cli_test.go` (`ARUMA_FIREBASE_CLI=1`). الأداة مضبوطة بالبيئة وحدها كما يضبطها المطوّر (C §5.1، وT23 في `docs/research/experiments.md`): `FIREBASE_API_URL` و`FIREBASE_TOKEN_URL` و`FIREBASE_RULES_URL` و`FIREBASE_FIREBASESTORAGE_URL` و`FIREBASE_SERVICE_USAGE_URL` إلى واجهة https أمام الخادم، و`FIREBASE_TOKEN` رمز CLI، و`FIREBASE_SKIP_INFORMATIONAL_IAM=1`. وتعمل ببيت خاص بها، وتحت `test/experiments/netguard.cjs` (وsandbox-exec على macOS)، فأي اتصال خارج loopback يُرفض ويُفشل الاختبار. والواجهة تسجّل كل طلب، فيُفحص الترتيب أيضًا.
+
+| الخطوة | ما يُفحص |
+|---|---|
+| `firebase init storage` بلا إصدارة | القالب بايتًا ببايت، و`"storage": {"rules": "storage.rules"}`، والطلبات: Service Usage باسم `127.0.0.1` (مضيف `FIREBASE_FIREBASESTORAGE_URL`، C §1.4)، ثم `defaultBucket`، ثم `releases` |
+| `firebase deploy --only storage` | `:test`، و`releases`، و`POST rulesets`، و`PATCH` 404 ثم `POST releases`، وقراءة مجهولة على `/v0` تنقلب من 403 إلى 200 بعد النشر مباشرة |
+| النشر الثاني بلا تغيير | «latest version of storage.rules already up to date, skipping upload...»، و`GET rulesets/{id}` و`PATCH` 200 بلا `POST rulesets` |
+| قواعد مغيّرة | القراءة نفسها 403 بعد النشر مباشرة |
+| `firebase init storage` بعد النشر | القواعد المنشورة بايتًا ببايت، و«Downloaded the existing Storage Security Rules from the Firebase console» |
+| خطأ ترجمة | خروج 1 و`[E] 4:20 - Missing conditional expression after 'if'.`، ولا طلب بعد `:test`، والقواعد قبله باقية على `/v0` |
+| بلا Storage | `init` و`deploy` يطبعان «Firebase Storage has not been set up on project 'cli-app'» بعد `defaultBucket` 404، ولا طلب لواجهة القواعد |
+
+- الأداة تطبع تحذير `FIREBASE_TOKEN` المهمل في كل أمر؛ وهو الاعتماد الوحيد العامل (T23).
+- `init` في هذا الإصدار يمر أيضًا بـ «Agent Skills Setup» ويكتب `.gitignore`، بلا طلب شبكة.
+- لا بند جديد في ADR-023 §3.
+
+### واجهة `/v0` (S3-A)
+
+يختبرها `api/api_test.go` (`TestRoutes`: كل طلب ترسله المكتبات الثلاث يصل معالجه، وردود الموجّه بشكل الإنتاج 400 و404)، و`api/objects_test.go` (أجسام PATCH، وكل خطأ مسمّى بحالته)، و`test/acceptance/storage_v0_test.go` (كل عملية غير الرفع والتنزيل على خادم حقيقي، و`wiretest.AssertNoNull` على كل رد).
+
+- **ترتيب الرد كالإنتاج** (`bucket_probe.json`): مسار لا يسمّي عملية 400 «Invalid HTTP method/URL pair.» أيًا كان الـ bucket، ثم bucket مجهول 404 «Not Found.» قبل أي اعتماد، ثم الاعتماد. ورابط جلسة الرفع يتجاهل `Authorization`.
+- **CORS:** `*` على كل رد غير التنزيل، والأخطاء منه، بلا `Allow-Credentials`؛ و`nosniff` و`private, max-age=0` على كل رد JSON (E §1).
+
+| # (ADR-023 §3) | الفرق | التصنيف | المصدر | الموضع |
+|---|---|---|---|---|
+| 67 | الاعتماد الذي لا يُقبل 401، ومنه `Bearer <idToken>` وحساب خدمة مشروع آخر | مؤقت | E §7 | `api.principal` |
+| 68 | رمز CLI للمالك يتجاوز القواعد، ويُربط بالحساب فيُفحص عند إنهاء الرفع | مؤقت | ADR-022 §15 | `api.admin` |
+| 69 | preflight على bucket مجهول 404، وعلى موجود 204؛ وCORS التنزيل من قواعد الـ bucket، و`Allow-Headers` يعيد الترويسات المطلوبة كـ GCS JSON | مؤقت | `bucket_probe.json`، ADR-022 §11 | `api.preflight`، `api.mediaCORS` |
+| 70 | `upload_requests_per_ip` 503 مع `Retry-After`، بعدّ واحد لكل عنوان يشاركه سطح GCS؛ و`ErrTooManyUploads` 429، و`Retry-After` (بين 1 و60 ثانية) على الضغط العابر وحده، لا على `ErrUnavailable` | مؤقت | A §5.3، ADR-022 §12 | `ratelimit.InFlight`، `api.writeError` |
+| 71 | `create_token` يغلب `delete_token` حين يجتمعان، وقيمته غير `true` 400 قبل فحص صلاحية Admin | مؤقت | `tokens.json` | `api.tokens` |
+| 72 | `maxResults` غير عدد صحيح موجب 400، و`startOffset`/`endOffset` تُتجاهل | مؤقت | A §3.7 | `api.list` |
+| 73 | جسم PATCH بقيمة غير نصية 400، وفوق الحد 413، والفارغ لا يغيّر إلا الـ metageneration | مؤقت | A §3.5 | `api.readPatch` |
+
+### واجهة GCS JSON لـ Admin (S4-A)
+
+تختبرها `internal/services/storage/gcs/*_test.go` فوق `core` حقيقية وPostgres، و`TestIsolationStorageServiceAccount` في `test/acceptance` برموز حقيقية من مفاتيح الحسابات. وجُرّبت مرة يدويًا بـ `@google-cloud/storage` 8.4.0 (`exists` و`getMetadata` و`setMetadata` و`copy` و`move` و`getFiles` و`setCorsConfiguration` و`delete`) وبـ `cloud.google.com/go/storage` 1.62.1 (`Attrs` و`Update` و`CopierFrom` و`Objects` و`Bucket.Update` و`Delete`): كلها كما في الإنتاج، و`exists()` يعيد `false` على 404، وGo يرى `ErrObjectNotExist` و`ErrBucketNotExist`. الرفع والوسائط في S4-B وS4-C.
+
+74. **قيد: حسابات الخدمة وحدها.** `Authorization: Bearer aruma_sat_…` لحساب من مشروع الـ bucket؛ رمز CLI الشخصي أو رمز مستخدم 401 `authError` «Invalid Credentials»، وبلا رمز 401 `required`، وحساب مشروع آخر 403 `forbidden` بنص GCS («… does not have storage.objects.get access …»)، لا `NOT_FOUND`: استثناء Storage من ADR-010 S-11 (ADR-022 §14)، والرد واحد لكائن موجود وغائب. وطلب على جلسة رفع (`upload_id`) بلا اعتماد: المعرّف هو الصلاحية. `gcs/auth.go`.
+75. **مؤقت: 404 قبل 401 و403.** الـ bucket يُحل أولًا، فغير الموجود 404 «The specified bucket does not exist.» لأي طالب، كما رد الإنتاج على المجهول (`production/bucket_probe.json`)؛ ثم الاعتماد، **قبل أي بحث عن كائن** (استثناء S-11، ADR-022 §14). `gcs/gcs.go` (`route`)، و`gcs/auth.go` (`admit`).
+76. **مؤقت: كل شرط على الصف الذي تقع عليه العملية.** `sourceGeneration` و`ifSourceGenerationMatch` وأخواتها في rewrite تُفحص في `core.Rewrite` على صف المصدر الذي يُنسخ ملفه (ومفتاح الملف لا يُعاد استعماله، فهي تصدق على البايتات المنسوخة بالضبط)، و`ifMetagenerationMatch`/`NotMatch` على الـ bucket في معاملة `SetCORS` على صف مقفل، فمن تعديلين بالشرط نفسه يمر واحد والآخر 412. و`?generation=` على PATCH وDELETE يصير `ifGenerationMatch` يُفحص على الصف المقفل، والجيل غير الحالي 404 لا 412 (البند 10). `gcs/objects.go` (`pinned`)، و`core/insert.go`، و`core/cors.go`؛ و`TestRewriteSourceConditionsUnderReplacement` و`TestSetCORSConditions`.
+77. **قيد: لا حقل يُتجاهل وهو يبدو مطبَّقًا.** في جسم PATCH وrewrite والرفع: `acl` و`temporaryHold` و`eventBasedHold` و`customTime` و`retention` و`contexts` و`kmsKeyName` و`customerEncryption` و`storageClass` غير `STANDARD` 501، وقيمها الفارغة (`null` و`false` و`[]`، كمورد قُرئ وأُعيد) تُتجاهل، وحقول المخرجات (`kind` و`generation` و`size` …) تُتجاهل. وقيمة `metadata` غير نص ولا `null` 400. و`buckets.patch` بأي حقل غير `cors` 400، و`cors: null` يمسحها، وجسم بلا `cors` لا يغيّر شيئًا. `gcs/resource.go` (`decodeAttrs`)، و`gcs/buckets.go` (`decodeBucketPatch`).
+78. **مؤقت: 501 وما حوله.** ما في واجهة GCS ولم يدخل v0.3 501 `notImplemented`: `copyTo` (المكتبات تنسخ بـ `rewriteTo`) و`compose` و`moveTo` و`restore` والـ ACL وIAM والإشعارات وقائمة الـ buckets وإنشاؤها وحذفها وتحديثها بـ PUT و`objects.update` بـ PUT وإنشاء كائن بلا رفع وترويسات CSEK و`predefinedAcl`. وما ليس في الواجهة أصلًا 404 «Not Found». و`rewriteToken` مُرسَل 400، فلا نصدر رموزًا (`done:true` دائمًا)، و`maxBytesRewrittenPerCall` يُتجاهل. وفي list: `versions` و`softDeleted` و`includeTrailingDelimiter` و`includeFoldersAsPrefixes` بقيمة `true`، و`matchGlob` غير فارغ، 400 (ADR-022 §13). `gcs/gcs.go`، و`gcs/objects.go`.
+79. **مؤقت: ما لا تسجيل له.** مورد الـ bucket بموقع اسمي (`US`، `multi-region`)، و`timeCreated` إنشاء المشروع، و`updated` آخر تغيير لـ CORS، وبلا `generation`. وأسباب الأخطاء: 412 «At least one of the pre-conditions you specified did not hold.» `conditionNotMet` (نص GCS)، و413 `uploadTooLarge`، و429 `rateLimitExceeded` لكثرة الجلسات ولتجاوز `upload_requests_per_ip` (IPv6 لكل /64، و`X-Forwarded-For` من وكيل موثوق وحده؛ والعدّ واحد مع `/v0`، فكتابة معلّقة على أحدهما تُحسب على الآخر، `TestStorageWritesPerIPAcrossSurfaces`)، و410 للجلسة الملغاة، و503 `backendError`. و`Retry-After: 1` على الضغط العابر وحده (`upload_requests_per_ip` و`core.ErrOverloaded`، وبدء الرفع فوق معدله بانتظاره)، **ولا يُرسل على `core.ErrUnavailable`**: عميل يحترمه قد يُسقط حدود إعادته (gtm-session-fetcher)، فيعيد بلا نهاية. وكل رد JSON بـ `Cache-Control: no-cache, no-store, max-age=0, must-revalidate` كالإنتاج. `gcs/resource.go`، و`gcs/errors.go`.
+
+### الرفع والوسائط على GCS (S4-B، S4-C)
+
+تختبرها `internal/services/storage/gcs/{upload,download}_test.go` طلبًا طلبًا كما يرسلها Node 8.4.0 وGo 1.62.1، و`TestStorageGCSWithTheAdminSDKs` في `test/acceptance` (بـ `ARUMA_GCS_SDK=1`) بالمكتبتين نفسيهما عبر وكيل يسجّل كل تبادل: `save()` في طلب واحد (`bytes 0-*/*`) ومقطّعًا (308 و`Range`) و`resumable:false`، وGo بـ multipart وبالجلسة (200 مع `X-Http-Status-Code-Override: 308`، والجزء الأخير الفارغ `bytes */N`)، والـ checksums المختلفة 400 بلا كائن، و`ifGenerationMatch=0` على موجود 412، و`download()` بتحققه الافتراضي من CRC، وقراءات Go بـ `WithJSONReads` كاملة وبنطاق ومثبّتة على generation، و`ReaderObjectAttrs.CacheControl` يساوي `Attrs().CacheControl`.
+
+80. **مؤقت: إلغاء الجلسة** بـ `DELETE` على رابطها 499 بلا جسم (وثيقة GCS: «the response contains a 499 status code»)، ومرة ثانية 499، وبعد الإنهاء 400، وطلب بعده على الجلسة 410. لا يرسله أي من العميلين (B §10.3). وطلب على الجلسة بلا `Content-Range` هو الكائن كله في طلب واحد، كـ `bytes 0-*/*`. `gcs/upload.go` (`resumeUpload`).
+81. **مؤقت: بدء الرفع يُحسب على `upload_starts_per_minute_per_ip`** (media وmultipart وresumable)، والتجاوز 429 `rateLimitExceeded` مع `Retry-After`. والعنوان من `X-Forwarded-For` لوكيل في `trusted_proxies` وحده، وIPv6 لكل /64 (`clientIP`). `gcs/upload.go` (`allowStart`).
+82. **مؤقت: ما لا تسجيل له في الرفع.** جسم أبطأ من `min_bytes_per_second` على 30 ثانية 408، وجسم انقطعت قراءته 400، وتجاوز حد الجسم عند المدخل 413 `uploadTooLarge`. و`Content-Length` يخالف طول `Content-Range` 400 قبل حفظ شيء، وطلب `bytes */*` بجسم 400. و`crc32c` أو `md5Hash` في JSON يناقضه `X-Goog-Hash` في الطلب نفسه 400. و`X-Upload-Content-Length` حجم معلن، والزيادة عليه 400 وتنهي الجلسة. `gcs/upload.go`.
+83. **قيد: `Retry-After` على الضغط الحقيقي وحده** في الرفع والتنزيل أيضًا (معدل البدء، و`upload_requests_per_ip`، و`core.ErrOverloaded`)، لا على 503 من عطل الخادم (`core.ErrUnavailable`: أرضية القرص، أو القاعدة، أو التزام لم يُحسم، أو إيقاف الخادم): المكتبات التي تحترمه تعيد بلا حد. القاعدة واحدة في `gcs/errors.go` (`writeError`، البند 79)، وتختبرها `TestUploadUnavailableHasNoRetryAfter`.
+
+### الرفع على `/v0` (S3-B)
+
+يختبرها `api/upload_test.go` (جسم JSON للرفع، وحالة كل رد على رابط الجلسة، وما يُرفض قبل `core`، والمهلة المتدرجة على خادم بمهلات مصغّرة)، و`test/acceptance/storage_upload_test.go` (إعادة طلبات الويب المسجّلة في `sdk_upload.json`، وأشكال Android وiOS من A §3.10-3.13، وكل رفض نهائي، ورفع 64 ثانية وslowloris على مستمع الخادم نفسه بمهلاته الحقيقية).
+
+- **`X-Goog-Upload-Status`:** `final` مع كل رفض نهائي (403 و402 والحجم المخالف وmd5Hash و413 و401) ومع كل تكرار له و`query` بعده؛ و`active` مع 2xx لجلسة حية، ومع الفجوة (400 والحجم المستلَم)، ومع 503 وحدها؛ ولا شيء على جلسة مجهولة (404) ولا على طلب لا يُقرأ.
+- **المهلة:** مهلتا القراءة والكتابة تتحركان معًا نافذة 30 ثانية كلما جاءت النافذة بـ `min_bytes_per_second` × 30 بايتًا، ومهلة الكتابة تُضبط نافذة أخرى قبل الرد مباشرة، فيصل رد رفع أطول من 60 ثانية بعد الـ commit.
+
+| # (ADR-023 §3) | الفرق | التصنيف | المصدر | الموضع |
+|---|---|---|---|---|
+| 84 | جسم دون `min_bytes_per_second` في نافذة 30 ثانية يُقطع 408 بلا `X-Goog-Upload-Status`، وما وصل منه يُحفظ | مؤقت | ADR-022 §6.4، A §5.3 | `api.pacedBody`، `api.chunk` |
+| 85 | قطعة أو إنهاء على جلسة ملغاة 400 مع `final`، و`query` و`cancel` عليها 200 مع `cancelled` | مؤقت | ADR-022 §6.1، E §3.1 | `api.writeSession`، `api.uploadSession` |
+| 86 | قطعة على جلسة انتهت بنجاح لا تأتي ببايت بعد `received` تكرار يُعاد له المحفوظ (200 و`final` والـ metadata)؛ وببايت بعده 400 مع `final` كالمحاكي | مؤقت | ADR-022 §6.1، `raw_resumable.json` | `api.chunk`، `api.pastReceived` |
+| 87 | نوع المحتوى في multipart من الـ JSON وحده و`?name=` يغلب اسم الـ JSON (كالمحاكي)؛ وقيمة `X-Goog-Upload-Protocol` أخرى 400؛ و`md5Hash` ليس base64 لستة عشر بايتًا 400 | مؤقت | `raw_upload.json` | `api.multipart`، `api.upload`، `api.parseResource` |
+| 88 | `X-Goog-Upload-Offset` إلزامي إلا لـ `finalize` منفردًا بجسم فارغ، و`X-Goog-Upload-Content-Length` على القطع لا يُقرأ (المعلن عند `start` هو الحكم) | مؤقت | A §3.11 | `api.chunk` |
+
+### التنزيل ومصفوفة المتصفحات (S3-C)
+
+`alt=media` على `/v0` يفتح الكائن بـ `core.Open` (الرمز وحده، أو القواعد) ثم `media.Serve`. يختبره `test/acceptance/storage_download_test.go` (من يفتح البايتات، والترويسات وCache-Control بالوضع، وRange، ورفض العمّال وسكربتات أصل اللوحة، وCORS الـ bucket على الرد ورفضه والـ preflight، وgzip كما خُزّن أو مفكوكًا، وقنبلة تُقطع عند `object_bytes` وتُعدّ).
+
+ومصفوفة المتصفحات (ADR-022 §10.6) في `test/e2e/browser-matrix/run.sh`: حالات F §2.4 على Chromium وFirefox وWebKit (Playwright 1.64.1)، 14 من 14 على كل محرك، ولكل حماية حالة ضابطة تثبت أن الفحص يرى فشلها. والنتائج التي تحسم ما علّقه ADR-022 على المصفوفة:
+
+- **HTML وSVG تحت `sandbox`** لا ينفّذان سكربتًا تصفحًا مباشرًا في المحركات الثلاثة، و`window.origin === "null"`، ولا كعكة اللوحة ولا `localStorage`. وSVG يُرسم، وفي `<img>` من أصل آخر أيضًا.
+- **الفيديو والصوت تحت `sandbox` و`media-src 'self'`** يُعرضان ويُقفز فيهما تصفحًا مباشرًا وفي `<video>`/`<audio>` من أصل آخر، ومع COEP `require-corp`، في الثلاثة. فلا حاجة لرفع `sandbox` عن الوسائط. وWebKit يطلب بـ `Range` ويأخذ 206.
+- **PDF يُنزَّل** تصفحًا مباشرًا، ولا يُعرض في `<iframe>` ولا `<embed>` من أصل آخر (`X-Frame-Options: DENY`).
+- **CORS:** bucket بلا إعداد يرفض `fetch` و`getBytes` و`getBlob` من أصل آخر، و`cors.json` الموثّق (`{origin: ["*"], method: ["GET"], maxAgeSeconds: 3600}`) يسمح بها ومعها الـ preflight. المكتبة هي `firebase` 13.1.0 (بناء CDN) بـ `connectStorageEmulator` للمضيف وحده، لأن مسار الإنتاج للويب في S6.
+- **Service Worker** من أصل اللوحة يُرفض، وكذلك `<script>` من أصلها، ويُحمَّل `<script>` من أصل تطبيق. والرفض 403 وحده هو المانع، بالطفرة على Chromium وFirefox (2026-10-24): مع إيقاف `media.refused` يُسجَّل رابط التنزيل Service Worker على أصل Aruma في Firefox (`registered`) فتفشل الحالة 8، ومعه تنجح. والحالة الضابطة في Firefox تسجّل عاملًا من أصل الصفحات، لأن Firefox في Playwright لا يمرر سكربت العامل عبر `route`.
+- **حدود المصفوفة:** H.264 غير موجود في Chromium الذي يوزعه Playwright، فيُفحص فيه WebM (VP9)؛ وWebKit يعلن VP9 ولا يفك منه إطارًا (من Aruma ومن خادم ملفات عادي سواء)، فيُفحص فيه MP4 وحده. والحالة 11 (قنبلة gzip) في اختبارات `media` والقبول لا في المتصفح، والحالة 12 (`file.download()` في Node) لمسار GCS في S4-C.
+
+| # (ADR-023 §3) | الفرق | التصنيف | المصدر | الموضع |
+|---|---|---|---|---|
+| 89 | `?token=` الفارغ لا رمز، فتقرر القواعد | مؤقت | ADR-022 §13 | `api.download` |
+| 90 | تنزيل قررته القواعد بلا `Authorization` يحمل `private` أيضًا | مؤقت | ADR-022 §10.5 | `api.download` |

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/arumadev/aruma/internal/services/storage/wire"
@@ -100,13 +101,36 @@ func serve(w http.ResponseWriter, r *http.Request, it Item, body io.ReadSeeker, 
 	return nil
 }
 
-// send writes the media headers over w's, and the status line.
+// send writes the media headers over w's, and the status line. Vary is merged, not replaced:
+// the caller's (Origin, from the bucket's CORS) and media's (Accept-Encoding, for a gzip object)
+// both decide the reply, and a cache that kept only one would give an origin another's answer.
 func send(w http.ResponseWriter, mh http.Header, status int) {
 	h := w.Header()
 	for k, v := range mh {
+		if k == "Vary" {
+			h[k] = mergeVary(h[k], v)
+			continue
+		}
 		h[k] = v
 	}
 	w.WriteHeader(status)
+}
+
+// mergeVary returns the field names of two Vary headers as one value, each name once, in the
+// order first seen, compared without case (RFC 9110 §12.5.5).
+func mergeVary(a, b []string) []string {
+	var names []string
+	seen := map[string]bool{}
+	for _, v := range append(slices.Clone(a), b...) {
+		for name := range strings.SplitSeq(v, ",") {
+			name = strings.TrimSpace(name)
+			if key := strings.ToLower(name); name != "" && !seen[key] {
+				seen[key] = true
+				names = append(names, name)
+			}
+		}
+	}
+	return []string{strings.Join(names, ", ")}
 }
 
 // cut ends a reply that failed after its headers: it tells lim.Cut why, then aborts the

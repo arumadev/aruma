@@ -29,6 +29,8 @@ type API struct {
 	log    *slog.Logger
 	opts   Options
 	router *httpx.Router
+	// compiles bounds the rules compilations of :test and createRuleset running at once (rules.go).
+	compiles chan struct{}
 }
 
 // Options configure the API.
@@ -39,17 +41,16 @@ type Options struct {
 	// Storage is set when Cloud Storage is served: defaultBucket and the firebaserules API
 	// answer for it (S5-A, ADR-022 §15).
 	Storage bool
-	// RulesLimits and Inflight are the rules engine's, for the firebaserules API's :test: the
-	// same limits as every ruleset, and the process's one cap on evaluation memory (ADR-021 §4).
+	// RulesLimits are the rules engine's, for the firebaserules API: the same limits as every
+	// ruleset. :test runs no test case, so it evaluates nothing and needs no rules.Inflight.
 	RulesLimits rules.Limits
-	Inflight    *rules.Inflight
 }
 
 var policy = authn.Policy{AccessToken: true, ServiceToken: true}
 
 // New returns the Management API.
 func New(svc *core.Service, auth *authn.Authenticator, logger *slog.Logger, opts Options) *API {
-	a := &API{svc: svc, auth: auth, log: logger, opts: opts}
+	a := &API{svc: svc, auth: auth, log: logger, opts: opts, compiles: make(chan struct{}, maxCompiles())}
 	a.router = a.routes()
 	return a
 }
@@ -100,11 +101,12 @@ func (a *API) routes() *httpx.Router {
 		r.Handle("GET", c, a.auth.Require(policy, http.HandlerFunc(a.listDatabaseInstances)))
 		r.Handle("GET", c+"/{instance}", a.auth.Require(policy, http.HandlerFunc(a.getDatabaseInstance)))
 	}
+	// defaultBucket, buckets and Service Usage (storage.go) for the firebase CLI (ADR-022 §15),
+	// answered with Storage off too, so the CLI learns Storage is not set up; and firebaserules
+	// v1 (rules.go) with Storage on.
+	a.storageRoutes(r)
 	if a.opts.Storage {
-		// firebaserules v1 (rules.go) and defaultBucket, buckets and Service Usage (storage.go)
-		// for the firebase CLI (ADR-022 §15).
 		a.rulesRoutes(r)
-		a.storageRoutes(r)
 	}
 	return r
 }

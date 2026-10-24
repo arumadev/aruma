@@ -21,6 +21,7 @@ import (
 	"github.com/arumadev/aruma/internal/platform/crypto"
 	"github.com/arumadev/aruma/internal/platform/idtoken"
 	"github.com/arumadev/aruma/internal/platform/metrics"
+	"github.com/arumadev/aruma/internal/platform/ratelimit"
 	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/server"
 	authapi "github.com/arumadev/aruma/internal/services/auth/api"
@@ -54,8 +55,8 @@ type App struct {
 	Users       idtoken.Users
 
 	// The Firestore and Storage rules engine's limits, and the one cap on the memory of every
-	// evaluation in the process (ADR-021 §4). Storage takes both with rules.NoDocuments{}, the
-	// rules API's :test the same Inflight in S5.
+	// evaluation in the process (ADR-021 §4). Storage takes both with rules.NoDocuments{}; the
+	// rules API takes the limits alone, since its :test evaluates nothing.
 	RulesLimits   rules.Limits
 	RulesInflight *rules.Inflight
 
@@ -186,7 +187,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		},
 	})
 	mgmtAPI := mgmt.New(svc, auth, logger, mgmt.Options{
-		RTDB: rtdbSvc != nil, Storage: storageSvc != nil, RulesLimits: rulesLimits, Inflight: rulesInflight,
+		RTDB: rtdbSvc != nil, Storage: storageSvc != nil, RulesLimits: rulesLimits,
 	})
 	dashboard, err := web.New(web.Embedded())
 	if err != nil {
@@ -214,14 +215,23 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		svc.OnProjectPurged(rtdbSvc.PurgeProject)
 	}
 	if storageSvc != nil {
+		// upload_requests_per_ip is one budget per address across both surfaces (ADR-022 §17):
+		// a client cannot double it by sending writes to /v0 and GCS at once.
+		writes := new(ratelimit.InFlight)
 		handlers.Storage = storageapi.New(storageSvc, storageapi.Options{
 			PublicURL:      publicURL,
 			TrustedProxies: cfg.TrustedProxyPrefixes(),
 			Credentials:    svc,
 			Projects:       svc,
 			IDTokens:       idTokens,
+			Writes:         writes,
 		}, logger).Handler()
-		handlers.GCS = gcs.New(storageSvc, gcs.Options{PublicURL: publicURL, Credentials: svc, Projects: svc}, logger).Handler()
+		handlers.GCS = gcs.New(storageSvc, gcs.Options{
+			PublicURL:      publicURL,
+			TrustedProxies: cfg.TrustedProxyPrefixes(),
+			Credentials:    svc,
+			Writes:         writes,
+		}, logger).Handler()
 		// A purged project's objects, sessions and files go with it.
 		svc.OnProjectPurged(storageSvc.PurgeProject)
 	}

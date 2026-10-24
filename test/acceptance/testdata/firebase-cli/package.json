@@ -1,0 +1,8 @@
+{
+  "name": "aruma-acceptance-firebase-cli",
+  "private": true,
+  "description": "S5-D: firebase-tools against a live Aruma (init storage, deploy --only storage); run by TestStorageWithTheFirebaseCLI.",
+  "dependencies": {
+    "firebase-tools": "15.34.0"
+  }
+}

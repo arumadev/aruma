@@ -67,11 +67,18 @@ func (s *Service) DatabaseURL(projectID string) string {
 // a project id or number. Anything the caller does not own is NOT_FOUND, never
 // PERMISSION_DENIED, so other people's projects cannot be discovered (ADR-010 S-11). Deleted
 // projects resolve only when allowDeleted is set.
+//
+// A ref that can name no project (neither control.projects' project_id pattern nor a project
+// number as it prints) is NOT_FOUND before any query, so a NUL, a control character or invalid
+// UTF-8 from a URL never reaches Postgres, which would refuse it as an error (500).
 func (s *Service) resolveProject(ctx context.Context, q *queries.Queries, p *authn.Principal, ref string, allowDeleted bool) (queries.ControlProject, error) {
 	var (
 		proj queries.ControlProject
 		err  error
 	)
+	if n, nerr := strconv.ParseInt(ref, 10, 64); !projectIDPattern.MatchString(ref) && (nerr != nil || n <= 0 || formatNumber(n) != ref) {
+		return proj, errNotFound()
+	}
 	switch p.Kind {
 	case authn.KindAccount:
 		proj, err = q.GetOwnedProject(ctx, queries.GetOwnedProjectParams{OwnerAccountID: p.AccountID, Ref: ref})
