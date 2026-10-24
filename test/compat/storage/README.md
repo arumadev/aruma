@@ -106,7 +106,8 @@ emulator mode send none) the same token, `/b/...` gets its `/storage/v1` back
 
 Every Node process loads `test/experiments/netguard.cjs` and refuses any connection off the
 machine; the browsers resolve nothing but loopback and the front's names. `summarize.mjs`
-prints the refused connections (none so far). The processes of `ct` and the captures get
+prints the refused connections (none so far), and the run fails on one, or when the guard saw no
+connection at all (it was not loaded). The processes of `ct` and the captures get
 their own `HOME`, so `applicationDefault()` finds no credential of this machine's user.
 
 ## Results

@@ -11,6 +11,8 @@
 #               each step with the emulator's recording in test/oracle/storage/emulator
 #
 #   test/compat/storage/run.sh [js-node js-browser js-compat ct captures ...]   (default: all)
+#   test/compat/storage/run.sh --prepare [suite ...]   only fetch and install, then exit (CI runs
+#                                                     the suites after it with the network off)
 #
 # The js suites run as production code does: Firebase's own host names, which hosts.cjs (Node)
 # and the browser's resolver rules send to a local TLS front (front.mjs), which hands each
@@ -42,7 +44,8 @@
 #                            otherwise they are raised for the run
 #
 # It needs Go, Node 24.12 or newer, curl, tar, openssl, psql and Postgres, and the network the
-# first time. It is heavy (two browsers in a row, about 650 MB of installs) and not part of CI.
+# first time. It is heavy (two browsers in a row, about 650 MB of installs); CI runs it in a job of
+# its own (.github/workflows/ci.yml, storage-compat), with the sources cached.
 set -euo pipefail
 
 SDK_COMMIT=0c331cc7fd9c4671a33baca9bd20c02a08899820 # firebase@13.0.0
@@ -70,6 +73,8 @@ db_prefix=${ARUMA_COMPAT_DB_PREFIX:-aruma_s3d_}
 admin_url=${ARUMA_TEST_DATABASE_URL:-postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable}
 psql=${ARUMA_PG_BIN:+$ARUMA_PG_BIN/}psql
 all=(js-node js-browser js-compat ct captures)
+prepare_only=
+[[ ${1:-} == --prepare ]] && prepare_only=1 && shift
 suites=("$@")
 [[ ${#suites[@]} -gt 0 ]] || suites=("${all[@]}")
 for s in "${suites[@]}"; do
@@ -188,6 +193,10 @@ for f in "$PLAYWRIGHT_BROWSERS_PATH/chromium_headless_shell-$CHROMIUM"/*/{chrome
   [[ -x $f ]] && headless=$f && break
 done
 if has js-browser || has ct; then [[ -n $headless ]] || fail "no Chromium headless shell $CHROMIUM under $PLAYWRIGHT_BROWSERS_PATH"; fi
+if [[ -n $prepare_only ]]; then
+  log "prepared ${suites[*]} in $base"
+  exit 0
+fi
 
 # --- Aruma (offline from here) -----------------------------------------------------------------
 

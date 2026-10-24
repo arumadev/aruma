@@ -15,8 +15,20 @@
 #
 # Default: all. (The run-time fallback is in run.sh.) The apps are copied from apps/ and installed under ARUMA_E2E_APPS_DIR (default
 # <repo>/.cache/web-storage-apps), outside the repository. Results: one line per target and app,
-# then the Playwright output.
+# then the Playwright output. It exits 1 when a line says FAILED.
+#
+#   test/e2e/web-storage/measure.sh --install [target…]   only install the apps, then exit (CI
+#                                                        measures after it with the network off)
+#
+# The versions are the ones measured (docs/compat/storage-v0.3.md, S6-W), and every other package
+# resolves as the registry stood then (npm install --before), so each run installs the same tree.
 set -euo pipefail
+
+npm_before=2026-10-24T12:00:00Z
+firebase=13.1.0
+vite_versions=(5.4.21 6.4.5 7.3.7 8.3.5) # Vite 5, 6, 7, 8
+next=16.4.3 react=19.3.1
+expo=58.0.19 svg_transformer=1.5.3
 
 here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/../../.." && pwd)
@@ -29,10 +41,16 @@ trap 'stop_dev; stop_all' EXIT
 dev_port=${ARUMA_E2E_DEV_PORT:-9426}
 export NEXT_TELEMETRY_DISABLED=1
 
+install_only=
+[[ ${1:-} == --install ]] && install_only=1 && shift
 targets=("$@")
 [[ ${#targets[@]} -gt 0 ]] || targets=(vite5 vite6 vite7 vite8 next expo flutter)
 
-start_aruma
+if [[ -n $install_only ]]; then
+  mkdir -p "$gen"
+else
+  start_aruma
+fi
 cd "$here"
 [[ -d node_modules ]] || npm ci --no-audit --no-fund --silent
 mkdir -p "$apps"
@@ -69,7 +87,7 @@ package() {
 # follow a link out of the project) fresh from sdk/web/aruma-web.
 install_app() {
   rm -rf "$1/node_modules/@aruma"
-  (cd "$1" && npm install --no-audit --no-fund --silent --install-links)
+  (cd "$1" && npm install --no-audit --no-fund --silent --install-links --before "$npm_before")
 }
 
 vite_app() {
@@ -77,11 +95,12 @@ vite_app() {
   log "Vite $major: build and dev server"
   rm -rf "$dir/src" "$dir/dist"
   mkdir -p "$dir/src"
-  package "$dir" "{\"firebase\": \"^13\", \"vite\": \"^$major\"}"
+  package "$dir" "{\"firebase\": \"$firebase\", \"vite\": \"${vite_versions[major - 5]}\"}"
   cp index.html "$dir/"
   cp src/main.js src/ops.js "$dir/src/"
   cp apps/vite/vite.config.mjs "$dir/"
   install_app "$dir" && rm -rf "$dir/node_modules/.vite"
+  [[ -z $install_only ]] || return 0
   note "vite $major: $(cd "$dir" && node -p 'require("vite/package.json").version')"
   if (cd "$dir" && ARUMA_E2E_NAME=$name npx vite build >"$gen/build-$name.log" 2>&1); then
     playwright "$name" "$name=$dir/dist" "$name-build"
@@ -131,13 +150,14 @@ next_app() {
   log "Next.js: webpack and Turbopack"
   rm -rf "$dir/app" "$dir"/.next*
   mkdir -p "$dir/app"
-  package "$dir" '{"firebase": "^13", "next": "^16", "react": "^19", "react-dom": "^19"}'
+  package "$dir" "{\"firebase\": \"$firebase\", \"next\": \"$next\", \"react\": \"$react\", \"react-dom\": \"$react\"}"
   cp apps/next/next.config.mjs "$dir/"
   cp apps/next/app/*.js "$dir/app/"
   rm -rf "$dir/pages"
   cp -R apps/next/pages "$dir/pages"
   cp src/ops.js "$dir/app/ops.js"
   install_app "$dir"
+  [[ -z $install_only ]] || return 0
   note "next: $(cd "$dir" && node -p 'require("next/package.json").version')"
   local b flag none
   # turbopack-bare: the same build without the transpilePackages the line adds (the leak it closes).
@@ -211,7 +231,7 @@ expo_app() {
   log "Expo: Metro, the web export in the browser, the Android bundle, react-native-svg-transformer"
   rm -rf "$dir/dist" "$dir/dist-"* "$dir/.expo"
   mkdir -p "$dir"
-  package "$dir" '{"expo": "^58", "firebase": "^13", "react-native-svg-transformer": "^1"}' '{"main": "index.js", "type": "commonjs"}'
+  package "$dir" "{\"expo\": \"$expo\", \"firebase\": \"$firebase\", \"react-native-svg-transformer\": \"$svg_transformer\"}" '{"main": "index.js", "type": "commonjs"}'
   cp apps/expo/metro.config.js apps/expo/app.json apps/expo/index.js "$dir/"
   cp src/ops.js "$dir/ops.js"
   install_app "$dir"
@@ -220,7 +240,8 @@ expo_app() {
   local peers
   peers=$(cd "$dir" && node -p 'const b = require("expo/bundledNativeModules.json"); ["react", "react-dom", "react-native", "react-native-web", "@expo/metro-runtime", "react-native-svg"].map((k) => `${k}@${b[k]}`).join(" ")')
   # shellcheck disable=SC2086
-  (cd "$dir" && npm install --no-audit --no-fund --silent --install-links $peers)
+  (cd "$dir" && npm install --no-audit --no-fund --silent --install-links --before "$npm_before" $peers)
+  [[ -z $install_only ]] || return 0
   note "expo: $(cd "$dir" && node -p 'require("expo/package.json").version'), react-native $(cd "$dir" && node -p 'require("react-native/package.json").version'), metro $(cd "$dir" && node -p 'require("metro/package.json").version'), react-native-svg-transformer $(cd "$dir" && node -p 'require("react-native-svg-transformer/package.json").version')"
   local svg platform out
   # web and android; the SVG transformer not at all, before @aruma/web (supported) and after it (refused).
@@ -247,9 +268,11 @@ expo_app() {
 flutter_app() {
   local dir=$apps/flutter
   log "Flutter web: aruma-web flutter-web, then flutter build web"
+  local offline=--offline
+  [[ -z $install_only ]] || offline=
   if [[ ! -f "$dir/web/index.html.orig" ]]; then
     rm -rf "$dir"
-    flutter create --offline --platforms web --project-name aruma_e2e_web_storage "$dir" >"$gen/flutter-create.log" 2>&1
+    flutter create $offline --platforms web --project-name aruma_e2e_web_storage "$dir" >"$gen/flutter-create.log" 2>&1
     cp "$dir/web/index.html" "$dir/web/index.html.orig"
   fi
   # The index.html flutter create wrote, before the tool patches it.
@@ -258,7 +281,8 @@ flutter_app() {
   cp apps/flutter/pubspec.yaml "$dir/"
   cp apps/flutter/lib/main.dart "$dir/lib/main.dart"
   cp apps/flutter/web/flutter_bootstrap.js "$dir/web/"
-  (cd "$dir" && flutter pub get --offline >"$gen/flutter-pub.log" 2>&1)
+  (cd "$dir" && flutter pub get $offline >"$gen/flutter-pub.log" 2>&1)
+  [[ -z $install_only ]] || return 0
   note "flutter: $(flutter --version 2>/dev/null | head -1 | cut -d' ' -f2), firebase_core_web $(grep -o 'firebase_core_web-[0-9.]*' "$dir/.dart_tool/package_config.json" | head -1 | cut -d- -f2)"
   # The tool, twice: the second run must replace its own block, not add one.
   local out
@@ -285,5 +309,12 @@ for t in "${targets[@]}"; do
   esac
 done
 
+if [[ -n $install_only ]]; then
+  log "installed ${targets[*]} in $apps"
+  exit 0
+fi
 log "summary"
 printf '  %s\n' "${results[@]}"
+if printf '%s\n' "${results[@]}" | grep -q '^FAILED'; then
+  exit 1
+fi
