@@ -323,7 +323,10 @@ func (s *Service) WriteUpload(ctx context.Context, b Bucket, name, id string, p 
 	}
 	defer leave()
 	idHash := s.keys.HashToken(id)
-	unlock := s.sessions.lock(idHash)
+	unlock, err := s.sessions.lock(ctx, idHash)
+	if err != nil {
+		return UploadState{}, err
+	}
 	defer unlock()
 	sess, err := s.lockedSession(ctx, b, name, idHash)
 	if err != nil {
@@ -898,7 +901,10 @@ func (s *Service) CancelUpload(ctx context.Context, b Bucket, name, id string) (
 	}
 	defer leave()
 	idHash := s.keys.HashToken(id)
-	unlock := s.sessions.lock(idHash)
+	unlock, err := s.sessions.lock(ctx, idHash)
+	if err != nil {
+		return UploadState{}, err
+	}
 	defer unlock()
 	sess, err := s.lockedSession(ctx, b, name, idHash)
 	if err != nil {
@@ -928,15 +934,22 @@ func (s *Service) CancelUpload(ctx context.Context, b Bucket, name, id string) (
 	return UploadState{Status: UploadCancelled, Received: sess.Received}, nil
 }
 
-// lock takes a session's lock and returns its release.
-func (l *sessionLocks) lock(idHash []byte) func() {
+// lock takes a session's lock and returns its release. A request whose context ends while it
+// waits leaves without it: ErrUnavailable, which leaves the session as it was, and its client,
+// gone, hears nothing.
+func (l *sessionLocks) lock(ctx context.Context, idHash []byte) (func(), error) {
 	k := string(idHash)
 	e := l.acquire(k)
-	e.mu.Lock()
-	return func() {
-		e.mu.Unlock()
+	select {
+	case e.held <- struct{}{}:
+	case <-ctx.Done():
 		l.drop(k, e)
+		return nil, fmt.Errorf("%w: waiting for the upload session: %w", ErrUnavailable, context.Cause(ctx))
 	}
+	return func() {
+		<-e.held
+		l.drop(k, e)
+	}, nil
 }
 
 // tryLock takes a session's lock when it is free: the background work passes over a session a
@@ -944,12 +957,14 @@ func (l *sessionLocks) lock(idHash []byte) func() {
 func (l *sessionLocks) tryLock(idHash []byte) (func(), bool) {
 	k := string(idHash)
 	e := l.acquire(k)
-	if !e.mu.TryLock() {
+	select {
+	case e.held <- struct{}{}:
+	default:
 		l.drop(k, e)
 		return nil, false
 	}
 	return func() {
-		e.mu.Unlock()
+		<-e.held
 		l.drop(k, e)
 	}, true
 }
@@ -962,7 +977,7 @@ func (l *sessionLocks) acquire(k string) *sessionLock {
 	}
 	e := l.held[k]
 	if e == nil {
-		e = &sessionLock{}
+		e = &sessionLock{held: make(chan struct{}, 1)}
 		l.held[k] = e
 	}
 	e.refs++
