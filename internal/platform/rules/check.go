@@ -544,6 +544,7 @@ func (c *checker) call(e *callExpr, cx exprCtx) {
 			break
 		}
 		e.kind, e.name = callsMethod, fn.name
+		c.methodArity(fn.nameAt, fn.name, len(e.args))
 		c.expr(fn.x, cx)
 		c.literalRegex(e)
 	default:
@@ -554,12 +555,19 @@ func (c *checker) call(e *callExpr, cx exprCtx) {
 	}
 }
 
-// libraryArities are the global functions whose number of arguments production checks when it
-// compiles, with a warning at the function's name; the call still fails when evaluated (Rules
-// Test API: "debug(1, 2)" warns, then "Function not found error: Name: [debug]." as every
-// debug() does, S1-B review; "math.abs(1, 2)" warns at abs, S0-A raw/math.json). Only the
-// measured ones are listed.
-var libraryArities = map[string]int{"debug": 1, "math.abs": 1}
+// libraryArities and methodArities are the functions and methods whose number of arguments
+// production checks when it compiles, with a warning at the name; the call still fails when
+// evaluated. Only those measured on the Rules Test API are listed (S1-E probe arity.mjs,
+// 2026-10-24): debug(1, 2) and debug() warn, then fail as every debug() does ("Function not
+// found error: Name: [debug]."); math.abs(1, 2) warns at abs; 'a'.size(1), [1].size(1) and
+// 'a'.lower(1) warn at the method, then fail "Incorrect number of arguments". A method is
+// listed only where every receiver that has it takes the same number, so the warning needs no
+// type of the receiver. Production warns about other calls the checker does not know
+// (docs/compat/rules-v0.3.md).
+var (
+	libraryArities = map[string]int{"debug": 1, "math.abs": 1}
+	methodArities  = map[string]int{"size": 0, "lower": 0}
+)
 
 // libraryArity warns about a call of the global function name with n arguments, as production
 // does where it is measured.
@@ -569,8 +577,17 @@ func (c *checker) libraryArity(at span, name string, n int) {
 	}
 }
 
+// methodArity warns about a call of the method name with n arguments, as production does where
+// it is measured.
+func (c *checker) methodArity(at span, name string, n int) {
+	if want, ok := methodArities[name]; ok && n != want {
+		c.warnf(at, msgArity, name)
+	}
+}
+
 // literalRegex compiles the pattern a string literal passes to matches, split or replace, so
-// that an invalid one, or one whose program is too large, fails compilation (but replace's, below).
+// that an invalid one, or one whose program is too large, fails compilation; an invalid one of
+// replace() fails only when evaluated (below).
 func (c *checker) literalRegex(e *callExpr) {
 	switch e.name {
 	case "matches", "split", "replace":
@@ -589,8 +606,11 @@ func (c *checker) literalRegex(e *callExpr) {
 		// one of replace() only when the call is evaluated, an error || absorbs (Rules Test API,
 		// S1-E probe 2026-10-24: '(' and '(?=b)' fail to compile in matches and split; '(' and
 		// '(a)\1' in replace give "Invalid regular expression pattern" at the call). A valid
-		// literal of replace() is still compiled once, here.
-		if err := compileLiteralRegex(c.rs.regexes, pattern); err != nil && e.name != "replace" {
+		// literal of replace() is still compiled once, here, and one past Aruma's limits (too
+		// many instructions) fails compilation whatever the method: that is our limit, not
+		// production's syntax.
+		err := compileLiteralRegex(c.rs.regexes, pattern)
+		if err != nil && !(e.name == "replace" && err.Error() == errRegex(pattern).Error()) {
 			c.issue(lit.span, SeverityError, err.Error())
 		}
 	}

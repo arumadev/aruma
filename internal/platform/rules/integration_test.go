@@ -107,10 +107,29 @@ func TestDebugArity(t *testing.T) {
 			t.Errorf("%s: %+v", cond, d.Statements)
 		}
 	}
-	_, issues := compileSource(t, grantingSource("math.abs(1, 2) == 1"))
-	if len(issues) != 1 || issues[0].Description != "Incorrect number of arguments supplied to function: math.abs." ||
-		issues[0].Position.Column != len("      allow get: if math.")+1 {
-		t.Errorf("math.abs(1, 2): %+v", issues)
+	// Measured on the Rules Test API too (S1-E probe arity.mjs): the warning stands at the name.
+	for cond, at := range map[string]string{
+		"math.abs(1, 2) == 1": "math.abs",
+		"'a'.size(1) == 1":    "'a'.size",
+		"[1].size(1) == 1":    "[1].size",
+		"'a'.lower(1) == 'a'": "'a'.lower",
+		"'a'.size() == 1":     "",
+	} {
+		_, issues := compileSource(t, grantingSource(cond))
+		if at == "" {
+			if len(issues) != 0 {
+				t.Errorf("%s: %+v", cond, issues)
+			}
+			continue
+		}
+		name := at[strings.LastIndexAny(at, ".")+1:]
+		if at == "math.abs" {
+			name = at
+		}
+		if len(issues) != 1 || issues[0].Description != "Incorrect number of arguments supplied to function: "+name+"." ||
+			issues[0].Position.Column != len("      allow get: if ")+strings.LastIndex(at, ".")+2 {
+			t.Errorf("%s: %+v", cond, issues)
+		}
 	}
 }
 
@@ -141,6 +160,15 @@ func TestInvalidLiteralPatterns(t *testing.T) {
 		}
 		if !d.Allow && d.Statements[0].Message != "Invalid regular expression pattern. Pattern: (." {
 			t.Errorf("%s: %+v", cond, d.Statements)
+		}
+	}
+	// A literal past Aruma's instruction limit fails compilation in replace() too, || true or not:
+	// the limit is ours, not production's syntax.
+	huge := strings.Repeat("(a|b|c|d|e|f|g|h)", 2000)
+	for _, m := range []string{"matches('" + huge + "')", "replace('" + huge + "', 'x') == 'a' || true"} {
+		rs, issues := Compile(Firestore, File{Name: "firestore.rules", Content: grantingSource("'a'." + m)}, DefaultLimits())
+		if rs != nil || len(issues) != 1 || !strings.HasPrefix(issues[0].Description, "Regular expression is too complex to compile safely") {
+			t.Errorf("%.30s…: compiled %v: %v", m, rs != nil, issues)
 		}
 	}
 }
