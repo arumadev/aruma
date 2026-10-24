@@ -53,7 +53,7 @@ jobs:
         run: make build
 
   smoke:
-    name: SDK smoke (web, Admin Node, Admin Go, Aruma admin-auth, tamper on the libraries, Android, Admin RTDB)
+    name: SDK smoke (web, Admin Node, Admin Go, Aruma admin-auth, tamper on the libraries, Android, Admin RTDB, Admin Storage)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -72,6 +72,7 @@ jobs:
             go.sum
             test/smoke/admin-go/go.sum
             sdk/go/adminauth/go.sum
+            sdk/go/adminstorage/go.sum
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -86,7 +87,7 @@ jobs:
           cache: gradle
           cache-dependency-path: test/smoke/android/**/*.gradle.kts
       - name: Smoke tests
-        run: test/smoke/run.sh web admin-node admin-go admin-auth-node admin-auth-go tamper-libs android admin-node-rtdb admin-go-rtdb
+        run: test/smoke/run.sh web admin-node admin-go admin-auth-node admin-auth-go tamper-libs android admin-node-rtdb admin-go-rtdb admin-node-storage admin-go-storage
 
   web-auth:
     name: Web Auth e2e (firebase 11, 12, 13; emulator and production modes)

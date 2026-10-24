@@ -3,7 +3,7 @@
 # Aruma server generates, with all network access blocked.
 #
 #   test/smoke/run.sh [web|admin-node|admin-go|admin-auth-node|admin-auth-go|tamper-libs|android|ios|flutter|flutter-ios
-#                      |admin-node-rtdb|admin-go-rtdb ...]
+#                      |admin-node-rtdb|admin-go-rtdb|admin-node-storage|admin-go-storage ...]
 #
 # admin-auth-node and admin-auth-go run the Aruma verification libraries' suites (sdk/), which
 # start their own live server and use the official firebase-admin beside them (AC-A5, AC-A10..14,
@@ -16,6 +16,13 @@
 # ARUMA_SMOKE_ADDR and ARUMA_SMOKE_TLS_ADDR set the server's and the front's addresses (default:
 # any free loopback port), ARUMA_SMOKE_DB_PREFIX the throwaway database's prefix. The Python
 # Admin SDK is not covered: see docs/compat/rtdb-v0.2.md.
+#
+# The -storage targets run the Aruma Admin Storage packages (sdk/node/admin-storage,
+# sdk/go/adminstorage): their own suites, then the official @google-cloud/storage and
+# cloud.google.com/go/storage through them against a live Aruma with Cloud Storage, once on
+# loopback and once behind genconfig's TLS front at https://storage.aruma.test, with every
+# connection beyond loopback refused. ARUMA_SMOKE_ADDR, ARUMA_SMOKE_TLS_ADDR and
+# ARUMA_SMOKE_DB_PREFIX apply to them as well.
 #
 # Without arguments it runs every target this machine can run. It needs the local Postgres
 # (ARUMA_TEST_DATABASE_URL), Node, Go and, per target, a JDK 17+ and the Android SDK, Xcode with an
@@ -58,6 +65,18 @@ run_admin_node_rtdb() {
 run_admin_go_rtdb() {
   log "admin-go-rtdb: firebase-admin-go Realtime Database (REST) through TLS"
   (cd "$smoke/admin-go" && go test -count=1 ./rtdb/)
+}
+
+run_admin_node_storage() {
+  log "admin-node-storage: @aruma/admin-storage with @google-cloud/storage, loopback and TLS"
+  (cd "$root/sdk/node/admin-storage" && npm ci --no-audit --no-fund --silent && npm test)
+  (cd "$smoke/admin-node" && npm ci --no-audit --no-fund --silent && npm run --silent test:storage)
+}
+
+run_admin_go_storage() {
+  log "admin-go-storage: adminstorage with cloud.google.com/go/storage, loopback and TLS"
+  (cd "$root/sdk/go/adminstorage" && go test -count=1 ./...)
+  (cd "$smoke/admin-go" && go test -count=1 ./storage/)
 }
 
 run_admin_auth_node() {
@@ -145,16 +164,17 @@ run_flutter_ios() {
 
 targets=("$@")
 if [[ ${#targets[@]} -eq 0 ]]; then
-  targets=(web admin-node admin-go admin-auth-node admin-auth-go tamper-libs admin-node-rtdb admin-go-rtdb)
+  targets=(web admin-node admin-go admin-auth-node admin-auth-go tamper-libs admin-node-rtdb admin-go-rtdb
+    admin-node-storage admin-go-storage)
   command -v java >/dev/null && [[ -d "${ANDROID_HOME:-$HOME/Library/Android/sdk}" ]] && targets+=(android)
   command -v xcodebuild >/dev/null && targets+=(ios)
   command -v flutter >/dev/null && targets+=(flutter)
   command -v flutter >/dev/null && command -v xcodebuild >/dev/null && targets+=(flutter-ios)
 fi
 
-# The -rtdb targets start servers of their own.
+# The -rtdb and -storage targets start servers of their own.
 for t in "${targets[@]}"; do
-  if [[ $t != *-rtdb ]]; then
+  if [[ $t != *-rtdb && $t != *-storage ]]; then
     generate
     break
   fi

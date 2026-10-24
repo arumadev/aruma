@@ -1,0 +1,40 @@
+{
+  "name": "@aruma/admin-storage",
+  "version": "0.1.0",
+  "description": "Reach Aruma Cloud Storage from a Node.js server with the official @google-cloud/storage client, and build download URLs on Aruma.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  },
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "tsc -p tsconfig.json && node --test --test-concurrency=1 test/*.test.js",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^8.4.0",
+    "google-auth-library": "^11.0.0"
+  },
+  "peerDependencies": {
+    "firebase-admin": "^14"
+  },
+  "devDependencies": {
+    "firebase-admin": "^14.5.0",
+    "typescript": "^5.9.3"
+  }
+}
