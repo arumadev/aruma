@@ -30,7 +30,8 @@ func TestGetBucket(t *testing.T) {
 		b, raw := decodeBucket(t, rec.Body.Bytes())
 		if b.Kind != "storage#bucket" || b.ID != bucketA || b.Name != bucketA || b.ProjectNumber != "482915736204" ||
 			b.Metageneration != "1" || b.ETag != "CAE=" || b.StorageClass != "STANDARD" || b.Location == "" ||
-			b.SelfLink != baseURL+"/storage/v1/b/"+bucketA || b.TimeCreated == "" || b.CORS != nil {
+			b.SelfLink != baseURL+"/storage/v1/b/"+bucketA || b.TimeCreated != "2026-10-01T12:00:00.000Z" ||
+			b.Updated != b.TimeCreated || b.CORS != nil {
 			t.Errorf("bucket %s", rec.Body)
 		}
 		for _, k := range []string{"projectNumber", "metageneration"} {

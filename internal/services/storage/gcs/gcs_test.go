@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/platform/authn"
@@ -138,15 +139,18 @@ func gcsErr(t *testing.T, rec *httptest.ResponseRecorder, status int, reason str
 	return body.Error
 }
 
+// created is when the two projects were made.
+var created = time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
+
 // testProjects is the control plane of the two projects.
 type testProjects struct{}
 
 func (testProjects) ProjectForBucket(ctx context.Context, bucket string) (tcore.Project, error) {
 	switch bucket {
 	case bucketA:
-		return tcore.Project{Number: projectA, ID: "alpha-app", State: "ACTIVE", StorageBucket: bucketA}, nil
+		return tcore.Project{Number: projectA, ID: "alpha-app", State: "ACTIVE", StorageBucket: bucketA, CreatedAt: created}, nil
 	case bucketB:
-		return tcore.Project{Number: projectB, ID: "bravo-app", State: "ACTIVE", StorageBucket: bucketB}, nil
+		return tcore.Project{Number: projectB, ID: "bravo-app", State: "ACTIVE", StorageBucket: bucketB, CreatedAt: created}, nil
 	}
 	return tcore.Project{}, apierr.New(apierr.NotFound, "Requested entity was not found.")
 }
