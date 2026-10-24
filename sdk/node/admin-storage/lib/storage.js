@@ -13,12 +13,107 @@
 //   (resumable-upload.js:124-147).
 // - authClient is a google-auth-library OAuth2Client whose tokens come from Aruma's token
 //   endpoint (token.js), not from gtoken, which asks Google.
+// - The authorization fails closed outside the Aruma origin (OriginGuard). The resumable upload
+//   picks its authorized client once and then sends to whatever URL the start's Location names
+//   (resumable-upload.js:123-147, :805, :838), and gaxios follows redirects with the headers it
+//   was given, so a Location or a redirect to another origin, port or scheme would carry the
+//   Bearer there.
 
 import { Storage } from '@google-cloud/storage';
-import { OAuth2Client } from 'google-auth-library';
+import { GoogleAuth, OAuth2Client } from 'google-auth-library';
 import { FirebaseStorageError } from 'firebase-admin/storage';
 import { argumentError } from './config.js';
 import { TokenSource } from './token.js';
+
+/** Throws unless url is on origin. */
+function requireOrigin(origin, url) {
+  let got = null;
+  try {
+    got = new URL(String(url)).origin;
+  } catch {
+    // not an absolute URL: refused below
+  }
+  if (got !== origin) {
+    throw argumentError(`Refusing to send the Aruma access token to ${got ?? url}: this client talks to ${origin} only. ` +
+      'An upload session on another origin means the url is not the server\'s public_url.');
+  }
+}
+
+/**
+ * ArumaAuthClient takes its tokens from Aruma, sends only to the Aruma origin, and follows no
+ * redirect: maxRedirects 0 on each request (gaxios 7 reads it from the request's own options,
+ * not from its defaults), so node-fetch rejects a 3xx with a Location instead of following it.
+ * The 308 of a resumable chunk has none. The resumable upload sends through request().
+ */
+class ArumaAuthClient extends OAuth2Client {
+  #origin;
+
+  constructor(origin, tokens) {
+    super({ universeDomain: new URL(origin).hostname });
+    this.#origin = origin;
+    this.refreshHandler = () => tokens.get();
+  }
+
+  request(opts, callback) {
+    try {
+      requireOrigin(this.#origin, opts?.url);
+    } catch (err) {
+      if (callback) {
+        callback(err);
+        return undefined;
+      }
+      return Promise.reject(err);
+    }
+    return super.request({ ...opts, maxRedirects: 0 }, callback);
+  }
+
+  async getRequestHeaders(url) {
+    if (url !== undefined) requireOrigin(this.#origin, url);
+    return super.getRequestHeaders(url);
+  }
+}
+
+/**
+ * OriginGuard is the GoogleAuth @google-cloud/storage uses as it is (nodejs-common/util.js:388).
+ * Its JSON requests are authorized with authorizeRequest and sent by teeny-request, to URLs made
+ * from apiEndpoint; the resumable upload calls request(). Signing (getSignedUrl,
+ * generateSignedPostPolicyV2/V4) goes through getCredentials and sign, which would ask the GCE
+ * metadata server and iamcredentials.googleapis.com: signed URLs are out of scope in v0.3
+ * (ADR-023), so both refuse.
+ */
+class OriginGuard extends GoogleAuth {
+  #origin;
+
+  constructor(origin, client, projectId) {
+    super({ authClient: client, universeDomain: client.universeDomain, ...(projectId ? { projectId } : {}) });
+    this.#origin = origin;
+  }
+
+  async authorizeRequest(opts = {}) {
+    requireOrigin(this.#origin, opts.uri ?? opts.url);
+    return super.authorizeRequest(opts);
+  }
+
+  async request(opts) {
+    requireOrigin(this.#origin, opts?.url);
+    return super.request(opts);
+  }
+
+  async getCredentials() {
+    throw signedURLsUnsupported();
+  }
+
+  async sign() {
+    throw signedURLsUnsupported();
+  }
+}
+
+function signedURLsUnsupported() {
+  return new FirebaseStorageError({
+    code: 'invalid-argument',
+    message: 'Signed URLs are not supported in Aruma v0.3: use getDownloadURL() for a link, or read and write through the client.',
+  });
+}
 
 export class ArumaStorage extends Storage {
   #app;
@@ -32,8 +127,7 @@ export class ArumaStorage extends Storage {
   constructor(app, { url, projectId, key, fetch }) {
     const universeDomain = new URL(url).hostname;
     const tokens = new TokenSource({ url, key, fetch });
-    const authClient = new OAuth2Client({ universeDomain });
-    authClient.refreshHandler = () => tokens.get();
+    const authClient = new OriginGuard(url, new ArumaAuthClient(url, tokens), projectId);
     super({
       ...(projectId ? { projectId } : {}),
       apiEndpoint: url,
@@ -41,6 +135,11 @@ export class ArumaStorage extends Storage {
       authClient,
       useAuthWithCustomEndpoint: true,
     });
+    if (this.authClient !== authClient) {
+      // A second copy of google-auth-library would wrap the guard instead of using it.
+      throw argumentError('@google-cloud/storage did not take the Aruma auth client: install one google-auth-library ^11 ' +
+        '(npm dedupe).');
+    }
     this.#app = app;
     this.#url = url;
     this.#defaultBucket = app?.options?.storageBucket;

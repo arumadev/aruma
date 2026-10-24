@@ -42,7 +42,12 @@ npm install @aruma/admin-storage firebase-admin@^14
 | Default bucket | the app's `storageBucket` |
 
 The server URL is the server's `public_url`: an origin without a path, `https` (plain `http`
-only on loopback), never a Google address. Upload sessions come back on that origin.
+only on loopback), never a Google address. The client sends its token to that origin only: a
+request to any other origin, port or scheme fails before it is sent, a resumable session whose
+URL is elsewhere included, and uploads follow no redirect. One limit remains: the JSON
+requests (metadata, list, copy, delete, downloads) are sent by `teeny-request`, which gives no
+way to turn redirects off, so a redirect that the Aruma origin itself answered to another port
+of the same host would carry the token (Aruma answers none on these paths).
 
 **How it reaches Aruma.** The client's `apiEndpoint` is the Aruma origin with
 `useAuthWithCustomEndpoint`, and its `universeDomain` is the Aruma host: without it, `save()` and
@@ -60,6 +65,9 @@ access token to `firebasestorage.googleapis.com`. It reads the file's Firebase m
 Aruma, which gives a file without a download token its first one, and returns
 `<server>/v0/b/<bucket>/o/<encodeURIComponent(name)>?alt=media&token=<token>`, the form every
 platform's SDK resolves.
+
+**Signed URLs are not supported** in Aruma v0.3: `getSignedUrl()` and the signed post policies
+throw. Use `getDownloadURL()` for a link.
 
 ## Tests
 
@@ -97,7 +105,10 @@ Aruma غير تابع لـ Google ولا معتمد منها. Firebase علام�
   `GOOGLE_APPLICATION_CREDENTIALS`.
 - **كيف تصل إلى Aruma:** `apiEndpoint` أصل Aruma مع `useAuthWithCustomEndpoint`، و`universeDomain`
   مضيف Aruma. بدونه يبدأ `save()` جلسة الرفع المتقطع ويرسل قطعها بلا اعتماد. والرمز من نقطة رموز
-  Aruma لا من Google، و`universe_domain` في ملف المفتاح لا يغيّر شيئًا.
+  Aruma لا من Google، و`universe_domain` في ملف المفتاح لا يغيّر شيئًا. والرمز لا يُرسل إلا إلى ذلك الأصل:
+  أي طلب إلى أصل أو منفذ أو بروتوكول آخر يفشل قبل إرساله، ومنه جلسة رفع رابطها في مكان آخر، ولا
+  تُتبع إعادة توجيه.
+- **الروابط الموقّعة غير مدعومة** في v0.3: `getSignedUrl()` وسياسات الرفع الموقّعة ترمي خطأ.
 - **حارس المحاكي:** ترفض `getStorage()` البدء إن وُجد `STORAGE_EMULATOR_HOST` أو
   `FIREBASE_STORAGE_EMULATOR_HOST`، بلا استثناء.
 - **`getDownloadURL`** من هذه الحزمة وحدها: نسخة `firebase-admin/storage` ترسل رمز Aruma إلى
