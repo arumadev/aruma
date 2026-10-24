@@ -238,6 +238,38 @@ func TestIDTokenClaimNumbers(t *testing.T) {
 	if c.Token["role"] != "admin" {
 		t.Fatalf("token claims %v", c.Token)
 	}
+	// A session cookie made from the token signs the same claims again, numbers unrounded.
+	cookiePayload, err := base64.RawURLEncoding.DecodeString(strings.Split(e.cookie(t, tok), ".")[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{`"n_big":9007199254740993`, `"big":-9007199254740993`, `[3,9007199254740995]`} {
+		if !strings.Contains(string(cookiePayload), want) {
+			t.Errorf("cookie payload %s: no %s", cookiePayload, want)
+		}
+	}
+	// A number past the double range is refused where claims enter.
+	huge := json.RawMessage(`{"m":{"x":[1e400]}}`)
+	if _, err := e.s.UpdateUser(ctx, e.a, AdminUser{UID: "u1", CustomClaims: &huge}); !errors.Is(err, ErrInvalidClaims) {
+		t.Fatalf("claims with 1e400: %v", err)
+	}
+}
+
+// validClaims, which setCustomUserClaims and custom tokens go through, takes only numbers a
+// double holds: 1e400 would verify in a token and break what reads its claims.
+func TestValidClaimsNumbers(t *testing.T) {
+	for raw, ok := range map[string]bool{
+		`{"a":1,"b":2.0,"c":9007199254740993,"d":1e308,"e":1e-400,"f":-0.5}`: true,
+		`{"a":{"b":[1,{"c":2.5}]}}`: true,
+		`{"a":1e400}`:               false,
+		`{"a":-1e400}`:              false,
+		`{"a":{"b":[1,1e309]}}`:     false,
+	} {
+		_, err := validClaims(json.RawMessage(raw))
+		if (err == nil) != ok || err != nil && !errors.Is(err, ErrInvalidClaims) {
+			t.Errorf("%s: %v, want ok %v", raw, err, ok)
+		}
+	}
 }
 
 // A normal rotation keeps the retired key's tokens valid for their lifetime; an emergency one

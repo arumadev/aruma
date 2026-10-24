@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math"
 	"net/mail"
 	"strconv"
 	"strings"
@@ -130,7 +131,10 @@ var reservedClaims = map[string]bool{
 	"sub": true, "firebase": true, "user_id": true,
 }
 
-// validClaims checks a custom claims object: JSON object, at most 1000 bytes, no reserved names.
+// validClaims checks a custom claims object: JSON object, at most 1000 bytes, no reserved names,
+// and every number a finite double. A number past the double range (1e400) would verify in an
+// ID token but break what reads its claims (session cookies, RTDB auth, the rules' auth.token),
+// so it is refused where it enters.
 func validClaims(raw json.RawMessage) (json.RawMessage, error) {
 	if len(raw) == 0 || string(raw) == "null" || string(raw) == "{}" {
 		return nil, nil
@@ -147,8 +151,34 @@ func validClaims(raw json.RawMessage) (json.RawMessage, error) {
 			return nil, failf("FORBIDDEN_CLAIM", k)
 		}
 	}
+	var all any
+	if decodeNumbers(raw, &all) != nil || !finiteNumbers(all) {
+		return nil, ErrInvalidClaims
+	}
 	compact, _ := json.Marshal(m)
 	return compact, nil
+}
+
+// finiteNumbers reports whether every number in a decoded JSON value is a finite double.
+func finiteNumbers(v any) bool {
+	switch x := v.(type) {
+	case json.Number:
+		f, err := strconv.ParseFloat(string(x), 64)
+		return err == nil && !math.IsInf(f, 0)
+	case map[string]any:
+		for _, e := range x {
+			if !finiteNumbers(e) {
+				return false
+			}
+		}
+	case []any:
+		for _, e := range x {
+			if !finiteNumbers(e) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // checkPassword applies the project's password policy.
