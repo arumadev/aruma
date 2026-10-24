@@ -160,7 +160,8 @@ path). The app's code does not change.
 | SvelteKit (any Vite SSR) | the same line: it also sets `ssr.noExternal` | Kit 3.1.0, adapter-node: the server and the client |
 | webpack | `arumaStorage.webpack({ url })` (`@aruma/web/unplugin`) | 5.112.2 |
 | esbuild | `arumaStorage.esbuild({ url })` | 0.28.2 |
-| Rollup, Rolldown, Rspack | `arumaStorage.rollup / .rolldown / .rspack({ url })` | not measured (the same hooks as Vite and webpack) |
+| Rollup, Rspack | `arumaStorage.rollup({ url })`, `arumaStorage.rspack({ url })` | Rollup 4.65.0, Rspack 1.7.12 |
+| Rolldown | `arumaStorage.rolldown({ url })` | inside Vite 8 only |
 | Next.js | `export default withArumaStorage(config, { url })` (`@aruma/web/next`) | 16.4.3: `next build --webpack`, `next build` and `next dev` (Turbopack), server components and client |
 | Expo, React Native (Metro) | `module.exports = withArumaStorage(getDefaultConfig(__dirname), { url })` (`@aruma/web/metro`) | Expo 58.0.19 (Metro 0.87.1): the web export, and the Android bundle |
 | Flutter web | `npx aruma-web flutter-web --url <url>` once in the project, then `flutter build web` | Flutter 3.44.2, firebase_core_web 4.1.0 (JS SDK 13.1.0), firebase_storage 14.0.1 |
@@ -306,7 +307,8 @@ install({ url: 'https://aruma.example.com' });
 | SvelteKit (وأي SSR على Vite) | السطر نفسه، ويضبط `ssr.noExternal` | Kit 3.1.0 مع adapter-node: الخادم والمتصفح |
 | webpack | `arumaStorage.webpack({ url })` من `@aruma/web/unplugin` | 5.112.2 |
 | esbuild | `arumaStorage.esbuild({ url })` | 0.28.2 |
-| Rollup وRolldown وRspack | `arumaStorage.rollup` و`.rolldown` و`.rspack` | لم يُقَس (الخطافات نفسها) |
+| Rollup وRspack | `arumaStorage.rollup({ url })` و`arumaStorage.rspack({ url })` | Rollup 4.65.0 وRspack 1.7.12 |
+| Rolldown | `arumaStorage.rolldown({ url })` | داخل Vite 8 وحده |
 | Next.js | `withArumaStorage(config, { url })` من `@aruma/web/next` | 16.4.3: `next build --webpack` و`next build` و`next dev` (Turbopack)، ومكوّنات الخادم والمتصفح |
 | Expo وReact Native (Metro) | `withArumaStorage(getDefaultConfig(__dirname), { url })` من `@aruma/web/metro` | Expo 58.0.19 (Metro 0.87.1): تصدير الويب وحزمة Android |
 | Flutter web | `npx aruma-web flutter-web --url <url>` مرة في المشروع، ثم `flutter build web` | Flutter 3.44.2، وfirebase_core_web 4.1.0 (JS 13.1.0)، وfirebase_storage 14.0.1 |

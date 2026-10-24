@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs the web Storage end-to-end tests (ADR-022 §16.1): the official firebase package in production
 # mode, with Storage's host rewritten at build time by @aruma/web, built with the real npm Vite 8,
-# webpack and esbuild (build.mjs, which also checks the builds that must fail) and as a SvelteKit
+# webpack, esbuild, Rollup and Rspack (build.mjs, which also checks the builds that must fail) and as a SvelteKit
 # app, then driven by Playwright in Chromium against a real Aruma server with Storage
 # (server/main.go), with every request off this machine blocked.
 #
@@ -30,7 +30,7 @@ cd "$here"
 npm ci --no-audit --no-fund --silent
 npx playwright install ${CI:+--with-deps} chromium >/dev/null
 
-log "builds: Vite 8, webpack and esbuild, and the builds that must fail"
+log "builds: Vite 8, webpack, esbuild, Rollup, Rspack and the fallback, and the builds that must fail"
 node build.mjs
 
 if [[ "${ARUMA_E2E_SSR:-on}" != off ]]; then
@@ -44,8 +44,8 @@ if [[ "${ARUMA_E2E_SSR:-on}" != off ]]; then
   wait_http "$ARUMA_E2E_SSR_URL/"
 fi
 
-log "Playwright: Vite 8, webpack, esbuild, the fallback${ARUMA_E2E_SSR_URL:+, SvelteKit}"
-ARUMA_E2E_APPS=vite,webpack,esbuild,fallback npx playwright test "$@"
+log "Playwright: Vite 8, webpack, esbuild, Rollup, Rspack, the fallback${ARUMA_E2E_SSR_URL:+, SvelteKit}"
+ARUMA_E2E_APPS=vite,webpack,esbuild,rollup,rspack,fallback npx playwright test "$@"
 if [[ -n "${ARUMA_E2E_SSR_URL:-}" ]] && grep -q BLOCK "$gen/ssr-netguard.log" 2>/dev/null; then
   echo "the SvelteKit server tried to leave the machine:" >&2
   grep BLOCK "$gen/ssr-netguard.log" >&2

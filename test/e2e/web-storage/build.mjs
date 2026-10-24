@@ -1,7 +1,7 @@
 // Builds the suite's app with each bundler's real npm package, from its config file (the one line
 // of @aruma/web in each), one at a time, then the builds that must fail:
 //
-//   node build.mjs [vite|webpack|esbuild|fallback …]     (default: all four)
+//   node build.mjs [vite|webpack|esbuild|rollup|rspack|fallback …]     (default: all)
 //
 // - dist/<bundler>/: the app, served under /<bundler>/ by serve.mjs.
 // - dist/fallback/: src/fallback.js bundled by esbuild with no plugin: the run-time fallback.
@@ -57,6 +57,31 @@ const builders = {
       ssr: { external: ['firebase', '@firebase/storage'] },
     });
   },
+  async rollup(entry, outDir) {
+    const { rollup } = await import('rollup');
+    const config = await fresh('rollup.config.mjs');
+    if (entry) Object.assign(config, { input: entry, output: { ...config.output, dir: outDir } });
+    const bundle = await rollup({ ...config, logLevel: 'silent' });
+    try {
+      await bundle.write(config.output);
+    } finally {
+      await bundle.close();
+    }
+    if (!entry) writeFileSync(`${here}dist/rollup/index.html`, html('main.js'));
+  },
+  async rspack(entry, outDir) {
+    const { rspack } = await import('@rspack/core');
+    const config = await fresh('rspack.config.mjs');
+    if (entry) Object.assign(config, { entry, output: { ...config.output, path: outDir } });
+    await new Promise((resolve, reject) =>
+      rspack(config, (err, stats) => {
+        if (err) return reject(err);
+        if (stats.hasErrors()) return reject(new Error(stats.toJson({ all: false, errors: true }).errors.map((e) => e.message).join('\n')));
+        resolve();
+      }),
+    );
+    if (!entry) writeFileSync(`${config.output.path}/index.html`, html('main.js'));
+  },
   // Only as a build that must fail: webpack with the Storage SDK in `externals`.
   async 'webpack-externals'(entry, outDir) {
     const config = await fresh('webpack.config.mjs');
@@ -83,7 +108,7 @@ const failures = [
   ['externals', './src/ssr.js', /is external to this bundle/, 'webpack-externals'],
 ];
 
-const names = process.argv.slice(2).length ? process.argv.slice(2) : ['vite', 'webpack', 'esbuild', 'fallback'];
+const names = process.argv.slice(2).length ? process.argv.slice(2) : ['vite', 'webpack', 'esbuild', 'rollup', 'rspack', 'fallback'];
 let bad = 0;
 for (const name of names) {
   mkdirSync(`${here}dist`, { recursive: true });

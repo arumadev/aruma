@@ -179,7 +179,7 @@ firebase-tools 15.34.0 نفسها (مثبّتة في `test/acceptance/testdata/f
 
 | الأداة | النتيجة | ملاحظة |
 |---|---|---|
-| Vite 8.3.5، webpack 5.112.2، esbuild 0.28.2 | 11/11 | `run.sh`. والبناء يفشل برسالة `@aruma/web` حين لا وحدة Storage، وحين يُستورد SDK من gstatic، في الثلاثة |
+| Vite 8.3.5، webpack 5.112.2، esbuild 0.28.2، Rollup 4.65.0، Rspack 1.7.12 | 11/11 | `run.sh`. والبناء يفشل برسالة `@aruma/web` حين لا وحدة Storage وحين يُستورد SDK من gstatic في الخمسة، وحين يُترك SDK خارج الحزمة (`ssr.external` في Vite، و`externals` في webpack) |
 | SvelteKit 3.1.0 (adapter-node) | الخادم والمتصفح | الخادم تحت netguard يرسم الرابط الموحّد ولا يتصل إلا بـ Aruma |
 | Vite 5.4.21 و6.4.5 و7.3.7 | `vite build` وخادم التطوير: 11/11 | `optimizeDeps.esbuildOptions.plugins` يعمل، فلا رفض لما قبل Vite 8 في Storage |
 | Next.js 16.4.3 | webpack وTurbopack (`next build` و`next dev`): 11/11، والمكوّن على الخادم يرسم الرابط الموحّد | محمّل `turbopack.rules` بشرط المسار يصل إلى `node_modules`. ولا نهاية بناء في Turbopack: لا يفشل بناء لم يصل إلى المكتبة |
@@ -187,5 +187,5 @@ firebase-tools 15.34.0 نفسها (مثبّتة في `test/acceptance/testdata/f
 | Flutter 3.44.2 web | 11/11 من Dart | `firebase-storage.js` 13.1.0 من npm مبدَّلًا مرة واحدة، و`flutterfire_ignore_scripts`. ولم يُطلب `firebase-storage.js` من gstatic |
 | الاحتياط (`installStorage` و`useArumaStorage`) | 11/11 | من حزمة تبقي نطاق Google |
 
-- **لم يُقَس:** Rollup وRolldown وRspack منفردة (الخطافات نفسها)، وwebpack في وضع المراقبة، وFirefox وWebKit، وmetro على جهاز. والبناء من npm وحده: لم يُقارن `firebase-storage.js` في npm بنسخة gstatic بايتًا ببايت (لا طلب إلى Google).
+- **لم يُقَس:** Rolldown منفردًا (قيس داخل Vite 8)، وwebpack في وضع المراقبة، وFirefox وWebKit، وmetro على جهاز. والبناء من npm وحده: لم يُقارن `firebase-storage.js` في npm بنسخة gstatic بايتًا ببايت (لا طلب إلى Google).
 - **قيود مقصودة:** عنوان Aruma لـ Storage جذر النطاق (بلا مسار)، وبناء الخادم لا يفشل لغياب Storage، وتطبيق Flutter web التجريبي يوجّه خطوط المحرك بعيدًا عن `fonts.gstatic.com` (ليس من Storage).
