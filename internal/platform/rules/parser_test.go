@@ -394,7 +394,7 @@ func TestParseErrors(t *testing.T) {
 			"L5:30 An unsupported type identifier was used with the 'is' operator. Received foo. Expected one of bool,bytes,constraint,duration,float,int,latlng,list,vector,set,number,map,string,timestamp,path,map_diff", false},
 		{"reserved word as a method", syntaxInMatch("allow read: if request.x.while() == 1;"), "L5:37 Unexpected '('.", true},
 		{"reserved word as a variable", syntaxInMatch("allow read: if var == 1;"), "L5:22 Missing conditional expression after 'if'.\nL5:22 Unexpected 'var'.", true},
-		{"rules_version as a field", syntaxInMatch("allow read: if a.rules_version;"), "L5:24 Unexpected 'rules_version'.", true},
+		{"rules_version as a field", syntaxInMatch("allow read: if a.rules_version;"), "L5:23 Unexpected '.'.\nL5:24 Unexpected 'rules_version'.", true},
 		{"at sign", syntaxInMatch("allow read: if @;"), "L5:22 Missing conditional expression after 'if'.\nL5:22 Unexpected '@'.", true},
 		// 4/2 is the number 4 and the path segment /2: a path where a declaration may start.
 		{"division without spaces", syntaxInMatch("allow read: if 4/2 == 2;"), "L5:23 Missing 'match' keyword before path.\nL5:26 mismatched input '==' expecting {'{', '/', PATH_SEGMENT}", true},
@@ -796,6 +796,40 @@ func TestParseAccessOnParentheses(t *testing.T) {
 		}
 		if text(e) != c.outer || text(inner) != c.inner {
 			t.Errorf("%s: outer %q, inner %q", c.cond, text(e), text(inner))
+		}
+	}
+}
+
+// Errors in map literals inside parentheses, as production lists them (S1-A review round 2):
+// the statement fails at the token, and the } after it is taken for the end of the block. An
+// error in a map compared with a map is reported at the == too. Where the lines after the first
+// still differ, production's are given.
+func TestParseMapErrors(t *testing.T) {
+	for _, c := range []struct{ cond, want, production string }{
+		{"({'k':1e0})", "L5:29 Unexpected 'e0'.\nL5:32 Unexpected ')'.\nL8:1 Unexpected '}'.", ""},
+		{"{} == {'k':1e0}", "L5:34 Unexpected 'e0'.\nL5:37 Unexpected ';'.\nL8:1 Unexpected '}'.", ""},
+		{"(1 == {'k':1e0})", "L5:34 Unexpected 'e0'.\nL5:37 Unexpected ')'.\nL8:1 Unexpected '}'.", ""},
+		{"(f({'k':1e0}))", "L5:31 Unexpected 'e0'.\nL5:34 Unexpected ')'.\nL8:1 Unexpected '}'.", ""},
+		{"(true && {'k':1e0})", "L5:37 Unexpected 'e0'.\nL5:40 Unexpected ')'.\nL8:1 Unexpected '}'.", ""},
+		{"(1 == [1e0])", "L5:30 Unexpected 'e0'.", ""},
+		{"({'k':1e0} == {})", "L5:29 Unexpected 'e0'.\nL5:33 Unexpected '=='.\nL5:38 Unexpected ')'.\nL7:3 Unexpected '}'.", ""},
+		// Known differences after the first line: production takes one } more for a block.
+		{"({} == {'k':1e0})", "L5:26 Unexpected '=='.\nL5:35 Unexpected 'e0'.\nL5:38 Unexpected ')'.\nL8:1 Unexpected '}'.",
+			"L5:26 Unexpected '=='.\nL5:35 Unexpected 'e0'.\nL5:38 Unexpected ')'.\nL7:3 Unexpected '}'."},
+		{"(({'k':1.0} == {'k':1e+0}) == true)", "L5:34 Unexpected '=='.\nL5:43 Unexpected 'e'.\nL5:47 Unexpected ')'.\nL8:1 Unexpected '}'.",
+			"L5:34 Unexpected '=='.\nL5:43 Unexpected 'e'.\nL5:47 Unexpected ')'.\nL7:3 Unexpected '}'."},
+		// A field named rules_version after a map: production has three lines.
+		{"{'rules_version':1}.rules_version == 1", "L5:41 Unexpected '.'.\nL5:42 Unexpected 'rules_version'.",
+			"L5:41 Unexpected '.'.\nL5:42 Unexpected 'rules_version'.\nL8:1 Unexpected '}'."},
+		// A keyword as a method fails the statement once (hidane's receiver_function_names).
+		{"(a.import() || true) == (a.import() || true)", "L5:31 Unexpected '('.", ""},
+	} {
+		_, issues := parse("t.rules", syntaxInMatch("allow read: if "+c.cond+";"), DefaultLimits())
+		if got := syntaxIssues(issues); got != c.want {
+			t.Errorf("%s:\n got %q\nwant %q", c.cond, got, c.want)
+		}
+		if c.production != "" && strings.SplitN(c.production, "\n", 2)[0] != strings.SplitN(c.want, "\n", 2)[0] {
+			t.Errorf("%s: the first line differs from production", c.cond)
 		}
 	}
 }

@@ -1019,8 +1019,17 @@ func (p *parser) letBinding() *let {
 func (p *parser) statement(stops func(tk) bool) expr {
 	e := p.expression()
 	if p.abort {
+		// import and service after a dot are names, a.import(), not declarations that stop
+		// the skip; function after a dot does stop it, as production reports a.function() as
+		// a function without its name (hidane's receiver_function_names).
 		p.abort = false
-		p.skipUntil(stops)
+		for p.la(1) != tkEOF {
+			t := p.la(1)
+			if stops(t) && !((t == tkImport || t == tkService) && p.i > 0 && p.kind[p.i-1] == tkDot) {
+				break
+			}
+			p.i++
+		}
 	}
 	p.roots = append(p.roots, e)
 	return e
@@ -1116,7 +1125,15 @@ func (p *parser) operators(lowest int) expr {
 			x = p.isType(x)
 			continue
 		}
+		found := len(p.found)
 		y := p.operand(func() expr { return p.operators(prec + 1) })
+		_, xMap := x.(*mapExpr)
+		_, yMap := y.(*mapExpr)
+		if xMap && yMap && t == tk(tokEQ) && p.nesting > 0 && len(p.found) > found {
+			// An error in a map compared with a map inside parentheses is reported at the ==
+			// too, where ANTLR's prediction fails first (production: "({} == {'k':1e0})").
+			p.report(op.span, "Unexpected '=='.")
+		}
 		opTok := op.op
 		if t == tkIn {
 			opTok = tokIn
@@ -1240,15 +1257,25 @@ func (p *parser) postfix() expr {
 		if p.la(1) == tkDot {
 			// A field may be named by any word but rules_version; a method only by an
 			// identifier.
-			if !p.la(2).isWord() || p.la(2) == tkRulesVersion {
+			if p.la(2) == tkRulesVersion {
+				// Production reports the dot and the name, and gives the statement up.
+				p.unexpected(1)
+				p.bump()
+				p.noViable(1)
+				p.abort = true
+				return x
+			}
+			if !p.la(2).isWord() {
 				p.bump()
 				p.noViable(1)
 				return x
 			}
 			p.bump()
 			if p.la(1) != tkIdent && p.la(2) == tkLParen {
-				// ANTLR fails at the parenthesis before it matches the keyword.
+				// ANTLR fails at the parenthesis before it matches the keyword, and the
+				// statement with it (production: one "Unexpected '('." for a.import()).
 				p.noViable(2)
+				p.abort = true
 				return x
 			}
 			t := p.bump()
@@ -1430,7 +1457,17 @@ func (p *parser) entries() (keys, vals []expr) {
 		}
 		p.bump()
 	}
-	p.close(tkRBrace)
+	// No token is deleted before the }: the statement fails at the token, and the skip after
+	// it stops at the }, which production then takes for the end of the block ("({'k':1e0})"
+	// is "Unexpected 'e0'.", "Unexpected ')'." and the file's last } unexpected).
+	switch {
+	case p.abort:
+	case p.la(1) == tkRBrace:
+		p.bump()
+	default:
+		p.noViable(1)
+		p.abort = true
+	}
 	return keys, vals
 }
 
