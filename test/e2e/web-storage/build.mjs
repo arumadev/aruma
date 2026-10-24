@@ -1,15 +1,16 @@
 // Builds the suite's app with each bundler's real npm package, from its config file (the one line
 // of @aruma/web in each), one at a time, then the builds that must fail:
 //
-//   node build.mjs [vite|webpack|esbuild …]     (default: all three)
+//   node build.mjs [vite|webpack|esbuild|fallback …]     (default: all four)
 //
 // - dist/<bundler>/: the app, served under /<bundler>/ by serve.mjs.
+// - dist/fallback/: src/fallback.js bundled by esbuild with no plugin: the run-time fallback.
 // - For each bundler, src/no-storage.js (no @firebase/storage module) and src/gstatic.js (the SDK
 //   from www.gstatic.com) must fail with @aruma/web's error, not with the bundler's own.
 //
 // It prints one line per build ("ok vite", "fails as it must: webpack no-storage: …") and exits 1
 // on anything else. ARUMA_URL is the server the rewrite targets.
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
@@ -45,6 +46,16 @@ const builders = {
     await esbuild.build({ ...config, logLevel: 'silent' });
     if (!entry) writeFileSync(`${here}dist/esbuild/index.html`, html('main.js'));
   },
+  async fallback() {
+    const esbuild = await import('esbuild');
+    const config = await fresh('esbuild.config.mjs');
+    await esbuild.build({ ...config, entryPoints: ['./src/fallback.js'], outfile: 'dist/fallback/main.js', plugins: [], logLevel: 'silent' });
+    // Not rewritten: what reaches Aruma in the browser is the fallback's doing.
+    if (!readFileSync(`${here}dist/fallback/main.js`, 'utf8').includes('"firebasestorage.googleapis.com"')) {
+      throw new Error('the fallback bundle does not have Google host literal');
+    }
+    writeFileSync(`${here}dist/fallback/index.html`, html('main.js'));
+  },
 };
 
 // The builds that must fail, and the start of @aruma/web's message each must fail with.
@@ -64,7 +75,7 @@ for (const name of names) {
     bad++;
     console.log(`FAILED ${name}: ${e.message}`);
   }
-  for (const [what, entry, want] of failures) {
+  for (const [what, entry, want] of name === 'fallback' ? [] : failures) {
     try {
       await builders[name](entry, `${here}dist/fail/${name}-${what}`);
       bad++;
