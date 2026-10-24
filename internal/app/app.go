@@ -258,6 +258,11 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 	}
 	if !cfg.SecureCookies() {
 		logger.Warn("public_url is plain http on a non-loopback host: console cookies will not be Secure; put the server behind https")
+		if cfg.Storage.Enabled {
+			// Browsers send no Fetch Metadata over plain http, so media's refusal of an
+			// uploaded script loaded from the dashboard's origin never fires (ADR-022 §10.1).
+			logger.Warn("storage is enabled on plain http: browsers send no Sec-Fetch-* headers, so an uploaded file loaded as a script or style from the dashboard's origin is not refused; put the server behind https")
+		}
 	}
 	if cfg.RTDB.Enabled && cfg.RTDB.Domain == "" && cfg.PublicBaseURL().Scheme == "https" {
 		// ADR-018: ?ns= on the main host breaks the iOS, Admin Go and Admin Python SDKs.

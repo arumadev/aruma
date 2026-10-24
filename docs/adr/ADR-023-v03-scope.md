@@ -153,9 +153,9 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 
 **أُضيفت في S2-F (خدمة البايتات، ADR-022 العواقب 18):**
 
-41. **مؤقت:** `Cache-Control` على وسائط GCS بلا قيمة مخزّنة `private, max-age=0` (GCS لكائن غير عام)، فيقرؤه Go في `ReaderObjectAttrs.CacheControl`.
-42. **قيد:** تنزيل قررته القواعد يحمل `private` دائمًا (يُحذف `public` و`s-maxage`، ويُضاف `private` حين يغيب، فلا يخزّنه مخبأ مشترك ولو كان المخزّن `must-revalidate`).
-43. **مؤقت:** 304 على `If-None-Match`/`If-Modified-Since`، و`If-Range` بتاريخ يعيد الكائن كاملًا، وجسم 416 ونصه، وكائن مخزّن gzip ليس gzip يُخدم كما خُزّن.
+52. **مؤقت:** `Cache-Control` على وسائط GCS بلا قيمة مخزّنة `private, max-age=0` (GCS لكائن غير عام)، فيقرؤه Go في `ReaderObjectAttrs.CacheControl`.
+53. **قيد:** تنزيل قررته القواعد يحمل `private` دائمًا (يُحذف `public` و`s-maxage`، ويُضاف `private` حين يغيب، فلا يخزّنه مخبأ مشترك ولو كان المخزّن `must-revalidate`). و`Content-Type` مخزّن فيه فاصلة أو غير صالح يُخدم `application/octet-stream`.
+54. **مؤقت:** 304 على `If-None-Match`/`If-Modified-Since` قبل `Range`، و`If-Range` بتاريخ يعيد الكائن كاملًا، وجسم 416 ونصه، وكائن مخزّن gzip ليس gzip يُخدم كما خُزّن.
 
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 
