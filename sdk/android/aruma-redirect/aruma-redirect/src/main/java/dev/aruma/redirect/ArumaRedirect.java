@@ -13,6 +13,10 @@ import java.net.URL;
  * {@link java.net.URLStreamHandlerFactory} that rewrites the Auth hosts to the Aruma server and leaves every other URL
  * to the platform.
  *
+ * <p>Cloud Storage for Firebase goes to Aruma through the Gradle plugin {@code dev.aruma.storage}, at build time. The
+ * factory also redirects {@code firebasestorage.googleapis.com}, as a fallback for an app built without the plugin,
+ * and at install checks which of the two is in place ({@link StorageGuard}): an app with neither stops at launch.
+ *
  * <p>Normally nothing is called: {@link ArumaRedirectProvider} reads the {@code ArumaURL} meta-data at process start.
  * Apps that prefer code call {@link #install(String)} before Firebase sends its first request.
  */
@@ -23,6 +27,12 @@ public final class ArumaRedirect {
     public static final String META_ALLOW_INSECURE = "ArumaAllowInsecureURL";
     /** Boolean: log host and path of each redirected request (never query, headers or body). */
     public static final String META_LOG = "ArumaRedirectLog";
+    /**
+     * Boolean, default true: also redirect Cloud Storage's {@code firebasestorage.googleapis.com} at run time. Set it
+     * to false in an app built with {@code dev.aruma.storage} to make the plugin mandatory: without it, the app then
+     * stops at launch instead of falling back.
+     */
+    public static final String META_STORAGE_REDIRECT = "ArumaStorageRedirect";
 
     private static final String TAG = "ArumaRedirect";
 
@@ -57,10 +67,10 @@ public final class ArumaRedirect {
      * @throws ArumaRedirectException when the URL is refused or the factory cannot be installed. Nothing is installed.
      */
     public static void install(String url, boolean allowInsecure, boolean logRequests) {
-        install(new ArumaBase(url, allowInsecure, false), logRequests);
+        install(new ArumaBase(url, allowInsecure, false), logRequests, true);
     }
 
-    private static void install(ArumaBase base, boolean logRequests) {
+    private static void install(ArumaBase base, boolean logRequests, boolean storageRedirect) {
         synchronized (LOCK) {
             if (baseUrl != null) {
                 if (baseUrl.equals(base.url)) {
@@ -69,6 +79,8 @@ public final class ArumaRedirect {
                 throw new ArumaRedirectException("ArumaRedirect is already installed for " + baseUrl
                         + "; it cannot be changed to " + base.url + " in the same process");
             }
+            // Before anything is installed: a Storage that would reach Google stops the app here.
+            String storage = StorageGuard.check(storageRedirect);
             final URL context;
             try {
                 context = new URL("https://aruma.invalid/");
@@ -89,9 +101,14 @@ public final class ArumaRedirect {
                         + e.getMessage() + "). Requests would reach Google, so the app stops here. Remove the "
                         + "other factory or install ArumaRedirect from it.", e);
             }
+            AuthEndpoints.storageRedirect = storageRedirect;
             baseUrl = base.url;
+            info("installed: Firebase Auth requests go to " + base.url
+                    + (storageRedirect ? ", and so do requests to " + AuthEndpoints.STORAGE_HOST : ""));
+            if (storage != null) {
+                info(storage);
+            }
         }
-        info("installed: Firebase Auth requests go to " + base.url);
     }
 
     /**
@@ -100,10 +117,17 @@ public final class ArumaRedirect {
      * may http go to an emulator's alias of the development machine without ArumaAllowInsecureURL.
      */
     static boolean installFromValues(Object url, Object allowInsecure, Object logRequests, boolean debuggable) {
+        return installFromValues(url, allowInsecure, logRequests, null, debuggable);
+    }
+
+    /** As above, with ArumaStorageRedirect: absent is true. */
+    static boolean installFromValues(Object url, Object allowInsecure, Object logRequests, Object storageRedirect,
+            boolean debuggable) {
         if (url == null || url.toString().trim().isEmpty()) {
             return false;
         }
-        install(new ArumaBase(url.toString(), bool(allowInsecure), debuggable), bool(logRequests));
+        install(new ArumaBase(url.toString(), bool(allowInsecure), debuggable), bool(logRequests),
+                storageRedirect == null || bool(storageRedirect));
         return true;
     }
 
@@ -126,11 +150,15 @@ public final class ArumaRedirect {
     }
 
     /**
-     * SPIKE (S0-B, docs/research/storage-production-path.md), not the S6 API: also redirects
-     * {@code https://firebasestorage.googleapis.com}. Read per request, so it can be switched at any time.
+     * The S0-B spike's switch, kept for test/experiments/storage-path: the Storage redirect is now on by default
+     * ({@link #META_STORAGE_REDIRECT}), and the build-time plugin {@code dev.aruma.storage} is the production path.
+     * Read per request; this skips the launch check.
+     *
+     * @deprecated use the manifest's {@code ArumaStorageRedirect}, or the Gradle plugin.
      */
+    @Deprecated
     public static void setStorageSpike(boolean on) {
-        AuthEndpoints.storageSpike = on;
+        AuthEndpoints.storageRedirect = on;
     }
 
     /** Test hook: forget the installed state and swap the installer. */
@@ -138,6 +166,7 @@ public final class ArumaRedirect {
         synchronized (LOCK) {
             baseUrl = null;
             installer = replacement;
+            AuthEndpoints.storageRedirect = true;
         }
     }
 

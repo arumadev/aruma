@@ -14,7 +14,8 @@ import android.os.Bundle;
 /**
  * Reads {@code ArumaURL} from the app manifest and installs the redirect before {@code Application.onCreate}
  * and before FirebaseInitProvider (see {@code android:initOrder} in this library's manifest). A provider that throws
- * from {@code onCreate} stops the app at launch, which is the intent when ArumaURL is set but unusable.
+ * from {@code onCreate} stops the app at launch, which is the intent when ArumaURL is set but unusable, and when
+ * Cloud Storage would reach Google ({@link StorageGuard}).
  */
 public final class ArumaRedirectProvider extends ContentProvider {
     @Override
@@ -30,7 +31,8 @@ public final class ArumaRedirectProvider extends ContentProvider {
         if (meta != null) {
             boolean debuggable = (info.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
             ArumaRedirect.installFromValues(meta.get(ArumaRedirect.META_URL),
-                    meta.get(ArumaRedirect.META_ALLOW_INSECURE), meta.get(ArumaRedirect.META_LOG), debuggable);
+                    meta.get(ArumaRedirect.META_ALLOW_INSECURE), meta.get(ArumaRedirect.META_LOG),
+                    meta.get(ArumaRedirect.META_STORAGE_REDIRECT), debuggable);
         }
         return true;
     }
