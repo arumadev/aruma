@@ -1,0 +1,146 @@
+name: ios-storage
+
+# Cloud Storage end to end on an iOS simulator, on the production path of ADR-022 §16.3-16.4:
+#   test/e2e/ios-storage/run.sh       the official FirebaseStorage and FirebaseAuth (Swift), the
+#                                     patched mirror through set-mirror, StorageE2ETests.
+#   test/e2e/flutter-storage/run.sh   the official firebase_storage and firebase_auth (Flutter) on
+#                                     the same mirror, the app's scenario.
+# Both run here so that no one has to run a simulator on their own Mac. On pull requests that touch
+# what they test, on main for the same paths, and by hand. The repository is public: GitHub's macOS
+# runners cost no minutes. The same two suites run in Codemagic (codemagic.yaml, ios-storage).
+#
+# The network guard: test/ci/egress-guard.sh (iptables) is Linux only and does not apply on macOS.
+# Each suite keeps its own guard, which is the proof here: LoopbackGuard (a URLProtocol refusing
+# every URLSession request off this machine that ArumaRedirect does not take) and FetcherLog in the
+# Swift tests; in the Flutter app guard.dart (IOOverrides on every Dart socket) and the e2e plugin's
+# URLProtocol. Both run.sh also sample the app's sockets with lsof (a second look, not proof).
+on:
+  pull_request:
+    paths:
+      - sdk/ios/**
+      - sdk/flutter/**
+      - test/e2e/ios-storage/**
+      - test/e2e/flutter-storage/**
+      - test/e2e/server.sh
+      - internal/services/storage/**
+      - .github/workflows/ios-storage.yml
+  push:
+    branches: [main]
+    paths:
+      - sdk/ios/**
+      - sdk/flutter/**
+      - test/e2e/ios-storage/**
+      - test/e2e/flutter-storage/**
+      - test/e2e/server.sh
+      - internal/services/storage/**
+      - .github/workflows/ios-storage.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-storage-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ARUMA_TEST_DATABASE_URL: postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+  # One mirror for both suites (its last path component must stay firebase-ios-sdk).
+  ARUMA_MIRROR: ${{ github.workspace }}/.cache/mirror/firebase-ios-sdk.git
+
+jobs:
+  ios-storage:
+    name: iOS Storage e2e (Swift and Flutter, simulator, production mode)
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - name: Xcode 16.4
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.4.app
+          xcodebuild -version
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: 3.44.2
+          channel: stable
+          cache: true
+      - name: PostgreSQL 18
+        run: |
+          brew install postgresql@18
+          PG=$(brew --prefix postgresql@18)/bin
+          "$PG/initdb" -D "$RUNNER_TEMP/pgdata" -U postgres --auth=trust >/dev/null
+          "$PG/pg_ctl" -D "$RUNNER_TEMP/pgdata" -l "$RUNNER_TEMP/pg.log" -o "-p 5432 -k $RUNNER_TEMP" -w start
+          "$PG/psql" "$ARUMA_TEST_DATABASE_URL" -tAc 'select version()'
+
+      # The mirror is reproducible and pinned (mirror.lock: commit and tree), so it is cached on what
+      # makes it. A miss builds it with make-mirror.sh, FirebaseStorage's unit tests included.
+      - name: Restore the mirror
+        id: mirror
+        uses: actions/cache/restore@v6
+        with:
+          path: .cache/mirror/firebase-ios-sdk.git
+          key: ios-mirror-${{ hashFiles('sdk/ios/firebase-storage-patch/storage-host.patch', 'sdk/ios/firebase-storage-patch/mirror.lock', 'sdk/ios/firebase-storage-patch/MIRROR-NOTICE.md', 'sdk/ios/firebase-storage-patch/make-mirror.sh') }}
+      - name: Build the mirror (12.19.3)
+        if: steps.mirror.outputs.cache-hit != 'true'
+        run: ARUMA_MIRROR_WORK=$RUNNER_TEMP/mirror-work sdk/ios/firebase-storage-patch/make-mirror.sh 12.19.3
+      - name: Save the mirror
+        if: steps.mirror.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: .cache/mirror/firebase-ios-sdk.git
+          key: ${{ steps.mirror.outputs.cache-primary-key }}
+
+      # The Swift package checkouts (Firebase and its binary dependencies) of both apps.
+      - name: Restore the Swift packages
+        id: spm
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            .cache/ios-storage/spm
+            .cache/flutter-storage/spm
+          key: ios-spm-${{ hashFiles('sdk/ios/firebase-storage-patch/mirror.lock', 'test/e2e/ios-storage/project.yml', 'test/e2e/flutter-storage/app/pubspec.lock', 'sdk/ios/ArumaRedirect/Package.swift') }}
+          restore-keys: ios-spm-
+
+      - name: Boot an iPhone simulator (the newest iOS runtime)
+        run: |
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json, re, sys
+          rts = [(tuple(int(x) for x in re.findall(r"\d+", rt)), ds) for rt, ds in json.load(sys.stdin)["devices"].items() if ".iOS-" in rt]
+          rts = [(v, [d for d in ds if d["name"].startswith("iPhone")]) for v, ds in sorted(rts, reverse=True)]
+          print(next(ds[0]["udid"] for v, ds in rts if ds))')
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b >/dev/null
+          xcrun simctl list devices | grep "$udid"
+          echo "ARUMA_IOS_SIMULATOR=$udid" >>"$GITHUB_ENV"
+
+      - name: Swift (test/e2e/ios-storage/run.sh)
+        run: test/e2e/ios-storage/run.sh
+      - name: Flutter (test/e2e/flutter-storage/run.sh ios)
+        if: ${{ !cancelled() }}
+        run: test/e2e/flutter-storage/run.sh ios
+
+      - name: Save the Swift packages
+        if: ${{ !cancelled() && steps.spm.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            .cache/ios-storage/spm
+            .cache/flutter-storage/spm
+          key: ${{ steps.spm.outputs.cache-primary-key }}
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: ios-storage-logs
+          path: |
+            test/e2e/ios-storage/.generated/xcodebuild.log
+            test/e2e/ios-storage/.generated/server/server.log
+            test/e2e/ios-storage/.generated/sockets.unique.txt
+            test/e2e/flutter-storage/.generated/ios/*.log
+            test/e2e/flutter-storage/.generated/ios/*.txt
+            test/e2e/flutter-storage/.generated/ios/results.json
+            test/e2e/flutter-storage/.generated/ios/server/server.log
