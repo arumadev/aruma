@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -255,7 +256,12 @@ func (a *API) chunk(w http.ResponseWriter, r *http.Request, b core.Bucket, name,
 	body := a.pace(w, r)
 	// No Total: the declared size was bound at start, and no SDK states another on its chunks
 	// that finalize checks better.
-	st, err := a.svc.WriteUpload(r.Context(), b, name, id, nil, core.Chunk{
+	//
+	// Not the request's context: net/http cancels it the moment the body breaks (a cut
+	// connection, a window short of the rate), and what arrived must still be recorded, since
+	// the client resumes from it (ADR-022 §6.3). core records under its own WithoutCancel, but
+	// a session's first durable byte checks the session caps with the context it was given.
+	st, err := a.svc.WriteUpload(context.WithoutCancel(r.Context()), b, name, id, nil, core.Chunk{
 		Offset: offset, Body: body, Length: r.ContentLength, Finalize: cmds.Has(wire.CommandFinalize), Total: -1,
 	})
 	a.received(body.n)
