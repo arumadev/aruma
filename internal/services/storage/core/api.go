@@ -283,8 +283,11 @@ type Options struct {
 // Service is Cloud Storage apart from any transport. It holds every field the tasks need from
 // the contract on, so no task adds one.
 type Service struct {
-	pool      *pgxpool.Pool
-	q         *queries.Queries
+	pool *pgxpool.Pool
+	// reads runs the read queries outside a transaction. It is for reads alone: a write goes
+	// through inTx or begin, which commit synchronously (durability.go), and
+	// TestWritesOnlyInTransactions holds every task to it.
+	reads     *queries.Queries
 	store     blob.Store
 	keys      *crypto.Keys
 	projects  Projects
@@ -362,7 +365,7 @@ func New(ctx context.Context, pool *pgxpool.Pool, store blob.Store, opts Options
 		opts.Now = time.Now
 	}
 	return &Service{
-		pool: pool, q: queries.New(pool), store: store, keys: opts.Keys, projects: opts.Projects,
+		pool: pool, reads: queries.New(pool), store: store, keys: opts.Keys, projects: opts.Projects,
 		documents: opts.Documents, inflight: opts.Inflight, users: opts.Users, limits: opts.Limits,
 		dataDir: opts.DataDir, gcGrace: opts.GCGrace, now: opts.Now, log: log, metrics: opts.Metrics,
 		startsPerIP: ratelimit.NewLimiter(opts.Limits.UploadStartsPerMinutePerIP, opts.Limits.UploadStartsPerMinutePerIP),

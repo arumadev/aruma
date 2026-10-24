@@ -38,7 +38,7 @@ func dbService(t *testing.T) (*Service, *pgxpool.Pool) {
 			t.Fatal(err)
 		}
 	}
-	return &Service{pool: pool, q: queries.New(pool), keys: testKeys(t), log: slog.New(slog.DiscardHandler)}, pool
+	return &Service{pool: pool, reads: queries.New(pool), keys: testKeys(t), log: slog.New(slog.DiscardHandler)}, pool
 }
 
 // ADR-022 §5: a Storage transaction commits synchronously on a server whose default is off, and
@@ -123,7 +123,7 @@ func TestReleaseObject(t *testing.T) {
 	if err := s.inTx(ctx, func(q *queries.Queries) error { return releaseObject(ctx, q, testProject, key, 40) }); err != nil {
 		t.Fatal(err)
 	}
-	u, err := s.q.GetUsage(ctx, testProject)
+	u, err := s.reads.GetUsage(ctx, testProject)
 	if err != nil || u.UsedBytes != 60 || u.ObjectCount != 1 {
 		t.Errorf("usage after the release: %+v, %v", u, err)
 	}
@@ -206,7 +206,7 @@ func TestCommitStatementsUnderConcurrentOverwrites(t *testing.T) {
 	if e1 != nil || e2 != nil {
 		t.Fatalf("writes: %v, %v", e1, e2)
 	}
-	cur, err := s.q.GetObject(ctx, queries.GetObjectParams{ProjectNumber: testProject, Name: "a.png"})
+	cur, err := s.reads.GetObject(ctx, queries.GetObjectParams{ProjectNumber: testProject, Name: "a.png"})
 	if err != nil || cur.BlobKey != k2 {
 		t.Fatalf("the row points to %q, %v; want the last writer's", cur.BlobKey, err)
 	}
@@ -225,7 +225,7 @@ func TestCommitStatementsUnderConcurrentOverwrites(t *testing.T) {
 		t.Errorf("blob_gc = %q, want the two replaced keys %q", queued, want)
 	}
 	// Each overwrite released what it replaced, once; counting the new generation is S2-D's.
-	if u, err := s.q.GetUsage(ctx, testProject); err != nil || u.UsedBytes != 980 || u.ObjectCount != 1 {
+	if u, err := s.reads.GetUsage(ctx, testProject); err != nil || u.UsedBytes != 980 || u.ObjectCount != 1 {
 		t.Errorf("usage %+v, %v; want 980 bytes and 1 object", u, err)
 	}
 }
@@ -249,8 +249,10 @@ func TestCommitStatementsCreateRace(t *testing.T) {
 	}
 	done := make(chan error, 1)
 	go func() {
-		_, err := s.q.InsertObject(ctx, params(blob.ObjectKey(testProject)))
-		done <- err
+		done <- s.inTx(ctx, func(q *queries.Queries) error {
+			_, err := q.InsertObject(ctx, params(blob.ObjectKey(testProject)))
+			return err
+		})
 	}()
 	select {
 	case err := <-done:
@@ -266,5 +268,55 @@ func TestCommitStatementsCreateRace(t *testing.T) {
 	var n int
 	if err := pool.QueryRow(ctx, "SELECT count(*) FROM storage.objects").Scan(&n); err != nil || n != 1 {
 		t.Errorf("%d objects, %v", n, err)
+	}
+}
+
+// A delete that commits between InsertObject's conflict and LockObject leaves no row to lock:
+// the write retries the insert, which then succeeds, and never answers 412 for it.
+func TestCommitStatementsRetryAfterConcurrentDelete(t *testing.T) {
+	s, pool := dbService(t)
+	ctx := context.Background()
+	now := time.Now()
+	params := func(key string) queries.InsertObjectParams {
+		return queries.InsertObjectParams{ProjectNumber: testProject, Name: "a.png", Generation: now.UnixMicro(), BlobKey: key,
+			Md5: make([]byte, 16), Metadata: json.RawMessage(`{}`), Now: now}
+	}
+	if err := s.inTx(ctx, func(q *queries.Queries) error {
+		_, err := q.InsertObject(ctx, params(blob.ObjectKey(testProject)))
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	key := blob.ObjectKey(testProject)
+	var tries int
+	err := s.inTx(ctx, func(q *queries.Queries) error {
+		for tries = 1; tries <= 3; tries++ {
+			_, err := q.InsertObject(ctx, params(key))
+			if err == nil {
+				return nil
+			}
+			if !errors.Is(err, pgx.ErrNoRows) {
+				return err
+			}
+			if tries == 1 {
+				// Another request deletes the object now, and commits.
+				if _, err := pool.Exec(ctx, "DELETE FROM storage.objects WHERE project_number = $1", testProject); err != nil {
+					return err
+				}
+			}
+			_, err = q.LockObject(ctx, queries.LockObjectParams{ProjectNumber: testProject, Name: "a.png"})
+			if errors.Is(err, pgx.ErrNoRows) {
+				continue // deleted in between: insert again
+			}
+			return err
+		}
+		return errors.New("no attempt succeeded")
+	})
+	if err != nil || tries != 2 {
+		t.Fatalf("write = %v after %d tries; want success on the second", err, tries)
+	}
+	cur, err := s.reads.GetObject(ctx, queries.GetObjectParams{ProjectNumber: testProject, Name: "a.png"})
+	if err != nil || cur.BlobKey != key {
+		t.Errorf("the row points to %q, %v; want the retried write's", cur.BlobKey, err)
 	}
 }

@@ -6,7 +6,8 @@
 -- blob_gc.
 
 -- name: InsertObject :one
--- A new name. No row back is a conflict: lock the row, or, under ifGenerationMatch=0, 412.
+-- A new name. No row back is a conflict: lock the row (LockObject), or, under
+-- ifGenerationMatch=0, 412.
 INSERT INTO storage.objects (project_number, name, generation, metageneration, blob_key, size, md5, crc32c,
     content_type, content_encoding, content_disposition, content_language, cache_control,
     metadata, download_tokens, time_created, updated)
@@ -18,7 +19,9 @@ RETURNING *;
 
 -- name: LockObject :one
 -- The current row, locked until the transaction ends: its blob_key and size are what the
--- write replaces, and the preconditions are checked on it.
+-- write replaces, and the preconditions are checked on it. No row back after InsertObject's
+-- conflict is a delete that committed in between: the caller retries InsertObject, a bounded
+-- number of times, and never answers 412 for it.
 SELECT * FROM storage.objects WHERE project_number = @project_number AND name = @name FOR UPDATE;
 
 -- name: ReplaceObject :one

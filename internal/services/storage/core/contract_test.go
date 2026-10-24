@@ -42,7 +42,8 @@ var (
 	_ func(*Service, context.Context, Bucket, string, Principal, string, int64) (Object, blob.Reader, error)            = (*Service).Open
 	_ func(*Service, context.Context, Bucket, Principal, ListOptions) (ListPage, error)                                 = (*Service).List
 	_ func(*Service, context.Context, Bucket, string, Principal, Surface, Patch, Preconditions) (Object, error)         = (*Service).Update
-	_ func(*Service, context.Context, Bucket, string, Principal, Preconditions) error                                   = (*Service).Delete
+	_ func(*Service, context.Context, Bucket, string, Principal, Surface, Preconditions) error                          = (*Service).Delete
+	_ func(Surface, Preconditions) error                                                                                = checkPre
 	_ func(*Service, context.Context, Bucket, string, Bucket, string, Principal, *Patch, Preconditions) (Object, error) = (*Service).Rewrite
 	_ func(*Service, context.Context, Bucket, string, Principal) (Object, error)                                        = (*Service).CreateToken
 	_ func(*Service, context.Context, Bucket, string, Principal, string) (Object, error)                                = (*Service).DeleteToken
@@ -163,7 +164,7 @@ func TestProjectsIsPinned(t *testing.T) {
 
 // The named errors, by code: a new one goes through the integrator.
 func TestErrorsArePinned(t *testing.T) {
-	want := []string{"bucket_not_found", "checksum_mismatch", "invalid_page_token", "not_found", "overloaded",
+	want := []string{"bucket_not_found", "checksum_mismatch", "invalid_argument", "invalid_page_token", "not_found", "overloaded",
 		"permission_denied", "precondition_failed", "quota_exceeded", "size_mismatch", "too_large", "too_many_uploads",
 		"unauthenticated", "unavailable", "upload_cancelled", "upload_final", "upload_not_found"}
 	got := slices.Sorted(maps.Keys(namedErrors))
@@ -319,7 +320,7 @@ func TestFinalErrors(t *testing.T) {
 		}
 	}
 	for _, err := range []error{ErrOverloaded, ErrUnavailable, ErrNotFound, ErrUploadNotFound, ErrBucketNotFound,
-		ErrPreconditionFailed, ErrUploadFinal, ErrTooManyUploads, ErrInvalidPageToken, &OffsetError{Received: 1},
+		ErrPreconditionFailed, ErrUploadFinal, ErrTooManyUploads, ErrInvalidPageToken, ErrInvalidArgument, &OffsetError{Received: 1},
 		&InvalidError{Reason: "invalid", Message: "x"}, errors.New("disk full"), nil} {
 		if _, ok := finalError(err); ok {
 			t.Errorf("%v makes a session final", err)
@@ -569,4 +570,36 @@ func testKeys(t *testing.T) *crypto.Keys {
 		t.Fatal(err)
 	}
 	return k
+}
+
+// Preconditions are GCS's alone: from any other surface, every write refuses them before it does
+// anything (a 412 would keep a /v0 session active and loop the mobile SDKs).
+func TestPreconditionsOnlyOnGCS(t *testing.T) {
+	ctx := context.Background()
+	s := &Service{}
+	zero := int64(0)
+	pre := Preconditions{IfGenerationMatch: &zero}
+	for _, sf := range []Surface{SurfaceFirebase, SurfaceConsole, 0} {
+		spec := UploadSpec{Name: "a.png", Surface: sf, Pre: pre, Declared: -1}
+		if _, err := s.StartUpload(ctx, Bucket{}, Principal{}, spec); err != ErrInvalidArgument {
+			t.Errorf("%v StartUpload: %v", sf, err)
+		}
+		if _, err := s.Insert(ctx, Bucket{}, Principal{}, spec, nil, 0); err != ErrInvalidArgument {
+			t.Errorf("%v Insert: %v", sf, err)
+		}
+		if _, err := s.Update(ctx, Bucket{}, "a.png", Principal{}, sf, Patch{}, pre); err != ErrInvalidArgument {
+			t.Errorf("%v Update: %v", sf, err)
+		}
+		if err := s.Delete(ctx, Bucket{}, "a.png", Principal{}, sf, pre); err != ErrInvalidArgument {
+			t.Errorf("%v Delete: %v", sf, err)
+		}
+	}
+	if err := checkPre(SurfaceGCS, pre); err != nil {
+		t.Errorf("GCS: %v", err)
+	}
+	for _, sf := range []Surface{SurfaceFirebase, SurfaceConsole, SurfaceGCS} {
+		if err := checkPre(sf, Preconditions{}); err != nil {
+			t.Errorf("%v without preconditions: %v", sf, err)
+		}
+	}
 }

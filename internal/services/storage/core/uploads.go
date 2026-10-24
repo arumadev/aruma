@@ -8,6 +8,9 @@ import "context"
 // until its first durable byte moves expires_at to start + upload_session_ttl
 // (console_session_ttl for the dashboard's). The live sessions per address count per project.
 func (s *Service) StartUpload(ctx context.Context, b Bucket, p Principal, spec UploadSpec) (id string, err error) {
+	if err := checkPre(spec.Surface, spec.Pre); err != nil {
+		return "", err
+	}
 	panic("S2-D: StartUpload")
 }
 

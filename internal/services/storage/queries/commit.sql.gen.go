@@ -47,7 +47,8 @@ type InsertObjectParams struct {
 // preconditions on it, and updates it. Under READ COMMITTED, FOR UPDATE waits for a concurrent
 // writer and then reads its committed version, so the key it replaced is the one that goes to
 // blob_gc.
-// A new name. No row back is a conflict: lock the row, or, under ifGenerationMatch=0, 412.
+// A new name. No row back is a conflict: lock the row (LockObject), or, under
+// ifGenerationMatch=0, 412.
 func (q *Queries) InsertObject(ctx context.Context, arg InsertObjectParams) (StorageObject, error) {
 	row := q.db.QueryRow(ctx, insertObject,
 		arg.ProjectNumber,
@@ -99,7 +100,9 @@ type LockObjectParams struct {
 }
 
 // The current row, locked until the transaction ends: its blob_key and size are what the
-// write replaces, and the preconditions are checked on it.
+// write replaces, and the preconditions are checked on it. No row back after InsertObject's
+// conflict is a delete that committed in between: the caller retries InsertObject, a bounded
+// number of times, and never answers 412 for it.
 func (q *Queries) LockObject(ctx context.Context, arg LockObjectParams) (StorageObject, error) {
 	row := q.db.QueryRow(ctx, lockObject, arg.ProjectNumber, arg.Name)
 	var i StorageObject

@@ -49,6 +49,9 @@ var (
 	ErrUploadFinal = &Error{"upload_final", "the upload session is already final"}
 	// ErrUploadCancelled is a chunk or finalize on a cancelled session.
 	ErrUploadCancelled = &Error{"upload_cancelled", "the upload session was cancelled"}
+	// ErrInvalidArgument is a request core refuses whatever its content, such as preconditions
+	// from a surface other than GCS: 400.
+	ErrInvalidArgument = &Error{"invalid_argument", "invalid argument"}
 	// ErrTooManyUploads is a start over the live sessions allowed per project, user or address.
 	ErrTooManyUploads = &Error{"too_many_uploads", "too many upload sessions"}
 	// ErrOverloaded is a rules evaluation the process cannot afford now: 503 with a bounded
@@ -65,7 +68,7 @@ var namedErrors = map[string]*Error{}
 func init() {
 	for _, e := range []*Error{ErrBucketNotFound, ErrNotFound, ErrUploadNotFound, ErrPermissionDenied,
 		ErrUnauthenticated, ErrQuotaExceeded, ErrTooLarge, ErrPreconditionFailed, ErrInvalidPageToken,
-		ErrSizeMismatch, ErrChecksumMismatch, ErrUploadFinal, ErrUploadCancelled, ErrTooManyUploads,
+		ErrSizeMismatch, ErrChecksumMismatch, ErrUploadFinal, ErrUploadCancelled, ErrTooManyUploads, ErrInvalidArgument,
 		ErrOverloaded, ErrUnavailable} {
 		namedErrors[e.code] = e
 	}

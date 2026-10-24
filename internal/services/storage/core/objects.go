@@ -24,11 +24,17 @@ func (s *Service) Open(ctx context.Context, b Bucket, name string, p Principal, 
 // Update applies a metadata change after the rules allow an update, and advances the
 // metageneration (ADR-022 §8, §14).
 func (s *Service) Update(ctx context.Context, b Bucket, name string, p Principal, sf Surface, u Patch, pre Preconditions) (Object, error) {
+	if err := checkPre(sf, pre); err != nil {
+		return Object{}, err
+	}
 	panic("S2-C: Update")
 }
 
 // Delete removes an object after the rules allow a delete; its file goes to blob_gc in the same
-// transaction.
-func (s *Service) Delete(ctx context.Context, b Bucket, name string, p Principal, pre Preconditions) error {
+// transaction (releaseObject). Preconditions come from the GCS surface alone.
+func (s *Service) Delete(ctx context.Context, b Bucket, name string, p Principal, sf Surface, pre Preconditions) error {
+	if err := checkPre(sf, pre); err != nil {
+		return err
+	}
 	panic("S2-C: Delete")
 }

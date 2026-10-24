@@ -101,6 +101,7 @@ CREATE TABLE storage.upload_sessions (
     CONSTRAINT upload_sessions_blob_key_project CHECK (blob_key IS NULL OR split_part(blob_key, '/', 2) = project_number::text),
     CONSTRAINT upload_sessions_attrs_no_tokens CHECK (NOT (attrs ? 'firebaseStorageDownloadTokens')
         AND NOT (COALESCE(attrs -> 'metadata', '{}') ? 'firebaseStorageDownloadTokens')),
+    CONSTRAINT upload_sessions_result_no_tokens CHECK (NOT (COALESCE(result_object -> 'metadata', '{}') ? 'firebaseStorageDownloadTokens')),
     CONSTRAINT upload_sessions_outcome CHECK (CASE WHEN state = 'final'
         THEN (final_status IS NULL) <> (result_object IS NULL)
         ELSE final_status IS NULL AND result_object IS NULL END)

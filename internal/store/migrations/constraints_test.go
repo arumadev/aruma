@@ -153,6 +153,10 @@ func TestStorageSchemaConstraints(t *testing.T) {
 			 VALUES ($1, 482915736204, 'a.txt', 'gcs', 'admin', 's/482915736204/7b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f', $2, now())`,
 			bytes.Repeat([]byte{4}, 32), attrs)
 	}
+	mustFail(t, pool, "a session's result holds no token",
+		`INSERT INTO storage.upload_sessions (id_hash, project_number, name, surface, principal_kind, staging_key, state, result_object, expires_at)
+		 VALUES ($1, 482915736204, 'a.txt', 'gcs', 'admin', 's/482915736204/ab7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f', 'final',
+		 '{"metadata": {"firebaseStorageDownloadTokens": "x"}}', now())`, bytes.Repeat([]byte{7}, 32))
 	mustFail(t, pool, "a final session has one outcome, not both",
 		`INSERT INTO storage.upload_sessions (id_hash, project_number, name, surface, principal_kind, staging_key, state, final_status, result_object, expires_at)
 		 VALUES ($1, 482915736204, 'a.txt', 'gcs', 'admin', 's/482915736204/8b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f', 'final', 'too_large', '{}', now())`,

@@ -42,6 +42,17 @@ func validateName(name string) error {
 	return nil
 }
 
+// checkPre refuses preconditions outside the GCS surface (ErrInvalidArgument). Only GCS has
+// them (ADR-022 §6.2), and a 412 keeps an upload session active: a /v0 or dashboard path that
+// filled them would put Android and iOS in a loop of queries and retries (§6.1). StartUpload,
+// Insert, Update and Delete check it before anything else.
+func checkPre(sf Surface, pre Preconditions) error {
+	if sf != SurfaceGCS && pre != (Preconditions{}) {
+		return ErrInvalidArgument
+	}
+	return nil
+}
+
 // segments returns an object name's path segments as the rules match them: the name split on
 // "/", without decoding, empty segments kept. The rules path is b/<bucket>/o/ followed by them
 // (ADR-022 §8).
