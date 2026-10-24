@@ -148,7 +148,7 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 **أُضيفت في S2-B (صيغ السلك، ADR-022 العواقب 16-17):**
 
 38. **مؤقت:** `Range` غير صحيح الصيغة يُتجاهل (200 كاملًا)، و`bytes=-0` 416.
-39. **قيد:** `multipart/related` جزءان بالضبط، أولهما `application/json` وبلا ترميز نقل، و`X-Goog-Upload-Command` بأحرف صغيرة، و`Content-Range` بأشكاله الستة وحدها: غيرها 400. المكتبات الرسمية كلها داخل هذه الحدود (`test/oracle/storage/emulator`).
+39. **قيد:** `multipart/related` جزءان بالضبط، أولهما `application/json` وبلا ترميز نقل، و`X-Goog-Upload-Command` بأحرف صغيرة، و`Content-Range` بأشكاله الستة ومعها `bytes N-(N-1)/N` (جزء Node الأخير الفارغ، يُقرأ `bytes */N`): غيرها 400. المكتبات الرسمية كلها داخل هذه الحدود: التسجيلات (`test/oracle/storage/emulator`)، وشكل Node الأخير من مراجعة S2-B (`@google-cloud/storage` 8.4.0 يرسل `bytes 0--1/0` لـ `save(Buffer.alloc(0), {chunkSize})`، `resumable-upload.js:619-623`).
 40. **مؤقت:** الـ metadata المخصّصة الفارغة تُحذف من رد `/v0` (المحاكي يكتب `"metadata":{}`)، والمكتبات الثلاث تقرأ الحالتين «بلا metadata» (Android يفحص `has("metadata")` في `StorageMetadata.parseJSON`، وiOS `as? [String: String]`، A §4).
 
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
