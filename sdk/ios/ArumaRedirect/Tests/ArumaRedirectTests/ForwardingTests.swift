@@ -207,6 +207,44 @@ final class ForwardingTests: XCTestCase {
     XCTAssertEqual(ArumaRedirect.baseURL?.absoluteString, "http://aruma.lan:8092")
   }
 
+  /// The fallback for an official FirebaseStorage, on by default: the prefixed path on Aruma, with
+  /// the explicit `:443` the official SDK writes.
+  func testStorageIsRedirectedByDefault() throws {
+    let original = URL(string: "https://firebasestorage.googleapis.com:443/v0/b/p.appspot.com/o/a%2Fb.txt?alt=media&token=T")!
+    let (data, response, error) = load(URLRequest(url: original))
+    XCTAssertNil(error)
+    XCTAssertEqual(response?.statusCode, 200)
+    XCTAssertEqual(response?.url, original)
+    XCTAssertEqual(json(data)["path"] as? String, "/firebasestorage.googleapis.com/v0/b/p.appspot.com/o/a/b.txt")
+    XCTAssertEqual(FakeAruma.seen.last?.url.absoluteString,
+                   "https://fake.aruma.test/firebasestorage.googleapis.com/v0/b/p.appspot.com/o/a%2Fb.txt?alt=media&token=T")
+  }
+
+  /// ArumaStorageRedirect false: the patch is mandatory, and an official FirebaseStorage's request
+  /// fails instead of reaching Google or Aruma.
+  func testStorageRefusedWhenTheRedirectIsOff() throws {
+    ArumaRedirect.reset()
+    ArumaRedirect.installFromInfoPlist(try makeBundle(["ArumaURL": "https://fake.aruma.test", "ArumaStorageRedirect": false]))
+    XCTAssertFalse(ArumaRedirect.storageRedirect)
+    let storage = URL(string: "https://firebasestorage.googleapis.com/v0/b/p.appspot.com/o/x")!
+    XCTAssertTrue(ArumaRedirectURLProtocol.canInit(with: URLRequest(url: storage)))
+    let (_, _, error) = load(URLRequest(url: storage))
+    XCTAssertEqual((error as? URLError)?.code, .cannotConnectToHost)
+    XCTAssertTrue(FakeAruma.seen.isEmpty)
+    // Auth still goes to Aruma.
+    let (_, response, authError) = load(URLRequest(url: URL(string: "https://securetoken.googleapis.com/v1/token")!))
+    XCTAssertNil(authError)
+    XCTAssertEqual(response?.statusCode, 200)
+  }
+
+  /// A refused ArumaURL blocks Storage too.
+  func testRefusedURLBlocksStorage() throws {
+    ArumaRedirect.installFromInfoPlist(try makeBundle(["ArumaURL": "ftp://aruma.example.com"]))
+    let (_, _, error) = load(URLRequest(url: URL(string: "https://firebasestorage.googleapis.com/v0/b/p/o/x")!))
+    XCTAssertEqual((error as? URLError)?.code, .cannotConnectToHost)
+    XCTAssertTrue(FakeAruma.seen.isEmpty)
+  }
+
   func testLoaderRanAtLoadTime() {
     XCTAssertTrue(ArumaRedirect.loaderRan, "the Objective-C +load ran without any call from the test")
   }

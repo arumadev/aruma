@@ -13,7 +13,16 @@ import Foundation
 /// - `https://www.googleapis.com/identitytoolkit/v3/relyingparty/<rpc>` →
 ///   `<ArumaURL>/www.googleapis.com/identitytoolkit/v3/relyingparty/<rpc>`
 ///
+/// - `https://firebasestorage.googleapis.com/v0/<path>` →
+///   `<ArumaURL>/firebasestorage.googleapis.com/v0/<path>` (Cloud Storage, the fallback below)
+///
 /// Every other request is passed through untouched.
+///
+/// Cloud Storage's production path is the patched FirebaseStorage from the SwiftPM mirror
+/// (sdk/ios/firebase-storage-patch): it reads the same `ArumaURL`, talks to Aruma directly and
+/// returns download URLs on Aruma. The Storage rewrite here catches an official FirebaseStorage,
+/// whose download URLs still name Google (see ``ArumaUrls``); it logs that once. With
+/// `ArumaStorageRedirect` false, such a request is refused instead.
 ///
 /// Normally nothing is called: the package's loader reads `ArumaURL` from Info.plist at launch.
 /// Apps that prefer code call ``install(url:allowInsecure:)`` before Firebase sends its first request.
@@ -26,6 +35,11 @@ public enum ArumaRedirect {
     public static let allowInsecure = "ArumaAllowInsecureURL"
     /// Bool: log each rewrite (method, host and path; never the query, headers or body).
     public static let log = "ArumaRedirectLog"
+    /// Bool, default true: rewrite Cloud Storage requests to `firebasestorage.googleapis.com` too,
+    /// as a fallback for the official FirebaseStorage. Set it to false in an app built with the
+    /// patched FirebaseStorage (sdk/ios/firebase-storage-patch) to make the patch mandatory: a
+    /// Storage request to Google is then refused instead of rewritten.
+    public static let storageRedirect = "ArumaStorageRedirect"
   }
 
   enum Mode: Equatable {
@@ -76,7 +90,8 @@ public enum ArumaRedirect {
   public static func install(urlString: String, allowInsecure: Bool = false) throws {
     let base = try ArumaBase(urlString, allowInsecure: allowInsecure)
     set(.forward(base))
-    log("installed: Firebase Auth requests go to \(base.url.absoluteString)")
+    log("installed: Firebase Auth requests go to \(base.url.absoluteString)"
+      + (AuthEndpoints.storageRedirect ? ", and so do requests to \(AuthEndpoints.storageHost)" : ""))
   }
 
   /// Reads ``InfoKey`` values from `bundle` and installs the redirect. Called at launch by the loader.
@@ -88,6 +103,9 @@ public enum ArumaRedirect {
           !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     else { return }
     let allowInsecure = boolValue(bundle.object(forInfoDictionaryKey: InfoKey.allowInsecure))
+    if let storage = bundle.object(forInfoDictionaryKey: InfoKey.storageRedirect) {
+      AuthEndpoints.storageRedirect = boolValue(storage)
+    }
     lock.lock()
     _logRequests = boolValue(bundle.object(forInfoDictionaryKey: InfoKey.log))
     lock.unlock()
@@ -103,15 +121,24 @@ public enum ArumaRedirect {
     lock.lock(); _loaderRan = true; lock.unlock()
   }
 
-  /// SPIKE (S0-B, docs/research/storage-production-path.md), not the S6 API: also redirects
-  /// `https://firebasestorage.googleapis.com`. Read per request, so it can be switched at any time.
+  /// Whether Cloud Storage requests to Google are rewritten (true, the default) or refused.
+  /// See ``InfoKey/storageRedirect``. Read per request.
+  public static var storageRedirect: Bool {
+    get { AuthEndpoints.storageRedirect }
+    set { AuthEndpoints.storageRedirect = newValue }
+  }
+
+  /// The S0-B spike's switch, kept for test/experiments/storage-path. The Storage redirect is now
+  /// on by default, and the patched FirebaseStorage is the production path.
+  @available(*, deprecated, message: "use storageRedirect or Info.plist ArumaStorageRedirect")
   public static func setStorageSpike(_ on: Bool) {
-    AuthEndpoints.storageSpike = on
+    AuthEndpoints.storageRedirect = on
   }
 
   /// Test hook: forget the installed mode. The URLProtocol stays registered and passes everything through.
   static func reset() {
     lock.lock(); _mode = nil; _logRequests = false; lock.unlock()
+    AuthEndpoints.resetStorage()
   }
 
   static func setLogRequests(_ on: Bool) {

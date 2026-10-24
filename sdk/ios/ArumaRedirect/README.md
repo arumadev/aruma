@@ -18,8 +18,9 @@ host (ADR-014), so a redirect is only a host rewrite:
 | `https://identitytoolkit.googleapis.com/<path>` | `<ArumaURL>/identitytoolkit.googleapis.com/<path>` |
 | `https://securetoken.googleapis.com/<path>` | `<ArumaURL>/securetoken.googleapis.com/<path>` |
 | `https://www.googleapis.com/identitytoolkit/v3/relyingparty/<rpc>` | `<ArumaURL>/www.googleapis.com/identitytoolkit/v3/relyingparty/<rpc>` |
+| `https://firebasestorage.googleapis.com/v0/<path>` (Cloud Storage, the fallback below) | `<ArumaURL>/firebasestorage.googleapis.com/v0/<path>` |
 
-- A `URLProtocol` handles those three families and nothing else. Every other request
+- A `URLProtocol` handles those families and nothing else. Every other request
   (Installations, Analytics, Firestore, …) passes through untouched.
 - It keeps the method, headers, query and body. It reads `httpBodyStream`, which is how
   URLProtocol usually receives a body.
@@ -46,18 +47,61 @@ when the app starts. In Flutter's Swift Package Manager mode, add the package in
 
 Then add `ArumaURL` to `Info.plist`. Keep `GoogleService-Info.plist` from Aruma.
 
+## Cloud Storage
+
+The production path for Storage is the **patched FirebaseStorage** from the SwiftPM mirror
+([`../firebase-storage-patch`](../firebase-storage-patch), ADR-022 §16.3). It reads the same
+`ArumaURL`, talks to Aruma directly, and `downloadURL()` returns the unified form
+`https://<aruma-host>/v0/b/<bucket>/o/<name>?alt=media&token=<uuid>`, which works in any loader
+(`AsyncImage`, `AVPlayer`, `WKWebView`, a shared link) without passing through Google. This package
+adds three things:
+
+- **The fallback.** Requests of an official FirebaseStorage to `firebasestorage.googleapis.com` are
+  rewritten like Auth's, and the first one logs that the build is the official one. Uploads,
+  downloads, metadata, list and delete then work, but `downloadURL()` still names Google
+  (`https://firebasestorage.googleapis.com:443/…`), and anything outside the app's URLSessions
+  sends it there. Set `ArumaStorageRedirect` to `false` in an app built with the patch to make
+  the patch mandatory: such a request then fails instead.
+- **`ArumaUrls.fromArumaUrl(url, bucket:)`** checks a download URL (the unified form, Google's,
+  with or without `:443`) and returns the `gs://<bucket>/<name>` that `Storage.reference(forURL:)`
+  reads back to the same object. `reference(forURL:)` ends the app (`fatalError`) on a URL it
+  cannot parse or on another bucket; this throws instead. The name is written raw, not
+  percent-encoded, because FirebaseStorage reads a `gs://` name as it is.
+
+  ```swift
+  let ref = storage.reference(forURL: try ArumaUrls.fromArumaUrl(link, bucket: storage.reference().bucket))
+  ```
+
+  `ArumaUrls.toArumaUrl(url)` moves a link on Google's host to the unified form on `ArumaURL`, for
+  apps on the fallback.
+- **CocoaPods.** [`Scripts/aruma_storage.rb`](Scripts/aruma_storage.rb) applies the same patch to
+  the FirebaseStorage pod, for the releases still published to CocoaPods (the last is 12.19.0;
+  Firebase stopped publishing there in October 2026). `pod install` fails if a line of the patch
+  is not found exactly once:
+
+  ```ruby
+  post_install do |installer|
+    require_relative '<aruma>/sdk/ios/ArumaRedirect/Scripts/aruma_storage'
+    ArumaStorage.patch!(installer)
+  end
+  ```
+
+  It reads the patch from `<aruma>/sdk/ios/firebase-storage-patch/`, so use it from a checkout of
+  this repository (`ARUMA_STORAGE_PATCH` names another copy).
+
 ## Configuration (Info.plist)
 
 | Key | Type | Meaning |
 |---|---|---|
-| `ArumaURL` | String | The Aruma server. Absent or empty: the package does nothing. |
+| `ArumaURL` | String | The Aruma server. Absent or empty: the package does nothing. The patched FirebaseStorage reads it too, and needs it at the root of the host (no path). |
 | `ArumaAllowInsecureURL` | Bool | Accept `http` to a host that is not loopback. Development only. |
 | `ArumaRedirectLog` | Bool | Log each rewrite: method, host and path. |
+| `ArumaStorageRedirect` | Bool | Default `true`: rewrite an official FirebaseStorage's requests. `false`: refuse them (the patch is then mandatory). |
 
 Safety:
 - **https only.** `http` is accepted only for `localhost`, `127.0.0.0/8` and `::1`, unless
   `ArumaAllowInsecureURL` is set.
-- **Fails closed.** When `ArumaURL` is present but refused, Auth requests fail with
+- **Fails closed.** When `ArumaURL` is present but refused, Auth and Storage requests fail with
   `URLError.cannotConnectToHost`. They are never sent to Google with the user's password.
 - **Logs.** Logs never contain the query (it holds the API key), headers, tokens or bodies.
 
@@ -76,8 +120,11 @@ then does nothing.
 ## Limits
 
 - **Background URLSessions** ignore custom protocols. Firebase Auth does not use them.
-- **Only Auth.** Firestore uses gRPC on its own sockets, not URLSession, so a URLProtocol
-  cannot redirect it. Later phases need another mechanism.
+  FirebaseStorage's `putFile` on a device sends its chunks from one, to the upload URL the server
+  returned; Aruma returns an absolute URL to itself, so they reach Aruma either way.
+- **The fallback buffers bodies** up to 16 MiB. The patched FirebaseStorage does not go through it.
+- **Auth, and Storage as a fallback.** Firestore uses gRPC on its own sockets, not URLSession, so a
+  URLProtocol cannot redirect it. Later phases need another mechanism.
 - **The SDK's URLs are an implementation detail.** If a Firebase release moves Auth to new hosts
   or paths, they pass through unchanged and fail against Google with Aruma's API key. Nothing
   leaks to Aruma. Pin the Firebase version and run the conformance suite before upgrading.
@@ -93,8 +140,9 @@ swift test
 ```
 
 The tests cover URL rewriting, body streams, forwarding through the protocol against a fake
-server (no network), errors, timeouts, cancellation, redirects, Info.plist parsing, and the
-`+load` loader.
+server (no network), errors, timeouts, cancellation, redirects, Info.plist parsing, the
+`+load` loader, the Storage fallback and `ArumaUrls`. The CocoaPods helper has its own:
+`ruby Scripts/aruma_storage_test.rb`.
 
 ## License
 
@@ -132,10 +180,24 @@ Aruma. أضف الحزمة ومفتاحًا واحدًا في Info.plist، دو�
 - لا يُسجَّل الاستعلام (فيه مفتاح API) ولا الرموز ولا الأجسام.
 - غياب `ArumaURL` يعني أن الحزمة لا تفعل شيئًا.
 
+**Cloud Storage:**
+- المسار الأساسي هو **FirebaseStorage المرقّعة** من مرآة SwiftPM ([`../firebase-storage-patch`](../firebase-storage-patch)،
+  ADR-022 §16.3): تقرأ `ArumaURL` نفسه، وتتصل بـ Aruma مباشرةً، ويعيد `downloadURL()` الرابط الموحّد
+  `https://<aruma-host>/v0/b/<bucket>/o/<name>?alt=media&token=<uuid>`.
+- **الاحتياط:** طلبات FirebaseStorage الرسمية إلى `firebasestorage.googleapis.com` تُحوَّل كطلبات Auth، ويُسجَّل
+  أول طلب منها أن المكتبة رسمية. فتعمل العمليات، لكن رابط التنزيل يبقى على Google (بـ `:443`). و`ArumaStorageRedirect=false`
+  يجعل الرقعة إلزامية: يُرفض الطلب بدل تحويله.
+- **`ArumaUrls.fromArumaUrl(url, bucket:)`** يفحص رابط التنزيل ويعيد `gs://<bucket>/<name>` الذي يقرؤه
+  `reference(forURL:)` إلى الكائن نفسه، ويرمي خطأً حيث ينهي `reference(forURL:)` التطبيق (`fatalError`). والاسم يُكتب
+  كما هو بلا ترميز، لأن FirebaseStorage تقرأ اسم `gs://` حرفيًا. و`ArumaUrls.toArumaUrl` ينقل رابط Google إلى الشكل الموحّد.
+- **CocoaPods:** `Scripts/aruma_storage.rb` يطبّق الرقعة نفسها على pod FirebaseStorage لآخر الإصدارات المنشورة هناك
+  (آخرها 12.19.0)، ويفشل `pod install` إن لم يجد سطرًا من الرقعة مرة واحدة بالضبط.
+
 **بالكود بدل Info.plist:** `try ArumaRedirect.install(url: URL(string: "https://aruma.example.com")!)`، قبل أول طلب Auth.
 
 **الحدود:**
-- الجلسات الخلفية (background) لا تمر بـ URLProtocol.
+- الجلسات الخلفية (background) لا تمر بـ URLProtocol. وقطع `putFile` على الجهاز تُرسل منها إلى رابط الرفع الذي أعاده
+  الخادم، وAruma يعيده مطلقًا إليه، فتصل إليه في الحالتين.
 - Firestore يستخدم gRPC لا URLSession، فلا تحوّله هذه الحزمة.
 - عناوين المكتبة تفصيل داخلي قد يتغير. ثبّت إصدار Firebase وشغّل اختبارات التوافق قبل الترقية.
 - مكتبات Firebase الأخرى تتصل بـ Google: مع Analytics أو Crashlytics أو Remote Config يرسل Installations طلبًا واحدًا إلى

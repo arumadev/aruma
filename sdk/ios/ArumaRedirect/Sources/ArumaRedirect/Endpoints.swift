@@ -53,28 +53,54 @@ struct ArumaBase: Equatable {
   }
 }
 
-/// The three Firebase Auth endpoint families, and how each maps onto an Aruma server (ADR-014).
+/// The Firebase endpoint families ArumaRedirect handles, and how each maps onto an Aruma server:
+/// the three of Auth (ADR-014), and Cloud Storage for Firebase as the run-time fallback of
+/// ADR-022 §16.3. Aruma serves Google's paths under its own host, so a rewrite only adds the
+/// original host as the first path segment.
 enum AuthEndpoints {
   static let identityToolkitHost = "identitytoolkit.googleapis.com"
   static let secureTokenHost = "securetoken.googleapis.com"
   static let legacyHost = "www.googleapis.com"
   static let legacyPathPrefix = "/identitytoolkit/v3/relyingparty/"
-  /// SPIKE (S0-B, docs/research/storage-production-path.md): Cloud Storage for Firebase, off by default.
+  /// Cloud Storage for Firebase. The production path is the patched FirebaseStorage
+  /// (sdk/ios/firebase-storage-patch), which sends nothing to this host when ArumaURL is set, so
+  /// ArumaRedirect only sees what an official FirebaseStorage sends.
   static let storageHost = "firebasestorage.googleapis.com"
-  private static let spikeLock = NSLock()
-  private static var _storageSpike = false
-  static var storageSpike: Bool {
-    get { spikeLock.lock(); defer { spikeLock.unlock() }; return _storageSpike }
-    set { spikeLock.lock(); _storageSpike = newValue; spikeLock.unlock() }
+  private static let storageLock = NSLock()
+  private static var _storageRedirect = true
+  private static var _storageSeen = false
+
+  /// False (Info.plist `ArumaStorageRedirect`): a Storage request is refused instead of rewritten.
+  static var storageRedirect: Bool {
+    get { storageLock.lock(); defer { storageLock.unlock() }; return _storageRedirect }
+    set { storageLock.lock(); _storageRedirect = newValue; storageLock.unlock() }
   }
 
-  /// True for a production Auth request: https on the default port to one of the three families.
+  /// True the first time only, so that the official-build notice is logged once.
+  static func firstStorageRequest() -> Bool {
+    storageLock.lock(); defer { storageLock.unlock() }
+    if _storageSeen { return false }
+    _storageSeen = true
+    return true
+  }
+
+  /// Test hook.
+  static func resetStorage() {
+    storageLock.lock(); _storageRedirect = true; _storageSeen = false; storageLock.unlock()
+  }
+
+  /// True for a production request to one of the families: https on the default port.
   static func matches(_ url: URL) -> Bool {
     target(of: url) != nil
   }
 
+  /// True for a Cloud Storage request that ``matches(_:)``.
+  static func isStorage(_ url: URL) -> Bool {
+    target(of: url)?.host == storageHost
+  }
+
   /// `https://<google host><path>?<query>` → `<base>/<google host><path>?<query>`, or nil when
-  /// the URL is not an Auth endpoint (it is then passed through untouched).
+  /// the URL is not one of the families (it is then passed through untouched).
   static func rewrite(_ url: URL, to base: ArumaBase) -> URL? {
     guard let (host, path, query) = target(of: url) else { return nil }
     var out = base.components
@@ -94,12 +120,10 @@ enum AuthEndpoints {
     // Dot segments would let the rewritten path escape the host prefix on the server.
     if path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." }) { return nil }
     switch host {
-    case identityToolkitHost, secureTokenHost:
+    case identityToolkitHost, secureTokenHost, storageHost:
       break
     case legacyHost:
       guard path.hasPrefix(legacyPathPrefix) else { return nil }
-    case storageHost:
-      guard storageSpike else { return nil }
     default:
       return nil
     }
@@ -109,7 +133,8 @@ enum AuthEndpoints {
 
 /// Request bodies: URLProtocol usually receives them as `httpBodyStream`, not `httpBody`.
 enum RequestBody {
-  /// Upper bound for a buffered body. Auth bodies are a few kilobytes.
+  /// Upper bound for a buffered body. Auth bodies are a few kilobytes; a Storage upload through
+  /// the fallback above this size fails (the patched FirebaseStorage never comes here).
   static let limit = 16 << 20
 
   static func read(from request: URLRequest, limit: Int = RequestBody.limit) throws -> Data? {
