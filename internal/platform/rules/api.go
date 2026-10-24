@@ -61,8 +61,9 @@ func Compile(svc Service, f File, lim Limits) (*Ruleset, Issues) {
 // (S0-A), and with names of 1, 100, 127, 128, 129 and 300 bytes the boundary moves by the
 // name's length, and by one more byte from 128 (S1-E probe of the Rules Test API, 2026-10-24).
 func sourceTooLarge(f File, lim *Limits) bool {
-	field := func(n int) int { return 1 + varintLen(n) + n } // a length-delimited field of n bytes
-	str := func(s string) int { // proto3 omits an empty string
+	// A length-delimited field of n bytes, and a string's, which proto3 omits when empty.
+	field := func(n int) int { return 1 + varintLen(n) + n }
+	str := func(s string) int {
 		if s == "" {
 			return 0
 		}
