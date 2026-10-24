@@ -38,6 +38,12 @@ func (routeProjects) ProjectForBucket(_ context.Context, bucket string) (tcore.P
 // routeService is a core.Service whose pool never connects: what routing needs is the bucket.
 func routeService(t *testing.T) *core.Service {
 	t.Helper()
+	return routeServiceWith(t, core.DefaultLimits())
+}
+
+// routeServiceWith is routeService with limits.
+func routeServiceWith(t *testing.T, limits core.Limits) *core.Service {
+	t.Helper()
 	pool, err := pgxpool.New(t.Context(), "postgres://nobody@127.0.0.1:1/none?sslmode=disable")
 	if err != nil {
 		t.Fatal(err)
@@ -48,7 +54,7 @@ func routeService(t *testing.T) *core.Service {
 		t.Fatal(err)
 	}
 	svc, err := core.New(t.Context(), pool, struct{ blob.Store }{}, core.Options{
-		Limits: core.DefaultLimits(), Keys: keys, Projects: routeProjects{},
+		Limits: limits, Keys: keys, Projects: routeProjects{},
 		Inflight: rules.NewInflight(1 << 20), DataDir: t.TempDir(),
 	}, nil)
 	if err != nil {
@@ -206,24 +212,33 @@ func TestRoutes(t *testing.T) {
 // A download is outside the API's open CORS: its CORS is the bucket's, and the router does not
 // set * on it, even on its preflight.
 func TestRoutesMediaCORS(t *testing.T) {
-	h := New(routeService(t), Options{}, nil).Handler()
+	a := New(routeService(t), Options{}, nil)
+	h := a.Handler()
 	obj := "/v0/b/" + routeBucket + "/o/a.png"
-	for _, method := range []string{"GET", "OPTIONS"} {
-		rec := httptest.NewRecorder()
-		reached := serveRecover(h, rec, httptest.NewRequest(method, obj+"?alt=media", nil))
-		if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "" {
-			t.Errorf("%s alt=media: Allow-Origin %q", method, got)
-		}
-		if method == "GET" && reached != "S3-C: download" {
-			t.Errorf("GET alt=media reached %q", reached)
-		}
-		if rec.Header().Get("Vary") != "Origin" {
-			t.Errorf("%s alt=media: Vary %q", method, rec.Header().Get("Vary"))
-		}
+	// A download: the router takes it for media, so it skips the open CORS, and mediaCORS sets
+	// only Vary without an Origin. download itself is not run: it is S3-C's, on core.
+	req := httptest.NewRequest("GET", obj+"?alt=media", nil)
+	rest, _ := wire.CutFirebasePrefix(req.URL.EscapedPath())
+	p, err := wire.SplitObjectPath(rest)
+	if rt := classify(req, p, req.URL.Query()); err != nil || rt != routeDownload || !rt.media(req.URL.Query()) {
+		t.Fatalf("GET alt=media: route %s, media %v", rt, rt.media(req.URL.Query()))
+	}
+	rec := httptest.NewRecorder()
+	if err := a.mediaCORS(rec, req, core.Bucket{Project: 7, Name: routeBucket}); err != nil {
+		t.Fatal(err)
+	}
+	if rec.Header().Get("Access-Control-Allow-Origin") != "" || rec.Header().Get("Vary") != "Origin" {
+		t.Errorf("GET alt=media: %v", rec.Header())
+	}
+	// Its preflight runs through the router, which answers it itself.
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("OPTIONS", obj+"?alt=media", nil))
+	if rec.Code != 204 || rec.Header().Get("Access-Control-Allow-Origin") != "" || rec.Header().Get("Vary") != "Origin" {
+		t.Errorf("OPTIONS alt=media: %d %v", rec.Code, rec.Header())
 	}
 	// The API's preflight: the methods and headers the SDKs send.
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest("OPTIONS", "/v0/b/"+routeBucket+"/o?name=a", nil)
+	rec = httptest.NewRecorder()
+	req = httptest.NewRequest("OPTIONS", "/v0/b/"+routeBucket+"/o?name=a", nil)
 	req.Header.Set("Origin", "https://app.example")
 	h.ServeHTTP(rec, req)
 	hd := rec.Header()
@@ -283,5 +298,78 @@ func TestWritesPerIP(t *testing.T) {
 	r2()
 	if _, ok := c.acquire(netip.Addr{}, 1); !ok {
 		t.Error("the zero address is limited")
+	}
+}
+
+// The router holds upload_requests_per_ip on every write route, before any handler, and on no
+// read: with a limit of 1 and one write of the address in flight, each write is refused 503 and
+// each read passes; once the write is done its place is free. X-Forwarded-For counts only from a
+// trusted proxy.
+func TestRouterWritesPerIP(t *testing.T) {
+	limits := core.DefaultLimits()
+	limits.UploadRequestsPerIP = 1
+	svc := routeServiceWith(t, limits)
+	a := New(svc, Options{}, nil)
+	h := a.Handler()
+	obj := "/v0/b/" + routeBucket + "/o/a.png"
+	list := "/v0/b/" + routeBucket + "/o"
+	session := list + "?name=a.png&upload_id=x"
+	refused := func(h http.Handler, method, target string, header map[string]string) (bool, string) {
+		req := httptest.NewRequest(method, target, nil) // from 192.0.2.1
+		for k, v := range header {
+			req.Header.Set(k, v)
+		}
+		rec := httptest.NewRecorder()
+		reached := serveRecover(h, rec, req)
+		return reached == "" && rec.Code == 503 && strings.Contains(rec.Body.String(), "Too many requests in flight"),
+			reached + " " + rec.Body.String()
+	}
+
+	release, ok := a.writes.acquire(netip.MustParseAddr("192.0.2.1"), 1) // the write held open
+	if !ok {
+		t.Fatal("acquire")
+	}
+	for _, c := range []struct {
+		method, target string
+		header         map[string]string
+	}{
+		{"PATCH", obj, nil},
+		{"PUT", obj, map[string]string{"X-HTTP-Method-Override": "PATCH"}},
+		{"DELETE", obj, nil},
+		{"POST", obj + "?create_token=true", nil},
+		{"POST", obj + "?delete_token=t", nil},
+		{"POST", list + "?name=a.png", map[string]string{"X-Goog-Upload-Protocol": "multipart"}},
+		{"POST", list + "?name=a.png", map[string]string{"X-Goog-Upload-Protocol": "resumable", "X-Goog-Upload-Command": "start"}},
+		{"PUT", obj, nil},
+		{"POST", session, map[string]string{"X-Goog-Upload-Command": "upload, finalize"}},
+		{"PUT", session, map[string]string{"X-Goog-Upload-Command": "query"}},
+		// An X-Forwarded-For from a peer that is not a trusted proxy is not believed.
+		{"POST", obj + "?create_token=true", map[string]string{"X-Forwarded-For": "198.51.100.7"}},
+	} {
+		if ok, got := refused(h, c.method, c.target, c.header); !ok {
+			t.Errorf("%s %s %v: not refused: %s", c.method, c.target, c.header, got)
+		}
+	}
+	for _, c := range []struct{ method, target string }{
+		{"GET", list}, {"GET", obj}, {"HEAD", obj}, {"OPTIONS", obj},
+	} {
+		if ok, got := refused(h, c.method, c.target, nil); ok {
+			t.Errorf("%s %s: a read refused: %s", c.method, c.target, got)
+		}
+	}
+	// Behind a trusted proxy, the client is the one X-Forwarded-For names.
+	trusted := New(svc, Options{TrustedProxies: []netip.Prefix{netip.MustParsePrefix("192.0.2.0/24")}}, nil)
+	trusted.writes.acquire(netip.MustParseAddr("192.0.2.1"), 1)
+	if ok, got := refused(trusted.Handler(), "POST", obj+"?create_token=true", map[string]string{"X-Forwarded-For": "198.51.100.7"}); ok {
+		t.Errorf("a trusted proxy's client counted as the proxy: %s", got)
+	}
+
+	// The held write ends; a write runs to its end (an anonymous create_token, 403) and frees its
+	// place for the next.
+	release()
+	for range 2 {
+		if ok, got := refused(h, "POST", obj+"?create_token=true", nil); ok || !strings.Contains(got, "Permission denied.") {
+			t.Errorf("a write after the release: %s", got)
+		}
 	}
 }

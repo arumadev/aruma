@@ -449,4 +449,19 @@ func TestStorageV0Routing(t *testing.T) {
 	if h := preflight("https://evil.example"); h.Get("Access-Control-Allow-Origin") != "" {
 		t.Errorf("another origin's preflight: %v", h)
 	}
+
+	// Firebase's documented cors.json, which names no responseHeader, and the preflight of the web
+	// SDK's getBlob, which always sends X-Firebase-Storage-Version: the headers asked for are
+	// allowed, as GCS's JSON API echoes them.
+	if _, err := e.App.Storage.SetCORS(context.Background(), e.bucket, storage.Principal{Kind: storage.PrincipalAdmin},
+		[]storage.CORSRule{{Origins: []string{"*"}, Methods: []string{"GET"}, MaxAgeSeconds: 3600}}); err != nil {
+		t.Fatal(err)
+	}
+	h = e.call("OPTIONS", media, "", "", map[string]string{"Origin": "https://app.example",
+		"Access-Control-Request-Method": "GET", "Access-Control-Request-Headers": "authorization,x-firebase-storage-version"}).header
+	if h.Get("Access-Control-Allow-Origin") != "https://app.example" || h.Get("Access-Control-Allow-Methods") != "GET" ||
+		h.Get("Access-Control-Allow-Headers") != "authorization,x-firebase-storage-version" ||
+		h.Get("Access-Control-Max-Age") != "3600" || h.Get("Access-Control-Expose-Headers") != "" {
+		t.Errorf("the documented cors.json's preflight: %v", h)
+	}
 }

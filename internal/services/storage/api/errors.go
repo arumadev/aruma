@@ -37,12 +37,16 @@ var (
 	// as unauthenticated.
 	errUnauthenticated = statusError(http.StatusUnauthorized, "Invalid authentication credentials.")
 	// errTooManyWrites is a client over upload_requests_per_ip: pressure that passes, so 503 with
-	// a Retry-After, which iOS retries and 429 it does not (A §5.3).
+	// a bounded Retry-After, which iOS retries where it does not retry 429 (A §5.3).
 	errTooManyWrites = statusError(http.StatusServiceUnavailable, "Too many requests in flight from this address.")
 )
 
-// retryAfter is the Retry-After of a 503: bounded, since iOS retries a 503 that carries one
-// without its usual cap (A §5.3), so a long or growing value would hold a client forever.
+// Retry-After goes on the 503s of passing pressure alone (A §5.3, ADR-022 §12): too many writes
+// in flight from one address (errTooManyWrites), a rules engine over its budget
+// (core.ErrOverloaded), and an upload start over its rate (writeRetry). iOS's fetcher skips its
+// maximum interval and its total time when a reply carries one (GTMSessionFetcher.m:3682, :3854),
+// so on any other 503 (core.ErrUnavailable: the database, the disk floor) it would retry forever;
+// there it gets none and its usual backoff ends. The value is bounded besides.
 const (
 	retryAfter    = 5 * time.Second
 	maxRetryAfter = 60 * time.Second
@@ -54,7 +58,7 @@ const (
 // X-Goog-Upload-Status first. An error nobody named is logged and answered 500.
 func (a *API) writeError(w http.ResponseWriter, r *http.Request, err error) {
 	status, message := a.errorStatus(r, err)
-	if status == http.StatusServiceUnavailable && w.Header().Get("Retry-After") == "" {
+	if pressure(err) && w.Header().Get("Retry-After") == "" {
 		setRetryAfter(w.Header(), retryAfter)
 	}
 	writeJSON(w, status, wire.NewFirebaseError(status, message))
@@ -65,6 +69,11 @@ func (a *API) writeError(w http.ResponseWriter, r *http.Request, err error) {
 func (a *API) writeRetry(w http.ResponseWriter, r *http.Request, status int, wait time.Duration) {
 	setRetryAfter(w.Header(), wait)
 	a.writeError(w, r, statusError(status, http.StatusText(status)+"."))
+}
+
+// pressure reports whether err is passing pressure, whose 503 carries a Retry-After.
+func pressure(err error) bool {
+	return errors.Is(err, errTooManyWrites) || errors.Is(err, core.ErrOverloaded)
 }
 
 func setRetryAfter(h http.Header, wait time.Duration) {

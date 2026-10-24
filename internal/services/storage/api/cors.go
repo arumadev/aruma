@@ -63,8 +63,11 @@ func (a *API) preflight(w http.ResponseWriter, r *http.Request, media bool) {
 // Origin, or without a rule that matches, it sets none, and a browser refuses the page the
 // bytes. Vary: Origin is always set, so a cache never gives one origin another's answer.
 //
-// As in GCS, a rule's responseHeader is both what a page may read (Expose-Headers) and, on a
-// preflight, what the request may send (Allow-Headers). The method allowed is the one asked for.
+// A rule's responseHeader is what a page may read (Expose-Headers). On a preflight the headers
+// the request asks to send (Access-Control-Request-Headers) are echoed in Allow-Headers, as GCS's
+// JSON API does: Firebase's documented cors.json has no responseHeader, and the web SDK always
+// sends X-Firebase-Storage-Version, so allowing only responseHeader would fail every getBlob and
+// getBytes. The method allowed is the one asked for.
 func (a *API) mediaCORS(w http.ResponseWriter, r *http.Request, b core.Bucket) error {
 	h := w.Header()
 	h.Add("Vary", "Origin")
@@ -91,8 +94,8 @@ func (a *API) mediaCORS(w http.ResponseWriter, r *http.Request, b core.Bucket) e
 	}
 	if preflight {
 		h.Set("Access-Control-Allow-Methods", method)
-		if len(rule.ResponseHeaders) > 0 {
-			h.Set("Access-Control-Allow-Headers", strings.Join(rule.ResponseHeaders, ", "))
+		if asked := r.Header.Get("Access-Control-Request-Headers"); asked != "" {
+			h.Set("Access-Control-Allow-Headers", asked)
 		}
 		if rule.MaxAgeSeconds > 0 {
 			h.Set("Access-Control-Max-Age", strconv.Itoa(rule.MaxAgeSeconds))
