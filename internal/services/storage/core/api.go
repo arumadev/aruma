@@ -319,6 +319,10 @@ type Service struct {
 	// checked and added in one atomic step (quota.go).
 	diskInflight atomic.Int64
 
+	// gate admits the writes and Run until Close, which waits for them before it releases the
+	// lock (run.go; added by S2-D at the review, with the lead's agreement).
+	gate writeGate
+
 	// authorizeHook decides for principals other than admins in this package's tests, until
 	// S2-E binds the rules (rules.go).
 	authorizeHook func(ctx context.Context, b Bucket, p Principal, op ruleOp) error

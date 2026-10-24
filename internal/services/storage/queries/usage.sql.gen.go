@@ -9,12 +9,50 @@ import (
 	"context"
 )
 
+const commitUsage = `-- name: CommitUsage :exec
+UPDATE storage.usage SET reserved_bytes = GREATEST(reserved_bytes - $1::bigint, 0),
+    anonymous_reserved_bytes = LEAST(GREATEST(anonymous_reserved_bytes - $2::bigint, 0),
+        GREATEST(reserved_bytes - $1::bigint, 0)),
+    used_bytes = used_bytes + $3::bigint, object_count = object_count + 1
+WHERE project_number = $4
+`
+
+type CommitUsageParams struct {
+	N             int64
+	AnonymousN    int64
+	Size          int64
+	ProjectNumber int64
+}
+
+// commitObject's move from reserved to used: the new generation's bytes and one more object.
+func (q *Queries) CommitUsage(ctx context.Context, arg CommitUsageParams) error {
+	_, err := q.db.Exec(ctx, commitUsage,
+		arg.N,
+		arg.AnonymousN,
+		arg.Size,
+		arg.ProjectNumber,
+	)
+	return err
+}
+
+const ensureUsage = `-- name: EnsureUsage :exec
+INSERT INTO storage.usage (project_number) VALUES ($1) ON CONFLICT (project_number) DO NOTHING
+`
+
+// The account is created on first use: an UPDATE on a missing row would match nothing and refuse
+// every write.
+func (q *Queries) EnsureUsage(ctx context.Context, projectNumber int64) error {
+	_, err := q.db.Exec(ctx, ensureUsage, projectNumber)
+	return err
+}
+
 const getUsage = `-- name: GetUsage :one
 
 SELECT project_number, used_bytes, reserved_bytes, anonymous_reserved_bytes, object_count FROM storage.usage WHERE project_number = $1
 `
 
-// The contract's queries (S2-0). S2-D adds the quota statements here.
+// A project's quota account (ADR-022 §6.5). Every reservation lives here, so no ledger in memory
+// disagrees with the database, and Boot reconciles it after a crash.
 func (q *Queries) GetUsage(ctx context.Context, projectNumber int64) (StorageUsage, error) {
 	row := q.db.QueryRow(ctx, getUsage, projectNumber)
 	var i StorageUsage
@@ -26,4 +64,99 @@ func (q *Queries) GetUsage(ctx context.Context, projectNumber int64) (StorageUsa
 		&i.ObjectCount,
 	)
 	return i, err
+}
+
+const reconcileUsage = `-- name: ReconcileUsage :one
+WITH projects AS (
+    SELECT project_number FROM storage.usage
+    UNION SELECT project_number FROM storage.objects
+    UNION SELECT project_number FROM storage.upload_sessions WHERE state = 'active'
+), want AS (
+    SELECT p.project_number,
+        COALESCE((SELECT sum(o.size) FROM storage.objects o WHERE o.project_number = p.project_number), 0)::bigint AS used_bytes,
+        (SELECT count(*) FROM storage.objects o WHERE o.project_number = p.project_number)::bigint AS object_count,
+        COALESCE((SELECT sum(u.reserved_bytes) FROM storage.upload_sessions u
+            WHERE u.project_number = p.project_number AND u.state = 'active'), 0)::bigint AS reserved_bytes,
+        COALESCE((SELECT sum(u.reserved_bytes) FROM storage.upload_sessions u
+            WHERE u.project_number = p.project_number AND u.state = 'active' AND u.principal_kind = 'anonymous'), 0)::bigint AS anonymous_reserved_bytes
+    FROM projects p
+), diff AS (
+    SELECT COALESCE(sum(abs(w.used_bytes - COALESCE(u.used_bytes, 0)) + abs(w.reserved_bytes - COALESCE(u.reserved_bytes, 0))), 0)::bigint AS corrected
+    FROM want w LEFT JOIN storage.usage u ON u.project_number = w.project_number
+), written AS (
+    INSERT INTO storage.usage (project_number, used_bytes, reserved_bytes, anonymous_reserved_bytes, object_count)
+    SELECT project_number, used_bytes, reserved_bytes, anonymous_reserved_bytes, object_count FROM want
+    ON CONFLICT (project_number) DO UPDATE SET used_bytes = excluded.used_bytes,
+        reserved_bytes = excluded.reserved_bytes, anonymous_reserved_bytes = excluded.anonymous_reserved_bytes,
+        object_count = excluded.object_count
+    RETURNING 1
+)
+SELECT diff.corrected, (SELECT count(*) FROM written)::bigint AS projects FROM diff
+`
+
+type ReconcileUsageRow struct {
+	Corrected int64
+	Projects  int64
+}
+
+// scope: global — Boot rebuilds every project's account from the rows before the listener opens
+// (ADR-022 §6.5): used and count from the objects, reserved from the live sessions, so what a
+// crash left reserved goes. It returns the bytes it corrected.
+func (q *Queries) ReconcileUsage(ctx context.Context) (ReconcileUsageRow, error) {
+	row := q.db.QueryRow(ctx, reconcileUsage)
+	var i ReconcileUsageRow
+	err := row.Scan(&i.Corrected, &i.Projects)
+	return i, err
+}
+
+const reserveUsage = `-- name: ReserveUsage :execrows
+UPDATE storage.usage SET reserved_bytes = reserved_bytes + $1::bigint,
+    anonymous_reserved_bytes = anonymous_reserved_bytes + $2::bigint
+WHERE project_number = $3
+    AND ($4::bigint = 0 OR used_bytes + reserved_bytes + $1::bigint <= $4::bigint)
+    AND anonymous_reserved_bytes + $2::bigint <= $5::bigint
+`
+
+type ReserveUsageParams struct {
+	N             int64
+	AnonymousN    int64
+	ProjectNumber int64
+	Quota         int64
+	AnonymousCap  int64
+}
+
+// n bytes on their way in, under the quota (0 is unlimited); anonymous_n of them for a session
+// without an identity, under the anonymous cap. No row back is a refusal.
+func (q *Queries) ReserveUsage(ctx context.Context, arg ReserveUsageParams) (int64, error) {
+	result, err := q.db.Exec(ctx, reserveUsage,
+		arg.N,
+		arg.AnonymousN,
+		arg.ProjectNumber,
+		arg.Quota,
+		arg.AnonymousCap,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const unreserveUsage = `-- name: UnreserveUsage :exec
+UPDATE storage.usage SET reserved_bytes = GREATEST(reserved_bytes - $1::bigint, 0),
+    anonymous_reserved_bytes = LEAST(GREATEST(anonymous_reserved_bytes - $2::bigint, 0),
+        GREATEST(reserved_bytes - $1::bigint, 0))
+WHERE project_number = $3
+`
+
+type UnreserveUsageParams struct {
+	N             int64
+	AnonymousN    int64
+	ProjectNumber int64
+}
+
+// Bytes reserved and not stored give their quota back: what a request did not use, a cancel, an
+// expiry, a refusal. Never below zero, and the anonymous part never above the whole.
+func (q *Queries) UnreserveUsage(ctx context.Context, arg UnreserveUsageParams) error {
+	_, err := q.db.Exec(ctx, unreserveUsage, arg.N, arg.AnonymousN, arg.ProjectNumber)
+	return err
 }
