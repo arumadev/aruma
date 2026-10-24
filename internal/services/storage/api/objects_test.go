@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/arumadev/aruma/internal/services/storage/core"
 )
@@ -97,24 +98,27 @@ func describePatch(p core.Patch) string {
 	return b.String()
 }
 
-// Every named error of core has its /v0 status, never 409 nor 308, and a 503 carries a bounded
-// Retry-After (ADR-022 §12).
+// Every named error of core has its /v0 status, never 409 nor 308. A Retry-After, bounded, goes
+// on the 503s of passing pressure alone: on any other, iOS would retry forever (A §5.3).
 func TestErrorStatuses(t *testing.T) {
 	a := New(routeService(t), Options{}, nil)
 	for _, c := range []struct {
-		err    error
-		status int
+		err        error
+		status     int
+		retryAfter string
 	}{
-		{core.ErrBucketNotFound, 404}, {core.ErrNotFound, 404}, {core.ErrUploadNotFound, 404},
-		{core.ErrPermissionDenied, 403}, {core.ErrUnauthenticated, 401}, {core.ErrQuotaExceeded, 402},
-		{core.ErrTooLarge, 413}, {core.ErrSizeMismatch, 400}, {core.ErrChecksumMismatch, 400},
-		{core.ErrInvalidPageToken, 400}, {core.ErrInvalidArgument, 400}, {core.ErrUploadFinal, 400},
-		{core.ErrUploadCancelled, 400}, {core.ErrTooManyUploads, 429}, {core.ErrOverloaded, 503},
-		{core.ErrUnavailable, 503}, {&core.InvalidError{Reason: "invalid", Message: "bad"}, 400},
-		{&core.OffsetError{Received: 5}, 400}, {errBadRoute, 400}, {errUnauthenticated, 401},
-		{errTooManyWrites, 503},
+		{core.ErrBucketNotFound, 404, ""}, {core.ErrNotFound, 404, ""}, {core.ErrUploadNotFound, 404, ""},
+		{core.ErrPermissionDenied, 403, ""}, {core.ErrUnauthenticated, 401, ""}, {core.ErrQuotaExceeded, 402, ""},
+		{core.ErrTooLarge, 413, ""}, {core.ErrSizeMismatch, 400, ""}, {core.ErrChecksumMismatch, 400, ""},
+		{core.ErrInvalidPageToken, 400, ""}, {core.ErrInvalidArgument, 400, ""}, {core.ErrUploadFinal, 400, ""},
+		{core.ErrUploadCancelled, 400, ""}, {core.ErrTooManyUploads, 429, ""},
+		{core.ErrOverloaded, 503, "5"}, {fmt.Errorf("evaluate: %w", core.ErrOverloaded), 503, "5"},
+		{errTooManyWrites, 503, "5"},
+		{core.ErrUnavailable, 503, ""}, {fmt.Errorf("%w: the database", core.ErrUnavailable), 503, ""},
+		{&core.InvalidError{Reason: "invalid", Message: "bad"}, 400, ""},
+		{&core.OffsetError{Received: 5}, 400, ""}, {errBadRoute, 400, ""}, {errUnauthenticated, 401, ""},
 		// A session's first byte over the live sessions is both, and 402 (core's errTooManyLive).
-		{fmt.Errorf("%w: %w", core.ErrQuotaExceeded, core.ErrTooManyUploads), 402},
+		{fmt.Errorf("%w: %w", core.ErrQuotaExceeded, core.ErrTooManyUploads), 402, ""},
 	} {
 		rec := httptest.NewRecorder()
 		r := httptest.NewRequest("GET", "/v0/b/x/o", nil)
@@ -122,13 +126,16 @@ func TestErrorStatuses(t *testing.T) {
 		if rec.Code != c.status {
 			t.Errorf("%v: %d, want %d", c.err, rec.Code, c.status)
 		}
-		if ra := rec.Header().Get("Retry-After"); (c.status == 503) != (ra == "5") {
-			t.Errorf("%v: Retry-After %q", c.err, ra)
+		if ra := rec.Header().Get("Retry-After"); ra != c.retryAfter {
+			t.Errorf("%v: Retry-After %q, want %q", c.err, ra, c.retryAfter)
 		}
 	}
-	rec := httptest.NewRecorder()
-	a.writeRetry(rec, httptest.NewRequest("POST", "/v0/b/x/o", nil), http.StatusTooManyRequests, 1<<40)
-	if rec.Code != 429 || rec.Header().Get("Retry-After") != "60" {
-		t.Errorf("writeRetry: %d %q", rec.Code, rec.Header().Get("Retry-After"))
+	// AllowUploadStart's refusal: its wait, bounded to [1s, 60s].
+	for wait, want := range map[time.Duration]string{1 << 40: "60", time.Millisecond: "1", 7 * time.Second: "7"} {
+		rec := httptest.NewRecorder()
+		a.writeRetry(rec, httptest.NewRequest("POST", "/v0/b/x/o", nil), http.StatusServiceUnavailable, wait)
+		if rec.Code != 503 || rec.Header().Get("Retry-After") != want {
+			t.Errorf("writeRetry(%v): %d %q, want %s", wait, rec.Code, rec.Header().Get("Retry-After"), want)
+		}
 	}
 }
