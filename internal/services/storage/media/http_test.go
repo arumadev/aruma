@@ -18,7 +18,8 @@ import (
 )
 
 // The tests on a real server, as the surfaces will call Serve: on S2-F's ports (9040-9049),
-// with the server's own 60 s WriteTimeout, and the caller's abort on an error.
+// with the server's own 60 s WriteTimeout. The handlers return normally whatever Serve did,
+// as a careless surface would: the cut is Serve's own.
 
 func listen(t *testing.T) net.Listener {
 	t.Helper()
@@ -36,11 +37,11 @@ func server(t *testing.T, it Item, open func() io.ReadSeeker, m Mode, lim Limits
 	t.Helper()
 	errs := make(chan error, 16)
 	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := Serve(w, r, it, open(), m, lim)
-		errs <- err
-		if err != nil {
-			panic(http.ErrAbortHandler) // the contract: count, then cut
-		}
+		var err error
+		defer func() { errs <- err }() // runs on Serve's abort too
+		l := lim
+		l.Cut = func(e error) { err = e }
+		err = Serve(w, r, it, open(), m, l)
 	}))
 	srv.Listener.Close()
 	srv.Listener = listen(t)
@@ -265,11 +266,10 @@ func TestPacingOutlastsWriteTimeout(t *testing.T) {
 	it.Size = size
 	errs := make(chan error, 1)
 	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := Serve(w, r, it, &zeros{size: size}, Token, Limits{DecompressedBytes: 1 << 40, MinBytesPerSecond: 1 << 20})
-		errs <- err
-		if err != nil {
-			panic(http.ErrAbortHandler)
-		}
+		var err error
+		defer func() { errs <- err }()
+		err = Serve(w, r, it, &zeros{size: size}, Token, Limits{DecompressedBytes: 1 << 40, MinBytesPerSecond: 1 << 20,
+			Cut: func(e error) { err = e }})
 	}))
 	srv.Listener.Close()
 	srv.Listener = listen(t)

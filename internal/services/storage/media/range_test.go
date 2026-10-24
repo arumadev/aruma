@@ -1,7 +1,11 @@
 package media
 
 import (
+	"bytes"
+	"errors"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -176,5 +180,47 @@ func TestShortBody(t *testing.T) {
 	_, err := get(t, newGet(), it, []byte("01234"), Token, generous)
 	if err != ErrShortBody {
 		t.Errorf("err %v", err)
+	}
+}
+
+// TestPreconditionsBeforeRange: If-None-Match and If-Modified-Since are evaluated before Range
+// (RFC 9110 §13.2.2), so a cached copy is a 304 even when the range would be a 416.
+func TestPreconditionsBeforeRange(t *testing.T) {
+	data := []byte("0123456789")
+	it := object("o", "text/plain", data)
+	for _, hd := range [][]string{
+		{"If-None-Match", it.ETag, "Range", "bytes=100-"},
+		{"If-Modified-Since", it.Updated.Add(time.Hour).Format(http.TimeFormat), "Range", "bytes=100-"},
+		{"If-None-Match", it.ETag, "Range", "bytes=2-3"},
+	} {
+		rec, err := get(t, newGet(hd...), it, data, Token, generous)
+		if err != nil || rec.Code != http.StatusNotModified || rec.Header().Get("Content-Range") != "" {
+			t.Errorf("%v: %d %v %v", hd, rec.Code, err, rec.Header())
+		}
+	}
+}
+
+// unseekable fails every Seek.
+type unseekable struct{ io.Reader }
+
+func (unseekable) Seek(int64, int) (int64, error) { return 0, errors.New("disk gone") }
+
+// TestErrorBeforeTheStatusLine: an error before any byte is returned, with w untouched, so the
+// caller may still answer; nothing of the media headers is left on w.
+func TestErrorBeforeTheStatusLine(t *testing.T) {
+	data := []byte("0123456789")
+	it := object("o.pdf", "application/pdf", data)
+	rec := httptest.NewRecorder()
+	rec.Header().Set("Cross-Origin-Resource-Policy", "same-origin")
+	err := Serve(rec, newGet(), it, unseekable{bytes.NewReader(data)}, Token, generous)
+	if err == nil {
+		t.Fatal("no error")
+	}
+	if rec.Code != http.StatusOK || rec.Body.Len() != 0 || rec.Flushed {
+		t.Errorf("wrote %d %q", rec.Code, rec.Body)
+	}
+	h := rec.Header()
+	if len(h) != 1 || h.Get("Cross-Origin-Resource-Policy") != "same-origin" {
+		t.Errorf("headers left: %v", h)
 	}
 }

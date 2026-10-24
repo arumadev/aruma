@@ -241,3 +241,51 @@ func TestStoredEncodingHeader(t *testing.T) {
 		}
 	}
 }
+
+// TestContentTypeTheBrowserCouldReadOtherwise: Fetch's "extract a MIME type" keeps the last
+// valid type of a comma list, so text/plain,application/pdf is a PDF to the browser. Such a
+// type, and any that mime.ParseMediaType refuses, is served as octet-stream, under the rules a
+// stored type would have escaped.
+func TestContentTypeTheBrowserCouldReadOtherwise(t *testing.T) {
+	data := []byte("%PDF-1.7 <script>")
+	for _, ct := range []string{
+		"text/plain,application/pdf",
+		"text/plain, application/pdf",
+		"application/pdf,text/html",
+		"text/html,",
+		",text/html",
+		`text/plain; charset="a,b"`,
+		"text/html;;",
+		"text",
+		"text/",
+		"/html",
+		"text/html; charset",
+		"text/html; =x",
+		"tex t/html",
+		`text/html\x`,
+		"(text)/html",
+	} {
+		it := object("doc", ct, data)
+		it.ContentDisposition = "inline"
+		for _, m := range []Mode{RulesDecided, Token, GCS, Console} {
+			rec, err := get(t, newGet(), it, data, m, generous)
+			if err != nil {
+				t.Fatal(err)
+			}
+			h := rec.Header()
+			if got := h.Get("Content-Type"); got != octetStream {
+				t.Errorf("%q mode %d: served as %q", ct, m, got)
+			}
+			if h.Get("Content-Security-Policy") != sandboxCSP || h.Get("X-Content-Type-Options") != "nosniff" {
+				t.Errorf("%q mode %d: %v", ct, m, h)
+			}
+		}
+	}
+	// Well-formed types with parameters stay as stored.
+	for _, ct := range []string{"text/plain; charset=utf-8", `text/plain; charset="utf-8"`, "Application/PDF; x=1"} {
+		rec, _ := get(t, newGet(), object("doc", ct, data), data, Token, generous)
+		if got := rec.Header().Get("Content-Type"); got != ct {
+			t.Errorf("%q served as %q", ct, got)
+		}
+	}
+}

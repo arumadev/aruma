@@ -83,6 +83,13 @@ func TestAcceptEncoding(t *testing.T) {
 		{[]string{"Accept-Encoding", "gzip;q=0"}, true},
 		{[]string{"Accept-Encoding", "gzip; q=0.000"}, true},
 		{[]string{"Accept-Encoding", "*;q=0"}, true},
+		// An explicit gzip;q=0 wins over * (RFC 9110 §12.5.3), in either order.
+		{[]string{"Accept-Encoding", "*, gzip;q=0"}, true},
+		{[]string{"Accept-Encoding", "gzip;q=0, *"}, true},
+		{[]string{"Accept-Encoding", "x-gzip;q=0, *;q=1"}, true},
+		{[]string{"Accept-Encoding", "gzip;q=0", "Accept-Encoding", "*"}, true},
+		{[]string{"Accept-Encoding", "gzip;q=0, x-gzip"}, false},
+		{[]string{"Accept-Encoding", "*;q=0, gzip"}, false},
 		{[]string{"Accept-Encoding", "identity"}, true},
 		{[]string{"Accept-Encoding", "deflate, br"}, true},
 		{[]string{"Accept-Encoding", ""}, true},
@@ -165,7 +172,7 @@ func TestGzipBombConstantMemory(t *testing.T) {
 		runtime.GC()
 		var before, after runtime.MemStats
 		runtime.ReadMemStats(&before)
-		err := Serve(w, newGet(), it, bytes.NewReader(stored), Token, lim)
+		err := serveCatch(w, newGet(), it, bytes.NewReader(stored), Token, lim)
 		runtime.ReadMemStats(&after)
 		return w, err, after.TotalAlloc - before.TotalAlloc
 	}
@@ -206,7 +213,7 @@ func TestIdentityConstantMemory(t *testing.T) {
 	runtime.GC()
 	var before, after runtime.MemStats
 	runtime.ReadMemStats(&before)
-	err := Serve(w, newGet(), it, &zeros{size: size}, GCS, generous)
+	err := serveCatch(w, newGet(), it, &zeros{size: size}, GCS, generous)
 	runtime.ReadMemStats(&after)
 	if err != nil || w.n != size {
 		t.Fatalf("%v %d", err, w.n)

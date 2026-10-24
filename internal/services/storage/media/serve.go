@@ -26,8 +26,23 @@ func serve(w http.ResponseWriter, r *http.Request, it Item, body io.ReadSeeker, 
 		writeError(w, m, http.StatusForbidden)
 		return nil
 	}
-	h := w.Header()
+	// The media headers go to w only with the status line, so an error returned before it
+	// leaves the caller w's headers as they were.
+	mh := http.Header{}
+	setHeaders(mh, it, m)
 	head := r.Method == http.MethodHead
+
+	// The preconditions before Range (RFC 9110 §13.2.2): a cached copy is a 304 whatever the
+	// range asks for.
+	if notModified(r, it) {
+		// As net/http's writeNotModified: no representation headers on a 304.
+		for _, k := range []string{"Content-Type", "Content-Length", "Content-Encoding", "Content-Disposition"} {
+			mh.Del(k)
+		}
+		send(w, mh, http.StatusNotModified)
+		return nil
+	}
+
 	transcode := isGzip(it.ContentEncoding) && !acceptsGzip(r.Header) && !noTransform(it.CacheControl) &&
 		lim.DecompressedBytes > 0
 
@@ -39,20 +54,10 @@ func serve(w http.ResponseWriter, r *http.Request, it Item, body io.ReadSeeker, 
 		// Several Range headers are several ranges: the whole object (§10.3).
 		rng, partial, err = wire.ParseRange(strings.Join(r.Header.Values("Range"), ","), it.Size)
 		if errors.Is(err, wire.ErrUnsatisfiable) {
-			h.Set("Content-Range", wire.UnsatisfiedContentRange(it.Size))
+			w.Header().Set("Content-Range", wire.UnsatisfiedContentRange(it.Size))
 			writeError(w, m, http.StatusRequestedRangeNotSatisfiable)
 			return nil
 		}
-	}
-
-	setHeaders(h, it, m)
-	if notModified(r, it) {
-		// As net/http's writeNotModified: no representation headers on a 304.
-		for _, k := range []string{"Content-Type", "Content-Length", "Content-Encoding", "Content-Disposition"} {
-			h.Del(k)
-		}
-		w.WriteHeader(http.StatusNotModified)
-		return nil
 	}
 
 	p := newPacer(w, lim.MinBytesPerSecond)
@@ -62,38 +67,59 @@ func serve(w http.ResponseWriter, r *http.Request, it Item, body io.ReadSeeker, 
 			return err
 		}
 		if ok {
-			h.Set("Accept-Ranges", "none")
-			w.WriteHeader(http.StatusOK)
-			if head {
-				return nil
+			mh.Set("Accept-Ranges", "none")
+			send(w, mh, http.StatusOK)
+			if !head {
+				cut(lim, gunzip(w, r, body, lim.DecompressedBytes, p))
 			}
-			return gunzip(w, r, body, lim.DecompressedBytes, p)
+			return nil
 		}
 		// Bytes stored as gzip that are not gzip: served whole as stored, with their
 		// encoding, so the reply is what the client stored rather than a 500.
 	}
 
 	if !identity(it.ContentEncoding) {
-		h.Set("Content-Encoding", storedEncoding(it.ContentEncoding))
+		mh.Set("Content-Encoding", storedEncoding(it.ContentEncoding))
 	}
-	h.Set("Accept-Ranges", "bytes")
+	mh.Set("Accept-Ranges", "bytes")
 	start, length := int64(0), it.Size
 	status := http.StatusOK
 	if partial {
 		start, length = rng.Start, rng.Length
 		status = http.StatusPartialContent
-		h.Set("Content-Range", rng.ContentRange(it.Size))
+		mh.Set("Content-Range", rng.ContentRange(it.Size))
 	}
-	h.Set("Content-Length", wire.Int(length))
+	mh.Set("Content-Length", wire.Int(length))
 	if _, err := body.Seek(start, io.SeekStart); err != nil {
-		// Nothing is written yet: the caller's abort leaves the client a cut connection.
 		return fmt.Errorf("media: seek: %w", err)
 	}
-	w.WriteHeader(status)
-	if head || length == 0 {
-		return nil
+	send(w, mh, status)
+	if !head && length > 0 {
+		cut(lim, copyN(w, r, body, length, p))
 	}
-	return copyN(w, r, body, length, p)
+	return nil
+}
+
+// send writes the media headers over w's, and the status line.
+func send(w http.ResponseWriter, mh http.Header, status int) {
+	h := w.Header()
+	for k, v := range mh {
+		h[k] = v
+	}
+	w.WriteHeader(status)
+}
+
+// cut ends a reply that failed after its headers: it tells lim.Cut why, then aborts the
+// handler, which cuts the connection (HTTP/1) or resets the stream (HTTP/2). A decompressed
+// reply has no Content-Length, so returning would close a chunked body as if it were whole.
+func cut(lim Limits, err error) {
+	if err == nil {
+		return
+	}
+	if lim.Cut != nil {
+		lim.Cut(err)
+	}
+	panic(http.ErrAbortHandler)
 }
 
 // copyN writes length bytes of body, a buffer at a time, extending the write deadline as the
@@ -195,22 +221,27 @@ func notModified(r *http.Request, it Item) bool {
 	return false
 }
 
-// acceptsGzip reports an Accept-Encoding that takes gzip: gzip, x-gzip or *, with a q above 0.
+// acceptsGzip reports an Accept-Encoding that takes gzip (RFC 9110 §12.5.3): an explicit gzip
+// or x-gzip with a q above 0, or, with neither named, a * with a q above 0. An explicit
+// gzip;q=0 refuses gzip whatever * says.
 func acceptsGzip(h http.Header) bool {
+	named, namedOK, star, starOK := false, false, false, false
 	for _, v := range h.Values("Accept-Encoding") {
 		for c := range strings.SplitSeq(v, ",") {
 			coding, params, _ := strings.Cut(c, ";")
+			ok := !zeroQ(params)
 			switch strings.ToLower(strings.TrimSpace(coding)) {
-			case "gzip", "x-gzip", "*":
-			default:
-				continue
-			}
-			if !zeroQ(params) {
-				return true
+			case "gzip", "x-gzip":
+				named, namedOK = true, namedOK || ok
+			case "*":
+				star, starOK = true, starOK || ok
 			}
 		}
 	}
-	return false
+	if named {
+		return namedOK
+	}
+	return star && starOK
 }
 
 // zeroQ reports a q=0 (q=0, q=0.0, q=0.000) among an Accept-Encoding entry's parameters.

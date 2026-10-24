@@ -1,6 +1,7 @@
 package media
 
 import (
+	"mime"
 	"net/http"
 	"strings"
 	"time"
@@ -39,10 +40,7 @@ const octetStream = "application/octet-stream"
 // setHeaders writes the headers of a reply serving it in mode m, except the ones that depend on
 // the bytes sent (Content-Length, Content-Range, Content-Encoding, Accept-Ranges).
 func setHeaders(h http.Header, it Item, m Mode) {
-	ct := cleanValue(it.ContentType)
-	if ct == "" {
-		ct = octetStream
-	}
+	ct := contentType(it.ContentType)
 	mt := mediaType(ct)
 	h.Set("Content-Type", ct)
 	h.Set("X-Content-Type-Options", "nosniff")
@@ -208,6 +206,27 @@ func storedEncoding(enc string) string {
 		return strings.ToLower(t)
 	}
 	return "identity"
+}
+
+// contentType returns the stored type, or octet-stream when there is none, or when it is not
+// one well-formed media type. Fetch's "extract a MIME type" splits a Content-Type on commas and
+// keeps the last valid one, so text/plain,application/pdf is a PDF to the browser while a check
+// on its first type reads text/plain: served as stored it would escape the forced attachment.
+// Any type the browser could read otherwise than mime.ParseMediaType does is not served.
+func contentType(stored string) string {
+	ct := cleanValue(stored)
+	if ct == "" || strings.ContainsRune(ct, ',') {
+		return octetStream
+	}
+	mt, _, err := mime.ParseMediaType(ct)
+	if err != nil {
+		return octetStream
+	}
+	// Fetch wants type/subtype; ParseMediaType takes a bare token too.
+	if typ, sub, ok := strings.Cut(mt, "/"); !ok || typ == "" || sub == "" || strings.Contains(sub, "/") {
+		return octetStream
+	}
+	return ct
 }
 
 // mediaType returns a Content-Type's type and subtype, lower case, without parameters.

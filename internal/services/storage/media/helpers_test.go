@@ -40,8 +40,24 @@ func get(t *testing.T, req *http.Request, it Item, data []byte, m Mode, lim Limi
 	// The server's general headers, which a media reply overrides and an error keeps.
 	rec.Header().Set("Cross-Origin-Resource-Policy", "same-origin")
 	rec.Header().Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
-	err := Serve(rec, req, it, bytes.NewReader(data), m, lim)
+	err := serveCatch(rec, req, it, bytes.NewReader(data), m, lim)
 	return rec, err
+}
+
+// serveCatch calls Serve and returns its error, or, when Serve cut the reply, the error it gave
+// lim.Cut; a cut without a Cut call, or any other panic, fails the test.
+func serveCatch(w http.ResponseWriter, req *http.Request, it Item, body io.ReadSeeker, m Mode, lim Limits) (err error) {
+	var cutErr error
+	lim.Cut = func(e error) { cutErr = e }
+	defer func() {
+		if p := recover(); p != nil {
+			if p != http.ErrAbortHandler || cutErr == nil {
+				panic(p)
+			}
+			err = cutErr
+		}
+	}()
+	return Serve(w, req, it, body, m, lim)
 }
 
 func newGet(headers ...string) *http.Request {
