@@ -86,18 +86,41 @@ func newEnvWithPool(t *testing.T, maxConns int, env map[string]string, opts ...a
 		u.RawQuery = q.Encode()
 		poolURL = u.String()
 	}
-	return serveOn(t, dbURL, poolURL, env, opts...)
+	return serveOn(t, dbURL, poolURL, nil, env, opts...)
+}
+
+// newEnvOnLink is newEnv with every connection the server accepts passed through link, the
+// network between the server and its clients as the server sees it.
+func newEnvOnLink(t *testing.T, link func(net.Conn) net.Conn, env map[string]string, opts ...app.Option) *Env {
+	t.Helper()
+	dbURL := storetest.NewDB(t)
+	return serveOn(t, dbURL, dbURL, link, env, opts...)
 }
 
 // restart starts a new server on e's database with the settings env, as a restarted process:
 // nothing carries over but what the database holds. The caller stops e's connections first.
 func (e *Env) restart(env map[string]string, opts ...app.Option) *Env {
 	e.t.Helper()
-	return serveOn(e.t, e.DB, e.DB, env, opts...)
+	return serveOn(e.t, e.DB, e.DB, nil, env, opts...)
 }
 
-// serveOn starts a server on the database at dbURL, its pool opened with poolURL.
-func serveOn(t *testing.T, dbURL, poolURL string, env map[string]string, opts ...app.Option) *Env {
+// linkListener passes each connection it accepts through link.
+type linkListener struct {
+	net.Listener
+	link func(net.Conn) net.Conn
+}
+
+func (l linkListener) Accept() (net.Conn, error) {
+	c, err := l.Listener.Accept()
+	if err != nil {
+		return nil, err
+	}
+	return l.link(c), nil
+}
+
+// serveOn starts a server on the database at dbURL, its pool opened with poolURL, its
+// connections passed through link unless it is nil.
+func serveOn(t *testing.T, dbURL, poolURL string, link func(net.Conn) net.Conn, env map[string]string, opts ...app.Option) *Env {
 	t.Helper()
 	ctx := context.Background()
 	pool, err := store.Open(ctx, poolURL)
@@ -132,6 +155,9 @@ func serveOn(t *testing.T, dbURL, poolURL string, env map[string]string, opts ..
 	ts := httptest.NewUnstartedServer(a.Server.Handler())
 	ts.Listener.Close()
 	ts.Listener = ln
+	if link != nil {
+		ts.Listener = linkListener{ln, link}
+	}
 	ts.Start()
 	t.Cleanup(ts.Close)
 	t.Cleanup(func() {
