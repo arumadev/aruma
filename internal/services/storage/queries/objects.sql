@@ -39,6 +39,15 @@ WHERE project_number = @project_number AND name >= @from_name AND name < @before
 ORDER BY name
 LIMIT @max_rows;
 
+-- name: LockBucketSettings :one
+-- The bucket's settings row, locked for the rest of the transaction: made first when absent, as
+-- the bucket is before any change (metageneration 1, no CORS), so a conditional change decides
+-- on a row that every other change waits for (SetCORS's BucketConditions).
+INSERT INTO storage.buckets (project_number, updated)
+VALUES (@project_number, @now)
+ON CONFLICT (project_number) DO UPDATE SET metageneration = storage.buckets.metageneration
+RETURNING *;
+
 -- name: SetBucketCORS :one
 -- The bucket's settings row, created on its first change: metageneration 1 is the bucket
 -- before any change, so the first one makes it 2 (BucketInfo).

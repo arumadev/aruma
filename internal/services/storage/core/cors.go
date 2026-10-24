@@ -58,10 +58,19 @@ func (s *Service) BucketInfo(ctx context.Context, b Bucket) (BucketInfo, error) 
 
 // SetCORS replaces a bucket's CORS rules, advancing its metageneration: admins only (the GCS
 // surface and the dashboard). It returns the bucket as changed, for buckets.patch. An empty
-// list removes every rule.
-func (s *Service) SetCORS(ctx context.Context, b Bucket, p Principal, rules []CORSRule) (BucketInfo, error) {
+// list removes every rule. cond, at most one, is checked on the settings row locked in the
+// change's transaction, so two changes with the same ifMetagenerationMatch never both pass:
+// the second is ErrPreconditionFailed.
+func (s *Service) SetCORS(ctx context.Context, b Bucket, p Principal, rules []CORSRule, cond ...BucketConditions) (BucketInfo, error) {
 	if p.Kind != PrincipalAdmin {
 		return BucketInfo{}, ErrPermissionDenied
+	}
+	if len(cond) > 1 {
+		return BucketInfo{}, ErrInvalidArgument
+	}
+	var c BucketConditions
+	if len(cond) == 1 {
+		c = cond[0]
 	}
 	leave, err := s.enter()
 	if err != nil {
@@ -78,12 +87,21 @@ func (s *Service) SetCORS(ctx context.Context, b Bucket, p Principal, rules []CO
 	}
 	var row queries.StorageBucket
 	err = s.inTx(ctx, func(q *queries.Queries) error {
+		if c != (BucketConditions{}) {
+			cur, err := q.LockBucketSettings(ctx, queries.LockBucketSettingsParams{ProjectNumber: b.Project, Now: created})
+			if err != nil {
+				return err
+			}
+			if !c.hold(cur.Metageneration) {
+				return ErrPreconditionFailed
+			}
+		}
 		var err error
 		row, err = q.SetBucketCORS(ctx, queries.SetBucketCORSParams{ProjectNumber: b.Project, Cors: enc, Now: s.now()})
 		return err
 	})
 	switch {
-	case errors.Is(err, ErrUnavailable):
+	case errors.Is(err, ErrPreconditionFailed), errors.Is(err, ErrUnavailable):
 		return BucketInfo{}, err
 	case err != nil:
 		return BucketInfo{}, fmt.Errorf("%w: set the bucket's CORS: %w", ErrUnavailable, err)
@@ -210,4 +228,10 @@ func httpToken(v string) bool {
 		}
 	}
 	return true
+}
+
+// hold reports whether the conditions hold on a bucket's metageneration.
+func (c BucketConditions) hold(metageneration int64) bool {
+	return (c.IfMetagenerationMatch == nil || *c.IfMetagenerationMatch == metageneration) &&
+		(c.IfMetagenerationNotMatch == nil || *c.IfMetagenerationNotMatch != metageneration)
 }

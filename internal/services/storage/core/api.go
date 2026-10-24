@@ -133,6 +133,22 @@ type Preconditions struct {
 	IfGenerationMatch, IfGenerationNotMatch, IfMetagenerationMatch, IfMetagenerationNotMatch *int64
 }
 
+// SourceConditions are a rewrite's conditions on its source: GCS's sourceGeneration (0 is the
+// current one; any other than the current is ErrNotFound) and ifSourceGenerationMatch and the
+// like. Rewrite checks them on the row whose file it copies, so they hold for exactly the bytes
+// copied. The zero value is no condition. (Added at S4-A's review, with the lead's agreement.)
+type SourceConditions struct {
+	Generation int64
+	Pre        Preconditions
+}
+
+// BucketConditions are GCS's ifMetagenerationMatch and ifMetagenerationNotMatch on a bucket,
+// checked by SetCORS on the settings row it locks. The zero value is no condition. (Added at
+// S4-A's review, with the lead's agreement.)
+type BucketConditions struct {
+	IfMetagenerationMatch, IfMetagenerationNotMatch *int64
+}
+
 // Checksums are what a client claims its object's checksums are; nil is not claimed.
 type Checksums struct {
 	CRC32C *uint32

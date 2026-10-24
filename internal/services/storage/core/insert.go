@@ -100,10 +100,22 @@ func (s *Service) Insert(ctx context.Context, b Bucket, p Principal, spec Upload
 
 // Rewrite copies an object to a new key, within one project (GCS rewriteTo), counted on the
 // quota and the disk floor. The tokens go with it, sealed again for the destination's name,
-// unless attrs replaces the metadata.
-func (s *Service) Rewrite(ctx context.Context, src Bucket, srcName string, dst Bucket, dstName string, p Principal, attrs *Patch, pre Preconditions) (Object, error) {
+// unless attrs replaces the metadata. pre are the destination's preconditions, and of (at most
+// one) the source's conditions, checked on the row whose file is copied: a file key is never
+// reused, so they hold for exactly the bytes copied, however the source changes meanwhile.
+func (s *Service) Rewrite(ctx context.Context, src Bucket, srcName string, dst Bucket, dstName string, p Principal, attrs *Patch, pre Preconditions, of ...SourceConditions) (Object, error) {
 	if err := checkPre(SurfaceGCS, pre); err != nil {
 		return Object{}, err
+	}
+	if len(of) > 1 {
+		return Object{}, ErrInvalidArgument
+	}
+	var cond SourceConditions
+	if len(of) == 1 {
+		cond = of[0]
+	}
+	if cond.Generation < 0 {
+		return Object{}, ErrInvalidArgument
 	}
 	if src.Project != dst.Project {
 		return Object{}, ErrPermissionDenied
@@ -132,8 +144,11 @@ func (s *Service) Rewrite(ctx context.Context, src Bucket, srcName string, dst B
 	if err := s.authorize(ctx, src, p, ruleOp{Method: rules.MethodGet, Name: srcName, Resource: from, Surface: SurfaceGCS}); err != nil {
 		return Object{}, err
 	}
-	if from == nil {
+	if from == nil || (cond.Generation != 0 && cond.Generation != from.Generation) {
 		return Object{}, ErrNotFound
+	}
+	if err := checkPreconditions(*from, cond.Pre); err != nil {
+		return Object{}, err
 	}
 	var o Object
 	if attrs == nil {
