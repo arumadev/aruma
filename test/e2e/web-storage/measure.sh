@@ -20,6 +20,9 @@
 #   test/e2e/web-storage/measure.sh --install [target…]   only install the apps, then exit (CI
 #                                                        measures after it with the network off)
 #
+# Under test/ci/egress-guard.sh (ARUMA_EGRESS_GUARD) it installs nothing and fails when an app is
+# not installed. Every measured value is a check: an ok line, or a FAILED one.
+#
 # The versions are the ones measured (docs/compat/storage-v0.3.md, S6-W), and every other package
 # resolves as the registry stood then (npm install --before), so each run installs the same tree.
 set -euo pipefail
@@ -28,7 +31,7 @@ npm_before=2026-10-24T12:00:00Z
 firebase=13.1.0
 vite_versions=(5.4.21 6.4.5 7.3.7 8.3.5) # Vite 5, 6, 7, 8
 next=16.4.3 react=19.3.1
-expo=58.0.19 svg_transformer=1.5.3
+expo=58.0.19 svg_transformer=1.5.3 metro=0.87.1
 
 here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/../../.." && pwd)
@@ -45,6 +48,17 @@ install_only=
 [[ ${1:-} == --install ]] && install_only=1 && shift
 targets=("$@")
 [[ ${#targets[@]} -gt 0 ]] || targets=(vite5 vite6 vite7 vite8 next expo flutter)
+guarded=${ARUMA_EGRESS_GUARD:-}
+if [[ -n $install_only && -n $guarded ]]; then
+  echo "measure.sh --install under the egress guard: install before turning it on" >&2
+  exit 2
+fi
+
+# not_installed <what>: under the guard nothing is installed, so a missing install ends the run.
+not_installed() {
+  echo "$1 is not installed: run measure.sh --install before the egress guard" >&2
+  exit 1
+}
 
 if [[ -n $install_only ]]; then
   mkdir -p "$gen"
@@ -52,7 +66,10 @@ else
   start_aruma
 fi
 cd "$here"
-[[ -d node_modules ]] || npm ci --no-audit --no-fund --silent
+if [[ ! -d node_modules ]]; then
+  [[ -z $guarded ]] || not_installed "$here"
+  npm ci --no-audit --no-fund --silent
+fi
 mkdir -p "$apps"
 
 results=()
@@ -86,8 +103,20 @@ package() {
 # install_app <dir>: npm install, with @aruma/web copied in (not linked: Turbopack and Metro do not
 # follow a link out of the project) fresh from sdk/web/aruma-web.
 install_app() {
+  if [[ -n $guarded ]]; then
+    [[ -d $1/node_modules/@aruma/web ]] || not_installed "$1"
+    return 0
+  fi
   rm -rf "$1/node_modules/@aruma"
   (cd "$1" && npm install --no-audit --no-fund --silent --install-links --before "$npm_before")
+}
+
+# pkg_version <dir> <package>: the version of the package installed in dir.
+pkg_version() { (cd "$1" && node -p "require('$2/package.json').version"); }
+
+# expect_version <what> <got> <want> [more]: ok when the installed version is the measured one.
+expect_version() {
+  if [[ $2 == "$3" ]]; then note "ok      $1 $2${4:+, $4}"; else note "FAILED  $1 $2, not the measured $3"; fi
 }
 
 vite_app() {
@@ -101,29 +130,65 @@ vite_app() {
   cp apps/vite/vite.config.mjs "$dir/"
   install_app "$dir" && rm -rf "$dir/node_modules/.vite"
   [[ -z $install_only ]] || return 0
-  note "vite $major: $(cd "$dir" && node -p 'require("vite/package.json").version')"
+  expect_version "$name: vite" "$(cd "$dir" && node -p 'require("vite/package.json").version')" "${vite_versions[major - 5]}"
   if (cd "$dir" && ARUMA_E2E_NAME=$name npx vite build >"$gen/build-$name.log" 2>&1); then
     playwright "$name" "$name=$dir/dist" "$name-build"
   else
     note "FAILED  $name-build: vite build failed (see $gen/build-$name.log)"
   fi
-  (cd "$dir" && ARUMA_E2E_NAME=$name exec npx vite --port "$dev_port") >"$gen/dev-$name.log" 2>&1 &
-  dev_pid=$!
-  wait_http "http://127.0.0.1:$dev_port/$name/"
-  playwright "$name@http://127.0.0.1:$dev_port/$name/" "" "$name-dev"
-  stop_dev
+  if port_free "$name-dev"; then
+    (cd "$dir" && ARUMA_E2E_NAME=$name exec npx vite --port "$dev_port") >"$gen/dev-$name.log" 2>&1 &
+    dev_pid=$!
+    if started "http://127.0.0.1:$dev_port/$name/" "$name-dev" "$gen/dev-$name.log"; then
+      playwright "$name@http://127.0.0.1:$dev_port/$name/" "" "$name-dev"
+    fi
+    stop_dev
+  fi
 }
 
-# stop_dev stops the dev server and what it started.
+# The servers measure.sh starts take $dev_port one after the other. A server measured must be the
+# one just started, never one an earlier stop left behind: port_free before the start, started
+# after it, and stop_dev ends the whole process tree and waits until the port is free.
+
+# answers: whether anything answers HTTP on $dev_port.
+answers() { curl -s -o /dev/null --max-time 2 "http://127.0.0.1:$dev_port/"; }
+
+# port_free <name>: true when nothing answers on $dev_port, else a FAILED line.
+port_free() {
+  answers || return 0
+  note "FAILED  $1: something already answers on :$dev_port, so the server was not started"
+  return 1
+}
+
+# started <url> <name> <log>: true when the server just started answers on url and is still
+# running (a server that lost the port to another exits), else a FAILED line.
+started() {
+  if wait_http "$1" && kill -0 "$dev_pid" 2>/dev/null; then return 0; fi
+  note "FAILED  $2: the server did not start (see $3)"
+  return 1
+}
+
+# kill_tree <pid>: the process and everything under it, the deepest first (npx, npm exec, the
+# framework's CLI and the server it forks).
+kill_tree() {
+  local child
+  for child in $(pgrep -P "$1" 2>/dev/null); do kill_tree "$child"; done
+  kill "$1" 2>/dev/null || true
+}
+
+# stop_dev stops the server and what it started, and waits until the port is free.
 dev_pid=
 stop_dev() {
   [[ -n "$dev_pid" ]] || return 0
-  pkill -P "$dev_pid" 2>/dev/null || true
-  kill "$dev_pid" 2>/dev/null || true
+  kill_tree "$dev_pid"
   wait "$dev_pid" 2>/dev/null || true
   dev_pid=
-  # What the server started further down (next start's own server) still holds the port.
-  lsof -ti "tcp:$dev_port" -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null || true
+  local _
+  for _ in $(seq 1 60); do
+    answers || return 0
+    sleep 0.25
+  done
+  note "FAILED  a stopped server still answers on :$dev_port"
 }
 
 # netguarded <log> <command…>: runs a Node server under test/experiments/netguard.cjs.
@@ -133,15 +198,25 @@ netguarded() {
   ARUMA_NETGUARD_LOG=$logf NODE_OPTIONS="--require $root/test/experiments/netguard.cjs" "$@"
 }
 
-# guard_clean <log> <what>: a note when the netguard blocked anything.
+google='googleapis\.com|gstatic\.com|google\.com|firebaseio\.com|firebasedatabase\.app|firebaseapp\.com'
+
+# blocked <log> [pattern]: the distinct targets the netguard blocked (matching pattern), on a line.
+blocked() { grep BLOCK "$1" 2>/dev/null | grep -E "${2:-.}" | cut -d' ' -f2 | sort -u | head -3 | tr '\n' ' ' || true; }
+
+# guard_clean <log> <what>: ok when the server's netguard saw its connections to this machine and
+# nothing to Google. The server's Pages Router page reads a link from Aruma, so a netguard that
+# saw no connection was not loaded (or another server answered), and that fails too.
 guard_clean() {
-  local google='googleapis\.com|gstatic\.com|google\.com|firebaseio\.com|firebasedatabase\.app|firebaseapp\.com'
-  if grep BLOCK "$1" 2>/dev/null | grep -qE "$google"; then
-    note "FAILED  $2: the server tried to reach Google: $(grep BLOCK "$1" | grep -E "$google" | cut -d' ' -f2 | sort -u | head -3 | tr '\n' ' ')"
-  elif grep -q BLOCK "$1" 2>/dev/null; then
-    note "ok      $2: nothing to Google; blocked elsewhere: $(grep BLOCK "$1" | cut -d' ' -f2 | sort -u | head -3 | tr '\n' ' ')"
+  local allowed
+  allowed=$(grep -c ALLOW "$1" 2>/dev/null || true)
+  if [[ -n $(blocked "$1" "$google") ]]; then
+    note "FAILED  $2: the server tried to reach Google: $(blocked "$1" "$google")"
+  elif [[ ${allowed:-0} -eq 0 ]]; then
+    note "FAILED  $2: its netguard saw no connection ($1): it was not loaded, or another server answered"
+  elif [[ -n $(blocked "$1") ]]; then
+    note "ok      $2: connected to $allowed local addresses, nothing to Google; blocked elsewhere: $(blocked "$1")"
   else
-    note "ok      $2: the server connected to $(grep -c ALLOW "$1" 2>/dev/null || echo 0) local addresses and nothing else"
+    note "ok      $2: the server connected to $allowed local addresses and nothing else"
   fi
 }
 
@@ -158,29 +233,45 @@ next_app() {
   cp src/ops.js "$dir/app/ops.js"
   install_app "$dir"
   [[ -z $install_only ]] || return 0
-  note "next: $(cd "$dir" && node -p 'require("next/package.json").version')"
-  local b flag none
+  expect_version "next:" "$(cd "$dir" && node -p 'require("next/package.json").version')" "$next"
+  local b flag none chunks leak pages
   # turbopack-bare: the same build without the transpilePackages the line adds (the leak it closes).
   for b in webpack turbopack turbopack-bare; do
     flag=
     none=
     [[ $b == webpack ]] && flag=--webpack
     [[ $b == turbopack-bare ]] && none=1
+    rm -f "$gen/netguard-next-$b.log"
     if ! (cd "$dir" && ARUMA_E2E_DIST=.next-$b ARUMA_E2E_NO_TRANSPILE=$none npx next build $flag >"$gen/build-next-$b.log" 2>&1); then
       note "FAILED  next-$b: next build failed (see $gen/build-next-$b.log)"
       grep -m5 -i "aruma\|error" "$gen/build-next-$b.log" | sed 's/^/          /'
       continue
     fi
-    # What the build left: the host literal must be gone from every chunk.
-    note "        next-$b: chunks still naming Google's host: $(grep -rl '"firebasestorage.googleapis.com"' "$dir/.next-$b" --include='*.js' 2>/dev/null | wc -l | tr -d ' ')"
+    # What the build left: the host literal must be gone from every chunk (the bare build's leak
+    # is the SDK the server loads from node_modules, not a chunk).
+    if [[ $b != turbopack-bare ]]; then
+      chunks=$(grep -rl '"firebasestorage.googleapis.com"' "$dir/.next-$b" --include='*.js' 2>/dev/null | wc -l | tr -d ' ')
+      if [[ $chunks -eq 0 ]]; then note "ok      next-$b: no chunk names Google's host"; else note "FAILED  next-$b: $chunks chunks still name Google's host"; fi
+    fi
+    port_free "next-$b" || continue
     (cd "$dir" && ARUMA_E2E_DIST=.next-$b ARUMA_E2E_NAME=next-$b ARUMA_E2E_NO_TRANSPILE=$none netguarded "$gen/netguard-next-$b.log" \
       exec npx next start -p "$dev_port" -H 127.0.0.1) >"$gen/start-next-$b.log" 2>&1 &
     dev_pid=$!
-    wait_http "http://127.0.0.1:$dev_port/"
-    if [[ $b == turbopack-bare ]]; then
-      note "        next-$b Pages Router: $(pages_check "http://127.0.0.1:$dev_port/pages-ssr") (without transpilePackages)"
+    if ! started "http://127.0.0.1:$dev_port/" "next-$b" "$gen/start-next-$b.log"; then
       stop_dev
-      note "        next-$b server: $(grep BLOCK "$gen/netguard-next-$b.log" | cut -d' ' -f2 | sort -u | tr '\n' ' ')"
+      continue
+    fi
+    if [[ $b == turbopack-bare ]]; then
+      # The control: without transpilePackages the Pages Router's server loads the SDK unrewritten
+      # and reaches for Google's host, which its netguard blocks (docs/compat/storage-v0.3.md).
+      pages=$(pages_check "http://127.0.0.1:$dev_port/pages-ssr")
+      stop_dev
+      leak=$(blocked "$gen/netguard-next-$b.log" 'firebasestorage\.googleapis\.com')
+      if [[ -n $leak && $pages != ok ]]; then
+        note "ok      next-$b: without transpilePackages the Pages Router's server reached for $leak(blocked)"
+      else
+        note "FAILED  next-$b: the leak transpilePackages closes did not show (Pages Router: $pages; blocked: ${leak:-nothing})"
+      fi
       continue
     fi
     playwright "next-$b@http://127.0.0.1:$dev_port/" "" "next-$b"
@@ -189,14 +280,19 @@ next_app() {
     guard_clean "$gen/netguard-next-$b.log" "next-$b server"
   done
   # The dev server compiles with Turbopack too, page by page.
+  rm -f "$gen/netguard-next-dev.log"
+  port_free next-dev || return 0
   (cd "$dir" && ARUMA_E2E_DIST=.next-dev ARUMA_E2E_NAME=next-dev netguarded "$gen/netguard-next-dev.log" \
     exec npx next dev -p "$dev_port" -H 127.0.0.1) >"$gen/dev-next.log" 2>&1 &
   dev_pid=$!
-  wait_http "http://127.0.0.1:$dev_port/"
-  playwright "next-dev@http://127.0.0.1:$dev_port/" "" "next-dev"
-  pages_note "http://127.0.0.1:$dev_port/pages-ssr" next-dev
-  stop_dev
-  guard_clean "$gen/netguard-next-dev.log" "next-dev server"
+  if started "http://127.0.0.1:$dev_port/" next-dev "$gen/dev-next.log"; then
+    playwright "next-dev@http://127.0.0.1:$dev_port/" "" "next-dev"
+    pages_note "http://127.0.0.1:$dev_port/pages-ssr" next-dev
+    stop_dev
+    guard_clean "$gen/netguard-next-dev.log" "next-dev server"
+  else
+    stop_dev
+  fi
 }
 
 # pages_note <url> <name>: a note on the Pages Router page.
@@ -226,6 +322,18 @@ literals() {
   echo "$google with Google's host literal, $aruma with Aruma's"
 }
 
+# rewritten <name> <files…>: ok when no file names Google's host and at least one names Aruma's.
+rewritten() {
+  local name=$1 counts
+  shift
+  counts=$(literals "$@")
+  if [[ $counts =~ ^0\ with\ Google.*,\ ([0-9]+)\ with\ Aruma ]] && [[ ${BASH_REMATCH[1]} -ge 1 ]]; then
+    note "ok      $name: $counts"
+  else
+    note "FAILED  $name: $counts (want 0 with Google's, at least 1 with Aruma's)"
+  fi
+}
+
 expo_app() {
   local dir=$apps/expo
   log "Expo: Metro, the web export in the browser, the Android bundle, react-native-svg-transformer"
@@ -238,11 +346,15 @@ expo_app() {
   # React, React Native and the web packages at the versions this Expo bundles (what `expo install`
   # would pick, without asking Expo's servers).
   local peers
-  peers=$(cd "$dir" && node -p 'const b = require("expo/bundledNativeModules.json"); ["react", "react-dom", "react-native", "react-native-web", "@expo/metro-runtime", "react-native-svg"].map((k) => `${k}@${b[k]}`).join(" ")')
-  # shellcheck disable=SC2086
-  (cd "$dir" && npm install --no-audit --no-fund --silent --install-links --before "$npm_before" $peers)
+  if [[ -z $guarded ]]; then
+    peers=$(cd "$dir" && node -p 'const b = require("expo/bundledNativeModules.json"); ["react", "react-dom", "react-native", "react-native-web", "@expo/metro-runtime", "react-native-svg"].map((k) => `${k}@${b[k]}`).join(" ")')
+    # shellcheck disable=SC2086
+    (cd "$dir" && npm install --no-audit --no-fund --silent --install-links --before "$npm_before" $peers)
+  fi
   [[ -z $install_only ]] || return 0
-  note "expo: $(cd "$dir" && node -p 'require("expo/package.json").version'), react-native $(cd "$dir" && node -p 'require("react-native/package.json").version'), metro $(cd "$dir" && node -p 'require("metro/package.json").version'), react-native-svg-transformer $(cd "$dir" && node -p 'require("react-native-svg-transformer/package.json").version')"
+  expect_version "expo:" "$(pkg_version "$dir" expo)" "$expo" "react-native $(pkg_version "$dir" react-native)"
+  expect_version "expo: metro" "$(pkg_version "$dir" metro)" "$metro"
+  expect_version "expo: react-native-svg-transformer" "$(pkg_version "$dir" react-native-svg-transformer)" "$svg_transformer"
   local svg platform out
   # web and android; the SVG transformer not at all, before @aruma/web (supported) and after it (refused).
   for svg in none before after; do
@@ -252,7 +364,8 @@ expo_app() {
         if [[ $svg == after ]]; then
           note "FAILED  expo-$platform-svg-after: the bundle was written without the rewrite: $(literals $(find "$dir/$out" -name '*.js'))"
         else
-          note "ok      expo-$platform-svg-$svg bundle: $(literals $(find "$dir/$out" -name '*.js'))"
+          # shellcheck disable=SC2046
+          rewritten "expo-$platform-svg-$svg bundle" $(find "$dir/$out" -name '*.js')
           if [[ $platform == web ]]; then playwright expo "expo=$dir/$out" "expo-web-svg-$svg"; fi
         fi
       elif [[ $svg == after ]] && grep -q 'was bundled without the Storage rewrite' "$gen/build-expo-$platform-$svg.log"; then
@@ -271,6 +384,7 @@ flutter_app() {
   local offline=--offline
   [[ -z $install_only ]] || offline=
   if [[ ! -f "$dir/web/index.html.orig" ]]; then
+    [[ -z $guarded ]] || not_installed "$dir"
     rm -rf "$dir"
     flutter create $offline --platforms web --project-name aruma_e2e_web_storage "$dir" >"$gen/flutter-create.log" 2>&1
     cp "$dir/web/index.html" "$dir/web/index.html.orig"
@@ -281,22 +395,37 @@ flutter_app() {
   cp apps/flutter/pubspec.yaml "$dir/"
   cp apps/flutter/lib/main.dart "$dir/lib/main.dart"
   cp apps/flutter/web/flutter_bootstrap.js "$dir/web/"
-  (cd "$dir" && flutter pub get $offline >"$gen/flutter-pub.log" 2>&1)
+  # Under the guard the packages resolved by --install stay: pubspec.yaml is the same file.
+  if [[ -z $guarded ]]; then
+    (cd "$dir" && flutter pub get $offline >"$gen/flutter-pub.log" 2>&1)
+  else
+    [[ -f "$dir/.dart_tool/package_config.json" ]] || not_installed "$dir"
+  fi
   [[ -z $install_only ]] || return 0
-  note "flutter: $(flutter --version 2>/dev/null | head -1 | cut -d' ' -f2), firebase_core_web $(grep -o 'firebase_core_web-[0-9.]*' "$dir/.dart_tool/package_config.json" | head -1 | cut -d- -f2)"
+  # Flutter is the job's toolchain (ci.yml pins 3.44.2), not measure.sh's: shown, not checked.
+  note "info    flutter $(flutter --version 2>/dev/null | head -1 | cut -d' ' -f2), firebase_core_web $(grep -o 'firebase_core_web-[0-9.]*' "$dir/.dart_tool/package_config.json" | head -1 | cut -d- -f2)"
   # The tool, twice: the second run must replace its own block, not add one.
   local out
   out=$(node "$sdk/src/cli.js" flutter-web --url "$ARUMA_URL" --project "$dir" --firebase "$here/node_modules/firebase")
   node "$sdk/src/cli.js" flutter-web --url "$ARUMA_URL" --project "$dir" --firebase "$here/node_modules/firebase" >/dev/null
-  local version
+  local version blocks
   version=$(sed -n 's/.*Firebase JS SDK \([0-9.]*\),.*/\1/p' <<<"$out")
-  note "        flutter-web tool: SDK $version, blocks in index.html: $(grep -c '<!-- @aruma/web flutter-web' "$dir/web/index.html"), $(literals "$dir/web/aruma/firebase-storage-$version.js")"
+  expect_version "flutter-web tool: Firebase JS SDK" "$version" "$firebase"
+  blocks=$(grep -c '<!-- @aruma/web flutter-web' "$dir/web/index.html" || true)
+  if [[ $blocks -eq 1 ]]; then
+    note "ok      flutter-web tool: run twice, one block in index.html"
+  else
+    note "FAILED  flutter-web tool: run twice, $blocks blocks in index.html (want 1)"
+  fi
+  rewritten "flutter-web tool: firebase-storage-$version.js" "$dir/web/aruma/firebase-storage-$version.js"
   if ! (cd "$dir" && flutter build web --no-web-resources-cdn --base-href /flutter/ --no-pub >"$gen/build-flutter.log" 2>&1); then
     note "FAILED  flutter: flutter build web failed (see $gen/build-flutter.log)"
     return
   fi
+  # The spec fails when firebase-storage.js comes from www.gstatic.com; it lists what did (the
+  # SDK files firebase_core_web imports, answered from npm).
   ARUMA_E2E_MIRROR=$version ARUMA_E2E_SIGNED_OUT=1 playwright flutter "flutter=$dir/build/web" flutter
-  note "        flutter: $(grep -m1 'from www.gstatic.com' "$gen/pw-flutter.log" | sed 's/^ *//')"
+  note "info    flutter: $(grep -m1 'from www.gstatic.com' "$gen/pw-flutter.log" | sed 's/^ *//')"
 }
 
 for t in "${targets[@]}"; do
