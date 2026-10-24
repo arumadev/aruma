@@ -33,6 +33,10 @@ func (s *Service) Insert(ctx context.Context, b Bucket, p Principal, spec Upload
 	if err := validateName(spec.Name); err != nil {
 		return Object{}, err
 	}
+	// The ruleset is the one of the request's start, resolved before the body arrives.
+	if ctx, err = s.prepareRules(ctx, b, p); err != nil {
+		return Object{}, err
+	}
 	o, err := s.incomingObject(b, spec.Name, spec.Attrs, spec.Surface)
 	if err != nil {
 		return Object{}, err
@@ -114,15 +118,22 @@ func (s *Service) Rewrite(ctx context.Context, src Bucket, srcName string, dst B
 	if err := validateName(dstName); err != nil {
 		return Object{}, err
 	}
+	// One ruleset for each bucket: the source decides a get, the destination a create.
+	for _, b := range []Bucket{src, dst} {
+		if ctx, err = s.prepareRules(ctx, b, p); err != nil {
+			return Object{}, err
+		}
+	}
 	from, row, err := s.storedObject(ctx, src, srcName)
 	if err != nil {
 		return Object{}, err
 	}
-	if from == nil {
-		return Object{}, ErrNotFound
-	}
+	// The rules decide before the source's existence does (ADR-022 §8).
 	if err := s.authorize(ctx, src, p, ruleOp{Method: rules.MethodGet, Name: srcName, Resource: from, Surface: SurfaceGCS}); err != nil {
 		return Object{}, err
+	}
+	if from == nil {
+		return Object{}, ErrNotFound
 	}
 	var o Object
 	if attrs == nil {

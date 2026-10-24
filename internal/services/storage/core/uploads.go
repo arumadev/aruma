@@ -587,6 +587,10 @@ func (s *Service) finalize(ctx context.Context, b Bucket, sess queries.StorageUp
 		return active, err
 	}
 	o.Size, o.CRC32C, o.MD5 = sess.Received, crc, sum
+	// The session's identity is known only now; no transaction is open yet.
+	if ctx, err = s.prepareRules(ctx, b, p); err != nil {
+		return active, err
+	}
 	if err := s.decideCreate(ctx, b, p, &o, pre, surface); err != nil {
 		return s.failSession(ctx, sess, err)
 	}

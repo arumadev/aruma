@@ -30,6 +30,10 @@ func (s *Service) Stat(ctx context.Context, b Bucket, name string, p Principal, 
 	if err := validateName(name); err != nil {
 		return Object{}, err
 	}
+	ctx, err := s.prepareRules(ctx, b, p)
+	if err != nil {
+		return Object{}, err
+	}
 	get := func(cur *Object) error {
 		if err := s.authorize(ctx, b, p, ruleOp{Method: rules.MethodGet, Name: name, Resource: cur, Surface: sf}); err != nil {
 			return err
@@ -71,6 +75,13 @@ func (s *Service) Stat(ctx context.Context, b Bucket, name string, p Principal, 
 func (s *Service) Open(ctx context.Context, b Bucket, name string, p Principal, token string, gen int64) (Object, blob.Reader, error) {
 	if err := validateName(name); err != nil {
 		return Object{}, nil, err
+	}
+	if token == "" {
+		// A token decides alone; without one the rules decide a get.
+		var err error
+		if ctx, err = s.prepareRules(ctx, b, p); err != nil {
+			return Object{}, nil, err
+		}
 	}
 	for range maxRaces {
 		row, err := s.reads.GetObject(ctx, queries.GetObjectParams{ProjectNumber: b.Project, Name: name})
@@ -150,6 +161,9 @@ func (s *Service) Update(ctx context.Context, b Bucket, name string, p Principal
 	if err := s.checkPatch(u); err != nil {
 		return Object{}, err
 	}
+	if ctx, err = s.prepareRules(ctx, b, p); err != nil {
+		return Object{}, err
+	}
 	return s.change(ctx, b, name, func(cur *Object) (*Object, error) {
 		var next *Object
 		if cur != nil {
@@ -183,7 +197,11 @@ func (s *Service) Delete(ctx context.Context, b Bucket, name string, p Principal
 	if err := validateName(name); err != nil {
 		return err
 	}
-	err := s.inTx(ctx, func(q *queries.Queries) error {
+	ctx, err := s.prepareRules(ctx, b, p)
+	if err != nil {
+		return err
+	}
+	err = s.inTx(ctx, func(q *queries.Queries) error {
 		cur, err := s.lockObject(ctx, q, b, name)
 		if err != nil {
 			return err

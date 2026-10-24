@@ -47,6 +47,10 @@ func (s *Service) List(ctx context.Context, b Bucket, p Principal, o ListOptions
 		}
 		cur = &c
 	}
+	ctx, err := s.prepareRules(ctx, b, p)
+	if err != nil {
+		return ListPage{}, err
+	}
 	if err := s.authorize(ctx, b, p, ruleOp{Method: rules.MethodList, Name: o.Prefix, List: true, Surface: o.Surface}); err != nil {
 		return ListPage{}, err
 	}
