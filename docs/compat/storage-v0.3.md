@@ -85,6 +85,24 @@
 65. **مؤقت: الأشكال التي لم تُقس:** الـ Ruleset بلا `metadata.services`، والقائمة بلا `source`، والقائمة الفارغة `{}` كـ proto3، و`createTime` و`updateTime` بست خانات عشرية ثابتة (الأداة ترتب بمقارنة النص). و`defaultBucket` بـ `location` = `US-CENTRAL1` واسم بمعرّف المشروع، و`/v1beta/projects/{p}/buckets` باسم برقم المشروع (`extensions/provisioningHelper.ts:127-129`)، وService Usage `ENABLED` لكل اسم وعملية `:enable` منتهية. `mgmt/storage.go`، و`mgmt/rules.go` (`rulesTime`).
 66. **قيد: جسم فوق 1 MiB على `:test` أو `rulesets`** يُرد برسالة الإنتاج للحجم 400 («Total size of sources must be smaller than 262144.»، `limits.json` `size_comment_1048576`) لا 413، فكل جسم بهذا الحجم مصدر فوق الحد. `mgmt/rules.go` (`decodeSource`).
 
+### أداة `firebase` من طرف إلى طرف (S5-D)
+
+firebase-tools 15.34.0 نفسها (مثبّتة في `test/acceptance/testdata/firebase-cli`) على خادم حي، يختبرها `TestStorageWithTheFirebaseCLI` في `test/acceptance/storage_cli_test.go` (`ARUMA_FIREBASE_CLI=1`). الأداة مضبوطة بالبيئة وحدها كما يضبطها المطوّر (C §5.1، وT23 في `docs/research/experiments.md`): `FIREBASE_API_URL` و`FIREBASE_TOKEN_URL` و`FIREBASE_RULES_URL` و`FIREBASE_FIREBASESTORAGE_URL` و`FIREBASE_SERVICE_USAGE_URL` إلى واجهة https أمام الخادم، و`FIREBASE_TOKEN` رمز CLI، و`FIREBASE_SKIP_INFORMATIONAL_IAM=1`. وتعمل ببيت خاص بها، وتحت `test/experiments/netguard.cjs` (وsandbox-exec على macOS)، فأي اتصال خارج loopback يُرفض ويُفشل الاختبار. والواجهة تسجّل كل طلب، فيُفحص الترتيب أيضًا.
+
+| الخطوة | ما يُفحص |
+|---|---|
+| `firebase init storage` بلا إصدارة | القالب بايتًا ببايت، و`"storage": {"rules": "storage.rules"}`، والطلبات: Service Usage باسم `127.0.0.1` (مضيف `FIREBASE_FIREBASESTORAGE_URL`، C §1.4)، ثم `defaultBucket`، ثم `releases` |
+| `firebase deploy --only storage` | `:test`، و`releases`، و`POST rulesets`، و`PATCH` 404 ثم `POST releases`، وقراءة مجهولة على `/v0` تنقلب من 403 إلى 200 بعد النشر مباشرة |
+| النشر الثاني بلا تغيير | «latest version of storage.rules already up to date, skipping upload...»، و`GET rulesets/{id}` و`PATCH` 200 بلا `POST rulesets` |
+| قواعد مغيّرة | القراءة نفسها 403 بعد النشر مباشرة |
+| `firebase init storage` بعد النشر | القواعد المنشورة بايتًا ببايت، و«Downloaded the existing Storage Security Rules from the Firebase console» |
+| خطأ ترجمة | خروج 1 و`[E] 4:20 - Missing conditional expression after 'if'.`، ولا طلب بعد `:test`، والقواعد قبله باقية على `/v0` |
+| بلا Storage | `init` و`deploy` يطبعان «Firebase Storage has not been set up on project 'cli-app'» بعد `defaultBucket` 404، ولا طلب لواجهة القواعد |
+
+- الأداة تطبع تحذير `FIREBASE_TOKEN` المهمل في كل أمر؛ وهو الاعتماد الوحيد العامل (T23).
+- `init` في هذا الإصدار يمر أيضًا بـ «Agent Skills Setup» ويكتب `.gitignore`، بلا طلب شبكة.
+- لا بند جديد في ADR-023 §3.
+
 ### واجهة `/v0` (S3-A)
 
 يختبرها `api/api_test.go` (`TestRoutes`: كل طلب ترسله المكتبات الثلاث يصل معالجه، وردود الموجّه بشكل الإنتاج 400 و404)، و`api/objects_test.go` (أجسام PATCH، وكل خطأ مسمّى بحالته)، و`test/acceptance/storage_v0_test.go` (كل عملية غير الرفع والتنزيل على خادم حقيقي، و`wiretest.AssertNoNull` على كل رد).
