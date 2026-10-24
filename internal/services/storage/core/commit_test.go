@@ -266,7 +266,11 @@ func TestInsertRefusalsLeaveNothing(t *testing.T) {
 		{"over the declared size", UploadSpec{Name: "a.txt", Surface: SurfaceGCS, Declared: 2}, "abc", -1, nil, ErrSizeMismatch},
 		{"short body", uploadSpec("a.txt", SurfaceGCS), "abc", 5, nil, errShortBody},
 	} {
+		// The refusals other than the rules' come with the rules allowing.
 		e.s.authorizeHook = c.hook
+		if c.hook == nil {
+			e.s.authorizeHook = func(context.Context, Bucket, Principal, ruleOp) error { return nil }
+		}
 		_, err := e.s.Insert(ctx, e.a, asUser("u1"), c.sp, strings.NewReader(c.body), c.len)
 		if !errors.Is(err, c.want) {
 			t.Errorf("%s: %v, want %v", c.name, err, c.want)
@@ -279,8 +283,9 @@ func TestInsertRefusalsLeaveNothing(t *testing.T) {
 		}
 	}
 	e.s.authorizeHook = nil
-	// Before S2-E, the contract refuses everyone but admins.
-	if _, err := e.s.Insert(ctx, e.a, asUser("u1"), uploadSpec("a.txt", SurfaceFirebase), strings.NewReader("x"), 1); !errors.Is(err, ErrPermissionDenied) {
+	// The control plane cannot give the project's rules (the env's fails): a user's write is
+	// ErrUnavailable, a 503, never an allow; an admin's needs no rules.
+	if _, err := e.s.Insert(ctx, e.a, asUser("u1"), uploadSpec("a.txt", SurfaceFirebase), strings.NewReader("x"), 1); !errors.Is(err, ErrUnavailable) {
 		t.Errorf("a user without rules: %v", err)
 	}
 	if _, err := e.s.Insert(ctx, e.a, asAdmin(), uploadSpec("a.txt", SurfaceFirebase), strings.NewReader("x"), 1); err != nil {

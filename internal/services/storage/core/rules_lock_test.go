@@ -48,7 +48,7 @@ func TestDecidingUnderALockNeedsNoConnection(t *testing.T) {
 			t.Fatal(err)
 		}
 		rs, _, err := tsvc.CreateRuleset(ctx, owner, proj.ID, rules.Storage, []rules.File{{Name: "storage.rules",
-			Content: storageRules("match /{all=**} { allow write: if request.auth.uid == 'ruleAlice'; }")}})
+			Content: storageRules("match /{all=**} { allow write: if request.auth.uid == 'alice'; }")}})
 		if err != nil {
 			t.Fatal(err)
 		}
