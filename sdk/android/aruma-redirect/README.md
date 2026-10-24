@@ -63,7 +63,8 @@ points firebase-storage at Aruma when the app is built, so download URLs are on 
 `https://<aruma-host>/v0/b/<bucket>/o/<path>?alt=media&token=<uuid>`. This library adds two things:
 
 - **The fallback.** Requests to `firebasestorage.googleapis.com` are redirected like Auth's, unless
-  `ArumaStorageRedirect` is `false`. Uploads, downloads, metadata, list and delete then work without the plugin, but
+  `ArumaStorageRedirect` is `false`, which refuses them with an `IOException` instead (as on iOS), so that even an
+  old download URL on Google's host opened with `HttpURLConnection` never reaches Google. Uploads, downloads, metadata, list and delete then work without the plugin, but
   `getDownloadUrl()` still returns a link on Google's host, which any loader outside `HttpURLConnection` (Coil,
   OkHttp, Glide with OkHttp, Cronet, MediaPlayer, WebView) or a shared link sends to Google.
 - **The launch check.** At install it reads `NetworkRequest.PROD_BASE_URL` and logs which path is in place. If it is
@@ -82,7 +83,7 @@ Google's host to the unified form on Aruma, for apps on the fallback.
 | `ArumaURL` | `https://aruma.example.com[/prefix]` | Absent or empty: the library does nothing. |
 | `ArumaAllowInsecureURL` | `true` | Accept `http` to any host. Development only. |
 | `ArumaRedirectLog` | `true` | Log host and path of each redirected request. Never the query, headers or body. |
-| `ArumaStorageRedirect` | `false` | Do not redirect Cloud Storage at run time; the app then needs `dev.aruma.storage` or stops at launch. Default `true`. |
+| `ArumaStorageRedirect` | `false` | Do not redirect Cloud Storage at run time: requests to Google's Storage host are refused, and the app needs `dev.aruma.storage` or stops at launch. Default `true`. |
 
 `http` is accepted without the flag only for loopback: `localhost`, `127.0.0.0/8` and `::1`, as in the web and iOS
 libraries. A debuggable app (`android:debuggable`, which every debug build is) may also use `10.0.2.2` (the Android
@@ -159,7 +160,7 @@ Run the unit tests: `./gradlew :aruma-redirect:testDebugUnitTest`.
 
 - factory واحد لكل عملية: إن ثبّتت مكتبة أخرى factory فالمكتبة تفشل مغلقةً.
 - **Cloud Storage:** المسار الأساسي إضافة Gradle [`dev.aruma.storage`](../aruma-storage-gradle) وقت البناء، فيصير رابط التنزيل
-  على Aruma. وهذه المكتبة تحوّل `firebasestorage.googleapis.com` احتياطًا (إلا إن كان `ArumaStorageRedirect=false`)، وتفحص عند
+  على Aruma. وهذه المكتبة تحوّل `firebasestorage.googleapis.com` احتياطًا، فإن كان `ArumaStorageRedirect=false` رفضت طلباته بـ `IOException` (كما في iOS)، فلا يصل رابط تنزيل قديم على Google إليها، وتفحص عند
   الإقلاع `NetworkRequest.PROD_BASE_URL`: إن بقي على Google ولا تحويل، يتوقف التطبيق. و`ArumaUrls.fromArumaUrl` يحوّل أي رابط
   تنزيل إلى `gs://` الذي يقبله `getReferenceFromUrl` في كل وضع، و`ArumaUrls.toArumaUrl` ينقل رابط Google إلى الشكل الموحّد.
 - مرتبطة بالنقل الحالي (`URL.openConnection`): لو انتقلت Firebase Auth لاحقًا إلى OkHttp أو Cronet أو gRPC فلن تُرى طلباتها

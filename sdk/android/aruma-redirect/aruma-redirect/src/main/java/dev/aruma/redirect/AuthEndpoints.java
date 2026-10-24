@@ -19,7 +19,9 @@ final class AuthEndpoints {
     static final String LEGACY_PATH_PREFIX = "/identitytoolkit/v3/relyingparty/";
     /**
      * Cloud Storage for Firebase: the run-time fallback of ADR-022 §16.2, on unless ArumaStorageRedirect is false. An
-     * app built with dev.aruma.storage sends nothing to this host, so the redirect only sees what that build missed.
+     * app built with dev.aruma.storage sends nothing to this host, so the redirect only sees what that build missed
+     * (an old download URL on Google's host, for one). With the fallback off such a request is refused, as on iOS,
+     * never passed to Google with its token.
      */
     static final String STORAGE_HOST = "firebasestorage.googleapis.com";
     static volatile boolean storageRedirect = true;
@@ -29,7 +31,8 @@ final class AuthEndpoints {
     /**
      * Returns the Aruma URL for a request to one of these endpoints, or null when {@code url} is not one (it is then
      * passed through untouched). Throws when it is one in a shape that cannot be rewritten safely
-     * (explicit port, credentials, dot segments): refusing is safer than letting the request reach Google.
+     * (explicit port, credentials, dot segments), or a Storage request while the Storage redirect is off: refusing is
+     * safer than letting the request reach Google.
      */
     static String rewrite(URL url, ArumaBase base) throws IOException {
         if (!"https".equalsIgnoreCase(url.getProtocol())) {
@@ -55,7 +58,7 @@ final class AuthEndpoints {
                 break;
             case STORAGE_HOST:
                 if (!storageRedirect) {
-                    return null;
+                    throw refused(host, "ArumaStorageRedirect is false, so Cloud Storage requests to Google are refused");
                 }
                 break;
             default:
