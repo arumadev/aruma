@@ -104,14 +104,20 @@ func (s *Service) releaseIdle(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("%w: list idle sessions: %w", ErrUnavailable, err)
 	}
+	// Each release runs to its end once begun, its statements included: a cancel stops the loop
+	// between sessions, never one transaction halfway.
+	durable := context.WithoutCancel(ctx)
 	n := 0
 	for _, r := range rows {
+		if err := ctx.Err(); err != nil {
+			return n, err
+		}
 		unlock, ok := s.sessions.tryLock(r.IDHash)
 		if !ok {
 			continue
 		}
-		err := s.inTx(context.WithoutCancel(ctx), func(q *queries.Queries) error {
-			cur, err := q.GetUploadSession(ctx, queries.GetUploadSessionParams{IDHash: r.IDHash, ProjectNumber: r.ProjectNumber})
+		err := s.inTx(durable, func(q *queries.Queries) error {
+			cur, err := q.GetUploadSession(durable, queries.GetUploadSessionParams{IDHash: r.IDHash, ProjectNumber: r.ProjectNumber})
 			if errors.Is(err, pgx.ErrNoRows) {
 				return nil
 			}
@@ -122,15 +128,15 @@ func (s *Service) releaseIdle(ctx context.Context) (int, error) {
 				return nil
 			}
 			if cur.Received == 0 {
-				if err := s.dropSessionFiles(ctx, q, cur); err != nil {
+				if err := s.dropSessionFiles(durable, q, cur); err != nil {
 					return err
 				}
-				return q.DeleteUploadSession(ctx, queries.DeleteUploadSessionParams{IDHash: cur.IDHash, ProjectNumber: cur.ProjectNumber})
+				return q.DeleteUploadSession(durable, queries.DeleteUploadSessionParams{IDHash: cur.IDHash, ProjectNumber: cur.ProjectNumber})
 			}
-			if _, err := q.ReleaseIdleUpload(ctx, queries.ReleaseIdleUploadParams{IDHash: cur.IDHash, ProjectNumber: cur.ProjectNumber}); err != nil {
+			if _, err := q.ReleaseIdleUpload(durable, queries.ReleaseIdleUploadParams{IDHash: cur.IDHash, ProjectNumber: cur.ProjectNumber}); err != nil {
 				return err
 			}
-			return unreserve(ctx, q, cur.ProjectNumber, cur.ReservedBytes-cur.Received, cur.PrincipalKind == kindAnonymous)
+			return unreserve(durable, q, cur.ProjectNumber, cur.ReservedBytes-cur.Received, cur.PrincipalKind == kindAnonymous)
 		})
 		unlock()
 		if err != nil {

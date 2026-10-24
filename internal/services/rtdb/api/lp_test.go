@@ -243,6 +243,8 @@ func TestLPStart(t *testing.T) {
 }
 
 func TestLPRoundTrip(t *testing.T) {
+	defer func(h time.Duration) { lpHold = h }(lpHold)
+	lpHold = 300 * time.Millisecond // see the segments out of order below
 	_, _, base := lpServer(t)
 	c := startLP(t, base)
 	if m := c.call(1, "auth", map[string]any{"cred": sat}); !strings.Contains(m, `"s":"ok"`) {
@@ -268,7 +270,10 @@ func TestLPRoundTrip(t *testing.T) {
 		t.Fatalf("push: %s", m)
 	}
 
-	// Segments out of order, over two requests: the message waits for its first piece.
+	// Segments out of order, over two requests: the message waits for its first piece. The
+	// last piece goes alone and first, and its request, with nothing to send, is answered
+	// once lpHold passes; then the first two. Sent at once, the two requests race for the
+	// reply, and the newer one, held when the older takes it, outlasts the client's timeout.
 	msg := `{"t":"d","d":{"r":4,"a":"g","b":{"p":"/x","q":{}}}}` + strings.Repeat(" ", 4000)
 	q := c.segments(msg) // three segments, seg0..seg2
 	segs := regexp.MustCompile(`&seg(\d)=(\d+)&ts\d=(\d+)&d\d=([^&]*)`).FindAllStringSubmatch(q, -1)
@@ -276,13 +281,10 @@ func TestLPRoundTrip(t *testing.T) {
 		t.Fatalf("segments: %d", len(segs))
 	}
 	one := func(s []string) string { return "&seg0=" + s[2] + "&ts0=" + s[3] + "&d0=" + s[4] }
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		c.poll(one(segs[2]))
-	}()
+	if body := c.poll(one(segs[2])); strings.Contains(body, `"r":4`) {
+		t.Fatalf("answered before the first piece: %s", body)
+	}
 	c.poll(one(segs[0]) + strings.Replace(one(segs[1]), "0=", "1=", 3))
-	<-done
 	if m := c.await(isReply(4)); m != `{"t":"d","d":{"r":4,"b":{"s":"ok","d":7}}}` {
 		t.Fatalf("out of order: %s", m)
 	}

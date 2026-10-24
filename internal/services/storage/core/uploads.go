@@ -479,7 +479,11 @@ func (s *Service) appendChunk(ctx context.Context, sess *queries.StorageUploadSe
 	// The request gives back what it reserved and did not write: at rest a session holds its
 	// durable bytes.
 	release := sess.Received + res.n - received
-	err = s.inTx(context.WithoutCancel(ctx), func(q *queries.Queries) error {
+	// What arrived is recorded even when the request is gone: net/http cancels its context the
+	// moment the body breaks, and the client resumes from what this announces. Every statement
+	// of the transaction runs on the uncancelled context, the session caps' included.
+	ctx = context.WithoutCancel(ctx)
+	err = s.inTx(ctx, func(q *queries.Queries) error {
 		if sess.Received == 0 && received > 0 {
 			// The session becomes live: the caps count it from now on.
 			p, err := decodePrincipal(sess.PrincipalKind, sess.Principal)
@@ -907,7 +911,8 @@ func (s *Service) CancelUpload(ctx context.Context, b Bucket, name, id string) (
 		st, _ := s.replay(b, sess)
 		return st, ErrUploadFinal
 	}
-	err = s.inTx(context.WithoutCancel(ctx), func(q *queries.Queries) error {
+	ctx = context.WithoutCancel(ctx)
+	err = s.inTx(ctx, func(q *queries.Queries) error {
 		rows, err := q.CancelUploadSession(ctx, queries.CancelUploadSessionParams{IDHash: idHash, ProjectNumber: b.Project})
 		if err != nil {
 			return err
