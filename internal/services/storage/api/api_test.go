@@ -68,10 +68,9 @@ func serveRecover(h http.Handler, rec *httptest.ResponseRecorder, req *http.Requ
 	return ""
 }
 
-// The routing contract (s3-wave-brief): each request reaches the handler its method, query and
-// headers name, through the whole router for the upload and download handlers of S3-B and S3-C, with the bucket
-// resolved first and Authorization ignored on a session URL; anything else is production's 400,
-// and an unknown bucket production's 404.
+// The routing contract (s3-wave-brief): each request is classified as the handler its method,
+// query and headers name, S3-B's and S3-C's included; anything else is production's 400 through
+// the whole router, and an unknown bucket production's 404, before any credential.
 func TestRoutes(t *testing.T) {
 	h := New(routeService(t), Options{}, nil).Handler()
 	obj := "/v0/b/" + routeBucket + "/o/photos%2Fa%20b.png"
@@ -152,9 +151,14 @@ func TestRoutes(t *testing.T) {
 		for k, v := range c.header {
 			req.Header.Set(k, v)
 		}
-		if name, ok := strings.CutPrefix(c.want, "S3-A: "); ok {
-			// S3-A's own handlers run on core: the route they get is what is checked here, and
-			// what they answer is test/acceptance/storage_v0_test.go's.
+		if owner, handler, ok := strings.Cut(c.want, ": "); ok && strings.HasPrefix(owner, "S3-") {
+			// The handlers run on core, which routeService cannot serve: the route each gets is
+			// what is checked here, and what it answers is its owner's tests'
+			// (test/acceptance/storage_v0_test.go for S3-A's).
+			name := handler
+			if handler == "uploadSession" {
+				name = routeSession.String()
+			}
 			rest, _ := wire.CutFirebasePrefix(req.URL.EscapedPath())
 			p, err := wire.SplitObjectPath(rest)
 			if got := classify(req, p, req.URL.Query()); err != nil || got.String() != name {
