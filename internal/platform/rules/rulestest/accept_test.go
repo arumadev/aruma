@@ -188,6 +188,8 @@ func TestCounts(t *testing.T) {
 	}
 	if f := Counts(rep, map[Provenance]Count{TestAPI: {2, 0}, Emulator: {5, 0}}); len(f) != 3 {
 		t.Errorf("counts that moved, and a provenance that counts nothing: %v", f)
+	} else if !strings.HasSuffix(f[0], "update oracleCounts in internal/platform/rules/oracle_test.go and give the reason in the commit") {
+		t.Errorf("a count that moved does not say how to update the pin: %q", f[0])
 	}
 	if f := Accept(rep, nil, 98, TestAPI, Emulator); len(f) != 1 || !strings.Contains(f[0], "emulator: nothing counts") {
 		t.Errorf("a required provenance that counts nothing: %v", f)

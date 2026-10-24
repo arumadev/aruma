@@ -114,6 +114,10 @@ func Faults(rep *Report) []string {
 // Count pins how many cases of a provenance count and how many are excluded.
 type Count struct{ Counted, Excluded int }
 
+// CountsHint ends a count that moved: what to do when the change is meant.
+const CountsHint = "if the oracle changed on purpose, update oracleCounts in " +
+	"internal/platform/rules/oracle_test.go and give the reason in the commit"
+
 // Counts returns how the tally differs from the pinned counts, so that a loader or binding
 // change that silently stops counting cases fails. A provenance that is pinned to count cases
 // and counts none fails too.
@@ -133,7 +137,8 @@ func Counts(rep *Report, want map[Provenance]Count) []string {
 	for _, p := range provs {
 		w, t := want[p], got[p]
 		if t.Counted != w.Counted || t.Excluded != w.Excluded {
-			out = append(out, fmt.Sprintf("%s: %d counted and %d excluded, pinned at %d and %d", p, t.Counted, t.Excluded, w.Counted, w.Excluded))
+			out = append(out, fmt.Sprintf("%s: %d counted and %d excluded, pinned at %d and %d; %s",
+				p, t.Counted, t.Excluded, w.Counted, w.Excluded, CountsHint))
 		}
 		if w.Counted > 0 && t.Counted == 0 {
 			out = append(out, fmt.Sprintf("%s: nothing counts", p))

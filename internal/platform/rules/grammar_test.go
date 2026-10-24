@@ -186,7 +186,9 @@ func TestGrammar(t *testing.T) {
 		diffs = nil // every one is the stub's panic
 	}
 	if counted != grammarFiles || conflicts != 0 {
-		t.Errorf("%d rules files counted and %d conflicting, pinned at %d and 0", counted, conflicts, grammarFiles)
+		t.Errorf("%d rules files counted and %d conflicting, pinned at %d and 0; if the oracle changed on purpose, "+
+			"update grammarFiles in internal/platform/rules/grammar_test.go and give the reason in the commit",
+			counted, conflicts, grammarFiles)
 	}
 	for i, d := range diffs {
 		if i == 60 {
