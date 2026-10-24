@@ -226,6 +226,11 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 87. **مؤقت: multipart نوعه من الـ JSON وحده و`?name=` يغلب اسم الـ JSON** كالمحاكي (`raw_upload.json`)؛ وقيمة `X-Goog-Upload-Protocol` غير `multipart` و`resumable` 400؛ و`md5Hash` ليس base64 لستة عشر بايتًا 400. `api/multipart.go`، `api/upload.go` (`parseResource`).
 88. **مؤقت: `X-Goog-Upload-Offset` إلزامي إلا لـ `finalize` منفردًا بجسم فارغ،** و`X-Goog-Upload-Content-Length` على قطع iOS لا يُقرأ: المعلن عند `start` هو الحكم عند الإنهاء. `api/upload.go` (`chunk`).
 
+**أضافها S3-C** (التنزيل على `/v0`، تفصيلها في `docs/compat/storage-v0.3.md`):
+
+89. **مؤقت: `?token=` الفارغ على `alt=media` لا رمز**، فتقرر القواعد كما لو غاب المعامل، كالمعاملات الفارغة في GCS (ADR-022 §13). لا يمنح شيئًا لا يمنحه حذف المعامل، والرمز غير الفارغ الذي لا يطابق يبقى 403 بلا قواعد (البند 19). `api/download.go`.
+90. **مؤقت: تنزيل قررته القواعد بلا `Authorization`** (قاعدة تسمح للمجهول) **يحمل `private` أيضًا**، كتنزيل فيه `Authorization` (ADR-022 §10.5)، لا القيمة المخزّنة كرابط الرمز. سلوك الإنتاج غير مقيس، والأشد لا يكون أكثر تساهلًا. `api/download.go` (`media.RulesDecided`).
+
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 
 ## البدائل المرفوضة

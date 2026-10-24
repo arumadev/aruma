@@ -1,0 +1,15 @@
+{
+  "name": "aruma-e2e-browser-matrix",
+  "private": true,
+  "type": "module",
+  "description": "How Chromium, Firefox and WebKit treat Aruma's download replies (ADR-022 §10.6, F §2.4): pages on other origins and on the dashboard's own, driven by Playwright against a real Aruma server.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  },
+  "dependencies": {
+    "firebase": "13.1.0"
+  }
+}

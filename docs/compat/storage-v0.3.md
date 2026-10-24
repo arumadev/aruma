@@ -136,3 +136,21 @@
 | 86 | قطعة على جلسة انتهت بنجاح لا تأتي ببايت بعد `received` تكرار يُعاد له المحفوظ (200 و`final` والـ metadata)؛ وببايت بعده 400 مع `final` كالمحاكي | مؤقت | ADR-022 §6.1، `raw_resumable.json` | `api.chunk`، `api.pastReceived` |
 | 87 | نوع المحتوى في multipart من الـ JSON وحده و`?name=` يغلب اسم الـ JSON (كالمحاكي)؛ وقيمة `X-Goog-Upload-Protocol` أخرى 400؛ و`md5Hash` ليس base64 لستة عشر بايتًا 400 | مؤقت | `raw_upload.json` | `api.multipart`، `api.upload`، `api.parseResource` |
 | 88 | `X-Goog-Upload-Offset` إلزامي إلا لـ `finalize` منفردًا بجسم فارغ، و`X-Goog-Upload-Content-Length` على القطع لا يُقرأ (المعلن عند `start` هو الحكم) | مؤقت | A §3.11 | `api.chunk` |
+
+### التنزيل ومصفوفة المتصفحات (S3-C)
+
+`alt=media` على `/v0` يفتح الكائن بـ `core.Open` (الرمز وحده، أو القواعد) ثم `media.Serve`. يختبره `test/acceptance/storage_download_test.go` (من يفتح البايتات، والترويسات وCache-Control بالوضع، وRange، ورفض العمّال وسكربتات أصل اللوحة، وCORS الـ bucket على الرد ورفضه والـ preflight، وgzip كما خُزّن أو مفكوكًا، وقنبلة تُقطع عند `object_bytes` وتُعدّ).
+
+ومصفوفة المتصفحات (ADR-022 §10.6) في `test/e2e/browser-matrix/run.sh`: حالات F §2.4 على Chromium وFirefox وWebKit (Playwright 1.64.1)، 14 من 14 على كل محرك، ولكل حماية حالة ضابطة تثبت أن الفحص يرى فشلها. والنتائج التي تحسم ما علّقه ADR-022 على المصفوفة:
+
+- **HTML وSVG تحت `sandbox`** لا ينفّذان سكربتًا تصفحًا مباشرًا في المحركات الثلاثة، و`window.origin === "null"`، ولا كعكة اللوحة ولا `localStorage`. وSVG يُرسم، وفي `<img>` من أصل آخر أيضًا.
+- **الفيديو والصوت تحت `sandbox` و`media-src 'self'`** يُعرضان ويُقفز فيهما تصفحًا مباشرًا وفي `<video>`/`<audio>` من أصل آخر، ومع COEP `require-corp`، في الثلاثة. فلا حاجة لرفع `sandbox` عن الوسائط. وWebKit يطلب بـ `Range` ويأخذ 206.
+- **PDF يُنزَّل** تصفحًا مباشرًا، ولا يُعرض في `<iframe>` ولا `<embed>` من أصل آخر (`X-Frame-Options: DENY`).
+- **CORS:** bucket بلا إعداد يرفض `fetch` و`getBytes` و`getBlob` من أصل آخر، و`cors.json` الموثّق (`{origin: ["*"], method: ["GET"], maxAgeSeconds: 3600}`) يسمح بها ومعها الـ preflight. المكتبة هي `firebase` 13.1.0 (بناء CDN) بـ `connectStorageEmulator` للمضيف وحده، لأن مسار الإنتاج للويب في S6.
+- **Service Worker** من أصل اللوحة يُرفض، وكذلك `<script>` من أصلها، ويُحمَّل `<script>` من أصل تطبيق. والرفض 403 وحده هو المانع، بالطفرة على Chromium وFirefox (2026-10-24): مع إيقاف `media.refused` يُسجَّل رابط التنزيل Service Worker على أصل Aruma في Firefox (`registered`) فتفشل الحالة 8، ومعه تنجح. والحالة الضابطة في Firefox تسجّل عاملًا من أصل الصفحات، لأن Firefox في Playwright لا يمرر سكربت العامل عبر `route`.
+- **حدود المصفوفة:** H.264 غير موجود في Chromium الذي يوزعه Playwright، فيُفحص فيه WebM (VP9)؛ وWebKit يعلن VP9 ولا يفك منه إطارًا (من Aruma ومن خادم ملفات عادي سواء)، فيُفحص فيه MP4 وحده. والحالة 11 (قنبلة gzip) في اختبارات `media` والقبول لا في المتصفح، والحالة 12 (`file.download()` في Node) لمسار GCS في S4-C.
+
+| # (ADR-023 §3) | الفرق | التصنيف | المصدر | الموضع |
+|---|---|---|---|---|
+| 89 | `?token=` الفارغ لا رمز، فتقرر القواعد | مؤقت | ADR-022 §13 | `api.download` |
+| 90 | تنزيل قررته القواعد بلا `Authorization` يحمل `private` أيضًا | مؤقت | ADR-022 §10.5 | `api.download` |
