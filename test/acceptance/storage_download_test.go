@@ -5,8 +5,11 @@ import (
 	"compress/gzip"
 	"context"
 	"io"
+	"io/fs"
 	"maps"
 	"net/http"
+	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -344,6 +347,39 @@ func TestStorageV0DownloadGzipCut(t *testing.T) {
 	}
 	if got := counter(t, e.App.Storage.Metrics().DecompressionsCut); got != before+1 {
 		t.Errorf("DecompressionsCut %v, want %v", got, before+1)
+	}
+}
+
+// An object whose file is gone is the server's fault: 503, and no Retry-After, since it is not
+// passing pressure and iOS would retry a Retry-After forever (ADR-023 §3-65).
+func TestStorageV0DownloadUnavailable(t *testing.T) {
+	dir := t.TempDir()
+	e := &v0Env{Env: newEnv(t, map[string]string{"ARUMA_STORAGE_ENABLED": "true", "ARUMA_STORAGE_DATA_DIR": dir})}
+	b, err := e.App.Storage.Bucket(context.Background(), e.owner().project("chat-app").str("storageBucket"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.bucket = b
+	const body = "the only file with these bytes"
+	o := e.putV0("lost.txt", body, nil)
+	removed := 0
+	err = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || !d.Type().IsRegular() {
+			return err
+		}
+		if got, err := os.ReadFile(path); err == nil && string(got) == body {
+			removed++
+			return os.Remove(path)
+		}
+		return nil
+	})
+	if err != nil || removed != 1 {
+		t.Fatalf("removing the object's file: %v, %d removed", err, removed)
+	}
+	r := e.media("GET", e.obj(o.Name)+"?alt=media&token="+o.DownloadTokens[0], "", nil)
+	e.expectMedia(r, 503, "", "a lost file")
+	if ra := r.header.Get("Retry-After"); ra != "" {
+		t.Errorf("Retry-After %q on a 503 that is no pressure", ra)
 	}
 }
 
