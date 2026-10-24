@@ -1,6 +1,7 @@
 package gcs
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/md5"
@@ -8,6 +9,7 @@ import (
 	"errors"
 	"hash/crc32"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -15,6 +17,7 @@ import (
 	"strings"
 	"testing"
 	"testing/iotest"
+	"time"
 
 	"github.com/arumadev/aruma/internal/services/storage/core"
 	"github.com/arumadev/aruma/internal/services/storage/wire"
@@ -454,5 +457,45 @@ func TestUploadUnavailableHasNoRetryAfter(t *testing.T) {
 	e.api.refuse(rec, core.ErrUnavailable, bucketA, "x")
 	if rec.Code != 503 || rec.Header().Get("Retry-After") != "" {
 		t.Fatalf("unavailable: %d %v", rec.Code, rec.Header())
+	}
+}
+
+// A body slower than min_bytes_per_second is cut at its window's end, and the 408 reaches the
+// client on a real connection: the refusal gets a write deadline of its own.
+func TestUploadTooSlowIs408(t *testing.T) {
+	e := newEnv(t)
+	defer func(w time.Duration) { uploadWindow = w }(uploadWindow)
+	uploadWindow = 300 * time.Millisecond
+	srv := httptest.NewServer(e.h)
+	defer srv.Close()
+	loc := e.start(t, "slow-session.bin", "", `{}`)
+	for _, target := range []string{upload + "?uploadType=media&name=slow.bin", loc} {
+		conn, err := net.Dial("tcp", srv.Listener.Addr().String())
+		if err != nil {
+			t.Fatal(err)
+		}
+		method, extra := "POST", "Authorization: Bearer "+tokenA+"\r\n"
+		if target == loc {
+			method, extra = "PUT", "Content-Range: bytes 0-*/*\r\n"
+		}
+		// Three bytes, then nothing: far under 4 KiB in the window.
+		_, err = io.WriteString(conn, method+" "+target+" HTTP/1.1\r\nHost: aruma.example\r\n"+extra+
+			"Transfer-Encoding: chunked\r\n\r\n3\r\nabc\r\n")
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+		resp, err := http.ReadResponse(bufio.NewReader(conn), nil)
+		if err != nil {
+			t.Fatalf("%s: no reply: %v", target, err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		_ = conn.Close()
+		if resp.StatusCode != http.StatusRequestTimeout || !strings.Contains(string(b), `"code":408`) {
+			t.Fatalf("%s: %d %s", target, resp.StatusCode, b)
+		}
+	}
+	if e.stored(e.a, "slow.bin") != nil {
+		t.Fatal("the slow upload was stored")
 	}
 }

@@ -61,6 +61,7 @@ func (a *API) uploadMultipart(w http.ResponseWriter, r *http.Request, b core.Buc
 	}
 	spec, err := a.uploadSpec(r, name, rel.JSON, rel.MediaType, -1)
 	if err != nil {
+		body.beforeReply()
 		a.writeError(w, err, "", "")
 		return
 	}
@@ -304,6 +305,9 @@ func (a *API) inserted(w http.ResponseWriter, body *requestBody, o core.Object, 
 // whatever core made of it: over the entry point's cap 413, a malformed multipart body 400, a
 // client too slow for min_bytes_per_second 408, any other read failure 400.
 func (a *API) uploadError(w http.ResponseWriter, body *requestBody, err error, bucket, name string) {
+	// The write deadline is the read's: a body cut at its window's end would leave the refusal
+	// no time to reach the client.
+	body.beforeReply()
 	cause := body.err
 	if cause == nil {
 		cause = err
