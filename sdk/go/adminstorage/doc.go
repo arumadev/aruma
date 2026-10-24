@@ -10,8 +10,8 @@
 //
 // The one line a server changes:
 //
-//	client, err := app.Storage(ctx)                 // before
-//	client, err := adminstorage.NewClient(ctx)      // after
+//	client, err := app.Storage(ctx)            // before
+//	client, err := adminstorage.NewClient(ctx) // after
 //
 // Client.Bucket and Client.DefaultBucket return the official *storage.BucketHandle, so the code
 // after that line stays as it is. Do not pass option.WithEndpoint to firebase.NewApp instead:
