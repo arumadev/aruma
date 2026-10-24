@@ -68,7 +68,7 @@ export ANDROID_HOME
 adb=$ANDROID_HOME/platform-tools/adb
 app_id=com.aruma.smoke
 
-uid= port= guarded= was_root= watcher= booted_here= sim=
+uid= port= guarded= was_root= watcher= booted_here= sim= out=
 cleanup() {
   set +e
   if [[ -n "$watcher" ]]; then kill "$watcher" 2>/dev/null; wait "$watcher" 2>/dev/null; fi
@@ -84,6 +84,7 @@ cleanup() {
     xcrun simctl terminate "$sim" "$app_id" >/dev/null 2>&1
     xcrun simctl uninstall "$sim" "$app_id" >/dev/null 2>&1
     [[ -n "$booted_here" ]] && xcrun simctl shutdown "$booted_here" >/dev/null 2>&1
+    [[ -n "$out" ]] && rm -rf "$out"
   fi
   [[ -x "$app/android/gradlew" ]] && (cd "$app/android" && ./gradlew --stop >/dev/null 2>&1)
   stop_server
@@ -302,12 +303,21 @@ xcrun simctl bootstatus "$sim" >/dev/null
 xcrun simctl uninstall "$sim" "$app_id" >/dev/null 2>&1 || true
 xcrun simctl install "$sim" "$runner"
 data=$(xcrun simctl get_app_container "$sim" "$app_id" data)
+# The installed copy, which is what runs (not $runner, the build's).
+installed=$(xcrun simctl get_app_container "$sim" "$app_id" app)
 rm -f "$data/tmp/aruma-e2e.json"
+# simctl launch --stdout/--stderr: the simulator side opens these files, and when they are on
+# another volume than the system's (the repository on /Volumes/Work, say) it cannot, and the launch
+# fails with "The request to open "com.aruma.smoke" failed ... denied by service delegate", every
+# time. So the app writes them under this user's temporary directory, on the system volume, and
+# they are copied into $gen once it is done.
+out=$(mktemp -d "$(getconf DARWIN_USER_TEMP_DIR)aruma-flutter-storage.XXXXXX")
+app_out() { cp "$out/app-stdout.txt" "$out/app-stderr.txt" "$gen/" 2>/dev/null || true; }
 
 : >"$gen/sockets.txt"
 watch_sockets() {
   while :; do
-    for pid in $(pgrep -f "$runner/Runner" || true); do
+    for pid in $(pgrep -f "$installed/Runner" || true); do
       lsof -nP -a -p "$pid" -i -F n 2>/dev/null | sed -n 's/^n/app /p' >>"$gen/sockets.txt" || true
     done
     sleep 0.2
@@ -317,7 +327,7 @@ watch_sockets &
 watcher=$!
 # Right after a boot, SpringBoard can deny the launch for a while: retry.
 for try in $(seq 1 10); do
-  xcrun simctl launch --terminate-running-process --stdout="$gen/app-stdout.txt" --stderr="$gen/app-stderr.txt" \
+  xcrun simctl launch --terminate-running-process --stdout="$out/app-stdout.txt" --stderr="$out/app-stderr.txt" \
     "$sim" "$app_id" >/dev/null 2>"$gen/launch.log" && break
   if [[ $try -eq 10 ]]; then
     cat "$gen/launch.log" >&2
@@ -335,6 +345,7 @@ done
 sleep 1
 kill "$watcher" 2>/dev/null; wait "$watcher" 2>/dev/null || true
 watcher=
+app_out
 status=0
 if [[ -s "$data/tmp/aruma-e2e.json" ]]; then
   cp "$data/tmp/aruma-e2e.json" "$gen/results.json"
