@@ -46,7 +46,7 @@ const (
 	compiles           = 4   // syntax.Parse, and regexp.Compile of whole, first and next
 
 	// A class's table in the three forms together, per rune of its capacity. With it, what a
-	// pattern holds after compiling is at most 1.1 times its weight on Go 1.27, and at most 0.84
+	// pattern holds after compiling is at most about 1.2 times its weight on Go 1.27, and at most 0.84
 	// times for \pL, \PL, \p{Han}, [^\pL], (?i) classes, alternations of categories and their
 	// repetitions (TestClassTablesAreCounted).
 	classBytesPerRune = 16
