@@ -268,6 +268,7 @@ type RulesLimits struct {
 	LookupsPerOperation int `yaml:"lookups_per_operation"` // documents one Firestore operation reads
 	LookupsPerRequest   int `yaml:"lookups_per_request"`   // documents a Firestore batch reads
 	StorageLookups      int `yaml:"storage_lookups"`       // Firestore documents one Storage request reads
+	RulesetsPerProject  int `yaml:"rulesets_per_project"`  // the rulesets one project keeps
 
 	// Aruma's.
 	MemberChain       int   `yaml:"member_chain"`        // a chain of .field and [index]
@@ -416,6 +417,7 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	count("ARUMA_RULES_LOOKUPS_PER_OPERATION", &rl.LookupsPerOperation)
 	count("ARUMA_RULES_LOOKUPS_PER_REQUEST", &rl.LookupsPerRequest)
 	count("ARUMA_RULES_STORAGE_LOOKUPS", &rl.StorageLookups)
+	count("ARUMA_RULES_RULESETS_PER_PROJECT", &rl.RulesetsPerProject)
 	count("ARUMA_RULES_MEMBER_CHAIN", &rl.MemberChain)
 	integer("ARUMA_RULES_WORK", &rl.Work)
 	integer("ARUMA_RULES_VALUE_BYTES", &rl.ValueBytes)

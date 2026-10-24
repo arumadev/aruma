@@ -21,6 +21,7 @@ const (
 	firebaseLookupsPerOperation = 10
 	firebaseLookupsPerRequest   = 20
 	firebaseStorageLookups      = 2
+	firebaseRulesetsPerProject  = 2500 // manage-deploy: "up to 2,500 rulesets"
 )
 
 // Limits bound what a ruleset may hold and what one evaluation may do. Firebase's limits are
@@ -41,6 +42,7 @@ type Limits struct {
 	LookupsPerOperation int // lookups_per_operation: Firestore documents one operation reads
 	LookupsPerRequest   int // lookups_per_request: Firestore documents a batch or transaction reads
 	StorageLookups      int // storage_lookups: Firestore documents one Storage evaluation reads
+	RulesetsPerProject  int // rulesets_per_project: the rulesets one project keeps (tenancy)
 
 	// Aruma's.
 	MemberChain           int   // member_chain: a chain of .field and [index] (checked when compiling)
@@ -71,6 +73,7 @@ func DefaultLimits() Limits {
 		LookupsPerOperation: firebaseLookupsPerOperation,
 		LookupsPerRequest:   firebaseLookupsPerRequest,
 		StorageLookups:      firebaseStorageLookups,
+		RulesetsPerProject:  firebaseRulesetsPerProject,
 
 		MemberChain:           2000,
 		Work:                  1 << 26,
@@ -107,6 +110,7 @@ func (l Limits) Validate() error {
 		{"lookups_per_operation", l.LookupsPerOperation, firebaseLookupsPerOperation},
 		{"lookups_per_request", l.LookupsPerRequest, firebaseLookupsPerRequest},
 		{"storage_lookups", l.StorageLookups, firebaseStorageLookups},
+		{"rulesets_per_project", l.RulesetsPerProject, firebaseRulesetsPerProject},
 	} {
 		switch {
 		case f.v < 1:
