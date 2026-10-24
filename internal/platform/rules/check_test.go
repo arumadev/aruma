@@ -338,6 +338,16 @@ func TestSourceSizeBoundary(t *testing.T) {
 			t.Errorf("%d bytes: too large %v, want %v", n, got, want)
 		}
 	}
+	// The largest content each name length compiles with, as the S1-E probe measured: the
+	// name's length counts, and one byte more from 128, where its length takes two bytes.
+	for name, largest := range map[int]int{1: 262_133, 15: 262_119, 100: 262_034, 127: 262_007, 128: 262_005, 129: 262_004, 300: 261_833} {
+		for n, want := range map[int]bool{largest: false, largest + 1: true} {
+			f := File{Name: strings.Repeat("n", name), Content: strings.Repeat("x", n)}
+			if got := sourceTooLarge(f, &lim); got != want {
+				t.Errorf("name of %d bytes, %d bytes of content: too large %v, want %v", name, n, got, want)
+			}
+		}
+	}
 	rs, issues := Compile(Firestore, File{Name: "firestore.rules", Content: strings.Repeat("/", 262_120)}, lim)
 	if rs != nil || len(issues) != 1 || issues[0].Description != "Total size of sources must be smaller than 262144." {
 		t.Errorf("Compile = %v, %v", rs, issues)

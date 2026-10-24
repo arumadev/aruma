@@ -147,10 +147,10 @@ go run ./tools/rules-diff -seed 1 -n 1000                                   # م
 | نتيجة `get()` المحاكاة بلا `id` ولا `__name__` | `aruma/storage/fs_get_id`، `aruma/storage/fs_get_name` | لا: الإنتاج يسمّي المستند |
 | `get()`/`exists()` لمستند غير محاكى «Function not found»، والمحاكاة بنتيجة `undefined` «Service call error» | `aruma/limits/get_unmocked`، `aruma/limits/get_mock_null` | نعم: الربط يجعلهما `ErrNoDocuments`، وهو خطأ تقييم |
 | لا حدّ لعدد القراءات المحاكاة: 50 مستندًا في Firestore، و3 و11 في Storage | `aruma/limits/exists_11`…`exists_50`، `aruma/limits/get_11`، `aruma/storage/fs_lookups_3`، `aruma/storage/fs_lookups_11`، `pyric/storage/firestore-lookup-budget/6` | لا: نطبّق 10/20 و2 كما في الوثائق وStorage المنشور (`pyric/storage/stdlib-realstorage-p3-lookup-budget-iam-enabled/three`) |
-| `debug()` غير موجودة | `aruma/errors/debug_function`، `aruma/storage/debug` | لا: المحاكي والإنتاج فيهما `debug()` |
+| `debug()` غير موجودة | `aruma/errors/debug_function`، `aruma/storage/debug` | لا (والمحرك يوافقها): المحاكي فيه `debug()`، والمرجع يقول إن المنشور كذلك ولم يُقس. فالمحرك يتبع Test API مؤقتًا («قرارات مؤقتة») |
 | تقبل الطريقة `write` في الطلب | `aruma/methods/method_write_verb` | لا: لا طلب حقيقي طريقته `write` |
 | ترفض طلبًا لا قواعد: وقت بغير صيغته، ومسار Storage ينتهي بـ `/`، و`503` لـ ruleset كبير | `aruma/encoding/time_bad_format`، `aruma/storage-paths/list_on_prefix`، `aruma/limits/size_functions_2000` | لا |
-| حجم المصدر يُقاس على رسالة الطلب (المحتوى والاسم و25 بايتًا) | `aruma/followups/size_comment_262119`، `aruma/followups/size_comment_262120` | نعم: رفض الحجم رفض ترجمة |
+| حجم المصدر يُقاس على رسالة الطلب (حجم رسالة `Source` في protobuf: المحتوى والاسم و10 بايتات، و11 لاسم من 128 بايتًا فأكثر) | `aruma/followups/size_comment_262119`، `aruma/followups/size_comment_262120` | نعم: رفض الحجم رفض ترجمة |
 | `request.auth.uid` أي نوع، ومسار Firestore لا يُشترط أن يسمّي مستندًا | `aruma/encoding/auth_uid_int`، `aruma/followups/nested_under_recursive_deep` | نعم: لغة لا ربط |
 | ملف مصدر واحد لكل طلب | Pyric `stdlib-storage-p0-source-boundaries` | لا: قواعده لم تُسجَّل |
 

@@ -53,14 +53,31 @@ func Compile(svc Service, f File, lim Limits) (*Ruleset, Issues) {
 	return rs, all
 }
 
-// sourceFraming is what the Rules API adds to a source's content and name when it measures
-// "Total size of sources must be smaller than 262144.": for firestore.rules, 262,119 bytes of
-// content compile and 262,120 do not (S0-A's review probes on the Rules Test API).
-const sourceFraming = 9
-
-// sourceTooLarge reports whether a file's sources reach lim.SourceBytes as the Rules API counts.
+// sourceTooLarge reports whether a file's sources are past lim.SourceBytes as the Rules API
+// counts "Total size of sources must be smaller than 262144.": the size of the Source message
+// in protocol buffers, Source{files: [File{content: 1, name: 2}]}, may be the limit itself and
+// no more. So the framing is 10 bytes for a name under 128 bytes, and 11 from 128, whose length
+// takes two bytes: for firestore.rules 262,119 bytes of content compile and 262,120 do not
+// (S0-A), and with names of 1, 100, 127, 128, 129 and 300 bytes the boundary moves by the
+// name's length, and by one more byte from 128 (S1-E probe of the Rules Test API, 2026-10-24).
 func sourceTooLarge(f File, lim *Limits) bool {
-	return len(f.Content)+len(f.Name)+sourceFraming >= lim.SourceBytes
+	field := func(n int) int { return 1 + varintLen(n) + n } // a length-delimited field of n bytes
+	str := func(s string) int { // proto3 omits an empty string
+		if s == "" {
+			return 0
+		}
+		return field(len(s))
+	}
+	return field(str(f.Content)+str(f.Name)) > lim.SourceBytes
+}
+
+// varintLen is how many bytes protocol buffers write n in.
+func varintLen(n int) int {
+	l := 1
+	for ; n >= 0x80; n >>= 7 {
+		l++
+	}
+	return l
 }
 
 // sortIssues orders issues as the Rules API lists them: those about the whole file first, then
