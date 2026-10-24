@@ -54,10 +54,10 @@
 | SR3-03 | blocker | رسائل أخطاء التقييم تنسخ نصوصًا بحجم يختاره المهاجم دون أن تُحسب على العدّاد، والمفسِّر يبقيها حية | للمنسّق |
 | SR3-04 | major | أخطاء دورات الدوال تكبر تربيعيًا | للمنسّق |
 | SR3-05 | minor | ترجمة القواعد من الكونسول خارج سيمافور الترجمة | للمنسّق |
-| SR3-06 | major | إعداد الويب لـ Auth وحده يرسل رمز هوية Aruma إلى `firebasestorage.googleapis.com` بلا تحذير | للمنسّق |
-| SR3-07 | minor | Android مع `ArumaStorageRedirect=false` يمرر طلبات Storage إلى Google، وiOS يرفضها | للمنسّق |
-| SR3-08 | minor | المخاطرة المقبولة لإعادة توجيه Node أوسع مما يقوله README | توثيق |
-| SR3-09 | minor | لا شيء يثبّت محتوى مرآة iOS (بند S6-I المفتوح) | للمنسّق |
+| SR3-06 | major | إعداد الويب لـ Auth وحده يرسل رمز هوية Aruma إلى `firebasestorage.googleapis.com` بلا تحذير | **مُصلحة في `s7-sdk-fixes`** |
+| SR3-07 | minor | Android مع `ArumaStorageRedirect=false` يمرر طلبات Storage إلى Google، وiOS يرفضها | **مُصلحة في `s7-sdk-fixes`** |
+| SR3-08 | minor | المخاطرة المقبولة لإعادة توجيه Node أوسع مما يقوله README | **وُثّقت في `s7-sdk-fixes`** |
+| SR3-09 | minor | لا شيء يثبّت محتوى مرآة iOS (بند S6-I المفتوح) | **مُصلحة في `s7-sdk-fixes`** |
 
 ### SR3-01: مجلد بيانات فارغ تحت قاعدة فيها كائنات
 
@@ -148,12 +148,18 @@
 - **الإصلاح المقترح:**
   - حين لا يعمل `installStorage`، تحجب أغلفة `fetch` و`XHR` في `install()` مضيفَ Storage طلبًا مرفوضًا.
   - ويفشل بناء Vite أو unplugin لـ Auth إن رأى وحدة من `@firebase/storage` والخيار مطفأ.
+- **الإصلاح (`s7-sdk-fixes`):** طبقتان، لأن الإضافة لا ترى في البناء إلا وحداتها، وAuth يُضبط بإضافة Vite أو في التشغيل (`install()` و`/auto`):
+  - في التشغيل: `install()` يرفض طلب مكتبة Storage إلى نطاق Google (فيه `Authorization` أو `X-Firebase-Storage-Version`)، في XHR بعد ترويساته فلا يُرسل ولا يوضع الرمز عليه، وفي fetch (بناء Node). إلا إن كان احتياط `installStorage` مثبّتًا فيأخذه. ورسالة واحدة في الكونسول. و`fetch` لرابط تنزيل بلا رمز هوية يمر. فالمسار مغطّى مع أي bundler وفي خادم تطوير Vite. `index.js` (`guardXHR`، `refusedFetch`).
+  - في البناء: إضافة Vite بلا `storage: true` تُفشل البناء على أي وحدة `@firebase/storage`، في البناء وفي مُحسّن خادم التطوير لوضع `build` (الذي لا كود تشغيل فيه). `vite.js` (`refuseStorage`).
+  - الأساس في المكتبة: `_getAuthToken` يأخذ الرمز من Auth التطبيق أيًّا كان نطاق Storage (`packages/storage/src/service.ts:266-277`، 0.14.6)، و`addAuthHeader_` يضعه (`implementation/request.ts:237`)، وبناء المتصفح يرسل بـ `open` ثم `setRequestHeader` ثم `send` (`platform/browser/connection.ts:77-88`).
+  - الاختبارات: `test/redirect.test.js` (الحارس، والترتيبان مع `installStorage`)، و`test/vite.test.js`، وفي `test/e2e/web-storage` تطبيق Auth وحده بلا إضافة لا يصل إلى Google (`tests/auth-only.spec.mjs`) وبناء Vite له يجب أن يفشل (`build.mjs`).
 
 ### SR3-07: وضع Android الصارم لا يرفض Storage
 
 - **الموضع:** `aruma-redirect/…/AuthEndpoints.java:56-59` يعيد `null`، فيفتح `ArumaStreamHandlerFactory.java:62` رابط Google الأصلي. أما iOS (`ArumaRedirectURLProtocol.swift:45-52`) فيفشل الطلب. وREADME Android (`:102-104`) يوحي بالفشل المغلق.
 - **العاقبة:** رابط تنزيل قديم بمضيف Google يُفتح بـ `HttpURLConnection` في تطبيق مبني بالإضافة، فيذهب رمز التنزيل إليها.
 - **الإصلاح المقترح:** `refused(host, "ArumaStorageRedirect is false")` لمضيف Storage بدل `null`، مع اختبار.
+- **الإصلاح (`s7-sdk-fixes`):** `AuthEndpoints.rewrite` يرمي `refused(host, "ArumaStorageRedirect is false, …")` لمضيف Storage، فلا يُفتح رابط Google. واختبار `storageIsRefusedWhenTheRedirectIsOff`، وREADME بالعربية والإنجليزية.
 
 ### SR3-08: نطاق إعادة توجيه Node
 
@@ -162,12 +168,14 @@
   - تجربة: `evil.aruma.localtest:… auth=Bearer SECRET`، و`aruma.localtest:<منفذ آخر> auth=Bearer SECRET`، و`other.localtest auth=undefined`.
   - وREADME (`sdk/node/admin-storage/README.md:47-51`) يقول «منفذ آخر للمضيف نفسه» وحده.
 - **الإصلاح:** تصحيح README: أي نطاق فرعي، وأي منفذ، والبروتوكول نفسه. والرفع المتقطع لا يتبع إعادة توجيه أصلًا (`maxRedirects: 0`).
+- **الحالة (`s7-sdk-fixes`):** README يذكر النطاق كاملًا: المضيف نفسه أو أي نطاق فرعي منه، بأي منفذ، بالبروتوكول نفسه، حتى 20 قفزة، والرفع المتقطع لا يتبع.
 
 ### SR3-09: محتوى مرآة iOS غير مثبّت
 
 - **الموضع:** `check-firebase-storage.sh:34` يتحقق من وجود `ARUMA-NOTICE.md` و`ArumaStorageOrigin.swift` وحدهما، والعلامة عند الإقلاع اسم صنف (`StorageBuild.swift:24-28`).
 - **العاقبة:** وسم منقول، أو مرآة مخترقة، يمر من البوابة ويشحن كودًا يحمل رموز الهوية. و`make-mirror.sh:95-104` يمنع أداتنا وحدها من نقل وسم، وحماية SwiftPM ثقة عند أول استعمال لكل جهاز، فمشغّلات CI الجديدة بلا بصمات.
 - **الإصلاح المقترح:** `make-mirror.sh` يبني بشكل قابل للتكرار، فيُلتزم بجدول `وسم → commit/tree`، ويقارن سكربت الفحص `rev-parse HEAD^{tree}` به.
+- **الإصلاح (`s7-sdk-fixes`):** `sdk/ios/firebase-storage-patch/mirror.lock` يثبّت `وسم → commit tree` (`12.19.3` → `f749478f…`، tree `c2f1efee…`، وهو ما حلّته مرآة e2e ونسخة Flutter كلتاهما). و`check-firebase-storage.sh` يقارن `rev-parse HEAD` و`HEAD^{tree}` به ويفشل على غيره، و`make-mirror.sh` يرفض بناءً يخالف التثبيت ويطبع سطر الوسم الجديد. وREADME يطلب التزام `Package.resolved` والحل بـ `-onlyUsePackageVersionsFromResolvedFile`. لم يُنقل وسم.
 
 ## ما فُحص ووُجد سليمًا
 
@@ -225,15 +233,16 @@
 | استثناء S-11: وجود الـ bucket ليس سرًا (403/401 لمشروع آخر) | ADR-022 §14. والرفض قبل أي بحث عن كائن (فُحص أعلاه) |
 | فرق توقيت صغير في مسار الرمز: الختم يُفتح للكائن الموجود وحده (`objects.go:99-110`). **رأي** | ميكروثوانٍ لفك AES-GCM، خلف ذهاب إلى القاعدة وإياب عبر الشبكة. لم يُقَس |
 | حلقة تحميل القواعد في `tenancy` بلا `recover`، فـ panic فيها يُسقط العملية. **رأي**: لم يوجد مدخل يُحدث panic | `Evaluate` نفسه تحت `recover` الوسيط (500، لا سماح) |
-| مرآة iOS: ثقة عند أول استعمال حتى يُصلح SR3-09 | لا مرآة منشورة اليوم خارج سيطرة المالك |
 
 ## قائمة الإصدار
 
 - [ ] دمج `0add0c6` (SR3-01).
 - [ ] **SR3-02 وSR3-03 مُصلحتان باختبار حدود** (blocker): ترجمة مصدر بالحد الأقصى تحت سقف ذاكرة مقيس، وتقييم بأسوأ الرسائل تحت `Inflight`.
-- [ ] SR3-04 وSR3-06 مُصلحتان (major)، أو قرار مكتوب من المالك بقبولهما.
-- [ ] SR3-05 وSR3-07 وSR3-09 مُصلحة، أو مذكورة في `docs/compat` أو README.
-- [ ] README حزمة Node بنطاق إعادة التوجيه الصحيح (SR3-08).
+- [ ] SR3-04 مُصلحة (major)، أو قرار مكتوب من المالك بقبولها.
+- [x] SR3-06 مُصلحة (major): `install()` يرفض و`vite` يُفشل البناء (`s7-sdk-fixes`).
+- [ ] SR3-05 مُصلحة، أو مذكورة في `docs/compat` أو README.
+- [x] SR3-07 وSR3-09 مُصلحتان (`s7-sdk-fixes`).
+- [x] README حزمة Node بنطاق إعادة التوجيه الصحيح (SR3-08، `s7-sdk-fixes`).
 - [ ] `govulncheck ./...` نظيف، ومعه `npm audit` على الحزم الثلاث يوم الوسم.
 - [ ] `docs/guides/storage.md`:
   - `data_dir` على قرص يُركَّب قبل الخدمة (systemd `RequiresMountsFor=`)، وما تقوله رسالة SR3-01.
