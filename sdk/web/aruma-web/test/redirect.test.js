@@ -436,10 +436,14 @@ describe('the Storage guard', () => {
     return { g, calls, xhr };
   }
 
-  // What the SDK's XhrConnection does: open, its headers, send; resolves on load or error.
+  // What the SDK's XhrConnection does: open, its headers, send; resolves with the status on load,
+  // or 'error'.
   function sdkXHR(g, url, headers) {
     const x = new g.XMLHttpRequest();
-    const done = new Promise((resolve) => x.addEventListener('error', () => resolve('error')));
+    const done = new Promise((resolve) => {
+      x.addEventListener('error', () => resolve('error'));
+      x.addEventListener('load', () => resolve({ status: x.status, statusText: x.statusText, body: JSON.parse(x.response) }));
+    });
     x.open('GET', url, true);
     for (const [k, v] of Object.entries(headers)) x.setRequestHeader(k, v);
     x.send();
@@ -448,24 +452,29 @@ describe('the Storage guard', () => {
 
   const sdkHeaders = { Authorization: 'Firebase ID_TOKEN', 'X-Firebase-Storage-Version': 'webjs/13.1.0' };
 
-  test('an SDK XHR to Google is never sent, and its token never set', async () => {
+  test('an SDK XHR to Google is never sent, its token never set, and it gets a 403 the SDK does not retry', async () => {
     const { g, xhr } = browserGlobal();
     install({ url: 'https://aruma.example.com', globalObject: g });
     const lines = await captureConsole(async () => {
-      assert.equal(await sdkXHR(g, google, sdkHeaders), 'error');
-      assert.equal(await sdkXHR(g, google, { 'X-Firebase-Storage-Version': 'webjs/13.1.0' }), 'error'); // signed out
+      const r = await sdkXHR(g, google, sdkHeaders);
+      assert.equal(r.status, 403);
+      assert.match(r.statusText, /Storage request to firebasestorage\.googleapis\.com was blocked/);
+      assert.equal(r.body.error.code, 403);
+      assert.equal((await sdkXHR(g, google, { 'X-Firebase-Storage-Version': 'webjs/13.1.0' })).status, 403); // signed out
     });
     assert.deepEqual(xhr, []);
     assert.equal(lines.length, 1, 'reported once');
     assert.match(lines[0], /Storage request to firebasestorage\.googleapis\.com was blocked.*storage: true/);
   });
 
-  test('an SDK fetch to Google is refused (the Node build), a plain link fetch is not', async () => {
+  test('an SDK fetch to Google gets a 403 (the Node build), a plain link fetch is sent', async () => {
     const { g, calls } = fakeGlobal();
     install({ url: 'https://aruma.example.com', globalObject: g });
     await captureConsole(async () => {
-      await assert.rejects(g.fetch(google, { headers: sdkHeaders }), /Storage request .* was blocked/);
-      await assert.rejects(g.fetch(new Request(google, { headers: { authorization: 'Firebase t' } })), /blocked/);
+      const r = await g.fetch(google, { headers: sdkHeaders });
+      assert.equal(r.status, 403);
+      assert.match((await r.json()).error.message, /Storage request .* was blocked/);
+      assert.equal((await g.fetch(new Request(google, { headers: { authorization: 'Firebase t' } }))).status, 403);
     });
     assert.equal(calls.length, 0);
     await g.fetch(`${google}&token=abc`); // a download link: no ID token, left alone
@@ -498,7 +507,7 @@ describe('the Storage guard', () => {
     const { g, xhr } = browserGlobal();
     await captureConsole(async () => {
       assert.throws(() => install({ url: 'http://aruma.example.com', globalObject: g }), ArumaConfigError);
-      assert.equal(await sdkXHR(g, google, sdkHeaders), 'error');
+      assert.equal((await sdkXHR(g, google, sdkHeaders)).status, 403);
     });
     assert.deepEqual(xhr, []);
   });

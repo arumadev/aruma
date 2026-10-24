@@ -7,10 +7,11 @@ import { test, expect, loadApp } from './fixtures.mjs';
 test('auth only: Storage on Google is refused, the ID token stays on the machine', async ({ browser, network }) => {
   const { context, page, done } = await loadApp(browser, network, '/auth-only/');
   expect(done.error, 'the app failed before its operations').toBeUndefined();
-  console.log(`auth-only: host=${done.host} upload=${done.upload} getMetadata=${done.metadata}`);
+  console.log(`auth-only: host=${done.host} in ${done.ms} ms\n  upload=${done.upload}\n  getMetadata=${done.metadata}`);
   expect(done.host).toBe('firebasestorage.googleapis.com');
-  expect(done.upload).not.toBe('ok');
-  expect(done.metadata).not.toBe('ok');
+  // At once and not retried, with the SDK's default budget: storage/unauthorized, and the reason.
+  for (const r of [done.upload, done.metadata]) expect(r).toMatch(/^storage\/unauthorized \(.*Firebase Auth is redirected to Aruma but Storage is not/);
+  expect(done.ms).toBeLessThan(5000);
   // Auth went to Aruma, Storage nowhere.
   expect(network.aruma.some((r) => r.path.startsWith('/identitytoolkit.googleapis.com/'))).toBe(true);
   expect(network.aruma.filter((r) => r.path.startsWith('/v0/')), 'Storage requests').toEqual([]);

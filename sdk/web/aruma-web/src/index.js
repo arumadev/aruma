@@ -181,8 +181,15 @@ function reportBlocked(global) {
     state.storageWarned = true;
     console.error(`${LOG_PREFIX} ${storageBlocked}`);
   }
-  return new TypeError(`${LOG_PREFIX} ${storageBlocked}`);
 }
+
+// A refused request is answered here, never sent, with 403. @firebase/storage retries a network
+// error and 5xx, 408 and 429 until its budget runs out (2 minutes, 10 for uploads; isRetryStatusCode
+// in implementation/utils.ts and the !hitServer check in implementation/request.ts:127-139 at
+// 0.14.6), and turns 403 into storage/unauthorized at once (sharedErrorHandler in
+// implementation/requests.ts:122-124), with the message in serverResponse (the XHR's statusText).
+const REFUSED_STATUS = 403;
+const refusedBody = () => JSON.stringify({ error: { code: REFUSED_STATUS, message: `${LOG_PREFIX} ${storageBlocked}` } });
 
 function hasSDKHeader(headers) {
   if (headers === undefined || headers === null || typeof Headers === 'undefined') return false;
@@ -196,17 +203,17 @@ function hasSDKHeader(headers) {
   return false;
 }
 
-/** A fetch the guard refuses: a Storage SDK request to Google's host. */
+/** A fetch the guard answers with 403 itself: a Storage SDK request to Google's host. */
 function refusedFetch(global, href, input, init) {
   if (href === null || !onGoogleStorage(href) || !guarding(global)) return false;
   return hasSDKHeader(init?.headers) || (isRequest(input) && hasSDKHeader(input.headers));
 }
 
 // The browser build of @firebase/storage sends with XMLHttpRequest: open(method, url), then
-// setRequestHeader for each header, then send (platform/browser/connection.ts). An XHR opened on
-// Google's Storage host that gets one of the SDK's headers is never sent: the token header is
-// dropped, and send() fails it as a network error, which the SDK reports (a throw would escape its
-// retry timer). Wrapped once per prototype; the guard reads the global's state on each call.
+// setRequestHeader for each header, then send (platform/browser/connection.ts:77-88). An XHR opened
+// on Google's Storage host that gets one of the SDK's headers is never sent: the token header is
+// dropped, and send() answers it with the refusal above and a load event (a throw would escape the
+// SDK's retry timer). Wrapped once per prototype; the guard reads the global's state on each call.
 function guardXHR(global) {
   const proto = global.XMLHttpRequest?.prototype;
   if (!proto?.open || !proto.send || !proto.setRequestHeader || Object.prototype.hasOwnProperty.call(proto, XHR_WRAPPED)) return;
@@ -227,7 +234,14 @@ function guardXHR(global) {
   proto.send = function send_(...args) {
     if (!this[XHR_GUARD]?.refuse) return send.apply(this, args);
     reportBlocked(global);
-    setTimeout(() => this.dispatchEvent(new (global.ProgressEvent ?? Event)('error')), 0);
+    const body = refusedBody();
+    const answer = { readyState: 4, status: REFUSED_STATUS, statusText: `${LOG_PREFIX} ${storageBlocked}`, response: body, responseText: body };
+    for (const [k, value] of Object.entries(answer)) Object.defineProperty(this, k, { value, configurable: true });
+    const E = global.ProgressEvent ?? Event;
+    setTimeout(() => {
+      this.dispatchEvent(new E('load'));
+      this.dispatchEvent(new E('loadend'));
+    }, 0);
     return undefined;
   };
 }
@@ -235,7 +249,12 @@ function guardXHR(global) {
 function makeWrapper(global, state) {
   const wrapped = function fetch(input, init) {
     const href = inputURL(input);
-    if (refusedFetch(global, href, input, init)) return Promise.reject(reportBlocked(global));
+    if (refusedFetch(global, href, input, init)) {
+      reportBlocked(global);
+      return Promise.resolve(
+        new Response(refusedBody(), { status: REFUSED_STATUS, statusText: 'Forbidden', headers: { 'content-type': 'application/json' } }),
+      );
+    }
     const m = href === null ? null : matchAuth(href);
     if (m === null || state.mode === null) return state.original.call(global, input, init);
     if (state.mode.error) {

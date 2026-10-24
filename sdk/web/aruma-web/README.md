@@ -41,7 +41,10 @@ host (ADR-014), so a redirect is only a host rewrite:
   wraps `globalThis.fetch` once. It rewrites only https requests on the default port to those two
   hosts, whether the request is a string, a `URL` or a `Request`. It keeps the method, headers,
   body and signal. Every other request (Firestore, Installations, your own API…) passes through
-  untouched.
+  untouched, except Storage's (below). **Firestore and callable Functions still go to Google and
+  carry the user's Aruma ID token** (`Authorization: Bearer <token>`; Firestore's travels inside
+  its WebChannel request): Aruma serves neither in v0.3, so an app on Aruma Auth should not use
+  them until they move to Aruma (SR3-10, v0.4).
 - The Vite plugin injects the install as the first module of `index.html`, before the app's own
   scripts. Installing after `firebase/auth` is imported also works in the browser, because the SDK
   looks `fetch` up per request (tested).
@@ -109,7 +112,9 @@ the same literal, so it stays consistent. It also runs in the dev server's depen
 - **Auth on Aruma never sends its ID token to Google Storage.** `@firebase/storage` takes the ID
   token from the app's Auth whatever its own host, and sends it as `Authorization: Firebase <token>`
   with every request. So while Auth is redirected, a Storage SDK request to
-  `firebasestorage.googleapis.com` fails instead of being sent (once, with an error in the console),
+  `firebasestorage.googleapis.com` is never sent: it fails at once with `storage/unauthorized`
+  (answered locally with 403, which the SDK does not retry; the reason is in the error's
+  `serverResponse` and, once, in the console),
   and the Vite plugin without `storage: true` stops a build that includes `@firebase/storage`. Turn
   Storage on (see [Firebase Storage](#firebase-storage)). A plain `fetch` of a download link, which
   carries no ID token, is left alone.
@@ -300,7 +305,7 @@ export default defineConfig({
 - `install()` يلفّ `globalThis.fetch` مرة واحدة، ولا يحوّل إلا طلبات https على المنفذ الافتراضي إلى هذين النطاقين:
   - نصًا كان الطلب، أو `URL`، أو `Request`.
   - ويُبقي الطريقة والترويسات والجسم وإشارة الإلغاء.
-  - وكل طلب آخر يمر كما هو.
+  - وكل طلب آخر يمر كما هو، إلا طلبات Storage (أدناه). **وFirestore والدوال القابلة للاستدعاء ما زالت تذهب إلى Google ومعها رمز هوية Aruma للمستخدم** (`Authorization: Bearer <token>`، وفي Firestore داخل طلب WebChannel): Aruma لا يخدمهما في v0.3، فالتطبيق على Auth في Aruma لا يستعملهما حتى ينتقلا إليه (SR3-10، v0.4).
 - إضافة Vite تحقن التثبيت أول وحدة في `index.html`، قبل سكربتات التطبيق.
 - والتثبيت بعد استيراد `firebase/auth` يعمل أيضًا في المتصفح (مُختبَر).
 
@@ -326,7 +331,7 @@ install({ url: 'https://aruma.example.com' });
 - **يفشل مغلقًا:** إن وُجد عنوان ورُفض، توقف الإضافة البناء، و`install()` يرمي خطأ.
   وفي كل الأحوال تفشل طلبات Auth، ولا تذهب إلى Google بكلمة مرور المستخدم.
 - **بلا إعداد لا يفعل شيئًا.**
-- **Auth على Aruma لا يرسل رمز الهوية إلى Storage عند Google.** `@firebase/storage` يأخذ رمز الهوية من Auth التطبيق أيًّا كان نطاقه، ويرسله `Authorization: Firebase <token>` مع كل طلب. فما دام Auth محوَّلًا، يفشل طلب مكتبة Storage إلى `firebasestorage.googleapis.com` ولا يُرسل (برسالة خطأ واحدة في الكونسول)، وتوقف إضافة Vite بلا `storage: true` البناءَ الذي فيه `@firebase/storage`. فعّل Storage (انظر Firebase Storage أدناه). أما `fetch` لرابط تنزيل، وليس فيه رمز هوية، فيمر.
+- **Auth على Aruma لا يرسل رمز الهوية إلى Storage عند Google.** `@firebase/storage` يأخذ رمز الهوية من Auth التطبيق أيًّا كان نطاقه، ويرسله `Authorization: Firebase <token>` مع كل طلب. فما دام Auth محوَّلًا، لا يُرسل طلب مكتبة Storage إلى `firebasestorage.googleapis.com`، بل يفشل في الحال بـ `storage/unauthorized` (يُجاب محليًا بـ 403 الذي لا تعيده المكتبة، والسبب في `serverResponse` للخطأ، ومرة في الكونسول)، وتوقف إضافة Vite بلا `storage: true` البناءَ الذي فيه `@firebase/storage`. فعّل Storage (انظر Firebase Storage أدناه). أما `fetch` لرابط تنزيل، وليس فيه رمز هوية، فيمر.
 - **السجل** مطفأ افتراضيًا. وإن فُعّل، فلا يحوي إلا الطريقة والنطاق والمسار: لا الاستعلام (فيه مفتاح API)، ولا الترويسات، ولا الرموز، ولا الأجسام.
 
 ## الحدود
