@@ -17,7 +17,7 @@ import (
 func Exclusion(c *Case) string {
 	switch {
 	case c.Expected.Outcome == Fact:
-		return "not a decision: a value observed on deployed Storage"
+		return "not a decision: a value observed on deployed rules"
 	case c.Skip != "":
 		return "not run on the emulator: " + firstLine(c.Skip)
 	case c.Ruleset == "":
@@ -34,7 +34,7 @@ func Exclusion(c *Case) string {
 	}
 	if c.Provenance == TestAPI {
 		if strings.Contains(c.Expected.Message, "Function not found error: Name: [debug]") {
-			return "Test API artefact: debug() is missing there; the emulator has it, and the reference says production does (unmeasured: the engine follows the Test API, provisionally)"
+			return "Test API artefact: debug() is missing there; deployed rules return its argument, as the emulator does (production/deployed-firestore.json)"
 		}
 		if contradictoryMocks(c) {
 			return "Test API artefact: get() and exists() of one document are mocked apart and disagree; a real document exists or not"

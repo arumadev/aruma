@@ -32,8 +32,7 @@ var libraryNamespaces = map[string]bool{
 // (S1-C) resolves calls with isLibraryFunction. math.isInfinite is in the reference but not in
 // production (Pyric math-namespace, time-math-and-casts, ast-strictness: "Function not found
 // error: Name: [math.isInfinite]."), so it is unknown here too; so is bool(), which is in
-// neither (Pyric bool-function). debug is a name the checker resolves (S1-0's contract), but
-// calling it is an error (callFunction).
+// neither (Pyric bool-function). debug returns its argument (callFunction).
 var libraryFunctions = map[string]bool{
 	"debug": true, "float": true, "int": true, "path": true, "string": true,
 	"duration.abs": true, "duration.time": true, "duration.value": true,
@@ -111,12 +110,18 @@ func callFunction(m *meter, name string, args []Value) (Value, error) {
 	}
 	switch name {
 	case "debug":
-		// The reference says debug() "has no effect in production", but the only production
-		// recording, the Rules Test API, has no such function ("Function not found error: Name:
-		// [debug].": S0-A aruma/errors/debug_function and aruma/storage/debug; hidane D113).
-		// Deployed rules are not measured; until they are, the stricter answer holds (ADR-021
-		// §4), recorded as provisional in docs/compat. The emulator returns the argument.
-		return Value{}, errNotFound("debug")
+		// Deployed rules return the first argument, as the emulator does and as the reference
+		// says ("has no effect in production"): debug(true), debug(1) == 1, debug('s') == 's' and
+		// debug({'a': 1}).a == 1 allow, and debug(1, 2) == 1 allows where == 2 and != 1 deny.
+		// debug() is an error: == null and != null both deny (S7-R on chatapp-8ae21,
+		// test/oracle/rules/production/deployed-firestore.json). Production's text for it is
+		// not observable (Firestore answers 403 with no reason). The Rules Test API alone has no
+		// debug() ("Function not found error: Name: [debug].": S0-A aruma/errors/debug_function,
+		// aruma/storage/debug), an artefact of it (rulestest.Exclusion).
+		if len(args) == 0 {
+			return Value{}, errArity(0, []string{"debug(any)"})
+		}
+		return args[0], nil
 	case "int":
 		return toInt(args)
 	case "float":

@@ -34,7 +34,7 @@
 | تقبل الطريقة `write` في الطلب وتطابقها مع `allow write` | `aruma/methods/method_write_verb` | لا طلب حقيقي طريقته `write` |
 | مسار Firestore لا يُشترط أن يسمّي مستندًا (عدد مقاطع فردي مقبول) | `aruma/followups/nested_under_recursive_deep` | المحاكي يرفض المسار |
 | مسار Storage ينتهي بـ `/` مرفوض: «should be URL-encoded» | `aruma/storage-paths/list_on_prefix` | — |
-| `debug()` غير موجودة: «Function not found error: Name: [debug]» | `aruma/errors/debug_function`، `aruma/storage/debug` | المحاكي: `debug(x)` يُرجع `x`. المنشور: الوثائق تقول لا أثر له، ولم نتحقق |
+| `debug()` غير موجودة: «Function not found error: Name: [debug]» | `aruma/errors/debug_function`، `aruma/storage/debug` | المحاكي: `debug(x)` يُرجع `x`. والمنشور كذلك: قاسه S7-R (`production/deployed-firestore.json`) |
 | حجم المصدر يُقاس على رسالة الطلب (انظر وثيقة النتائج) | `aruma/followups/size_comment_262119`، `aruma/followups/size_comment_262120` | المحاكي لا يُختبر هنا |
 
 ## خلافات المحاكي (ليست من Test API)

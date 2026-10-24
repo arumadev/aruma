@@ -27,6 +27,10 @@ import (
 //     Mocked lookups answer the mock's value as given, without id or __name__; a lookup that is
 //     not mocked, or whose mock is undefined, fails as rules.ErrNoDocuments, which is the
 //     evaluation error the Test API reports ("Function not found", "Service call error").
+//   - deployed (S7-R, production/deployed-firestore.json): as rules-test-api, but the database
+//     is real: a lookup of a document no mock lists finds no document, and request.auth is a
+//     verified ID token's claims converted as the services convert them (rules.Auth), numbers as
+//     the token wrote them (an int stays exact beyond 2^53).
 //   - emulator: what the emulator recorder (test/oracle/rules/tools/record-emulator.mjs) and the
 //     emulator made of the case. Firestore: request.auth is null without a user and holds the
 //     unsigned ID token's claims with one; request.resource is the written document on create
@@ -367,7 +371,11 @@ func (b *binder) testAPIVariables() (map[string]rules.Value, error) {
 		if !f.Present() {
 			continue
 		}
-		v, err := b.testAPIField(f)
+		read := b.testAPIField
+		if name == "auth" && b.c.Provenance == Deployed {
+			read = b.deployedAuth
+		}
+		v, err := read(f)
 		if err != nil {
 			return nil, fmt.Errorf("request.%s: %w", name, err)
 		}
@@ -400,9 +408,30 @@ func mockTarget(fn string) (get, after bool, err error) {
 	return false, false, fmt.Errorf("rulestest: unknown mocked function %q", fn)
 }
 
+// deployedAuth is request.auth of a deployed case: {uid, token} as the ID token's verifier
+// gives them to the services, or null without a token.
+func (b *binder) deployedAuth(f Field) (rules.Value, error) {
+	if f.IsNull() {
+		return rules.Null(), nil
+	}
+	var a struct {
+		UID   string         `json:"uid"`
+		Token map[string]any `json:"token"`
+	}
+	d := json.NewDecoder(bytes.NewReader(f.Raw()))
+	d.UseNumber()
+	if err := d.Decode(&a); err != nil {
+		return rules.Value{}, err
+	}
+	return rules.Auth(a.UID, a.Token), nil
+}
+
 func (b *binder) testAPIDocuments(vars map[string]rules.Value) (*MemoryDocuments, error) {
 	docs := NewMemoryDocuments()
 	docs.Missing = rules.ErrNoDocuments
+	if b.c.Provenance == Deployed {
+		docs.Missing = nil // a real database: a document not written is not found
+	}
 	// After the request's writes, the Test API reads its own document as the write leaves it
 	// (getAfter(request.path) is request.resource; existsAfter is true on a create, false on a
 	// delete), and any other as the mocks of get() and exists() give it (Pyric
