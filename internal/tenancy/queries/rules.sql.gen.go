@@ -8,6 +8,7 @@ package queries
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -21,6 +22,29 @@ func (q *Queries) CountRulesets(ctx context.Context, projectNumber int64) (int64
 	var count int64
 	err := row.Scan(&count)
 	return count, err
+}
+
+const deleteUnreleasedRuleset = `-- name: DeleteUnreleasedRuleset :execrows
+DELETE FROM control.rulesets s
+WHERE s.project_number = $1 AND s.ruleset_id = $2
+  AND NOT EXISTS (
+    SELECT 1 FROM control.rules_releases r
+    WHERE r.project_number = s.project_number AND r.ruleset_id = s.ruleset_id)
+`
+
+type DeleteUnreleasedRulesetParams struct {
+	ProjectNumber int64
+	RulesetID     uuid.UUID
+}
+
+// Deletes a ruleset no release points to. A release published meanwhile makes the foreign key
+// refuse the delete instead (rules_releases_ruleset_fkey).
+func (q *Queries) DeleteUnreleasedRuleset(ctx context.Context, arg DeleteUnreleasedRulesetParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteUnreleasedRuleset, arg.ProjectNumber, arg.RulesetID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const getRelease = `-- name: GetRelease :one
@@ -116,6 +140,96 @@ func (q *Queries) InsertRuleset(ctx context.Context, arg InsertRulesetParams) (C
 		&i.CreateTime,
 	)
 	return i, err
+}
+
+const listReleases = `-- name: ListReleases :many
+SELECT project_number, name, ruleset_id, create_time, update_time FROM control.rules_releases
+WHERE project_number = $1 AND name > $2::text
+ORDER BY name
+LIMIT $3
+`
+
+type ListReleasesParams struct {
+	ProjectNumber int64
+	After         string
+	PageSize      int32
+}
+
+// A project's releases by their stored name, keyset-paginated by it.
+func (q *Queries) ListReleases(ctx context.Context, arg ListReleasesParams) ([]ControlRulesRelease, error) {
+	rows, err := q.db.Query(ctx, listReleases, arg.ProjectNumber, arg.After, arg.PageSize)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ControlRulesRelease{}
+	for rows.Next() {
+		var i ControlRulesRelease
+		if err := rows.Scan(
+			&i.ProjectNumber,
+			&i.Name,
+			&i.RulesetID,
+			&i.CreateTime,
+			&i.UpdateTime,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRulesets = `-- name: ListRulesets :many
+SELECT ruleset_id, service, create_time FROM control.rulesets
+WHERE project_number = $1
+  AND ($2::timestamptz IS NULL
+       OR create_time < $2::timestamptz
+       OR (create_time = $2::timestamptz AND ruleset_id > $3::uuid))
+ORDER BY create_time DESC, ruleset_id
+LIMIT $4
+`
+
+type ListRulesetsParams struct {
+	ProjectNumber int64
+	AfterTime     *time.Time
+	AfterID       *uuid.UUID
+	PageSize      int32
+}
+
+type ListRulesetsRow struct {
+	RulesetID  uuid.UUID
+	Service    string
+	CreateTime time.Time
+}
+
+// A project's rulesets newest first, without their files, keyset-paginated after the
+// (create_time, ruleset_id) of the last one a page showed.
+func (q *Queries) ListRulesets(ctx context.Context, arg ListRulesetsParams) ([]ListRulesetsRow, error) {
+	rows, err := q.db.Query(ctx, listRulesets,
+		arg.ProjectNumber,
+		arg.AfterTime,
+		arg.AfterID,
+		arg.PageSize,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListRulesetsRow{}
+	for rows.Next() {
+		var i ListRulesetsRow
+		if err := rows.Scan(&i.RulesetID, &i.Service, &i.CreateTime); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const lockProjectRulesets = `-- name: LockProjectRulesets :one

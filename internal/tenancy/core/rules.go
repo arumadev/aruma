@@ -4,14 +4,17 @@ import (
 	"container/list"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/platform/authn"
@@ -114,19 +117,125 @@ func (s *Service) CreateRuleset(ctx context.Context, p *authn.Principal, project
 	return out, issues, nil
 }
 
-// GetRuleset returns one of a project's rulesets.
+// GetRuleset returns one of a project's rulesets. name is as PublishRelease takes it: the full
+// name under the project's id or number, or the uuid alone.
 func (s *Service) GetRuleset(ctx context.Context, p *authn.Principal, project, name string) (Ruleset, error) {
-	panic("S5-A: GetRuleset")
+	proj, err := s.resolveProject(ctx, s.q, p, project, false)
+	if err != nil {
+		return Ruleset{}, err
+	}
+	id, err := rulesetID(s.toProject(proj), name)
+	if err != nil {
+		return Ruleset{}, err
+	}
+	row, err := s.q.GetRuleset(ctx, queries.GetRulesetParams{ProjectNumber: proj.ProjectNumber, RulesetID: id})
+	switch {
+	case notFound(err):
+		return Ruleset{}, errNotFound()
+	case err != nil:
+		return Ruleset{}, internal(err)
+	}
+	out, err := toRuleset(proj.ProjectID, row)
+	if err != nil {
+		return Ruleset{}, internal(err)
+	}
+	return out, nil
 }
 
-// ListRulesets lists a project's rulesets, newest first.
+// ListRulesets lists a project's rulesets, newest first. The listing holds names and times, not
+// files, as the Rules API's does: GetRuleset reads a source.
 func (s *Service) ListRulesets(ctx context.Context, p *authn.Principal, project string, opt ListOptions) (Page[Ruleset], error) {
-	panic("S5-A: ListRulesets")
+	proj, err := s.resolveProject(ctx, s.q, p, project, false)
+	if err != nil {
+		return Page[Ruleset]{}, err
+	}
+	size := pageSize(opt.PageSize)
+	params := queries.ListRulesetsParams{ProjectNumber: proj.ProjectNumber, PageSize: size + 1}
+	if opt.PageToken != "" {
+		at, id, err := decodeRulesetToken(opt.PageToken)
+		if err != nil {
+			return Page[Ruleset]{}, err
+		}
+		params.AfterTime, params.AfterID = &at, &id
+	}
+	rows, err := s.q.ListRulesets(ctx, params)
+	if err != nil {
+		return Page[Ruleset]{}, internal(err)
+	}
+	var page Page[Ruleset]
+	if len(rows) > int(size) {
+		rows = rows[:size]
+		last := rows[len(rows)-1]
+		page.NextPageToken = encodeToken(strconv.FormatInt(last.CreateTime.UnixMicro(), 10) + "/" + last.RulesetID.String())
+	}
+	page.Items = make([]Ruleset, 0, len(rows))
+	for _, r := range rows {
+		page.Items = append(page.Items, Ruleset{Name: rulesetName(proj.ProjectID, r.RulesetID), CreateTime: r.CreateTime})
+	}
+	return page, nil
 }
 
-// DeleteRuleset deletes a ruleset no release points to.
+// decodeRulesetToken reads a ruleset page token: the create time of the previous page's last
+// ruleset, in microseconds as Postgres keeps it, and its id.
+func decodeRulesetToken(tok string) (time.Time, uuid.UUID, error) {
+	raw, err := decodeToken(tok)
+	if err != nil {
+		return time.Time{}, uuid.UUID{}, err
+	}
+	micros, rawID, ok := strings.Cut(raw, "/")
+	us, err := strconv.ParseInt(micros, 10, 64)
+	if !ok || err != nil {
+		return time.Time{}, uuid.UUID{}, errBadPageToken
+	}
+	id, err := uuid.Parse(rawID)
+	if err != nil {
+		return time.Time{}, uuid.UUID{}, errBadPageToken
+	}
+	return time.UnixMicro(us), id, nil
+}
+
+// DeleteRuleset deletes a ruleset no release points to. One a release points to, even a release
+// published while this runs, is FAILED_PRECONDITION and stays.
 func (s *Service) DeleteRuleset(ctx context.Context, p *authn.Principal, project, name string) error {
-	panic("S5-A: DeleteRuleset")
+	return internal(s.tx(ctx, func(q *queries.Queries, _ pgx.Tx) error {
+		proj, err := s.resolveProject(ctx, q, p, project, false)
+		if err != nil {
+			return err
+		}
+		id, err := rulesetID(s.toProject(proj), name)
+		if err != nil {
+			return err
+		}
+		full := rulesetName(proj.ProjectID, id)
+		inUse := apierr.New(apierr.FailedPrecondition, "The ruleset %s is referenced by a release and cannot be deleted.", full)
+		n, err := q.DeleteUnreleasedRuleset(ctx, queries.DeleteUnreleasedRulesetParams{ProjectNumber: proj.ProjectNumber, RulesetID: id})
+		if referenced(err) {
+			return inUse
+		}
+		if err != nil {
+			return err
+		}
+		if n == 0 {
+			// It does not exist, or a release points to it.
+			_, err := q.GetRuleset(ctx, queries.GetRulesetParams{ProjectNumber: proj.ProjectNumber, RulesetID: id})
+			switch {
+			case notFound(err):
+				return errNotFound()
+			case err != nil:
+				return err
+			}
+			return inUse
+		}
+		return s.audit(ctx, q, p, proj.ProjectNumber, "rules.ruleset.delete", full, nil)
+	}))
+}
+
+// referenced reports whether err is rules_releases_ruleset_fkey refusing a delete: a release
+// committed after the delete's snapshot points to the ruleset. ON DELETE RESTRICT fails with
+// restrict_violation (23001), a deferred check with foreign_key_violation (23503).
+func referenced(err error) bool {
+	pg, ok := errors.AsType[*pgconn.PgError](err)
+	return ok && (pg.Code == "23001" || pg.Code == "23503")
 }
 
 // GetRelease returns one of a project's releases. NOT_FOUND when it does not exist.
@@ -150,9 +259,33 @@ func (s *Service) GetRelease(ctx context.Context, p *authn.Principal, project, r
 	return toRelease(pr, row), nil
 }
 
-// ListReleases lists a project's releases.
+// ListReleases lists a project's releases by name, the Storage release under the current
+// bucket's name as everywhere else.
 func (s *Service) ListReleases(ctx context.Context, p *authn.Principal, project string, opt ListOptions) (Page[Release], error) {
-	panic("S5-A: ListReleases")
+	proj, err := s.resolveProject(ctx, s.q, p, project, false)
+	if err != nil {
+		return Page[Release]{}, err
+	}
+	after, err := decodeToken(opt.PageToken)
+	if err != nil {
+		return Page[Release]{}, err
+	}
+	size := pageSize(opt.PageSize)
+	rows, err := s.q.ListReleases(ctx, queries.ListReleasesParams{ProjectNumber: proj.ProjectNumber, After: after, PageSize: size + 1})
+	if err != nil {
+		return Page[Release]{}, internal(err)
+	}
+	var page Page[Release]
+	if len(rows) > int(size) {
+		rows = rows[:size]
+		page.NextPageToken = encodeToken(rows[len(rows)-1].Name)
+	}
+	pr := s.toProject(proj)
+	page.Items = make([]Release, 0, len(rows))
+	for _, r := range rows {
+		page.Items = append(page.Items, toRelease(pr, r))
+	}
+	return page, nil
 }
 
 // PublishRelease creates a release or points an existing one at another ruleset, and drops the
@@ -192,7 +325,12 @@ func (s *Service) PublishRelease(ctx context.Context, p *authn.Principal, projec
 			return apierr.New(apierr.InvalidArgument, "The release %s takes a %s ruleset; %s is for %s.",
 				release, want, rulesetName(pr.ID, id), rs.Service)
 		}
-		if row, err = q.UpsertRelease(ctx, queries.UpsertReleaseParams{ProjectNumber: proj.ProjectNumber, Name: stored, RulesetID: id}); err != nil {
+		row, err = q.UpsertRelease(ctx, queries.UpsertReleaseParams{ProjectNumber: proj.ProjectNumber, Name: stored, RulesetID: id})
+		if pg, ok := errors.AsType[*pgconn.PgError](err); ok && pg.Code == "23503" {
+			// DeleteRuleset removed the ruleset after GetRuleset read it: gone, as if never read.
+			return errNotFound()
+		}
+		if err != nil {
 			return err
 		}
 		return s.audit(ctx, q, p, proj.ProjectNumber, "rules.release.publish", shownRelease(pr, stored),

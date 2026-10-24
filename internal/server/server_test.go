@@ -384,16 +384,20 @@ func TestStorageRouting(t *testing.T) {
 		}
 	}
 
-	// Disabled, the paths fall through to the rest of the entry point, the management paths
-	// with them: the routes are those of a server before Storage.
+	// Disabled, the Storage paths fall through to the rest of the entry point; the management
+	// paths stay the Management API's, which answers the firebase CLI in JSON.
 	off := New(testConfig(t, "https://aruma.test"), slog.New(slog.NewTextHandler(io.Discard, nil)), nil, metrics.New("test"),
 		Handlers{Static: record("static"), Mgmt: record("mgmt")})
-	for _, p := range []string{"/v0/b/x/o", "/firebasestorage.googleapis.com/v0/b/x/o", "/storage/v1/b/x", "/upload/storage/v1/b/x/o",
-		"/download/storage/v1/b/x/o/a", "/v1/projects/chat-app:test", "/v1alpha/projects/chat-app/defaultBucket"} {
+	for _, c := range []struct{ path, want string }{
+		{"/v0/b/x/o", "static"}, {"/firebasestorage.googleapis.com/v0/b/x/o", "static"}, {"/storage/v1/b/x", "static"},
+		{"/upload/storage/v1/b/x/o", "static"}, {"/download/storage/v1/b/x/o/a", "static"},
+		{"/v1/projects/chat-app:test", "mgmt"}, {"/v1/projects/chat-app/services/x", "mgmt"},
+		{"/v1alpha/projects/chat-app/defaultBucket", "mgmt"}, {"/v1/other", "static"},
+	} {
 		hits = nil
-		off.Handler().ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", p, nil))
-		if len(hits) != 1 || hits[0] != "static" {
-			t.Errorf("Storage disabled: %s routed to %v", p, hits)
+		off.Handler().ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", c.path, nil))
+		if len(hits) != 1 || hits[0] != c.want {
+			t.Errorf("Storage disabled: %s routed to %v, want %s", c.path, hits, c.want)
 		}
 	}
 }

@@ -89,13 +89,11 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("/v1beta1/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
 	// The Realtime Database's management API (internal/admin/mgmt/rtdb.go).
 	mux.Handle("/v1beta/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
-	if s.handlers.Storage != nil {
-		// firebaserules, Service Usage and defaultBucket for the firebase CLI (ADR-022 §1, §15):
-		// mounted with Storage, until Firestore needs them too, so a server without Storage
-		// routes exactly as before.
-		mux.Handle("/v1/projects/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
-		mux.Handle("/v1alpha/projects/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
-	}
+	// firebaserules, Service Usage and defaultBucket for the firebase CLI (ADR-022 §1, §15):
+	// mounted with Storage off too, so the CLI gets the JSON it reads, and defaultBucket's 404
+	// makes it say "Firebase Storage has not been set up" (internal/admin/mgmt/storage.go).
+	mux.Handle("/v1/projects/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
+	mux.Handle("/v1alpha/projects/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
 	mux.Handle("/oauth2/", s.metrics.Instrument("oauth", apiOnly(s.handlers.OAuth)))
 	for _, prefix := range AuthPrefixes {
 		mux.Handle(prefix, s.metrics.Instrument("auth", apiOnly(s.handlers.Auth)))

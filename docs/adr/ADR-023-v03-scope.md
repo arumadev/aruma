@@ -184,6 +184,14 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 60. **قيد: اسم بمقاطع أكثر من `request_segments` للـ ruleset** (1024 افتراضيًا مع `b/<bucket>/o`) **يُرفض 403**، لا 503 تعيد المكتبات عليه بلا نهاية. `core/rules.go` (`ruleRequest`، و`Ruleset.RequestSegments`).
 61. **قيد: مصدر قواعد فيه NUL يُرفض 400** (jsonb لا يحفظه). وعدد الـ rulesets لكل مشروع `rules.limits.rulesets_per_project` (2,500 افتراضيًا، ولا يتجاوز حد Firebase، ADR-021 §7). `tenancy/core/rules.go`.
 
+**أضافها S5-A** (واجهات أداة `firebase`، ADR-022 §15؛ تفصيلها في `docs/compat/storage-v0.3.md`؛ الأرقام بعد S3-A):
+
+69. **مؤقت: `:test` لا يشغّل `testSuite`:** خطأ الترجمة يُرد بـ `issues[]` أولًا، ومصدر يترجم مع `testCases` 400 لا نجاح مزعوم. `mgmt/rules.go` (`testRuleset`).
+70. **مؤقت: خدمة الـ ruleset من تصريح `service` في مصدره** (Storage، أو Firestore لـ `cloud.firestore`). `mgmt/rules.go` (`compile`).
+71. **مؤقت: حذف ruleset مُطلقة 400 `FAILED_PRECONDITION`، و`PATCH` لإصدارة غائبة 404، و`POST` لموجودة 409، و`filter` و`attachment_point` 400.** `mgmt/rules.go`، و`tenancy/core/rules.go` (`DeleteRuleset`).
+72. **مؤقت: أشكال لم تُقس:** Ruleset بلا `metadata`، والقائمة الفارغة `{}`، والأوقات بست خانات، و`defaultBucket` بـ `US-CENTRAL1`، و`buckets` برقم المشروع، وService Usage `ENABLED` لكل اسم. `mgmt/storage.go`، و`mgmt/rules.go`.
+73. **قيد: جسم فوق 1 MiB على `:test` و`rulesets` 400 برسالة الحجم من الإنتاج** لا 413. `mgmt/rules.go` (`decodeSource`).
+
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 
 ## البدائل المرفوضة
