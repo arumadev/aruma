@@ -121,3 +121,36 @@
 81. **مؤقت: بدء الرفع يُحسب على `upload_starts_per_minute_per_ip`** (media وmultipart وresumable)، والتجاوز 429 `rateLimitExceeded` مع `Retry-After`. والعنوان من `X-Forwarded-For` لوكيل في `trusted_proxies` وحده، وIPv6 لكل /64 (`clientIP`). `gcs/upload.go` (`allowStart`).
 82. **مؤقت: ما لا تسجيل له في الرفع.** جسم أبطأ من `min_bytes_per_second` على 30 ثانية 408، وجسم انقطعت قراءته 400، وتجاوز حد الجسم عند المدخل 413 `uploadTooLarge`. و`Content-Length` يخالف طول `Content-Range` 400 قبل حفظ شيء، وطلب `bytes */*` بجسم 400. و`crc32c` أو `md5Hash` في JSON يناقضه `X-Goog-Hash` في الطلب نفسه 400. و`X-Upload-Content-Length` حجم معلن، والزيادة عليه 400 وتنهي الجلسة. `gcs/upload.go`.
 83. **قيد: `Retry-After` على الضغط الحقيقي وحده** في الرفع والتنزيل أيضًا (معدل البدء، و`upload_requests_per_ip`، و`core.ErrOverloaded`)، لا على 503 من عطل الخادم (`core.ErrUnavailable`: أرضية القرص، أو القاعدة، أو التزام لم يُحسم، أو إيقاف الخادم): المكتبات التي تحترمه تعيد بلا حد. القاعدة واحدة في `gcs/errors.go` (`writeError`، البند 79)، وتختبرها `TestUploadUnavailableHasNoRetryAfter`.
+
+### الرفع على `/v0` (S3-B)
+
+يختبرها `api/upload_test.go` (جسم JSON للرفع، وحالة كل رد على رابط الجلسة، وما يُرفض قبل `core`، والمهلة المتدرجة على خادم بمهلات مصغّرة)، و`test/acceptance/storage_upload_test.go` (إعادة طلبات الويب المسجّلة في `sdk_upload.json`، وأشكال Android وiOS من A §3.10-3.13، وكل رفض نهائي، ورفع 64 ثانية وslowloris على مستمع الخادم نفسه بمهلاته الحقيقية).
+
+- **`X-Goog-Upload-Status`:** `final` مع كل رفض نهائي (403 و402 والحجم المخالف وmd5Hash و413 و401) ومع كل تكرار له و`query` بعده؛ و`active` مع 2xx لجلسة حية، ومع الفجوة (400 والحجم المستلَم)، ومع 503 وحدها؛ ولا شيء على جلسة مجهولة (404) ولا على طلب لا يُقرأ.
+- **المهلة:** مهلتا القراءة والكتابة تتحركان معًا نافذة 30 ثانية كلما جاءت النافذة بـ `min_bytes_per_second` × 30 بايتًا، ومهلة الكتابة تُضبط نافذة أخرى قبل الرد مباشرة، فيصل رد رفع أطول من 60 ثانية بعد الـ commit.
+
+| # (ADR-023 §3) | الفرق | التصنيف | المصدر | الموضع |
+|---|---|---|---|---|
+| 84 | جسم دون `min_bytes_per_second` في نافذة 30 ثانية يُقطع 408 بلا `X-Goog-Upload-Status`، وما وصل منه يُحفظ | مؤقت | ADR-022 §6.4، A §5.3 | `api.pacedBody`، `api.chunk` |
+| 85 | قطعة أو إنهاء على جلسة ملغاة 400 مع `final`، و`query` و`cancel` عليها 200 مع `cancelled` | مؤقت | ADR-022 §6.1، E §3.1 | `api.writeSession`، `api.uploadSession` |
+| 86 | قطعة على جلسة انتهت بنجاح لا تأتي ببايت بعد `received` تكرار يُعاد له المحفوظ (200 و`final` والـ metadata)؛ وببايت بعده 400 مع `final` كالمحاكي | مؤقت | ADR-022 §6.1، `raw_resumable.json` | `api.chunk`، `api.pastReceived` |
+| 87 | نوع المحتوى في multipart من الـ JSON وحده و`?name=` يغلب اسم الـ JSON (كالمحاكي)؛ وقيمة `X-Goog-Upload-Protocol` أخرى 400؛ و`md5Hash` ليس base64 لستة عشر بايتًا 400 | مؤقت | `raw_upload.json` | `api.multipart`، `api.upload`، `api.parseResource` |
+| 88 | `X-Goog-Upload-Offset` إلزامي إلا لـ `finalize` منفردًا بجسم فارغ، و`X-Goog-Upload-Content-Length` على القطع لا يُقرأ (المعلن عند `start` هو الحكم) | مؤقت | A §3.11 | `api.chunk` |
+
+### التنزيل ومصفوفة المتصفحات (S3-C)
+
+`alt=media` على `/v0` يفتح الكائن بـ `core.Open` (الرمز وحده، أو القواعد) ثم `media.Serve`. يختبره `test/acceptance/storage_download_test.go` (من يفتح البايتات، والترويسات وCache-Control بالوضع، وRange، ورفض العمّال وسكربتات أصل اللوحة، وCORS الـ bucket على الرد ورفضه والـ preflight، وgzip كما خُزّن أو مفكوكًا، وقنبلة تُقطع عند `object_bytes` وتُعدّ).
+
+ومصفوفة المتصفحات (ADR-022 §10.6) في `test/e2e/browser-matrix/run.sh`: حالات F §2.4 على Chromium وFirefox وWebKit (Playwright 1.64.1)، 14 من 14 على كل محرك، ولكل حماية حالة ضابطة تثبت أن الفحص يرى فشلها. والنتائج التي تحسم ما علّقه ADR-022 على المصفوفة:
+
+- **HTML وSVG تحت `sandbox`** لا ينفّذان سكربتًا تصفحًا مباشرًا في المحركات الثلاثة، و`window.origin === "null"`، ولا كعكة اللوحة ولا `localStorage`. وSVG يُرسم، وفي `<img>` من أصل آخر أيضًا.
+- **الفيديو والصوت تحت `sandbox` و`media-src 'self'`** يُعرضان ويُقفز فيهما تصفحًا مباشرًا وفي `<video>`/`<audio>` من أصل آخر، ومع COEP `require-corp`، في الثلاثة. فلا حاجة لرفع `sandbox` عن الوسائط. وWebKit يطلب بـ `Range` ويأخذ 206.
+- **PDF يُنزَّل** تصفحًا مباشرًا، ولا يُعرض في `<iframe>` ولا `<embed>` من أصل آخر (`X-Frame-Options: DENY`).
+- **CORS:** bucket بلا إعداد يرفض `fetch` و`getBytes` و`getBlob` من أصل آخر، و`cors.json` الموثّق (`{origin: ["*"], method: ["GET"], maxAgeSeconds: 3600}`) يسمح بها ومعها الـ preflight. المكتبة هي `firebase` 13.1.0 (بناء CDN) بـ `connectStorageEmulator` للمضيف وحده، لأن مسار الإنتاج للويب في S6.
+- **Service Worker** من أصل اللوحة يُرفض، وكذلك `<script>` من أصلها، ويُحمَّل `<script>` من أصل تطبيق. والرفض 403 وحده هو المانع، بالطفرة على Chromium وFirefox (2026-10-24): مع إيقاف `media.refused` يُسجَّل رابط التنزيل Service Worker على أصل Aruma في Firefox (`registered`) فتفشل الحالة 8، ومعه تنجح. والحالة الضابطة في Firefox تسجّل عاملًا من أصل الصفحات، لأن Firefox في Playwright لا يمرر سكربت العامل عبر `route`.
+- **حدود المصفوفة:** H.264 غير موجود في Chromium الذي يوزعه Playwright، فيُفحص فيه WebM (VP9)؛ وWebKit يعلن VP9 ولا يفك منه إطارًا (من Aruma ومن خادم ملفات عادي سواء)، فيُفحص فيه MP4 وحده. والحالة 11 (قنبلة gzip) في اختبارات `media` والقبول لا في المتصفح، والحالة 12 (`file.download()` في Node) لمسار GCS في S4-C.
+
+| # (ADR-023 §3) | الفرق | التصنيف | المصدر | الموضع |
+|---|---|---|---|---|
+| 89 | `?token=` الفارغ لا رمز، فتقرر القواعد | مؤقت | ADR-022 §13 | `api.download` |
+| 90 | تنزيل قررته القواعد بلا `Authorization` يحمل `private` أيضًا | مؤقت | ADR-022 §10.5 | `api.download` |
