@@ -184,7 +184,7 @@ func (p *compiledRegex) loneForms(m *meter, limit int, base rune) (*regexForms, 
 		p.loneErr = errTooComplex(p.text, -1, limit)
 		return nil, p.loneErr
 	}
-	if err := m.alloc(3*textCost + 3*int64(p.insts+8)*progBytesPerInst); err != nil {
+	if err := m.alloc(3*textCost + 3*int64(p.insts+8)*progBytesPerInst + p.classes); err != nil {
 		return nil, err
 	}
 	if err := m.work(3 * (int64(len(text)) + 4*int64(p.insts))); err != nil {

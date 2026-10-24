@@ -131,10 +131,13 @@ func (rs *Ruleset) Service() Service { return rs.service }
 
 // Weight estimates the bytes the ruleset holds, for tenancy's cache of compiled rulesets, which
 // is bounded by weight rather than count (ADR-021 §4, §7): its text, its tree, the programs of
-// its literal patterns with the forms for lone surrogates they may keep, and the cap of its
-// cache of patterns built during evaluation, which it may fill. Compile refuses a ruleset that
-// would weigh more than a quarter of compiled_rulesets_bytes, so every ruleset that compiles
-// fits in the cache.
+// its literal patterns with the tables of their classes and the forms for lone surrogates they
+// may keep, and the cap of its cache of patterns built during evaluation, which it may fill.
+// Compile refuses a ruleset that would weigh more than a quarter of compiled_rulesets_bytes, so
+// every ruleset that compiles is kept. It is an estimate: over the pattern shapes measured
+// (\pL, \PL, \p{Han}, negated and case-folded classes, repetitions, lone forms), a file whose
+// patterns use regex_bytes holds at most 0.84 times what the budgets count and 0.79 times its
+// weight (TestClassTablesAreCounted); the tree's share is not measured that way.
 func (rs *Ruleset) Weight() int64 {
 	w := int64(len(rs.src)) + rs.treeBytes + rs.lim.RegexCacheBytes
 	if rs.regexes != nil {

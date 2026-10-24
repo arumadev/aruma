@@ -89,8 +89,8 @@ func check(f *file, svc Service, lim Limits) (*Ruleset, []Issue) {
 	}
 	// A ruleset the cache could not keep would be compiled again for every request that needs
 	// it (the review's SR3-02): it does not compile. Its patterns are bounded already
-	// (regex_bytes); what is left is the text and the tree, which a 256 KiB source keeps far
-	// below the share with the default limits.
+	// (regex_bytes); what is left is the text and the tree, by its estimate of 96 bytes a node
+	// (the oracle's largest tree, size_functions_950, is 1.3 MB).
 	if w := c.rs.Weight(); w > c.lim.rulesetBytes() {
 		c.issues = append(c.issues, Issue{File: f.name, Severity: SeverityError, Description: fmt.Sprintf(msgRulesetWeight, w, c.lim.rulesetBytes())})
 	}

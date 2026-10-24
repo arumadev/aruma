@@ -25,7 +25,9 @@ import (
 //     folds case, 16 bytes for each character a class range folds one by one, measured on Go
 //     1.27 (see foldCost). A pattern past instructions × 256 bytes is refused unparsed.
 //  2. estimateInsts estimates the program from the parsed tree without building it, as
-//     syntax.Compile would (x{n} is n copies of x), saturating at the limit.
+//     syntax.Compile would (x{n} is n copies of x), saturating at the limit, and classBytes
+//     the tables of its classes, which the instructions themselves do not show: \pL is one
+//     instruction and 1,368 runes, kept in each of the three forms (the review of S7-B1).
 //  3. syntax.Compile builds the program, now known to be small, and its exact size is checked.
 //
 // Past the limit, a literal pattern fails compilation and one built during evaluation is an
@@ -42,6 +44,14 @@ const (
 	parseBytesPerInst  = 256 // the budget of parseCost, per instruction of the limit
 	progBytesPerInst   = 64  // a compiled program's instruction
 	compiles           = 4   // syntax.Parse, and regexp.Compile of whole, first and next
+
+	// A class's table, per rune of its capacity, in the three forms together, and the copy of
+	// it each of its instructions may keep besides: x{n} shares one table among its n
+	// instructions, but a one-pass program copies the runes of each. With these, what a
+	// pattern holds after compiling is at most 1.3 times its weight on Go 1.27, 0.8 times for
+	// \pL, \PL, \p{Han}, [^\pL] and (?i) classes and their repetitions (TestClassTablesAreCounted).
+	classBytesPerRune = 16
+	instBytesPerRune  = 8
 )
 
 // compiledRegex is one compiled pattern, in the three forms the library runs.
@@ -54,6 +64,7 @@ type compiledRegex struct {
 	literal   string // the pattern's text when it is a literal: no flags, groups or classes
 	isLiteral bool
 	weight    int64 // estimated bytes held
+	classes   int64 // the part of weight that the tables of its classes take (classBytes)
 
 	// The forms for strings that hold lone surrogates, compiled when one first comes
 	// (regexlone.go). Only a literal pattern keeps them (keepLone), up to loneCacheBlocks: its
@@ -352,7 +363,8 @@ func compilePattern(text string, limit int, ch patternCharges) (*compiledRegex, 
 	if est > limit {
 		return nil, errTooComplex(text, limit+1, limit)
 	}
-	weight := 3*int64(est+8)*progBytesPerInst + 3*int64(len(text))
+	classes := classBytes(re, 1)
+	weight := 3*int64(est+8)*progBytesPerInst + 3*int64(len(text)) + classes
 	if ch.programs != nil {
 		if err := ch.programs(weight, 4*int64(est)); err != nil {
 			return nil, err
@@ -370,7 +382,7 @@ func compilePattern(text string, limit int, ch patternCharges) (*compiledRegex, 
 		return nil, ferr
 	}
 	p := &compiledRegex{text: text, insts: len(prog.Inst), groups: re.MaxCap(), regexForms: *forms,
-		width: matchWidth(re), weight: weight}
+		width: matchWidth(re), weight: weight, classes: classes}
 	if re.Op == syntax.OpLiteral && re.Flags&syntax.FoldCase == 0 {
 		lit := string(re.Rune)
 		p.literal, p.isLiteral = lit, true
@@ -423,6 +435,29 @@ func matchWidth(re *syntax.Regexp) int {
 		return total
 	}
 	return 0 // empty matches and assertions
+}
+
+// classBytes estimates what the tables of re's classes hold in the three forms, where the
+// program makes times copies of re: each class's table once, by the capacity of its runes, and
+// a copy for each of the instructions syntax.Compile would make of it, x{n} n of them. It runs
+// once estimateInsts has bounded the instructions, so it cannot overflow: at most 10,000
+// instructions of classes of a few thousand runes.
+func classBytes(re *syntax.Regexp, times int64) int64 {
+	switch re.Op {
+	case syntax.OpCharClass:
+		return classBytesPerRune*int64(cap(re.Rune)) + times*instBytesPerRune*int64(len(re.Rune))
+	case syntax.OpRepeat:
+		n := int64(re.Max)
+		if re.Max == -1 {
+			n = int64(max(re.Min, 1))
+		}
+		return classBytes(re.Sub[0], times*n)
+	}
+	var n int64
+	for _, sub := range re.Sub {
+		n += classBytes(sub, times)
+	}
+	return n
 }
 
 // estimateInsts estimates the instructions syntax.Compile would make of re after Simplify, which
