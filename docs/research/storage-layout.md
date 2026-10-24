@@ -220,13 +220,14 @@ type Store interface {
 type Writer interface { io.Writer; Commit() error; Abort() error } // Commit: fsync file and directory
 type Reader interface { io.ReadSeekCloser; Size() int64 }
 type Staging interface { Append(r io.Reader, limit int64) (int64, error); Truncate(n int64) error; Sync() error; Size() (int64, error); Close() error }
+func ValidKey(key string) bool
 func ObjectKey(project int64) string   // p/<n>/<uuid>
 func StagingKey(project int64) string  // s/<n>/<uuid>
 func NewDisk(root string) (*Disk, error)
 
 // Lock is held for the life of the process (ADR-022 §5.1).
 type Lock interface{ Instance() (string, bool, error); SetInstance(id string) error; Release() error }
-func AcquireLock(ctx context.Context, root string, log func(waited time.Duration)) (Lock, error) // flock(LOCK_EX) on <root>/LOCK
+func AcquireLock(ctx context.Context, root string, log func(waited time.Duration)) (Lock, error) // lock.go: flock(LOCK_EX) on <root>/LOCK
 ```
 
 ```go
@@ -235,6 +236,7 @@ type Principal struct {
 	Kind  PrincipalKind  // Anonymous, User, Admin
 	UID   string         // User
 	Token map[string]any // User: the verified ID token's claims, for request.auth
+	AuthTime, IssuedAt time.Time // User: auth_time and iat, for idtoken.UserState.Admits at finalize
 	ServiceAccount string // Admin: for audit
 	ConsoleAccount string // Admin through the dashboard: re-checked at finalize, audited
 }
@@ -266,6 +268,7 @@ type UploadSpec struct {
 	Surface  Surface
 	Pre      Preconditions
 	Want     Checksums
+	IP       netip.Addr  // the sessions-per-IP limit; the zero Addr counts against none
 }
 type Chunk struct {
 	Offset   int64
@@ -294,6 +297,7 @@ type Options struct {
 	Documents rules.Documents   // rules.NoDocuments{} until v0.4
 	Inflight  *rules.Inflight
 	Users     idtoken.Users     // live user state at finalize
+	GCGrace   time.Duration     // storage.gc_grace; 0 is one minute
 	Now       func() time.Time
 }
 
@@ -301,6 +305,8 @@ type Options struct {
 // per-session mutexes, the in-flight byte counter, the boot candidate list, limits and logger.
 type Service struct{ /* complete in S2-0 */ }
 
+func (s *Service) Limits() Limits                                                                            // 0
+func (s *Service) Now() time.Time                                                                            // 0
 func (s *Service) Bucket(ctx context.Context, name string) (Bucket, error)                                  // 0
 func (s *Service) Stat(ctx context.Context, b Bucket, name string, p Principal, sf Surface, gen int64) (Object, error) // C
 func (s *Service) Open(ctx context.Context, b Bucket, name string, p Principal, token string, gen int64) (Object, blob.Reader, error) // C
@@ -344,6 +350,29 @@ type ruleOp struct { Method rules.Method; Name string; List bool; Resource, Inco
 - **`wire` و`media`:** الأنواع والتوقيعات كاملة في العقد (الجداول أعلاه)، والأجسام تذعر.
 - **`api` و`gcs`:** `New` و`Handler()` في العقد، و`Handler` يرد 501 لكل مسار حتى تُدمج S3 وS4. والتركيب في `server` و`app` يعمل من العقد.
 - **وفيه:** المخطط، وsqlc بهياكل الجداول، وقواعد archtest كلها، وقسم الإعداد بفحوصه، و`ProjectForBucket`، وغرض المفتاح الجديد في `keys.go`، وواجهة `idtoken.Users`، و`RuntimeParams` في `store.Open`، والتركيب في `app` و`server` كاملًا (`Boot` و`Run` و`OnProjectPurged` تذعر حتى D). فلا تلمس مهمة بعد العقد `app.go` ولا `server.go` إلا عبر المدمج.
+
+#### قرارات commit العقد (لم تكن في المسودة)
+
+حسمها S2-0 حيث سكت الهيكل أو تعارض، وكلها في الكود (والاختبار `core/contract_test.go` يثبّت توقيعات `Service` وطرقه المصدَّرة وحقول الأنواع):
+
+- **`gc_grace` في `storage.gc_grace` و`Options.GCGrace`، لا في `Limits`:** ADR-022 §5 والهيكل يضعانه في القسم، وجدول §17 تحت `storage.limits`. أخذنا الأولين: هو مهلة تشغيل لا حد يصمد أمام مشروع معادٍ.
+- **أسماء الحدود التي لم يسمّها §17:** `upload_sessions_per_user` (50) و`upload_sessions_per_ip` (100) بجانب `upload_sessions_per_project`، و`upload_starts_per_second` (1,000)، و`list_max_results` لا يتجاوز 1000. والحدود على الطلبات (المعدلات لكل IP، والطلبات المتزامنة، وأدنى معدل) في `core.Limits` أيضًا ليبقى `storage.limits` نوعًا واحدًا، وتفرضها الواجهتان.
+- **`Principal.AuthTime` و`IssuedAt`، و`idtoken.UserState.Admits(authTime, issuedAt)`:** فحص الحالة الحية عند الإنهاء يحتاجهما بترتيب `Verifier` نفسه (محذوف، ثم معطّل، ثم مُبطل أو رمز أقدم من المستخدم). و`UserState` فيها `Created` لهذا. وتنفيذ `Users()` في `auth/core/userstate.go`، و`State` يذعر حتى S2-D. لا مستأجرين في v0.3، فلا `tenant` في التوقيع.
+- **`UploadSpec.IP` وعمود `client_ip`:** حد الجلسات لكل IP يحتاج العنوان عند `start`، ولا موضع له في التوقيع.
+- **`final_status` و`final_body` يحفظان رمز خطأ `core` ورسالته، لا حالة HTTP:** `core` لا تعرف HTTP. و`encodeError`/`decodeError` في `errors.go` تعملان من العقد، وكل واجهة تربط الخطأ بحالتها. وأُضيفت `ErrUnauthenticated` (401 عند الإنهاء) و`ErrUploadCancelled` و`ErrTooManyUploads` و`ErrUnavailable` إلى الأخطاء المسمّاة.
+- **`download_tokens` بقيمة NULL حين لا رموز:** هي `bytea` مختومة، فشرط «بلا رموز» في §9 يصير `download_tokens IS NULL` لا `cardinality(...) = 0`.
+- **أعمدة زائدة على §3:** `upload_sessions.surface` (`firebase`/`gcs`/`console`) بدل `protocol`، لأن جلسة اللوحة تختلف في عمرها وحجمها المعلن وإعادة فحص الحساب؛ و`hash_state` لحالة الهاشين مع `received` (§6.3)؛ و`usage.anonymous_reserved_bytes` لسقف المجهولين؛ و`buckets.metageneration` و`updated` لمورد GCS؛ و`instance.one_row` لفرض الصف الواحد.
+- **الاستعلامات في العقد قراءة واحدة لكل جدول** (`GetObject` و`GetBucketSettings` و`GetUploadSession` و`GetUsage` و`GetInstance`): sqlc وscopecheck يحتاجان استعلامًا في كل ملف، ويضيف C وD الباقي.
+- **`core.Projects`** فيها `ProjectForBucket` و`GetProject` (إعادة فحص حساب اللوحة) و`CompiledRelease` و`Audit`. فأُضيف إلى `tenancy` `Audit` عاملًا (سجل التدقيق لكتابات Storage)، و`CompiledRelease` في `tenancy/core/rules.go` يذعر حتى S2-E.
+- **`applyDefaults` يضع `defaultDisposition` على `SurfaceConsole` أيضًا:** جلسة اللوحة ترفع عبر `/v0` (§15).
+- **`media.Mode` فيها `GCS` رابعة،** لأن §10.5 يخدم على GCS القيمة المخزّنة كما هي ومعها `x-goog-*`. و`Serve` يعيد `error` يقول لماذا توقف، للمقاييس.
+- **قاعدة archtest للكونسول خاصة بـ Storage** (`internal/services/storage/console`): `auth/console` يستورد `auth/api` (`users.go:10`)، فقاعدة `*/console` العامة كانت تكسره. وقواعد `*/api` و`*/gcs` و`*/media` عامة كما في الهيكل.
+- **`AcquireLock` في `lock.go`** (ملف A) لا في `blob.go`، و`NewDisk` يعمل من العقد (مسار مطلق فقط)، ويكمله A بالإنشاء وفحص الكتابة. ومساعدان عاملان: `ProjectPrefix` و`StagingPrefix`.
+- **`wire` في العقد:** `ObjectPath` (ناتج `SplitObjectPath`، ومعه `Rest` لـ `rewriteTo`)، و`UploadCommands` (مجموعة بتّات)، و`ContentRange` مع `Query()` و`Final()` العاملتين، و`RelatedReader`، و`Range`، وثوابت البادئات وأسماء الترويسات، و`Time(time.Time)`.
+- **`server`:** البادئات `/v1/projects/` و`/v1alpha/projects/` (أضيق، كما في جدول §1)، والتوجيه إلى Storage بالبادئة وحدها بلا `ServeMux`، فلا يُنظَّف مسار فيه اسم كائن ولا يُعاد توجيهه. و`mgmt.Options.Storage` جاهز لـ S5-A.
+- **`Run` يبدأ بجانب `Server.Run`** (قبله مباشرة في goroutine)، لا بعد فتح المستمع بالضبط: لا خطّاف في `server` لذلك، ولا ضرر، فالمرشحون أُخذوا في `Boot`.
+- **لا مقاييس في العقد** (§18): لا خدمة تستعمل `platform/metrics` بعد، ويضيفها المدمج.
+- **`ctx` في `core.New`** لا يُستعمل اليوم، و`app.New` يمرر `context.Background()`.
 
 ## المهام
 
