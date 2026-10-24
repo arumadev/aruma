@@ -92,8 +92,10 @@ emulator mode send none) the same token, `/b/...` gets its `/storage/v1` back
   is upstream's: ts-node with firebase-tools' `tsconfig.json` (transpile only), a 2 s timeout,
   chai-as-promised.
 - Every test comes from one address, a few hundred uploads in a minute, so the run raises
-  Aruma's per-address upload limits; with the defaults most `ct` tests meet 429
-  (ADR-023 §3-3), which `STORAGE_COMPAT_LIMITS=default` shows.
+  Aruma's per-address upload limits. `STORAGE_COMPAT_LIMITS=default` keeps them: `ct` passes
+  the same 111 of 119, since an admin's starts are no longer counted on the address
+  (ADR-023 §3-81); before that most of it met the start rate, `/v0` 503 with Retry-After and
+  GCS 429.
 - For the captures the server is restarted with the recording proxy as its public URL, so the
   session URLs it hands out lead back through the recorder, as the emulator's did (it builds
   them from `Host`). The re-recordings land in `results/captures/`, beside the emulator's in
@@ -126,7 +128,7 @@ classified test is missing from the run; 2 usage; 3 setup failed.
 | js-node | 13 | 13 | 0 | 0 | 0 |
 | js-browser | 13 | 13 | 0 | 0 | 0 |
 | js-compat | 8 | 8 | 0 | 0 | 0 |
-| ct (not emulatorOnly) | 119 | 108 | 0 (9 fixed) | 9 | 2 |
+| ct (not emulatorOnly) | 119 | 111 | 0 (12 fixed) | 6 | 2 |
 | captures | 188 steps | | 836 differences of 64 kinds: a 0, b 24 kinds (293), c 40 kinds (543) |
 
 A whole run with warm caches takes under a minute (39 s on this machine); a cold one adds the downloads and the three `npm ci`.

@@ -38,7 +38,8 @@
 #   ARUMA_PG_BIN             directory of psql, when it is not on PATH
 #   PLAYWRIGHT_BROWSERS_PATH the browsers (default $ARUMA_CACHE_DIR/ms-playwright, Chromium 1248)
 #   STORAGE_COMPAT_LIMITS    "default" keeps Aruma's per-address upload limits, which the suites'
-#                            pace meets (429); otherwise they are raised for the run
+#                            users' starts can meet (/v0 503 with Retry-After, GCS 429);
+#                            otherwise they are raised for the run
 #
 # It needs Go, Node 24.12 or newer, curl, tar, openssl, psql and Postgres, and the network the
 # first time. It is heavy (two browsers in a row, about 650 MB of installs) and not part of CI.
@@ -232,9 +233,10 @@ start_aruma() {
     ARUMA_MASTER_KEY=$(openssl rand -base64 32) ARUMA_METRICS_LISTEN=- ARUMA_PROJECT_DOMAIN=appspot.com \
     ARUMA_TRUSTED_PROXIES=127.0.0.1/32 ARUMA_MAIL_DEV_MAILBOX=true ARUMA_LOG_LEVEL=warn \
     ARUMA_STORAGE_ENABLED=true ARUMA_STORAGE_DATA_DIR=$work/storage
-  # Every test comes from 127.0.0.1, a few hundred uploads in a minute or two: under the default
-  # per-address limits (60 starts a minute, 100 live sessions) most of them meet 429, which is
-  # ADR-023 §3-3 doing its job. STORAGE_COMPAT_LIMITS=default keeps the defaults, to see that.
+  # Every test comes from 127.0.0.1, a few hundred uploads in a minute or two. The per-address
+  # limits (60 starts a minute for the clients, 100 live sessions) are ADR-023 §3-3 doing its
+  # job, not what the suites test, so they are raised; STORAGE_COMPAT_LIMITS=default keeps them
+  # (/v0 503 with Retry-After, GCS 429 past them).
   if [[ ${STORAGE_COMPAT_LIMITS:-} != default ]]; then
     export ARUMA_STORAGE_UPLOAD_STARTS_PER_MINUTE_PER_IP=100000 ARUMA_STORAGE_UPLOAD_SESSIONS_PER_IP=100000 \
       ARUMA_STORAGE_UPLOAD_SESSIONS_PER_USER=100000 ARUMA_STORAGE_UPLOAD_SESSIONS_PER_PROJECT=100000

@@ -233,7 +233,7 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 
 **أضافها S3-D** (من اختبارات Firebase الرسمية، `test/compat/storage`؛ تفصيلها في `docs/compat/storage-v0.3.md`):
 
-91. **مؤقت: رفع GCS بلا `uploadType` رفع media**، أو multipart إن قالت `X-Goog-Upload-Protocol: multipart` (CT `gcs.endpoints.test.ts`، والمحاكي)؛ وقيمة أخرى للترويسة بلا `uploadType` 400. لا مكتبة رسمية تحذفه. `gcs/gcs.go` (`classifyUpload`).
+91. **مؤقت: رفع GCS بلا `uploadType` رفع media**، أو multipart إن قالت `X-Goog-Upload-Protocol: multipart` (CT `gcs.endpoints.test.ts`، والمحاكي)؛ وقيمة أخرى للترويسة بلا `uploadType` 400. لا مكتبة رسمية تحذفه. **ودليل مخالف:** مرجع GCS JSON لـ `objects.insert` يذكر `uploadType` في «Required query parameters»، ونص 400 الذي كان يرده Aruma نص GCS؛ والسلوك باقٍ على CT والمحاكي حتى يُقاس الإنتاج (مراجعة S3-D). `gcs/gcs.go` (`classifyUpload`).
 92. **مؤقت: `null` في الـ metadata المخصّصة لكائن جديد عبر GCS يُخزَّن `""`** (CT: النسخ؛ والرفع بالقياس)، و`null` في PATCH يحذف المفتاح. و`/v0` واللوحة يحذفانه من الكائن الجديد. `core/insert.go` (`incomingObject`).
 93. **قيد: bucket واحد لكل مشروع ولا XML API** (§2): النسخ إلى bucket آخر 404 كأي bucket غير موجود، ورفع POST policy على `/<bucket>` وقراءة `/<bucket>/<object>` لا تُخدمان. اختبارات المطابقة التي تحتاج bucket ثانيًا تفشل لذلك.
 94. **مؤقت: ردود البدء والقطع والاستعلام والإلغاء على `/v0` بلا جسم** (المحاكي `OK` نصًا)، وكل رد قطعة أو إنهاء يحمل `X-Goog-Upload-Size-Received` لا الاستعلام وحده (A §7). `api/upload.go` (`start`، `writeSession`).
