@@ -3,16 +3,20 @@ package core
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
+	"net/netip"
 	"reflect"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/arumadev/aruma/internal/platform/apierr"
@@ -20,6 +24,7 @@ import (
 	"github.com/arumadev/aruma/internal/platform/crypto"
 	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/services/storage/blob"
+	"github.com/arumadev/aruma/internal/services/storage/queries"
 	tcore "github.com/arumadev/aruma/internal/tenancy/core"
 )
 
@@ -42,7 +47,26 @@ var (
 	_ func(*Service, context.Context, Bucket, string, Principal) (Object, error)                                        = (*Service).CreateToken
 	_ func(*Service, context.Context, Bucket, string, Principal, string) (Object, error)                                = (*Service).DeleteToken
 	_ func(*Service, context.Context, Bucket) ([]CORSRule, error)                                                       = (*Service).CORS
-	_ func(*Service, context.Context, Bucket, Principal, []CORSRule) error                                              = (*Service).SetCORS
+	_ func(*Service, context.Context, Bucket, Principal, []CORSRule) (BucketInfo, error)                                = (*Service).SetCORS
+	_ func(*Service, context.Context, Bucket) (BucketInfo, error)                                                       = (*Service).BucketInfo
+	_ func(*Service) error                                                                                              = (*Service).Close
+	_ func(*Service, netip.Addr) (bool, time.Duration)                                                                  = (*Service).AllowUploadStart
+	_ func(*Service) *Metrics                                                                                           = (*Service).Metrics
+	_ func() *Metrics                                                                                                   = NewMetrics
+	_ func(Limits) int64                                                                                                = Limits.BodyCap
+	_ func(*Service, context.Context) (pgx.Tx, error)                                                                   = (*Service).begin
+	_ func(*Service, context.Context, func(*queries.Queries) error) error                                               = (*Service).inTx
+	_ func(*Service, context.Context) error                                                                             = (*Service).warnUnsafeDurability
+	_ func(context.Context, *queries.Queries, int64, string, int64) error                                               = releaseObject
+	_ func(error) (*Error, bool)                                                                                        = finalError
+	_ func(error) (string, string, bool)                                                                                = encodeError
+	_ func(string) error                                                                                                = decodeError
+	_ func(*Service, int64, string, []byte, []string) ([]byte, error)                                                   = (*Service).sealSessionTokens
+	_ func(*Service, int64, string, []byte, []byte) ([]string, error)                                                   = (*Service).openSessionTokens
+	_ func(Patch) (json.RawMessage, error)                                                                              = encodeAttrs
+	_ func(json.RawMessage) (Patch, error)                                                                              = decodeAttrs
+	_ func(Object) (json.RawMessage, error)                                                                             = encodeSnapshot
+	_ func(json.RawMessage) (Object, error)                                                                             = decodeSnapshot
 	_ func(*Service, []CORSRule, string, string) (bool, CORSRule)                                                       = (*Service).MatchCORS
 	_ func(*Service, context.Context, Bucket) (Usage, error)                                                            = (*Service).Usage
 	_ func(*Service, context.Context, Bucket, Principal, UploadSpec, io.Reader, int64) (Object, error)                  = (*Service).Insert
@@ -67,9 +91,9 @@ var (
 
 // No task adds an exported method to Service: the surfaces are written against this list.
 func TestServiceMethodsArePinned(t *testing.T) {
-	want := []string{"Boot", "Bucket", "CORS", "CancelUpload", "CreateToken", "Delete", "DeleteToken", "Insert",
-		"Limits", "List", "MatchCORS", "Now", "Open", "PurgeProject", "QueryUpload", "Rewrite", "Run", "SetCORS",
-		"StartUpload", "Stat", "Update", "Usage", "WriteUpload"}
+	want := []string{"AllowUploadStart", "Boot", "Bucket", "BucketInfo", "CORS", "CancelUpload", "Close", "CreateToken",
+		"Delete", "DeleteToken", "Insert", "Limits", "List", "MatchCORS", "Metrics", "Now", "Open", "PurgeProject",
+		"QueryUpload", "Rewrite", "Run", "SetCORS", "StartUpload", "Stat", "Update", "Usage", "WriteUpload"}
 	typ := reflect.TypeFor[*Service]()
 	var got []string
 	for i := range typ.NumMethod() {
@@ -95,7 +119,14 @@ func TestTypesArePinned(t *testing.T) {
 		{Preconditions{}, "IfGenerationMatch *int64; IfGenerationNotMatch *int64; IfMetagenerationMatch *int64; IfMetagenerationNotMatch *int64"},
 		{Checksums{}, "CRC32C *uint32; MD5 *[16]uint8"},
 		{UploadSpec{}, "Name string; Attrs core.Patch; Declared int64; Surface core.Surface; Pre core.Preconditions; Want core.Checksums; IP netip.Addr"},
-		{Chunk{}, "Offset int64; Body io.Reader; Length int64; Finalize bool; Total int64"},
+		{Chunk{}, "Offset int64; Body io.Reader; Length int64; Finalize bool; Total int64; Want core.Checksums"},
+		{BucketInfo{}, "Bucket core.Bucket; Metageneration int64; Created time.Time; Updated time.Time; CORS []core.CORSRule"},
+		{Options{}, "Limits core.Limits; Keys *crypto.Keys; Projects core.Projects; Documents rules.Documents; Inflight *rules.Inflight; " +
+			"Users idtoken.Users; DataDir string; GCGrace time.Duration; Metrics *core.Metrics; Now func() time.Time"},
+		{Limits{}, "ObjectBytes int64; ProjectBytes int64; MinFreeBytes int64; EmptySessionTTL time.Duration; UploadIdleTTL time.Duration; " +
+			"UploadSessionTTL time.Duration; ConsoleSessionTTL time.Duration; AnonymousStagedFraction float64; MetadataBytes int; " +
+			"JSONBodyBytes int64; HeaderFieldBytes int; UploadSessionsPerProject int; UploadSessionsPerUser int; UploadSessionsPerIP int; " +
+			"UploadStartsPerMinutePerIP int; UploadStartsPerSecond int; UploadRequestsPerIP int; MinBytesPerSecond int64; ListMaxResults int"},
 		{UploadState{}, "Status core.UploadStatus; Received int64; Object *core.Object; Err error"},
 		{ListOptions{}, "Prefix string; Delimiter string; PageToken string; StartOffset string; EndOffset string; MaxResults int; Surface core.Surface"},
 		{ListPage{}, "Prefixes []string; Objects []core.Object; NextPageToken string"},
@@ -107,6 +138,37 @@ func TestTypesArePinned(t *testing.T) {
 		if got := strings.ReplaceAll(fields(c.v), "core.PrincipalKind", "PrincipalKind"); got != c.want {
 			t.Errorf("%T:\n got %s\nwant %s", c.v, got, c.want)
 		}
+	}
+}
+
+// Projects is the control plane's side of the contract: tenancy implements exactly these.
+func TestProjectsIsPinned(t *testing.T) {
+	typ := reflect.TypeFor[Projects]()
+	var got []string
+	for i := range typ.NumMethod() {
+		m := typ.Method(i)
+		got = append(got, m.Name+" "+m.Type.String())
+	}
+	want := []string{
+		"Audit func(context.Context, *authn.Principal, int64, string, string, map[string]interface {}) error",
+		"CompiledRelease func(context.Context, int64, string) (*rules.Ruleset, error)",
+		"GetProject func(context.Context, *authn.Principal, string) (core.Project, error)",
+		"ProjectForBucket func(context.Context, string) (core.Project, error)",
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("Projects:\n got %q\nwant %q", got, want)
+	}
+	var _ Projects = (*tcore.Service)(nil)
+}
+
+// The named errors, by code: a new one goes through the integrator.
+func TestErrorsArePinned(t *testing.T) {
+	want := []string{"bucket_not_found", "checksum_mismatch", "invalid_page_token", "not_found", "overloaded",
+		"permission_denied", "precondition_failed", "quota_exceeded", "size_mismatch", "too_large", "too_many_uploads",
+		"unauthenticated", "unavailable", "upload_cancelled", "upload_final", "upload_not_found"}
+	got := slices.Sorted(maps.Keys(namedErrors))
+	if !slices.Equal(got, want) {
+		t.Errorf("named errors %q, want %q", got, want)
 	}
 }
 
@@ -246,25 +308,30 @@ func TestDownloadTokens(t *testing.T) {
 	}
 }
 
-// A final session's refusal survives its row: every repeat answers with the same error.
-func TestErrorsRoundTrip(t *testing.T) {
+// Only the terminal refusals of ADR-022 §6.1 make a session final, and each survives its row:
+// every repeat answers with the same error, so the same status.
+func TestFinalErrors(t *testing.T) {
 	for _, err := range []error{ErrPermissionDenied, ErrQuotaExceeded, ErrSizeMismatch, ErrChecksumMismatch,
-		ErrUnauthenticated, ErrTooLarge, ErrPreconditionFailed, fmt.Errorf("finalize: %w", ErrPermissionDenied)} {
-		code, msg := encodeError(err)
-		if got := decodeError(code, msg); !errors.Is(err, got) {
-			t.Errorf("%v round-trips to %v", err, got)
+		ErrTooLarge, ErrUnauthenticated, ErrUploadCancelled, fmt.Errorf("finalize: %w", ErrPermissionDenied)} {
+		code, msg, ok := encodeError(err)
+		if !ok || msg == "" || !errors.Is(err, decodeError(code)) {
+			t.Errorf("%v: encodes to %q, %v; decodes to %v", err, code, ok, decodeError(code))
 		}
 	}
-	code, msg := encodeError(&InvalidError{Reason: "invalid", Message: "Bad metadata."})
-	var ie *InvalidError
-	if got := decodeError(code, msg); !errors.As(got, &ie) || ie.Reason != "invalid" || ie.Message != "Bad metadata." {
-		t.Errorf("an InvalidError round-trips to %v", got)
+	for _, err := range []error{ErrOverloaded, ErrUnavailable, ErrNotFound, ErrUploadNotFound, ErrBucketNotFound,
+		ErrPreconditionFailed, ErrUploadFinal, ErrTooManyUploads, ErrInvalidPageToken, &OffsetError{Received: 1},
+		&InvalidError{Reason: "invalid", Message: "x"}, errors.New("disk full"), nil} {
+		if _, ok := finalError(err); ok {
+			t.Errorf("%v makes a session final", err)
+		}
+		if _, _, ok := encodeError(err); ok {
+			t.Errorf("%v is encoded as a final refusal", err)
+		}
 	}
-	if code, _ := encodeError(errors.New("disk full")); decodeError(code, "") != ErrUnavailable {
-		t.Error("an unnamed error is not kept as ErrUnavailable")
-	}
-	if decodeError("no_such_code", "") != ErrUnavailable {
-		t.Error("an unknown code is not ErrUnavailable")
+	for _, code := range []string{"no_such_code", "overloaded", "not_found", ""} {
+		if decodeError(code) != ErrUnavailable {
+			t.Errorf("decodeError(%q) is not ErrUnavailable", code)
+		}
 	}
 	seen := map[string]bool{}
 	for code, e := range namedErrors {
@@ -275,6 +342,88 @@ func TestErrorsRoundTrip(t *testing.T) {
 	}
 	if (&OffsetError{Received: 262144}).Error() != "storage: the chunk starts after the 262144 bytes received" {
 		t.Error("OffsetError message")
+	}
+}
+
+func TestSessionTokens(t *testing.T) {
+	s := &Service{keys: testKeys(t)}
+	id := bytes.Repeat([]byte{9}, 32)
+	sealed, err := s.sealSessionTokens(482915736204, "a.png", id, []string{"t1", "t2"})
+	if err != nil || bytes.Contains(sealed, []byte("t1")) {
+		t.Fatalf("sealSessionTokens = %x, %v", sealed, err)
+	}
+	if got, err := s.openSessionTokens(482915736204, "a.png", id, sealed); err != nil || !slices.Equal(got, []string{"t1", "t2"}) {
+		t.Fatalf("openSessionTokens = %v, %v", got, err)
+	}
+	if _, err := s.openSessionTokens(482915736204, "a.png", bytes.Repeat([]byte{8}, 32), sealed); err == nil {
+		t.Error("a session's tokens open for another session")
+	}
+	if _, err := s.openTokens(482915736204, "a.png", sealed); err == nil {
+		t.Error("a session's sealed tokens open as an object's")
+	}
+	obj, _ := s.sealTokens(482915736204, "a.png", []string{"t1"})
+	if _, err := s.openSessionTokens(482915736204, "a.png", id, obj); err == nil {
+		t.Error("an object's sealed tokens open as a session's")
+	}
+}
+
+func TestAttrs(t *testing.T) {
+	ct, v := "image/png", "1"
+	raw, err := encodeAttrs(Patch{Fields: map[string]*string{FieldContentType: &ct}, Metadata: map[string]*string{"k": &v, "gone": nil},
+		ClearMetadata: true, Tokens: &[]string{"secret-token"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(raw, []byte("secret-token")) || bytes.Contains(raw, []byte(TokensKey)) {
+		t.Errorf("attrs carry tokens: %s", raw)
+	}
+	p, err := decodeAttrs(raw)
+	if err != nil || *p.Fields[FieldContentType] != ct || *p.Metadata["k"] != "1" || p.Metadata["gone"] != nil ||
+		!p.ClearMetadata || p.Tokens != nil {
+		t.Errorf("decodeAttrs = %+v, %v", p, err)
+	}
+	if _, ok := p.Metadata["gone"]; !ok {
+		t.Error("a key to delete is lost")
+	}
+	if _, err := encodeAttrs(Patch{Metadata: map[string]*string{TokensKey: &v}}); err == nil {
+		t.Error("the token key is accepted in attrs")
+	}
+}
+
+func TestSnapshot(t *testing.T) {
+	at := time.Date(2026, 10, 24, 12, 0, 0, 123456000, time.UTC)
+	o := Object{Bucket: "b", Name: "a/b.png", Generation: 1784647629568292, Metageneration: 2, Size: 13, MD5: [16]byte{1, 2},
+		CRC32C: 0xdeadbeef, ContentType: "image/png", ContentDisposition: "inline", Metadata: map[string]string{"k": "v"},
+		DownloadTokens: []string{"secret-token"}, Created: at, Updated: at}
+	raw, err := encodeSnapshot(o)
+	if err != nil || bytes.Contains(raw, []byte("secret-token")) {
+		t.Fatalf("encodeSnapshot = %s, %v", raw, err)
+	}
+	got, err := decodeSnapshot(raw)
+	o.DownloadTokens = nil
+	if err != nil || !reflect.DeepEqual(got, o) {
+		t.Errorf("decodeSnapshot = %+v, %v; want %+v", got, err, o)
+	}
+}
+
+func TestAllowUploadStart(t *testing.T) {
+	lim := DefaultLimits()
+	lim.UploadStartsPerMinutePerIP, lim.UploadStartsPerSecond = 2, 3
+	s, err := New(context.Background(), &pgxpool.Pool{}, &blob.Disk{}, Options{Limits: lim, Keys: testKeys(t),
+		Projects: fakeProjects{}, Inflight: rules.NewInflight(1 << 20), DataDir: "/srv/aruma/storage"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, b := netip.MustParseAddr("192.0.2.1"), netip.MustParseAddr("2001:db8::1")
+	// a's third start is refused for its address; b's /64 is one address; the process allows
+	// three starts that passed their address's limit, then refuses.
+	for i, c := range []struct {
+		ip netip.Addr
+		ok bool
+	}{{a, true}, {a, true}, {a, false}, {b, true}, {netip.MustParseAddr("2001:db8::2"), false}, {netip.Addr{}, false}} {
+		if ok, wait := s.AllowUploadStart(c.ip); ok != c.ok || (!ok && wait <= 0) {
+			t.Errorf("start %d from %v: %v, %v; want %v", i, c.ip, ok, wait, c.ok)
+		}
 	}
 }
 
@@ -298,6 +447,8 @@ func TestLimits(t *testing.T) {
 		"anonymous_staged_fraction":    func(l *Limits) { l.AnonymousStagedFraction = 1.5 },
 		"anonymous_staged_fraction ":   func(l *Limits) { l.AnonymousStagedFraction = -0.1 },
 		"list_max_results":             func(l *Limits) { l.ListMaxResults = 1001 },
+		"5 TiB":                        func(l *Limits) { l.ProjectBytes, l.ObjectBytes = 0, MaxObjectBytes+1 },
+		"json_body_bytes must not":     func(l *Limits) { l.JSONBodyBytes = MaxJSONBodyBytes + 1 },
 		"upload_requests_per_ip":       func(l *Limits) { l.UploadRequestsPerIP = 0 },
 		"min_bytes_per_second":         func(l *Limits) { l.MinBytesPerSecond = 0 },
 	} {
@@ -351,7 +502,8 @@ func TestBucket(t *testing.T) {
 func TestNew(t *testing.T) {
 	ctx := context.Background()
 	disk, _ := blob.NewDisk("/srv/aruma/storage")
-	opts := Options{Limits: DefaultLimits(), Keys: testKeys(t), Projects: fakeProjects{}, Inflight: rules.NewInflight(1 << 20)}
+	opts := Options{Limits: DefaultLimits(), Keys: testKeys(t), Projects: fakeProjects{}, Inflight: rules.NewInflight(1 << 20),
+		DataDir: "/srv/aruma/storage"}
 	s, err := New(ctx, &pgxpool.Pool{}, disk, opts, slog.New(slog.DiscardHandler))
 	if err != nil {
 		t.Fatal(err)
@@ -366,6 +518,14 @@ func TestNew(t *testing.T) {
 	bad.Limits.ObjectBytes = 0
 	if _, err := New(ctx, &pgxpool.Pool{}, disk, bad, nil); err == nil {
 		t.Error("invalid limits are accepted")
+	}
+	bad = opts
+	bad.DataDir = "storage"
+	if _, err := New(ctx, &pgxpool.Pool{}, disk, bad, nil); err == nil {
+		t.Error("a relative data directory is accepted")
+	}
+	if l := DefaultLimits(); l.BodyCap() != 5<<30+64<<10+64<<10 {
+		t.Errorf("BodyCap = %d", l.BodyCap())
 	}
 	bad = opts
 	bad.Inflight = nil

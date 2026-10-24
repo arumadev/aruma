@@ -1,8 +1,11 @@
 package blob
 
 import (
+	"context"
+	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 // The tests of the contract commit (S2-0): keys. S2-A tests the disk.
@@ -56,5 +59,34 @@ func TestNewDiskNeedsAnAbsoluteRoot(t *testing.T) {
 	d, err := NewDisk("/var/lib/aruma/storage/")
 	if err != nil || d.Root() != "/var/lib/aruma/storage" {
 		t.Errorf("NewDisk = %v, %v", d, err)
+	}
+}
+
+var _ func(context.Context, string, func(time.Duration)) (Lock, error) = AcquireLock
+
+// The interfaces of the contract, method by method: S2-A implements them, core calls them.
+func TestInterfacesArePinned(t *testing.T) {
+	for _, c := range []struct {
+		typ  reflect.Type
+		want string
+	}{
+		{reflect.TypeFor[Store](), "Create func(string) (blob.Writer, error); CreateStaging func(string) (blob.Staging, error); " +
+			"Delete func(string) error; DeletePrefix func(string) error; FreeBytes func() (int64, error); " +
+			"Open func(string) (blob.Reader, error); OpenStaging func(string) (blob.Staging, error); Promote func(string, string) error; " +
+			"Walk func(string, func(string, time.Time) error) error"},
+		{reflect.TypeFor[Writer](), "Abort func() error; Commit func() error; Write func([]uint8) (int, error)"},
+		{reflect.TypeFor[Reader](), "Close func() error; Read func([]uint8) (int, error); Seek func(int64, int) (int64, error); Size func() int64"},
+		{reflect.TypeFor[Staging](), "Append func(io.Reader, int64) (int64, error); Close func() error; Size func() (int64, error); " +
+			"Sync func() error; Truncate func(int64) error"},
+		{reflect.TypeFor[Lock](), "Instance func() (string, bool, error); Release func() error; SetInstance func(string) error"},
+	} {
+		var methods []string
+		for i := range c.typ.NumMethod() {
+			m := c.typ.Method(i)
+			methods = append(methods, m.Name+" "+m.Type.String())
+		}
+		if got := strings.Join(methods, "; "); got != c.want {
+			t.Errorf("%v:\n got %s\nwant %s", c.typ, got, c.want)
+		}
 	}
 }

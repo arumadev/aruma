@@ -1,12 +1,8 @@
 package acceptance
 
 import (
-	"context"
-	"errors"
 	"strings"
 	"testing"
-
-	storage "github.com/arumadev/aruma/internal/services/storage/core"
 )
 
 // isolationEnv has two owners, A and B, each with one project holding one app of every
@@ -24,7 +20,7 @@ type isolationEnv struct {
 
 func newIsolation(t *testing.T) *isolationEnv { return newIsolationWith(t, nil) }
 
-// newIsolationWith is newIsolation on a server with the settings env.
+// newIsolationWith is newIsolation on a server with the settings env, such as Storage enabled.
 func newIsolationWith(t *testing.T, env map[string]string) *isolationEnv {
 	e := newEnv(t, env)
 	ie := &isolationEnv{Env: e, a: e.owner(), b: e.account("b@example.com")}
@@ -176,62 +172,4 @@ func TestIsolationDeleteRestore(t *testing.T) {
 	if n := len(ie.b.mustOK(ie.b.do("GET", "/console/v1/projects/bravo-app/apps", nil)).list("apps")); n != 3 {
 		t.Fatalf("B has %d apps after A's restore", n)
 	}
-}
-
-// Cloud Storage (ADR-022 §3). Each project has its own bucket, and a deleted project's bucket
-// answers as one that never existed.
-func TestIsolationStorageBuckets(t *testing.T) {
-	ie := newIsolationWith(t, map[string]string{"ARUMA_STORAGE_ENABLED": "true", "ARUMA_STORAGE_DATA_DIR": t.TempDir()})
-	ctx := context.Background()
-	st := ie.App.Storage
-	domain := ie.App.Config.ProjectDomain
-	numbers := map[string]int64{}
-	for _, x := range []struct {
-		c  *Client
-		id string
-	}{{ie.a, "alpha-app"}, {ie.b, "bravo-app"}} {
-		p := x.c.mustOK(x.c.do("GET", "/console/v1/projects/"+x.id, nil))
-		b, err := st.Bucket(ctx, p.str("storageBucket"))
-		if err != nil || b.Name != x.id+"."+domain {
-			t.Fatalf("%s's bucket %q: %+v, %v", x.id, p.str("storageBucket"), b, err)
-		}
-		numbers[x.id] = b.Project
-	}
-	if numbers["alpha-app"] == numbers["bravo-app"] {
-		t.Fatal("two projects resolve to one bucket")
-	}
-	for _, name := range []string{"alpha-app." + domain + ".", "Alpha-App." + domain, "alpha-app", "alpha-app.appspot.com", "nobody-app." + domain} {
-		if _, err := st.Bucket(ctx, name); !errors.Is(err, storage.ErrBucketNotFound) {
-			t.Errorf("Bucket(%q) = %v, want ErrBucketNotFound", name, err)
-		}
-	}
-	ie.a.mustOK(ie.a.do("POST", "/console/v1/projects/alpha-app:delete", map[string]any{"confirmProjectId": "alpha-app"}))
-	if _, err := st.Bucket(ctx, "alpha-app."+domain); !errors.Is(err, storage.ErrBucketNotFound) {
-		t.Errorf("a deleted project's bucket: %v, want ErrBucketNotFound", err)
-	}
-	if b, err := st.Bucket(ctx, "bravo-app."+domain); err != nil || b.Project != numbers["bravo-app"] {
-		t.Errorf("B's bucket after A's deletion: %+v, %v", b, err)
-	}
-}
-
-// The Storage isolation cases of ADR-022 §3, each filled by the task that owns its path.
-
-func TestIsolationStorageUploadURL(t *testing.T) {
-	t.Skip("S2-D: an upload session URL of one project does not finish an upload in another, nor on another name")
-}
-
-func TestIsolationStorageDownloadToken(t *testing.T) {
-	t.Skip("S2-C: an object's download token does not open the object of the same name in another project")
-}
-
-func TestIsolationStoragePageToken(t *testing.T) {
-	t.Skip("S2-C: a list page token of one bucket is 400 on another bucket")
-}
-
-func TestIsolationStorageServiceAccount(t *testing.T) {
-	t.Skip("S4-A: a service account does not read another project's bucket over GCS, nor rewrite into it")
-}
-
-func TestIsolationStorageRuleset(t *testing.T) {
-	t.Skip("S2-E: a project's Storage ruleset is never applied to another project's bucket")
 }

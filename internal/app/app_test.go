@@ -114,6 +114,9 @@ func TestRulesWiring(t *testing.T) {
 	if a.RulesInflight == nil {
 		t.Error("no Inflight for the rules engine")
 	}
+	if a.Service.Options().RulesLimits != want {
+		t.Error("tenancy does not compile rulesets with the configured limits")
+	}
 }
 
 // config.StorageLimits is storage/core.Limits field for field (the conversion compiles), with the
@@ -138,6 +141,8 @@ func TestStorageLimitsMirrorCore(t *testing.T) {
 		"no starts":          func(l *config.StorageLimits) { l.UploadStartsPerSecond = 0 },
 		"no minimum rate":    func(l *config.StorageLimits) { l.MinBytesPerSecond = 0 },
 		"no session per uid": func(l *config.StorageLimits) { l.UploadSessionsPerUser = 0 },
+		"over 5 TiB":         func(l *config.StorageLimits) { l.ProjectBytes, l.ObjectBytes = 0, 5<<40+1 },
+		"a large JSON part":  func(l *config.StorageLimits) { l.JSONBodyBytes = 1<<20 + 1 },
 	} {
 		l := config.Defaults().Storage.Limits
 		change(&l)
@@ -145,6 +150,9 @@ func TestStorageLimitsMirrorCore(t *testing.T) {
 			"ARUMA_DATABASE_URL": "postgres://unused",
 			"ARUMA_PUBLIC_URL":   "https://aruma.test",
 			"ARUMA_MASTER_KEY":   "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+			// The limits are checked only when Storage is enabled.
+			"ARUMA_STORAGE_ENABLED":  "true",
+			"ARUMA_STORAGE_DATA_DIR": "/srv/aruma/storage",
 		}
 		v := reflect.ValueOf(l)
 		for i, f := range reflect.VisibleFields(v.Type()) {
@@ -165,6 +173,9 @@ func TestStorageLimitsMirrorCore(t *testing.T) {
 		}
 		if cfgErr == nil && storage.Limits(cfg.Storage.Limits) != storage.Limits(l) {
 			t.Errorf("%s: config loaded %+v from %+v", name, cfg.Storage.Limits, l)
+		}
+		if cfg != nil && cfg.Storage.Limits.BodyCap() != storage.Limits(l).BodyCap() {
+			t.Errorf("%s: the body caps differ", name)
 		}
 	}
 }
@@ -204,6 +215,13 @@ func TestStorageWiring(t *testing.T) {
 	if on.Storage.Limits() != storage.DefaultLimits() {
 		t.Error("the service does not have the configured limits")
 	}
+	rec := httptest.NewRecorder()
+	on.Server.PrivateHandler().ServeHTTP(rec, httptest.NewRequest("GET", "/metrics", nil))
+	for _, name := range []string{"aruma_storage_upload_sessions", "aruma_storage_gc_queue", "aruma_storage_sweep_deleted_total"} {
+		if !strings.Contains(rec.Body.String(), name) {
+			t.Errorf("/metrics lacks %s", name)
+		}
+	}
 	h := on.Server.Handler()
 	for _, path := range []string{"/v0/b/chat-app.aruma.test/o", "/firebasestorage.googleapis.com/v0/b/x/o", "/storage/v1/b/x", "/upload/storage/v1/b/x/o"} {
 		rec := httptest.NewRecorder()
@@ -219,7 +237,7 @@ func TestStorageWiring(t *testing.T) {
 	if off.Storage != nil {
 		t.Error("Storage disabled, but a service is built")
 	}
-	rec := httptest.NewRecorder()
+	rec = httptest.NewRecorder()
 	off.Server.Handler().ServeHTTP(rec, httptest.NewRequest("GET", "/storage/v1/b/x", nil))
 	if rec.Code == http.StatusNotImplemented {
 		t.Error("Storage disabled, but its API answers")

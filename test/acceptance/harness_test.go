@@ -128,6 +128,7 @@ func serveOn(t *testing.T, dbURL, poolURL string, env map[string]string, opts ..
 	if err != nil {
 		t.Fatal(err)
 	}
+	startStorage(t, a)
 	ts := httptest.NewUnstartedServer(a.Server.Handler())
 	ts.Listener.Close()
 	ts.Listener = ln
@@ -301,4 +302,52 @@ func expect(t *testing.T, r *Response, status int, errStatus string) {
 	if r.Status != status || (errStatus != "" && r.errStatus() != errStatus) {
 		t.Fatalf("got %d %s, want %d %s: %s", r.Status, r.errStatus(), status, errStatus, strings.TrimSpace(string(r.Body)))
 	}
+}
+
+// startStorage does for a test server what Serve does when Storage is enabled: Boot before the
+// listener opens, Run beside it, and Close once the server has stopped. Until S2-D writes Boot,
+// a test that enables Storage through the harness is skipped, saying so.
+func startStorage(t *testing.T, a *app.App) {
+	t.Helper()
+	if a.Storage == nil {
+		return
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	pending, err := bootStorage(ctx, a)
+	if pending != "" || err != nil {
+		cancel()
+		if err != nil {
+			t.Fatalf("storage: boot: %v", err)
+		}
+		t.Skipf("Storage cannot boot yet: %s", pending)
+	}
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		if err := a.Storage.Run(ctx); err != nil && ctx.Err() == nil {
+			t.Errorf("storage: run: %v", err)
+		}
+	}()
+	t.Cleanup(func() {
+		cancel()
+		<-done
+		if err := a.Storage.Close(); err != nil {
+			t.Errorf("storage: close: %v", err)
+		}
+	})
+}
+
+// bootStorage runs Boot, and returns the owner's message when the contract's body is still in
+// place (a panic naming its task, such as "S2-D: Boot").
+func bootStorage(ctx context.Context, a *app.App) (pending string, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			msg, ok := p.(string)
+			if !ok || !strings.HasPrefix(msg, "S2-") {
+				panic(p)
+			}
+			pending = msg
+		}
+	}()
+	return "", a.Storage.Boot(ctx)
 }

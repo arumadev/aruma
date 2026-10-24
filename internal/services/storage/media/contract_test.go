@@ -1,9 +1,11 @@
 package media
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -18,7 +20,17 @@ func TestModesAreDistinct(t *testing.T) {
 		}
 		seen[m] = true
 	}
-	if n := reflect.TypeFor[Item]().NumField(); n != 13 {
-		t.Errorf("Item has %d fields; the contract has 13", n)
+	var names []string
+	typ := reflect.TypeFor[Item]()
+	for i := range typ.NumField() {
+		names = append(names, typ.Field(i).Name+" "+typ.Field(i).Type.String())
+	}
+	want := "Name string; ContentType string; ContentEncoding string; ContentDisposition string; ContentLanguage string; " +
+		"CacheControl string; Size int64; ETag string; Updated time.Time; Generation int64; Metageneration int64; CRC32C uint32; MD5 [16]uint8"
+	if got := strings.Join(names, "; "); got != want {
+		t.Errorf("Item:\n got %s\nwant %s", got, want)
+	}
+	if got := fmt.Sprintf("%d %s %s", reflect.TypeFor[Limits]().NumField(), reflect.TypeFor[Limits]().Field(0).Name, reflect.TypeFor[Limits]().Field(1).Name); got != "2 DecompressedBytes MinBytesPerSecond" {
+		t.Errorf("Limits: %s", got)
 	}
 }

@@ -66,7 +66,9 @@ var denied = map[string][]string{
 	"internal/services/*/api":           {"internal/services/*/gcs", "internal/services/*/console"},
 	"internal/services/*/gcs":           {"internal/services/*/api", "internal/services/*/console"},
 	"internal/services/storage/console": {"internal/services/storage/api", "internal/services/storage/gcs"},
-	"internal/services/*/media":         {"internal/services/*/api", "internal/services/*/gcs", "internal/services/*/console", "internal/services/*/core"},
+	// Storage's core knows no wire format either: each surface converts core's values (ADR-022 §1).
+	"internal/services/storage/core": {"internal/services/storage/wire"},
+	"internal/services/*/media":      {"internal/services/*/api", "internal/services/*/gcs", "internal/services/*/console", "internal/services/*/core"},
 }
 
 func TestDependencyRules(t *testing.T) {
@@ -240,7 +242,7 @@ func TestRulesThemselves(t *testing.T) {
 		{"internal/services/storage/core", "internal/platform/crypto", true},
 		{"internal/services/storage/core", "internal/tenancy/core", true},
 		{"internal/services/storage/core", "internal/store", true},
-		{"internal/services/storage/core", "internal/services/storage/wire", true},
+		{"internal/services/storage/core", "internal/services/storage/wire", false},
 		{"internal/services/storage/core", "internal/services/storage/api", false},
 		{"internal/services/storage/core", "internal/services/storage/gcs", false},
 		{"internal/services/storage/core", "internal/services/storage/console", false},

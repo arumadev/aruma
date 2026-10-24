@@ -17,6 +17,7 @@ import (
 
 	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/tenancy/queries"
 )
 
@@ -32,6 +33,9 @@ type Options struct {
 	// RTDBDomain is rtdb.domain: the parent of the Realtime Database hosts (ADR-018). Empty,
 	// databaseURL takes the development form on PublicURL.
 	RTDBDomain string
+	// RulesLimits compile the rulesets saved (CreateRuleset) and bound the cache of compiled
+	// ones (CompiledRelease, compiled_rulesets_bytes) (ADR-021 §4, §7).
+	RulesLimits rules.Limits
 }
 
 // Service is the control plane.

@@ -35,6 +35,21 @@ type Limits struct {
 	ListMaxResults             int           // list_max_results: the largest list page
 }
 
+// The ceilings of two limits, so a request's body cap never overflows: GCS's largest object, and
+// the largest JSON part a multipart upload may carry.
+const (
+	MaxObjectBytes   = 5 << 40 // 5 TiB
+	MaxJSONBodyBytes = 1 << 20
+)
+
+// multipartOverhead is what a multipart/related body carries besides its JSON part and its
+// media: boundaries and part headers.
+const multipartOverhead = 64 << 10
+
+// BodyCap is the largest body a Storage request may carry: an object, and a multipart upload's
+// JSON part and boundaries. The entry point caps Storage's routes at it (ADR-022 §1, §6.4).
+func (l Limits) BodyCap() int64 { return l.ObjectBytes + l.JSONBodyBytes + multipartOverhead }
+
 // DefaultLimits returns ADR-022 §17's defaults.
 func DefaultLimits() Limits {
 	return Limits{
@@ -90,6 +105,12 @@ func (l Limits) Validate() error {
 		if f.v < 1 {
 			errs = append(errs, fmt.Errorf("%s must be positive", f.name))
 		}
+	}
+	if l.ObjectBytes > MaxObjectBytes {
+		errs = append(errs, errors.New("object_bytes must not exceed 5 TiB, the largest object GCS stores"))
+	}
+	if l.JSONBodyBytes > MaxJSONBodyBytes {
+		errs = append(errs, errors.New("json_body_bytes must not exceed 1 MiB"))
 	}
 	if l.ProjectBytes < 0 {
 		errs = append(errs, errors.New("project_bytes must not be negative (0 is unlimited)"))

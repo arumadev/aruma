@@ -228,6 +228,21 @@ type StorageLimits struct {
 	ListMaxResults             int           `yaml:"list_max_results"`                // the largest list page, at most 1000
 }
 
+// The ceilings of object_bytes (GCS's largest object) and json_body_bytes, and what a multipart
+// body carries besides them, as storage/core defines them.
+const (
+	maxStorageObjectBytes   = 5 << 40
+	maxStorageJSONBodyBytes = 1 << 20
+	storageMultipartBytes   = 64 << 10
+)
+
+// BodyCap is the largest body a Storage request may carry: an object, a multipart upload's JSON
+// part and its boundaries, as storage/core.Limits.BodyCap computes it. The ceilings keep the sum
+// from overflowing.
+func (l StorageLimits) BodyCap() int64 {
+	return l.ObjectBytes + l.JSONBodyBytes + storageMultipartBytes
+}
+
 // Rules holds the settings of the Firestore and Storage security rules engine (ADR-021).
 type Rules struct {
 	// Limits bound what a ruleset may hold and what one evaluation may do.
@@ -603,18 +618,20 @@ func (c *Config) validateRules() []error {
 	return []error{fmt.Errorf("rules.limits: %w", err)}
 }
 
-// validateStorage checks the storage section (ADR-022 §5.1, §17): data_dir when Storage is
-// enabled, and the limits with their cross checks, as storage/core.Limits.Validate checks them.
+// validateStorage checks the storage section when Storage is enabled (ADR-022 §5.1, §17):
+// data_dir, and the limits with their cross checks, as storage/core.Limits.Validate checks them.
+// Disabled, nothing in the section matters, so nothing in it is refused.
 func (c *Config) validateStorage() []error {
 	var errs []error
 	st := &c.Storage
-	if st.Enabled {
-		switch {
-		case st.DataDir == "":
-			errs = append(errs, errors.New("storage.data_dir (ARUMA_STORAGE_DATA_DIR) is required when Storage is enabled: an absolute path on a local file system"))
-		case !filepath.IsAbs(st.DataDir):
-			errs = append(errs, fmt.Errorf("storage.data_dir %q must be an absolute path", st.DataDir))
-		}
+	if !st.Enabled {
+		return nil
+	}
+	switch {
+	case st.DataDir == "":
+		errs = append(errs, errors.New("storage.data_dir (ARUMA_STORAGE_DATA_DIR) is required when Storage is enabled: an absolute path on a local file system"))
+	case !filepath.IsAbs(st.DataDir):
+		errs = append(errs, fmt.Errorf("storage.data_dir %q must be an absolute path", st.DataDir))
 	}
 	if st.GCGrace <= 0 {
 		errs = append(errs, errors.New("storage.gc_grace must be positive"))
@@ -645,6 +662,12 @@ func (c *Config) validateStorage() []error {
 		if f.v < 1 {
 			errs = append(errs, fmt.Errorf("storage.limits.%s must be positive", f.name))
 		}
+	}
+	if l.ObjectBytes > maxStorageObjectBytes {
+		errs = append(errs, errors.New("storage.limits.object_bytes must not exceed 5 TiB, the largest object GCS stores"))
+	}
+	if l.JSONBodyBytes > maxStorageJSONBodyBytes {
+		errs = append(errs, errors.New("storage.limits.json_body_bytes must not exceed 1 MiB"))
 	}
 	if l.ProjectBytes < 0 {
 		errs = append(errs, errors.New("storage.limits.project_bytes must not be negative (0 is unlimited)"))

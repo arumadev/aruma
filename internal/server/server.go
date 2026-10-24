@@ -52,10 +52,6 @@ var StoragePrefixes = []string{"/v0/", "/firebasestorage.googleapis.com/v0/"}
 // GCSPrefixes are the paths routed to Handlers.GCS: the Admin SDKs' apiEndpoint (ADR-022 §1).
 var GCSPrefixes = []string{"/storage/v1/", "/upload/storage/v1/", "/download/storage/v1/"}
 
-// storageBodySlack is what a Storage request may carry beyond the largest object: a multipart
-// upload's JSON part and boundaries. Each handler enforces its exact limit (ADR-022 §6.4).
-const storageBodySlack = 1 << 20
-
 // shutdowner is a handler that holds connections of its own.
 type shutdowner interface {
 	Shutdown(ctx context.Context) error
@@ -93,9 +89,13 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("/v1beta1/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
 	// The Realtime Database's management API (internal/admin/mgmt/rtdb.go).
 	mux.Handle("/v1beta/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
-	// firebaserules, Service Usage and defaultBucket for the firebase CLI (ADR-022 §1, §15).
-	mux.Handle("/v1/projects/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
-	mux.Handle("/v1alpha/projects/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
+	if s.handlers.Storage != nil {
+		// firebaserules, Service Usage and defaultBucket for the firebase CLI (ADR-022 §1, §15):
+		// mounted with Storage, until Firestore needs them too, so a server without Storage
+		// routes exactly as before.
+		mux.Handle("/v1/projects/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
+		mux.Handle("/v1alpha/projects/", s.metrics.Instrument("mgmt", apiOnly(s.handlers.Mgmt)))
+	}
 	mux.Handle("/oauth2/", s.metrics.Instrument("oauth", apiOnly(s.handlers.OAuth)))
 	for _, prefix := range AuthPrefixes {
 		mux.Handle(prefix, s.metrics.Instrument("auth", apiOnly(s.handlers.Auth)))
@@ -172,7 +172,9 @@ func (s *Server) storageMux() *storageRoutes {
 		return nil
 	}
 	dispatch := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { sr.route(r.URL.Path).ServeHTTP(w, r) })
-	limit := s.cfg.Storage.Limits.ObjectBytes + storageBodySlack
+	// An object, and a multipart upload's JSON part and boundaries; each handler enforces its
+	// exact limit (ADR-022 §6.4).
+	limit := s.cfg.Storage.Limits.BodyCap()
 	sr.Handler = httpx.CommonWithLimit(s.securityHeaders(dispatch), s.log, s.cfg.TrustedProxyPrefixes(), limit)
 	return sr
 }

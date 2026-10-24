@@ -3,7 +3,6 @@ package core
 import (
 	"errors"
 	"strconv"
-	"strings"
 )
 
 // Error is a named Storage error. core knows no HTTP: each surface maps the errors, with
@@ -94,29 +93,42 @@ func (e *OffsetError) Error() string {
 	return "storage: the chunk starts after the " + strconv.FormatInt(e.Received, 10) + " bytes received"
 }
 
-// encodeError returns how a final upload session keeps its refusal: the error's code and its
-// message. Every final refusal is a named Error or an InvalidError; anything else is kept as
-// ErrUnavailable.
-func encodeError(err error) (code, message string) {
-	var ie *InvalidError
-	if errors.As(err, &ie) {
-		return "invalid:" + ie.Reason, ie.Message
+// terminalErrors are the refusals that make an upload session final (ADR-022 §6.1): the rules
+// (403), the quota (402), a size other than declared (400), a client checksum that does not match
+// (400), the request or object limit (413), an identity that no longer stands (401), and a
+// cancelled session. Nothing else does: 503 (ErrOverloaded, ErrUnavailable), a gap
+// (OffsetError) and an unknown session leave it active, and the client tries again.
+var terminalErrors = []*Error{ErrPermissionDenied, ErrQuotaExceeded, ErrSizeMismatch, ErrChecksumMismatch,
+	ErrTooLarge, ErrUnauthenticated, ErrUploadCancelled}
+
+// finalError reports whether err makes an upload session final, and returns the named error it
+// is, so a replay answers with exactly the first reply's status.
+func finalError(err error) (*Error, bool) {
+	for _, e := range terminalErrors {
+		if errors.Is(err, e) {
+			return e, true
+		}
 	}
-	var e *Error
-	if errors.As(err, &e) && namedErrors[e.code] == e {
-		return e.code, e.msg
-	}
-	return ErrUnavailable.code, ErrUnavailable.msg
+	return nil, false
 }
 
-// decodeError returns the error encodeError kept, so every repeat of a finalize answers as the
-// first did.
-func decodeError(code, message string) error {
-	if reason, ok := strings.CutPrefix(code, "invalid:"); ok {
-		return &InvalidError{Reason: reason, Message: message}
+// encodeError returns how a final upload session keeps its refusal: the terminal error's code
+// and message. It refuses an error that is not terminal: such a session stays active.
+func encodeError(err error) (code, message string, ok bool) {
+	e, ok := finalError(err)
+	if !ok {
+		return "", "", false
 	}
+	return e.code, e.msg, true
+}
+
+// decodeError returns the error encodeError kept. A code it does not know (a row written by a
+// later version) reads as ErrUnavailable, which leaves the client to retry.
+func decodeError(code string) error {
 	if e, ok := namedErrors[code]; ok {
-		return e
+		if _, terminal := finalError(e); terminal {
+			return e
+		}
 	}
 	return ErrUnavailable
 }

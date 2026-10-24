@@ -105,6 +105,8 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		return nil, err
 	}
 	hasher := crypto.NewHasher(st.argon2, argon2Concurrency)
+	rulesLimits := cfg.RulesEngineLimits()
+	rulesInflight := rules.NewInflight(rulesLimits.InflightBytes)
 	svc := core.New(pool, keys, hasher, core.Options{
 		SignupOpen:      cfg.SignupOpen,
 		IdleTimeout:     cfg.Session.IdleTimeout,
@@ -112,6 +114,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		PublicURL:       strings.TrimSuffix(cfg.PublicBaseURL().String(), "/"),
 		ProjectDomain:   cfg.ProjectDomain,
 		RTDBDomain:      cfg.RTDB.Domain,
+		RulesLimits:     rulesLimits,
 	}, logger)
 
 	auth := &authn.Authenticator{
@@ -126,8 +129,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		st.idp(authSvc)
 	}
 	idTokens, revocations, users := authSvc.IDTokenVerifier(), authSvc.Revocations(), authSvc.Users()
-	rulesLimits := cfg.RulesEngineLimits()
-	rulesInflight := rules.NewInflight(rulesLimits.InflightBytes)
+	m := metrics.New(version)
 	var rtdbSvc *rtdb.Service
 	if cfg.RTDB.Enabled {
 		l := cfg.RTDB.Limits
@@ -155,6 +157,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		// Firestore document until v0.4, shares the process's one cap on rules memory, and asks
 		// Auth for a user's live state when an upload finalizes (ADR-022 §7, §8). It opens
 		// nothing here: Boot takes the data directory before the listener opens (Serve).
+		storageMetrics := storage.NewMetrics()
 		storageSvc, err = storage.New(context.Background(), pool, disk, storage.Options{
 			Limits:    storage.Limits(cfg.Storage.Limits),
 			Keys:      keys,
@@ -162,21 +165,29 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 			Documents: rules.NoDocuments{},
 			Inflight:  rulesInflight,
 			Users:     users,
+			DataDir:   cfg.Storage.DataDir,
 			GCGrace:   cfg.Storage.GCGrace,
+			Metrics:   storageMetrics,
 		}, logger)
 		if err != nil {
 			return nil, fmt.Errorf("storage: %w", err)
 		}
+		m.Registry.MustRegister(storageMetrics.Collectors()...)
 	}
+	publicURL := strings.TrimSuffix(cfg.PublicBaseURL().String(), "/")
 	consoleAPI := console.New(svc, auth, logger, console.Options{
 		Version: version, SecureCookies: cfg.SecureCookies(),
 		Mounts: []func(*consolemount.Mount){
 			authconsole.Routes(authSvc),
 			rtdbconsole.Routes(rtdbSvc, rtdbconsole.Options{DatabaseURL: svc.DatabaseURL, DevOpenRules: cfg.RTDB.DevOpenRules}),
-			storageconsole.Routes(storageSvc),
+			storageconsole.Routes(storageSvc, storageconsole.Options{
+				PublicURL: publicURL, ProjectDomain: cfg.ProjectDomain, Rules: svc, Audit: svc.Audit,
+			}),
 		},
 	})
-	mgmtAPI := mgmt.New(svc, auth, logger, mgmt.Options{RTDB: rtdbSvc != nil, Storage: storageSvc != nil})
+	mgmtAPI := mgmt.New(svc, auth, logger, mgmt.Options{
+		RTDB: rtdbSvc != nil, Storage: storageSvc != nil, RulesLimits: rulesLimits, Inflight: rulesInflight,
+	})
 	dashboard, err := web.New(web.Embedded())
 	if err != nil {
 		return nil, fmt.Errorf("dashboard: %w", err)
@@ -203,7 +214,6 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		svc.OnProjectPurged(rtdbSvc.PurgeProject)
 	}
 	if storageSvc != nil {
-		publicURL := strings.TrimSuffix(cfg.PublicBaseURL().String(), "/")
 		handlers.Storage = storageapi.New(storageSvc, storageapi.Options{
 			PublicURL:      publicURL,
 			TrustedProxies: cfg.TrustedProxyPrefixes(),
@@ -216,7 +226,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		svc.OnProjectPurged(storageSvc.PurgeProject)
 	}
 
-	srv := server.New(cfg, logger, pool, metrics.New(version), handlers)
+	srv := server.New(cfg, logger, pool, m, handlers)
 	return &App{Config: cfg, Service: svc, Auth: authSvc, RTDB: rtdbSvc, Storage: storageSvc,
 		IDTokens: idTokens, Revocations: revocations, Users: users,
 		RulesLimits: rulesLimits, RulesInflight: rulesInflight,
@@ -275,6 +285,13 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 		go func() {
 			if err := a.Storage.Run(ctx); err != nil && ctx.Err() == nil {
 				logger.Error("storage", "error", err)
+			}
+		}()
+		// Once the server has drained its requests, the data directory's lock goes, and the next
+		// instance may take it.
+		defer func() {
+			if err := a.Storage.Close(); err != nil {
+				logger.Warn("storage: close", "error", err)
 			}
 		}()
 	}

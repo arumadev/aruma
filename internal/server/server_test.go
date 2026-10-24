@@ -307,6 +307,8 @@ func TestStorageRouting(t *testing.T) {
 			"ARUMA_PUBLIC_URL":            "https://aruma.test",
 			"ARUMA_MASTER_KEY":            "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
 			"ARUMA_RTDB_DOMAIN":           "rtdb.aruma.test",
+			"ARUMA_STORAGE_ENABLED":       "true",
+			"ARUMA_STORAGE_DATA_DIR":      "/srv/aruma/storage",
 			"ARUMA_STORAGE_OBJECT_BYTES":  "3145728",
 			"ARUMA_STORAGE_PROJECT_BYTES": "0",
 		}[k]
@@ -360,15 +362,20 @@ func TestStorageRouting(t *testing.T) {
 		}
 	}
 
-	// Bodies up to object_bytes and the slack pass; beyond, the cap holds.
+	// Bodies up to object_bytes, json_body_bytes and the multipart overhead pass; beyond, the
+	// cap holds.
+	limit := 3<<20 + 64<<10 + 64<<10
+	if got := cfg.Storage.Limits.BodyCap(); got != int64(limit) {
+		t.Fatalf("BodyCap = %d, want %d", got, limit)
+	}
 	for _, c := range []struct {
 		path string
 		size int
 		ok   bool
 	}{
-		{"/v0/b/x/o?name=a", 3<<20 + 1<<19, true},
-		{"/upload/storage/v1/b/x/o?uploadType=media&name=a", 4 << 20, true},
-		{"/v0/b/x/o?name=a", 4<<20 + 1, false},
+		{"/v0/b/x/o?name=a", 3<<20 + 1, true},
+		{"/upload/storage/v1/b/x/o?uploadType=media&name=a", limit, true},
+		{"/v0/b/x/o?name=a", limit + 1, false},
 	} {
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, httptest.NewRequest("POST", c.path, strings.NewReader(strings.Repeat("x", c.size))))
@@ -377,9 +384,12 @@ func TestStorageRouting(t *testing.T) {
 		}
 	}
 
-	// Disabled, the paths fall through to the rest of the entry point.
-	off := New(cfg, slog.New(slog.NewTextHandler(io.Discard, nil)), nil, metrics.New("test"), Handlers{Static: record("static")})
-	for _, p := range []string{"/v0/b/x/o", "/storage/v1/b/x"} {
+	// Disabled, the paths fall through to the rest of the entry point, the management paths
+	// with them: the routes are those of a server before Storage.
+	off := New(testConfig(t, "https://aruma.test"), slog.New(slog.NewTextHandler(io.Discard, nil)), nil, metrics.New("test"),
+		Handlers{Static: record("static"), Mgmt: record("mgmt")})
+	for _, p := range []string{"/v0/b/x/o", "/firebasestorage.googleapis.com/v0/b/x/o", "/storage/v1/b/x", "/upload/storage/v1/b/x/o",
+		"/download/storage/v1/b/x/o/a", "/v1/projects/chat-app:test", "/v1alpha/projects/chat-app/defaultBucket"} {
 		hits = nil
 		off.Handler().ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", p, nil))
 		if len(hits) != 1 || hits[0] != "static" {

@@ -18,6 +18,7 @@ import (
 	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/tenancy/core"
 )
 
@@ -38,6 +39,10 @@ type Options struct {
 	// Storage is set when Cloud Storage is served: defaultBucket and the firebaserules API
 	// answer for it (S5-A, ADR-022 §15).
 	Storage bool
+	// RulesLimits and Inflight are the rules engine's, for the firebaserules API's :test: the
+	// same limits as every ruleset, and the process's one cap on evaluation memory (ADR-021 §4).
+	RulesLimits rules.Limits
+	Inflight    *rules.Inflight
 }
 
 var policy = authn.Policy{AccessToken: true, ServiceToken: true}

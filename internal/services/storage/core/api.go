@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/netip"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/platform/crypto"
 	"github.com/arumadev/aruma/internal/platform/idtoken"
+	"github.com/arumadev/aruma/internal/platform/ratelimit"
 	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/services/storage/blob"
 	"github.com/arumadev/aruma/internal/services/storage/queries"
@@ -163,6 +165,10 @@ type Chunk struct {
 	Finalize bool
 	// Total is the object's size when the request states it, else -1.
 	Total int64
+	// Want is what this request claims the object's checksums are (Go sends X-Goog-Hash on the
+	// last request alone). Finalize merges it with UploadSpec.Want; a claim that contradicts
+	// the start's is ErrChecksumMismatch.
+	Want Checksums
 }
 
 // UploadStatus is an upload session's state.
@@ -219,6 +225,14 @@ type CORSRule struct {
 	MaxAgeSeconds                     int
 }
 
+// BucketInfo is the bucket resource: what buckets.get and buckets.patch return (B §4.6).
+type BucketInfo struct {
+	Bucket
+	Metageneration   int64     // 1 until the settings first change, then up by one per change
+	Created, Updated time.Time // the project's creation; the last settings change (Created until then)
+	CORS             []CORSRule
+}
+
 // Usage is a project's storage use and quota.
 type Usage struct {
 	UsedBytes, ReservedBytes, Objects int64
@@ -253,9 +267,15 @@ type Options struct {
 	Inflight *rules.Inflight
 	// Users reports a user's live state when an upload finalizes (ADR-022 §7).
 	Users idtoken.Users
+	// DataDir is the store's data directory (storage.data_dir), which Boot locks and binds to
+	// the database (ADR-022 §5.1): an absolute path.
+	DataDir string
 	// GCGrace is how long a file no row points to waits before it is deleted, covering a read
 	// between its row and its file (storage.gc_grace); 0 is one minute.
 	GCGrace time.Duration
+	// Metrics are the collectors Storage reports to (metrics.go); nil makes collectors nobody
+	// registers, so reporting costs nothing and shows nowhere.
+	Metrics *Metrics
 	// Now is the clock; nil is time.Now.
 	Now func() time.Time
 }
@@ -272,9 +292,16 @@ type Service struct {
 	inflight  *rules.Inflight
 	users     idtoken.Users
 	limits    Limits
+	dataDir   string
 	gcGrace   time.Duration
 	now       func() time.Time
 	log       *slog.Logger
+	metrics   *Metrics
+
+	// starts are the upload starts allowed per client address and in the whole process, which
+	// both surfaces take through AllowUploadStart (ADR-022 §17).
+	startsPerIP *ratelimit.Limiter
+	starts      *ratelimit.Limiter
 
 	// Boot's (boot.go): the data directory's lock, held for the life of the process, the
 	// instance id that binds it to this database, and the keys found under p/ and s/ before the
@@ -308,13 +335,22 @@ type sessionLock struct {
 }
 
 // New returns the service on an open pool and a store. It checks the limits and needs Keys,
-// Projects and Inflight.
+// Projects, Inflight and an absolute DataDir.
 func New(ctx context.Context, pool *pgxpool.Pool, store blob.Store, opts Options, log *slog.Logger) (*Service, error) {
 	if err := opts.Limits.Validate(); err != nil {
 		return nil, err
 	}
 	if pool == nil || store == nil || opts.Keys == nil || opts.Projects == nil || opts.Inflight == nil {
 		return nil, errors.New("storage: New needs a pool, a store, Keys, Projects and Inflight")
+	}
+	if !filepath.IsAbs(opts.DataDir) {
+		return nil, errors.New("storage: the data directory must be an absolute path")
+	}
+	if opts.Metrics == nil {
+		opts.Metrics = NewMetrics()
+	}
+	if log == nil {
+		log = slog.New(slog.DiscardHandler)
 	}
 	if opts.Documents == nil {
 		opts.Documents = rules.NoDocuments{}
@@ -328,9 +364,28 @@ func New(ctx context.Context, pool *pgxpool.Pool, store blob.Store, opts Options
 	return &Service{
 		pool: pool, q: queries.New(pool), store: store, keys: opts.Keys, projects: opts.Projects,
 		documents: opts.Documents, inflight: opts.Inflight, users: opts.Users, limits: opts.Limits,
-		gcGrace: opts.GCGrace, now: opts.Now, log: log,
-		sessions: sessionLocks{held: map[string]*sessionLock{}},
+		dataDir: opts.DataDir, gcGrace: opts.GCGrace, now: opts.Now, log: log, metrics: opts.Metrics,
+		startsPerIP: ratelimit.NewLimiter(opts.Limits.UploadStartsPerMinutePerIP, opts.Limits.UploadStartsPerMinutePerIP),
+		starts:      ratelimit.NewLimiter(opts.Limits.UploadStartsPerSecond*60, opts.Limits.UploadStartsPerSecond),
+		sessions:    sessionLocks{held: map[string]*sessionLock{}},
 	}, nil
+}
+
+// Metrics returns the collectors Storage reports to; the surfaces report theirs (bytes,
+// decompressions cut) there too.
+func (s *Service) Metrics() *Metrics { return s.metrics }
+
+// AllowUploadStart takes an upload start from a client address: upload_starts_per_minute_per_ip
+// for the address (IPv6 counted per /64), then upload_starts_per_second for the process. Both
+// surfaces call it before StartUpload, Insert and a console session; when it refuses, it says
+// how long until a start is allowed.
+func (s *Service) AllowUploadStart(ip netip.Addr) (bool, time.Duration) {
+	if ip.IsValid() {
+		if ok, wait := s.startsPerIP.Allow(ratelimit.AddrKey(ip)); !ok {
+			return false, wait
+		}
+	}
+	return s.starts.Allow("")
 }
 
 // Limits returns the configured limits; the surfaces enforce the ones on requests.

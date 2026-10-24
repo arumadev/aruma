@@ -415,8 +415,8 @@ func TestStorageRejectsBadValues(t *testing.T) {
 		vars map[string]string
 		want string
 	}{
-		{map[string]string{"ARUMA_STORAGE_ENABLED": "true"}, "storage.data_dir (ARUMA_STORAGE_DATA_DIR) is required"},
-		{map[string]string{"ARUMA_STORAGE_ENABLED": "true", "ARUMA_STORAGE_DATA_DIR": "data"}, `storage.data_dir "data" must be an absolute path`},
+		{map[string]string{"ARUMA_STORAGE_DATA_DIR": ""}, "storage.data_dir (ARUMA_STORAGE_DATA_DIR) is required"},
+		{map[string]string{"ARUMA_STORAGE_DATA_DIR": "data"}, `storage.data_dir "data" must be an absolute path`},
 		{map[string]string{"ARUMA_STORAGE_GC_GRACE": "-1s"}, "storage.gc_grace must be positive"},
 		{map[string]string{"ARUMA_STORAGE_OBJECT_BYTES": "0"}, "storage.limits.object_bytes must be positive"},
 		{map[string]string{"ARUMA_STORAGE_PROJECT_BYTES": "-1"}, "storage.limits.project_bytes must not be negative"},
@@ -430,8 +430,14 @@ func TestStorageRejectsBadValues(t *testing.T) {
 		{map[string]string{"ARUMA_STORAGE_LIST_MAX_RESULTS": "5000"}, "list_max_results must not exceed 1000"},
 		{map[string]string{"ARUMA_STORAGE_UPLOAD_REQUESTS_PER_IP": "0"}, "storage.limits.upload_requests_per_ip must be positive"},
 		{map[string]string{"ARUMA_STORAGE_UPLOAD_IDLE_TTL": "soon"}, "ARUMA_STORAGE_UPLOAD_IDLE_TTL"},
+		// A body cap that cannot overflow: GCS's largest object, and a bounded JSON part.
+		{map[string]string{"ARUMA_STORAGE_PROJECT_BYTES": "0", "ARUMA_STORAGE_OBJECT_BYTES": "5497558138881"}, "object_bytes must not exceed 5 TiB"},
+		{map[string]string{"ARUMA_STORAGE_PROJECT_BYTES": "0", "ARUMA_STORAGE_OBJECT_BYTES": "9223372036854775807"}, "object_bytes must not exceed 5 TiB"},
+		{map[string]string{"ARUMA_STORAGE_JSON_BODY_BYTES": "1048577"}, "json_body_bytes must not exceed 1 MiB"},
 	} {
 		m := required()
+		m["ARUMA_STORAGE_ENABLED"] = "true"
+		m["ARUMA_STORAGE_DATA_DIR"] = "/srv/aruma/storage"
 		for k, v := range c.vars {
 			m[k] = v
 		}
@@ -440,12 +446,35 @@ func TestStorageRejectsBadValues(t *testing.T) {
 			t.Errorf("%v: error %v, want one containing %q", c.vars, err, c.want)
 		}
 	}
-	// An unlimited quota takes any object size, and the anonymous share may be 0 or 1.
+	// An unlimited quota takes any object up to 5 TiB, and the anonymous share may be 0 or 1.
 	m := required()
+	m["ARUMA_STORAGE_ENABLED"] = "true"
+	m["ARUMA_STORAGE_DATA_DIR"] = "/srv/aruma/storage"
 	m["ARUMA_STORAGE_PROJECT_BYTES"] = "0"
-	m["ARUMA_STORAGE_OBJECT_BYTES"] = "1099511627776"
+	m["ARUMA_STORAGE_OBJECT_BYTES"] = "5497558138880"
+	m["ARUMA_STORAGE_JSON_BODY_BYTES"] = "1048576"
 	m["ARUMA_STORAGE_ANONYMOUS_STAGED_FRACTION"] = "0"
+	c, err := Load("", env(m))
+	if err != nil {
+		t.Fatalf("an unlimited quota: %v", err)
+	}
+	if got := c.Storage.Limits.BodyCap(); got != 5<<40+1<<20+64<<10 {
+		t.Errorf("BodyCap = %d", got)
+	}
+}
+
+// Disabled, the storage section is not checked: a server without Storage starts as before,
+// whatever the section holds.
+func TestStorageDisabledIsNotChecked(t *testing.T) {
+	m := required()
+	m["ARUMA_STORAGE_DATA_DIR"] = "relative"
+	m["ARUMA_STORAGE_OBJECT_BYTES"] = "0"
+	m["ARUMA_STORAGE_GC_GRACE"] = "-1s"
 	if _, err := Load("", env(m)); err != nil {
-		t.Errorf("an unlimited quota: %v", err)
+		t.Errorf("a disabled storage section is checked: %v", err)
+	}
+	m["ARUMA_STORAGE_OBJECT_BYTES"] = "lots"
+	if _, err := Load("", env(m)); err == nil {
+		t.Error("a malformed variable is accepted")
 	}
 }

@@ -2,9 +2,12 @@ package wire
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 // The tests of the contract commit (S2-0): the types' JSON shapes and the helpers that work from
@@ -75,6 +78,46 @@ func TestContentRangeKinds(t *testing.T) {
 	} {
 		if c.r.Query() != c.query || c.r.Final() != c.final {
 			t.Errorf("%s: Query %v Final %v, want %v %v", c.form, c.r.Query(), c.r.Final(), c.query, c.final)
+		}
+	}
+}
+
+// The formats and parsers of the contract: a change does not compile.
+var (
+	_ func(time.Time) string                                 = Time
+	_ func(int64) string                                     = Int
+	_ func(uint32) string                                    = CRC32C
+	_ func([16]byte) string                                  = MD5
+	_ func(int64, int64) string                              = ETag
+	_ func(int64) string                                     = MediaETag
+	_ func(uint32, [16]byte) string                          = HashHeader
+	_ func(string) (ObjectPath, error)                       = SplitObjectPath
+	_ func(string) (UploadCommands, error)                   = ParseUploadCommand
+	_ func(string) (ContentRange, error)                     = ParseContentRange
+	_ func(http.Header) int64                                = DeclaredLength
+	_ func(http.Header) string                               = DeclaredType
+	_ func(io.Reader, string, int64) (*RelatedReader, error) = NewRelatedReader
+	_ func(string, int64) (Range, bool, error)               = ParseRange
+	_ func(http.Header, string, string)                      = Set
+)
+
+func TestTypesArePinned(t *testing.T) {
+	for _, c := range []struct {
+		typ  reflect.Type
+		want string
+	}{
+		{reflect.TypeFor[ObjectPath](), "Bucket Objects Object Rest"},
+		{reflect.TypeFor[ContentRange](), "Start End Open Total"},
+		{reflect.TypeFor[RelatedReader](), "JSON MediaType Media"},
+		{reflect.TypeFor[Range](), "Start Length"},
+	} {
+		typ, want := c.typ, c.want
+		var names []string
+		for i := range typ.NumField() {
+			names = append(names, typ.Field(i).Name)
+		}
+		if got := strings.Join(names, " "); got != want {
+			t.Errorf("%v fields %q, want %q", typ, got, want)
 		}
 	}
 }

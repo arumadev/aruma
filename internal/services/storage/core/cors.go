@@ -7,8 +7,14 @@ func (s *Service) CORS(ctx context.Context, b Bucket) ([]CORSRule, error) {
 	panic("S2-C: CORS")
 }
 
-// SetCORS replaces a bucket's CORS rules: admins only (the GCS surface and the dashboard).
-func (s *Service) SetCORS(ctx context.Context, b Bucket, p Principal, rules []CORSRule) error {
+// BucketInfo returns the bucket resource: its settings and their metageneration.
+func (s *Service) BucketInfo(ctx context.Context, b Bucket) (BucketInfo, error) {
+	panic("S2-C: BucketInfo")
+}
+
+// SetCORS replaces a bucket's CORS rules, advancing its metageneration: admins only (the GCS
+// surface and the dashboard). It returns the bucket as changed, for buckets.patch.
+func (s *Service) SetCORS(ctx context.Context, b Bucket, p Principal, rules []CORSRule) (BucketInfo, error) {
 	panic("S2-C: SetCORS")
 }
 
