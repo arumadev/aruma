@@ -97,6 +97,14 @@ public class AuthEndpointsTest {
     }
 
     @Test
+    public void storageIsRedirectedByDefaultWithItsEncodedNames() throws Exception {
+        assertTrue(AuthEndpoints.storageRedirect);
+        assertEquals("https://aruma.example.com/firebasestorage.googleapis.com/v0/b/p.aruma.dev/o/a%2Fb%20c?alt=media",
+                rewrite("https://firebasestorage.googleapis.com/v0/b/p.aruma.dev/o/a%2Fb%20c?alt=media"));
+        refused("https://firebasestorage.googleapis.com/v0/b/p/o/..");
+    }
+
+    @Test
     public void refusalMessageHasNoQuery() throws Exception {
         try {
             rewrite("https://securetoken.googleapis.com:8443/v1/token?key=SECRET");

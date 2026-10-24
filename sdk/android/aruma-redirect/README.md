@@ -22,6 +22,7 @@ host rewrite:
 | `https://www.googleapis.com/identitytoolkit/v3/relyingparty/<rpc>` | `<ArumaURL>/www.googleapis.com/identitytoolkit/v3/relyingparty/<rpc>` |
 | `https://securetoken.googleapis.com/v1/token` | `<ArumaURL>/securetoken.googleapis.com/v1/token` |
 | `https://identitytoolkit.googleapis.com/<path>` (v1, v2) | `<ArumaURL>/identitytoolkit.googleapis.com/<path>` |
+| `https://firebasestorage.googleapis.com/v0/<path>` (Cloud Storage, the fallback below) | `<ArumaURL>/firebasestorage.googleapis.com/v0/<path>` |
 
 - A `ContentProvider` in the library manifest (`initOrder` 1000, above FirebaseInitProvider's 100) runs before
   `Application.onCreate`. It reads `ArumaURL` and installs one process-wide `URLStreamHandlerFactory` for `https`.
@@ -55,6 +56,25 @@ repositories of `android/build.gradle(.kts)` (`allprojects { repositories { mave
 `ArumaURL` line in `android/app/src/main/AndroidManifest.xml`. Dart code stays the official `firebase_auth`, with no `useAuthEmulator`.
 Use the `google-services.json` that Aruma generates for the Android app.
 
+### Cloud Storage
+
+The production path for Storage is the Gradle plugin [`dev.aruma.storage`](../aruma-storage-gradle) (ADR-022 §16.2): it
+points firebase-storage at Aruma when the app is built, so download URLs are on Aruma too, in the unified form
+`https://<aruma-host>/v0/b/<bucket>/o/<path>?alt=media&token=<uuid>`. This library adds two things:
+
+- **The fallback.** Requests to `firebasestorage.googleapis.com` are redirected like Auth's, unless
+  `ArumaStorageRedirect` is `false`. Uploads, downloads, metadata, list and delete then work without the plugin, but
+  `getDownloadUrl()` still returns a link on Google's host, which any loader outside `HttpURLConnection` (Coil,
+  OkHttp, Glide with OkHttp, Cronet, MediaPlayer, WebView) or a shared link sends to Google.
+- **The launch check.** At install it reads `NetworkRequest.PROD_BASE_URL` and logs which path is in place. If it is
+  still Google's and the fallback is off, the app stops with an `ArumaRedirectException`. Set
+  `ArumaStorageRedirect=false` in an app built with the plugin to make the plugin mandatory.
+
+`ArumaUrls.fromArumaUrl(url)` turns any download URL (the unified form, Google's, iOS's with `:443`) into the
+`gs://<bucket>/<path>` that `FirebaseStorage.getReferenceFromUrl` accepts in every mode; it refuses the prefixed form
+`<aruma>/firebasestorage.googleapis.com/v0/...`, which no platform reads. `ArumaUrls.toArumaUrl(url)` moves a link on
+Google's host to the unified form on Aruma, for apps on the fallback.
+
 ### Configuration (manifest `<meta-data>` in `<application>`)
 
 | Name | Value | |
@@ -62,6 +82,7 @@ Use the `google-services.json` that Aruma generates for the Android app.
 | `ArumaURL` | `https://aruma.example.com[/prefix]` | Absent or empty: the library does nothing. |
 | `ArumaAllowInsecureURL` | `true` | Accept `http` to any host. Development only. |
 | `ArumaRedirectLog` | `true` | Log host and path of each redirected request. Never the query, headers or body. |
+| `ArumaStorageRedirect` | `false` | Do not redirect Cloud Storage at run time; the app then needs `dev.aruma.storage` or stops at launch. Default `true`. |
 
 `http` is accepted without the flag only for loopback: `localhost`, `127.0.0.0/8` and `::1`, as in the web and iOS
 libraries. A debuggable app (`android:debuggable`, which every debug build is) may also use `10.0.2.2` (the Android
@@ -79,7 +100,8 @@ debuggable flag without a `Context`.
 ### Safety
 
 - **Fail closed.** If `ArumaURL` is set but invalid, or `URL.setURLStreamHandlerFactory` was already called by someone
-  else, the app stops at launch with an `ArumaRedirectException` that says why, instead of letting a password go to Google.
+  else, or Cloud Storage would reach Google (above), the app stops at launch with an `ArumaRedirectException` that says
+  why, instead of letting a password go to Google.
 - An Auth request that cannot be rewritten safely (explicit non-443 port, credentials in the URL, dot segments in the
   path, a trailing-dot host written to get around a match) is refused with an `IOException`, never sent to Google.
 - Never logs keys, tokens or bodies. Without `ArumaURL`, nothing is installed.
@@ -91,7 +113,8 @@ debuggable flag without a `Context`.
 - **Tied to the current transport.** It sees what goes through `URL.openConnection`. If a future Firebase Auth release
   moves to OkHttp, Cronet or gRPC, the redirect will not see those requests and **they would go to Google**. Pin the Firebase
   version and re-run a network-guarded conformance pass on each upgrade.
-- Auth only. Firestore (gRPC) and Realtime Database (WebSocket) do not use `URL.openConnection`.
+- Auth, and Cloud Storage as a fallback. Firestore (gRPC) and Realtime Database (WebSocket) do not use
+  `URL.openConnection`.
 - Not covered: phone auth, Google sign-in, App Check, reCAPTCHA (they may go through Play services).
 - Tested on an API 33 emulator, in debug and in a release build shrunk by R8 (the consumer rules keep the provider,
   the public class and the configuration error). No physical device yet.
@@ -135,6 +158,10 @@ Run the unit tests: `./gradlew :aruma-redirect:testDebugUnitTest`.
 ### الحدود
 
 - factory واحد لكل عملية: إن ثبّتت مكتبة أخرى factory فالمكتبة تفشل مغلقةً.
+- **Cloud Storage:** المسار الأساسي إضافة Gradle [`dev.aruma.storage`](../aruma-storage-gradle) وقت البناء، فيصير رابط التنزيل
+  على Aruma. وهذه المكتبة تحوّل `firebasestorage.googleapis.com` احتياطًا (إلا إن كان `ArumaStorageRedirect=false`)، وتفحص عند
+  الإقلاع `NetworkRequest.PROD_BASE_URL`: إن بقي على Google ولا تحويل، يتوقف التطبيق. و`ArumaUrls.fromArumaUrl` يحوّل أي رابط
+  تنزيل إلى `gs://` الذي يقبله `getReferenceFromUrl` في كل وضع، و`ArumaUrls.toArumaUrl` ينقل رابط Google إلى الشكل الموحّد.
 - مرتبطة بالنقل الحالي (`URL.openConnection`): لو انتقلت Firebase Auth لاحقًا إلى OkHttp أو Cronet أو gRPC فلن تُرى طلباتها
   **وستذهب إلى Google**. ثبّت إصدار Firebase وأعد اختبار التوافق بحارس شبكة عند كل ترقية.
 - Auth فقط: Firestore (gRPC) وRealtime Database (WebSocket) لا يمرّان بهذه الطبقة. وغير مغطّى: الهاتف ودخول Google وApp Check وreCAPTCHA.

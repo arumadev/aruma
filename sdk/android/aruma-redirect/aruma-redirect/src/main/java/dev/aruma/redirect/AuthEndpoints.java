@@ -8,8 +8,8 @@ import java.net.URL;
 import java.util.Locale;
 
 /**
- * The Firebase Auth endpoint families and how each maps onto an Aruma server. Aruma serves Google's paths under
- * its own host, so a redirect only adds the original host as the first path segment:
+ * The Firebase endpoint families (Auth, and Cloud Storage for Firebase) and how each maps onto an Aruma server. Aruma
+ * serves Google's paths under its own host, so a redirect only adds the original host as the first path segment:
  * {@code https://<google host><path>?<query>} becomes {@code <base>/<google host><path>?<query>}.
  */
 final class AuthEndpoints {
@@ -17,15 +17,18 @@ final class AuthEndpoints {
     static final String SECURE_TOKEN_HOST = "securetoken.googleapis.com";
     static final String LEGACY_HOST = "www.googleapis.com";
     static final String LEGACY_PATH_PREFIX = "/identitytoolkit/v3/relyingparty/";
-    /** SPIKE (S0-B, docs/research/storage-production-path.md): Cloud Storage for Firebase, off by default. */
+    /**
+     * Cloud Storage for Firebase: the run-time fallback of ADR-022 §16.2, on unless ArumaStorageRedirect is false. An
+     * app built with dev.aruma.storage sends nothing to this host, so the redirect only sees what that build missed.
+     */
     static final String STORAGE_HOST = "firebasestorage.googleapis.com";
-    static volatile boolean storageSpike;
+    static volatile boolean storageRedirect = true;
 
     private AuthEndpoints() {}
 
     /**
-     * Returns the Aruma URL for an Auth request, or null when {@code url} is not an Auth endpoint (it is then
-     * passed through untouched). Throws when it is an Auth endpoint in a shape that cannot be rewritten safely
+     * Returns the Aruma URL for a request to one of these endpoints, or null when {@code url} is not one (it is then
+     * passed through untouched). Throws when it is one in a shape that cannot be rewritten safely
      * (explicit port, credentials, dot segments): refusing is safer than letting the request reach Google.
      */
     static String rewrite(URL url, ArumaBase base) throws IOException {
@@ -51,7 +54,7 @@ final class AuthEndpoints {
                 }
                 break;
             case STORAGE_HOST:
-                if (!storageSpike) {
+                if (!storageRedirect) {
                     return null;
                 }
                 break;
