@@ -10,7 +10,7 @@ import (
 // its weight) leave room over every file of the oracle that compiles: the largest weighs a
 // sixth of the share, and the most its literal patterns take together is a hundredth of
 // regex_bytes (the review's SR3-02, 2026-10-24: 5,547,839 bytes for size_functions_950, and
-// 38,817 for strings/size_ascii, its classes counted).
+// 38,785 for strings/size_ascii, its classes counted).
 func TestCorpusFitsTheBudgets(t *testing.T) {
 	set := loadOracle(t)
 	lim := rules.DefaultLimits()
