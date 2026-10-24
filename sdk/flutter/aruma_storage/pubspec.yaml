@@ -1,0 +1,14 @@
+name: aruma_storage
+description: >-
+  Cloud Storage for Firebase on an Aruma server, from Flutter: fromArumaUrl turns a download URL on
+  Aruma's host into the gs:// URL that FirebaseStorage.refFromURL accepts.
+version: 0.1.0
+repository: https://github.com/arumadev/aruma/tree/main/sdk/flutter/aruma_storage
+# Used from this repository (a path or git dependency) for now, like the Android and iOS libraries.
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+dev_dependencies:
+  test: ^1.25.0

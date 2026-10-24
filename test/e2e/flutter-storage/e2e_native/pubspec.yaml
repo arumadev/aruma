@@ -1,0 +1,21 @@
+name: aruma_e2e_native
+description: "The native half of the Flutter Cloud Storage e2e: its network guard, and what the native build holds."
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.12.2
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: dev.aruma.e2e
+        pluginClass: E2eNativePlugin
+      ios:
+        pluginClass: E2eNativePlugin

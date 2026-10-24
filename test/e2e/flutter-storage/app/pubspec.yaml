@@ -1,0 +1,26 @@
+name: aruma_flutter_storage_e2e
+description: "The Flutter Cloud Storage e2e app: firebase_storage on the native SDKs built for Aruma."
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.2
+
+# Pinned: FlutterFire's last line on Firebase iOS 12.x, the one test/e2e/ios-storage measured with
+# the mirror (firebase_core 4.15.2 asks SwiftPM for firebase-ios-sdk exact 12.19.3). The 5.x line
+# asks for firebase-ios-sdk 13.1.1, whose manifest needs Swift 6.2 (Xcode 26.2).
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: 4.15.2
+  firebase_auth: 6.7.1
+  firebase_storage: 13.6.1
+  aruma_storage:
+    path: ../../../../sdk/flutter/aruma_storage
+  aruma_e2e_native:
+    path: ../e2e_native
+
+flutter:
+  uses-material-design: false
+  config:
+    enable-swift-package-manager: true
