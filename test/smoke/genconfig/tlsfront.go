@@ -20,19 +20,20 @@ import (
 )
 
 // tlsFront stands before Aruma as Caddy does in production (ADR-018): it terminates TLS for
-// the database hosts and forwards to the plain http server, WebSocket upgrades included. The
-// Host header passes through unchanged, so Aruma sees <ns>.<rtdb.domain>; X-Forwarded-For,
-// -Host and -Proto are set as Caddy's reverse_proxy sets them.
+// the database hosts (or the -public-host name) and forwards to the plain http server,
+// WebSocket upgrades included. The Host header passes through unchanged, so Aruma sees
+// <ns>.<rtdb.domain>; X-Forwarded-For, -Host and -Proto are set as Caddy's reverse_proxy sets
+// them.
 type tlsFront struct {
 	ln  net.Listener
 	srv *http.Server
 }
 
-// startTLSFront listens on addr with a certificate for <projectID>-default-rtdb.<domain> and
-// *.<domain>, signed by a CA made for this run and valid for a day. The CA certificate goes
-// to caFile, for the clients to trust; its key never leaves this process.
-func startTLSFront(addr, domain, target, caFile string) (*tlsFront, error) {
-	cert, caPEM, err := issue(domain)
+// startTLSFront listens on addr with a certificate for names (the first is its common name),
+// signed by a CA made for this run and valid for a day. The CA certificate goes to caFile, for
+// the clients to trust; its key never leaves this process.
+func startTLSFront(addr, target, caFile string, names ...string) (*tlsFront, error) {
+	cert, caPEM, err := issue(names)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +72,7 @@ func (f *tlsFront) Addr() string { return f.ln.Addr().String() }
 func (f *tlsFront) Close() { _ = f.srv.Close() }
 
 // issue makes the run's CA and the server certificate it signs.
-func issue(domain string) (tls.Certificate, []byte, error) {
+func issue(names []string) (tls.Certificate, []byte, error) {
 	now := time.Now()
 	caKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
@@ -97,11 +98,10 @@ func issue(domain string) (tls.Certificate, []byte, error) {
 	if err != nil {
 		return tls.Certificate{}, nil, err
 	}
-	host := projectID + "-default-rtdb." + domain
 	leaf := &x509.Certificate{
 		SerialNumber: big.NewInt(2),
-		Subject:      pkix.Name{CommonName: host},
-		DNSNames:     []string{host, "*." + domain},
+		Subject:      pkix.Name{CommonName: names[0]},
+		DNSNames:     names,
 		NotBefore:    now.Add(-time.Hour),
 		NotAfter:     now.Add(24 * time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature,

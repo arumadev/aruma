@@ -23,6 +23,13 @@
 // Realtime Database end-to-end tests (switch.go): POST /down closes the listening socket and every
 // open connection, POST /up listens again. With -serve its URL is printed as ARUMA_SWITCH_URL.
 //
+// -storage serves Cloud Storage, its blobs in storage/ under -out. -public-host <name> makes the
+// server's public URL https://<name> and trusts 127.0.0.1 as a proxy; with -serve, -public-tls
+// <addr> puts a TLS front for that name on addr (tlsfront.go), writes its CA to public-ca.pem in
+// -out and prints its address as ARUMA_PUBLIC_TLS_ADDR. Key files then carry the token_uri
+// https://<name>/oauth2/v1/token, and upload sessions come back on that origin, as behind Caddy
+// in production. Clients resolve the name to the front themselves.
+//
 // -log <level> writes the server's own log to stderr from that level up; without it the log is
 // dropped.
 package main
@@ -100,6 +107,10 @@ func main() {
 	flag.StringVar(&r.domain, "rtdb-domain", "", "rtdb.domain, e.g. rtdb.aruma.test (implies -rtdb)")
 	flag.StringVar(&r.tlsAddr, "rtdb-tls", "", "with -serve and -rtdb-domain: address of a TLS front for the database hosts")
 	switchAddr := flag.String("switch", "", "with -serve: address of the server's off switch (POST /down, POST /up)")
+	var p publicOptions
+	flag.BoolVar(&p.storage, "storage", false, "serve Cloud Storage")
+	flag.StringVar(&p.host, "public-host", "", "public URL https://<name>, e.g. storage.aruma.test, behind a proxy on 127.0.0.1")
+	flag.StringVar(&p.tlsAddr, "public-tls", "", "with -serve and -public-host: address of a TLS front for that name")
 	logLevel := flag.String("log", "", "the server's log on stderr from this level up: debug, info, warn or error (default: none)")
 	flag.Parse()
 	if r.domain != "" {
@@ -111,6 +122,9 @@ func main() {
 	if *switchAddr != "" && !*serve {
 		log.Fatal("-switch needs -serve")
 	}
+	if p.tlsAddr != "" && (p.host == "" || !*serve) {
+		log.Fatal("-public-tls needs -public-host and -serve")
+	}
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	if *logLevel != "" {
 		var level slog.Level
@@ -119,7 +133,7 @@ func main() {
 		}
 		logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level}))
 	}
-	if err := run(*out, *addr, *dbPrefix, *switchAddr, *serve, *anonymous, r, logger); err != nil {
+	if err := run(*out, *addr, *dbPrefix, *switchAddr, *serve, *anonymous, r, p, logger); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -130,7 +144,13 @@ type rtdbOptions struct {
 	domain, tlsAddr string
 }
 
-func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtdbOptions, logger *slog.Logger) error {
+// publicOptions are the Storage and public URL flags.
+type publicOptions struct {
+	storage       bool
+	host, tlsAddr string
+}
+
+func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtdbOptions, pub publicOptions, logger *slog.Logger) error {
 	ctx := context.Background()
 	// The name goes into CREATE DATABASE unquoted.
 	if !regexp.MustCompile(`^[a-z_][a-z0-9_]*$`).MatchString(dbPrefix) {
@@ -172,7 +192,26 @@ func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtd
 		return err
 	}
 	base := "http://" + ln.Addr().String()
-	vars := map[string]string{"ARUMA_DATABASE_URL": dbURL, "ARUMA_PUBLIC_URL": base, "ARUMA_MASTER_KEY": randomBase64Key()}
+	// public is where the SDKs reach the server; genconfig itself talks to base.
+	public := base
+	if pub.host != "" {
+		public = "https://" + pub.host
+	}
+	vars := map[string]string{"ARUMA_DATABASE_URL": dbURL, "ARUMA_PUBLIC_URL": public, "ARUMA_MASTER_KEY": randomBase64Key()}
+	if pub.host != "" {
+		vars["ARUMA_TRUSTED_PROXIES"] = "127.0.0.1/32"
+	}
+	if pub.storage {
+		dir, err := filepath.Abs(filepath.Join(out, "storage"))
+		if err == nil {
+			err = os.MkdirAll(dir, 0o700)
+		}
+		if err != nil {
+			return err
+		}
+		vars["ARUMA_STORAGE_ENABLED"] = "true"
+		vars["ARUMA_STORAGE_DATA_DIR"] = dir
+	}
 	if rtdb.enabled {
 		vars["ARUMA_RTDB_ENABLED"] = "true"
 	}
@@ -214,7 +253,7 @@ func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtd
 	if err := c.json("POST", "/projects", map[string]string{"projectId": projectID, "displayName": "Smoke"}, &proj); err != nil {
 		return err
 	}
-	exp := Expected{ServerURL: base, ProjectID: projectID, ProjectNumber: proj.ProjectNumber, StorageBucket: proj.StorageBucket, AuthDomain: proj.AuthDomain}
+	exp := Expected{ServerURL: public, ProjectID: projectID, ProjectNumber: proj.ProjectNumber, StorageBucket: proj.StorageBucket, AuthDomain: proj.AuthDomain}
 	if anonymous {
 		// New projects start without anonymous sign-in, as in Firebase. The console's Sign-in
 		// methods screen will switch it; until then the setting is written directly.
@@ -292,7 +331,7 @@ func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtd
 		return err
 	}
 	exp.ServiceEmail = sa.Email
-	exp.TokenURI = base + "/oauth2/v1/token"
+	exp.TokenURI = public + "/oauth2/v1/token"
 
 	eb, _ := json.MarshalIndent(exp, "", "  ")
 	if err := os.WriteFile(filepath.Join(out, "expected.json"), append(eb, '\n'), 0o644); err != nil {
@@ -303,12 +342,21 @@ func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtd
 	if serve {
 		fmt.Printf("export ARUMA_URL=%s\n", base)
 		if rtdb.tlsAddr != "" {
-			front, err := startTLSFront(rtdb.tlsAddr, rtdb.domain, base, filepath.Join(out, "rtdb-ca.pem"))
+			host := projectID + "-default-rtdb." + rtdb.domain
+			front, err := startTLSFront(rtdb.tlsAddr, base, filepath.Join(out, "rtdb-ca.pem"), host, "*."+rtdb.domain)
 			if err != nil {
 				return err
 			}
 			defer front.Close()
 			fmt.Printf("export ARUMA_RTDB_TLS_ADDR=%s\n", front.Addr())
+		}
+		if pub.tlsAddr != "" {
+			front, err := startTLSFront(pub.tlsAddr, base, filepath.Join(out, "public-ca.pem"), pub.host)
+			if err != nil {
+				return err
+			}
+			defer front.Close()
+			fmt.Printf("export ARUMA_PUBLIC_TLS_ADDR=%s\n", front.Addr())
 		}
 		if sw != nil {
 			u, stop, err := serveSwitch(switchAddr, sw)
