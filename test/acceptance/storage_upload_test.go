@@ -412,7 +412,19 @@ func TestStorageUploadRefusals(t *testing.T) {
 	if fin.str("md5Hash") != md5Of("0123456789abcdefghij") {
 		t.Fatalf("res.txt: %s", fin.body)
 	}
-	e.status(e.call("POST", s, auth, "z", h("upload", 20)), "a byte after final", 200, "final", "20")
+	// A repeat of the last chunk, or an empty finalize, is answered the saved result; a byte past
+	// the object is refused, never dropped while the client reports it stored (ADR-023 §3-71).
+	again := e.call("POST", s, auth, "fghij", h("upload, finalize", 15))
+	e.status(again, "the last chunk again", 200, "final", "20")
+	if again.str("generation") != fin.str("generation") {
+		t.Fatalf("the last chunk again: %s", again.body)
+	}
+	e.status(e.call("POST", s, auth, "", h("finalize", 20)), "an empty finalize again", 200, "final", "20")
+	e.status(e.call("POST", s, auth, "z", h("upload", 20)), "a byte after final", 400, "final", "20")
+	e.status(e.call("POST", s, auth, "ijklm", h("upload, finalize", 18)), "new bytes over the end", 400, "final", "20")
+	if r := e.call("GET", e.obj("public/res.txt"), auth, "", nil); r.str("size") != "20" || r.str("generation") != fin.str("generation") {
+		t.Fatalf("res.txt after the refused bytes: %s", r.body)
+	}
 
 	// A finalize short of the declared size: final, and so is every repeat and query.
 	s = start("public/short.txt", "", 10)
@@ -462,6 +474,44 @@ func TestStorageUploadRefusals(t *testing.T) {
 	r = e.call("POST", e.list()+"?name=public%2Ftok.txt", auth, mp(`{"metadata":{"firebaseStorageDownloadTokens":"mine","k":"v"}}`, "d"), mph)
 	if r.status != 200 || r.str("downloadTokens") == "mine" || fmt.Sprint(r.json["metadata"]) != "map[k:v]" {
 		t.Fatalf("planted token: %s", r.body)
+	}
+}
+
+// A chunk whose connection breaks halfway keeps what arrived (ADR-022 §6.3, ADR-023 §3-53): the
+// reply, when the client still reads one, is 400 active with the bytes kept, a query reports
+// them, and the rest sent again from there completes the object whole. The first chunk of a
+// session is the case net/http's cancelled context used to lose.
+func TestStorageUploadCutBody(t *testing.T) {
+	e := newUploadEnv(t, nil)
+	auth := firebase(e.alice)
+	data := strings.Repeat("0123456789", 10)
+	s := e.session(e.call("POST", e.list()+"?name=users%2Falice%2Fcut", auth, "",
+		map[string]string{"X-Goog-Upload-Protocol": "resumable", "X-Goog-Upload-Command": "start"}), e.URL)
+	conn, err := net.Dial("tcp", strings.TrimPrefix(e.URL, "http://"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	fmt.Fprintf(conn, "POST %s HTTP/1.1\r\nHost: x\r\nX-Goog-Upload-Command: upload, finalize\r\nX-Goog-Upload-Offset: 0\r\n"+
+		"Content-Length: %d\r\n\r\n%s", s, len(data), data[:50])
+	// The client stops sending: its half of the connection closes.
+	if err := conn.(*net.TCPConn).CloseWrite(); err != nil {
+		t.Fatal(err)
+	}
+	_ = conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+	resp, err := http.ReadResponse(bufio.NewReader(conn), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != 400 || resp.Header.Get("X-Goog-Upload-Status") != "active" || resp.Header.Get("X-Goog-Upload-Size-Received") != "50" {
+		t.Fatalf("the cut chunk: %d %v", resp.StatusCode, resp.Header)
+	}
+	e.status(e.call("POST", s, "", "", map[string]string{"X-Goog-Upload-Command": "query"}), "query after the cut", 200, "active", "50")
+	fin := e.call("POST", s, auth, data[50:], map[string]string{"X-Goog-Upload-Command": "upload, finalize", "X-Goog-Upload-Offset": "50"})
+	e.status(fin, "the rest", 200, "final", "100")
+	if fin.str("size") != "100" || fin.str("md5Hash") != md5Of(data) {
+		t.Fatalf("the object: %s", fin.body)
 	}
 }
 

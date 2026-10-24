@@ -286,3 +286,20 @@ func TestPacedSlowloris(t *testing.T) {
 		conn.Close()
 	}
 }
+
+// A chunk on a finished session is a repeat when it brings nothing past the bytes received, by
+// its length or, without one, by its body (ADR-023 §3-71).
+func TestPastReceived(t *testing.T) {
+	for _, c := range []struct {
+		offset, length int64
+		body           string
+		want           bool
+	}{
+		{15, 5, "fghij", false}, {20, 0, "", false}, {0, 20, "", false}, {20, 1, "z", true}, {18, 5, "ijklm", true},
+		{15, -1, "fghij", false}, {20, -1, "", false}, {15, -1, "fghijk", true}, {25, -1, "", false}, {25, -1, "x", true},
+	} {
+		if got := pastReceived(strings.NewReader(c.body), c.offset, c.length, 20); got != c.want {
+			t.Errorf("%d+%d %q: %v, want %v", c.offset, c.length, c.body, got, c.want)
+		}
+	}
+}

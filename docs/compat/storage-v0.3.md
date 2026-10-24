@@ -103,6 +103,6 @@
 |---|---|---|---|---|
 | 69 | جسم دون `min_bytes_per_second` في نافذة 30 ثانية يُقطع 408 بلا `X-Goog-Upload-Status`، وما وصل منه يُحفظ | مؤقت | ADR-022 §6.4، A §5.3 | `api.pacedBody`، `api.chunk` |
 | 70 | قطعة أو إنهاء على جلسة ملغاة 400 مع `final`، و`query` و`cancel` عليها 200 مع `cancelled` | مؤقت | ADR-022 §6.1، E §3.1 | `api.writeSession`، `api.uploadSession` |
-| 71 | `upload` على جلسة انتهت بنجاح يعيد النتيجة المحفوظة (200 و`final` والـ metadata)، والمحاكي 400 | مؤقت | ADR-022 §6.1، `raw_resumable.json` | `api.writeSession` |
+| 71 | قطعة على جلسة انتهت بنجاح لا تأتي ببايت بعد `received` تكرار يُعاد له المحفوظ (200 و`final` والـ metadata)؛ وببايت بعده 400 مع `final` كالمحاكي | مؤقت | ADR-022 §6.1، `raw_resumable.json` | `api.chunk`، `api.pastReceived` |
 | 72 | نوع المحتوى في multipart من الـ JSON وحده و`?name=` يغلب اسم الـ JSON (كالمحاكي)؛ وقيمة `X-Goog-Upload-Protocol` أخرى 400؛ و`md5Hash` ليس base64 لستة عشر بايتًا 400 | مؤقت | `raw_upload.json` | `api.multipart`، `api.upload`، `api.parseResource` |
 | 73 | `X-Goog-Upload-Offset` إلزامي إلا لـ `finalize` منفردًا بجسم فارغ، و`X-Goog-Upload-Content-Length` على القطع لا يُقرأ (المعلن عند `start` هو الحكم) | مؤقت | A §3.11 | `api.chunk` |

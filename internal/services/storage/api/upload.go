@@ -259,11 +259,16 @@ func (a *API) chunk(w http.ResponseWriter, r *http.Request, b core.Bucket, name,
 	//
 	// Not the request's context: net/http cancels it the moment the body breaks (a cut
 	// connection, a window short of the rate), and what arrived must still be recorded, since
-	// the client resumes from it (ADR-022 §6.3). core records under its own WithoutCancel, but
-	// a session's first durable byte checks the session caps with the context it was given.
+	// the client resumes from it (ADR-022 §6.3). core records on an uncancelled context itself;
+	// this is defence in depth.
 	st, err := a.svc.WriteUpload(context.WithoutCancel(r.Context()), b, name, id, nil, core.Chunk{
 		Offset: offset, Body: body, Length: r.ContentLength, Finalize: cmds.Has(wire.CommandFinalize), Total: -1,
 	})
+	if err == nil && st.Status == core.UploadFinal && pastReceived(body, offset, r.ContentLength, st.Received) {
+		// A finished session replays its result to a repeat, never to new bytes: those would be
+		// dropped while JS and iOS report the upload complete (ADR-023 §3-71, raw_resumable.json).
+		err = core.ErrUploadFinal
+	}
 	a.received(body.n)
 	body.replying()
 	switch {
@@ -279,6 +284,19 @@ func (a *API) chunk(w http.ResponseWriter, r *http.Request, b core.Bucket, name,
 		return
 	}
 	a.writeSession(w, r, st, err)
+}
+
+// pastReceived reports whether a chunk at offset, length bytes long (-1 unknown), brings a byte
+// past received: by its length when it has one, else by reading past what was received.
+func pastReceived(body io.Reader, offset, length, received int64) bool {
+	if length >= 0 {
+		return offset+length > received
+	}
+	if _, err := io.CopyN(io.Discard, body, max(received-offset, 0)); err != nil {
+		return false
+	}
+	n, _ := io.ReadFull(body, make([]byte, 1))
+	return n > 0
 }
 
 // writeSession answers a request on a session with where the session stands:
