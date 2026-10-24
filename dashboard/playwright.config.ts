@@ -7,9 +7,13 @@ import type { Options } from './e2e/fixtures';
 //
 // Set ARUMA_API_URL (and ARUMA_SETUP_CODE on a fresh server) to also run the live smoke test
 // against a real `aruma serve`.
+//
+// Set ARUMA_DASHBOARD_URL to a real `aruma serve` with the dashboard embedded and Storage enabled
+// to run e2e/live-storage.spec.ts on the server itself, under its own Content-Security-Policy.
 
 const PORT = 4173;
 const live = Boolean(process.env.ARUMA_API_URL);
+const dashboard = process.env.ARUMA_DASHBOARD_URL;
 
 const browser = {
   ...devices['Desktop Chrome'],
@@ -34,9 +38,10 @@ export default defineConfig<Options>({
     acceptDownloads: true,
   },
   projects: [
-    { name: 'ar-rtl', testIgnore: /live\.spec/, use: { ...browser, locale: 'ar', appLocale: 'ar' } },
-    { name: 'en-ltr', testIgnore: /live\.spec/, use: { ...browser, locale: 'en-US', appLocale: 'en' } },
+    { name: 'ar-rtl', testIgnore: /live(-storage)?\.spec/, use: { ...browser, locale: 'ar', appLocale: 'ar' } },
+    { name: 'en-ltr', testIgnore: /live(-storage)?\.spec/, use: { ...browser, locale: 'en-US', appLocale: 'en' } },
     ...(live ? [{ name: 'live', testMatch: /live\.spec/, use: { ...browser, appLocale: 'ar' as const } }] : []),
+    ...(dashboard ? [{ name: 'live-storage', testMatch: /live-storage\.spec/, use: { ...browser, baseURL: dashboard, appLocale: 'en' as const } }] : []),
   ],
   webServer: {
     command: 'node e2e/serve.mjs',

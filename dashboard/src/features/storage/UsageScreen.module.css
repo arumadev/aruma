@@ -1,0 +1,43 @@
+.quota {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-block-end: var(--space-4);
+}
+
+.summary {
+  color: var(--md-sys-color-on-surface);
+  font: var(--md-sys-typescale-body-large);
+}
+
+.meter {
+  inline-size: 100%;
+  block-size: 8px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--md-sys-color-surface-container-highest);
+  appearance: none;
+  overflow: hidden;
+}
+
+.meter::-webkit-meter-bar {
+  border: 0;
+  border-radius: 4px;
+  background: var(--md-sys-color-surface-container-highest);
+}
+
+.meter::-webkit-meter-optimum-value {
+  background: var(--md-sys-color-primary);
+}
+
+.meter::-webkit-meter-suboptimum-value {
+  background: var(--md-custom-color-warning);
+}
+
+.meter::-webkit-meter-even-less-good-value {
+  background: var(--md-sys-color-error);
+}
+
+.meter::-moz-meter-bar {
+  background: var(--md-sys-color-primary);
+}

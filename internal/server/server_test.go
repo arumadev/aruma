@@ -401,3 +401,61 @@ func TestStorageRouting(t *testing.T) {
 		}
 	}
 }
+
+// TestStaticDirStaysStatic: the dashboard's policy loads scripts and stylesheets from
+// /_next/static/ alone (internal/admin/web), and CSP checks a script's path only before a
+// redirect. So no URL under /_next/static/, raw or decoded, may reach another API, Storage above
+// all, nor be redirected out of the directory.
+func TestStaticDirStaysStatic(t *testing.T) {
+	cfg, err := config.Load("", func(k string) string {
+		return map[string]string{
+			"ARUMA_DATABASE_URL":     "postgres://unused",
+			"ARUMA_PUBLIC_URL":       "https://aruma.test",
+			"ARUMA_MASTER_KEY":       "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+			"ARUMA_STORAGE_ENABLED":  "true",
+			"ARUMA_STORAGE_DATA_DIR": "/srv/aruma/storage",
+		}[k]
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var hits []string
+	record := func(name string) http.Handler {
+		return http.HandlerFunc(func(http.ResponseWriter, *http.Request) { hits = append(hits, name) })
+	}
+	s := New(cfg, slog.New(slog.NewTextHandler(io.Discard, nil)), nil, metrics.New("test"), Handlers{
+		Console: record("console"), Mgmt: record("mgmt"), OAuth: record("oauth"), Auth: record("auth"),
+		Storage: record("storage"), GCS: record("gcs"), RTDB: record("rtdb"), Static: record("static"),
+	})
+	ts := httptest.NewServer(s.Handler())
+	t.Cleanup(ts.Close)
+	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	for _, p := range []string{
+		"/_next/static/chunks/a.js",
+		"/_next/static/..%2f..%2fv0/b/x/o/e.js",
+		"/_next/static/..%2F..%2Fv0/b/x/o/e.js",
+		"/_next/static/..%2f..%2ffirebasestorage.googleapis.com/v0/b/x/o/e.js",
+		"/_next/static/..%2f..%2fstorage/v1/b/x/o/e.js",
+		"/_next/static/..%2f..%2fconsole/v1/projects/p/storage/object:download",
+		"/_next/static/..%2f..%2fv1beta1/projects",
+		"/_next/static/%2e%2e/%2e%2e/v0/b/x/o/e.js",
+		"/_next/static//v0/b/x/o/e.js",
+		"/_next/static/chunks/",
+		"/_next/static/x.json?ns=a",
+	} {
+		hits = nil
+		resp, err := client.Get(ts.URL + p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if loc := resp.Header.Get("Location"); loc != "" && !strings.HasPrefix(loc, "/_next/static/") {
+			t.Errorf("%s: redirected out of /_next/static/ to %s", p, loc)
+		}
+		for _, h := range hits {
+			if h != "static" {
+				t.Errorf("%s reached %s", p, h)
+			}
+		}
+	}
+}

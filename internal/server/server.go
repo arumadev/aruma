@@ -192,6 +192,10 @@ func (s *Server) isRTDB(r *http.Request) bool {
 	switch p := r.URL.Path; {
 	case p == "/.ws" || p == "/.lp":
 		return true
+	case strings.HasPrefix(p, "/_next/static/") || strings.HasPrefix(r.URL.EscapedPath(), "/_next/static/"):
+		// The dashboard's own files: its policy loads scripts and stylesheets from there alone
+		// (internal/admin/web), so nothing else may answer under it.
+		return false
 	case strings.HasSuffix(p, ".json"):
 		return r.URL.Query().Has("ns")
 	}

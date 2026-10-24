@@ -26,4 +26,10 @@ export const routes = {
   authSettings: (id: string) => withQuery('/project/auth/settings/', { id }),
   database: (id: string) => withQuery('/project/database/', { id }),
   databaseRules: (id: string) => withQuery('/project/database/rules/', { id }),
+  /** A folder of the bucket: "" for the root, else a prefix ending in "/". */
+  storage: (id: string, prefix = '') => withQuery('/project/storage/', prefix ? { id, prefix } : { id }),
+  storageObject: (id: string, name: string) => withQuery('/project/storage/object/', { id, name }),
+  storageRules: (id: string) => withQuery('/project/storage/rules/', { id }),
+  storageUsage: (id: string) => withQuery('/project/storage/usage/', { id }),
+  storageCors: (id: string) => withQuery('/project/storage/cors/', { id }),
 } as const;

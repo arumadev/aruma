@@ -16,6 +16,7 @@ import type {
 } from '../src/lib/api/types';
 import { MockAuth } from './mock-auth';
 import { MockDatabase } from './mock-database';
+import { MockStorage } from './mock-storage';
 
 // A deterministic, in-memory stand-in for /console/v1 (docs/api/console.md), installed with
 // page.route. Each test gets a fresh copy, so writes are visible within a test only.
@@ -213,7 +214,7 @@ export function seed(locale: Locale): Store {
   };
 }
 
-type Reply = { status: number; body?: unknown; headers?: Record<string, string>; raw?: string };
+type Reply = { status: number; body?: unknown; headers?: Record<string, string>; raw?: string | Buffer };
 const ok = (body: unknown): Reply => ({ status: 200, body });
 const empty = (): Reply => ({ status: 204 });
 const fail = (status: number, rpc: string, message: string, field?: string): Reply => ({
@@ -240,14 +241,17 @@ export class MockApi {
   readonly store: Store;
   readonly auth = new MockAuth();
   readonly database = new MockDatabase();
+  readonly storage = new MockStorage();
   readonly calls: { method: string; path: string; body: unknown; csrf: string | null }[] = [];
 
   constructor(locale: Locale) {
     this.store = seed(locale);
   }
 
-  async install(page: Page): Promise<void> {
+  /** Answers /console/v1, and the /v0 upload sessions it issues on `origin`. */
+  async install(page: Page, origin: string): Promise<void> {
     await page.route('**/console/v1/**', (route) => this.handle(route));
+    await this.storage.install(page, origin);
   }
 
   private async handle(route: Route): Promise<void> {
@@ -380,6 +384,7 @@ export class MockApi {
     const [kind, idWithVerb, child, childId] = sub;
     if (kind === 'auth') return this.auth.dispatch(p.projectId, method, sub.slice(1), q, body);
     if (kind === 'database') return this.database.dispatch(p.projectId, method, sub.slice(1), q, body);
+    if (kind === 'storage') return this.storage.dispatch(p.projectId, method, sub.slice(1), q, body);
     if (kind === 'auditLog') return ok({ entries: s.audit[p.projectId] ?? [], nextPageToken: '' });
     if (kind === 'flutterOptions') return download('firebase_options.dart', 'text/x-dart; charset=utf-8', '// firebase_options.dart\n');
 
