@@ -36,6 +36,10 @@ var (
 	// errUnauthenticated is a credential that does not verify (A §7): 401, which every SDK reads
 	// as unauthenticated.
 	errUnauthenticated = statusError(http.StatusUnauthorized, "Invalid authentication credentials.")
+	// errBearerRefused is a Bearer that is no admin of the bucket's project: 403, as the
+	// conformance tests expect of production (ADR-023 §3-67). A Firebase token that does not
+	// verify stays errUnauthenticated, which the SDKs answer by refreshing it.
+	errBearerRefused = statusError(http.StatusForbidden, wire.MessagePermission)
 	// errTooManyWrites is a client over upload_requests_per_ip: pressure that passes, so 503 with
 	// a bounded Retry-After, which iOS retries where it does not retry 429 (A §5.3).
 	errTooManyWrites = statusError(http.StatusServiceUnavailable, "Too many requests in flight from this address.")

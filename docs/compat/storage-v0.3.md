@@ -172,7 +172,7 @@ firebase-tools 15.34.0 نفسها (مثبّتة في `test/acceptance/testdata/f
 
 | # (ADR-023 §3) | الفرق | التصنيف | المصدر | الموضع |
 |---|---|---|---|---|
-| 67 | الاعتماد الذي لا يُقبل 401، ومنه `Bearer <idToken>` وحساب خدمة مشروع آخر | مؤقت | E §7 | `api.principal` |
+| 67 | `Firebase` برمز لا يُتحقق منه ومخطط آخر 401 (تجدّد المكتبات رمزها)؛ و`Bearer` ليس Admin لمشروع الـ bucket، ومنه `Bearer <idToken>` وحساب خدمة مشروع آخر، 403 «Permission denied.» قبل أي بحث عن كائن (مراجعة S3-D) | مؤقت | E §7، وCT (`firebase.endpoints.test.ts:662-667`، `:712-717`) | `api.principal`، `api.admin` |
 | 68 | رمز CLI للمالك يتجاوز القواعد، ويُربط بالحساب فيُفحص عند إنهاء الرفع | مؤقت | ADR-022 §15 | `api.admin` |
 | 69 | preflight على bucket مجهول 404، وعلى موجود 204؛ وCORS التنزيل من قواعد الـ bucket، و`Allow-Headers` يعيد الترويسات المطلوبة كـ GCS JSON | مؤقت | `bucket_probe.json`، ADR-022 §11 | `api.preflight`، `api.mediaCORS` |
 | 70 | `upload_requests_per_ip` 503 مع `Retry-After`، بعدّ واحد لكل عنوان يشاركه سطح GCS؛ و`ErrTooManyUploads` 429، و`Retry-After` (بين 1 و60 ثانية) على الضغط العابر وحده، لا على `ErrUnavailable` | مؤقت | A §5.3، ADR-022 §12 | `ratelimit.InFlight`، `api.writeError` |

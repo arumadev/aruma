@@ -16,16 +16,6 @@
       "item": "88",
       "note": "supertest's .send({}) makes the finalize carry the two bytes {} without X-Goog-Upload-Offset; a finalize alone must have an empty body (400)"
     },
-    "ct | Firebase Storage endpoint conformance tests tokens should return a 403 for create_token if auth header is invalid": {
-      "class": "b",
-      "item": "67",
-      "note": "Authorization: Bearer somethingElse is a credential that is not accepted: 401, as in RTDB; the test wants 403"
-    },
-    "ct | Firebase Storage endpoint conformance tests tokens should return a 403 for delete_token if auth header is invalid": {
-      "class": "b",
-      "item": "67",
-      "note": "the same, on delete_token"
-    },
     "ct | GCS Javascript SDK conformance tests .file() #copy() should copy the file to a different bucket": {
       "class": "b",
       "item": "93",
@@ -305,7 +295,7 @@
       "key": "sdk_read | GET metadata with Bearer instead of Firebase | *",
       "class": "b",
       "item": "67",
-      "note": "Bearer <ID token> on /v0 is a credential that is not accepted: 401; the emulator takes it"
+      "note": "Bearer <ID token> on /v0 is a Bearer that is no admin: 403 Permission denied.; the emulator takes it"
     },
     {
       "key": "rules | raw: garbage token | *",

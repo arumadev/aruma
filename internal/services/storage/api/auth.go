@@ -22,8 +22,11 @@ import (
 //   - "Bearer <access token>": an admin, which bypasses the rules (ADR-021 §7): a service
 //     account's access token of the bucket's project, or the CLI token of an account that owns
 //     it. That is how the console and the Admin SDKs call create_token (CT, E §5). A bearer
-//     that is not such a token, a user's ID token included, is 401: production's answer to
-//     "Bearer <idToken>" on /v0 is not known, and acting as that user would be a guess (E §7).
+//     that is not such a token, a user's ID token or another project's service account
+//     included, is 403 Permission denied., as the conformance tests expect of production
+//     (firebase.endpoints.test.ts:662-667, 712-717): acting as that user would be a guess
+//     (E §7), and no SDK refreshes on a Bearer. Like GCS's 403 (ADR-022 §14), it comes before
+//     any object is looked up (ADR-023 §3-67).
 //   - Any other scheme is 401.
 //
 // X-Firebase-AppCheck and X-Firebase-GMPID are accepted and ignored in v0.3 (ADR-022 §19; JS
@@ -75,7 +78,7 @@ func (a *API) user(ctx context.Context, b core.Bucket, token string) (core.Princ
 // account no longer owns the project (ADR-022 §15).
 func (a *API) admin(ctx context.Context, b core.Bucket, token string) (core.Principal, error) {
 	if a.opts.Credentials == nil || a.opts.Projects == nil {
-		return core.Principal{}, errUnauthenticated
+		return core.Principal{}, errBearerRefused
 	}
 	var (
 		p   *authn.Principal
@@ -87,7 +90,7 @@ func (a *API) admin(ctx context.Context, b core.Bucket, token string) (core.Prin
 	case strings.HasPrefix(token, authn.AccessTokenPrefix):
 		p, err = a.opts.Credentials.VerifyAccessToken(ctx, token)
 	default:
-		return core.Principal{}, errUnauthenticated
+		return core.Principal{}, errBearerRefused
 	}
 	if err == nil {
 		got, gerr := a.opts.Projects.GetProject(ctx, p, strconv.FormatInt(b.Project, 10))
@@ -101,7 +104,7 @@ func (a *API) admin(ctx context.Context, b core.Bucket, token string) (core.Prin
 	if err != nil {
 		if refused(err) {
 			a.log.Info("storage: admin credential refused", "bucket", b.Name, "error", err)
-			return core.Principal{}, errUnauthenticated
+			return core.Principal{}, errBearerRefused
 		}
 		a.log.Warn("storage: verifying an admin credential", "bucket", b.Name, "error", err)
 		return core.Principal{}, core.ErrUnavailable
