@@ -388,6 +388,11 @@ func (m *memStore) Promote(staging, key string) error {
 	defer m.mu.Unlock()
 	f, ok := m.files[staging]
 	if !ok {
+		if _, done := m.files[key]; done {
+			// S2-A's resumable Promote: the move happened before; the file is made durable.
+			m.files[key].synced = len(m.files[key].data)
+			return errPromotedEarlier
+		}
 		return fs.ErrNotExist
 	}
 	if _, ok := m.files[key]; ok {

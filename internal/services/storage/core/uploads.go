@@ -624,20 +624,13 @@ func (s *Service) auditConsole(ctx context.Context, b Bucket, p Principal, o Obj
 }
 
 // placeBlob moves the staging file to the session's object key: blob_key is written first, so a
-// finalize after a crash finds the file. A session with blob_key resumes: the file is there when
-// the move happened, and is moved now when it did not.
+// finalize after a crash finds the file. A session with blob_key resumes: Promote is called
+// again, which makes a file an earlier move left at the key durable, and the file at the key is
+// hashed again and must be the session's bytes before anything commits.
 func (s *Service) placeBlob(ctx context.Context, sess *queries.StorageUploadSession) (string, error) {
 	if sess.BlobKey != nil {
 		key := *sess.BlobKey
-		if r, err := s.store.Open(key); err == nil {
-			size := r.Size()
-			r.Close()
-			if size != sess.Received {
-				return "", fmt.Errorf("%w: %s holds %d bytes, not %d", ErrUnavailable, key, size, sess.Received)
-			}
-			return key, nil
-		}
-		if err := s.promote(sess, key); err != nil {
+		if err := s.promote(sess, key, true); err != nil {
 			return "", err
 		}
 		return key, nil
@@ -656,29 +649,74 @@ func (s *Service) placeBlob(ctx context.Context, sess *queries.StorageUploadSess
 	}
 	sess.BlobKey = &key
 	hook("finalize.blob_key")
-	if err := s.promote(sess, key); err != nil {
+	if err := s.promote(sess, key, false); err != nil {
 		return "", err
 	}
 	hook("finalize.promoted")
 	return key, nil
 }
 
+// errPromotedEarlier is blob.ErrPromotedEarlier: Promote found no staging file and the file of
+// an earlier move at the key, and made it durable (S2-A's resumable Promote).
+//
+// S2-A: until blob.ErrPromotedEarlier is merged this is a stand-in that only the tests' store
+// returns; the merge replaces it with `var errPromotedEarlier = blob.ErrPromotedEarlier`.
+var errPromotedEarlier = errors.New("blob: the staging file was promoted earlier")
+
 // promote cuts the staging file to received, what a crash after an append may have left beyond
-// it, and moves it to key.
-func (s *Service) promote(sess *queries.StorageUploadSession, key string) error {
+// it, and moves it to key. When the file at the key was not moved by this call (a resume, where
+// the staging file may be gone, or Promote saying it was moved earlier), its bytes are checked
+// against the session's before the caller may commit.
+func (s *Service) promote(sess *queries.StorageUploadSession, key string, resume bool) error {
 	st, err := s.store.OpenStaging(sess.StagingKey)
-	if err != nil {
+	switch {
+	case err == nil:
+		err = s.cutStaging(st, sess)
+		if cerr := st.Close(); err == nil {
+			err = cerr
+		}
+		if err != nil {
+			return err
+		}
+	case !resume:
 		return fmt.Errorf("%w: open %s: %w", ErrUnavailable, sess.StagingKey, err)
 	}
-	err = s.cutStaging(st, sess)
-	if cerr := st.Close(); err == nil {
-		err = cerr
-	}
-	if err != nil {
-		return err
-	}
-	if err := s.store.Promote(sess.StagingKey, key); err != nil {
+	err = s.store.Promote(sess.StagingKey, key)
+	earlier := errors.Is(err, errPromotedEarlier)
+	if err != nil && !earlier {
 		return fmt.Errorf("%w: move %s: %w", ErrUnavailable, sess.StagingKey, err)
+	}
+	if resume || earlier {
+		return s.verifyPlaced(sess, key)
+	}
+	return nil
+}
+
+// verifyPlaced hashes the file at a session's object key and compares its size, crc32c and md5
+// with what the session recorded. A file that differs is never committed: the request fails with
+// ErrUnavailable and the session stays active, and the file is left where it is for the
+// operator; the session's expiry queues it.
+func (s *Service) verifyPlaced(sess *queries.StorageUploadSession, key string) error {
+	want, err := restoreHasher(sess.HashState)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrUnavailable, err)
+	}
+	wantCRC, wantMD5 := want.sums()
+	r, err := s.store.Open(key)
+	if err != nil {
+		return fmt.Errorf("%w: open %s: %w", ErrUnavailable, key, err)
+	}
+	defer r.Close()
+	h := newHasher()
+	n, err := io.Copy(h, r)
+	if err != nil {
+		return fmt.Errorf("%w: read %s: %w", ErrUnavailable, key, err)
+	}
+	crc, sum := h.sums()
+	if n != sess.Received || crc != wantCRC || sum != wantMD5 {
+		s.log.Error("storage: the file an upload moved to its object key is not the bytes it received; it is not committed",
+			"key", key, "size", n, "received", sess.Received)
+		return fmt.Errorf("%w: %s does not hold the upload's bytes", ErrUnavailable, key)
 	}
 	return nil
 }
