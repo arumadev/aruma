@@ -270,10 +270,10 @@
 - [ ] `make lint` و`make sqlc-check` و`make test` نظيفة على الوسم: نظيفة على `d9391be` (وظيفة Go في [40111454561](https://github.com/arumadev/aruma/actions/runs/40111454561))، و`make lint` و`go build ./...` على `s7-c-close`. **تبقى للمالك:** CI أخضر على commit الوسم.
 - [x] مصفوفة المتصفحات (ADR-022 §10.6): 14/14 على Chromium وFirefox وWebKit في [40111454561](https://github.com/arumadev/aruma/actions/runs/40111454561).
 - [x] أوراكل القواعد 98%: مجموعة التطوير 87/87 و3643/3643 و1985/1985 بلا سماح زائد، بعد S7-B1 (`docs/compat/rules-v0.3.md`)، و`TestOracle` في وظيفة Go.
-- [ ] e2e الأجهزة بحارس الشبكة: Android وiOS لـ Storage شغّلهما S6-A وS6-I محليًا (`test/e2e/android-storage`، و`test/e2e/ios-storage/README.md`)، وليسا في CI على `main`. **تبقى للمالك:** دمج `s6-f-flutter` (iOS في GitHub Actions وCodemagic، وFlutter و`aruma_storage`)، وتشغيل أخضر لـ Codemagic/iOS. وإن لم يُدمج قبل الوسم يُحذف صف Flutter (الجوال) من ملاحظات الإصدار.
+- [x] e2e الأجهزة بحارس الشبكة: Android وiOS لـ Storage شغّلهما S6-A وS6-I محليًا (`test/e2e/android-storage`، و`test/e2e/ios-storage/README.md`)، وFlutter على Android محليًا (S6-F، ‏26/26 debug وrelease). وiOS في CI على `main` (`.github/workflows/ios-storage.yml`، دُمج في `87ad20f`): Swift ‏4/4 وFlutter ‏26/26 واختبارات المرآة 173/173 ([run 40115235140](https://github.com/arumadev/aruma/actions/runs/40115235140)). و`codemagic.yaml` بديل اختياري لم يُشغَّل بعد (توكن المالك يحتاج تجديدًا). وAndroid على الجهاز ليس في CI.
 - [x] قائمة ADR-010 S-1 إلى S-15 باختباراتها السلبية خضراء، ومعها الاختبارات الجديدة هنا: `test/acceptance` (ومنه `isolation_test.go`) في `make test`، وظيفة Go في [40111454561](https://github.com/arumadev/aruma/actions/runs/40111454561).
 
-**ما يبقى للمالك:** الوسم `v0.3.0` (رسالته الفقرة الأولى من `docs/releases/v0.3.0.md`، كالوسمين السابقين)؛ وCI أخضر على commit الوسم؛ ودمج `s6-f-flutter` وتشغيل Codemagic/iOS الأخضر. ودليل `docs/guides/storage.md` بعد الإصدار.
+**ما يبقى للمالك:** الوسم `v0.3.0` (رسالته الفقرة الأولى من `docs/releases/v0.3.0.md`، كالوسمين السابقين)؛ وCI أخضر على commit الوسم. وتشغيل Codemagic اختياري، ودليل `docs/guides/storage.md` بعد الإصدار.
 
 ## ما لم يُتحقق منه
 
