@@ -231,6 +231,13 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 89. **مؤقت: `?token=` الفارغ على `alt=media` لا رمز**، فتقرر القواعد كما لو غاب المعامل، كالمعاملات الفارغة في GCS (ADR-022 §13). لا يمنح شيئًا لا يمنحه حذف المعامل، والرمز غير الفارغ الذي لا يطابق يبقى 403 بلا قواعد (البند 19). `api/download.go`.
 90. **مؤقت: تنزيل قررته القواعد بلا `Authorization`** (قاعدة تسمح للمجهول) **يحمل `private` أيضًا**، كتنزيل فيه `Authorization` (ADR-022 §10.5)، لا القيمة المخزّنة كرابط الرمز. سلوك الإنتاج غير مقيس، والأشد لا يكون أكثر تساهلًا. `api/download.go` (`media.RulesDecided`).
 
+**أضافها S3-D** (من اختبارات Firebase الرسمية، `test/compat/storage`؛ تفصيلها في `docs/compat/storage-v0.3.md`):
+
+91. **مؤقت: رفع GCS بلا `uploadType` رفع media**، أو multipart إن قالت `X-Goog-Upload-Protocol: multipart` (CT `gcs.endpoints.test.ts`، والمحاكي)؛ وقيمة أخرى للترويسة بلا `uploadType` 400. لا مكتبة رسمية تحذفه. `gcs/gcs.go` (`classifyUpload`).
+92. **مؤقت: `null` في الـ metadata المخصّصة لكائن جديد عبر GCS يُخزَّن `""`** (CT: النسخ؛ والرفع بالقياس)، و`null` في PATCH يحذف المفتاح. و`/v0` واللوحة يحذفانه من الكائن الجديد. `core/insert.go` (`incomingObject`).
+93. **قيد: bucket واحد لكل مشروع ولا XML API** (§2): النسخ إلى bucket آخر 404 كأي bucket غير موجود، ورفع POST policy على `/<bucket>` وقراءة `/<bucket>/<object>` لا تُخدمان. اختبارات المطابقة التي تحتاج bucket ثانيًا تفشل لذلك.
+94. **مؤقت: ردود البدء والقطع والاستعلام والإلغاء على `/v0` بلا جسم** (المحاكي `OK` نصًا)، وكل رد قطعة أو إنهاء يحمل `X-Goog-Upload-Size-Received` لا الاستعلام وحده (A §7). `api/upload.go` (`start`، `writeSession`).
+
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 
 ## البدائل المرفوضة
