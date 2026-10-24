@@ -54,8 +54,8 @@ type App struct {
 	Users       idtoken.Users
 
 	// The Firestore and Storage rules engine's limits, and the one cap on the memory of every
-	// evaluation in the process (ADR-021 §4). Storage takes both with rules.NoDocuments{}, the
-	// rules API's :test the same Inflight in S5.
+	// evaluation in the process (ADR-021 §4). Storage takes both with rules.NoDocuments{}; the
+	// rules API takes the limits alone, since its :test evaluates nothing.
 	RulesLimits   rules.Limits
 	RulesInflight *rules.Inflight
 
@@ -186,7 +186,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		},
 	})
 	mgmtAPI := mgmt.New(svc, auth, logger, mgmt.Options{
-		RTDB: rtdbSvc != nil, Storage: storageSvc != nil, RulesLimits: rulesLimits, Inflight: rulesInflight,
+		RTDB: rtdbSvc != nil, Storage: storageSvc != nil, RulesLimits: rulesLimits,
 	})
 	dashboard, err := web.New(web.Embedded())
 	if err != nil {
