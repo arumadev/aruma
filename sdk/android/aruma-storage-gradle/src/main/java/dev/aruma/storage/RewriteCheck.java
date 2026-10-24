@@ -27,13 +27,16 @@ import org.objectweb.asm.Opcodes;
  * cached transform or another plugin's transform can each leave {@code NetworkRequest} as Google wrote it.
  *
  * <p>It reads the classes under {@code com/google/firebase/storage/} and nothing else. It passes when there is exactly
- * one {@code NetworkRequest}, its static initializer loads the Aruma base exactly once, and no class there still holds
- * {@link StorageBase#GOOGLE}.
+ * one {@code NetworkRequest}, it loads the Aruma base exactly once, in its static initializer, and never Google's, and
+ * no other class there holds Google's host ({@link StorageBase#GOOGLE_HOST}) in any form: a second way to Google would
+ * be one the plugin does not rewrite. NetworkRequest itself is judged by its {@code ldc}s, not its bytes: ASM keeps the
+ * replaced text as an unused constant, which D8 drops. Classes outside firebase-storage are not its concern (aruma-redirect
+ * itself names the host, to redirect it).
  */
 final class RewriteCheck {
     private static final String PACKAGE = "com/google/firebase/storage/";
     private static final String CLASS_FILE = NetworkRequestVisitor.INTERNAL_NAME + ".class";
-    private static final byte[] GOOGLE_BYTES = StorageBase.GOOGLE.getBytes(StandardCharsets.UTF_8);
+    private static final byte[] HOST_BYTES = StorageBase.GOOGLE_HOST.getBytes(StandardCharsets.UTF_8);
 
     private RewriteCheck() {}
 
@@ -50,7 +53,7 @@ final class RewriteCheck {
             if (name.equals(CLASS_FILE)) {
                 copies.add(where);
                 networkRequest[0] = bytes;
-            } else if (indexOf(bytes, GOOGLE_BYTES) >= 0) {
+            } else if (indexOf(bytes, HOST_BYTES) >= 0) {
                 leftovers.add(name + " in " + where);
             }
         };
@@ -84,7 +87,7 @@ final class RewriteCheck {
         }
         if (!leftovers.isEmpty()) {
             throw new IllegalStateException("dev.aruma.storage: classes of firebase-storage other than NetworkRequest hold \""
-                    + StorageBase.GOOGLE + "\", which the plugin does not rewrite: " + leftovers
+                    + StorageBase.GOOGLE_HOST + "\", which the plugin does not rewrite: " + leftovers
                     + ". This firebase-storage is not one the plugin knows.");
         }
     }

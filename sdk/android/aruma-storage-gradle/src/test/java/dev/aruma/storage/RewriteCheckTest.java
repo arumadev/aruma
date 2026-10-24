@@ -91,6 +91,17 @@ public class RewriteCheckTest {
     }
 
     @Test
+    public void theBareHostInAnotherStorageClassFails() throws IOException {
+        byte[] util = Classes.make("com/google/firebase/storage/internal/Util", new String[] {"https://firebasestorage.googleapis.com"},
+                new String[0]);
+        byte[] other = Classes.make("com/google/firebase/storage/Other", new String[0], new String[] {"firebasestorage.googleapis.com"});
+        fails(List.of(jar("storage.jar", NR, rewritten(), "com/google/firebase/storage/internal/Util.class", util)), List.of(),
+                "other than NetworkRequest", "firebasestorage.googleapis.com");
+        fails(List.of(jar("storage2.jar", NR, rewritten())), List.of(dir("classes", "com/google/firebase/storage/Other.class", other)),
+                "other than NetworkRequest", "Other.class");
+    }
+
+    @Test
     public void theTextOutsideFirebaseStorageIsNotItsConcern() throws IOException {
         byte[] other = Classes.make("com/example/Links", new String[] {StorageBase.GOOGLE}, new String[0]);
         RewriteCheck.check(List.of(jar("storage.jar", NR, rewritten(), "com/example/Links.class", other)), List.of(), BASE);
