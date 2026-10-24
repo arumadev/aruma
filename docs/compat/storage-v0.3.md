@@ -102,7 +102,7 @@
 - **الفيديو والصوت تحت `sandbox` و`media-src 'self'`** يُعرضان ويُقفز فيهما تصفحًا مباشرًا وفي `<video>`/`<audio>` من أصل آخر، ومع COEP `require-corp`، في الثلاثة. فلا حاجة لرفع `sandbox` عن الوسائط. وWebKit يطلب بـ `Range` ويأخذ 206.
 - **PDF يُنزَّل** تصفحًا مباشرًا، ولا يُعرض في `<iframe>` ولا `<embed>` من أصل آخر (`X-Frame-Options: DENY`).
 - **CORS:** bucket بلا إعداد يرفض `fetch` و`getBytes` و`getBlob` من أصل آخر، و`cors.json` الموثّق (`{origin: ["*"], method: ["GET"], maxAgeSeconds: 3600}`) يسمح بها ومعها الـ preflight. المكتبة هي `firebase` 13.1.0 (بناء CDN) بـ `connectStorageEmulator` للمضيف وحده، لأن مسار الإنتاج للويب في S6.
-- **Service Worker** من أصل اللوحة يُرفض، وكذلك `<script>` من أصلها، ويُحمَّل `<script>` من أصل تطبيق.
+- **Service Worker** من أصل اللوحة يُرفض، وكذلك `<script>` من أصلها، ويُحمَّل `<script>` من أصل تطبيق. والرفض 403 وحده هو المانع، بالطفرة على Chromium وFirefox (2026-10-24): مع إيقاف `media.refused` يُسجَّل رابط التنزيل Service Worker على أصل Aruma في Firefox (`registered`) فتفشل الحالة 8، ومعه تنجح. والحالة الضابطة في Firefox تسجّل عاملًا من أصل الصفحات، لأن Firefox في Playwright لا يمرر سكربت العامل عبر `route`.
 - **حدود المصفوفة:** H.264 غير موجود في Chromium الذي يوزعه Playwright، فيُفحص فيه WebM (VP9)؛ وWebKit يعلن VP9 ولا يفك منه إطارًا (من Aruma ومن خادم ملفات عادي سواء)، فيُفحص فيه MP4 وحده. والحالة 11 (قنبلة gzip) في اختبارات `media` والقبول لا في المتصفح، والحالة 12 (`file.download()` في Node) لمسار GCS في S4-C.
 
 | # (ADR-023 §3) | الفرق | التصنيف | المصدر | الموضع |
