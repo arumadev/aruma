@@ -12,11 +12,19 @@ package blob
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
 	"time"
 )
+
+// ErrPromotedEarlier is Promote's answer when the staging file is gone and a file is at the
+// key (or both names are one file): an earlier call, cut by a failure or a crash, moved it.
+// Promote has made that file durable, but the store cannot tell it is the session's bytes: the
+// caller hashes the file at the key against the session's size, crc32c and md5 before it
+// commits a row that points to it (ADR-022 §5).
+var ErrPromotedEarlier = errors.New("blob: the staging file was promoted earlier")
 
 // Store holds the bytes. Disk is its one implementation in v0.3; the interface leaves room for an
 // object store, whose staging stays local (ADR-022 §4, §6.3).
@@ -28,7 +36,8 @@ type Store interface {
 	Open(key string) (Reader, error)
 	// Delete removes the file at key; a missing file is not an error.
 	Delete(key string) error
-	// Promote moves a staging file to an object key, durably on return.
+	// Promote moves a staging file to an object key, durably on return. When an earlier call
+	// already moved it, it returns an error that wraps ErrPromotedEarlier (see there).
 	Promote(staging, key string) error
 	// CreateStaging creates a session's staging file. Only an upload's start calls it.
 	CreateStaging(key string) (Staging, error)

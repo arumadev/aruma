@@ -145,6 +145,45 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 36. `etag` يتغير مع PATCH، و`generation` بالميكروثانية، و`x-goog-metageneration` بالتهجئة الصحيحة.
 37. لا تقييم مزدوج للقواعد (ADR-021 §5.4).
 
+**أُضيفت في S2-B (صيغ السلك، ADR-022 العواقب 16-17):**
+
+38. **مؤقت:** `Range` غير صحيح الصيغة يُتجاهل (200 كاملًا)، و`bytes=-0` 416.
+39. **قيد:** `multipart/related` جزءان بالضبط، أولهما `application/json` وبلا ترميز نقل، و`X-Goog-Upload-Command` بأحرف صغيرة، و`Content-Range` بأشكاله الستة ومعها `bytes N-(N-1)/N` (جزء Node الأخير الفارغ، يُقرأ `bytes */N`): غيرها 400. المكتبات الرسمية كلها داخل هذه الحدود: التسجيلات (`test/oracle/storage/emulator`)، وشكل Node الأخير من مراجعة S2-B (`@google-cloud/storage` 8.4.0 يرسل `bytes 0--1/0` لـ `save(Buffer.alloc(0), {chunkSize})`، `resumable-upload.js:619-623`).
+40. **مؤقت:** الـ metadata المخصّصة الفارغة تُحذف من رد `/v0` (المحاكي يكتب `"metadata":{}`)، والمكتبات الثلاث تقرأ الحالتين «بلا metadata» (Android يفحص `has("metadata")` في `StorageMetadata.parseJSON`، وiOS `as? [String: String]`، A §4).
+
+**أُضيفت في S2-F (خدمة البايتات، ADR-022 العواقب 18):**
+
+41. **مؤقت:** `Cache-Control` على وسائط GCS بلا قيمة مخزّنة `private, max-age=0` (GCS لكائن غير عام)، فيقرؤه Go في `ReaderObjectAttrs.CacheControl`.
+42. **قيد:** تنزيل قررته القواعد يحمل `private` دائمًا (يُحذف `public` و`s-maxage`، ويُضاف `private` حين يغيب، فلا يخزّنه مخبأ مشترك ولو كان المخزّن `must-revalidate`). و`Content-Type` مخزّن فيه فاصلة أو غير صالح يُخدم `application/octet-stream`.
+43. **مؤقت:** 304 على `If-None-Match`/`If-Modified-Since` قبل `Range`، و`If-Range` بتاريخ يعيد الكائن كاملًا، وجسم 416 ونصه، وكائن مخزّن gzip ليس gzip يُخدم كما خُزّن.
+
+**أضافها S2-C** (تفصيلها وموضعها في الكود في `docs/compat/storage-v0.3.md`):
+
+44. مؤقت: CORS على `alt=media` يطابق الأصل حرفيًا أو `*`، بلا أنماط داخله. والطريقة حرفيًا أو `*` (أي طريقة، وثيقة GCS).
+45. مؤقت: `pageToken` مربوط أيضًا بـ `startOffset` و`endOffset` والسطح.
+46. مؤقت: `delete_token` لرمز ليس للكائن يرفع الـ metageneration وحده (المحاكي).
+47. قيد: الرموز تُحسب في `metadata_bytes` كما يحملها GCS.
+48. مؤقت: `"metadata": null` على GCS يمسح الرموز معها (دلالة GCS).
+49. قيد: مفاتيح الـ metadata المخصّصة بلا محارف تحكم، ولا NUL في قيمها، ولا DEL في الحقول التي تصير ترويسات.
+50. مؤقت: على `/v0` تُحذف البادئة التي فيها مقطع فارغ قبل فاصلها الأخير، وتبقى `a/bar/` من `a/bar//` (CT). وما يُحذف يُحسب على الصفحة، فقد تأتي صفحة ناقصة أو فارغة ومعها `nextPageToken`.
+
+**أضافها S2-D** (تفصيلها وموضعها في الكود في `docs/compat/storage-v0.3.md`):
+
+51. مؤقت: كل شرط مسبق غير `ifGenerationMatch=0` على كائن غير موجود 412.
+52. مؤقت: الكتابة فوق موجود، أو الإنشاء بعد حذف، لا ترث رموز التنزيل.
+53. مؤقت: قطعة تتجاوز الحجم المعلن أو الكلي في `Content-Range` 400 و`final` (لا 413)، وجسم أقصر من طوله المعلن 400 مع `active`.
+54. قيد: جسم مجهول الطول يحجز الحصة بخطوات 8 MiB تُنصَّف حتى 64 KiB قرب الحد، فتحت التزامن قرب الحصة قد يُرفض رفع كان سيتسع.
+55. مؤقت: على GCS، شرط مسبق يفشل عند إنهاء الرفع المتقطع نهائي (412 محفوظ يُعاد، والبايتات وحجزها تُحرَّر فورًا).
+56. قيد: الجلسات الفارغة تُحسب عند `start` في حدّي IP و`uid`، وأول بايت متين لجلسة يُفحص من جديد على الحدود الثلاثة، وتجاوزها عنده 402 و`final`.
+
+**أضافها S2-E** (ربط القواعد، ADR-022 العواقب 19-20؛ تفصيلها في `docs/compat/storage-v0.3.md`):
+
+57. **مؤقت: ترتيب `metadata` في `resource` و`request.resource` بالمفتاح** (`rules.Map`)، فـ `values()` مرتبة كـ `keys()`. Test API وحدها تحفظ ترتيب الطلب، وهي تأخذ `request` حرفيًا، وjsonb لا يحفظ ترتيبًا، ولا قياس من المحاكي ولا المنشور. فلا تخزين يحفظ الترتيب على استنتاج. `core/rules_fields.go` (`metadataValue`).
+58. **مؤقت: `resource` سبعة عشر مفتاحًا:** الخمسة عشر التي قاسها PY-RR في `request.resource`، و`timeCreated` و`updated` timestamp. والحقل غير المضبوط `null`، و`contentEncoding` غير المضبوط `'identity'` كما قاسه PY-RR في `request.resource` (عند الإنشاء والتعديل)، و`storageClass` = `'STANDARD'`. مجموعة المفاتيح الدقيقة في `resource` لم تُقس. `core/rules_fields.go` (`existing`).
+59. **مؤقت: list ببادئة لا تنتهي بـ `/` يُقرَّر على مجلدها** (ما قبل آخر `/`) ومقطع مجهول، فلا تسمح قاعدة `p/a/{x}` بقائمة `p/a` التي تعيد `p/ab`. المكتبات ترسل `<مسار>/` أو البادئة الفارغة دائمًا. `core/rules.go` (`rulePaths`).
+60. **قيد: اسم بمقاطع أكثر من `request_segments` للـ ruleset** (1024 افتراضيًا مع `b/<bucket>/o`) **يُرفض 403**، لا 503 تعيد المكتبات عليه بلا نهاية. `core/rules.go` (`ruleRequest`، و`Ruleset.RequestSegments`).
+61. **قيد: مصدر قواعد فيه NUL يُرفض 400** (jsonb لا يحفظه). وعدد الـ rulesets لكل مشروع `rules.limits.rulesets_per_project` (2,500 افتراضيًا، ولا يتجاوز حد Firebase، ADR-021 §7). `tenancy/core/rules.go`.
+
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 
 ## البدائل المرفوضة

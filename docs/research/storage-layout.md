@@ -46,7 +46,7 @@
 |---|---|---|
 | `doc.go` | وصف الحزمة: bucket واحد لكل مشروع، والقرارات المؤقتة (ADR-023 §3) بموضعها في الكود | 0 |
 | `api.go` | **العقد العام** (القسم «عقد S2-0»): `Service` **بكل حقوله الخاصة** (فلا تضيف مهمة حقلًا) و`New` و`Options` و`Principal` و`Bucket` و`Object` و`Patch` و`Preconditions` و`Checksums` و`UploadSpec` و`Chunk` و`UploadState` و`ListOptions` و`ListPage` و`CORSRule` و`Usage`، وتوقيعات كل الطرق | 0 |
-| `helpers.go` | **مساعدات مشتركة تعمل من العقد** (لا تذعر)، ليتشاركها C وD وE بلا انتظار: `validateName` و`segments` و`applyDefaults` (ومنها `defaultDisposition`، **دالة الهروب الوحيدة** المطابقة لـ PY-RR) و`StripClientTokens` و`newDownloadToken` و`sealTokens`/`openTokens` (KEK، البيانات الإضافية `(project, name)`)، و`sealSessionTokens`/`openSessionTokens` (`(project, name, id_hash)`)، و`encodeAttrs`/`decodeAttrs` و`encodeSnapshot`/`decodeSnapshot` لصف الجلسة. ولها اختباراتها في العقد. تغييرها يمر بالمدمج | 0 |
+| `helpers.go` | **مساعدات مشتركة تعمل من العقد** (لا تذعر)، ليتشاركها C وD وE بلا انتظار: `validateName` و`segments` و`applyDefaults` (ومنها `defaultDisposition`، على **دالة الهروب الوحيدة** المطابقة لـ PY-RR في `internal/platform/disposition`) و`StripClientTokens` و`newDownloadToken` و`sealTokens`/`openTokens` (KEK، البيانات الإضافية `(project, name)`)، و`sealSessionTokens`/`openSessionTokens` (`(project, name, id_hash)`)، و`encodeAttrs`/`decodeAttrs` و`encodeSnapshot`/`decodeSnapshot` لصف الجلسة. ولها اختباراتها في العقد. تغييرها يمر بالمدمج | 0 |
 | `durability.go` | **مساعد المعاملات الوحيد:** `begin` و`inTx` (`SET LOCAL synchronous_commit TO on`، و`COMMIT` تحت `WithoutCancel`)، تمر به كل معاملة Storage في C وD وE؛ و`warnUnsafeDurability` (`SHOW fsync`) يستدعيه `Boot`؛ و**`releaseObject`** (نقص `used_bytes` و`object_count` وصف `blob_gc`) يستعمله `Delete` في C والكتابة فوق موجود في D | 0 |
 | `metrics.go` | المقاييس (ADR-022 §18) بأسمائها وتسمياتها، ولكل مقياس مالكه في تعليقه، و`Collectors()` يسجّلها `app` | 0 |
 | `errors.go` | الأخطاء المسمّاة (`ErrNotFound` و`ErrBucketNotFound` و`ErrPermissionDenied` …، و`InvalidError{Reason, Message}` و`OffsetError{Received}`). كل واجهة تربطها بحالتها وجسمها. و`finalError`: قائمة الأخطاء النهائية وحدها (§6.1)، و`encodeError` يرفض غيرها | 0 |
@@ -167,13 +167,14 @@
 | `internal/config/config.go` | قسم `storage`: `enabled` و`data_dir` (**إلزامي ومطلق حين Storage مفعّل**) و`limits` (`config.StorageLimits`، ADR-022 §17) و`gc_grace`، ومتغيرات `ARUMA_STORAGE_*`، والفحص والفحوص المتقاطعة في `config` عند التحميل | 0 |
 | `internal/platform/crypto/keys.go` | غرض جديد `aruma/v1/storage-page-token` و`PageTokenMAC`، واختباره | 0 |
 | `internal/platform/idtoken/idtoken.go` | واجهة `Users` (`State(ctx, project, uid)`: موجود، ومعطّل، و`tokensValidAfter`) | 0، وتنفيذها في `internal/services/auth/core` في S2-D |
+| `internal/platform/disposition/` **جديد** (لم يكن في المسودة) | هروب اسم الملف في `Content-Disposition` (`filename*`، حالة PY-RR)، بـ Go القياسية وحدها، يستورده `core` و`media`، وفي `stdlibOnly` في archtest | دمج S2 |
 | `internal/server/server.go` | `Handlers.Storage` و`Handlers.GCS`، والبادئات (ADR-022 §1)، وتركيبهما بـ `CommonWithLimit` بحد `object_bytes + 1 MiB`، و`/v1/` و`/v1alpha/` لـ `Mgmt`. وحالات في اختبار جدول البادئات | 0 |
 | `internal/app/app.go` | `core.New` بـ `blob.NewDisk(cfg.Storage.DataDir)` و`rules.NoDocuments{}` و`rulesInflight` و`svc` (tenancy) و`idtoken.Users` من Auth، و`svc.OnProjectPurged(storageSvc.PurgeProject)`، و**`storageSvc.Boot(ctx)` قبل فتح المستمع** في `Serve`، و`go storageSvc.Run(ctx)` بعده، وتركيب `api` و`gcs` و`console.Routes`. **كله في S2-0** (بأجسام تذعر)، فلا تلمسه المهام بعدها إلا عبر المدمج | 0 |
 | `internal/admin/mgmt/rules.go` **جديد** | firebaserules v1 (R1 إلى R8، C §1.5) فوق `tenancy`، و`:test` بـ `rules.Compile` و`Inflight` نفسه | S5-A |
 | `internal/admin/mgmt/storage.go` **جديد** | `GET /v1alpha/projects/{p}/defaultBucket`، و`GET /v1beta/projects/{p}/buckets`، و`GET /v1/projects/{p}/services/{name}` (`ENABLED`) و`:enable` | S5-A |
 | `internal/app/testdata/console_routes.txt` | مسارات الكونسول الجديدة، بـ `-update` ومراجعة الفرق | S5-B |
 | `dashboard/src/features/storage/` **جديد** | الملفات (والرفع ببروتوكول `/v0` إلى رابط الجلسة التي تصدرها اللوحة)، ومحرر القواعد (أخطاء `issues[]` على الأسطر)، والإعدادات (CORS)، والاستعمال | S5-C |
-| `internal/admin/web/web.go` | **تضييق CSP اللوحة** إلى مصادر بمسار (`<origin>/_next/static/`) حيث أمكن، والثمن مكتوب (ADR-022 §10.1) | S5-C |
+| `internal/admin/web/web.go` | **تضييق CSP اللوحة إلزامًا:** `script-src` و`style-src` إلى مصادر بمسار (`<origin>/_next/static/`) لا `'self'`، فهي الحماية الوحيدة على HTTP العادي حيث لا ترسل المتصفحات `Sec-Fetch-*` (ADR-022 §10.1) | S5-C |
 | `test/acceptance/storage_*_test.go` **جديد** | فوق خادم حقيقي وPostgres: كل عملية `/v0` وGCS، والانهيار المحاكى (قتل العملية بين الخطوات في `tools/storage-chaos`، اختياري في S7) | S3، S4 |
 | `test/acceptance/isolation_storage_*_test.go` | حالات Storage (ADR-022 §3)، **ملف لكل مالك**: `isolation_storage_test.go` (العقد: bucket لكل مشروع)، و`_s2c_` (رمز التنزيل و`pageToken`)، و`_s2d_` (رابط الرفع)، و`_s2e_` (الـ ruleset)، و`_s4a_` (حساب الخدمة وrewrite) | 0، C، D، E، S4-A |
 | `test/acceptance/harness_test.go` | `startStorage`: `Boot` ثم `Run` ثم `Close` كما يفعل `Serve`، والاختبار يُتخطى باسم المالك حتى يكتب S2-D `Boot` (`storage_boot_test.go`) | 0 |
@@ -200,7 +201,7 @@
 - **`wire` بلا `core`:** الصيغ قيم بسيطة، والتحويل من `core.Object` في كل واجهة (`resource.go`)، لأن `/v0` وGCS يختلفان في الرموز و`contentEncoding` والأرقام.
 - **`rules_fields.go` جدول منفصل:** مفاتيح `request.resource` و`resource` تُطابَق بأوراكل منشور، وتتغير وحدها إن ظهرت ملاحظة جديدة.
 - **كل كتابة تجعل ملفًا مرئيًا في D:** `commitObject` و`Insert` والإنهاء و**`Rewrite`**، فلا ينتظر C شيئًا من D. والمساعدات التي يحتاجها C وD وE معًا (الأسماء، والمقاطع، والقيم الافتراضية، وتنقية الرموز، وتوليدها وختمها) **تعمل من العقد** في `helpers.go`، كما عملت `position` من عقد S1-0، فلا ينتظر D ولا E شيئًا من C.
-- **دالة هروب واحدة** لـ `Content-Disposition` الافتراضي، في `core/helpers.go`.
+- **دالة هروب واحدة** لـ `Content-Disposition` الافتراضي، في `internal/platform/disposition` (Go القياسية وحدها)، يستوردها `core` للقيمة المخزّنة و`media` لـ `attachment` كائن بلا قيمة، لأن أحدهما لا يستورد الآخر. (تعديل، دمج S2: كانت في `core/helpers.go`، وكتبها `media` مرة ثانية.)
 - **لا واجهة `Service` مجردة بين `api` و`core`:** كما في RTDB، الاختبارات فوق `core` حقيقية وPostgres (`storetest`)، لا مزيفات.
 
 ## عقد S2-0 (يسبق الجميع)
@@ -347,7 +348,7 @@ func (s *Service) authorize(ctx context.Context, b Bucket, p Principal, op ruleO
 func validateName(name string) error
 func segments(name string) []string
 func applyDefaults(o *Object, sf Surface)             // contentType, and defaultDisposition on SurfaceFirebase
-func defaultDisposition(name string) string           // the one escaping function (PY-RR)
+func defaultDisposition(name string) string           // through platform/disposition, the one escaping (PY-RR)
 func StripClientTokens(md map[string]*string)
 func newDownloadToken() string
 func (s *Service) sealTokens(project int64, name string, tokens []string) ([]byte, error)
@@ -397,6 +398,14 @@ type ruleOp struct { Method rules.Method; Name string; List bool; Resource, Inco
 - **المقاييس في العقد** (§18، `core/metrics.go`): أسماؤها وتسمياتها ثابتة، ولكل مقياس مالكه في تعليقه (D للجلسات والحصة والقرص وGC والمسح والالتزامات الملتبسة والقفل، وE للقواعد، وS3/S4 للبايتات وفك الضغط المقطوع)، ويسجّلها `app` على سجل الخادم، وتبقى صفرًا حتى يبلّغ مالكها.
 - **`ctx` في `core.New`** لا يُستعمل اليوم، و`app.New` يمرر `context.Background()`.
 
+#### قرارات S2-E (لم تكن في المسودة)
+
+- **`prepareRules` قبل كل قرار، وقبل أي معاملة:** `ctx, err := s.prepareRules(ctx, b, p)`، ثم `authorize` بهذا الـ `ctx`. و`authorize` لا يقرأ الإصدارة أبدًا: بلا العلامة يسجّل خطأ ويرد `ErrUnavailable`، مع `authorizeHook` أيضًا، فتكشف اختبارات C وD النداء المنسي. فلا تأخذ قرارًا تحت قفل صف اتصالًا ثانيًا من المجمّع (وإلا تقف الكتابات حين يمتلئ). على C في `Stat` و`Open` و`List` و`Update` و`Delete` والرموز، وعلى D في `Insert` والإنهاء و`Rewrite` (للـ bucketين). وAdmin يأخذ العلامة بلا قراءة. `TestDecidingUnderALockNeedsNoConnection` (مجمّع من اتصالين) و`TestAuthorizeWithoutPrepareRulesFails`. وتحميل الإصدارة المشترك يجري تحت `WithoutCancel` بمهلة 10 ثوانٍ، وكل منتظر يتوقف بسياقه.
+- **ذاكرة `CompiledRelease` معلّقة بمفتاح ضعيف على `*tenancy.Service`** في `tenancy/core/rules.go`، لأن حقول `Service` من العقد (`service.go`). تزول مع الخدمة (`runtime.AddCleanup`).
+- **`etag` في القواعد** يُحسب في `core/rules_fields.go` (`objectETag`) بصيغة `wire.ETag` نفسها (S2-B)، فـ `core` لا تستورد `wire`. وأي تغيير في إحداهما يغيّر الأخرى.
+- **الإصدارة الغائبة لا تُكتب صفًا:** `CompiledRelease` يعيد القاعدة المقفلة المترجمة مرة واحدة، و`GetRelease` يرد NOT_FOUND، فتكتب firebase-tools القالب (C §2.2).
+- **`PublishRelease`** يقبل اسم الـ ruleset كاملًا (بمعرّف المشروع أو رقمه) أو الـ uuid وحده، ويرفض ruleset خدمة أخرى لإصدارتَي Storage و`cloud.firestore`. و`firebase.storage/default` من الخارج NOT_FOUND كأي bucket آخر.
+
 ## المهام
 
 ### S2: النواة (بعد S2-0، متوازية)
@@ -437,7 +446,7 @@ type ruleOp struct { Method rules.Method; Name string; List bool; Resource, Inco
 |---|---|---|
 | **S5-A: واجهات الأداة** | `internal/admin/mgmt/rules.go` و`storage.go`، واختباراتهما | كل طلب في C §1.5 و§1.3 و§1.4 بالحالة 200 حرفيًا وأشكاله، و`:test` بـ `issues[]` على الخطأ |
 | **S5-B: واجهة اللوحة** | `internal/services/storage/console/`، و`console_routes.txt` | كل مسار يطلب اعتمادًا (ADR-010 S-4) ويمر بـ CSRF، ومسار إصدار جلسة الرفع يعيد رابط `/v0` بهوية Admin وحساب اللوحة، بعمر ساعة وحجم معلن إلزامي، ويُكتب الإصدار والإنهاء في سجل التدقيق، ولا مسار كونسول يقبل جسمًا فوق 1 MiB، والتنزيل `attachment` دائمًا بترويسات `media` |
-| **S5-C: الواجهة** | `dashboard/src/features/storage/`، وتضييق CSP في `internal/admin/web/web.go` | الملفات (تصفح، ورفع متقطع كبير بجلسة تصدرها اللوحة وقطع إلى `/v0`، وحذف، وmetadata، ورموز)، ومحرر القواعد بأخطائه على الأسطر، وCORS، والاستعمال. وe2e في Playwright |
+| **S5-C: الواجهة** | `dashboard/src/features/storage/`، وتضييق CSP في `internal/admin/web/web.go` | **CSP اللوحة بلا `'self'` في `script-src` و`style-src`** (مصادر بمسار `<origin>/_next/static/` وحدها، واختبار يثبتها)، والملفات (تصفح، ورفع متقطع كبير بجلسة تصدرها اللوحة وقطع إلى `/v0`، وحذف، وmetadata، ورموز)، ومحرر القواعد بأخطائه على الأسطر، وCORS، والاستعمال. وe2e في Playwright |
 | **S5-D: أداة `firebase`** | e2e في `test/acceptance` أو `test/e2e/cli-storage` | `firebase init storage` يكتب القالب أو القواعد المنشورة، و`firebase deploy --only storage` ينشر وتطبَّق القواعد فورًا على `/v0`، والنشر الثاني بلا تغيير «already up to date»، وخطأ ترجمة يطبع `[E] line:column` |
 
 ### S6: مسار الإنتاج لكل منصة (يبدأ بعد S3-B على خادم يعمل)

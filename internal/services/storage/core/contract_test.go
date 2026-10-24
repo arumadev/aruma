@@ -535,25 +535,6 @@ func TestNew(t *testing.T) {
 	}
 }
 
-// Until S2-E, only admins pass, unless a test decides.
-func TestAuthorizeBeforeTheRules(t *testing.T) {
-	ctx := context.Background()
-	s := &Service{}
-	op := ruleOp{Method: rules.MethodGet, Name: "a.png", Surface: SurfaceFirebase}
-	if err := s.authorize(ctx, Bucket{}, Principal{Kind: PrincipalAdmin}, op); err != nil {
-		t.Errorf("an admin: %v", err)
-	}
-	for _, k := range []PrincipalKind{PrincipalAnonymous, PrincipalUser} {
-		if err := s.authorize(ctx, Bucket{}, Principal{Kind: k}, op); err != ErrPermissionDenied {
-			t.Errorf("kind %d: %v", k, err)
-		}
-	}
-	s.authorizeHook = func(context.Context, Bucket, Principal, ruleOp) error { return nil }
-	if err := s.authorize(ctx, Bucket{}, Principal{}, op); err != nil {
-		t.Errorf("with a hook: %v", err)
-	}
-}
-
 func TestNames(t *testing.T) {
 	for v, want := range map[fmt.Stringer]string{SurfaceFirebase: "firebase", SurfaceGCS: "gcs", SurfaceConsole: "console", Surface(0): "invalid",
 		UploadActive: "active", UploadFinal: "final", UploadCancelled: "cancelled", UploadStatus(0): "invalid"} {

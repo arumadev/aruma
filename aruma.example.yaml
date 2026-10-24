@@ -62,6 +62,7 @@ rules:                             # Firestore and Storage security rules (ADR-0
     lookups_per_operation: 10      # documents one Firestore operation reads (get, exists)
     lookups_per_request: 20        # documents a Firestore batch or transaction reads
     storage_lookups: 2             # Firestore documents one Storage request reads
+    rulesets_per_project: 2500     # the rulesets one project keeps
     # Aruma's limits: they protect the server from hostile rules, and may be set freely.
     member_chain: 2000             # a chain of .field and [index]
     work: 67108864                 # work units of one evaluation (patterns, collections)

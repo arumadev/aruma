@@ -54,12 +54,33 @@ type Limits struct {
 	DecompressedBytes int64
 	// MinBytesPerSecond is the slowest a client may read before the write deadline cuts it.
 	MinBytesPerSecond int64
+	// Cut, if not nil, is told why a reply failed after its headers, just before Serve
+	// aborts the handler: the place to count it (ErrDecompressedTooLarge is
+	// core.Metrics.DecompressionsCut).
+	Cut func(err error)
 }
 
 // Serve writes the object's bytes from body with the headers of its mode, or refuses the
 // request (403 for service workers, and for scripts, styles, workers and xslt loaded from the
 // dashboard's own origin, ADR-022 §10.1). It returns why serving stopped early, for the
 // metrics: nil when the reply was complete.
+//
+// A complete reply includes a refusal, a 416 and a 304. Serve returns an error only before the
+// status line, when w is untouched and the caller may still answer (a body that cannot seek).
+// After it, a failure (the body ended or failed, the client stopped reading, the request's
+// context ended, or gzip decompression passed lim.DecompressedBytes: ErrDecompressedTooLarge)
+// is passed to lim.Cut, and Serve then panics with http.ErrAbortHandler, which cuts the
+// connection (HTTP/1) or resets the stream (HTTP/2). The headers are gone by then, and a
+// decompressed reply has no Content-Length, so a handler that returned normally would close a
+// chunked body as if it were whole; Serve does not leave that to its callers.
+//
+// Serve lifts the server's write deadline itself, through http.ResponseController, a window
+// at a time (pace.go): a client that reads fewer than lim.MinBytesPerSecond × 30 bytes in a
+// 30 seconds window is cut. The caller sets nothing; on a writer without deadlines (a test
+// recorder) the pacing is off.
+//
+// Serve reads body from its start, never all at once: memory is a few buffers of 32 KiB
+// whatever the object's size or its decompressed size.
 func Serve(w http.ResponseWriter, r *http.Request, it Item, body io.ReadSeeker, m Mode, lim Limits) error {
-	panic("S2-F: Serve")
+	return serve(w, r, it, body, m, lim)
 }

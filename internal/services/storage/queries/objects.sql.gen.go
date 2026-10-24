@@ -7,7 +7,42 @@ package queries
 
 import (
 	"context"
+	"encoding/json"
+	"time"
 )
+
+const deleteObject = `-- name: DeleteObject :one
+DELETE FROM storage.objects
+WHERE project_number = $1 AND name = $2
+    AND generation = $3 AND metageneration = $4
+RETURNING blob_key, size
+`
+
+type DeleteObjectParams struct {
+	ProjectNumber  int64
+	Name           string
+	Generation     int64
+	Metageneration int64
+}
+
+type DeleteObjectRow struct {
+	BlobKey string
+	Size    int64
+}
+
+// The generation the delete was authorized on; its file goes to blob_gc in the same
+// transaction (releaseObject).
+func (q *Queries) DeleteObject(ctx context.Context, arg DeleteObjectParams) (DeleteObjectRow, error) {
+	row := q.db.QueryRow(ctx, deleteObject,
+		arg.ProjectNumber,
+		arg.Name,
+		arg.Generation,
+		arg.Metageneration,
+	)
+	var i DeleteObjectRow
+	err := row.Scan(&i.BlobKey, &i.Size)
+	return i, err
+}
 
 const getBucketSettings = `-- name: GetBucketSettings :one
 SELECT project_number, cors, metageneration, updated FROM storage.buckets WHERE project_number = $1
@@ -35,9 +70,168 @@ type GetObjectParams struct {
 	Name          string
 }
 
-// The contract's queries (S2-0). S2-C adds the object, list, token and CORS statements here.
+// The object, list, token and CORS statements (S2-0's reads, then S2-C's). Every change to a
+// row is conditional on the generation and metageneration its caller read, decided on and
+// authorized: no row back means the row changed in between, and the caller reads it again.
 func (q *Queries) GetObject(ctx context.Context, arg GetObjectParams) (StorageObject, error) {
 	row := q.db.QueryRow(ctx, getObject, arg.ProjectNumber, arg.Name)
+	var i StorageObject
+	err := row.Scan(
+		&i.ProjectNumber,
+		&i.Name,
+		&i.Generation,
+		&i.Metageneration,
+		&i.BlobKey,
+		&i.Size,
+		&i.Md5,
+		&i.Crc32c,
+		&i.ContentType,
+		&i.ContentEncoding,
+		&i.ContentDisposition,
+		&i.ContentLanguage,
+		&i.CacheControl,
+		&i.Metadata,
+		&i.DownloadTokens,
+		&i.TimeCreated,
+		&i.Updated,
+	)
+	return i, err
+}
+
+const listObjects = `-- name: ListObjects :many
+SELECT project_number, name, generation, metageneration, blob_key, size, md5, crc32c, content_type, content_encoding, content_disposition, content_language, cache_control, metadata, download_tokens, time_created, updated FROM storage.objects
+WHERE project_number = $1 AND name >= $2 AND name < $3
+ORDER BY name
+LIMIT $4
+`
+
+type ListObjectsParams struct {
+	ProjectNumber int64
+	FromName      string
+	BeforeName    string
+	MaxRows       int32
+}
+
+// One seek of the list's index walk (ADR-022 §13): the names in [from_name, before_name), in
+// byte order (COLLATE "C"). A prefix found in them makes the next seek start past it.
+func (q *Queries) ListObjects(ctx context.Context, arg ListObjectsParams) ([]StorageObject, error) {
+	rows, err := q.db.Query(ctx, listObjects,
+		arg.ProjectNumber,
+		arg.FromName,
+		arg.BeforeName,
+		arg.MaxRows,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StorageObject{}
+	for rows.Next() {
+		var i StorageObject
+		if err := rows.Scan(
+			&i.ProjectNumber,
+			&i.Name,
+			&i.Generation,
+			&i.Metageneration,
+			&i.BlobKey,
+			&i.Size,
+			&i.Md5,
+			&i.Crc32c,
+			&i.ContentType,
+			&i.ContentEncoding,
+			&i.ContentDisposition,
+			&i.ContentLanguage,
+			&i.CacheControl,
+			&i.Metadata,
+			&i.DownloadTokens,
+			&i.TimeCreated,
+			&i.Updated,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const setBucketCORS = `-- name: SetBucketCORS :one
+INSERT INTO storage.buckets (project_number, cors, metageneration, updated)
+VALUES ($1, $2, 2, $3)
+ON CONFLICT (project_number) DO UPDATE SET
+    cors = EXCLUDED.cors, metageneration = storage.buckets.metageneration + 1,
+    updated = GREATEST(EXCLUDED.updated, storage.buckets.updated)
+RETURNING project_number, cors, metageneration, updated
+`
+
+type SetBucketCORSParams struct {
+	ProjectNumber int64
+	Cors          json.RawMessage
+	Now           time.Time
+}
+
+// The bucket's settings row, created on its first change: metageneration 1 is the bucket
+// before any change, so the first one makes it 2 (BucketInfo).
+func (q *Queries) SetBucketCORS(ctx context.Context, arg SetBucketCORSParams) (StorageBucket, error) {
+	row := q.db.QueryRow(ctx, setBucketCORS, arg.ProjectNumber, arg.Cors, arg.Now)
+	var i StorageBucket
+	err := row.Scan(
+		&i.ProjectNumber,
+		&i.Cors,
+		&i.Metageneration,
+		&i.Updated,
+	)
+	return i, err
+}
+
+const updateObject = `-- name: UpdateObject :one
+UPDATE storage.objects SET
+    metageneration = metageneration + 1,
+    content_type = $1, content_encoding = $2,
+    content_disposition = $3, content_language = $4,
+    cache_control = $5, metadata = $6, download_tokens = $7,
+    updated = GREATEST($8::timestamptz, updated)
+WHERE project_number = $9 AND name = $10
+    AND generation = $11 AND metageneration = $12
+RETURNING project_number, name, generation, metageneration, blob_key, size, md5, crc32c, content_type, content_encoding, content_disposition, content_language, cache_control, metadata, download_tokens, time_created, updated
+`
+
+type UpdateObjectParams struct {
+	ContentType        *string
+	ContentEncoding    *string
+	ContentDisposition *string
+	ContentLanguage    *string
+	CacheControl       *string
+	Metadata           json.RawMessage
+	DownloadTokens     []byte
+	Now                time.Time
+	ProjectNumber      int64
+	Name               string
+	Generation         int64
+	Metageneration     int64
+}
+
+// A metadata change (PATCH), a token change (create_token, delete_token, a GCS patch of
+// firebaseStorageDownloadTokens), or the token an authorized /v0 read mints: one statement, a
+// new metageneration, and the same generation (ADR-022 §9, §12). Two readers that race to mint
+// read the same metageneration, so only one of them writes: exactly one token.
+func (q *Queries) UpdateObject(ctx context.Context, arg UpdateObjectParams) (StorageObject, error) {
+	row := q.db.QueryRow(ctx, updateObject,
+		arg.ContentType,
+		arg.ContentEncoding,
+		arg.ContentDisposition,
+		arg.ContentLanguage,
+		arg.CacheControl,
+		arg.Metadata,
+		arg.DownloadTokens,
+		arg.Now,
+		arg.ProjectNumber,
+		arg.Name,
+		arg.Generation,
+		arg.Metageneration,
+	)
 	var i StorageObject
 	err := row.Scan(
 		&i.ProjectNumber,

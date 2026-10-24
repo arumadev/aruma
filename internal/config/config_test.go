@@ -316,6 +316,7 @@ func TestRulesLimitsRejectBadValues(t *testing.T) {
 		{"ARUMA_RULES_EXPRESSION_DEPTH", "99", "rules.limits.expression_depth"},
 		{"ARUMA_RULES_LOOKUPS_PER_REQUEST", "21", "rules.limits.lookups_per_request"},
 		{"ARUMA_RULES_STORAGE_LOOKUPS", "3", "rules.limits.storage_lookups"},
+		{"ARUMA_RULES_RULESETS_PER_PROJECT", "2501", "rules.limits.rulesets_per_project"},
 		{"ARUMA_RULES_SOURCE_BYTES", "1000000", "rules.limits.source_bytes"},
 		{"ARUMA_RULES_INFLIGHT_BYTES", "0", "rules.limits.inflight_bytes must be at least 1"},
 		{"ARUMA_RULES_WORK", "-5", "rules.limits.work must be at least 1"},

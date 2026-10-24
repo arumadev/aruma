@@ -252,12 +252,18 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 	if err != nil {
 		return err
 	}
+	// The pool closes last, after every service has drained its writes on it (below).
 	defer pool.Close()
 	if err := store.CheckCurrent(ctx, pool); err != nil {
 		return err
 	}
 	if !cfg.SecureCookies() {
 		logger.Warn("public_url is plain http on a non-loopback host: console cookies will not be Secure; put the server behind https")
+		if cfg.Storage.Enabled {
+			// Browsers send no Fetch Metadata over plain http, so media's refusal of an
+			// uploaded script loaded from the dashboard's origin never fires (ADR-022 §10.1).
+			logger.Warn("storage is enabled on plain http: browsers send no Sec-Fetch-* headers, so an uploaded file loaded as a script or style from the dashboard's origin is not refused; put the server behind https")
+		}
 	}
 	if cfg.RTDB.Enabled && cfg.RTDB.Domain == "" && cfg.PublicBaseURL().Scheme == "https" {
 		// ADR-018: ?ns= on the main host breaks the iOS, Admin Go and Admin Python SDKs.
@@ -273,6 +279,11 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 	if err := a.AnnounceSetup(ctx); err != nil {
 		return err
 	}
+	// Everything started below ends with the server: on a cancelled ctx, and also when the
+	// server stops by itself (a listen that fails, a listener that breaks), which ctx alone would
+	// not say, so Storage's Run would hold its gate and Close would wait for it in vain.
+	ctx, endWork := context.WithCancel(ctx)
+	defer endWork()
 	if a.Storage != nil {
 		// Before the listener opens (ADR-022 §5.1): the data directory's lock, which a new
 		// instance waits for while the old one runs, its binding to this database, the list of
@@ -287,18 +298,15 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 				logger.Error("storage", "error", err)
 			}
 		}()
-		// Once the server has drained its requests, the data directory's lock goes, and the next
-		// instance may take it.
-		defer func() {
-			if err := a.Storage.Close(); err != nil {
-				logger.Warn("storage: close", "error", err)
-			}
-		}()
 	}
 	go a.housekeeping(ctx)
 	go a.Auth.RunMailer(ctx)
 	logger.Info("starting aruma", "version", version, "public_url", cfg.PublicBaseURL().String())
 	runErr := a.Server.Run(ctx)
+	endWork()
+	// The shutdown, once the server has drained its requests and the background work is told to
+	// end: each data service finishes its writes while the pool is still open, and the pool
+	// closes only after both (its defer).
 	if a.RTDB != nil {
 		// The connections are closed and their onDisconnect writes queued; let the writers
 		// finish them.
@@ -306,6 +314,13 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 		defer cancel()
 		if err := a.RTDB.Close(stop); err != nil {
 			logger.Warn("rtdb: shutdown", "error", err)
+		}
+	}
+	if a.Storage != nil {
+		// Storage waits for its writes in flight and for Run, then releases the data
+		// directory's lock, and the next instance may take it (ADR-022 §5.1).
+		if err := a.Storage.Close(); err != nil {
+			logger.Warn("storage: close", "error", err)
 		}
 	}
 	if runErr != nil {

@@ -26,7 +26,7 @@
 //  12. A wrong offset is 400 and active (OffsetError), a size other than declared 400 and final
 //     (ErrSizeMismatch): uploads.go, api/upload.go.
 //  13. Content-Disposition attachment on download without a stored value: media/headers.go; the
-//     escaping of the stored default: defaultDisposition (helpers.go).
+//     escaping, of the stored default and of that attachment: internal/platform/disposition.
 //  14. Authorization on chunks is ignored: api/upload.go.
 //  15. CORS * on the API's replies and preflights: api/cors.go.
 package core

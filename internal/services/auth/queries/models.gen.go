@@ -290,6 +290,22 @@ type ControlProject struct {
 	ExpireTime     *time.Time
 }
 
+type ControlRulesRelease struct {
+	ProjectNumber int64
+	Name          string
+	RulesetID     uuid.UUID
+	CreateTime    time.Time
+	UpdateTime    time.Time
+}
+
+type ControlRuleset struct {
+	ProjectNumber int64
+	RulesetID     uuid.UUID
+	Service       string
+	Files         json.RawMessage
+	CreateTime    time.Time
+}
+
 type ControlServiceAccount struct {
 	ID            uuid.UUID
 	ProjectNumber int64
