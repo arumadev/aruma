@@ -8,5 +8,15 @@
 // STORAGE_EMULATOR_HOST, whose mode sends no credential, and builds download URLs in the one
 // form every platform resolves: https://<aruma>/v0/b/<bucket>/o/<path>?alt=media&token=<token>.
 //
-// It is its own module, and imports nothing of the server. S4-D writes it.
+// The one line a server changes:
+//
+//	client, err := app.Storage(ctx)                 // before
+//	client, err := adminstorage.NewClient(ctx)      // after
+//
+// Client.Bucket and Client.DefaultBucket return the official *storage.BucketHandle, so the code
+// after that line stays as it is. Do not pass option.WithEndpoint to firebase.NewApp instead:
+// firebase-admin-go hands the app's options to every service, and Cloud Messaging then posts to
+// <aruma>/storage/v1//projects/…/messages:send (docs/research/storage-production-path.md).
+//
+// It is its own module, and imports nothing of the server.
 package adminstorage
