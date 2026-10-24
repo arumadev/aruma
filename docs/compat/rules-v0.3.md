@@ -161,7 +161,9 @@ S1-E، 2026-10-24، `cloud-firestore-emulator` v1.22.0، `-n 1000 -depth 5` (و�
 |---|---|---|---|
 | `debug(x)` | خطأ تقييم «Function not found error: Name: [debug].»، أي رفض ما لم يمتصه `\|\|` | Test API: حالتا S0-A `aruma/errors/debug_function` و`aruma/storage/debug`، وhidane D113. المرجع يقول «has no effect in production»، والمحاكي يعيد وسيطه | إن أعاد المنشور وسيطه صارت `debug` في `callFunction` (`library.go`) دالة هوية |
 | الأعداد في `request.auth.token` | العدد الصحيح الذي يتسع له int64 يصير `int`، سواء كُتب `2` أو `2.0`، والباقي `float`. ومنه `exp` و`iat` و`auth_time` | Test API (مسابير المراجعة، 2026-10-24): `level: 2` و`2.0` و`m.n: 3` و`l[0]: 3` كلها `is int`، و`2.5` `is float`. وTest API يأخذ `request` كما يُرسل، لا من رمز حقيقي | قياس بطلب حقيقي برمز ID من مكتبة Firebase. إن جعل المنشور الأعداد المخصّصة `float` تغيّرت `claimValue` (`auth.go`) |
-| `debug()` بعدد وسائط غير واحد | يُترجم بتحذير «Incorrect number of arguments supplied to function: debug.» عند اسمها، ثم خطأ التقييم نفسه | Test API: `debug(1, 2)` (مراجعة S1-B)، ومثله `math.abs(1, 2)` في `production/raw/math.json` | يتبع حكم `debug(x)` أعلاه |
+| `debug()` بعدد وسائط غير واحد | يُترجم بتحذير «Incorrect number of arguments supplied to function: debug.» عند اسمها، ثم خطأ التقييم نفسه | مقيس على Test API (مسبار S1-E `arity.mjs`): `debug(1, 2)` و`debug()` يحذّران عند L5:21، و`debug(1)` لا، والثلاثة «Function not found» عند التقييم | يتبع حكم `debug(x)` أعلاه |
+| ترتيب الخريطة في قيم الخدمة | `values()` بترتيب المصدر، والربط يبنيها بـ `rules.MapInOrder` | Test API وحدها (`keyOrder`، و`upload-primitives-boundaries` 181-183)، وهي تأخذ `request` حرفيًّا، فلا يثبت ما تفعله الخدمة | **على S2:** ترتيب بيانات Storage الوصفية مؤقت حتى يقيسه تسجيل من المحاكي (أو المنشور). إن رتّبها المصدر صارت `rules.Map` |
+| `get()` لمستند غائب | `null`، و`exists()` له `false` | مرجع `rules.firestore` والمحاكي، لا الإنتاج (`parity-exceptions.md`) | تسجيل منشور يفصل بين `null` والخطأ |
 
 ### محسومة بالإنتاج
 
@@ -192,10 +194,12 @@ S1-E، 2026-10-24، `cloud-firestore-emulator` v1.22.0، `-n 1000 -depth 5` (و�
 
 ### فروق مقصودة
 
+- **تحذيرات عدد الوسائط:** الإنتاج يحذّر من عدد وسائط خاطئ في كل دالة وطريقة يعرف نوعها، والمحرك في المقيس وحده:
+  `debug` و`math.abs` و`size` و`lower` (مسبار S1-E). التحذير لا يغيّر الترجمة ولا القرار.
 - **`'x'[float(…)]`:** الإنتاج والمحاكي يجيبان 500 عند الترجمة (مسبار S1-E و`rules-diff` البذرة 2)، والمحرك يترجم
   ويرفض عند التقييم. لا نقلّد عطلًا داخليًا لا نعرف حدوده.
 - **نمط حرفي غير صالح في `replace()`** خطأ تقييم يمتصه `||`، وفي `matches()` و`split()` خطأ ترجمة، كما في الإنتاج
-  (مسبار S1-E: `'('` و`'(?=b)'` و`'(a)\\1'`). ونمط حرفي فوق حد Aruma للتعليمات في `replace()` كذلك خطأ تقييم.
+  (مسبار S1-E: `'('` و`'(?=b)'` و`'(a)\\1'`). أما نمط حرفي فوق حد Aruma للتعليمات فخطأ ترجمة في الدوال الثلاث، `replace()` معها: الحد حدنا لا نحو الإنتاج.
 
 *يكتبها S1-E وS7: حدود Aruma (ADR-021 §4) حيث تمنع ما يقبله Firebase، والتحذيرات التي لا نصدرها، والنشر الفوري.*
 
@@ -212,13 +216,13 @@ S1-E، 2026-10-24، `cloud-firestore-emulator` v1.22.0، `-n 1000 -depth 5` (و�
 | نص بصيغة RFC 3339 يصير timestamp، ونص يبدأ بـ `/databases/` يصير path، و`{latitude, longitude}` يصير latlng | `aruma/encoding/json_ts_string_is_timestamp`، `aruma/hidane-conditions/rules/11`، `145`، `150` | نعم |
 | تحاكي `get()` و`exists()` كلًّا وحدها: `exists()` بـ `false` مع `get()` بمستند للمسار نفسه | `pyric/firestore/simcase-mock-and-path-fidelity/1` | لا: المستند الحقيقي موجود أو غائب، والمحرك يقرؤه مرة للاثنتين |
 | بعد الكتابة: `getAfter(request.path)` هو `request.resource`، و`existsAfter` صحيح في الإنشاء وخطأ في الحذف، وغيره من المستندات كما تحاكيه `get()`/`exists()` | Pyric `get-after-and-exists-after`، `atomic-batch-sibling-merge` | نعم: الربط يبنيه كذلك، وهو ما تعطيه الخدمة |
-| تحفظ ترتيب الخرائط كما أُرسلت، و`values()` يتبعه (و`keys()` مرتبة) | Pyric `required-fields-and-mapdiff` (keyOrder)، `upload-primitives-boundaries` 181-183 | نعم: الربط يقرأ JSON بترتيبه (`rules.MapInOrder`)؛ وعلى ربط Storage في S2 أن يحفظ ترتيب البيانات الوصفية |
+| تحفظ ترتيب الخرائط كما أُرسلت، و`values()` يتبعه (و`keys()` مرتبة) | Pyric `required-fields-and-mapdiff` (keyOrder)، `upload-primitives-boundaries` 181-183 | نعم: الربط يقرأ JSON بترتيبه (`rules.MapInOrder`). وما تفعله الخدمة مؤقت («قرارات مؤقتة») |
 | نتيجة `get()` المحاكاة بلا `id` ولا `__name__` | `aruma/storage/fs_get_id`، `aruma/storage/fs_get_name` | لا: الإنتاج يسمّي المستند |
 | `get()`/`exists()` لمستند غير محاكى «Function not found»، والمحاكاة بنتيجة `undefined` «Service call error» | `aruma/limits/get_unmocked`، `aruma/limits/get_mock_null` | نعم: الربط يجعلهما `ErrNoDocuments`، وهو خطأ تقييم |
 | لا حدّ لعدد القراءات المحاكاة: 50 مستندًا في Firestore، و3 و11 في Storage | `aruma/limits/exists_11`…`exists_50`، `aruma/limits/get_11`، `aruma/storage/fs_lookups_3`، `aruma/storage/fs_lookups_11`، `pyric/storage/firestore-lookup-budget/6` | لا: نطبّق 10/20 و2 كما في الوثائق وStorage المنشور (`pyric/storage/stdlib-realstorage-p3-lookup-budget-iam-enabled/three`) |
 | `debug()` غير موجودة | `aruma/errors/debug_function`، `aruma/storage/debug` | لا (والمحرك يوافقها): المحاكي فيه `debug()`، والمرجع يقول إن المنشور كذلك ولم يُقس. فالمحرك يتبع Test API مؤقتًا («قرارات مؤقتة») |
 | تقبل الطريقتين `write` و`read` في الطلب | `aruma/methods/method_write_verb`، و`aruma/methods/method_read_verb` (المحجوزة، صُنّفت بعد قياسها) | لا: لا طلب حقيقي طريقته `write` أو `read` |
-| تفك ترميز URL في كل مقطع من مسار الطلب، و`+` مسافة، و`%2F` يبقى داخل مقطعه | `aruma/s1e-paths/*` | نعم: الربط يفكها كما تفكها الخدمة قبل المحرك |
+| تقسم مسار الطلب على `/` ثم تفك ترميز URL في كل مقطع: `+` مسافة، و`%2F` يبقى داخل مقطعه | `aruma/s1e-paths/*` | نعم: الربط يفكها كذلك. وهذه حقائق عن مدخل Test API وحده، لا قاعدة للخدمة: **الخدمة تفك ترميز اسم الكائن مرة واحدة ثم تقسمه على `/`، ولا تفكه مرتين** (`B-admin-gcs-protocol.md:86`، و`A-client-protocol.md:86`: مكتبة JS ترسل `+` بالشكل `%2B`) |
 | ترفض طلبًا لا قواعد: وقت بغير صيغته، ومسار Storage ينتهي بـ `/`، و`503` لـ ruleset كبير | `aruma/encoding/time_bad_format`، `aruma/storage-paths/list_on_prefix`، `aruma/limits/size_functions_2000` | لا |
 | حجم المصدر يُقاس على رسالة الطلب (حجم رسالة `Source` في protobuf: المحتوى والاسم و10 بايتات، و11 لاسم من 128 بايتًا فأكثر) | `aruma/followups/size_comment_262119`، `aruma/followups/size_comment_262120` | نعم: رفض الحجم رفض ترجمة |
 | `request.auth.uid` أي نوع، ومسار Firestore لا يُشترط أن يسمّي مستندًا | `aruma/encoding/auth_uid_int`، `aruma/followups/nested_under_recursive_deep` | نعم: لغة لا ربط |
