@@ -77,24 +77,19 @@ Future<Result> operations(String storageUrl, SocketGuard guard, ShowImage showIm
 
   await step(res, 'upload.small', () async {
     final s = await smallRef.putData(small, SettableMetadata(contentType: 'text/plain'));
-    _equal(small.length, s.bytesTransferred, 'bytes sent');
-    return '${s.bytesTransferred} bytes';
+    return _uploaded(s, small.length);
   });
   await step(res, 'upload.resumable3MB', () async {
-    final s = await bigRef.putData(big);
-    _equal(big.length, s.bytesTransferred, 'bytes sent');
-    return '${s.bytesTransferred} bytes';
+    return _uploaded(await bigRef.putData(big), big.length);
   });
   await step(res, 'upload.putFile3MB', () async {
-    final s = await fileRef.putFile(bigFile);
-    _equal(big.length, s.bytesTransferred, 'bytes sent');
-    return '${s.bytesTransferred} bytes';
+    return _uploaded(await fileRef.putFile(bigFile), big.length);
   });
   await step(res, 'upload.putString', () async {
     final s = await stringRef.putString(base64.encode(small), format: PutStringFormat.base64);
-    _equal(small.length, s.totalBytes, 'size');
+    final got = _uploaded(s, small.length);
     _same(small, await stringRef.getData(), 'bytes');
-    return '${s.totalBytes} bytes (base64)';
+    return '$got (base64)';
   });
   await step(res, 'getMetadata', () async {
     final m = await smallRef.getMetadata();
@@ -222,9 +217,12 @@ Future<Result> names(String storageUrl) async {
       await ref.putData(bytes);
       try {
         final link = await ref.getDownloadURL();
+        // Each SDK escapes the name itself (from the metadata's name), as it does on Google's
+        // host: the link must be that SDK's spelling exactly, and it must still name the object
+        // (fromArumaUrl, refFromURL and the GET below).
+        final escape = Platform.isIOS ? _gcsEscapedIOS : Uri.encodeComponent;
         final want =
-            '$storageUrl/v0/b/${Uri.encodeComponent(ref.bucket)}/o/'
-            '${Uri.encodeComponent(ref.fullPath)}?alt=media&token=';
+            '$storageUrl/v0/b/${escape(ref.bucket)}/o/${escape(ref.fullPath)}?alt=media&token=';
         if (!link.startsWith(want)) throw StateError('want $want…, got ${_redact(link)}');
         final threw = _throws(() => storage.refFromURL(link));
         final gs = fromArumaUrl(link);
@@ -382,6 +380,47 @@ Future<Uint8List> _readAll(Stream<List<int>> s) async {
     b.add(chunk);
   }
   return b.takeBytes();
+}
+
+/// _uploaded checks an upload's final snapshot against the [length] bytes sent, and describes it.
+/// The object's size, from the server, is [length] on every platform. The SDKs count progress
+/// differently: firebase-storage (Android) counts the object's bytes; FirebaseStorage (iOS) takes
+/// GTMSessionUploadFetcher's counts, which add the resumable upload's first request, the JSON
+/// metadata (gtm-session-fetcher's GTMSessionUploadFetcher.m: `totalSent = initialBodySent +
+/// currentOffset + totalBytesSent`, `totalExpected = initialBodySent + fullUploadLength`). So
+/// on iOS bytesTransferred and totalBytes are [length] plus that body, as they are against Google;
+/// the snapshot must still be complete (bytesTransferred == totalBytes).
+String _uploaded(TaskSnapshot s, int length) {
+  _equal(TaskState.success, s.state, 'state');
+  _equal(length, s.metadata?.size, 'metadata.size');
+  _equal(s.totalBytes, s.bytesTransferred, 'bytesTransferred against totalBytes');
+  if (Platform.isIOS) {
+    if (s.totalBytes <= length) {
+      throw StateError(
+        'totalBytes ${s.totalBytes}: want $length plus the metadata request\'s body',
+      );
+    }
+    return 'size $length, ${s.bytesTransferred} bytes counted with the metadata request';
+  }
+  _equal(length, s.bytesTransferred, 'bytes sent');
+  return '${s.bytesTransferred} bytes';
+}
+
+/// FirebaseStorage (iOS) 12.19.3's StorageUtils.GCSEscapedString: percent-encodes every character
+/// but these ("the list at cloud.google.com/storage/docs/json_api/ without &, ; and +"), so it
+/// leaves `$ , = : @` as they are, where Uri.encodeComponent (and Android) encode them.
+String _gcsEscapedIOS(String s) {
+  const allowed = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~!\$\'()*,=:@';
+  final b = StringBuffer();
+  for (final c in utf8.encode(s)) {
+    final ch = String.fromCharCode(c);
+    b.write(
+      c < 0x80 && allowed.contains(ch)
+          ? ch
+          : '%${c.toRadixString(16).toUpperCase().padLeft(2, '0')}',
+    );
+  }
+  return b.toString();
 }
 
 String _redact(String link) => link.replaceAll(RegExp('token=[^&]*'), 'token=<redacted>');

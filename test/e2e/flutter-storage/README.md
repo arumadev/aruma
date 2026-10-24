@@ -36,6 +36,14 @@ test/e2e/flutter-storage/run.sh ios       # the patched FirebaseStorage mirror t
   holds for a link on a production host (`https://storage.example.com/…`).
 - **Refused:** links to `e2e/<uid>//x.txt`, `/e2e/<uid>/x.txt` and `e2e/<uid>/x/`: `fromArumaUrl`
   throws `NotStorageUrlException`, as the Android and iOS versions do.
+- **What differs by SDK, as against Google:** on iOS an upload's `bytesTransferred` and
+  `totalBytes` include the resumable upload's first request (the JSON metadata), because
+  FirebaseStorage takes GTMSessionUploadFetcher's counts (`totalSent = initialBodySent +
+  currentOffset + totalBytesSent`); the object's `size` is the bytes sent on both platforms. And
+  FirebaseStorage (iOS) escapes names with its own `GCSEscapedString`, which leaves
+  `$ , = : @` unencoded: `50% off?#&=1.txt` gives `…%26=1.txt` on iOS and `…%26%3D1.txt` on
+  Android. Both are built by the SDK from the metadata's `name`, not by Aruma, and both name the
+  same object; the test requires each SDK's own spelling exactly.
 - **The guards:** each half refuses (or records) its own probe to 192.0.2.1 first; at the end no
   Dart socket and no native request went anywhere but this device, and no Storage request went
   through the run-time fallback (`ArumaStorageRedirect` is false).
