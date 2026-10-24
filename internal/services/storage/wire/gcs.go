@@ -72,7 +72,7 @@ type GCSCORS struct {
 	Origin         []string `json:"origin,omitempty"`
 	Method         []string `json:"method,omitempty"`
 	ResponseHeader []string `json:"responseHeader,omitempty"`
-	MaxAgeSeconds  int      `json:"maxAgeSeconds,omitempty"`
+	MaxAgeSeconds  int      `json:"maxAgeSeconds,omitzero"`
 }
 
 // GCSRewrite is a rewriteTo reply. Aruma rewrites in one request, so Done is always true and no

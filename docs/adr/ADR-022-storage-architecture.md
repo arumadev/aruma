@@ -341,7 +341,7 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
 ### 12. صيغة الردود
 
 - **لا JSON `null` في أي رد على `/v0`:** الحقل بلا قيمة يُحذف. Android يقرأ `null` نصًا `"null"` بـ `optString`، فيرسل `pageToken=null` ويبني رابطًا فيه `&token=null` (A §1.8؛ AOSP `JSONObject.java:579-583`). يُفرض بنوع ترميز واحد في `wire` (`omitempty` على كل حقل، وخرائط نص إلى نص)، واختبار يمر على كل رد مسجّل في اختبارات `/v0` ويرفض أي `null`.
-- **الأوقات:** `2006-01-02T15:04:05.000Z` بالضبط، ثلاث خانات ولاحقة `Z`، على `/v0` وGCS. Android يُزيح الوقت بصمت مع كسر أطول ويُرجع 0 بلا كسر، وiOS يعيد `nil` (A §1.6). وPostgres يحفظ الميكروثانية، والتقريب عند الإخراج.
+- **الأوقات:** `2006-01-02T15:04:05.000Z` بالضبط، ثلاث خانات ولاحقة `Z`، على `/v0` وGCS. Android يُزيح الوقت بصمت مع كسر أطول ويُرجع 0 بلا كسر، وiOS يعيد `nil` (A §1.6). وPostgres يحفظ الميكروثانية، فيُقتطع الكسر عند الإخراج ولا يُقرَّب.
 - **الأرقام نصوص:** `generation` و`metageneration` و`size` (و`objectSize` و`totalBytesRewritten` و`projectNumber` في GCS). وسوم `,string` في Go ترفض الأرقام (B §1.7).
 - **`generation`** بالميكروثانية من الساعة، **ويزيد دائمًا للاسم نفسه** (`max(now_µs, السابق + 1)`) (Pyric `"1784647629568292"`، E §4). يتقدم مع كل كتابة للبايتات ويثبت مع PATCH، و`metageneration` يتقدم مع PATCH وتوليد الرمز (Pyric `metadata-update-relations`، E §4).
 - **`crc32c`:** base64 لأربعة بايتات big-endian **في `/v0` وGCS معًا** (لا مكتبة `/v0` تقرؤه، A §4؛ صيغة الإنتاج في `/v0` غير مقيسة، مؤقت). و`md5Hash` base64.
@@ -562,7 +562,7 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
   14. `Authorization` على القطع يُتجاهل (البند 7).
   15. CORS `*` على ردود الـ API والـ preflight (البند 11).
   16. `Range` غير صحيح الصيغة (وحدة أخرى، أو `a-b` و`b < a`، أو رقم ناقص) يُتجاهل فيُرد 200 كاملًا، و`bytes=-0` على كائن غير فارغ 416 (البند 10.3؛ RFC 9110 §14.2 يسمح بالتجاهل، والإنتاج غير مقيس). في `wire.ParseRange` (S2-B).
-  17. **صيغ السلك أشد من المقيس حيث لم يُقس الإنتاج** (S2-B): `multipart/related` جزءان بالضبط، أولهما `application/json`، وبلا `Content-Transfer-Encoding` غير `7bit`/`8bit`/`binary`، والحد حسب RFC 2046 (70 حرفًا)؛ و`X-Goog-Upload-Command` بأحرف صغيرة كما ترسلها المكتبات الثلاث؛ و`Content-Range` بأشكاله الستة وحدها. وكل خروج عنها 400. وكل الحالات في `wire` (`multipart.go` و`upload.go`).
+  17. **صيغ السلك أشد من المقيس حيث لم يُقس الإنتاج** (S2-B): `multipart/related` جزءان بالضبط، أولهما `application/json`، وبلا `Content-Transfer-Encoding` غير `7bit`/`8bit`/`binary`، والحد حسب RFC 2046 (70 حرفًا)؛ و`X-Goog-Upload-Command` بأحرف صغيرة كما ترسلها المكتبات الثلاث؛ و`Content-Range` بأشكاله الستة، ومعها الجزء الأخير الفارغ بشكل Node `bytes N-(N-1)/N` (`bytes 0--1/0` لملف فارغ مع `chunkSize`، `resumable-upload.js:619-623`) يُقرأ `bytes */N`، ولا شيء غيرها. وكل خروج عنها 400. وكل الحالات في `wire` (`multipart.go` و`upload.go`).
   18. **خدمة البايتات حيث سكت هذا البند أو لم يُقس الإنتاج** (S2-F، كلها في `media`):
       - `Cache-Control` على GCS بلا قيمة مخزّنة `private, max-age=0`، كما يرسله GCS لكائن غير عام (البند 10.5).
       - على تنزيل قررته القواعد يُضاف `private` حين يغيب، لا يُستبدل `public` وحده: `must-revalidate` أيضًا يسمح لمخبأ مشترك بخزن رد طلب فيه `Authorization` (RFC 9111 §3.5).

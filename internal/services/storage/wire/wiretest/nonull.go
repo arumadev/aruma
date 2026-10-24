@@ -35,7 +35,7 @@ func FindNull(body []byte) (string, error) {
 	if err != nil || path != "" {
 		return path, err
 	}
-	if _, err := dec.Token(); err != io.EOF {
+	if _, err := dec.Token(); !errors.Is(err, io.EOF) {
 		return "", errors.New("data after the JSON value")
 	}
 	return path, nil

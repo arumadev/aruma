@@ -69,6 +69,8 @@ func NewRelatedReader(body io.Reader, contentType string, maxJSON int64) (*Relat
 
 	media, err := mr.NextRawPart()
 	if err != nil {
+		// == and not errors.Is: NextRawPart returns a bare io.EOF at the closing boundary
+		// alone, and one wrapped in its own error when the body ends mid-line.
 		if err == io.EOF {
 			return nil, fmt.Errorf("%w: no media part", ErrBadMultipart)
 		}
@@ -96,7 +98,7 @@ func relatedBoundary(contentType string) (string, error) {
 	if b == "" || len(b) > maxBoundary || b[len(b)-1] == ' ' {
 		return "", fmt.Errorf("%w: bad boundary", ErrBadMultipart)
 	}
-	for i := 0; i < len(b); i++ {
+	for i := range len(b) {
 		if !bchar(b[i]) {
 			return "", fmt.Errorf("%w: bad boundary", ErrBadMultipart)
 		}
@@ -138,7 +140,7 @@ func (m *mediaReader) Read(p []byte) (int, error) {
 	switch {
 	case err == nil:
 		return n, nil
-	case err == io.EOF:
+	case errors.Is(err, io.EOF):
 		m.err = m.end()
 	case m.src.err != nil:
 		m.err = m.src.err
@@ -153,7 +155,7 @@ func (m *mediaReader) end() error {
 	m.src.left = headerBudget // a third part's headers are read under the budget again
 	next, err := m.mr.NextRawPart()
 	switch {
-	case err == io.EOF:
+	case err == io.EOF: // bare at the closing boundary; wrapped when the body is cut
 		return io.EOF
 	case err != nil:
 		if m.src.err != nil {
@@ -188,7 +190,7 @@ func (b *budgetReader) Read(p []byte) (int, error) {
 	if b.left > 0 {
 		b.left -= int64(n)
 	}
-	if err != nil && err != io.EOF && b.err == nil {
+	if err != nil && !errors.Is(err, io.EOF) && b.err == nil {
 		b.err = err
 	}
 	return n, err

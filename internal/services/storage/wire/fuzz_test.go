@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"math"
 	"strings"
 	"testing"
 )
 
-// The parsers' fuzz targets (storage-layout.md, S2-B). Each holds a parser to never panic, to
+// The parsers' fuzz targets (storage-layout.md, S2-B, and FuzzHashHeader from its review). Each holds a parser to never panic, to
 // keep its result's invariants, and to read no more than its bounds; S2-B ran each ten minutes
 // (go test -fuzz=<target> -fuzztime=10m -parallel=2, GOMEMLIMIT=1GiB).
 
@@ -51,7 +52,8 @@ func FuzzSplitObjectPath(f *testing.F) {
 
 func FuzzContentRange(f *testing.F) {
 	for _, s := range []string{"bytes 0-4194303/*", "bytes 0-12/13", "bytes */9437184", "bytes 0-*/*",
-		"bytes 5-*/10", "bytes */*", "bytes 5-4/10", "bytes 0-9223372036854775808/*", "Bytes 0-0/1"} {
+		"bytes 5-*/10", "bytes */*", "bytes 5-4/10", "bytes 0-9223372036854775808/*", "Bytes 0-0/1",
+		"bytes 0--1/0", "bytes 5-4/5", "bytes 5-3/5", "bytes 0-9223372036854775807/*"} {
 		f.Add(s)
 	}
 	f.Fuzz(func(t *testing.T, s string) {
@@ -72,9 +74,13 @@ func FuzzContentRange(f *testing.F) {
 				t.Fatalf("%q: %+v", s, r)
 			}
 		default:
-			if r.End < r.Start || (r.Total >= 0 && r.End >= r.Total) || r.Total < -1 {
+			if r.End < r.Start || r.End == math.MaxInt64 || (r.Total >= 0 && r.End >= r.Total) || r.Total < -1 {
 				t.Fatalf("%q: %+v", s, r)
 			}
+		}
+		if n := r.Length(); n < -1 || (r.Open && n != -1) || (!r.Open && r.Start < 0 && n != 0) ||
+			(!r.Open && r.Start >= 0 && n < 1) {
+			t.Fatalf("%q: %+v has length %d", s, r, n)
 		}
 		if back, err := ParseContentRange(r.String()); err != nil || back != r {
 			t.Fatalf("%q: %+v writes back as %q: %+v %v", s, r, r.String(), back, err)
@@ -149,23 +155,70 @@ func FuzzRelated(f *testing.F) {
 	f.Add("multipart/mixed; boundary=b0undary", []byte(related("b0undary", `{}`, "", "x")))
 	f.Fuzz(func(t *testing.T, contentType string, body []byte) {
 		const maxJSON = 1 << 10
-		src := &counter{r: bytes.NewReader(body)}
-		rr, err := NewRelatedReader(src, contentType, maxJSON)
+		// The body as it is: every failure is ErrBadMultipart, and the media is within it.
+		rr, err := NewRelatedReader(bytes.NewReader(body), contentType, maxJSON)
 		if err != nil {
 			if !errors.Is(err, ErrBadMultipart) || rr != nil {
 				t.Fatalf("%v", err)
 			}
+		} else {
+			if len(rr.JSON) > maxJSON {
+				t.Fatalf("JSON of %d bytes", len(rr.JSON))
+			}
+			n, err := io.Copy(io.Discard, rr.Media)
+			if err != nil && !errors.Is(err, ErrBadMultipart) {
+				t.Fatalf("media: %v", err)
+			}
+			if n > int64(len(body)) {
+				t.Fatalf("media of %d bytes from a body of %d", n, len(body))
+			}
+		}
+		if len(body) == 0 {
 			return
 		}
-		if len(rr.JSON) > maxJSON {
-			t.Fatalf("JSON of %d bytes", len(rr.JSON))
+		// The body repeated without end: before the media, the parser reads no more than its
+		// budgets, which NewRelatedReader sets in turn (headerBudget for the preamble and the
+		// JSON part's headers, then maxJSON+1+headerBudget for the JSON and the media part's
+		// headers), each a cap on reads, not on bytes kept.
+		src := &counter{r: io.MultiReader(bytes.NewReader(body), &repeat{pattern: body})}
+		rr, err = NewRelatedReader(src, contentType, maxJSON)
+		if limit := int64(maxJSON + 1 + 2*headerBudget); src.read > limit {
+			t.Fatalf("read %d bytes before the media, over %d", src.read, limit)
 		}
-		n, err := io.Copy(io.Discard, rr.Media)
-		if err != nil && !errors.Is(err, ErrBadMultipart) {
-			t.Fatalf("media: %v", err)
+		if err == nil {
+			// The media streams without a cap of its own; its caller sets one.
+			if _, err := io.CopyN(io.Discard, rr.Media, 1<<20); err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, ErrBadMultipart) {
+				t.Fatalf("media: %v", err)
+			}
 		}
-		if n > int64(len(body)) || src.read > int64(len(body)) {
-			t.Fatalf("read %d, media %d, of a body of %d", src.read, n, len(body))
+	})
+}
+
+func FuzzHashHeader(f *testing.F) {
+	for _, s := range []string{"", "crc32c=U5UsBg==", "crc32c=U5UsBg==,md5=XUFAKrxLKna5cZ2REBfFkg==",
+		"crc32c=U5UsBg==, md5=XUFAKrxLKna5cZ2REBfFkg==", "crc32c=U5UsBg==\nmd5=XUFAKrxLKna5cZ2REBfFkg==",
+		"crc32c=U5UsBg==,crc32c=U5UsBg==", "sha256=x", "crc32c=", "md5=AAAA", "crc32c=AAAAAB=="} {
+		f.Add(s)
+	}
+	f.Fuzz(func(t *testing.T, s string) {
+		values := strings.Split(s, "\n") // one header value per line
+		h, err := ParseHashHeader(values)
+		if err != nil {
+			if !errors.Is(err, ErrBadHash) || h != (Hashes{}) {
+				t.Fatalf("%q: %+v %v", s, h, err)
+			}
+			return
+		}
+		// What was read writes back to the same checksums.
+		var entries []string
+		if h.HasCRC32C {
+			entries = append(entries, "crc32c="+CRC32C(h.CRC32C))
+		}
+		if h.HasMD5 {
+			entries = append(entries, "md5="+MD5(h.MD5))
+		}
+		if back, err := ParseHashHeader([]string{strings.Join(entries, ",")}); len(entries) > 0 && (err != nil || back != h) {
+			t.Fatalf("%q: %+v writes back as %v: %+v %v", s, h, entries, back, err)
 		}
 	})
 }

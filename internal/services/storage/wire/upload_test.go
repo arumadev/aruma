@@ -107,6 +107,20 @@ func TestParseContentRange(t *testing.T) {
 		{in: "bytes */0", want: ContentRange{Start: -1, End: -1, Total: 0}},
 		{in: "Bytes 0-0/1", want: ContentRange{Start: 0, End: 0, Total: 1}},
 		{in: "bytes 0-9223372036854775806/9223372036854775807", want: ContentRange{Start: 0, End: math.MaxInt64 - 1, Total: math.MaxInt64}},
+		// Node's empty last chunk, bytes N-(N-1)/N, is bytes */N (resumable-upload.js:619-623).
+		{in: "bytes 0--1/0", want: ContentRange{Start: -1, End: -1, Total: 0}},
+		{in: "bytes 5-4/5", want: ContentRange{Start: -1, End: -1, Total: 5}},
+		{in: "bytes 4194304-4194303/4194304", want: ContentRange{Start: -1, End: -1, Total: 4194304}},
+		{in: "bytes 5-3/5", err: true},
+		{in: "bytes 5-4/6", err: true},
+		{in: "bytes 5-4/4", err: true},
+		{in: "bytes 5-4/*", err: true},
+		{in: "bytes 0--1/1", err: true},
+		{in: "bytes 0--1/*", err: true},
+		{in: "bytes 1--1/1", err: true},
+		{in: "bytes 0--2/0", err: true},
+		{in: "bytes 0--0/0", err: true},
+		{in: "bytes 0-9223372036854775807/*", err: true}, // End-Start+1 would overflow
 		{in: "", err: true},
 		{in: "bytes", err: true},
 		{in: "bytes ", err: true},
@@ -141,6 +155,29 @@ func TestParseContentRange(t *testing.T) {
 		}
 		if back, err := ParseContentRange(got.String()); err != nil || back != got {
 			t.Errorf("%q writes back as %q: %+v %v", c.in, got.String(), back, err)
+		}
+	}
+}
+
+func TestContentRangeLength(t *testing.T) {
+	for in, want := range map[string]int64{
+		"bytes 0-4194303/*":             4194304,
+		"bytes 7-7/8":                   1,
+		"bytes */10":                    0,
+		"bytes 0--1/0":                  0,
+		"bytes 5-4/5":                   0,
+		"bytes */*":                     0,
+		"bytes 0-*/*":                   -1,
+		"bytes 3-*/10":                  -1,
+		"bytes 0-9223372036854775806/*": math.MaxInt64,
+		"bytes 9223372036854775806-9223372036854775806/9223372036854775807": 1,
+	} {
+		r, err := ParseContentRange(in)
+		if err != nil {
+			t.Fatalf("%q: %v", in, err)
+		}
+		if got := r.Length(); got != want {
+			t.Errorf("%q: Length %d, want %d", in, got, want)
 		}
 	}
 }

@@ -22,7 +22,7 @@
 | 36 | `etag` من `(generation, metageneration)` بشكل GCS (varint، مثل `CAEQAQ==`)، ويتغير مع PATCH؛ وetag الـ bucket من الـ metageneration (`CBE=` لـ 17، كالإنتاج) | أصح من المحاكي | B §7، `bucket_probe.json` | `wire.ETag`، `wire.BucketETag` |
 | 29 | ترويسة `ETag` على الوسائط من `generation` وحده، وسم قوي بين علامتي تنصيص | مؤقت | ADR-022 §12 | `wire.MediaETag` |
 | 38 | `Range` غير صحيح الصيغة يُتجاهل فيُرد 200، و`bytes=-0` 416 | مؤقت | RFC 9110 §14.2 | `wire.ParseRange` |
-| 39 | `multipart/related` جزءان بالضبط، أولهما `application/json`، بلا ترميز نقل؛ و`X-Goog-Upload-Command` بأحرف صغيرة؛ و`Content-Range` بأشكاله الستة: غيرها 400 | قيد | التسجيلات كلها داخلها | `wire.NewRelatedReader`، `wire.ParseUploadCommand`، `wire.ParseContentRange` |
+| 39 | `multipart/related` جزءان بالضبط، أولهما `application/json`، بلا ترميز نقل؛ و`X-Goog-Upload-Command` بأحرف صغيرة؛ و`Content-Range` بأشكاله الستة ومعها `bytes N-(N-1)/N`: غيرها 400. و`bytes N-(N-1)/N` (`bytes 0--1/0` لملف فارغ) جزء أخير فارغ مثل `bytes */N`، ولا يُقبل غيره مما نهايته قبل بدايته (`bytes 5-3/5`، و`N-(N-1)/M` بـ M≠N) | قيد؛ وشكل Node الأخير مؤقت: رد GCS في الإنتاج عليه غير مقيس | التسجيلات كلها داخلها؛ و`@google-cloud/storage` 8.4.0 `resumable-upload.js:619-623`، أُعيد إنتاجه أمام مسجّل في مراجعة S2-B | `wire.NewRelatedReader`، `wire.ParseUploadCommand`، `wire.ParseContentRange` |
 | 40 | الـ metadata المخصّصة الفارغة تُحذف من رد `/v0` (المحاكي: `"metadata":{}`) | مؤقت | A §4 | `wire.FirebaseObject` |
 
 - **الأوقات** تُقص إلى الميلي ثانية ولا تُقرَّب، فلا يُكتب وقت بعد وقوعه. وكل وقت مسجّل من الإنتاج والمحاكي يعود بـ `wire.Time` كما هو.
