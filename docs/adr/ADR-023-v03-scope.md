@@ -218,6 +218,14 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 82. **مؤقت: أسباب رفض الرفع حيث لا تسجيل:** البطء تحت `min_bytes_per_second` 408، والجسم المنقطع 400، و`Content-Length` يخالف `Content-Range` 400، وتناقض checksum بين JSON و`X-Goog-Hash` 400. `gcs/upload.go`.
 83. **قيد: لا `Retry-After` على 503 من عطل الخادم** (`core.ErrUnavailable`) في الرفع والتنزيل، بل على الضغط وحده. `gcs/errors.go` (`writeError`).
 
+**أضافها S3-B** (الرفع على `/v0`، تفصيلها في `docs/compat/storage-v0.3.md`):
+
+84. **مؤقت: جسم رفع دون `min_bytes_per_second` في نافذة 30 ثانية يُقطع 408** بلا `X-Goog-Upload-Status` (المكتبات الثلاث تعيد 408 بـ `query` ثم تستأنف، A §5.3)، وما وصل منه يُحفظ ويُعلن. `api/upload.go` (`pacedBody`).
+85. **مؤقت: قطعة أو إنهاء على جلسة ملغاة 400 مع `final`** لا `cancelled` (Android لا يوقف المهمة إلا على `final`، ADR-022 §6.1)، و`query` و`cancel` عليها 200 مع `cancelled` (E §3.1). `api/upload.go` (`writeSession`).
+86. **مؤقت: قطعة على جلسة انتهت بنجاح:** إن لم تأتِ ببايت بعد `received` (`offset + length ≤ received`، أو جسم فارغ) فهي تكرار يُعاد له المحفوظ (200 و`final` والـ metadata) كالإنهاء المكرر؛ وإلا 400 مع `final`، كالمحاكي (`raw_resumable.json`)، فلا تُسقط بايتات جديدة بصمت ويبلّغ JS وiOS رفعًا ناقصًا أنه اكتمل. `api/upload.go` (`pastReceived`).
+87. **مؤقت: multipart نوعه من الـ JSON وحده و`?name=` يغلب اسم الـ JSON** كالمحاكي (`raw_upload.json`)؛ وقيمة `X-Goog-Upload-Protocol` غير `multipart` و`resumable` 400؛ و`md5Hash` ليس base64 لستة عشر بايتًا 400. `api/multipart.go`، `api/upload.go` (`parseResource`).
+88. **مؤقت: `X-Goog-Upload-Offset` إلزامي إلا لـ `finalize` منفردًا بجسم فارغ،** و`X-Goog-Upload-Content-Length` على قطع iOS لا يُقرأ: المعلن عند `start` هو الحكم عند الإنهاء. `api/upload.go` (`chunk`).
+
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 
 ## البدائل المرفوضة
