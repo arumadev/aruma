@@ -53,6 +53,12 @@ func (s *Service) Stat(ctx context.Context, b Bucket, name string, p Principal, 
 	if sf != SurfaceFirebase || len(cur.DownloadTokens) > 0 {
 		return *cur, nil
 	}
+	// The mint is a write: it passes the shutdown gate, which a plain read never takes.
+	leave, err := s.enter()
+	if err != nil {
+		return Object{}, err
+	}
+	defer leave()
 	return s.change(ctx, b, name, func(cur *Object) (*Object, error) {
 		if err := get(cur); err != nil {
 			return nil, err

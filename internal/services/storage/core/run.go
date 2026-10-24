@@ -21,7 +21,7 @@ type writeGate struct {
 var closeWait = 30 * time.Second
 
 // enter admits a write, ErrUnavailable once Close began; the caller calls leave when done.
-// S2-C's Update, Delete, the token and CORS writes take it too.
+// S2-C's Update, Delete, the token and CORS writes, and Stat's /v0 mint, take it too.
 func (s *Service) enter() (leave func(), err error) {
 	s.gate.mu.Lock()
 	defer s.gate.mu.Unlock()

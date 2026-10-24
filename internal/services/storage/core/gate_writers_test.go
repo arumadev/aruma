@@ -6,12 +6,13 @@ import (
 	"time"
 )
 
-// Once Close has started, the shutdown gate refuses every new write: Update, Delete and SetCORS
-// as well as the uploads, so nothing begins a transaction while the lock is being released.
+// Once Close has started, the shutdown gate refuses every new write: Update, Delete, SetCORS,
+// create_token, delete_token and the /v0 mint as well as the uploads, so nothing begins a
+// transaction while the lock is being released. A plain read still answers.
 func TestChangesRefusedOnceCloseStarts(t *testing.T) {
 	e := newEnv(t)
-	o := e.insert(e.a, "g/a", "abc")
-	leave, err := e.s.enter() // a write in flight: Close waits for it
+	o := e.insert(e.a, "g/a", "abc") // through GCS: no token yet, so a /v0 read would mint one
+	leave, err := e.s.enter()        // a write in flight: Close waits for it
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,6 +39,18 @@ func TestChangesRefusedOnceCloseStarts(t *testing.T) {
 			return err
 		},
 		"delete": func() error { return e.s.Delete(ctx, e.a, o.Name, admin, SurfaceGCS, Preconditions{}) },
+		"create_token": func() error {
+			_, err := e.s.CreateToken(ctx, e.a, o.Name, admin)
+			return err
+		},
+		"delete_token": func() error {
+			_, err := e.s.DeleteToken(ctx, e.a, o.Name, admin, "not-a-token-of-it")
+			return err
+		},
+		"the /v0 mint": func() error {
+			_, err := e.s.Stat(ctx, e.a, o.Name, asUser("alice"), SurfaceFirebase, 0)
+			return err
+		},
 		"set CORS": func() error {
 			_, err := e.s.SetCORS(ctx, e.a, admin, []CORSRule{{Origins: []string{"*"}, Methods: []string{"GET"}}})
 			return err
@@ -48,7 +61,8 @@ func TestChangesRefusedOnceCloseStarts(t *testing.T) {
 		}
 	}
 	got, err := e.s.Stat(ctx, e.a, o.Name, admin, SurfaceGCS, 0)
-	if err != nil || got.Metageneration != o.Metageneration || got.ContentType != o.ContentType {
+	if err != nil || got.Metageneration != o.Metageneration || got.ContentType != o.ContentType ||
+		len(got.DownloadTokens) != 0 {
 		t.Errorf("the object after the refused changes: %+v, %v; want it as it was", got, err)
 	}
 	leave()

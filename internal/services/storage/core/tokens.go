@@ -22,6 +22,11 @@ func (s *Service) CreateToken(ctx context.Context, b Bucket, name string, p Prin
 	if err := validateName(name); err != nil {
 		return Object{}, err
 	}
+	leave, err := s.enter()
+	if err != nil {
+		return Object{}, err
+	}
+	defer leave()
 	return s.change(ctx, b, name, func(cur *Object) (*Object, error) {
 		if cur == nil {
 			return nil, ErrNotFound
@@ -48,6 +53,11 @@ func (s *Service) DeleteToken(ctx context.Context, b Bucket, name string, p Prin
 	if token == "" {
 		return Object{}, &InvalidError{Reason: "required", Message: "The download token to delete is required."}
 	}
+	leave, err := s.enter()
+	if err != nil {
+		return Object{}, err
+	}
+	defer leave()
 	return s.change(ctx, b, name, func(cur *Object) (*Object, error) {
 		if cur == nil {
 			return nil, ErrNotFound
