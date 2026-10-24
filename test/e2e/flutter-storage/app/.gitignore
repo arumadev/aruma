@@ -1,0 +1,11 @@
+# Made by run.sh on every run (flutter create, then prepare.py), and the server's config.
+/android/
+/ios/
+/build/
+/test/
+/.dart_tool/
+/.metadata
+/.flutter-plugins-dependencies
+/README.md
+*.iml
+/lib/firebase_options.dart
