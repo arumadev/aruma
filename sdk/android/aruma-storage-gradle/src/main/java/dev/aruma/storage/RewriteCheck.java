@@ -77,10 +77,9 @@ final class RewriteCheck {
         int[] counts = ldcCounts(networkRequest[0], base);
         if (counts[0] != 0 || counts[1] != 1) {
             throw new IllegalStateException("dev.aruma.storage: " + NetworkRequestVisitor.CLASS_NAME + " in "
-                    + copies.get(0) + " was not pointed at Aruma: its static initializer loads \"" + base + "\" "
-                    + counts[1] + " times, and \"" + StorageBase.GOOGLE + "\" is loaded " + counts[0]
-                    + " times. Its requests would go to Google. The class was left out of the plugin's "
-                    + "instrumentation (an excludes pattern on android.instrumentation or "
+                    + copies.get(0) + " was not pointed at Aruma (ldc of \"" + base + "\" in its static initializer: "
+                    + counts[1] + ", ldc of \"" + StorageBase.GOOGLE + "\": " + counts[0] + "), so its requests would "
+                    + "go to Google. The class was left out of the plugin's instrumentation (an excludes pattern on "
                     + "variant.instrumentation), or a later transform replaced it. Remove that, then build again.");
         }
         if (!leftovers.isEmpty()) {

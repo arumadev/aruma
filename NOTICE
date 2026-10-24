@@ -28,3 +28,18 @@ Copyright 2026 David East
 Licensed under the Apache License, Version 2.0.
 Files: test/oracle/rules/imported/pyric/ (Firestore and Cloud Storage Security
 Rules observations and the rules corpus they were recorded from).
+
+This product includes tools that modify the following projects inside the
+apps they build (ADR-022 §16, docs/research/storage-production-path.md).
+
+firebase-android-sdk (https://github.com/firebase/firebase-android-sdk)
+Copyright Google LLC
+Licensed under the Apache License, Version 2.0.
+The Gradle plugin in sdk/android/aruma-storage-gradle (dev.aruma.storage)
+modifies firebase-storage for Android (com.google.firebase:firebase-storage)
+inside each app it builds: it replaces the text
+"https://firebasestorage.googleapis.com/v0" in the static initializer of
+com.google.firebase.storage.network.NetworkRequest with the Aruma server's
+base URL, and changes nothing else. No firebase-storage code is included in
+this repository. Every app built with the plugin carries a notice of the
+change in META-INF/aruma/firebase-storage-MODIFIED.txt.
