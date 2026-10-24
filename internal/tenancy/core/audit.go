@@ -91,3 +91,13 @@ func (s *Service) ListAudit(ctx context.Context, p *authn.Principal, ref string,
 	}
 	return page, nil
 }
+
+// Audit records an administrative action a data service took on a project, once it took
+// effect: Storage's dashboard writes and the upload sessions the dashboard issues (ADR-022 §15).
+// details must never hold secrets.
+func (s *Service) Audit(ctx context.Context, p *authn.Principal, project int64, action, target string, details map[string]any) error {
+	if err := s.audit(ctx, s.q, p, project, action, target, details); err != nil {
+		return internal(err)
+	}
+	return nil
+}
