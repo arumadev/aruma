@@ -67,6 +67,15 @@ func rulesService(t *testing.T, src string) *Service {
 	}
 }
 
+// authz decides op as an operation does: prepareRules, then authorize with its context.
+func authz(s *Service, ctx context.Context, b Bucket, p Principal, op ruleOp) error {
+	ctx, err := s.prepareRules(ctx, b, p)
+	if err != nil {
+		return err
+	}
+	return s.authorize(ctx, b, p, op)
+}
+
 func storedObject(name string) *Object {
 	return &Object{
 		Bucket: rulesBucket.Name, Name: name, Generation: 1700000000000000, Metageneration: 1, Size: 1024,
@@ -198,30 +207,66 @@ func TestAuthorizeOperations(t *testing.T) {
 		{"a method out of range", alice, ruleOp{Method: 0, Name: "public/x"}, false},
 		{"List on a get", anonymous, ruleOp{Method: rules.MethodGet, List: true, Name: "public/x"}, false},
 	} {
-		err := s.authorize(ctx, rulesBucket, c.p, c.op)
+		err := authz(s, ctx, rulesBucket, c.p, c.op)
 		if c.allow && err != nil || !c.allow && err != ErrPermissionDenied {
 			t.Errorf("%s: %v, want allow %v", c.name, err, c.allow)
 		}
 	}
 	// Admins bypass the rules, even a rule that denies all.
 	deny := rulesService(t, storageRules("match /{all=**} { allow read, write: if false; }"))
-	if err := deny.authorize(ctx, rulesBucket, Principal{Kind: PrincipalAdmin}, get("a", nil)); err != nil {
+	if err := authz(deny, ctx, rulesBucket, Principal{Kind: PrincipalAdmin}, get("a", nil)); err != nil {
 		t.Errorf("an admin: %v", err)
 	}
-	if err := deny.authorize(ctx, rulesBucket, alice, get("a", nil)); err != ErrPermissionDenied {
+	if err := authz(deny, ctx, rulesBucket, alice, get("a", nil)); err != ErrPermissionDenied {
 		t.Errorf("a user under the locked rules: %v", err)
 	}
-	// The package's tests may still decide through the hook.
+	// The package's tests may still decide through the hook, with prepareRules called.
 	deny.authorizeHook = func(context.Context, Bucket, Principal, ruleOp) error { return nil }
-	if err := deny.authorize(ctx, rulesBucket, anonymous, get("a", nil)); err != nil {
+	if err := authz(deny, ctx, rulesBucket, anonymous, get("a", nil)); err != nil {
 		t.Errorf("with a hook: %v", err)
+	}
+	if err := deny.authorize(ctx, rulesBucket, anonymous, get("a", nil)); !errors.Is(err, ErrUnavailable) {
+		t.Errorf("a hook without prepareRules: %v, want ErrUnavailable", err)
+	}
+}
+
+// An operation that forgets prepareRules fails loudly: authorize logs it, answers
+// ErrUnavailable, and reads nothing from the control plane.
+func TestAuthorizeWithoutPrepareRulesFails(t *testing.T) {
+	ctx := context.Background()
+	var logs strings.Builder
+	s := rulesService(t, storageRules("match /{all=**} { allow read; }"))
+	s.log = slog.New(slog.NewTextHandler(&logs, nil))
+	op := ruleOp{Method: rules.MethodGet, Name: "a"}
+	for _, p := range []Principal{anonymous, alice} {
+		if err := s.authorize(ctx, rulesBucket, p, op); !errors.Is(err, ErrUnavailable) || errors.Is(err, ErrPermissionDenied) {
+			t.Errorf("unprepared: %v, want ErrUnavailable", err)
+		}
+	}
+	if asked := s.projects.(*releaseProjects).asked; len(asked) != 0 {
+		t.Errorf("authorize read the control plane: %v", asked)
+	}
+	if !strings.Contains(logs.String(), "authorize without prepareRules") || !strings.Contains(logs.String(), "level=ERROR") {
+		t.Errorf("no error logged: %s", logs.String())
+	}
+	// Prepared for another bucket is not prepared for this one.
+	other, err := s.prepareRules(ctx, Bucket{Project: 7, Name: "x"}, anonymous)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.authorize(other, rulesBucket, anonymous, op); !errors.Is(err, ErrUnavailable) {
+		t.Errorf("prepared for another project: %v", err)
+	}
+	// Admins bypass the rules, prepared or not.
+	if err := s.authorize(ctx, rulesBucket, Principal{Kind: PrincipalAdmin}, op); err != nil {
+		t.Errorf("an admin: %v", err)
 	}
 }
 
 // The release read is the project's Storage release under its logical name (ADR-022 §2).
 func TestAuthorizeReadsTheLogicalRelease(t *testing.T) {
 	s := rulesService(t, storageRules("match /{all=**} { allow read; }"))
-	if err := s.authorize(context.Background(), rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: "a"}); err != nil {
+	if err := authz(s, context.Background(), rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: "a"}); err != nil {
 		t.Fatal(err)
 	}
 	asked := s.projects.(*releaseProjects).asked
@@ -237,10 +282,10 @@ func TestAuthorizeReadsTheLogicalRelease(t *testing.T) {
 func TestListNeedsRulesVersion2(t *testing.T) {
 	s := rulesService(t, "service firebase.storage {\n  match /b/{bucket}/o {\n    match /{all=**} { allow read; }\n  }\n}\n")
 	ctx := context.Background()
-	if err := s.authorize(ctx, rulesBucket, alice, ruleOp{Method: rules.MethodGet, Name: "a/b"}); err != nil {
+	if err := authz(s, ctx, rulesBucket, alice, ruleOp{Method: rules.MethodGet, Name: "a/b"}); err != nil {
 		t.Errorf("get under version 1: %v", err)
 	}
-	if err := s.authorize(ctx, rulesBucket, alice, ruleOp{Method: rules.MethodList, List: true, Name: "a/"}); err != ErrPermissionDenied {
+	if err := authz(s, ctx, rulesBucket, alice, ruleOp{Method: rules.MethodList, List: true, Name: "a/"}); err != ErrPermissionDenied {
 		t.Errorf("list under version 1: %v", err)
 	}
 }
@@ -251,12 +296,12 @@ func TestAuthorizeOutagesAreNotDenials(t *testing.T) {
 	ctx := context.Background()
 	op := ruleOp{Method: rules.MethodGet, Name: "a.png"}
 	s := rulesService(t, storageRules("match /{all=**} { allow read: if ('a' + 'b') == 'ab'; }"))
-	if err := s.authorize(ctx, rulesBucket, anonymous, op); err != nil {
+	if err := authz(s, ctx, rulesBucket, anonymous, op); err != nil {
 		t.Fatalf("allowed: %v", err)
 	}
 
 	s.inflight = rules.NewInflight(1)
-	if err := s.authorize(ctx, rulesBucket, anonymous, op); err != ErrOverloaded {
+	if err := authz(s, ctx, rulesBucket, anonymous, op); err != ErrOverloaded {
 		t.Errorf("an overloaded engine: %v, want ErrOverloaded", err)
 	}
 	if n := counted(t, s.metrics.RulesDecisions.WithLabelValues("overloaded")); n != 1 {
@@ -266,20 +311,20 @@ func TestAuthorizeOutagesAreNotDenials(t *testing.T) {
 	s.inflight = rules.NewInflight(64 << 20)
 	cancelled, cancel := context.WithCancel(ctx)
 	cancel()
-	err := s.authorize(cancelled, rulesBucket, anonymous, op)
+	err := authz(s, cancelled, rulesBucket, anonymous, op)
 	if !errors.Is(err, ErrUnavailable) || !errors.Is(err, context.Canceled) {
 		t.Errorf("a cancelled request: %v", err)
 	}
 
 	boom := errors.New("connection refused")
 	s.projects = &releaseProjects{err: boom}
-	err = s.authorize(ctx, rulesBucket, anonymous, op)
+	err = authz(s, ctx, rulesBucket, anonymous, op)
 	if !errors.Is(err, ErrUnavailable) || !errors.Is(err, boom) || errors.Is(err, ErrPermissionDenied) {
 		t.Errorf("the control plane down: %v", err)
 	}
 	// A control plane that answers no ruleset denies.
 	s.projects = &releaseProjects{}
-	if err := s.authorize(ctx, rulesBucket, anonymous, op); err != ErrPermissionDenied {
+	if err := authz(s, ctx, rulesBucket, anonymous, op); err != ErrPermissionDenied {
 		t.Errorf("no ruleset: %v", err)
 	}
 	if n := counted(t, s.metrics.RulesDecisions.WithLabelValues("allow")); n != 1 {
@@ -289,8 +334,8 @@ func TestAuthorizeOutagesAreNotDenials(t *testing.T) {
 		t.Errorf("%v deny decisions counted", n)
 	}
 	var m dto.Metric
-	if err := s.metrics.RulesSeconds.Write(&m); err != nil || m.GetHistogram().GetSampleCount() != 5 {
-		t.Errorf("RulesSeconds holds %d decisions, %v; want 5", m.GetHistogram().GetSampleCount(), err)
+	if err := s.metrics.RulesSeconds.Write(&m); err != nil || m.GetHistogram().GetSampleCount() != 4 {
+		t.Errorf("RulesSeconds holds %d decisions, %v; want 4 (the outage fails in prepareRules)", m.GetHistogram().GetSampleCount(), err)
 	}
 }
 
@@ -333,14 +378,14 @@ func TestStorageLookups(t *testing.T) {
 		"databases/(default)/documents/c/a": true, "databases/(default)/documents/c/b": true, "databases/(default)/documents/c/c": true,
 	}}
 	s.documents = docs
-	if err := s.authorize(ctx, rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: "two/x"}); err != nil || docs.reads != 2 {
+	if err := authz(s, ctx, rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: "two/x"}); err != nil || docs.reads != 2 {
 		t.Errorf("two lookups: %v after %d reads", err, docs.reads)
 	}
-	if err := s.authorize(ctx, rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: "three/x"}); err != ErrPermissionDenied {
+	if err := authz(s, ctx, rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: "three/x"}); err != ErrPermissionDenied {
 		t.Errorf("three lookups: %v", err)
 	}
 	s.documents = rules.NoDocuments{}
-	if err := s.authorize(ctx, rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: "two/x"}); err != ErrPermissionDenied {
+	if err := authz(s, ctx, rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: "two/x"}); err != ErrPermissionDenied {
 		t.Errorf("NoDocuments: %v", err)
 	}
 }
@@ -395,11 +440,25 @@ func TestLongPathsAreDenied(t *testing.T) {
 	if err := validateName(name); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.authorize(ctx, rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: name}); err != ErrPermissionDenied {
+	if err := authz(s, ctx, rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: name}); err != ErrPermissionDenied {
 		t.Errorf("1024 segments: %v", err)
 	}
-	if err := s.authorize(ctx, rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: strings.Repeat("a/", 500) + "x"}); err != nil {
+	if err := authz(s, ctx, rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: strings.Repeat("a/", 500) + "x"}); err != nil {
 		t.Errorf("501 segments: %v", err)
+	}
+	// The limit is the ruleset's own request_segments, as configured.
+	lim := rules.DefaultLimits()
+	lim.RequestSegments = 10
+	low, issues := rules.Compile(rules.Storage, rules.File{Name: "storage.rules", Content: storageRules("match /{all=**} { allow read; }")}, lim)
+	if low == nil {
+		t.Fatal(issues)
+	}
+	s.projects = &releaseProjects{rs: low}
+	if err := authz(s, ctx, rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: "1/2/3/4/5/6/7/8"}); err != ErrPermissionDenied {
+		t.Errorf("11 segments under a limit of 10: %v, want a denial, not 503", err)
+	}
+	if err := authz(s, ctx, rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: "1/2/3/4/5/6/7"}); err != nil {
+		t.Errorf("10 segments under a limit of 10: %v", err)
 	}
 }
 
@@ -442,8 +501,15 @@ func TestPrepareRules(t *testing.T) {
 	if _, err := s.prepareRules(ctx, rulesBucket, anonymous); !errors.Is(err, ErrUnavailable) {
 		t.Errorf("preparing during an outage: %v", err)
 	}
-	// Admins need nothing prepared.
-	if got, err := s.prepareRules(ctx, rulesBucket, Principal{Kind: PrincipalAdmin}); err != nil || got != ctx {
-		t.Errorf("an admin: %v", err)
+	// An admin, and a hook, get the marker without a read.
+	fp.asked = map[int64][]string{}
+	got, err := s.prepareRules(ctx, rulesBucket, Principal{Kind: PrincipalAdmin})
+	if _, ok := preparedRuleset(got, rulesBucket.Project); err != nil || !ok || len(fp.asked) != 0 {
+		t.Errorf("an admin: %v, marked %v, asked %v", err, ok, fp.asked)
+	}
+	s.authorizeHook = func(context.Context, Bucket, Principal, ruleOp) error { return nil }
+	got, err = s.prepareRules(ctx, rulesBucket, anonymous)
+	if _, ok := preparedRuleset(got, rulesBucket.Project); err != nil || !ok || len(fp.asked) != 0 {
+		t.Errorf("under the hook: %v, marked %v, asked %v", err, ok, fp.asked)
 	}
 }

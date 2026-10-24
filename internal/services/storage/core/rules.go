@@ -20,31 +20,39 @@ import (
 //	create  Method create, Name; Resource the object stored (an upload over it is a create too),
 //	        or nil; Incoming the new object with its actual size and hashes; at finalize, with
 //	        the principal the session's start bound
-//	update  Method update, Name; Resource the object stored; Patch the change (or Incoming, the
-//	        object it makes)
+//	update  Method update, Name; Resource the object stored; Patch the change. An Incoming the
+//	        caller sets gives the content fields only: the versions are always Resource's
 //	delete  Method delete, Name; Resource the object stored, or nil
 //
 // The rules decide before the object's existence does: a denial is ErrPermissionDenied even
 // where the object is missing, so the answer never says whether a name exists (§8).
 //
-// An operation that decides while it holds a row lock resolves the ruleset first, with
-// prepareRules, before its transaction begins: authorize then reads nothing from the pool.
+// Every operation resolves the ruleset with prepareRules before it begins any transaction, and
+// decides with the context it returns: authorize never reads the control plane itself, so a
+// decision under a row lock takes no connection from the pool.
 
 // authorize decides an operation (ADR-022 §8): admins bypass the rules; everyone else answers
-// to the project's Storage rules. A denial is ErrPermissionDenied; an evaluation the process
-// cannot afford now is ErrOverloaded, and a failure of the control plane or the engine
-// ErrUnavailable: both are 503 on the surfaces, never 403 and never an allow.
+// to the project's Storage rules, as prepareRules resolved them. A denial is
+// ErrPermissionDenied; an evaluation the process cannot afford now is ErrOverloaded, and a
+// failure of the control plane or the engine ErrUnavailable: both are 503 on the surfaces,
+// never 403 and never an allow.
 //
-// The package's tests may still decide through authorizeHook.
+// A context prepareRules did not prepare for the bucket is a bug of the caller: authorize logs
+// it and answers ErrUnavailable, under authorizeHook too, so the package's tests catch it.
 func (s *Service) authorize(ctx context.Context, b Bucket, p Principal, op ruleOp) error {
 	if p.Kind == PrincipalAdmin {
 		return nil
+	}
+	rs, ok := preparedRuleset(ctx, b.Project)
+	if !ok {
+		s.log.Error("storage: authorize without prepareRules", "project_number", b.Project, "method", op.Method.String())
+		return fmt.Errorf("%w: the rules were not prepared for project %d", ErrUnavailable, b.Project)
 	}
 	if s.authorizeHook != nil {
 		return s.authorizeHook(ctx, b, p, op)
 	}
 	start := time.Now()
-	allow, err := s.decide(ctx, b, p, op)
+	allow, err := s.decide(ctx, b, p, op, rs)
 	s.metrics.RulesSeconds.Observe(time.Since(start).Seconds())
 	switch {
 	case errors.Is(err, ErrOverloaded):
@@ -61,17 +69,10 @@ func (s *Service) authorize(ctx context.Context, b Bucket, p Principal, op ruleO
 	return nil
 }
 
-// decide evaluates op under the project's Storage release, read by its logical name
-// (ADR-022 §2): a project without one has the locked default, and a release that no longer
-// compiles denies everything; tenancy answers both.
-func (s *Service) decide(ctx context.Context, b Bucket, p Principal, op ruleOp) (bool, error) {
-	rs, ok := preparedRuleset(ctx, b.Project)
-	if !ok {
-		var err error
-		if rs, err = s.storageRuleset(ctx, b); err != nil {
-			return false, err
-		}
-	}
+// decide evaluates op under the project's Storage release (ADR-022 §2): a project without one
+// has the locked default, and a release that no longer compiles denies everything; tenancy
+// answers both.
+func (s *Service) decide(ctx context.Context, b Bucket, p Principal, op ruleOp, rs *rules.Ruleset) (bool, error) {
 	if rs == nil {
 		return false, nil
 	}
@@ -89,37 +90,29 @@ func (s *Service) decide(ctx context.Context, b Bucket, p Principal, op ruleOp) 
 	return d.Allow, nil
 }
 
-// storageRuleset reads the project's Storage release from the control plane: its cache, or the
-// database through the pool.
-func (s *Service) storageRuleset(ctx context.Context, b Bucket) (*rules.Ruleset, error) {
-	rs, err := s.projects.CompiledRelease(ctx, b.Project, tcore.StorageRelease)
-	if err != nil {
-		return nil, fmt.Errorf("%w: the project's Storage rules: %w", ErrUnavailable, err)
-	}
-	return rs, nil
-}
-
-// prepareRules resolves the bucket's Storage ruleset before a transaction that will lock rows,
-// and returns a context that carries it, so authorize under the lock reads no connection from
-// the pool. Without it, authorize inside a transaction that holds a row lock may need a second
-// connection to load a release the cache does not hold, and writers that hold every connection
-// of the pool, each waiting for another, would deadlock.
+// prepareRules resolves the bucket's Storage ruleset, read by its logical name from the control
+// plane (its cache, or the database through the pool), and returns a context that carries it.
+// Every operation that decides calls it before any transaction begins, and passes the context
+// on to authorize: get and list too, so nothing ever loads inside authorize. Under a row lock, a
+// load would need a second connection, and writers that hold every connection of the pool, each
+// waiting for another, would deadlock.
 //
-// Every operation that decides inside inTx or begin calls it first, with the context it then
-// passes on (Update, Delete, the token changes, commitObject's callers, Rewrite for both of its
-// buckets): ctx, err := s.prepareRules(ctx, b, p). An admin, and a test deciding through
-// authorizeHook, need nothing, and get ctx back as it is. The error is ErrUnavailable. The
-// ruleset is the one of the request's start: a publish after it applies from the next request.
+//	ctx, err := s.prepareRules(ctx, b, p) // Rewrite: once for each of its buckets
+//
+// An admin needs no ruleset, and a test deciding through authorizeHook reads none, but both get
+// the marker authorize checks. The error is ErrUnavailable. The ruleset is the one of the
+// request's start: a publish after it applies from the next request.
 func (s *Service) prepareRules(ctx context.Context, b Bucket, p Principal) (context.Context, error) {
-	if p.Kind == PrincipalAdmin || s.authorizeHook != nil {
-		return ctx, nil
-	}
 	if _, ok := preparedRuleset(ctx, b.Project); ok {
 		return ctx, nil
 	}
-	rs, err := s.storageRuleset(ctx, b)
-	if err != nil {
-		return ctx, err
+	var rs *rules.Ruleset
+	if p.Kind != PrincipalAdmin && s.authorizeHook == nil {
+		var err error
+		rs, err = s.projects.CompiledRelease(ctx, b.Project, tcore.StorageRelease)
+		if err != nil {
+			return ctx, fmt.Errorf("%w: the project's Storage rules: %w", ErrUnavailable, err)
+		}
 	}
 	prev, _ := ctx.Value(preparedKey{}).([]prepared)
 	return context.WithValue(ctx, preparedKey{}, append(slices.Clip(prev), prepared{b.Project, rs})), nil
@@ -130,7 +123,7 @@ type preparedKey struct{}
 
 type prepared struct {
 	project int64
-	rs      *rules.Ruleset
+	rs      *rules.Ruleset // nil for an admin and under authorizeHook
 }
 
 func preparedRuleset(ctx context.Context, project int64) (*rules.Ruleset, bool) {
@@ -143,16 +136,12 @@ func preparedRuleset(ctx context.Context, project int64) (*rules.Ruleset, bool) 
 	return nil, false
 }
 
-// maxRulePathSegments is the longest match path the binding hands the engine: its
-// request_segments default. A name of more segments (over a thousand slashes) is denied here
-// rather than refused by the engine as an invalid request, which the surfaces would answer 503
-// and the SDKs retry without end. An operator who lowers request_segments below it gets such
-// names refused that way: an Aruma limit (docs/compat/storage-v0.3.md).
-var maxRulePathSegments = rules.DefaultLimits().RequestSegments
-
 // ruleRequest builds the engine's request for op, or false where the binding denies without
 // evaluating: list under rules_version 1 (core-syntax; the emulator: "List operations are only
-// allowed for rules_version='2'", D §4.1), and a path past maxRulePathSegments.
+// allowed for rules_version='2'", D §4.1), and a path longer than the ruleset's
+// request_segments (a name of over a thousand slashes by default), which the engine would refuse
+// as an invalid request, answered 503 and retried by the SDKs without end: an Aruma limit
+// (docs/compat/storage-v0.3.md).
 func (s *Service) ruleRequest(b Bucket, p Principal, op ruleOp, rs *rules.Ruleset) (*rules.Request, bool) {
 	list := op.Method == rules.MethodList
 	if op.Method < rules.MethodGet || op.Method > rules.MethodDelete || (op.List && !list) {
@@ -162,7 +151,7 @@ func (s *Service) ruleRequest(b Bucket, p Principal, op ruleOp, rs *rules.Rulese
 		return nil, false
 	}
 	match, path := rulePaths(b.Name, op.Name, list)
-	if len(match) > maxRulePathSegments {
+	if len(match) > rs.RequestSegments() {
 		return nil, false
 	}
 	vars := map[string]rules.Value{
@@ -208,11 +197,16 @@ func (s *Service) requestValue(p Principal, op ruleOp, path []string) rules.Valu
 			incoming = incomingCreate(o)
 		}
 	case rules.MethodUpdate:
-		switch {
-		case op.Incoming != nil:
-			incoming = incomingUpdate(*op.Incoming)
-		case op.Resource != nil:
-			incoming = incomingUpdate(patched(*op.Resource, op.Patch))
+		// generation, metageneration and etag are the stored object's whatever Incoming says
+		// (PY-RR metageneration-unchanged ALLOW, metageneration-next DENY): a caller's Incoming
+		// may already carry the metageneration the change will commit.
+		if op.Resource != nil {
+			o := patched(*op.Resource, op.Patch)
+			if op.Incoming != nil {
+				o = *op.Incoming
+				o.Generation, o.Metageneration = op.Resource.Generation, op.Resource.Metageneration
+			}
+			incoming = incomingUpdate(o)
 		}
 	}
 	return rules.Map(map[string]rules.Value{

@@ -20,8 +20,8 @@ import (
 
 // A transaction that holds a row lock decides with the ruleset prepareRules resolved before it
 // began, and reads no connection from the pool: with two connections and 200 writers on the
-// cold caches of twenty projects, every one finishes. Unprepared, two writers that each hold a
-// connection and a lock wait for a third connection that never comes.
+// cold caches of twenty projects, every one finishes. Unprepared, a writer under the lock fails
+// at once instead of waiting for a third connection.
 func TestDecidingUnderALockNeedsNoConnection(t *testing.T) {
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, storetest.NewDB(t)+"&pool_max_conns=2")
@@ -105,23 +105,26 @@ func TestDecidingUnderALockNeedsNoConnection(t *testing.T) {
 		}
 	}
 
-	// The hazard, unprepared: both connections held by locked writers, each needing a third.
+	// Unprepared, both connections held by locked writers: each fails at once, and neither
+	// waits for a third connection.
 	s = cold()
-	short, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
 	var both sync.WaitGroup
 	both.Add(2)
 	errs = make(chan error, 2)
+	began := time.Now()
 	for i := range 2 {
 		wg.Go(func() {
-			errs <- write(short, s, buckets[i], false, func() { both.Done(); both.Wait() })
+			errs <- write(deadline, s, buckets[i], false, func() { both.Done(); both.Wait() })
 		})
 	}
 	wg.Wait()
 	close(errs)
 	for err := range errs {
-		if !errors.Is(err, ErrUnavailable) || !errors.Is(err, context.DeadlineExceeded) {
-			t.Errorf("an unprepared writer under the lock: %v, want it stuck until its deadline", err)
+		if !errors.Is(err, ErrUnavailable) || errors.Is(err, context.DeadlineExceeded) {
+			t.Errorf("an unprepared writer under the lock: %v, want ErrUnavailable at once", err)
 		}
+	}
+	if d := time.Since(began); d > 5*time.Second {
+		t.Errorf("the unprepared writers took %v", d)
 	}
 }

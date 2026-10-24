@@ -100,7 +100,7 @@ func TestPyricRequestResourceFields(t *testing.T) {
 	check := func(id, want string, op ruleOp) {
 		t.Helper()
 		n++
-		err := s.authorize(ctx, b, alice, op)
+		err := authz(s, ctx, b, alice, op)
 		got := "ALLOW"
 		if err == ErrPermissionDenied {
 			got = "DENY"
@@ -138,6 +138,24 @@ func TestPyricRequestResourceFields(t *testing.T) {
 			}
 			check(group+"/"+id, probes[id], op)
 		}
+	}
+	// An update whose caller hands an Incoming with the versions it will commit (S2-C's Update
+	// does) sees the stored versions all the same: every update probe again, the
+	// metageneration-next DENY and metageneration-unchanged ALLOW among them.
+	for id, want := range rr.Behavior["update"] {
+		name := fmt.Sprintf("%s/update/%s.bin", prefix, id)
+		p := Patch{Fields: settable, Metadata: custom}
+		if strings.HasPrefix(id, "partial-") {
+			p = Patch{Metadata: custom}
+		}
+		res := seed(name, SurfaceGCS)
+		next := patched(*res, &p)
+		next.Generation, next.Metageneration = res.Generation+1, res.Metageneration+1
+		check("update with a bumped Incoming/"+id, want, ruleOp{Method: rules.MethodUpdate, Name: name, Resource: res,
+			Incoming: &next, Patch: &p, Surface: SurfaceFirebase})
+	}
+	if rr.Behavior["update"]["metageneration-next"] != "DENY" || rr.Behavior["update"]["metageneration-unchanged"] != "ALLOW" {
+		t.Error("PY-RR's metageneration probes are not the ones pinned")
 	}
 	for seedBy, probes := range rr.StoredUpdateBehavior {
 		sf := map[string]Surface{"client": SurfaceFirebase, "gcs": SurfaceGCS}[seedBy]
@@ -234,7 +252,7 @@ func TestPyricNativeObjectFields(t *testing.T) {
 		default:
 			op = ruleOp{Method: rules.MethodGet, Name: at(family).Name, Resource: at(family), Surface: SurfaceFirebase}
 		}
-		err := s.authorize(ctx, Bucket{Project: testProject, Name: stored.Bucket}, alice, op)
+		err := authz(s, ctx, Bucket{Project: testProject, Name: stored.Bucket}, alice, op)
 		if got := map[bool]string{true: "ALLOW", false: "DENY"}[err == nil]; got != w || (err != nil && err != ErrPermissionDenied) {
 			t.Errorf("%s: %v, production %s", family, err, w)
 		}
@@ -322,7 +340,7 @@ func TestOracleListAndPath(t *testing.T) {
 		{paths.ruleset(t, "aruma/storage-paths/list_on_prefix"), list(""), false, "not the root"},
 	} {
 		s := rulesService(t, c.src)
-		err := s.authorize(ctx, b, user, c.op)
+		err := authz(s, ctx, b, user, c.op)
 		if c.allow && err != nil || !c.allow && err != ErrPermissionDenied {
 			t.Errorf("%s: %v, want allow %v", c.why, err, c.allow)
 		}
@@ -390,7 +408,7 @@ func TestOracleResourceView(t *testing.T) {
 			p = Principal{Kind: PrincipalUser, UID: req.Auth.UID, Token: req.Auth.Token}
 		}
 		total++
-		err := s.authorize(ctx, b, p, ruleOp{Method: rules.MethodGet, Name: name, Resource: &o, Surface: SurfaceFirebase})
+		err := authz(s, ctx, b, p, ruleOp{Method: rules.MethodGet, Name: name, Resource: &o, Surface: SurfaceFirebase})
 		got := map[bool]string{true: "allow", false: "deny"}[err == nil]
 		if err != nil && err != ErrPermissionDenied {
 			t.Fatalf("%s: %v", c.ID, err)

@@ -18,5 +18,5 @@
 50. **مؤقت: ترتيب `metadata` في القواعد بالمفتاح** (`rules.Map`)، فـ `values()` مرتبة كـ `keys()`. Test API وحدها تحفظ ترتيب الطلب، وهي تأخذ `request` حرفيًا؛ jsonb لا يحفظ ترتيبًا، ولا قياس من المحاكي ولا المنشور. إن قاسه تسجيل تغيّر `metadataValue` وحده، ومعه تخزين يحفظ الترتيب. `core/rules_fields.go`.
 51. **مؤقت: `resource` سبعة عشر مفتاحًا:** مفاتيح `request.resource` الخمسة عشر (PY-RR) و`timeCreated` و`updated`، وغير المضبوط `null` إلا `contentEncoding` (`'identity'`، كما قاسه PY-RR في `request.resource`)، و`storageClass` = `'STANDARD'`. `core/rules_fields.go` (`existing`).
 52. **مؤقت: list ببادئة لا تنتهي بـ `/` يُقرَّر على مجلدها** ومقطع مجهول، فلا تسمح قاعدة `p/a/{x}` بقائمة `p/a` التي تعيد `p/ab`. `core/rules.go` (`rulePaths`).
-53. **قيد: اسم بأكثر من 1021 مقطعًا يُرفض 403** (حد `request_segments` 1024)، لا 503. `core/rules.go` (`maxRulePathSegments`).
-54. **قيد: مصدر قواعد فيه NUL يُرفض 400**، و2,500 ruleset لكل مشروع ثابتة في الكود. `tenancy/core/rules.go`.
+53. **قيد: اسم بمقاطع أكثر من `request_segments` للـ ruleset** (1024 افتراضيًا) **يُرفض 403**، لا 503. `core/rules.go` (`ruleRequest`).
+54. **قيد: مصدر قواعد فيه NUL يُرفض 400**، والـ rulesets لكل مشروع حتى `rules.limits.rulesets_per_project` (2,500). `tenancy/core/rules.go`.

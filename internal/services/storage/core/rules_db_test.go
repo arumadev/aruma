@@ -40,7 +40,7 @@ func TestRulesDeployedThroughTenancyDecide(t *testing.T) {
 	create := ruleOp{Method: rules.MethodCreate, Name: "users/alice/b.png", Surface: SurfaceFirebase,
 		Incoming: &Object{Bucket: b.Name, Name: "users/alice/b.png", Size: 10, ContentType: "image/png"}}
 
-	if err := s.authorize(ctx, b, alice, get); err != ErrPermissionDenied {
+	if err := authz(s, ctx, b, alice, get); err != ErrPermissionDenied {
 		t.Errorf("before any deploy: %v, want the locked default's denial", err)
 	}
 	deploy := func(src string) {
@@ -68,13 +68,13 @@ func TestRulesDeployedThroughTenancyDecide(t *testing.T) {
 		{alice, ruleOp{Method: rules.MethodList, List: true, Name: "users/alice/"}, nil},
 		{alice, ruleOp{Method: rules.MethodDelete, Name: "users/alice/a.png", Resource: storedObject("users/alice/a.png")}, ErrPermissionDenied},
 	} {
-		if err := s.authorize(ctx, b, c.p, c.op); err != c.want {
+		if err := authz(s, ctx, b, c.p, c.op); err != c.want {
 			t.Errorf("%s %s of %s: %v, want %v", c.p.UID, c.op.Method, c.op.Name, err, c.want)
 		}
 	}
 	// A new deploy takes effect on the next request.
 	deploy(storageRules("match /{all=**} { allow read, write: if false; }"))
-	if err := s.authorize(ctx, b, alice, get); err != ErrPermissionDenied {
+	if err := authz(s, ctx, b, alice, get); err != ErrPermissionDenied {
 		t.Errorf("after the locking deploy: %v", err)
 	}
 }

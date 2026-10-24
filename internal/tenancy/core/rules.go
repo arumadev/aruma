@@ -40,9 +40,6 @@ const (
 	firestoreRelease     = "cloud.firestore"
 )
 
-// maxRulesets is how many rulesets a project keeps, as in Firebase (manage-deploy: 2,500).
-const maxRulesets = 2500
-
 // Ruleset is a saved rules source, as the firebaserules API shows it.
 type Ruleset struct {
 	Name       string // projects/{project}/rulesets/{uuid}
@@ -101,7 +98,7 @@ func (s *Service) CreateRuleset(ctx context.Context, p *authn.Principal, project
 		if err != nil {
 			return err
 		}
-		if n >= maxRulesets {
+		if n >= int64(s.opts.RulesLimits.RulesetsPerProject) {
 			return apierr.New(apierr.ResourceExhausted, "The project has %d rulesets, the most it may keep. Delete unused ones first.", n)
 		}
 		if row, err = q.InsertRuleset(ctx, queries.InsertRulesetParams{ProjectNumber: proj.ProjectNumber, Service: string(svc), Files: raw}); err != nil {
@@ -470,8 +467,11 @@ func (s *Service) compiledCache() *releaseCache {
 	return c.(*releaseCache)
 }
 
-// load returns the cached ruleset for key, or waits for the load in flight, or loads it with
-// fn, which returns the ruleset and its weight.
+// load returns the cached ruleset for key, or the result of the load in flight for it, starting
+// one with fn (which returns the ruleset and its weight) when there is none. The load is every
+// waiter's: it runs on its own, under context.WithoutCancel and loadTimeout, so the first
+// request's short deadline or cancellation fails no other; each waiter, the first included,
+// stops waiting when its own ctx ends.
 func (c *releaseCache) load(ctx context.Context, key releaseKey, fn func(context.Context) (*rules.Ruleset, int64, error)) (*rules.Ruleset, error) {
 	c.mu.Lock()
 	if el, ok := c.entries[key]; ok {
@@ -480,32 +480,27 @@ func (c *releaseCache) load(ctx context.Context, key releaseKey, fn func(context
 		c.mu.Unlock()
 		return rs, nil
 	}
-	if l, ok := c.loading[key]; ok {
-		c.mu.Unlock()
-		select {
-		case <-l.done:
-			return l.rs, l.err
-		case <-ctx.Done():
-			return nil, internal(ctx.Err())
-		}
+	l, ok := c.loading[key]
+	if !ok {
+		l = &releaseLoad{done: make(chan struct{})}
+		c.loading[key] = l
+		go c.run(context.WithoutCancel(ctx), key, l, c.epoch, fn)
 	}
-	l := &releaseLoad{done: make(chan struct{})}
-	c.loading[key] = l
-	epoch := c.epoch
 	c.mu.Unlock()
-
-	// The load is the waiters' too: it does not stop when the first request goes away, but keeps
-	// its deadline, and never runs past loadTimeout, so a pool that cannot give it a connection
-	// fails it rather than holding every waiter.
-	deadline := time.Now().Add(loadTimeout)
-	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
-		deadline = d
+	select {
+	case <-l.done:
+		return l.rs, l.err
+	case <-ctx.Done():
+		return nil, internal(ctx.Err())
 	}
-	lctx, cancel := context.WithDeadline(context.WithoutCancel(ctx), deadline)
-	rs, weight, err := fn(lctx)
+}
+
+// run performs one load and caches its result, unless a forget overtook it.
+func (c *releaseCache) run(ctx context.Context, key releaseKey, l *releaseLoad, epoch uint64, fn func(context.Context) (*rules.Ruleset, int64, error)) {
+	ctx, cancel := context.WithTimeout(ctx, loadTimeout)
+	rs, weight, err := fn(ctx)
 	cancel()
 	l.rs, l.err = rs, err
-
 	c.mu.Lock()
 	if c.loading[key] == l {
 		delete(c.loading, key)
@@ -515,7 +510,6 @@ func (c *releaseCache) load(ctx context.Context, key releaseKey, fn func(context
 	}
 	c.mu.Unlock()
 	close(l.done)
-	return rs, err
 }
 
 // put adds an entry under c.mu, evicting the least recently used ones over the cap. A ruleset

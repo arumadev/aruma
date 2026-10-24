@@ -252,7 +252,7 @@ func TestCreateRulesetRefusals(t *testing.T) {
 	}
 	// 2,500 per project.
 	if _, err := pool.Exec(ctx, `INSERT INTO control.rulesets (project_number, service, files)
-		SELECT $1, 'firebase.storage', '[]' FROM generate_series(1, $2)`, proj.Number, maxRulesets-1-count()); err != nil {
+		SELECT $1, 'firebase.storage', '[]' FROM generate_series(1, $2)`, proj.Number, s.opts.RulesLimits.RulesetsPerProject-1-count()); err != nil {
 		t.Fatal(err)
 	}
 	if _, _, err := s.CreateRuleset(ctx, p, proj.ID, rules.Storage, storageFile("true")); err != nil {
@@ -569,5 +569,64 @@ func TestReleaseCacheLoadsOnce(t *testing.T) {
 	}
 	if s.compiledCache() != s.compiledCache() {
 		t.Error("a service has two caches")
+	}
+}
+
+// The shared load is every waiter's: the first request's short deadline ends its own wait, not
+// the load the others joined, and the result is cached.
+func TestReleaseCacheLoadOutlivesItsFirstRequest(t *testing.T) {
+	c := &releaseCache{max: 1 << 20, order: list.New(), entries: map[releaseKey]*list.Element{}, loading: map[releaseKey]*releaseLoad{}}
+	rs := &rules.Ruleset{}
+	key := releaseKey{1, StorageRelease}
+	release := make(chan struct{})
+	var stopped atomic.Bool
+	fn := func(ctx context.Context) (*rules.Ruleset, int64, error) {
+		select {
+		case <-release:
+		case <-ctx.Done():
+			stopped.Store(true)
+			return nil, 0, ctx.Err()
+		}
+		return rs, 10, nil
+	}
+	short, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	first := make(chan error, 1)
+	go func() {
+		_, err := c.load(short, key, fn)
+		first <- err
+	}()
+	for inFlight := false; !inFlight; {
+		c.mu.Lock()
+		_, inFlight = c.loading[key]
+		c.mu.Unlock()
+		runtime.Gosched()
+	}
+	second := make(chan *rules.Ruleset, 1)
+	go func() {
+		got, err := c.load(context.Background(), key, func(context.Context) (*rules.Ruleset, int64, error) {
+			t.Error("a second load started")
+			return nil, 0, nil
+		})
+		if err != nil {
+			t.Errorf("the second request: %v", err)
+		}
+		second <- got
+	}()
+	if err := <-first; !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("the first request's own deadline: %v", err)
+	}
+	close(release)
+	if got := <-second; got != rs {
+		t.Errorf("the second request got %v", got)
+	}
+	if stopped.Load() {
+		t.Error("the load stopped with the first request")
+	}
+	c.mu.Lock()
+	_, cached := c.entries[key]
+	c.mu.Unlock()
+	if !cached {
+		t.Error("the load's result is not cached")
 	}
 }
