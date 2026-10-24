@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/platform/httpx"
 	"github.com/arumadev/aruma/internal/tenancy/core"
 )
@@ -12,9 +13,13 @@ import (
 // §1.4, ADR-022 §15): Service Usage, which they reach through FIREBASE_SERVICE_USAGE_URL to
 // check that the API named by FIREBASE_FIREBASESTORAGE_URL's host is on, and the project's
 // default bucket from the Firebase Storage API at that origin. Each project has one bucket,
-// <project>.<project_domain> (ADR-022 §2), the storageBucket of its config files. Routes are
-// registered only with Storage on; without it these paths are not served and defaultBucket's
-// 404 makes the CLI print "Firebase Storage has not been set up on project".
+// <project>.<project_domain> (ADR-022 §2), the storageBucket of its config files.
+//
+// The routes answer with Storage off too, in the JSON the CLI reads: Service Usage still says
+// ENABLED, since the CLI would otherwise enable and poll for two minutes before it gives up;
+// defaultBucket is 404, on which both commands print "Firebase Storage has not been set up on
+// project" and stop before any rules request (gcp/storage.ts:214-219); and the bucket list is
+// empty, which ext:install reads as Storage not set up.
 
 // storageLocation is where every bucket reports it is. Aruma has one place; the CLI does not read
 // it (C §1.3).
@@ -42,6 +47,9 @@ type bucketRef struct {
 // TypeError (C §1.3).
 func (a *API) defaultBucket(w http.ResponseWriter, r *http.Request) {
 	p, err := a.activeProject(r)
+	if err == nil && !a.opts.Storage {
+		err = apierr.New(apierr.NotFound, "Cloud Storage is not enabled on this server.")
+	}
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -59,11 +67,15 @@ func (a *API) defaultBucket(w http.ResponseWriter, r *http.Request) {
 
 // listBuckets is the Firebase Storage API's bucket list, which firebase ext:install reads to
 // see whether Storage is set up. Its names carry the project number, as firebase-tools expects
-// (extensions/provisioningHelper.ts:127-129).
+// (extensions/provisioningHelper.ts:127-129). With Storage off it is empty, {} as proto3 writes it.
 func (a *API) listBuckets(w http.ResponseWriter, r *http.Request) {
 	p, err := a.activeProject(r)
 	if err != nil {
 		a.fail(w, r, err)
+		return
+	}
+	if !a.opts.Storage {
+		httpx.WriteJSON(w, http.StatusOK, struct{}{})
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{

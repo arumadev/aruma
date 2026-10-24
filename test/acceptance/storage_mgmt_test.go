@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -506,25 +505,49 @@ func TestStorageMgmtAuthAndIsolation(t *testing.T) {
 	sa.mustOK(sa.do("GET", "/v1/"+name, nil))
 	expect(t, sa.do("GET", "/v1alpha/projects/other-app/defaultBucket", nil), 404, "NOT_FOUND")
 
-	// Without Storage the Management API registers none of them, and the server routes /v1/ and
-	// /v1alpha/ elsewhere (server.go): nothing answers 2xx, so defaultBucket's failure makes the
-	// CLI stop before any rules request.
+	// Without Storage, every path still answers JSON, as the CLI reads it: Service Usage ENABLED
+	// (or the CLI would enable and poll for two minutes), defaultBucket 404 (the CLI then prints
+	// "Firebase Storage has not been set up" and stops), an empty bucket list, and the rules API
+	// NOT_FOUND. Credentials and ownership hold as with Storage on.
 	off := newEnv(t, nil)
 	offOwner := off.owner()
 	offOwner.project("chat-app")
-	pat := offOwner.pat()
-	offCLI := off.withBearer(pat)
+	offCLI := off.withBearer(offOwner.pat())
+	offOther := off.withBearer(off.account("stranger@example.com").pat())
 	for _, mp := range paths {
-		if r := offCLI.do(mp[0], mp[1], map[string]any{}); r.Status < 400 {
-			t.Errorf("without Storage, %s %s: %d %s", mp[0], mp[1], r.Status, r.Body)
+		r := offCLI.do(mp[0], mp[1], map[string]any{})
+		if ct := r.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
+			t.Errorf("without Storage, %s %s: %d %s %s", mp[0], mp[1], r.Status, ct, r.Body)
 		}
-		req := httptest.NewRequest(mp[0], mp[1], strings.NewReader("{}"))
-		req.Header.Set("Authorization", "Bearer "+pat)
-		req.Header.Set("Content-Type", "application/json")
-		rec := httptest.NewRecorder()
-		off.App.Mgmt.Handler().ServeHTTP(rec, req)
-		if rec.Code != 404 || !strings.Contains(rec.Body.String(), `"NOT_FOUND"`) {
-			t.Errorf("without Storage, the Management API on %s %s: %d %s", mp[0], mp[1], rec.Code, rec.Body)
+		switch {
+		case strings.Contains(mp[1], "/services/") && mp[0] == "GET":
+			if r.Status != 200 || r.str("state") != "ENABLED" {
+				t.Errorf("without Storage, %s %s: %d %s", mp[0], mp[1], r.Status, r.Body)
+			}
+		case strings.Contains(mp[1], "/services/"):
+			if r.Status != 200 || r.JSON["done"] != true {
+				t.Errorf("without Storage, %s %s: %d %s", mp[0], mp[1], r.Status, r.Body)
+			}
+		case strings.HasSuffix(mp[1], "/buckets"):
+			if r.Status != 200 || string(r.Body) != "{}\n" {
+				t.Errorf("without Storage, %s %s: %d %s", mp[0], mp[1], r.Status, r.Body)
+			}
+		default:
+			if r.Status != 404 || r.errStatus() != "NOT_FOUND" {
+				t.Errorf("without Storage, %s %s: %d %s", mp[0], mp[1], r.Status, r.Body)
+			}
 		}
+		// A served route asks for a credential; the rules API, not served, is NOT_FOUND to
+		// everyone, as any other unknown path of the Management API.
+		served := strings.Contains(mp[1], "/services/") || strings.HasSuffix(mp[1], "/buckets") || strings.HasSuffix(mp[1], "/defaultBucket")
+		if r := off.client().do(mp[0], mp[1], map[string]any{}); served && r.Status != 401 || !served && r.Status != 404 {
+			t.Errorf("without Storage, %s %s anonymous: %d", mp[0], mp[1], r.Status)
+		}
+		if r := offOther.do(mp[0], mp[1], map[string]any{}); r.Status != 404 {
+			t.Errorf("without Storage, %s %s by another account: %d %s", mp[0], mp[1], r.Status, r.Body)
+		}
+	}
+	if msg := offCLI.do("GET", "/v1alpha/projects/chat-app/defaultBucket", nil).str("error", "message"); msg != "Cloud Storage is not enabled on this server." {
+		t.Errorf("defaultBucket without Storage: %q", msg)
 	}
 }

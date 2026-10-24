@@ -101,11 +101,12 @@ func (a *API) routes() *httpx.Router {
 		r.Handle("GET", c, a.auth.Require(policy, http.HandlerFunc(a.listDatabaseInstances)))
 		r.Handle("GET", c+"/{instance}", a.auth.Require(policy, http.HandlerFunc(a.getDatabaseInstance)))
 	}
+	// defaultBucket, buckets and Service Usage (storage.go) for the firebase CLI (ADR-022 §15),
+	// answered with Storage off too, so the CLI learns Storage is not set up; and firebaserules
+	// v1 (rules.go) with Storage on.
+	a.storageRoutes(r)
 	if a.opts.Storage {
-		// firebaserules v1 (rules.go) and defaultBucket, buckets and Service Usage (storage.go)
-		// for the firebase CLI (ADR-022 §15).
 		a.rulesRoutes(r)
-		a.storageRoutes(r)
 	}
 	return r
 }
