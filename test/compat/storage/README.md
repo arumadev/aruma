@@ -129,4 +129,4 @@ classified test is missing from the run; 2 usage; 3 setup failed.
 | ct (not emulatorOnly) | 119 | 108 | 0 (9 fixed) | 9 | 2 |
 | captures | 188 steps | | 836 differences of 64 kinds: a 0, b 24 kinds (293), c 40 kinds (543) |
 
-A whole run with warm caches takes about two minutes, most of it the two browsers.
+A whole run with warm caches takes under a minute (39 s on this machine); a cold one adds the downloads and the three `npm ci`.
