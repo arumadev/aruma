@@ -21,7 +21,7 @@ import (
 // and none that case folding pairs with another (so (?i) cannot reach a sentinel). The private
 // use blocks come first. Dropping a block the string does not use changes nothing it can match,
 // so the rewritten pattern answers on the string as the pattern would. A string with characters
-// in every one of the 30 blocks and a lone surrogate to read leaves none: an evaluation error,
+// in every one of the 23 blocks and a lone surrogate to read leaves none: an evaluation error,
 // a denial; only a string written for it holds that.
 //
 // A string the matcher reads no lone surrogate in never meets a rewritten pattern.
