@@ -15,14 +15,15 @@ import (
 //
 // The walk reads the names in [from, before) in byte order. A name with the delimiter after the
 // prefix gives a prefix, and the next seek starts past every name under it (pastPrefix), so a
-// bucket of a million names under a hundred folders costs a hundred and one seeks. Every seek
-// but the last returns an entry (or, on /v0, skips one), which bounds them by MaxResults+1;
-// the extra row a seek asks for tells whether a next page exists, without another one. Without
-// a delimiter a seek reads the rest of the page; with one, it reads listBatch rows at first and
-// twice as many after each seek that found no prefix, so a folder's names past its first few
-// are not read for nothing. Prefixes and objects share the page's MaxResults in one order, as
-// GCS pages them. On /v0, names and prefixes with an empty segment are left out, and the next
-// seek still starts past them.
+// bucket of a million names under a hundred folders costs a hundred and one seeks. On /v0,
+// names and prefixes with an empty segment are left out, but count against the page as if
+// returned: a page examines at most MaxResults entries, and may come back short, even empty,
+// with a next page token. Every seek but the last examines an entry, which bounds them by
+// MaxResults+1; the extra row a seek asks for tells whether a next page exists, without another
+// one. Without a delimiter a seek reads the rest of the page; with one, it reads listBatch rows
+// at first and twice as many after each seek that found no prefix, so a folder's names past its
+// first few are not read for nothing. Prefixes and objects share the page's MaxResults in one
+// order, as GCS pages them. Objects carry no tokens on /v0, whose items are a name and a bucket.
 func (s *Service) List(ctx context.Context, b Bucket, p Principal, o ListOptions) (ListPage, error) {
 	for _, f := range []struct{ name, v string }{
 		{"prefix", o.Prefix}, {"delimiter", o.Delimiter}, {"startOffset", o.StartOffset}, {"endOffset", o.EndOffset},
@@ -72,7 +73,7 @@ func (s *Service) List(ctx context.Context, b Bucket, p Principal, o ListOptions
 		before = min(before, o.EndOffset)
 	}
 
-	n, batch := 0, listBatch
+	n, batch := 0, listBatch // n: the entries examined, returned or left out
 	var last pageCursor
 	for from < before {
 		limit := size - n + 1
@@ -97,8 +98,8 @@ func (s *Service) List(ctx context.Context, b Bucket, p Principal, o ListOptions
 					last = pageCursor{last: pre, prefix: true}
 					if !firebase || !prefixHasEmptySegment(pre) {
 						page.Prefixes = append(page.Prefixes, pre)
-						n++
 					}
+					n++
 					next, ok := pastPrefix(pre)
 					if !ok {
 						return page, nil
@@ -109,15 +110,11 @@ func (s *Service) List(ctx context.Context, b Bucket, p Principal, o ListOptions
 			}
 			last = pageCursor{last: r.Name}
 			from = after(r.Name)
+			n++
 			if firebase && hasEmptySegment(r.Name) {
 				continue
 			}
-			obj, err := s.objectFromRow(b, r)
-			if err != nil {
-				return ListPage{}, err
-			}
-			page.Objects = append(page.Objects, obj)
-			n++
+			page.Objects = append(page.Objects, s.listObject(b, r, o.Surface))
 		}
 		switch {
 		case jumped:
@@ -133,3 +130,23 @@ func (s *Service) List(ctx context.Context, b Bucket, p Principal, o ListOptions
 
 // listBatch is the rows a seek reads at first when the list has a delimiter.
 const listBatch = 16
+
+// listObject returns a listed object. /v0 items show a name and a bucket alone, so their tokens
+// stay sealed; GCS items show them, opened here. One row that does not convert never fails the
+// page: what does not open is logged and left out of that item.
+func (s *Service) listObject(b Bucket, r queries.StorageObject, sf Surface) Object {
+	o, err := rowObject(b, r)
+	if err != nil {
+		s.log.Error("storage: a listed object's metadata does not read", "project", b.Project, "name", r.Name, "err", err)
+	}
+	if sf == SurfaceFirebase {
+		return o
+	}
+	tokens, err := s.openTokens(b.Project, r.Name, r.DownloadTokens)
+	if err != nil {
+		s.log.Error("storage: a listed object's download tokens do not open", "project", b.Project, "name", r.Name, "err", err)
+		return o
+	}
+	o.DownloadTokens = tokens
+	return o
+}

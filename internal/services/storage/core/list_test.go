@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"sync/atomic"
@@ -356,5 +357,72 @@ func TestListSeeksOnAMillionNames(t *testing.T) {
 	page, err = f.s.List(ctx, f.b, admin, ListOptions{Delimiter: "/", MaxResults: 10, Surface: SurfaceFirebase, PageToken: page.NextPageToken})
 	if err != nil || len(page.Prefixes) != 10 || page.Prefixes[0] != "f0010/" || db.seeks.Load() > 11 {
 		t.Errorf("the second page: %v, %v, %d seeks", page.Prefixes, err, db.seeks.Load())
+	}
+}
+
+// On /v0 the names and prefixes left out count against the page: 20,000 names with an empty
+// segment cost at most maxResults+1 seeks a page, with no delimiter and with one other than "/",
+// and the pages come back empty with a token until the range ends.
+func TestListSkipsCountAgainstThePage(t *testing.T) {
+	ctx := context.Background()
+	f := newObjectsFixture(t)
+	names := make([]string, 20000)
+	for i := range names {
+		names[i] = fmt.Sprintf("x//%05d-y", i)
+	}
+	putNames(t, f.pool, testProject, append(names, "z.txt"))
+	db := &countingDB{DBTX: f.pool}
+	f.s.reads = queries.New(db)
+	for _, delim := range []string{"", "-"} {
+		o := ListOptions{Delimiter: delim, MaxResults: 1000, Surface: SurfaceFirebase}
+		var got []string
+		pages := 0
+		for {
+			db.seeks.Store(0)
+			page, err := f.s.List(ctx, f.b, admin, o)
+			if err != nil {
+				t.Fatal(err)
+			}
+			pages++
+			if s := db.seeks.Load(); s > 1001 {
+				t.Fatalf("delimiter %q, page %d: %d seeks", delim, pages, s)
+			}
+			for _, obj := range page.Objects {
+				got = append(got, obj.Name)
+			}
+			if len(page.Prefixes) != 0 {
+				t.Fatalf("delimiter %q: prefixes %v", delim, page.Prefixes)
+			}
+			if page.NextPageToken == "" {
+				break
+			}
+			o.PageToken = page.NextPageToken
+		}
+		if !slices.Equal(got, []string{"z.txt"}) || pages != 21 {
+			t.Errorf("delimiter %q: %v in %d pages", delim, got, pages)
+		}
+	}
+}
+
+// A seal that does not open fails no page: /v0 items do not open the tokens, GCS items leave out
+// the tokens that do not open.
+func TestListWithABadSeal(t *testing.T) {
+	ctx := context.Background()
+	f := newObjectsFixture(t)
+	tok := newDownloadToken()
+	f.put(t, "a.txt", seed{body: "a", tokens: []string{tok}})
+	f.put(t, "b.txt", seed{body: "b"})
+	if _, err := f.pool.Exec(ctx, `UPDATE storage.objects SET download_tokens = (SELECT download_tokens FROM storage.objects
+		WHERE name = 'a.txt') WHERE name = 'b.txt'`); err != nil {
+		t.Fatal(err)
+	}
+	for _, sf := range []Surface{SurfaceFirebase, SurfaceGCS} {
+		page, err := f.s.List(ctx, f.b, admin, ListOptions{Surface: sf})
+		if err != nil || len(page.Objects) != 2 || len(page.Objects[1].DownloadTokens) != 0 {
+			t.Fatalf("%v: %+v, %v", sf, page, err)
+		}
+		if want := map[Surface]int{SurfaceFirebase: 0, SurfaceGCS: 1}[sf]; len(page.Objects[0].DownloadTokens) != want {
+			t.Errorf("%v: a.txt's tokens %v", sf, page.Objects[0].DownloadTokens)
+		}
 	}
 }
