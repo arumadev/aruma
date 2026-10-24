@@ -55,6 +55,8 @@ host (ADR-014), so a redirect is only a host rewrite:
 npm install --save-dev @aruma/web
 ```
 
+It needs Node 20.19 or later (the build tools load ES modules with `require`).
+
 ### Vite (recommended)
 
 The block above. Options:
@@ -162,8 +164,8 @@ path). The app's code does not change.
 | esbuild | `arumaStorage.esbuild({ url })` | 0.28.2 |
 | Rollup, Rspack | `arumaStorage.rollup({ url })`, `arumaStorage.rspack({ url })` | Rollup 4.65.0, Rspack 1.7.12 |
 | Rolldown | `arumaStorage.rolldown({ url })` | inside Vite 8 only |
-| Next.js | `export default withArumaStorage(config, { url })` (`@aruma/web/next`) | 16.4.3: `next build --webpack`, `next build` and `next dev` (Turbopack), server components and client |
-| Expo, React Native (Metro) | `module.exports = withArumaStorage(getDefaultConfig(__dirname), { url })` (`@aruma/web/metro`) | Expo 58.0.19 (Metro 0.87.1): the web export, and the Android bundle |
+| Next.js | `export default withArumaStorage(config, { url })` (`@aruma/web/next`) | 16.4.3: `next build --webpack`, `next build` and `next dev` (Turbopack); the App Router (server components and client) and the Pages Router (`getServerSideProps`) |
+| Expo, React Native (Metro) | `module.exports = withArumaStorage(getDefaultConfig(__dirname), { url })` (`@aruma/web/metro`) | Expo 58.0.19 (Metro 0.87.1): the web export, and the Android bundle; with react-native-svg-transformer 1.5.3 applied before it |
 | Flutter web | `npx aruma-web flutter-web --url <url>` once in the project, then `flutter build web` | Flutter 3.44.2, firebase_core_web 4.1.0 (JS SDK 13.1.0), firebase_storage 14.0.1 |
 
 Measured means: the official SDK in production mode, built from npm, against a real Aruma, passes
@@ -181,11 +183,41 @@ link unified and nothing sent off the machine. The rule was also checked on `@fi
   module restored from a persistent cache is checked too.
 - A browser build with no `@firebase/storage` module (`required: false` turns this one off). Server
   builds and watch mode never fail for it.
-- Anything that loads the SDK from `www.gstatic.com`, in an import or in the output (`index.html`
-  included): that copy never passes through the bundler.
+- Any emitted script (a Web Worker's bundle, a chunk of a child compiler) that carries the Storage
+  SDK with Google's host literal, wherever it came from.
+- Anything that loads the SDK from a CDN, in an import or in the output (`index.html` included):
+  `www.gstatic.com/firebasejs/` (also `//www.gstatic.com/…`), and the Storage SDK from any absolute
+  URL (jsdelivr, unpkg, esm.sh …). That copy never passes through the bundler.
+- The Storage host must be a host name, an IP address and an optional port: it is written into the
+  SDK's code.
 
-Turbopack and Metro give a plugin no end of build: there a file whose literals are not found fails
-the build, but a build that never reached the SDK cannot.
+Turbopack gives a loader no end of build: there a file whose literals are not found fails the build,
+but a build that never reached the SDK cannot. Metro's bundle fails when a `@firebase/storage` module
+in it was not rewritten (its serializer's `processModuleFilter`).
+
+### Web Workers
+
+Vite builds a worker with `worker.plugins` alone; the Vite plugin adds itself there. webpack and
+Rspack build `new Worker(new URL(…))` in the same compilation, so the plugin reaches it. esbuild and
+Rollup do not follow `new Worker(new URL(…))`: make the worker an entry point (input) of the same
+build. Measured with a worker that uploads, links and deletes, in all five.
+
+### Order with other config wrappers
+
+- **Metro:** apply `withArumaStorage` last, around the others. A wrapper applied after it that sets
+  `transformer.babelTransformerPath` (react-native-svg-transformer, measured) replaces the rewrite,
+  and the bundle then fails: `withArumaStorage(withSvg(getDefaultConfig(__dirname)), { url })`.
+- **Next.js:** `withArumaStorage` adds `firebase`, `@firebase/storage` and `@firebase/storage-compat`
+  to `transpilePackages`, so that the server bundles the SDK in both routers (the Pages Router leaves
+  `node_modules` external otherwise, and its server would talk to Google: measured), and it refuses
+  them in `serverExternalPackages`.
+
+### Links from before
+
+After the rewrite the SDK parses links against Aruma's host, so `ref(storage, link)` with a link on
+`firebasestorage.googleapis.com` (stored before the switch, or made by another platform) throws
+`storage/invalid-url`. Convert it first: `ref(storage, toArumaUrl(link, 'https://aruma.example.com'))`.
+`gs://` URLs and the unified link work as they are.
 
 ### Flutter web
 
@@ -309,8 +341,8 @@ install({ url: 'https://aruma.example.com' });
 | esbuild | `arumaStorage.esbuild({ url })` | 0.28.2 |
 | Rollup وRspack | `arumaStorage.rollup({ url })` و`arumaStorage.rspack({ url })` | Rollup 4.65.0 وRspack 1.7.12 |
 | Rolldown | `arumaStorage.rolldown({ url })` | داخل Vite 8 وحده |
-| Next.js | `withArumaStorage(config, { url })` من `@aruma/web/next` | 16.4.3: `next build --webpack` و`next build` و`next dev` (Turbopack)، ومكوّنات الخادم والمتصفح |
-| Expo وReact Native (Metro) | `withArumaStorage(getDefaultConfig(__dirname), { url })` من `@aruma/web/metro` | Expo 58.0.19 (Metro 0.87.1): تصدير الويب وحزمة Android |
+| Next.js | `withArumaStorage(config, { url })` من `@aruma/web/next` | 16.4.3: `next build --webpack` و`next build` و`next dev` (Turbopack)؛ وApp Router (مكوّنات الخادم والمتصفح) وPages Router (`getServerSideProps`) |
+| Expo وReact Native (Metro) | `withArumaStorage(getDefaultConfig(__dirname), { url })` من `@aruma/web/metro` | Expo 58.0.19 (Metro 0.87.1): تصدير الويب وحزمة Android، ومعه react-native-svg-transformer 1.5.3 مطبَّقًا قبله |
 | Flutter web | `npx aruma-web flutter-web --url <url>` مرة في المشروع، ثم `flutter build web` | Flutter 3.44.2، وfirebase_core_web 4.1.0 (JS 13.1.0)، وfirebase_storage 14.0.1 |
 
 - «قيس» يعني: المكتبة الرسمية في وضع الإنتاج، مبنية من npm، أمام Aruma حقيقي، تجتاز العمليات الإحدى عشرة في `test/e2e/web-storage` في Chromium، وكل رابط موحّد، ولا طلب يخرج من الجهاز.
@@ -321,9 +353,28 @@ install({ url: 'https://aruma.example.com' });
 - ملف من `@firebase/storage` لا يجد فيه نص النطاق (ونص البروتوكول على http) مرة واحدة بالضبط.
 - وحدة `@firebase/storage` في الحزمة ما زالت تسمّي Google، أو متروكة خارجها (افتراض SSR في Vite، و`externals` في webpack). ويُفحص هذا على مجموعة الوحدات التي ينتهي بها البناء، فتُفحص الوحدة المسترجعة من الذاكرة المؤقتة أيضًا.
 - بناء للمتصفح بلا وحدة `@firebase/storage` (ويطفئه `required: false`). وبناء الخادم ووضع المراقبة لا يفشلان لهذا.
-- أي تحميل للمكتبة من `www.gstatic.com`، في استيراد أو في الناتج (و`index.html` منه).
+- أي سكربت في الناتج (حزمة Web Worker، أو جزء من compiler ابن) يحمل مكتبة Storage بنص نطاق Google، من أي مصدر جاء.
+- أي تحميل للمكتبة من CDN، في استيراد أو في الناتج (و`index.html` منه): `www.gstatic.com/firebasejs/` (و`//www.gstatic.com/…`)، ومكتبة Storage من أي عنوان مطلق (jsdelivr وunpkg وesm.sh …).
+- ونطاق Storage اسم مضيف أو عنوان IP ومنفذ اختياري وحسب، لأنه يُكتب في كود المكتبة.
 
-أما Turbopack وMetro فلا يعطيان الإضافة نهايةً للبناء: يفشل البناء على ملف لم يُجد نصه، لكن لا يفشل بناء لم يصل إلى المكتبة أصلًا.
+Turbopack لا يعطي المحمّل نهايةً للبناء: يفشل البناء على ملف لم يُجد نصه، ولا يفشل بناء لم يصل إلى المكتبة. أما Metro فتفشل حزمته إن كانت فيها وحدة `@firebase/storage` غير مبدَّلة (`processModuleFilter` في الـ serializer).
+
+### Web Workers
+
+- Vite يبني الـ worker بـ `worker.plugins` وحدها، والإضافة تضع نفسها هناك.
+- webpack وRspack يبنيان `new Worker(new URL(…))` في البناء نفسه، فتصله الإضافة.
+- esbuild وRollup لا يتبعانه: اجعل الـ worker مدخلًا للبناء نفسه. ومقيس بـ worker يرفع ويأخذ الرابط ويحذف في الخمسة.
+
+### الترتيب مع أغلفة الإعداد الأخرى
+
+- **Metro:** طبّق `withArumaStorage` آخرًا حول الباقي. فالغلاف الذي يأتي بعده ويضبط `transformer.babelTransformerPath` (react-native-svg-transformer، مقيس) يُسقط التبديل، فتفشل الحزمة.
+- **Next.js:** `withArumaStorage` يضيف `firebase` و`@firebase/storage` و`@firebase/storage-compat` إلى `transpilePackages` ليحزمها الخادم في الموجّهين (Pages Router يترك `node_modules` خارجًا، فيكلّم خادمه Google: مقيس)، ويرفضها في `serverExternalPackages`.
+
+### روابط من قبل
+
+بعد التبديل تحلّل المكتبة الروابط على نطاق Aruma، فيرمي `ref(storage, link)` لرابط على `firebasestorage.googleapis.com` الخطأ `storage/invalid-url`. حوّله أولًا: `ref(storage, toArumaUrl(link, 'https://aruma.example.com'))`. أما `gs://` والرابط الموحّد فيعملان كما هما.
+
+ويلزم Node 20.19 فأحدث.
 
 ### Flutter web
 

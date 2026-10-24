@@ -179,13 +179,14 @@ firebase-tools 15.34.0 نفسها (مثبّتة في `test/acceptance/testdata/f
 
 | الأداة | النتيجة | ملاحظة |
 |---|---|---|
-| Vite 8.3.5، webpack 5.112.2، esbuild 0.28.2، Rollup 4.65.0، Rspack 1.7.12 | 11/11 | `run.sh`. والبناء يفشل برسالة `@aruma/web` حين لا وحدة Storage وحين يُستورد SDK من gstatic في الخمسة، وحين يُترك SDK خارج الحزمة (`ssr.external` في Vite، و`externals` في webpack) |
+| Vite 8.3.5، webpack 5.112.2، esbuild 0.28.2، Rollup 4.65.0، Rspack 1.7.12 | 11/11 | `run.sh`، ومعها Web Worker يرفع ويأخذ الرابط في الخمسة (`worker.plugins` في Vite). والبناء يفشل برسالة `@aruma/web` حين لا وحدة Storage وحين يُستورد SDK من CDN في الخمسة، وحين يُترك SDK خارج الحزمة (`ssr.external` في Vite، و`externals` في webpack)، وحين يحمل worker في Vite بلا الإضافة نطاق Google |
 | SvelteKit 3.1.0 (adapter-node) | الخادم والمتصفح | الخادم تحت netguard يرسم الرابط الموحّد ولا يتصل إلا بـ Aruma |
 | Vite 5.4.21 و6.4.5 و7.3.7 | `vite build` وخادم التطوير: 11/11 | `optimizeDeps.esbuildOptions.plugins` يعمل، فلا رفض لما قبل Vite 8 في Storage |
-| Next.js 16.4.3 | webpack وTurbopack (`next build` و`next dev`): 11/11، والمكوّن على الخادم يرسم الرابط الموحّد | محمّل `turbopack.rules` بشرط المسار يصل إلى `node_modules`. ولا نهاية بناء في Turbopack: لا يفشل بناء لم يصل إلى المكتبة |
-| Expo 58.0.19 (Metro 0.87.1) | تصدير الويب 11/11، وحزمة Android بلا نص نطاق Google | ولا نهاية بناء في Metro كذلك |
+| Next.js 16.4.3 | webpack وTurbopack (`next build` و`next dev`): 11/11، والمكوّن على الخادم و`getServerSideProps` في Pages Router يرسمان الرابط الموحّد | `transpilePackages` يضيفه السطر، وبدونه يكلّم خادم Pages Router نطاق Google (مقيس). ومحمّل `turbopack.rules` بشرط المسار يصل إلى `node_modules`. ولا نهاية بناء في Turbopack: لا يفشل بناء لم يصل إلى المكتبة |
+| Expo 58.0.19 (Metro 0.87.1) | تصدير الويب 11/11، وحزمة Android بلا نص نطاق Google، ومع react-native-svg-transformer 1.5.3 قبله | وبعده يفشل التصدير (`processModuleFilter`)، على الويب وAndroid |
 | Flutter 3.44.2 web | 11/11 من Dart | `firebase-storage.js` 13.1.0 من npm مبدَّلًا مرة واحدة، و`flutterfire_ignore_scripts`. ولم يُطلب `firebase-storage.js` من gstatic |
 | الاحتياط (`installStorage` و`useArumaStorage`) | 11/11 | من حزمة تبقي نطاق Google |
 
 - **لم يُقَس:** Rolldown منفردًا (قيس داخل Vite 8)، وwebpack في وضع المراقبة، وFirefox وWebKit، وmetro على جهاز. والبناء من npm وحده: لم يُقارن `firebase-storage.js` في npm بنسخة gstatic بايتًا ببايت (لا طلب إلى Google).
-- **قيود مقصودة:** عنوان Aruma لـ Storage جذر النطاق (بلا مسار)، وبناء الخادم لا يفشل لغياب Storage، وتطبيق Flutter web التجريبي يوجّه خطوط المحرك بعيدًا عن `fonts.gstatic.com` (ليس من Storage).
+- **رابط Google بعد التبديل:** `ref(storage, link)` لرابط على `firebasestorage.googleapis.com` يرمي `storage/invalid-url` (مقيس على بناء Node المبدَّل)، كما يرفض Firebase رابطًا على مضيف غير مضيفه. والمخرج `toArumaUrl(link, url)` قبله؛ و`gs://` والرابط الموحّد يعملان.
+- **قيود مقصودة:** عنوان Aruma لـ Storage جذر النطاق (بلا مسار) واسم مضيف أو IP ومنفذ وحسب، وNode 20.19 فأحدث، وبناء الخادم لا يفشل لغياب Storage، وتطبيق Flutter web التجريبي يوجّه خطوط المحرك بعيدًا عن `fonts.gstatic.com` (ليس من Storage).
