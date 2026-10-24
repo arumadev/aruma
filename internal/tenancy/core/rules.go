@@ -413,6 +413,9 @@ func toRelease(p Project, r queries.ControlRulesRelease) Release {
 // entry holds its key alone.
 const markerWeight = 64
 
+// loadTimeout bounds one load of a release: its read and its compilation.
+const loadTimeout = 10 * time.Second
+
 type releaseKey struct {
 	project int64
 	name    string
@@ -491,8 +494,16 @@ func (c *releaseCache) load(ctx context.Context, key releaseKey, fn func(context
 	epoch := c.epoch
 	c.mu.Unlock()
 
-	// The load is the waiters' too: it does not stop with the first request's context.
-	rs, weight, err := fn(context.WithoutCancel(ctx))
+	// The load is the waiters' too: it does not stop when the first request goes away, but keeps
+	// its deadline, and never runs past loadTimeout, so a pool that cannot give it a connection
+	// fails it rather than holding every waiter.
+	deadline := time.Now().Add(loadTimeout)
+	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
+		deadline = d
+	}
+	lctx, cancel := context.WithDeadline(context.WithoutCancel(ctx), deadline)
+	rs, weight, err := fn(lctx)
+	cancel()
 	l.rs, l.err = rs, err
 
 	c.mu.Lock()
