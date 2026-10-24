@@ -215,16 +215,32 @@ func fields(m map[string]any) map[string]any {
 const docsPrefix = "/v1/projects/" + emulatorProject + "/databases/(default)/documents/"
 
 func (e *emulator) put(ctx context.Context, path string, data map[string]any) error {
-	res, err := e.call(ctx, "PATCH", docsPrefix+path, map[string]any{"fields": fields(data)}, "owner")
-	if err == nil && res.status != http.StatusOK {
-		err = fmt.Errorf("seed %s: %d %s", path, res.status, errorMessage(res.body))
-	}
-	return err
+	return e.write(ctx, "PATCH", path, map[string]any{"fields": fields(data)})
 }
 
 func (e *emulator) del(ctx context.Context, path string) error {
-	_, err := e.call(ctx, "DELETE", docsPrefix+path, nil, "owner")
-	return err
+	return e.write(ctx, "DELETE", path, nil)
+}
+
+// write seeds a document as the owner. The emulator sometimes still holds the document's lock
+// from the case before and answers 409 "Transaction lock timeout." (seeds 3 and 7, 2026-10-24),
+// so it tries again; a seed that does not take fails the run, rather than leaving the case to
+// run on the documents of the one before (seed 3's case 622 was "allowed" so).
+func (e *emulator) write(ctx context.Context, method, path string, body any) error {
+	for attempt := 0; ; attempt++ {
+		res, err := e.call(ctx, method, docsPrefix+path, body, "owner")
+		if err != nil {
+			return err
+		}
+		if res.status == http.StatusConflict && attempt < 8 {
+			time.Sleep(time.Duration(attempt+1) * time.Second)
+			continue
+		}
+		if res.status != http.StatusOK {
+			return fmt.Errorf("seed %s %s: %d %s", method, path, res.status, errorMessage(res.body))
+		}
+		return nil
+	}
 }
 
 // idToken returns an unsigned ID token for alice, with her claims, as the recorder builds it.
@@ -262,7 +278,7 @@ func (e *emulator) run(ctx context.Context, c *genCase, src string) (verdict, er
 	if !ok {
 		return verdict{Outcome: "compile-error", Message: msg}, nil
 	}
-	const doc = "c/d"
+	doc := c.doc()
 	if c.Alice {
 		err = e.put(ctx, "u/alice", map[string]any{"role": "editor"})
 	} else {
@@ -298,7 +314,10 @@ func (e *emulator) run(ctx context.Context, c *genCase, src string) (verdict, er
 	if err != nil {
 		return verdict{}, err
 	}
-	if err := e.del(ctx, doc); err != nil {
+	// Clean up without waiting: after some requests that fail in their rules the emulator keeps
+	// the document's lock (seed 3's case 621, a delete; seed 7's case 726, a create), and no
+	// other case uses this document.
+	if _, err := e.call(ctx, "DELETE", docsPrefix+doc, nil, "owner"); err != nil {
 		return verdict{}, err
 	}
 	v := verdict{Compiled: true}

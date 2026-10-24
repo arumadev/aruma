@@ -410,7 +410,12 @@ type genCase struct {
 	tree *node
 }
 
-var aliceToken = map[string]any{"email": "alice@example.com", "admin": true, "role": "editor", "groups": []any{"g1", "g2"}}
+// doc is the document the case reads or writes, one per case: after some cases the emulator
+// keeps the lock of the document they used for longer than a write waits ("409 Transaction lock
+// timeout.", seeds 3 and 7 on 2026-10-24), so no case reuses another's.
+func (c *genCase) doc() string { return fmt.Sprintf("c/d%d", c.Index) }
+
+var aliceToken =map[string]any{"email": "alice@example.com", "admin": true, "role": "editor", "groups": []any{"g1", "g2"}}
 
 func (g *gen) value() any {
 	switch g.r.IntN(7) {

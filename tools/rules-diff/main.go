@@ -276,7 +276,7 @@ func oracleCase(c *genCase, condition string) *rulestest.Case {
 		Provenance: rulestest.Emulator,
 		Expression: condition,
 		Ruleset:    ruleset(c.Method, condition),
-		Request:    &rulestest.Request{Method: c.Method, Path: "/databases/(default)/documents/c/d"},
+		Request:    &rulestest.Request{Method: c.Method, Path: "/databases/(default)/documents/" + c.doc()},
 	}
 	if c.Auth {
 		oc.Request.Auth = rulestest.FieldOf(map[string]any{"uid": "alice", "token": aliceToken})
