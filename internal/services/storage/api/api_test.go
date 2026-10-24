@@ -69,7 +69,7 @@ func serveRecover(h http.Handler, rec *httptest.ResponseRecorder, req *http.Requ
 }
 
 // The routing contract (s3-wave-brief): each request reaches the handler its method, query and
-// headers name, the upload and download stubs of S3-B and S3-C included, with the bucket
+// headers name, through the whole router for the upload and download handlers of S3-B and S3-C, with the bucket
 // resolved first and Authorization ignored on a session URL; anything else is production's 400,
 // and an unknown bucket production's 404.
 func TestRoutes(t *testing.T) {
@@ -151,6 +151,16 @@ func TestRoutes(t *testing.T) {
 		req := httptest.NewRequest(c.method, c.target, nil)
 		for k, v := range c.header {
 			req.Header.Set(k, v)
+		}
+		if name, ok := strings.CutPrefix(c.want, "S3-A: "); ok {
+			// S3-A's own handlers run on core: the route they get is what is checked here, and
+			// what they answer is test/acceptance/storage_v0_test.go's.
+			rest, _ := wire.CutFirebasePrefix(req.URL.EscapedPath())
+			p, err := wire.SplitObjectPath(rest)
+			if got := classify(req, p, req.URL.Query()); err != nil || got.String() != name {
+				t.Errorf("%s %s %v: route %s, want %s", c.method, c.target, c.header, got, name)
+			}
+			continue
 		}
 		rec := httptest.NewRecorder()
 		got := serveRecover(h, rec, req)
