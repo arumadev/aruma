@@ -32,9 +32,10 @@ public class ArumaUrlsTest {
             // Google's, and iOS's with :443.
             {"https://firebasestorage.googleapis.com/v0/b/p.appspot.com/o/a%2Fb?" + TOKEN, "gs://p.appspot.com/a/b"},
             {"https://firebasestorage.googleapis.com:443/v0/b/p.appspot.com/o/a", "gs://p.appspot.com/a"},
-            // Names getReferenceFromUrl would otherwise misread: Uri.getPath() decodes.
-            {"https://a.example/v0/b/b/o/100%25%20sure%3F%23x", "gs://b/100%25%20sure%3F%23x"},
-            {"https://a.example/v0/b/b/o/%C3%A9t%C3%A9+", "gs://b/%C3%A9t%C3%A9%2B"},
+            // The name decoded once, as getReferenceFromUrl encodes a gs:// path itself.
+            {"https://a.example/v0/b/b/o/100%25%20sure%3F%23x", "gs://b/100% sure?#x"},
+            {"https://a.example/v0/b/b/o/a%20b%2B%C3%A9.txt", "gs://b/a b+é.txt"},
+            {"https://a.example/v0/b/b/o/%D8%B5%D9%88%D8%B1%D8%A9%20%D9%A1.png", "gs://b/صورة ١.png"},
             {"gs://b/already", "gs://b/already"},
         };
         for (String[] c : cases) {

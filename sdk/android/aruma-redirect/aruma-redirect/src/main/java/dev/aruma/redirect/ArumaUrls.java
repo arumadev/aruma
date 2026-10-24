@@ -60,7 +60,9 @@ public final class ArumaUrls {
         if (bucket.contains("/")) {
             throw notStorage(url);
         }
-        return "gs://" + bucket + "/" + encodePath(name);
+        // The name as it is, decoded: getReferenceFromUrl encodes a gs:// path itself (Util.normalize,
+        // Slashes.preserveSlashEncode), so an encoded name would be encoded twice and name another object.
+        return "gs://" + bucket + "/" + name;
     }
 
     /**
@@ -139,24 +141,5 @@ public final class ArumaUrls {
         } catch (CharacterCodingException e) {
             throw notStorage(url);
         }
-    }
-
-    /**
-     * Encodes a name for the path of a {@code gs://} URL, which getReferenceFromUrl reads with {@code Uri.getPath()}
-     * (decoded): '/' stays a separator, unreserved characters stay, everything else is percent-encoded.
-     */
-    static String encodePath(String name) {
-        StringBuilder b = new StringBuilder(name.length());
-        for (byte x : name.getBytes(StandardCharsets.UTF_8)) {
-            int c = x & 0xff;
-            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '.'
-                    || c == '_' || c == '~' || c == '/') {
-                b.append((char) c);
-            } else {
-                b.append('%').append(Character.toUpperCase(Character.forDigit(c >> 4, 16)))
-                        .append(Character.toUpperCase(Character.forDigit(c & 0xf, 16)));
-            }
-        }
-        return b.toString();
     }
 }
