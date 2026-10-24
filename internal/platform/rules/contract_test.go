@@ -107,28 +107,6 @@ func TestValueReaders(t *testing.T) {
 	}
 }
 
-// The contract's provisional position (S1-A replaces it and its cases): lines end at \n, and
-// columns and offsets count code points.
-func TestProvisionalPosition(t *testing.T) {
-	src := "ab\nنص 🙂 x\r\ny"
-	x := strings.Index(src, "x") // after the emoji, four bytes and one code point
-	for _, c := range []struct {
-		at   span
-		want Position
-	}{
-		{span{0, 0}, Position{Line: 1, Column: 1}},
-		{span{1, 2}, Position{Line: 1, Column: 2, CurrentOffset: 1, EndOffset: 2}},
-		{span{3, 7}, Position{Line: 2, Column: 1, CurrentOffset: 3, EndOffset: 5}},
-		{span{x, x + 1}, Position{Line: 2, Column: 6, CurrentOffset: 8, EndOffset: 9}},
-		{span{len(src) - 1, len(src)}, Position{Line: 3, Column: 1, CurrentOffset: 11, EndOffset: 12}},
-		{span{-5, 1 << 20}, Position{Line: 1, Column: 1, EndOffset: 12}},
-	} {
-		if got := position(src, c.at); got != c.want {
-			t.Errorf("position(%v) = %+v, want %+v", c.at, got, c.want)
-		}
-	}
-}
-
 func TestSegments(t *testing.T) {
 	segs := Literals("b", "bucket", "o", "")
 	for i, want := range []string{"b", "bucket", "o", ""} {
