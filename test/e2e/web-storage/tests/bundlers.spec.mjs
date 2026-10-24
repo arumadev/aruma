@@ -10,10 +10,13 @@ const apps = (process.env.ARUMA_E2E_APPS ?? 'vite,webpack,esbuild').split(',').f
   return { name, url: url ?? `/${name}/` };
 });
 const signedIn = process.env.ARUMA_E2E_SIGNED_OUT !== '1';
+// ARUMA_E2E_MIRROR=<version>: answer the Firebase JS SDK of that version on www.gstatic.com from the
+// firebase npm package (Flutter web's firebase_core_web imports it from there).
+const mirror = process.env.ARUMA_E2E_MIRROR;
 
 for (const { name, url } of apps) {
   test(`${name}: eleven operations on Aruma, links unified`, async ({ browser, network }) => {
-    const { context, page, done } = await loadApp(browser, network, url);
+    const { context, page, done } = await loadApp(browser, network, url, { mirror });
     const summary = expectEleven(done);
     console.log(`${name}:\n  ${summary.join('\n  ')}`);
     expectStorageOnRoot(network, { signedIn });
@@ -26,6 +29,10 @@ for (const { name, url } of apps) {
       expect((await page.locator('#ssr').getAttribute('src')).startsWith(`${e2e.aruma}/v0/b/`)).toBe(true);
       expect(await page.locator('#ssr').evaluate((img) => img.complete && img.naturalWidth)).toBe(4);
     }
+    // Flutter web: firebase_core_web took the app's SDK from gstatic (answered from npm here), but
+    // Storage from the rewritten file the tool wrote, never firebase-storage.js from gstatic.
+    if (network.mirrored.length) console.log(`  from www.gstatic.com (answered from npm): ${network.mirrored.map((u) => u.split('/').pop()).join(', ')}`);
+    expect(network.mirrored.filter((u) => u.endsWith('/firebase-storage.js')), 'gstatic firebase-storage.js').toEqual([]);
     expect(page.errors.filter((e) => !/404|Failed to load resource/.test(e))).toEqual([]);
     await context.close();
   });

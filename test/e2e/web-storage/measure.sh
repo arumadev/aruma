@@ -193,9 +193,41 @@ expo_app() {
   fi
 }
 
+flutter_app() {
+  local dir=$apps/flutter
+  log "Flutter web: aruma-web flutter-web, then flutter build web"
+  if [[ ! -f "$dir/web/index.html.orig" ]]; then
+    rm -rf "$dir"
+    flutter create --offline --platforms web --project-name aruma_e2e_web_storage "$dir" >"$gen/flutter-create.log" 2>&1
+    cp "$dir/web/index.html" "$dir/web/index.html.orig"
+  fi
+  # The index.html flutter create wrote, before the tool patches it.
+  cp "$dir/web/index.html.orig" "$dir/web/index.html"
+  rm -rf "$dir/web/aruma" "$dir/test"
+  cp apps/flutter/pubspec.yaml "$dir/"
+  cp apps/flutter/lib/main.dart "$dir/lib/main.dart"
+  cp apps/flutter/web/flutter_bootstrap.js "$dir/web/"
+  (cd "$dir" && flutter pub get --offline >"$gen/flutter-pub.log" 2>&1)
+  note "flutter: $(flutter --version 2>/dev/null | head -1 | cut -d' ' -f2), firebase_core_web $(grep -o 'firebase_core_web-[0-9.]*' "$dir/.dart_tool/package_config.json" | head -1 | cut -d- -f2)"
+  # The tool, twice: the second run must replace its own block, not add one.
+  local out
+  out=$(node "$sdk/src/cli.js" flutter-web --url "$ARUMA_URL" --project "$dir" --firebase "$here/node_modules/firebase")
+  node "$sdk/src/cli.js" flutter-web --url "$ARUMA_URL" --project "$dir" --firebase "$here/node_modules/firebase" >/dev/null
+  local version
+  version=$(sed -n 's/.*Firebase JS SDK \([0-9.]*\),.*/\1/p' <<<"$out")
+  note "        flutter-web tool: SDK $version, blocks in index.html: $(grep -c '<!-- @aruma/web flutter-web' "$dir/web/index.html"), $(literals "$dir/web/aruma/firebase-storage-$version.js")"
+  if ! (cd "$dir" && flutter build web --no-web-resources-cdn --base-href /flutter/ --no-pub >"$gen/build-flutter.log" 2>&1); then
+    note "FAILED  flutter: flutter build web failed (see $gen/build-flutter.log)"
+    return
+  fi
+  ARUMA_E2E_MIRROR=$version ARUMA_E2E_SIGNED_OUT=1 playwright flutter "flutter=$dir/build/web" flutter
+  note "        flutter: $(grep -m1 'from www.gstatic.com' "$gen/pw-flutter.log" | sed 's/^ *//')"
+}
+
 for t in "${targets[@]}"; do
   case $t in
     expo) expo_app ;;
+    flutter) flutter_app ;;
     vite5 | vite6 | vite7 | vite8) vite_app "${t#vite}" ;;
     next) next_app ;;
     *) echo "unknown target $t" >&2; exit 2 ;;
