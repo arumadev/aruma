@@ -112,7 +112,9 @@ jobs:
           cache-dependency-path: test/e2e/web-auth/package-lock.json
       - name: "@aruma/web unit tests"
         working-directory: sdk/web/aruma-web
-        run: npm test
+        run: |
+          npm ci --no-audit --no-fund
+          npm test
       - name: Official SDK against a real server, no request to Google
         run: test/e2e/web-auth/run.sh
       - name: The same in production mode (no connectAuthEmulator), through @aruma/web

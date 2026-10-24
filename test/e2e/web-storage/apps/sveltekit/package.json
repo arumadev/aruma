@@ -1,0 +1,20 @@
+{
+  "name": "aruma-e2e-web-storage-sveltekit",
+  "private": true,
+  "type": "module",
+  "description": "A SvelteKit app (adapter-node) whose page loads a Storage link on the server and runs the eleven operations in the browser, built with @aruma/web's Vite plugin (storage: true).",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "firebase": "^13"
+  },
+  "devDependencies": {
+    "@aruma/web": "file:../../../../../sdk/web/aruma-web",
+    "@sveltejs/adapter-node": "^6",
+    "@sveltejs/kit": "^3",
+    "@sveltejs/vite-plugin-svelte": "^7",
+    "svelte": "^5",
+    "vite": "^8"
+  }
+}

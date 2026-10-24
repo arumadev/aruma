@@ -15,6 +15,12 @@ export interface ArumaViteOptions {
    * 'build': rewrite the host literals inside @firebase/auth at build time (Vite 8+), no runtime code.
    */
   mode?: 'fetch' | 'build';
+  /**
+   * Also rewrite Firebase Storage's host at build time (in `vite build`, SSR and the dev server), so
+   * its requests and its download links are on Aruma. The URL must then be the root of Aruma's host.
+   * `{ required: false }`: do not fail a browser build that has no @firebase/storage module.
+   */
+  storage?: boolean | { required?: boolean };
 }
 
 /** A Vite plugin (typed loosely so that this package does not depend on vite). */
@@ -23,7 +29,8 @@ export interface ArumaVitePlugin {
   [hook: string]: unknown;
 }
 
-export default function aruma(options?: ArumaViteOptions): ArumaVitePlugin;
+/** One plugin, or with `storage` two (Auth's and Storage's); Vite flattens the array. */
+export default function aruma(options?: ArumaViteOptions): ArumaVitePlugin | ArumaVitePlugin[];
 export { aruma };
 
 /** The build-time rewrite of one @firebase/auth module. */

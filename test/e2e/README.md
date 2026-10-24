@@ -11,6 +11,7 @@ machine, fails the run.
 | [android-auth](android-auth) | `firebase-auth` (BoM 35), instrumented tests | production, through `aruma-redirect` | `android-auth/run.sh` | GitHub Actions emulator, weekly and by hand (`devices.yml`) |
 | [ios-auth](ios-auth) | `FirebaseAuth` 12, XCTest in an empty host app | production, through `ArumaRedirect` | `ios-auth/run.sh` | Codemagic, twice a week (`codemagic.yaml`, `ios-auth`) |
 | [web-rtdb](web-rtdb) | `firebase` 11, 12, 13 (Auth and Realtime Database) in Chromium (Playwright) | production; Auth through `@aruma/web` | `web-rtdb/run.sh` | GitHub Actions, pull requests and main (`ci.yml`) |
+| [web-storage](web-storage) | `firebase` 13 (Auth and Storage) built with Vite 8, webpack, esbuild, Rollup, Rspack and SvelteKit, in Chromium (Playwright) | production; Storage rewritten at build time by `@aruma/web`, and the run-time fallback | `web-storage/run.sh`; `web-storage/measure.sh` for Vite 5 to 8 and their dev servers, Next.js (webpack, Turbopack), Expo and Flutter web | by hand |
 | [android-rtdb](android-rtdb) | `firebase-database` and `firebase-auth` (BoM 35), instrumented tests | production; Auth through `aruma-redirect` | `android-rtdb/run.sh` | GitHub Actions emulator, weekly and by hand (`devices.yml`) |
 | [ios-rtdb](ios-rtdb) | `FirebaseDatabase` and `FirebaseAuth` 12, XCTest in an empty host app | production; Auth through `ArumaRedirect` | `ios-rtdb/run.sh` | Codemagic, by hand (`codemagic.yaml`, `ios-rtdb`) |
 

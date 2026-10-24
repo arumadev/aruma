@@ -1,0 +1,289 @@
+#!/usr/bin/env bash
+# Measures where the build-time Storage rewrite works beyond run.sh's bundlers, with the same app,
+# server and guard (ADR-022 §16.1 asks S6-W to measure these and write the result down):
+#
+#   test/e2e/web-storage/measure.sh [target…]
+#
+#   vite5 vite6 vite7 vite8  `vite build` and the dev server (its dependency optimizer: esbuild's
+#                            before Vite 8, Rolldown's from 8), each in the browser
+#   next                     Next.js: next build --webpack, next build (Turbopack) and next dev
+#                            (Turbopack), each with its server under the netguard
+#   expo                     an Expo app's web export through Metro, in the browser, and its
+#                            Android bundle, checked for the rewritten host
+#   flutter                  a Flutter web app after `aruma-web flutter-web`, in the browser
+#                            (needs Flutter, and PUB_CACHE with firebase_storage 14.0.1)
+#
+# Default: all. (The run-time fallback is in run.sh.) The apps are copied from apps/ and installed under ARUMA_E2E_APPS_DIR (default
+# <repo>/.cache/web-storage-apps), outside the repository. Results: one line per target and app,
+# then the Playwright output.
+set -euo pipefail
+
+here=$(cd "$(dirname "$0")" && pwd)
+root=$(cd "$here/../../.." && pwd)
+gen=$here/.generated
+apps=${ARUMA_E2E_APPS_DIR:-$root/.cache/web-storage-apps}
+sdk=$root/sdk/web/aruma-web
+# shellcheck source=lib.sh
+. "$here/lib.sh"
+trap 'stop_dev; stop_all' EXIT
+dev_port=${ARUMA_E2E_DEV_PORT:-9426}
+export NEXT_TELEMETRY_DISABLED=1
+
+targets=("$@")
+[[ ${#targets[@]} -gt 0 ]] || targets=(vite5 vite6 vite7 vite8 next expo flutter)
+
+start_aruma
+cd "$here"
+[[ -d node_modules ]] || npm ci --no-audit --no-fund --silent
+mkdir -p "$apps"
+
+results=()
+note() {
+  results+=("$*")
+  printf '  %s\n' "$*"
+}
+
+# playwright <apps> [roots]: the bundlers spec on those apps.
+playwright() {
+  if ARUMA_E2E_APPS=$1 ARUMA_E2E_ROOTS=${2:-} npx playwright test tests/bundlers.spec.mjs >"$gen/pw-$3.log" 2>&1; then
+    note "ok      $3"
+  else
+    note "FAILED  $3 (see $gen/pw-$3.log)"
+    grep -E '✗|⚠|Error|expect\(' "$gen/pw-$3.log" | head -20 | sed 's/^/          /'
+  fi
+}
+
+# package <dir> <json> [fields]: writes dir/package.json from a JSON fragment of dependencies (and
+# of other fields).
+package() {
+  node -e '
+    const [dir, deps, sdk, fields] = process.argv.slice(1);
+    const d = JSON.parse(deps);
+    d["@aruma/web"] = "file:" + sdk;
+    const p = { name: "aruma-measure", private: true, type: "module", ...JSON.parse(fields || "{}"), dependencies: d };
+    require("fs").writeFileSync(dir + "/package.json", JSON.stringify(p, null, 2));
+  ' "$1" "$2" "$sdk" "${3:-}"
+}
+
+# install_app <dir>: npm install, with @aruma/web copied in (not linked: Turbopack and Metro do not
+# follow a link out of the project) fresh from sdk/web/aruma-web.
+install_app() {
+  rm -rf "$1/node_modules/@aruma"
+  (cd "$1" && npm install --no-audit --no-fund --silent --install-links)
+}
+
+vite_app() {
+  local major=$1 name=vite$1 dir=$apps/vite$1
+  log "Vite $major: build and dev server"
+  rm -rf "$dir/src" "$dir/dist"
+  mkdir -p "$dir/src"
+  package "$dir" "{\"firebase\": \"^13\", \"vite\": \"^$major\"}"
+  cp index.html "$dir/"
+  cp src/main.js src/ops.js "$dir/src/"
+  cp apps/vite/vite.config.mjs "$dir/"
+  install_app "$dir" && rm -rf "$dir/node_modules/.vite"
+  note "vite $major: $(cd "$dir" && node -p 'require("vite/package.json").version')"
+  if (cd "$dir" && ARUMA_E2E_NAME=$name npx vite build >"$gen/build-$name.log" 2>&1); then
+    playwright "$name" "$name=$dir/dist" "$name-build"
+  else
+    note "FAILED  $name-build: vite build failed (see $gen/build-$name.log)"
+  fi
+  (cd "$dir" && ARUMA_E2E_NAME=$name exec npx vite --port "$dev_port") >"$gen/dev-$name.log" 2>&1 &
+  dev_pid=$!
+  wait_http "http://127.0.0.1:$dev_port/$name/"
+  playwright "$name@http://127.0.0.1:$dev_port/$name/" "" "$name-dev"
+  stop_dev
+}
+
+# stop_dev stops the dev server and what it started.
+dev_pid=
+stop_dev() {
+  [[ -n "$dev_pid" ]] || return 0
+  pkill -P "$dev_pid" 2>/dev/null || true
+  kill "$dev_pid" 2>/dev/null || true
+  wait "$dev_pid" 2>/dev/null || true
+  dev_pid=
+  # What the server started further down (next start's own server) still holds the port.
+  lsof -ti "tcp:$dev_port" -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null || true
+}
+
+# netguarded <log> <command…>: runs a Node server under test/experiments/netguard.cjs.
+netguarded() {
+  local logf=$1
+  shift
+  ARUMA_NETGUARD_LOG=$logf NODE_OPTIONS="--require $root/test/experiments/netguard.cjs" "$@"
+}
+
+# guard_clean <log> <what>: a note when the netguard blocked anything.
+guard_clean() {
+  local google='googleapis\.com|gstatic\.com|google\.com|firebaseio\.com|firebasedatabase\.app|firebaseapp\.com'
+  if grep BLOCK "$1" 2>/dev/null | grep -qE "$google"; then
+    note "FAILED  $2: the server tried to reach Google: $(grep BLOCK "$1" | grep -E "$google" | cut -d' ' -f2 | sort -u | head -3 | tr '\n' ' ')"
+  elif grep -q BLOCK "$1" 2>/dev/null; then
+    note "ok      $2: nothing to Google; blocked elsewhere: $(grep BLOCK "$1" | cut -d' ' -f2 | sort -u | head -3 | tr '\n' ' ')"
+  else
+    note "ok      $2: the server connected to $(grep -c ALLOW "$1" 2>/dev/null || echo 0) local addresses and nothing else"
+  fi
+}
+
+next_app() {
+  local dir=$apps/next
+  log "Next.js: webpack and Turbopack"
+  rm -rf "$dir/app" "$dir"/.next*
+  mkdir -p "$dir/app"
+  package "$dir" '{"firebase": "^13", "next": "^16", "react": "^19", "react-dom": "^19"}'
+  cp apps/next/next.config.mjs "$dir/"
+  cp apps/next/app/*.js "$dir/app/"
+  rm -rf "$dir/pages"
+  cp -R apps/next/pages "$dir/pages"
+  cp src/ops.js "$dir/app/ops.js"
+  install_app "$dir"
+  note "next: $(cd "$dir" && node -p 'require("next/package.json").version')"
+  local b flag none
+  # turbopack-bare: the same build without the transpilePackages the line adds (the leak it closes).
+  for b in webpack turbopack turbopack-bare; do
+    flag=
+    none=
+    [[ $b == webpack ]] && flag=--webpack
+    [[ $b == turbopack-bare ]] && none=1
+    if ! (cd "$dir" && ARUMA_E2E_DIST=.next-$b ARUMA_E2E_NO_TRANSPILE=$none npx next build $flag >"$gen/build-next-$b.log" 2>&1); then
+      note "FAILED  next-$b: next build failed (see $gen/build-next-$b.log)"
+      grep -m5 -i "aruma\|error" "$gen/build-next-$b.log" | sed 's/^/          /'
+      continue
+    fi
+    # What the build left: the host literal must be gone from every chunk.
+    note "        next-$b: chunks still naming Google's host: $(grep -rl '"firebasestorage.googleapis.com"' "$dir/.next-$b" --include='*.js' 2>/dev/null | wc -l | tr -d ' ')"
+    (cd "$dir" && ARUMA_E2E_DIST=.next-$b ARUMA_E2E_NAME=next-$b ARUMA_E2E_NO_TRANSPILE=$none netguarded "$gen/netguard-next-$b.log" \
+      exec npx next start -p "$dev_port" -H 127.0.0.1) >"$gen/start-next-$b.log" 2>&1 &
+    dev_pid=$!
+    wait_http "http://127.0.0.1:$dev_port/"
+    if [[ $b == turbopack-bare ]]; then
+      note "        next-$b Pages Router: $(pages_check "http://127.0.0.1:$dev_port/pages-ssr") (without transpilePackages)"
+      stop_dev
+      note "        next-$b server: $(grep BLOCK "$gen/netguard-next-$b.log" | cut -d' ' -f2 | sort -u | tr '\n' ' ')"
+      continue
+    fi
+    playwright "next-$b@http://127.0.0.1:$dev_port/" "" "next-$b"
+    pages_note "http://127.0.0.1:$dev_port/pages-ssr" "next-$b"
+    stop_dev
+    guard_clean "$gen/netguard-next-$b.log" "next-$b server"
+  done
+  # The dev server compiles with Turbopack too, page by page.
+  (cd "$dir" && ARUMA_E2E_DIST=.next-dev ARUMA_E2E_NAME=next-dev netguarded "$gen/netguard-next-dev.log" \
+    exec npx next dev -p "$dev_port" -H 127.0.0.1) >"$gen/dev-next.log" 2>&1 &
+  dev_pid=$!
+  wait_http "http://127.0.0.1:$dev_port/"
+  playwright "next-dev@http://127.0.0.1:$dev_port/" "" "next-dev"
+  pages_note "http://127.0.0.1:$dev_port/pages-ssr" next-dev
+  stop_dev
+  guard_clean "$gen/netguard-next-dev.log" "next-dev server"
+}
+
+# pages_note <url> <name>: a note on the Pages Router page.
+pages_note() {
+  local r
+  r=$(pages_check "$1")
+  if [[ $r == ok ]]; then note "ok      $2 Pages Router (getServerSideProps)"; else note "FAILED  $2 Pages Router: $r"; fi
+}
+
+# pages_check <url>: "ok" when the page the server rendered names Aruma and links the unified URL,
+# else "FAILED" and what it rendered.
+pages_check() {
+  local html
+  html=$(curl -sS "$1" 2>/dev/null || true)
+  if grep -q "<p id=\"ssr-host\">$ARUMA_URL</p>" <<<"$html" && grep -q "<img id=\"ssr\" src=\"$ARUMA_URL/v0/b/" <<<"$html"; then
+    echo ok
+  else
+    echo "FAILED $(grep -o '<p id="ssr-host">[^<]*' <<<"$html" | head -1 | sed 's/.*>//') $(grep -o 'Internal Server Error\|Application error[^<]*' <<<"$html" | head -1)"
+  fi
+}
+
+# literals <files…>: "<n> with Google's host literal, <m> with Aruma's" over the given files.
+literals() {
+  local google aruma
+  google=$(grep -l -a -E "[\"']firebasestorage\.googleapis\.com[\"']" "$@" 2>/dev/null | wc -l | tr -d ' ')
+  aruma=$(grep -l -a -E "[\"']${addr//./\\.}[\"']" "$@" 2>/dev/null | wc -l | tr -d ' ')
+  echo "$google with Google's host literal, $aruma with Aruma's"
+}
+
+expo_app() {
+  local dir=$apps/expo
+  log "Expo: Metro, the web export in the browser, the Android bundle, react-native-svg-transformer"
+  rm -rf "$dir/dist" "$dir/dist-"* "$dir/.expo"
+  mkdir -p "$dir"
+  package "$dir" '{"expo": "^58", "firebase": "^13", "react-native-svg-transformer": "^1"}' '{"main": "index.js", "type": "commonjs"}'
+  cp apps/expo/metro.config.js apps/expo/app.json apps/expo/index.js "$dir/"
+  cp src/ops.js "$dir/ops.js"
+  install_app "$dir"
+  # React, React Native and the web packages at the versions this Expo bundles (what `expo install`
+  # would pick, without asking Expo's servers).
+  local peers
+  peers=$(cd "$dir" && node -p 'const b = require("expo/bundledNativeModules.json"); ["react", "react-dom", "react-native", "react-native-web", "@expo/metro-runtime", "react-native-svg"].map((k) => `${k}@${b[k]}`).join(" ")')
+  # shellcheck disable=SC2086
+  (cd "$dir" && npm install --no-audit --no-fund --silent --install-links $peers)
+  note "expo: $(cd "$dir" && node -p 'require("expo/package.json").version'), react-native $(cd "$dir" && node -p 'require("react-native/package.json").version'), metro $(cd "$dir" && node -p 'require("metro/package.json").version'), react-native-svg-transformer $(cd "$dir" && node -p 'require("react-native-svg-transformer/package.json").version')"
+  local svg platform out
+  # web and android; the SVG transformer not at all, before @aruma/web (supported) and after it (refused).
+  for svg in none before after; do
+    for platform in web android; do
+      out=dist-$platform-$svg
+      if (cd "$dir" && ARUMA_E2E_SVG=$svg EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 CI=1 npx expo export -p "$platform" --output-dir "$out" --no-bytecode --clear >"$gen/build-expo-$platform-$svg.log" 2>&1); then
+        if [[ $svg == after ]]; then
+          note "FAILED  expo-$platform-svg-after: the bundle was written without the rewrite: $(literals $(find "$dir/$out" -name '*.js'))"
+        else
+          note "ok      expo-$platform-svg-$svg bundle: $(literals $(find "$dir/$out" -name '*.js'))"
+          if [[ $platform == web ]]; then playwright expo "expo=$dir/$out" "expo-web-svg-$svg"; fi
+        fi
+      elif [[ $svg == after ]] && grep -q 'was bundled without the Storage rewrite' "$gen/build-expo-$platform-$svg.log"; then
+        note "ok      expo-$platform-svg-after: refused: $(grep -o '@aruma/web/metro: [^,]*' "$gen/build-expo-$platform-$svg.log" | head -1 | cut -c1-110)"
+      else
+        note "FAILED  expo-$platform-svg-$svg: expo export failed (see $gen/build-expo-$platform-$svg.log)"
+        grep -m5 -i "aruma\|error" "$gen/build-expo-$platform-$svg.log" | sed 's/^/          /'
+      fi
+    done
+  done
+}
+
+flutter_app() {
+  local dir=$apps/flutter
+  log "Flutter web: aruma-web flutter-web, then flutter build web"
+  if [[ ! -f "$dir/web/index.html.orig" ]]; then
+    rm -rf "$dir"
+    flutter create --offline --platforms web --project-name aruma_e2e_web_storage "$dir" >"$gen/flutter-create.log" 2>&1
+    cp "$dir/web/index.html" "$dir/web/index.html.orig"
+  fi
+  # The index.html flutter create wrote, before the tool patches it.
+  cp "$dir/web/index.html.orig" "$dir/web/index.html"
+  rm -rf "$dir/web/aruma" "$dir/test"
+  cp apps/flutter/pubspec.yaml "$dir/"
+  cp apps/flutter/lib/main.dart "$dir/lib/main.dart"
+  cp apps/flutter/web/flutter_bootstrap.js "$dir/web/"
+  (cd "$dir" && flutter pub get --offline >"$gen/flutter-pub.log" 2>&1)
+  note "flutter: $(flutter --version 2>/dev/null | head -1 | cut -d' ' -f2), firebase_core_web $(grep -o 'firebase_core_web-[0-9.]*' "$dir/.dart_tool/package_config.json" | head -1 | cut -d- -f2)"
+  # The tool, twice: the second run must replace its own block, not add one.
+  local out
+  out=$(node "$sdk/src/cli.js" flutter-web --url "$ARUMA_URL" --project "$dir" --firebase "$here/node_modules/firebase")
+  node "$sdk/src/cli.js" flutter-web --url "$ARUMA_URL" --project "$dir" --firebase "$here/node_modules/firebase" >/dev/null
+  local version
+  version=$(sed -n 's/.*Firebase JS SDK \([0-9.]*\),.*/\1/p' <<<"$out")
+  note "        flutter-web tool: SDK $version, blocks in index.html: $(grep -c '<!-- @aruma/web flutter-web' "$dir/web/index.html"), $(literals "$dir/web/aruma/firebase-storage-$version.js")"
+  if ! (cd "$dir" && flutter build web --no-web-resources-cdn --base-href /flutter/ --no-pub >"$gen/build-flutter.log" 2>&1); then
+    note "FAILED  flutter: flutter build web failed (see $gen/build-flutter.log)"
+    return
+  fi
+  ARUMA_E2E_MIRROR=$version ARUMA_E2E_SIGNED_OUT=1 playwright flutter "flutter=$dir/build/web" flutter
+  note "        flutter: $(grep -m1 'from www.gstatic.com' "$gen/pw-flutter.log" | sed 's/^ *//')"
+}
+
+for t in "${targets[@]}"; do
+  case $t in
+    expo) expo_app ;;
+    flutter) flutter_app ;;
+    vite5 | vite6 | vite7 | vite8) vite_app "${t#vite}" ;;
+    next) next_app ;;
+    *) echo "unknown target $t" >&2; exit 2 ;;
+  esac
+done
+
+log "summary"
+printf '  %s\n' "${results[@]}"

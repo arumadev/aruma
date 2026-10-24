@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "aruma-e2e-web-storage",
+    "slug": "aruma-e2e-web-storage",
+    "platforms": ["web", "android"],
+    "android": { "package": "com.aruma.e2e.webstorage" },
+    "web": { "bundler": "metro", "output": "single" },
+    "experiments": { "baseUrl": "/expo" }
+  }
+}

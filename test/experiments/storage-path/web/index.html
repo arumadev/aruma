@@ -26,7 +26,7 @@
       install({ url: aruma, log: true });
     }
     if (mode.startsWith('prod-xhr')) {
-      const { installStorage } = await import('/aruma-web/storage-spike.js');
+      const { installStorage } = await import('/aruma-web/storage.js');
       installStorage({ url: aruma, log: true });
     }
     const { initializeApp } = await import('/firebasejs/13.1.0/firebase-app.js');
