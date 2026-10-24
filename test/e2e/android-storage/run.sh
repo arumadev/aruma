@@ -6,15 +6,16 @@
 # The server runs on this machine with Cloud Storage and the rules of storage.rules; `adb reverse`
 # gives the device the same address on its own loopback.
 #
-# In order:
+# For the debug build and for a release build (R8 on, not debuggable, signed with the debug key):
 #   1. The plugin's check: a build that excludes NetworkRequest from the instrumentation must fail.
 #   2. aruma-redirect's launch check: an app built without the plugin and with
 #      ArumaStorageRedirect=false must stop at launch.
 #   3. The build with the plugin, given the server's URL with its host in upper case. Its notice,
 #      META-INF/aruma/firebase-storage-MODIFIED.txt, must be in the APK and in the universal APK
 #      bundletool derives from its App Bundle.
-#   4. The twelve operations on the device (StorageE2ETest): every one must pass, and the download
-#      URL must equal the unified form literally, with the host in lower case.
+#   4. On the device (StorageE2ETest, calling the app's own Scenario): the twelve operations must
+#      all pass, the download URL must equal the unified form literally, with the host in lower
+#      case, and names that need encoding must name the same object in every form of their URL.
 #
 # The network guard has two halves: the tests record every connection the process opens to
 # anything but loopback (NetworkGuard.java) and fail on one, and iptables on the device rejects
@@ -27,6 +28,7 @@
 #   ANDROID_HOME     the Android SDK (adb, and the platform Gradle compiles against)
 #   ARUMA_E2E_DEVICE_GUARD=off  skip the iptables half (it needs `adb root`, which an emulator image
 #                    without Google Play has); the in-process half still runs.
+#   ARUMA_E2E_BUILD_TYPES  the build types to run (default "debug release")
 #   ARUMA_E2E_ADDR, ARUMA_E2E_DB_PREFIX  see ../server.sh
 #
 # It needs a JDK 17+, the local Postgres (ARUMA_TEST_DATABASE_URL), Go and python3.
@@ -84,33 +86,44 @@ echo "Aruma at $ARUMA_URL, project $ARUMA_PROJECT_ID, device $ANDROID_SERIAL"
 cp "$gen/google-services.json" "$here/app/"
 
 gradle() { (cd "$here" && ./gradlew --no-daemon -q "$@" -ParumaUrl="$ARUMA_URL"); }
+types=(${ARUMA_E2E_BUILD_TYPES:-debug release})
+outs=$here/app/build/outputs
 
-log "1. the plugin's check: NetworkRequest excluded from the instrumentation"
-if gradle :app:assembleDebug -ParumaStorageUrl="$storage_upper" -ParumaE2eExclude=true >"$gen/build-excluded.txt" 2>&1; then
-  echo "the build passed with NetworkRequest excluded" >&2
-  exit 1
-fi
-grep -q "verifyDebugArumaStorage" "$gen/build-excluded.txt" && grep -q "was not pointed at Aruma" "$gen/build-excluded.txt" \
-  || { cat "$gen/build-excluded.txt" >&2; echo "the build failed, but not on the plugin's check" >&2; exit 1; }
-echo "verifyDebugArumaStorage failed the build: $(grep -o 'was not pointed at Aruma ([^)]*)' "$gen/build-excluded.txt" | head -1)"
+# Steps 1 to 3, for each build type: the outputs are kept under .generated/<type>/.
+for t in "${types[@]}"; do
+  T=$(printf '%s' "${t:0:1}" | tr '[:lower:]' '[:upper:]')${t:1}
+  g=$gen/$t
+  rm -rf "$g" && mkdir -p "$g"
 
-log "2. building without the plugin, with ArumaStorageRedirect=false"
-gradle :app:assembleDebug -ParumaE2eNoPlugin=true -ParumaStorageRedirect=false
-cp "$here/app/build/outputs/apk/debug/app-debug.apk" "$gen/app-without-plugin.apk"
-if unzip -l "$gen/app-without-plugin.apk" | grep -q "$notice"; then
-  echo "the build without the plugin has the notice" >&2
-  exit 1
-fi
+  log "$t, 1. the plugin's check: NetworkRequest excluded from the instrumentation"
+  if gradle ":app:assemble$T" -ParumaE2eBuildType="$t" -ParumaStorageUrl="$storage_upper" -ParumaE2eExclude=true \
+    >"$g/build-excluded.txt" 2>&1; then
+    echo "the $t build passed with NetworkRequest excluded" >&2
+    exit 1
+  fi
+  grep -q "verify${T}ArumaStorage" "$g/build-excluded.txt" && grep -q "was not pointed at Aruma" "$g/build-excluded.txt" \
+    || { cat "$g/build-excluded.txt" >&2; echo "the $t build failed, but not on the plugin's check" >&2; exit 1; }
+  echo "verify${T}ArumaStorage failed the build: $(grep -o 'was not pointed at Aruma ([^)]*)' "$g/build-excluded.txt" | head -1)"
 
-log "3. building with the plugin (arumaStorage.url = $storage_upper), its tests and its App Bundle"
-gradle :app:assembleDebug :app:assembleDebugAndroidTest :app:universalApkFromBundle -ParumaStorageUrl="$storage_upper"
-apk=$here/app/build/outputs/apk/debug/app-debug.apk
-rm -rf "$gen/apks" && mkdir -p "$gen/apks"
-unzip -q -o "$here/app/build/outputs/bundletool/app-debug.apks" universal.apk -d "$gen/apks"
-for f in "$apk" "$gen/apks/universal.apk"; do
-  unzip -p "$f" "$notice" | grep -q "with \"$storage_url/v0\"" \
-    || { echo "$notice is missing from $f, or does not name $storage_url/v0" >&2; exit 1; }
-  echo "notice in $(basename "$f")$([[ $f == "$apk" ]] || echo ' (from the App Bundle, bundletool build-apks --mode=universal)')"
+  log "$t, 2. building without the plugin, with ArumaStorageRedirect=false"
+  gradle ":app:assemble$T" -ParumaE2eBuildType="$t" -ParumaE2eNoPlugin=true -ParumaStorageRedirect=false
+  cp "$outs/apk/$t/app-$t.apk" "$g/app-without-plugin.apk"
+  if unzip -l "$g/app-without-plugin.apk" | grep -q "$notice"; then
+    echo "the $t build without the plugin has the notice" >&2
+    exit 1
+  fi
+
+  log "$t, 3. building with the plugin (arumaStorage.url = $storage_upper), its tests and its App Bundle"
+  gradle ":app:assemble$T" ":app:assemble${T}AndroidTest" ":app:universalApkFromBundle$T" -ParumaE2eBuildType="$t" \
+    -ParumaStorageUrl="$storage_upper"
+  cp "$outs/apk/$t/app-$t.apk" "$g/app.apk"
+  cp "$outs/apk/androidTest/$t/app-$t-androidTest.apk" "$g/tests.apk"
+  unzip -q -o "$outs/bundletool/app-$t.apks" universal.apk -d "$g"
+  for f in app.apk universal.apk; do
+    unzip -p "$g/$f" "$notice" | grep -q "with \"$storage_url/v0\"" \
+      || { echo "$notice is missing from $t's $f, or does not name $storage_url/v0" >&2; exit 1; }
+    echo "notice in $f$([[ $f == app.apk ]] || echo ' (from the App Bundle, bundletool build-apks --mode=universal)')"
+  done
 done
 
 if [[ "${ARUMA_E2E_DEVICE_GUARD:-on}" != off ]]; then
@@ -124,9 +137,8 @@ if [[ "${ARUMA_E2E_DEVICE_GUARD:-on}" != off ]]; then
   done
 fi
 
-log "installing the build without the plugin, and the tests"
-"$adb" install -r -t "$gen/app-without-plugin.apk" >/dev/null
-"$adb" install -r -t "$here/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk" >/dev/null
+# Every build is signed with the same debug key, so `install -r` keeps the app's uid throughout.
+"$adb" install -r -t "$gen/${types[0]}/app-without-plugin.apk" >/dev/null
 uid=$("$adb" shell pm list packages -U "$app" | tr -d '\r' | sed -n "s/^package:$app uid:\([0-9]*\).*/\1/p")
 [[ -n "$uid" ]] || { echo "cannot find the uid of $app" >&2; exit 1; }
 
@@ -153,47 +165,61 @@ fi
 "$adb" reverse "tcp:$port" "tcp:$port" >/dev/null
 status=0
 
-log "2. (device) the launch check stops the app built without the plugin"
-"$adb" logcat -c
-"$adb" shell am instrument -w -e arumaUrl "$ARUMA_URL" -e storageUrl "$storage_url" \
-  -e class com.aruma.e2e.LaunchE2ETest "$runner" | tr -d '\r' >"$gen/instrument-without-plugin.txt" || true
-"$adb" logcat -d -v tag 'AndroidRuntime:E' 'ArumaRedirect:I' '*:S' | tr -d '\r' >"$gen/logcat-without-plugin.txt"
-if grep -q "Process crashed" "$gen/instrument-without-plugin.txt" \
-  && grep -q "ArumaRedirectException: Firebase Storage would send its requests to Google" "$gen/logcat-without-plugin.txt"; then
-  grep -o "ArumaRedirectException: Firebase Storage would send its requests to Google: [^(]*" "$gen/logcat-without-plugin.txt" | head -1
-else
-  cat "$gen/instrument-without-plugin.txt" "$gen/logcat-without-plugin.txt" >&2
-  echo "the app built without the plugin did not stop at launch" >&2
-  status=1
-fi
+for t in "${types[@]}"; do
+  g=$gen/$t
+  log "$t, 2. (device) the launch check stops the app built without the plugin"
+  "$adb" install -r -t "$g/app-without-plugin.apk" >/dev/null
+  "$adb" install -r -t "$g/tests.apk" >/dev/null
+  "$adb" logcat -c
+  "$adb" shell am instrument -w -e arumaUrl "$ARUMA_URL" -e storageUrl "$storage_url" \
+    -e class com.aruma.e2e.LaunchE2ETest "$runner" | tr -d '\r' >"$g/instrument-without-plugin.txt" || true
+  "$adb" logcat -d -v tag 'AndroidRuntime:E' 'ArumaRedirect:I' '*:S' | tr -d '\r' >"$g/logcat-without-plugin.txt"
+  # The message says the field was read and is Google's: under R8 too, the consumer rule kept it.
+  if grep -q "Process crashed" "$g/instrument-without-plugin.txt" \
+    && grep -q "ArumaRedirectException: Firebase Storage would send its requests to Google" "$g/logcat-without-plugin.txt"; then
+    grep -o "ArumaRedirectException: Firebase Storage would send its requests to Google: [^(]*" "$g/logcat-without-plugin.txt" | head -1
+  else
+    cat "$g/instrument-without-plugin.txt" "$g/logcat-without-plugin.txt" >&2
+    echo "the $t app built without the plugin did not stop at launch" >&2
+    status=1
+  fi
 
-log "4. installing the build with the plugin and running the instrumented tests"
-"$adb" install -r -t "$apk" >/dev/null
-"$adb" logcat -c
-"$adb" logcat -v tag 'ArumaRedirect:I' 'ArumaE2E:I' 'TestRunner:I' 'AndroidRuntime:E' '*:S' >"$gen/logcat.txt" 2>&1 &
-logcat_pid=$!
-"$adb" shell am instrument -w -e arumaUrl "$ARUMA_URL" -e storageUrl "$storage_url" \
-  -e notClass com.aruma.e2e.LaunchE2ETest "$@" "$runner" | tr -d '\r' >"$gen/instrument.txt"
-sleep 1
-grep -E '^./TestRunner: (finished|failed):' "$gen/logcat.txt" | sed 's/^.\/TestRunner: /  /' || true
-if ! grep -q '^OK (' "$gen/instrument.txt"; then
-  cat "$gen/instrument.txt" >&2
-  status=1
-fi
-grep -E "^(OK \(|Tests run:)" "$gen/instrument.txt"
+  log "$t, 4. installing the build with the plugin and running the instrumented tests"
+  "$adb" install -r -t "$g/app.apk" >/dev/null
+  "$adb" logcat -c
+  "$adb" logcat -v tag 'ArumaRedirect:I' 'ArumaE2E:I' 'TestRunner:I' 'AndroidRuntime:E' '*:S' >"$g/logcat.txt" 2>&1 &
+  logcat_pid=$!
+  "$adb" shell am instrument -w -e arumaUrl "$ARUMA_URL" -e storageUrl "$storage_url" \
+    -e notClass com.aruma.e2e.LaunchE2ETest "$@" "$runner" | tr -d '\r' >"$g/instrument.txt"
+  sleep 1
+  kill "$logcat_pid" 2>/dev/null; wait "$logcat_pid" 2>/dev/null || true
+  logcat_pid=
+  grep -E '^./TestRunner: (finished|failed):' "$g/logcat.txt" | sed 's/^.\/TestRunner: /  /' || true
+  if ! grep -q '^OK (' "$g/instrument.txt"; then
+    cat "$g/instrument.txt" >&2
+    status=1
+  fi
+  grep -E "^(OK \(|Tests run:)" "$g/instrument.txt"
 
-sed -n 's/^I\/ArumaE2E: //p' "$gen/logcat.txt"
-grep -E '^I/ArumaRedirect: (installed|Firebase Storage)' "$gen/logcat.txt" | sed 's/^I\/ArumaRedirect: //' || true
-echo "requests redirected by aruma-redirect, by host:"
-sed -n 's/^I\/ArumaRedirect: redirected \([^/]*\).*/\1/p' "$gen/logcat.txt" | sort | uniq -c
-if grep -q '^I/ArumaRedirect: redirected firebasestorage' "$gen/logcat.txt"; then
-  echo "Storage requests went through the run-time fallback, not the plugin's base" >&2
-  status=1
-fi
+  sed -n 's/^I\/ArumaE2E: //p' "$g/logcat.txt"
+  grep -E '^I/ArumaRedirect: (installed|Firebase Storage)' "$g/logcat.txt" | sed 's/^I\/ArumaRedirect: //' || true
+  # aruma-redirect read PROD_BASE_URL by reflection and found the plugin's base.
+  if ! grep -q "^I/ArumaRedirect: Firebase Storage: requests and download URLs go to $storage_url/v0 (built with dev.aruma.storage)" "$g/logcat.txt"; then
+    echo "aruma-redirect did not find the plugin's base in the $t build" >&2
+    status=1
+  fi
+  echo "requests redirected by aruma-redirect, by host:"
+  sed -n 's/^I\/ArumaRedirect: redirected \([^/]*\).*/\1/p' "$g/logcat.txt" | sort | uniq -c
+  if grep -q '^I/ArumaRedirect: redirected firebasestorage' "$g/logcat.txt"; then
+    echo "Storage requests went through the run-time fallback, not the plugin's base" >&2
+    status=1
+  fi
+done
+
 if [[ -n "$guarded" ]]; then
   n=$(( $(rejected) - baseline ))
   echo "packets of the app rejected by the device guard during the tests: $n"
   [[ "$n" == 0 ]] || status=1
 fi
-[[ $status -eq 0 ]] && log "Android Cloud Storage e2e passed"
+[[ $status -eq 0 ]] && log "Android Cloud Storage e2e passed (${types[*]})"
 exit "$status"

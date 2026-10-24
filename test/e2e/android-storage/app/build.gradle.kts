@@ -9,6 +9,7 @@
 //   arumaStorageRedirect  ArumaStorageRedirect in the manifest (default true)
 //   arumaE2eNoPlugin      build without dev.aruma.storage: aruma-redirect's launch check
 //   arumaE2eExclude       exclude NetworkRequest from the instrumentation: the plugin's check
+//   arumaE2eBuildType     debug (default) or release: the build type the instrumented tests run on
 plugins {
     id("com.android.application")
     id("com.google.gms.google-services")
@@ -37,6 +38,17 @@ android {
         manifestPlaceholders["arumaStorageRedirect"] = providers.gradleProperty("arumaStorageRedirect").getOrElse("true")
     }
 
+    // release: what a store gets, shrunk and optimized by R8 and not debuggable, signed with the
+    // debug key only so that the tests can be installed next to it.
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-e2e.pro")
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+    testBuildType = providers.gradleProperty("arumaE2eBuildType").getOrElse("debug")
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -52,19 +64,22 @@ if (providers.gradleProperty("arumaE2eExclude").isPresent) {
 // The APK a store would derive from the App Bundle: bundletool build-apks --mode=universal, the
 // bundletool AGP itself uses. run.sh looks for the plugin's notice in it.
 val bundletool = configurations.create("bundletool")
-tasks.register<JavaExec>("universalApkFromBundle") {
-    dependsOn("bundleDebug")
-    val aab = layout.buildDirectory.file("outputs/bundle/debug/app-debug.aab")
-    val apks = layout.buildDirectory.file("outputs/bundletool/app-debug.apks")
-    val aapt2 = androidComponents.sdkComponents.sdkDirectory
-        .map { it.file("build-tools/${android.buildToolsVersion}/aapt2") }
-    inputs.file(aab)
-    outputs.file(apks)
-    classpath = bundletool
-    mainClass = "com.android.tools.build.bundletool.BundleToolMain"
-    argumentProviders.add {
-        listOf("build-apks", "--mode=universal", "--overwrite", "--aapt2=${aapt2.get().asFile}",
-            "--bundle=${aab.get().asFile}", "--output=${apks.get().asFile}")
+for (type in listOf("debug", "release")) {
+    val cap = type.replaceFirstChar { it.uppercase() }
+    tasks.register<JavaExec>("universalApkFromBundle$cap") {
+        dependsOn("bundle$cap")
+        val aab = layout.buildDirectory.file("outputs/bundle/$type/app-$type.aab")
+        val apks = layout.buildDirectory.file("outputs/bundletool/app-$type.apks")
+        val aapt2 = androidComponents.sdkComponents.sdkDirectory
+            .map { it.file("build-tools/${android.buildToolsVersion}/aapt2") }
+        inputs.file(aab)
+        outputs.file(apks)
+        classpath = bundletool
+        mainClass = "com.android.tools.build.bundletool.BundleToolMain"
+        argumentProviders.add {
+            listOf("build-apks", "--mode=universal", "--overwrite", "--aapt2=${aapt2.get().asFile}",
+                "--bundle=${aab.get().asFile}", "--output=${apks.get().asFile}")
+        }
     }
 }
 
