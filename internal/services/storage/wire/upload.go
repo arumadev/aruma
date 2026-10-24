@@ -117,7 +117,8 @@ var ErrBadContentRange = errors.New("wire: malformed Content-Range")
 // ParseContentRange parses a GCS chunk's Content-Range header: bytes a-b/*, bytes a-b/T,
 // bytes */T, bytes N-*/*, bytes N-*/T and bytes */* (B §5.4-5.7, §10.2). The unit is "bytes" in
 // any case and one space; the numbers are plain decimals that fit an int64. Impossible bounds
-// are refused: b < a, b ≥ T, N > T.
+// are refused: b < a, b ≥ T, N > T, b = math.MaxInt64. One more form is read, the empty last
+// chunk Node writes as bytes N-(N-1)/N (bytes 0--1/0 for an empty file): it is bytes */N.
 func ParseContentRange(v string) (ContentRange, error) {
 	unit, spec, ok := strings.Cut(v, " ")
 	if !ok || !strings.EqualFold(unit, "bytes") {
@@ -154,12 +155,36 @@ func ParseContentRange(v string) (ContentRange, error) {
 		}
 		return r, nil
 	}
-	end, err := ParseLength(last)
-	if err != nil || end < start || (r.Total >= 0 && end >= r.Total) {
+	end := int64(-1)
+	if last != "-1" {
+		if end, err = ParseLength(last); err != nil {
+			return ContentRange{}, ErrBadContentRange
+		}
+	}
+	if end == start-1 && r.Total == start {
+		// bytes N-(N-1)/N: an empty last chunk, the same as bytes */N. Node writes it when the
+		// object ends on a chunk's boundary, bytes 0--1/0 for an empty file with chunkSize
+		// (@google-cloud/storage 8.4.0 resumable-upload.js:619-623).
+		return ContentRange{Start: -1, End: -1, Total: start}, nil
+	}
+	if end < start || end == math.MaxInt64 || (r.Total >= 0 && end >= r.Total) {
 		return ContentRange{}, ErrBadContentRange
 	}
 	r.End = end
 	return r, nil
+}
+
+// Length returns how many bytes the request's body carries by its header: End-Start+1, 0 when it
+// carries none (bytes */T, bytes */*), and -1 when it is open ended and only its body tells.
+// ParseContentRange never returns an End of math.MaxInt64, so the sum cannot overflow.
+func (r ContentRange) Length() int64 {
+	switch {
+	case r.Start < 0:
+		return 0
+	case r.Open:
+		return -1
+	}
+	return r.End - r.Start + 1
 }
 
 // ErrBadLength is a length or offset that is not a plain non-negative decimal fitting an int64.

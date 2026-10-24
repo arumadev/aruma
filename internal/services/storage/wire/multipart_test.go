@@ -194,6 +194,10 @@ func TestRelatedReaderBounded(t *testing.T) {
 	} {
 		src := &counter{r: c.body}
 		rr, err := NewRelatedReader(src, ct, maxJSON)
+		// The budgets NewRelatedReader sets in turn, before the media (multipart.go).
+		if limit := int64(maxJSON + 1 + 2*headerBudget); src.read > limit {
+			t.Errorf("%s: read %d bytes before the media, over %d", c.name, src.read, limit)
+		}
 		if c.media {
 			if err != nil {
 				t.Fatalf("%s: %v", c.name, err)
@@ -203,7 +207,9 @@ func TestRelatedReaderBounded(t *testing.T) {
 		if !errors.Is(err, ErrBadMultipart) {
 			t.Errorf("%s: %v, want ErrBadMultipart", c.name, err)
 		}
-		if limit := int64(maxJSON + 3*headerBudget + 3*4096); src.read > limit {
+		// After the media, the closing check has one more headerBudget, past the reader's
+		// 4 KiB look-ahead.
+		if limit := int64(maxJSON + 1 + 3*headerBudget + 4096); src.read > limit {
 			t.Errorf("%s: read %d bytes, over %d", c.name, src.read, limit)
 		}
 	}
