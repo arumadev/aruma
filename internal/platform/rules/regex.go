@@ -57,7 +57,7 @@ type compiledRegex struct {
 	// The forms for strings that hold lone surrogates, compiled when one first comes
 	// (regexlone.go).
 	loneMu  sync.Mutex
-	lone    *regexForms
+	lone    map[rune]*regexForms // by the base of the sentinels' block
 	loneErr error
 }
 
@@ -328,7 +328,7 @@ func compilePattern(text string, limit int, charge func(alloc, work int64) error
 		lit := string(re.Rune)
 		p.literal, p.isLiteral = lit, true
 		for _, r := range re.Rune {
-			if isSurrogate(r) || inSentinels(r) || r == utf8.RuneError {
+			if isSurrogate(r) || r == utf8.RuneError {
 				p.literal, p.isLiteral = "", false
 			}
 		}
@@ -467,7 +467,7 @@ func matchString(m *meter, s, text string) (Value, error) {
 	if err := m.work((int64(len(s)) + 1) * int64(p.insts)); err != nil {
 		return Value{}, err
 	}
-	in, forms, err := viewOf(m, p, s)
+	in, forms, _, err := viewOf(m, p, s)
 	if err != nil {
 		return Value{}, err
 	}
@@ -475,23 +475,27 @@ func matchString(m *meter, s, text string) (Value, error) {
 }
 
 // viewOf returns the matcher's view of s and the pattern's forms that read it: s itself, or,
-// when it holds lone surrogates, its lone view (regexlone.go), the copy charged.
-func viewOf(m *meter, p *compiledRegex, s string) (string, *regexForms, error) {
+// when it holds lone surrogates, its lone view with sentinels at base (regexlone.go), the copy
+// charged; base is 0 for s itself.
+func viewOf(m *meter, p *compiledRegex, s string) (string, *regexForms, rune, error) {
 	if err := m.work(scanWork(len(s))); err != nil {
-		return "", nil, err
+		return "", nil, 0, err
 	}
 	if !hasLoneSurrogate(s) {
-		return s, &p.regexForms, nil
+		return s, &p.regexForms, 0, nil
 	}
-	forms, err := p.loneForms(m, m.regexes.insts)
+	base, err := pickBlock(m, s)
 	if err != nil {
-		return "", nil, err
+		return "", nil, 0, err
+	}
+	forms, err := p.loneForms(m, m.regexes.insts, base)
+	if err != nil {
+		return "", nil, 0, err
 	}
 	if err := m.alloc(int64(len(s))); err != nil {
-		return "", nil, err
+		return "", nil, 0, err
 	}
-	in, err := loneView(s)
-	return in, forms, err
+	return loneView(s, base), forms, base, nil
 }
 
 // A found match: where it starts and ends, and where each of the pattern's groups does (an
@@ -532,6 +536,8 @@ type matcher struct {
 	m     *meter
 	p     *compiledRegex
 	forms *regexForms
+	base  rune   // the sentinels' block for s, chosen when a lone surrogate is first read; or 0
+	plain bool   // in is s itself, which holds no lone surrogate
 	s     string // the string, WTF-8
 	in    string // the matcher's view of s (viewOf)
 	pos   unitPos
@@ -573,7 +579,8 @@ func (it *matcher) next() (found, bool, error) {
 // find returns the leftmost match at or after it.pos.
 func (it *matcher) find() (found, bool, error) {
 	p, in := it.p, it.in
-	if p.isLiteral && !it.pos.mid {
+	// A literal of real characters is found as it is, in a view without sentinels.
+	if p.isLiteral && it.plain && !it.pos.mid {
 		return it.findLiteral()
 	}
 	if p.width < 0 {
@@ -659,7 +666,14 @@ func (it *matcher) search(start unitPos, end int) (found, bool, error) {
 		at = func(t int) unitPos { return unitPos{b: base + t} }
 	default:
 		// In the middle of a pair: its halves are lone surrogates, read as their sentinels.
-		lone, err := it.p.loneForms(it.m, it.m.regexes.insts)
+		if it.base == 0 {
+			base, err := pickBlock(it.m, it.s)
+			if err != nil {
+				return found{}, false, err
+			}
+			it.base = base
+		}
+		lone, err := it.p.loneForms(it.m, it.m.regexes.insts, it.base)
 		if err != nil {
 			return found{}, false, err
 		}
@@ -670,7 +684,7 @@ func (it *matcher) search(start unitPos, end int) (found, bool, error) {
 		}
 		r, _ := decodeWTF8(it.s[start.b:])
 		hi, lo := halves(r)
-		hay = string(utf8.AppendRune(utf8.AppendRune(nil, sentinel(hi)), sentinel(lo))) + in[after:end]
+		hay = string(utf8.AppendRune(utf8.AppendRune(nil, sentinel(it.base, hi)), sentinel(it.base, lo))) + in[after:end]
 		at = func(t int) unitPos {
 			if t <= 3 {
 				return unitPos{b: start.b, mid: true}
@@ -705,11 +719,11 @@ func newMatcher(m *meter, s, text string) (*matcher, error) {
 	if err != nil {
 		return nil, err
 	}
-	in, forms, err := viewOf(m, p, s)
+	in, forms, base, err := viewOf(m, p, s)
 	if err != nil {
 		return nil, err
 	}
-	return &matcher{m: m, p: p, forms: forms, s: s, in: in}, nil
+	return &matcher{m: m, p: p, forms: forms, base: base, plain: base == 0, s: s, in: in}, nil
 }
 
 // pieceBytes is the size of one piece of split's result before it is built: a string header

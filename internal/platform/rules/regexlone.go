@@ -4,61 +4,108 @@ import (
 	"regexp"
 	"regexp/syntax"
 	"slices"
+	"unicode"
 	"unicode/utf8"
 )
 
 // Production's matcher, RE2J, reads a lone surrogate as its own code point: '😀'[0] matches
 // '[\x{D800}-\x{DFFF}]' and '[^\x{FFFD}]', not '\x{FFFD}' (the review's probes of the Rules Test
-// API, 2026-10-24). Go's regexp reads only UTF-8, where no surrogate exists, so a string holding
-// lone surrogates is matched in a view where each is a sentinel, U+E000 to U+E7FF for U+D800 to
-// U+DFFF, three bytes as the surrogate's own form so offsets agree, against the pattern rewritten
-// the same way: a class's surrogates become their sentinels, and the sentinels it named before
-// are dropped. A string that holds both lone surrogates and real characters of the sentinels'
-// range cannot be told apart and is an evaluation error, a denial: private-use characters that
-// meet a lone surrogate in one string.
+// API, 2026-10-24). Go's regexp reads only UTF-8, where no surrogate exists, so a string where a
+// lone surrogate is read (one it holds, or a half that a search in the middle of a pair starts
+// at) is matched in a view where each lone surrogate is a sentinel, against the pattern
+// rewritten the same way: a class's surrogates become their sentinels, and what it named of
+// the sentinels' block before is dropped.
+//
+// The block of sentinels is chosen for each string: the first block of 2048 characters, each
+// three bytes as a surrogate's own form so offsets agree, that holds no character of the string
+// and none that case folding pairs with another (so (?i) cannot reach a sentinel). The private
+// use blocks come first. Dropping a block the string does not use changes nothing it can match,
+// so the rewritten pattern answers on the string as the pattern would. A string with characters
+// in every one of the 23 blocks and a lone surrogate to read leaves none: an evaluation error,
+// a denial; only a string written for it holds that.
+//
+// A string the matcher reads no lone surrogate in never meets a rewritten pattern.
 
-const (
-	sentinelBase = 0xE000
-	sentinelLast = sentinelBase + 0xDFFF - 0xD800
-)
+// sentinelBlocks are the bases of the blocks the sentinels may take, in the order chosen.
+var sentinelBlocks = func() []rune {
+	var out []rune
+	usable := func(base rune) bool {
+		for r := base; r < base+0x800; r++ {
+			if unicode.SimpleFold(r) != r {
+				return false
+			}
+		}
+		return true
+	}
+	for _, base := range []rune{0xE000, 0xE800, 0xF000} {
+		out = append(out, base)
+	}
+	for base := rune(0x800); base < 0x10000; base += 0x800 {
+		if base == 0xD800 || slices.Contains(out, base) || !usable(base) {
+			continue
+		}
+		out = append(out, base)
+	}
+	return out
+}()
 
-func sentinel(r rune) rune { return r - 0xD800 + sentinelBase }
-
-func inSentinels(r rune) bool { return r >= sentinelBase && r <= sentinelLast }
-
-// errSentinelClash is the error for a string the matcher cannot read.
-func errSentinelClash() *evalError {
-	return errorf("A string holding both lone surrogates and characters from U+E000 to U+E7FF cannot be matched.")
+// errNoSentinels is the error for a string that leaves no block for the sentinels.
+func errNoSentinels() *evalError {
+	return errorf("A string holding characters from every block the matcher can read lone surrogates through cannot be matched.")
 }
 
-// loneView is the matcher's view of s, which holds lone surrogates: each one its sentinel.
-func loneView(s string) (string, error) {
+// pickBlock returns the base of the first block of sentinels that s holds no character of,
+// charging the walk.
+func pickBlock(m *meter, s string) (rune, error) {
+	if err := m.work(walkWork(len(s))); err != nil {
+		return 0, err
+	}
+	var used [0x10000 >> 11]bool
+	for i := 0; i < len(s); {
+		r, n := decodeWTF8(s[i:])
+		if r < 0x10000 {
+			used[r>>11] = true
+		}
+		i += n
+	}
+	for _, base := range sentinelBlocks {
+		if !used[base>>11] {
+			return base, nil
+		}
+	}
+	return 0, errNoSentinels()
+}
+
+// sentinel is the sentinel of the surrogate r in the block at base.
+func sentinel(base, r rune) rune { return r - 0xD800 + base }
+
+// loneView is the matcher's view of s: each lone surrogate its sentinel in the block at base,
+// which s holds no character of.
+func loneView(s string, base rune) string {
 	out := make([]byte, 0, len(s))
 	for i := 0; i < len(s); {
 		r, n := decodeWTF8(s[i:])
-		switch {
-		case n == 3 && isSurrogate(r):
-			out = utf8.AppendRune(out, sentinel(r))
-		case inSentinels(r):
-			return "", errSentinelClash()
-		default:
+		if n == 3 && isSurrogate(r) {
+			out = utf8.AppendRune(out, sentinel(base, r))
+		} else {
 			out = append(out, s[i:i+n]...)
 		}
 		i += n
 	}
-	return string(out), nil
+	return string(out)
 }
 
-// rewriteLone rewrites a parsed pattern for the lone view: surrogates become their sentinels,
-// and what named the sentinels themselves names nothing.
-func rewriteLone(re *syntax.Regexp) {
+// rewriteLone rewrites a parsed pattern for the view with sentinels at base: surrogates become
+// their sentinels, and what named the block itself names nothing.
+func rewriteLone(re *syntax.Regexp, base rune) {
+	last := base + 0x7FF
 	switch re.Op {
 	case syntax.OpLiteral:
 		for i, r := range re.Rune {
 			switch {
 			case isSurrogate(r):
-				re.Rune[i] = sentinel(r)
-			case inSentinels(r):
+				re.Rune[i] = sentinel(base, r)
+			case r >= base && r <= last:
 				*re = syntax.Regexp{Op: syntax.OpNoMatch}
 				return
 			}
@@ -67,16 +114,16 @@ func rewriteLone(re *syntax.Regexp) {
 		var out []rune
 		for i := 0; i+1 < len(re.Rune); i += 2 {
 			lo, hi := re.Rune[i], re.Rune[i+1]
-			// Without the sentinels' range.
-			if lo < sentinelBase {
-				out = append(out, lo, min(hi, sentinelBase-1))
+			// Without the block.
+			if lo < base {
+				out = append(out, lo, min(hi, base-1))
 			}
-			if hi > sentinelLast {
-				out = append(out, max(lo, sentinelLast+1), hi)
+			if hi > last {
+				out = append(out, max(lo, last+1), hi)
 			}
 			// The surrogates it holds, as sentinels.
 			if a, b := max(lo, 0xD800), min(hi, 0xDFFF); a <= b {
-				out = append(out, sentinel(a), sentinel(b))
+				out = append(out, sentinel(base, a), sentinel(base, b))
 			}
 		}
 		pairs := make([][2]rune, 0, len(out)/2)
@@ -98,18 +145,25 @@ func rewriteLone(re *syntax.Regexp) {
 		}
 	}
 	for _, sub := range re.Sub {
-		rewriteLone(sub)
+		rewriteLone(sub, base)
 	}
 }
 
-// loneForms compiles the pattern's three forms for the lone view, once per pattern, charged to
-// the evaluation that first needs them; a form past the limits is an evaluation error. An
+// loneCacheBlocks is how many blocks' forms a pattern keeps; the forms for another block are
+// compiled for each evaluation that needs them.
+const loneCacheBlocks = 4
+
+// loneForms returns the pattern's three forms for the view with sentinels at base, charged to
+// the evaluation that compiles them; a form past the limits is an evaluation error. An
 // evaluation that runs out of its own limits on the way leaves them for the next to compile.
-func (p *compiledRegex) loneForms(m *meter, limit int) (*regexForms, error) {
+func (p *compiledRegex) loneForms(m *meter, limit int, base rune) (*regexForms, error) {
 	p.loneMu.Lock()
 	defer p.loneMu.Unlock()
-	if p.lone != nil || p.loneErr != nil {
-		return p.lone, p.loneErr
+	if f, ok := p.lone[base]; ok {
+		return f, nil
+	}
+	if p.loneErr != nil {
+		return nil, p.loneErr
 	}
 	if err := m.work(int64(len(p.text))); err != nil {
 		return nil, err
@@ -122,7 +176,7 @@ func (p *compiledRegex) loneForms(m *meter, limit int) (*regexForms, error) {
 		p.loneErr = errRegex(p.text)
 		return nil, p.loneErr
 	}
-	rewriteLone(re)
+	rewriteLone(re, base)
 	text := re.String()
 	textCost := parseCost(text)
 	if textCost > int64(limit)*parseBytesPerInst {
@@ -140,7 +194,12 @@ func (p *compiledRegex) loneForms(m *meter, limit int) (*regexForms, error) {
 		p.loneErr = ferr
 		return nil, p.loneErr
 	}
-	p.lone = f
+	if len(p.lone) < loneCacheBlocks {
+		if p.lone == nil {
+			p.lone = map[rune]*regexForms{}
+		}
+		p.lone[base] = f
+	}
 	return f, nil
 }
 

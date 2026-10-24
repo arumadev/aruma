@@ -72,7 +72,7 @@ func TestSplitCostAsProduction(t *testing.T) {
 func allMatches(t *testing.T, p *compiledRegex, s string, width int) []found {
 	t.Helper()
 	q := &compiledRegex{text: p.text, insts: p.insts, groups: p.groups, regexForms: p.regexForms, width: width}
-	it := &matcher{m: newTestMeter(), p: q, forms: &q.regexForms, s: s, in: s}
+	it := &matcher{m: newTestMeter(), p: q, forms: &q.regexForms, plain: true, s: s, in: s}
 	var got []found
 	for {
 		f, ok, err := it.next()
@@ -138,8 +138,9 @@ func TestLoneSurrogatesInPatterns(t *testing.T) {
 		{"half.matches('[\\x{E000}-\\x{E7FF}]') is false", vCall(half, "matches", vs(`[\x{E000}-\x{E7FF}]`)), vb(false), ""},
 		{"a split between halves reads them", vThen(vCall(vs("a😀b"), "split", vs(`[\x{DC00}-\x{DFFF}]`)), "size"), vi(1), ""},
 		{"a split on the empty pattern, then the low half", vOpOn(vThen(vCall(vs("😀"), "split", vs("")), "join", vs("|")), tokEQ, vLit(vs("|"+lone(0xD83D)+"|"+lone(0xDE00)))), vb(true), ""},
-		// A private-use character of the sentinels' range beside a lone surrogate: an error.
-		{"a clash is an error", vCall(vs(lone(0xD83D)+""), "matches", vs(".*")), Value{}, "cannot be matched"},
+		// A private-use character of the first block beside a lone surrogate: the next block.
+		{"U+E000 beside a half", vCall(vs(lone(0xD83D)+"\uE000"), "matches", vs(`[\x{D800}-\x{DFFF}]\x{E000}`)), vb(true), ""},
+		{"U+E000 is no surrogate beside a half", vCall(vs(lone(0xD83D)+"\uE000"), "matches", vs(`[\x{D800}-\x{DFFF}]{2}`)), vb(false), ""},
 		// Without a lone surrogate, the sentinels' range is itself.
 		{"U+E000 alone", vCall(vs(""), "matches", vs(`[\x{E000}-\x{E7FF}]`)), vb(true), ""},
 		// toUtf8 and hashing of a half read it as '?' (production, round 2: b'?', size 1).
