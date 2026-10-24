@@ -26,6 +26,10 @@ import (
 // Node's bytes 0-*/*, its 308 with Range and its multipart, Go's multipart, its 200 with
 // X-Http-Status-Code-Override: 308 and its bytes */N.
 //
+// Both run under a network guard, and the test fails unless the guard saw them connect to the
+// recorder and nothing else: the Go program refuses every dial beyond loopback itself (its last
+// step), and Node loads test/experiments/netguard.cjs.
+//
 // It builds a Go program with the Google libraries and installs an npm package, so it runs only
 // with ARUMA_GCS_SDK=1 (Go and Node on PATH; the first run needs the module proxy and the npm
 // registry, or their caches):
@@ -207,6 +211,14 @@ func (p *recorder) run(t *testing.T, dir string, cmd *exec.Cmd, env ...string) h
 	p.mu.Lock()
 	p.got = nil
 	p.mu.Unlock()
+	guardLog := filepath.Join(t.TempDir(), "netguard.log")
+	if dir == "node" {
+		guard, err := filepath.Abs(filepath.Join("..", "experiments", "netguard.cjs"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		env = append(env, "NODE_OPTIONS=--require "+guard, "ARUMA_NETGUARD_LOG="+guardLog)
+	}
 	cmd.Env = append(os.Environ(), env...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
@@ -222,7 +234,9 @@ func (p *recorder) run(t *testing.T, dir string, cmd *exec.Cmd, env ...string) h
 	if jerr := json.Unmarshal(lastLine(out), &res); jerr != nil || len(res.Results) == 0 {
 		t.Fatalf("%s: %v %v\nstdout:\n%s\nstderr:\n%s", dir, err, jerr, out, stderr.String())
 	}
+	guarded := false
 	for _, r := range res.Results {
+		guarded = guarded || r.Op == "network guard"
 		if r.OK {
 			t.Logf("%s %s: ok %s", dir, r.Op, r.Detail)
 		} else {
@@ -232,10 +246,43 @@ func (p *recorder) run(t *testing.T, dir string, cmd *exec.Cmd, env ...string) h
 	if err != nil && !t.Failed() {
 		t.Errorf("%s: %v\n%s", dir, err, stderr.String())
 	}
+	switch dir {
+	case "go":
+		if !guarded {
+			t.Error("go: no network guard step: the program ran without its guard")
+		}
+	case "node":
+		p.netguarded(t, guardLog)
+	}
 	t.Logf("%s: %d steps in %v", dir, len(res.Results), time.Since(start).Round(time.Millisecond))
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.got
+}
+
+// netguarded fails the test unless netguard.cjs's log shows connections to the recorder and to
+// nothing else.
+func (p *recorder) netguarded(t *testing.T, log string) {
+	t.Helper()
+	b, err := os.ReadFile(log)
+	if err != nil {
+		t.Errorf("the network guard wrote nothing: %v", err)
+		return
+	}
+	self := strings.TrimPrefix(p.URL, "http://")
+	allowed := 0
+	for line := range strings.Lines(string(b)) {
+		verdict, rest, _ := strings.Cut(strings.TrimSpace(line), " ")
+		target, _, _ := strings.Cut(rest, " ")
+		if verdict != "ALLOW" || target != self {
+			t.Errorf("network guard: %s", strings.TrimSpace(line))
+			continue
+		}
+		allowed++
+	}
+	if allowed == 0 {
+		t.Error("the network guard saw no connection to the recorder: it was not loaded")
+	}
 }
 
 func lastLine(b []byte) []byte {
