@@ -33,6 +33,10 @@
       "types": "./flutter-web.d.ts",
       "default": "./src/flutter-web.js"
     },
+    "./next": {
+      "types": "./next.d.ts",
+      "default": "./src/next.js"
+    },
     "./package.json": "./package.json"
   },
   "types": "./index.d.ts",
@@ -51,6 +55,7 @@
     "unplugin.d.ts",
     "metro.d.ts",
     "flutter-web.d.ts",
+    "next.d.ts",
     "README.md",
     "LICENSE"
   ],

@@ -26,6 +26,7 @@ sdk=$root/sdk/web/aruma-web
 . "$here/lib.sh"
 trap 'stop_dev; stop_all' EXIT
 dev_port=${ARUMA_E2E_DEV_PORT:-9426}
+export NEXT_TELEMETRY_DISABLED=1
 
 targets=("$@")
 [[ ${#targets[@]} -gt 0 ]] || targets=(vite5 vite6 vite7 vite8 next expo flutter fallback)
@@ -61,6 +62,13 @@ package() {
   ' "$1" "$2" "$sdk"
 }
 
+# install_app <dir>: npm install, with @aruma/web copied in (not linked: Turbopack and Metro do not
+# follow a link out of the project) fresh from sdk/web/aruma-web.
+install_app() {
+  rm -rf "$1/node_modules/@aruma"
+  (cd "$1" && npm install --no-audit --no-fund --silent --install-links)
+}
+
 vite_app() {
   local major=$1 name=vite$1 dir=$apps/vite$1
   log "Vite $major: build and dev server"
@@ -70,7 +78,7 @@ vite_app() {
   cp index.html "$dir/"
   cp src/main.js src/ops.js "$dir/src/"
   cp apps/vite/vite.config.mjs "$dir/"
-  (cd "$dir" && npm install --no-audit --no-fund --silent && rm -rf node_modules/.vite)
+  install_app "$dir" && rm -rf "$dir/node_modules/.vite"
   note "vite $major: $(cd "$dir" && node -p 'require("vite/package.json").version')"
   if (cd "$dir" && ARUMA_E2E_NAME=$name npx vite build >"$gen/build-$name.log" 2>&1); then
     playwright "$name" "$name=$dir/dist" "$name-build"
@@ -92,11 +100,62 @@ stop_dev() {
   kill "$dev_pid" 2>/dev/null || true
   wait "$dev_pid" 2>/dev/null || true
   dev_pid=
+  # What the server started further down (next start's own server) still holds the port.
+  lsof -ti "tcp:$dev_port" -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null || true
+}
+
+# netguarded <log> <command…>: runs a Node server under test/experiments/netguard.cjs.
+netguarded() {
+  local logf=$1
+  shift
+  ARUMA_NETGUARD_LOG=$logf NODE_OPTIONS="--require $root/test/experiments/netguard.cjs" "$@"
+}
+
+# guard_clean <log> <what>: a note when the netguard blocked anything.
+guard_clean() {
+  if grep -q BLOCK "$1" 2>/dev/null; then
+    note "FAILED  $2: the server tried to leave the machine: $(grep BLOCK "$1" | sort -u | head -3 | tr '\n' ' ')"
+  else
+    note "ok      $2: the server connected to $(grep -c ALLOW "$1" 2>/dev/null || echo 0) local addresses and nothing else"
+  fi
+}
+
+next_app() {
+  local dir=$apps/next
+  log "Next.js: webpack and Turbopack"
+  rm -rf "$dir/app" "$dir"/.next*
+  mkdir -p "$dir/app"
+  package "$dir" '{"firebase": "^13", "next": "^16", "react": "^19", "react-dom": "^19"}'
+  cp apps/next/next.config.mjs "$dir/"
+  cp apps/next/app/*.js "$dir/app/"
+  cp src/ops.js "$dir/app/ops.js"
+  install_app "$dir"
+  note "next: $(cd "$dir" && node -p 'require("next/package.json").version')"
+  local b flag
+  for b in webpack turbopack; do
+    flag=
+    [[ $b == webpack ]] && flag=--webpack
+    if ! (cd "$dir" && ARUMA_E2E_DIST=.next-$b npx next build $flag >"$gen/build-next-$b.log" 2>&1); then
+      note "FAILED  next-$b: next build failed (see $gen/build-next-$b.log)"
+      grep -m5 -i "aruma\|error" "$gen/build-next-$b.log" | sed 's/^/          /'
+      continue
+    fi
+    # What the build left: the host literal must be gone from every chunk.
+    note "        next-$b: chunks still naming Google's host: $(grep -rl '"firebasestorage.googleapis.com"' "$dir/.next-$b" --include='*.js' 2>/dev/null | wc -l | tr -d ' ')"
+    (cd "$dir" && ARUMA_E2E_DIST=.next-$b ARUMA_E2E_NAME=next-$b netguarded "$gen/netguard-next-$b.log" \
+      exec npx next start -p "$dev_port" -H 127.0.0.1) >"$gen/start-next-$b.log" 2>&1 &
+    dev_pid=$!
+    wait_http "http://127.0.0.1:$dev_port/"
+    playwright "next-$b@http://127.0.0.1:$dev_port/" "" "next-$b"
+    stop_dev
+    guard_clean "$gen/netguard-next-$b.log" "next-$b server"
+  done
 }
 
 for t in "${targets[@]}"; do
   case $t in
     vite5 | vite6 | vite7 | vite8) vite_app "${t#vite}" ;;
+    next) next_app ;;
     *) echo "unknown target $t" >&2; exit 2 ;;
   esac
 done

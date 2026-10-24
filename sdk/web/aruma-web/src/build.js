@@ -113,13 +113,14 @@ function rollupVerify(rw, ctx, bundle, { browser }) {
 // webpack and Rspack: the module set at finishModules (also the modules a persistent cache
 // restored, which the transform never saw), and the emitted assets.
 function tapWebpack(rw, compiler) {
-  const targets = [compiler.options.target].flat();
-  const server =
+  // Asked per compilation: webpack sets the compiler's name and target defaults after the plugins
+  // are applied. Next.js names its compilers client, server and edge-server.
+  const server = () =>
     ['server', 'edge-server'].includes(compiler.name) ||
-    targets.some((t) => typeof t === 'string' && /^(?:node|async-node|electron-main)/.test(t));
+    [compiler.options.target].flat().some((t) => typeof t === 'string' && /^(?:node|async-node|electron-main)/.test(t));
   const fail = (compilation, problems) => {
     const E = compiler.webpack?.WebpackError ?? Error;
-    for (const p of problems) compilation.errors.push(new E(p));
+    for (const p of problems) compilation.errors.push(new E(compiler.name ? `${p} (webpack compiler ${compiler.name})` : p));
   };
   compiler.hooks.thisCompilation.tap(NAME, (compilation) => {
     compilation.hooks.finishModules.tap(NAME, (modules) => {
@@ -139,7 +140,7 @@ function tapWebpack(rw, compiler) {
         }
         list.push({ id, code });
       }
-      fail(compilation, rw.verify(list, { browser: !server, watch: Boolean(compiler.watchMode) }));
+      fail(compilation, rw.verify(list, { browser: !server(), watch: Boolean(compiler.watchMode) }));
     });
     const stage = compiler.webpack?.Compilation?.PROCESS_ASSETS_STAGE_REPORT ?? 5000;
     compilation.hooks.processAssets.tap({ name: NAME, stage }, (assets) => {
