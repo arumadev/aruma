@@ -86,9 +86,9 @@
 |---|---|---|---|---|
 | 62 | الاعتماد الذي لا يُقبل 401، ومنه `Bearer <idToken>` وحساب خدمة مشروع آخر | مؤقت | E §7 | `api.principal` |
 | 63 | رمز CLI للمالك يتجاوز القواعد، ويُربط بالحساب فيُفحص عند إنهاء الرفع | مؤقت | ADR-022 §15 | `api.admin` |
-| 64 | preflight على bucket مجهول 404، وعلى موجود 204؛ وCORS التنزيل من قواعد الـ bucket بدلالة GCS | مؤقت | `bucket_probe.json`، ADR-022 §11 | `api.preflight`، `api.mediaCORS` |
-| 65 | `upload_requests_per_ip` 503 مع `Retry-After`، و`ErrTooManyUploads` 429، و`Retry-After` بين 1 و60 ثانية | مؤقت | A §5.3، ADR-022 §12 | `api.ipCounter`، `api.writeError` |
-| 66 | `create_token` يغلب `delete_token` حين يجتمعان | مؤقت | `tokens.json` | `api.tokens` |
+| 64 | preflight على bucket مجهول 404، وعلى موجود 204؛ وCORS التنزيل من قواعد الـ bucket، و`Allow-Headers` يعيد الترويسات المطلوبة كـ GCS JSON | مؤقت | `bucket_probe.json`، ADR-022 §11 | `api.preflight`، `api.mediaCORS` |
+| 65 | `upload_requests_per_ip` 503 مع `Retry-After`، و`ErrTooManyUploads` 429، و`Retry-After` (بين 1 و60 ثانية) على الضغط العابر وحده، لا على `ErrUnavailable` | مؤقت | A §5.3، ADR-022 §12 | `api.ipCounter`، `api.writeError` |
+| 66 | `create_token` يغلب `delete_token` حين يجتمعان، وقيمته غير `true` 400 قبل فحص صلاحية Admin | مؤقت | `tokens.json` | `api.tokens` |
 | 67 | `maxResults` غير عدد صحيح موجب 400، و`startOffset`/`endOffset` تُتجاهل | مؤقت | A §3.7 | `api.list` |
 | 68 | جسم PATCH بقيمة غير نصية 400، وفوق الحد 413، والفارغ لا يغيّر إلا الـ metageneration | مؤقت | A §3.5 | `api.readPatch` |
 
