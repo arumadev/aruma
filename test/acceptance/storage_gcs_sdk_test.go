@@ -201,6 +201,7 @@ func (p *recorder) run(t *testing.T, dir string, cmd *exec.Cmd, env ...string) h
 	cmd.Dir = filepath.Join("testdata", "gcs-sdk", dir)
 	if dir == "node" {
 		if _, err := os.Stat(filepath.Join(cmd.Dir, "node_modules", "@google-cloud", "storage")); err != nil {
+			notUnderEgressGuard(t, cmd.Dir)
 			install := exec.Command("npm", "ci", "--no-audit", "--no-fund", "--prefer-offline")
 			install.Dir = cmd.Dir
 			if out, err := install.CombinedOutput(); err != nil {

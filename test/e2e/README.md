@@ -81,9 +81,14 @@ installs, on the pinned commits and the lockfiles).
 **The network.** Each job installs everything first (`npm ci`, `go mod download`, `playwright
 install`, `measure.sh --install`, `run.sh --prepare`), then runs its suite under
 [test/ci/egress-guard.sh](../ci/egress-guard.sh): iptables rejects, logs and counts every packet a
-process of the suite sends beyond loopback and the job's Postgres container, whatever the program,
-and npm runs from its cache only. The guard proves itself with a probe before the suite, and the
-job's last step fails when it was not turned on or counted a packet. The suites' own guards stay on
+process of the suite sends beyond loopback and the job's Postgres container, whatever the program.
+Under it nothing is installed (the scripts see `ARUMA_EGRESS_GUARD`), npm runs from its cache
+only, npx fetches nothing, and sudo cannot gain root (`no_new_privs`), so no root process escapes
+the rules. The guard proves itself with probes before the suite, and the job's last step fails
+when it was not turned on or counted a packet. What it does not count: DNS goes to the runner's
+stub resolver on 127.0.0.53, which forwards it as its own user (the last step reports how many
+packets went to port 53; the suites' guards refuse Google's names before any lookup), and an IPv6
+connection without an IPv6 route fails before the rules (probed only when there is a route). The suites' own guards stay on
 under it: netguard.cjs in every Node process that has one, the browsers' resolver rules and request
 checks, the Go programs' loopback-only dialers, and in `TestStorageWithTheFirebaseCLI` netguard
 alone (sandbox-exec is macOS only). Nothing in CI needs a secret or reaches Google.

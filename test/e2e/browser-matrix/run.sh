@@ -52,11 +52,13 @@ for _ in $(seq 1 240); do
 done
 grep -q ready "$gen/server.out" || { echo "Aruma did not start" >&2; exit 1; }
 
-(cd "$here" && npm ci --no-audit --no-fund --silent)
+# Under test/ci/egress-guard.sh nothing is installed: the job installed the packages, the engine
+# and its system dependencies before turning the guard on.
+[[ -n ${ARUMA_EGRESS_GUARD:-} ]] || (cd "$here" && npm ci --no-audit --no-fund --silent)
 status=0
 for engine in "${engines[@]}"; do
   printf '\n==> browser matrix: %s\n' "$engine"
-  (cd "$here" && npx playwright install ${CI:+--with-deps} "$engine" >/dev/null)
+  [[ -n ${ARUMA_EGRESS_GUARD:-} ]] || (cd "$here" && npx playwright install "$engine" >/dev/null)
   (cd "$here" && npx playwright test --project "$engine" "$@") || status=1
 done
 exit $status

@@ -97,7 +97,13 @@ has() { [[ " ${suites[*]} " == *" $1"* ]]; }
 # --- sources and tools (network) ---------------------------------------------------------------
 
 # stamp_ok tells whether dir's stamp names exactly what is wanted; a change installs again.
-stamp_ok() { [[ -f $1/.aruma-ready && $(cat "$1/.aruma-ready") == "$2" ]]; }
+# Under test/ci/egress-guard.sh (ARUMA_EGRESS_GUARD) nothing is fetched or installed: a stamp that
+# does not match ends the run (the job runs --prepare before the guard).
+stamp_ok() {
+  [[ -f $1/.aruma-ready && $(cat "$1/.aruma-ready") == "$2" ]] && return 0
+  [[ -z ${ARUMA_EGRESS_GUARD:-} ]] || fail "$1 is not prepared for this run: run.sh --prepare before the egress guard"
+  return 1
+}
 lockhash() { openssl dgst -sha256 -r "$1" | cut -d' ' -f1; }
 
 # prepare_sdk keeps from the firebase@13.0.0 archive what the Storage suites read: the two
