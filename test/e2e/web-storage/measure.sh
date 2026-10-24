@@ -250,7 +250,7 @@ next_app() {
     # What the build left: the host literal must be gone from every chunk (the bare build's leak
     # is the SDK the server loads from node_modules, not a chunk).
     if [[ $b != turbopack-bare ]]; then
-      chunks=$(grep -rl '"firebasestorage.googleapis.com"' "$dir/.next-$b" --include='*.js' 2>/dev/null | wc -l | tr -d ' ')
+      chunks=$( (grep -rl '"firebasestorage.googleapis.com"' "$dir/.next-$b" --include='*.js' 2>/dev/null || true) | wc -l | tr -d ' ')
       if [[ $chunks -eq 0 ]]; then note "ok      next-$b: no chunk names Google's host"; else note "FAILED  next-$b: $chunks chunks still name Google's host"; fi
     fi
     port_free "next-$b" || continue
