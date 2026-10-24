@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -78,7 +79,10 @@ func (s *Service) CreateRuleset(ctx context.Context, p *authn.Principal, project
 	if strings.ContainsRune(f.Name, 0) || strings.ContainsRune(f.Content, 0) {
 		return Ruleset{}, nil, apierr.New(apierr.InvalidArgument, "A rules source may not contain the NUL character.")
 	}
-	rs, issues := rules.Compile(svc, f, s.opts.RulesLimits)
+	rs, issues, err := s.CompileRules(ctx, svc, f)
+	if err != nil {
+		return Ruleset{}, nil, err
+	}
 	if rs == nil {
 		return Ruleset{}, issues, apierr.New(apierr.InvalidArgument, "The rules source does not compile.")
 	}
@@ -345,6 +349,55 @@ func (s *Service) PublishRelease(ctx context.Context, p *authn.Principal, projec
 	return toRelease(pr, row), nil
 }
 
+// maxCompiles is how many rules compilations of each kind run at once in the process, so that
+// requests in parallel cannot multiply what one hostile source costs (the review's SR3-05).
+// There are two kinds, each with its own turns:
+//
+//   - the management's (compiles): the firebaserules API's :test and createRuleset, and the
+//     console's validate and publish, which the owner of any project may send at will;
+//   - the loads of CompiledRelease (loads), which the services wait for, so that they never
+//     queue behind the management's: a load waits at most for other loads, each for one
+//     release, and fails its requests at loadTimeout (the review of S7-B1,
+//     SR3-05-dataplane-starvation).
+//
+// One of the largest source takes a fraction of a second and its tree's memory, its literal
+// patterns bounded by regex_bytes; the compilations past these wait their turn, or their
+// request's end.
+func maxCompiles() int { return max(2, runtime.GOMAXPROCS(0)/2) }
+
+// slot waits for one of turns. The caller calls done when its compilation ends.
+func slot(ctx context.Context, turns chan struct{}) (done func(), err error) {
+	select {
+	case turns <- struct{}{}:
+		return func() { <-turns }, nil
+	case <-ctx.Done():
+		return nil, apierr.Wrap(ctx.Err(), apierr.Canceled, "The request was cancelled.")
+	}
+}
+
+// compileSlot waits for a turn of the management's compilations.
+func (s *Service) compileSlot(ctx context.Context) (done func(), err error) {
+	return slot(ctx, s.compiles)
+}
+
+// compile compiles a rules file for svc under the configured limits, in one of turns.
+func (s *Service) compile(ctx context.Context, turns chan struct{}, svc rules.Service, f rules.File) (*rules.Ruleset, rules.Issues, error) {
+	done, err := slot(ctx, turns)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer done()
+	rs, issues := rules.Compile(svc, f, s.opts.RulesLimits)
+	return rs, issues, nil
+}
+
+// CompileRules compiles a rules file for svc under the configured limits, in a turn of the
+// management's compilations (maxCompiles). The issues and the ruleset are rules.Compile's; the
+// error is the request's end while it waited for its turn, CANCELLED.
+func (s *Service) CompileRules(ctx context.Context, svc rules.Service, f rules.File) (*rules.Ruleset, rules.Issues, error) {
+	return s.compile(ctx, s.compiles, svc, f)
+}
+
 // CompiledRelease returns the compiled ruleset a project's release points to, for the services
 // that evaluate it. A project without its Storage release gets the locked default; a release
 // whose ruleset no longer compiles denies everything (ADR-021 §7).
@@ -362,7 +415,7 @@ func (s *Service) CompiledRelease(ctx context.Context, project int64, release st
 		case err != nil:
 			return nil, 0, internal(err)
 		}
-		rs, err := s.compileStored(project, release, row)
+		rs, err := s.compileStored(ctx, project, release, row)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -377,7 +430,7 @@ func (s *Service) CompiledRelease(ctx context.Context, project int64, release st
 // compileStored compiles a release's stored ruleset again. A ruleset that no longer compiles
 // (the limits or the language changed between two versions of Aruma), or whose service is not
 // the release's, is nil, which denies everything, with a warning in the log (ADR-021 §7).
-func (s *Service) compileStored(project int64, release string, row queries.GetReleaseSourceRow) (*rules.Ruleset, error) {
+func (s *Service) compileStored(ctx context.Context, project int64, release string, row queries.GetReleaseSourceRow) (*rules.Ruleset, error) {
 	var files []storedFile
 	if err := json.Unmarshal(row.Files, &files); err != nil {
 		return nil, internal(fmt.Errorf("rules: ruleset %s: %w", row.RulesetID, err))
@@ -395,7 +448,10 @@ func (s *Service) compileStored(project int64, release string, row queries.GetRe
 		deny("the ruleset does not hold one file", "files", len(files))
 		return nil, nil
 	}
-	rs, issues := rules.Compile(svc, rules.File{Name: files[0].Name, Content: files[0].Content}, s.opts.RulesLimits)
+	rs, issues, err := s.compile(ctx, s.loads, svc, rules.File{Name: files[0].Name, Content: files[0].Content})
+	if err != nil {
+		return nil, internal(err)
+	}
 	if rs == nil {
 		deny("the ruleset no longer compiles", "error", issues.Err())
 		return nil, nil

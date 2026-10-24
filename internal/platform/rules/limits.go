@@ -3,6 +3,7 @@ package rules
 import (
 	"errors"
 	"fmt"
+	"math"
 )
 
 // Firebase's limits (ADR-021 §4): their values are part of compatibility, so a configuration may
@@ -55,8 +56,17 @@ type Limits struct {
 	RequestSegments       int   // request_segments: the segments of a request path
 	RegexCacheEntries     int   // regex_cache_entries: patterns built during evaluation that a ruleset keeps
 	RegexCacheBytes       int64 // regex_cache_bytes: the estimated programs of those patterns
+	RegexBytes            int64 // regex_bytes: the estimated programs of one ruleset's literal patterns together
 	CompiledRulesetsBytes int64 // compiled_rulesets_bytes: the compiled rulesets kept in memory, by weight
 }
+
+// rulesetShare is the part of compiled_rulesets_bytes one ruleset may weigh (Weight): a quarter,
+// so that the cache keeps the four heaviest rulesets that compile at once, and no ruleset that
+// compiles is too heavy to keep and compiled again on every request (the review's SR3-02).
+const rulesetShare = 4
+
+// rulesetBytes is the most a ruleset may weigh: Compile refuses a heavier one.
+func (l *Limits) rulesetBytes() int64 { return l.CompiledRulesetsBytes / rulesetShare }
 
 // DefaultLimits returns Firebase's limits and Aruma's defaults (ADR-021 §4).
 func DefaultLimits() Limits {
@@ -85,13 +95,15 @@ func DefaultLimits() Limits {
 		RequestSegments:       1024,
 		RegexCacheEntries:     256,
 		RegexCacheBytes:       4 << 20,
+		RegexBytes:            4 << 20,
 		CompiledRulesetsBytes: 128 << 20,
 	}
 }
 
 // Validate reports every limit that is not positive, every Firebase limit set above Firebase's
 // value (raising one would allow what Firebase denies), an Inflight cap below one evaluation's
-// allocation, and a value cap above it.
+// allocation, a value cap above it, and a cache of compiled rulesets too small for a ruleset
+// whose literal patterns use their budget.
 func (l Limits) Validate() error {
 	var errs []error
 	for _, f := range []struct {
@@ -133,6 +145,7 @@ func (l Limits) Validate() error {
 		{"request_segments", int64(l.RequestSegments)},
 		{"regex_cache_entries", int64(l.RegexCacheEntries)},
 		{"regex_cache_bytes", l.RegexCacheBytes},
+		{"regex_bytes", l.RegexBytes},
 		{"compiled_rulesets_bytes", l.CompiledRulesetsBytes},
 	} {
 		if f.v < 1 {
@@ -148,5 +161,25 @@ func (l Limits) Validate() error {
 	if l.ValueBytes > l.AllocBytes {
 		errs = append(errs, fmt.Errorf("value_bytes %d must not exceed alloc_bytes %d", l.ValueBytes, l.AllocBytes))
 	}
+	// A ruleset weighs at least its source, the cap of its cache of patterns and its literal
+	// patterns with their forms for lone surrogates (Weight): past a quarter of the cache, one
+	// whose patterns use their budget would never compile.
+	if need := l.leastWeight(); l.CompiledRulesetsBytes > 0 && need > l.rulesetBytes() {
+		errs = append(errs, fmt.Errorf("compiled_rulesets_bytes %d must be at least %d times source_bytes, regex_cache_bytes and %d times regex_bytes together (%d)",
+			l.CompiledRulesetsBytes, rulesetShare, 1+loneCacheBlocks, need))
+	}
 	return errors.Join(errs...)
+}
+
+// leastWeight is what a ruleset whose source and literal patterns use their limits weighs at
+// least, saturating rather than overflowing.
+func (l *Limits) leastWeight() int64 {
+	w := int64(0)
+	for _, n := range []int64{int64(l.SourceBytes), l.RegexCacheBytes, literalWeight(l.RegexBytes)} {
+		if n > math.MaxInt64-w {
+			return math.MaxInt64
+		}
+		w += max(n, 0)
+	}
+	return w
 }

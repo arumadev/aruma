@@ -149,8 +149,9 @@ func rewriteLone(re *syntax.Regexp, base rune) {
 	}
 }
 
-// loneCacheBlocks is how many blocks' forms a pattern keeps; the forms for another block are
-// compiled for each evaluation that needs them.
+// loneCacheBlocks is how many blocks' forms a literal pattern keeps; the forms for another
+// block, and those of a pattern built during evaluation, are compiled for each evaluation that
+// needs them.
 const loneCacheBlocks = 4
 
 // loneForms returns the pattern's three forms for the view with sentinels at base, charged to
@@ -183,7 +184,7 @@ func (p *compiledRegex) loneForms(m *meter, limit int, base rune) (*regexForms, 
 		p.loneErr = errTooComplex(p.text, -1, limit)
 		return nil, p.loneErr
 	}
-	if err := m.alloc(3*textCost + 3*int64(p.insts+8)*progBytesPerInst); err != nil {
+	if err := m.alloc(3*textCost + 3*int64(p.insts+8)*progBytesPerInst + p.classes); err != nil {
 		return nil, err
 	}
 	if err := m.work(3 * (int64(len(text)) + 4*int64(p.insts))); err != nil {
@@ -194,7 +195,7 @@ func (p *compiledRegex) loneForms(m *meter, limit int, base rune) (*regexForms, 
 		p.loneErr = ferr
 		return nil, p.loneErr
 	}
-	if len(p.lone) < loneCacheBlocks {
+	if p.keepLone && len(p.lone) < loneCacheBlocks {
 		if p.lone == nil {
 			p.lone = map[rune]*regexForms{}
 		}
@@ -202,6 +203,15 @@ func (p *compiledRegex) loneForms(m *meter, limit int, base rune) (*regexForms, 
 	}
 	return f, nil
 }
+
+// wholeForm is the form matches() runs: the whole string, ^(?:p)$, after an empty group. The
+// empty group changes nothing a match can be, and the search is still anchored (the program's
+// start condition skips it), but Go builds no one-pass program for a form that does not start
+// with ^: one copies the runes of every instruction of a class, and merges those of every
+// branch of an alternation into each, so ^[\p{L} ]{1,100}$ held a hundred copies of \p{L} and
+// an alternation of 28 categories twelve times what its weight counts (the re-review of S7-B1).
+// The other two forms are never one-pass: they do not end in \z.
+func wholeForm(text string) string { return `(?:)^(?:` + text + `)$` }
 
 // compileForms compiles the three forms of a pattern's text.
 func compileForms(text string) (*regexForms, error) {
@@ -211,7 +221,7 @@ func compileForms(text string) (*regexForms, error) {
 		re   **regexp.Regexp
 		form string
 	}{
-		{&f.whole, `^(?:` + text + `)$`},
+		{&f.whole, wholeForm(text)},
 		{&f.first, `\A(?s:.*?)(` + text + `)`},
 		{&f.next, `\A(?s:.)(?s:.*?)(` + text + `)`},
 	} {

@@ -75,4 +75,6 @@ rules:                             # Firestore and Storage security rules (ADR-0
     request_segments: 1024         # the segments of a request path
     regex_cache_entries: 256       # patterns built during evaluation that a ruleset keeps
     regex_cache_bytes: 4194304     # their estimated programs
-    compiled_rulesets_bytes: 134217728  # compiled rulesets kept in memory, by weight
+    regex_bytes: 4194304           # the estimated programs of one ruleset's literal patterns
+    compiled_rulesets_bytes: 134217728  # compiled rulesets kept in memory, by weight; one
+                                   # ruleset may weigh a quarter of it

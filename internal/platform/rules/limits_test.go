@@ -16,7 +16,7 @@ func TestDefaultLimitsFollowADR021(t *testing.T) {
 		LookupsPerOperation: 10, LookupsPerRequest: 20, StorageLookups: 2, RulesetsPerProject: 2500,
 		MemberChain: 2000, Work: 1 << 26, ValueBytes: 2 << 20, ValueElements: 1 << 20,
 		AllocBytes: 16 << 20, InflightBytes: 512 << 20, RegexInstructions: 10_000,
-		RequestSegments: 1024, RegexCacheEntries: 256, RegexCacheBytes: 4 << 20,
+		RequestSegments: 1024, RegexCacheEntries: 256, RegexCacheBytes: 4 << 20, RegexBytes: 4 << 20,
 		CompiledRulesetsBytes: 128 << 20,
 	}
 	if l != want {
@@ -60,8 +60,8 @@ func TestValidateAcceptsLoweredAndFreeLimits(t *testing.T) {
 		// Aruma's limits have no ceiling.
 		MemberChain: 1 << 30, Work: 1 << 40, ValueBytes: 1 << 40, ValueElements: 1 << 30,
 		AllocBytes: 1 << 40, InflightBytes: 1 << 40, RegexInstructions: 1 << 30,
-		RequestSegments: 1 << 30, RegexCacheEntries: 1 << 30, RegexCacheBytes: 1 << 40,
-		CompiledRulesetsBytes: 1 << 40,
+		RequestSegments: 1 << 30, RegexCacheEntries: 1 << 30, RegexCacheBytes: 1 << 40, RegexBytes: 1 << 40,
+		CompiledRulesetsBytes: 1 << 50,
 	}
 	if err := l.Validate(); err != nil {
 		t.Errorf("lowered Firebase limits and raised Aruma ones: %v", err)
@@ -80,7 +80,7 @@ func TestValidateRefusesLimitsBelowOne(t *testing.T) {
 		"lookups_per_operation", "lookups_per_request", "storage_lookups", "rulesets_per_project",
 		"member_chain", "work", "value_bytes", "value_elements", "alloc_bytes", "inflight_bytes",
 		"regex_instructions", "request_segments", "regex_cache_entries", "regex_cache_bytes",
-		"compiled_rulesets_bytes",
+		"regex_bytes", "compiled_rulesets_bytes",
 	} {
 		if !strings.Contains(err.Error(), name+" must be at least 1") {
 			t.Errorf("Validate() of zero limits does not name %s: %v", name, err)
@@ -108,5 +108,26 @@ func TestValidateRefusesInconsistentMemoryLimits(t *testing.T) {
 	l.InflightBytes, l.ValueBytes = l.AllocBytes, l.AllocBytes
 	if err := l.Validate(); err != nil {
 		t.Errorf("inflight_bytes and value_bytes equal to alloc_bytes: %v", err)
+	}
+}
+
+// A ruleset may weigh a quarter of the cache of compiled rulesets: limits under which one whose
+// patterns use regex_bytes would weigh more do not validate, so the cache can always keep what
+// compiles (the review's SR3-02).
+func TestValidateRefusesACacheTooSmallForARuleset(t *testing.T) {
+	l := DefaultLimits()
+	need := int64(l.SourceBytes) + l.RegexCacheBytes + literalWeight(l.RegexBytes)
+	l.CompiledRulesetsBytes = need * rulesetShare
+	if err := l.Validate(); err != nil {
+		t.Errorf("a cache of %d for rulesets of %d: %v", l.CompiledRulesetsBytes, need, err)
+	}
+	l.CompiledRulesetsBytes--
+	if err := l.Validate(); err == nil || !strings.Contains(err.Error(), "compiled_rulesets_bytes") {
+		t.Errorf("a cache too small: Validate() = %v", err)
+	}
+	l = DefaultLimits()
+	l.RegexBytes = 1 << 62 // saturates rather than overflows
+	if err := l.Validate(); err == nil || !strings.Contains(err.Error(), "compiled_rulesets_bytes") {
+		t.Errorf("regex_bytes of 2^62: Validate() = %v", err)
 	}
 }

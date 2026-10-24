@@ -281,6 +281,7 @@ type RulesLimits struct {
 	RequestSegments   int   `yaml:"request_segments"`    // the segments of a request path
 	RegexCacheEntries int   `yaml:"regex_cache_entries"` // patterns built during evaluation a ruleset keeps
 	RegexCacheBytes   int64 `yaml:"regex_cache_bytes"`   // the estimated programs of those patterns
+	RegexBytes        int64 `yaml:"regex_bytes"`         // the estimated programs of one ruleset's literal patterns
 	// CompiledRulesetsBytes caps the compiled rulesets kept in memory, by estimated weight.
 	CompiledRulesetsBytes int64 `yaml:"compiled_rulesets_bytes"`
 }
@@ -428,6 +429,7 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	count("ARUMA_RULES_REQUEST_SEGMENTS", &rl.RequestSegments)
 	count("ARUMA_RULES_REGEX_CACHE_ENTRIES", &rl.RegexCacheEntries)
 	integer("ARUMA_RULES_REGEX_CACHE_BYTES", &rl.RegexCacheBytes)
+	integer("ARUMA_RULES_REGEX_BYTES", &rl.RegexBytes)
 	integer("ARUMA_RULES_COMPILED_RULESETS_BYTES", &rl.CompiledRulesetsBytes)
 
 	fraction := func(name string, dst *float64) {

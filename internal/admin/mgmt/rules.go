@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"context"
 	"net/http"
-	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -133,14 +132,15 @@ const invalidServiceFirestore = "Invalid service name: " + string(rules.Firestor
 
 // compile compiles a file for the service its declaration names, as the Rules API does: Storage,
 // or Firestore for a file that declares cloud.firestore. A name that is neither compiles for
-// Storage with the engine's warning, and grants nothing.
-func (a *API) compile(f rules.File) (rules.Service, *rules.Ruleset, rules.Issues) {
-	rs, issues := rules.Compile(rules.Storage, f, a.opts.RulesLimits)
-	if declaresFirestore(issues) {
-		rs, issues = rules.Compile(rules.Firestore, f, a.opts.RulesLimits)
-		return rules.Firestore, rs, issues
+// Storage with the engine's warning, and grants nothing. tenancy compiles it, in a turn of the
+// process's compilations (core.Service.CompileRules); the error is the request's end while it
+// waited.
+func (a *API) compile(ctx context.Context, f rules.File) (*rules.Ruleset, rules.Issues, error) {
+	rs, issues, err := a.svc.CompileRules(ctx, rules.Storage, f)
+	if err == nil && declaresFirestore(issues) {
+		rs, issues, err = a.svc.CompileRules(ctx, rules.Firestore, f)
 	}
-	return rules.Storage, rs, issues
+	return rs, issues, err
 }
 
 // declaresFirestore reports whether a compilation for Storage failed because the file declares
@@ -149,21 +149,6 @@ func declaresFirestore(issues rules.Issues) bool {
 	return slices.ContainsFunc(issues, func(i rules.Issue) bool {
 		return i.Severity == rules.SeverityError && i.Description == invalidServiceFirestore
 	})
-}
-
-// maxCompiles is how many compilations :test and createRuleset run at once. One of the largest
-// source takes a fraction of a second and its tree's memory; the requests past these wait their
-// turn, or their end.
-func maxCompiles() int { return max(2, runtime.GOMAXPROCS(0)/2) }
-
-// compileSlot waits for a turn to compile. The caller calls done when its compilation ends.
-func (a *API) compileSlot(ctx context.Context) (done func(), err error) {
-	select {
-	case a.compiles <- struct{}{}:
-		return func() { <-a.compiles }, nil
-	case <-ctx.Done():
-		return nil, apierr.Wrap(ctx.Err(), apierr.Canceled, "The request was cancelled.")
-	}
 }
 
 // tooLarge is the one compile error the Rules API answers 400 instead of listing it: a source
@@ -214,13 +199,11 @@ func (a *API) testRuleset(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	done, err := a.compileSlot(r.Context())
+	rs, issues, err := a.compile(r.Context(), f)
 	if err != nil {
 		a.fail(w, r, err)
 		return
 	}
-	_, rs, issues := a.compile(f)
-	done()
 	if err := tooLarge(issues); err != nil {
 		a.fail(w, r, err)
 		return
@@ -265,14 +248,8 @@ func (a *API) createRuleset(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	done, err := a.compileSlot(r.Context())
-	if err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	defer done()
 	// tenancy compiles the source, once: for Storage, and again for Firestore only when the file
-	// declares cloud.firestore.
+	// declares cloud.firestore, each in a turn of the process's compilations.
 	create := func(svc rules.Service) (core.Ruleset, rules.Issues, error) {
 		return a.svc.CreateRuleset(r.Context(), principal(r), r.PathValue("project"), svc, []rules.File{f})
 	}
