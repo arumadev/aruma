@@ -351,7 +351,7 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
 - **الأخطاء:**
   - `/v0`: `{"error":{"code":<الحالة>,"message":"…"}}`. 404 «Not Found.» (E §1)، و403 «Permission denied.» (PY-RR `diagnostics`)، و400 «Invalid HTTP method/URL pair.» لمسار مجهول (E §1). JSON مضغوط بـ `Content-Type: application/json; charset=UTF-8`. ولا 409 أبدًا (Android يعرضه `invalid-checksum`، A §5.2)، ولا 308.
   - GCS: `{"error":{"code","message","errors":[{"domain":"global","reason","message"}]}}`، و`code` **رقم يساوي حالة HTTP** وإلا لا يعرف `exists()` في Node أن الحالة 404 (B §8).
-  - الضغط المؤقت: 503 مع `Retry-After` محدود (iOS يعيد على 503 ويحترم `Retry-After`، ولا يعيد على 429 ولا 500، A §5.3؛ و`Retry-After` الدائم قد يعني إعادة بلا نهاية، فالقيمة محدودة). **وعلى الضغط العابر وحده** (`ErrOverloaded`، والطلبات المتزامنة لكل IP، ومعدل البدء)؛ و503 العطل (`ErrUnavailable`) بلا `Retry-After`، فمعه يتخطى iOS حده الأقصى ومدته الكلية (`GTMSessionFetcher.m:3682`، `:3854`) ويعيد بلا نهاية، وبدونه تنتهي إعادته المعتادة (تعديل S3-A، ADR-023 §3-65).
+  - الضغط المؤقت: 503 مع `Retry-After` محدود (iOS يعيد على 503 ويحترم `Retry-After`، ولا يعيد على 429 ولا 500، A §5.3؛ و`Retry-After` الدائم قد يعني إعادة بلا نهاية، فالقيمة محدودة). **وعلى الضغط العابر وحده** (`ErrOverloaded`، والطلبات المتزامنة لكل IP، ومعدل البدء)؛ و503 العطل (`ErrUnavailable`) بلا `Retry-After`، فمعه يتخطى iOS حده الأقصى ومدته الكلية (`GTMSessionFetcher.m:3682`، `:3854`) ويعيد بلا نهاية، وبدونه تنتهي إعادته المعتادة (تعديل S3-A، ADR-023 §3-70).
 
 ### 13. القوائم
 
