@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"runtime"
 	"strconv"
 	"strings"
@@ -63,6 +65,35 @@ func TestTranscoding(t *testing.T) {
 	if h := rec.Header(); field(h, "Content-Encoding") != "gzip" || field(h, "Content-Length") != "10" ||
 		field(h, "Content-Range") != "bytes 0-9/"+strconv.Itoa(len(stored)) {
 		t.Errorf("gzip accepted headers %v", h)
+	}
+}
+
+// TestShortTranscodingHasNoContentLength: a decompressed reply short enough for net/http's
+// buffer leaves the server without Content-Length too, as CT gzip wants it ("hello world",
+// firebase.endpoints.test.ts:481-514 and gcs.endpoints.test.ts:405-438). The recorder above
+// cannot see that: net/http adds the length on the wire. On an ephemeral port.
+func TestShortTranscodingHasNoContentLength(t *testing.T) {
+	plain := []byte("hello world")
+	it, stored := gzipObject(t, plain)
+	for _, m := range []Mode{RulesDecided, Token, GCS} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if err := Serve(w, r, it, bytes.NewReader(stored), m, generous); err != nil {
+				t.Error(err)
+			}
+		}))
+		tr := &http.Transport{DisableCompression: true}
+		res, err := (&http.Client{Transport: tr}).Get(srv.URL)
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, _ := io.ReadAll(res.Body)
+		res.Body.Close()
+		tr.CloseIdleConnections()
+		srv.Close()
+		if res.StatusCode != 200 || !bytes.Equal(body, plain) || res.ContentLength != -1 ||
+			res.Header.Get("Content-Length") != "" || res.Header.Get("Content-Encoding") != "" {
+			t.Errorf("mode %d: %d %q, length %d, headers %v", m, res.StatusCode, body, res.ContentLength, res.Header)
+		}
 	}
 }
 
