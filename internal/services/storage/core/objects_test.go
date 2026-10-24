@@ -703,9 +703,13 @@ func pgDump(t *testing.T, pool *pgxpool.Pool) []byte {
 		t.Logf("no pg_dump (%v): the row's text alone is checked", err)
 		return nil
 	}
+	// The pool's own connection: host, port, user and database as arguments, and the password,
+	// which CI's server requires, through the environment, never in the arguments or a log.
 	cfg := pool.Config().ConnConfig
-	out, err := exec.Command(path, "--schema=storage", "--data-only", "-h", cfg.Host, "-p", strconv.Itoa(int(cfg.Port)),
-		"-U", cfg.User, cfg.Database).CombinedOutput()
+	cmd := exec.Command(path, "--schema=storage", "--data-only", "-h", cfg.Host, "-p", strconv.Itoa(int(cfg.Port)),
+		"-U", cfg.User, "-d", cfg.Database)
+	cmd.Env = append(os.Environ(), "PGPASSWORD="+cfg.Password)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("pg_dump: %v: %s", err, out)
 	}
