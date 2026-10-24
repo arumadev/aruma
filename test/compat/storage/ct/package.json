@@ -1,0 +1,18 @@
+{
+  "name": "aruma-storage-compat-ct",
+  "private": true,
+  "description": "What the Storage conformance tests of firebase-tools v15.34.0 (scripts/storage-emulator-integration/conformance) import, at the versions its npm-shrinkwrap.json pins. run.sh installs it with npm ci --ignore-scripts next to the extracted sources, so puppeteer downloads no browser: the run uses the Chromium headless shell in .cache/ms-playwright.",
+  "devDependencies": {
+    "@google-cloud/storage": "6.9.0",
+    "chai": "4.3.4",
+    "chai-as-promised": "7.1.1",
+    "firebase": "9.23.0",
+    "firebase-admin": "11.5.0",
+    "mocha": "11.7.1",
+    "puppeteer": "19.11.1",
+    "source-map-support": "0.5.21",
+    "supertest": "6.2.3",
+    "ts-node": "10.9.1",
+    "typescript": "5.9.3"
+  }
+}

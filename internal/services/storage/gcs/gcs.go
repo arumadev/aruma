@@ -273,7 +273,7 @@ func classifyJSON(r *http.Request, rest string, download bool) target {
 // classifyUpload classifies /upload/storage/v1/b/<bucket>/o. An upload_id makes the request one
 // on an existing session whatever its method and uploadType, since Go sends its chunks as POST
 // to a URL that carries uploadType=resumable (B §5.3, ADR-022 §6.2). Without one, uploadType
-// picks the protocol.
+// picks the protocol, and without it the upload is media (or multipart by its header).
 func classifyUpload(r *http.Request, rest string) target {
 	path, err := wire.SplitObjectPath(rest)
 	switch {
@@ -296,15 +296,27 @@ func classifyUpload(r *http.Request, rest string) target {
 	if r.Method != http.MethodPost {
 		return target{err: errNotFoundPath}
 	}
-	switch ut := q.Get("uploadType"); ut {
+	ut := q.Get("uploadType")
+	if ut == "" {
+		// Without uploadType: X-Goog-Upload-Protocol: multipart, else a media upload, as the
+		// conformance tests expect of GCS (CT, gcs.endpoints.test.ts:158-173 and 306-318) and
+		// the emulator does. No official client leaves it out (ADR-023 §3-91).
+		switch p := r.Header.Get(wire.UploadProtocol); p {
+		case "":
+			ut = "media"
+		case "multipart":
+			ut = p
+		default:
+			return target{err: invalidf("Invalid %s for an upload without uploadType: %q.", wire.UploadProtocol, p)}
+		}
+	}
+	switch ut {
 	case "media":
 		t.route = routeUploadMedia
 	case "multipart":
 		t.route = routeUploadMultipart
 	case "resumable":
 		t.route = routeStartResumable
-	case "":
-		return target{err: requiredf("Upload requests must include an uploadType URL parameter and a URL-encoded object name.")}
 	default:
 		return target{err: invalidf("Invalid upload type: %q.", ut)}
 	}

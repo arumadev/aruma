@@ -402,7 +402,8 @@ func (s *Service) Metrics() *Metrics { return s.metrics }
 // AllowUploadStart takes an upload start from a client address: upload_starts_per_minute_per_ip
 // for the address (IPv6 counted per /64), then upload_starts_per_second for the process. Both
 // surfaces call it before StartUpload, Insert and a console session; when it refuses, it says
-// how long until a start is allowed.
+// how long until a start is allowed. The zero address counts on the process alone: the
+// surfaces pass it for an admin's start (ADR-022 §17).
 func (s *Service) AllowUploadStart(ip netip.Addr) (bool, time.Duration) {
 	if ip.IsValid() {
 		if ok, wait := s.startsPerIP.Allow(ratelimit.AddrKey(ip)); !ok {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"slices"
 
 	"github.com/arumadev/aruma/internal/platform/rules"
@@ -241,7 +242,18 @@ func (s *Service) incomingObject(b Bucket, name string, attrs Patch, sf Surface)
 	if err := s.checkPatch(attrs); err != nil {
 		return Object{}, err
 	}
-	o := applyPatch(Object{Bucket: b.Name, Name: name}, Patch{Fields: attrs.Fields, Metadata: attrs.Metadata})
+	md := attrs.Metadata
+	if sf == SurfaceGCS {
+		// A new object's null custom value is stored empty over GCS (CT, gcs-js-sdk.test.ts:637-670,
+		// a copy), where a PATCH's deletes the key (ADR-023 §3-92).
+		md = maps.Clone(md)
+		for k, v := range md {
+			if v == nil {
+				md[k] = new("")
+			}
+		}
+	}
+	o := applyPatch(Object{Bucket: b.Name, Name: name}, Patch{Fields: attrs.Fields, Metadata: md})
 	if len(o.Metadata) == 0 {
 		o.Metadata = nil
 	}

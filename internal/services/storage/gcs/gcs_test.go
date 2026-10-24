@@ -212,7 +212,11 @@ func TestClassify(t *testing.T) {
 		{"POST", up + "?alt=json&name=a.txt&prettyPrint=false&projection=full&uploadType=multipart", nil, "upload.multipart", 0},
 		{"POST", up + "?uploadType=multipart", nil, "upload.multipart", 0}, // the name in the JSON part
 		{"POST", up + "?name=a.txt&uploadType=resumable", nil, "upload.resumable", 0},
-		{"POST", up + "?name=a.txt", nil, "", 400},
+		// Without uploadType, media, or multipart by its header (CT, ADR-023 §3-91).
+		{"POST", up + "?name=a.txt", nil, "upload.media", 0},
+		{"POST", up, []string{wire.UploadProtocol, "multipart"}, "upload.multipart", 0},
+		{"POST", up + "?name=a.txt", []string{wire.UploadProtocol, "resumable"}, "", 400},
+		{"POST", up + "?name=a.txt&uploadType=media", []string{wire.UploadProtocol, "multipart"}, "upload.media", 0},
 		{"POST", up + "?uploadType=chunked&name=a.txt", nil, "", 400},
 		{"PUT", up + "?uploadType=media&name=a.txt", nil, "", 404},
 		{"POST", up + "/a.txt?uploadType=media", nil, "", 404},

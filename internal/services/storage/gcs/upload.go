@@ -6,6 +6,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"net/netip"
 	"os"
 	"strconv"
 	"strings"
@@ -33,7 +34,7 @@ import (
 // uploadMedia stores the body as the object's bytes: uploadType=media. The request's
 // Content-Type is the object's.
 func (a *API) uploadMedia(w http.ResponseWriter, r *http.Request, b core.Bucket, name string, p core.Principal) {
-	if !a.allowStart(w, r) {
+	if !a.allowStart(w, r, p) {
 		return
 	}
 	spec, err := a.uploadSpec(r, name, nil, r.Header.Get("Content-Type"), -1)
@@ -50,7 +51,7 @@ func (a *API) uploadMedia(w http.ResponseWriter, r *http.Request, b core.Bucket,
 // uploadType=multipart (Node's resumable:false, Go under 16 MiB). The media part streams to
 // the disk; only the JSON part, at most json_body_bytes, is held (ADR-022 §6.1).
 func (a *API) uploadMultipart(w http.ResponseWriter, r *http.Request, b core.Bucket, name string, p core.Principal) {
-	if !a.allowStart(w, r) {
+	if !a.allowStart(w, r, p) {
 		return
 	}
 	body := a.uploadBody(w, r.Body)
@@ -77,7 +78,7 @@ func (a *API) uploadMultipart(w http.ResponseWriter, r *http.Request, b core.Buc
 // there when the body has none. X-Upload-Content-Length, when sent, is the declared size. The
 // reply's body is empty: both clients ignore it.
 func (a *API) startResumable(w http.ResponseWriter, r *http.Request, b core.Bucket, name string, p core.Principal) {
-	if !a.allowStart(w, r) {
+	if !a.allowStart(w, r, p) {
 		return
 	}
 	js, err := a.readJSON(r)
@@ -272,10 +273,17 @@ func mergeClaims(js, header core.Checksums) (core.Checksums, error) {
 	return out, nil
 }
 
-// allowStart takes an upload start from the client's address (core.AllowUploadStart), and
-// answers 429 with Retry-After when the address or the process is over its rate.
-func (a *API) allowStart(w http.ResponseWriter, r *http.Request) bool {
-	ok, wait := a.svc.AllowUploadStart(a.clientIP(r))
+// allowStart takes an upload start (core.AllowUploadStart), and answers 429 with Retry-After
+// when it is over its rate. An admin's start, every one here (service accounts alone), is
+// counted on the process's upload_starts_per_second and not on the client's address: an Admin
+// SDK import runs from one address, and Node's save() without a precondition does not retry
+// (ADR-022 §17, ADR-023 §3-81).
+func (a *API) allowStart(w http.ResponseWriter, r *http.Request, p core.Principal) bool {
+	ip := a.clientIP(r)
+	if p.Kind == core.PrincipalAdmin {
+		ip = netip.Addr{}
+	}
+	ok, wait := a.svc.AllowUploadStart(ip)
 	if ok {
 		return true
 	}
@@ -317,6 +325,9 @@ func (a *API) uploadError(w http.ResponseWriter, body *requestBody, err error, b
 		return
 	}
 	switch {
+	case errors.Is(cause, wire.ErrBadContentType):
+		// The words of the conformance tests (CT, gcs.endpoints.test.ts:320-330).
+		a.writeError(w, invalidf("Bad content type. A multipart upload is multipart/related with a boundary."), "", "")
 	case errors.Is(cause, wire.ErrBadMultipart):
 		a.writeError(w, invalidf("The multipart/related body is malformed: one JSON part, then the media."), "", "")
 	case body.err != nil && errors.Is(body.err, os.ErrDeadlineExceeded):

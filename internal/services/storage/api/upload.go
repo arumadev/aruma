@@ -57,9 +57,9 @@ var errNoName = statusError(http.StatusBadRequest, "The upload names no object."
 // (with X-Goog-Upload-Status set first where the protocol wants it) and writeObject.
 func (a *API) upload(w http.ResponseWriter, r *http.Request, b core.Bucket, name string, p core.Principal) {
 	protocol := strings.Trim(r.Header.Get(wire.UploadProtocol), " \t")
-	command, hasCommand := r.Header[http.CanonicalHeaderKey(wire.UploadCommand)]
+	command := r.Header[http.CanonicalHeaderKey(wire.UploadCommand)]
 	switch {
-	case strings.EqualFold(protocol, "resumable") || (protocol == "" && hasCommand):
+	case resumable(r.Header):
 		cmds, err := wire.ParseUploadCommand(strings.Join(command, ","))
 		if err != nil || cmds != wire.CommandStart {
 			a.writeError(w, r, errBadCommand)
@@ -71,6 +71,14 @@ func (a *API) upload(w http.ResponseWriter, r *http.Request, b core.Bucket, name
 	default:
 		a.writeError(w, r, statusError(http.StatusBadRequest, "Invalid X-Goog-Upload-Protocol."))
 	}
+}
+
+// resumable reports an upload request of the resumable protocol: X-Goog-Upload-Protocol:
+// resumable, or an X-Goog-Upload-Command without a protocol.
+func resumable(h http.Header) bool {
+	protocol := strings.Trim(h.Get(wire.UploadProtocol), " \t")
+	_, hasCommand := h[http.CanonicalHeaderKey(wire.UploadCommand)]
+	return strings.EqualFold(protocol, "resumable") || (protocol == "" && hasCommand)
 }
 
 // start begins a resumable upload (A §3.10): the name from ?name= or the path, the metadata
@@ -109,7 +117,7 @@ func (a *API) start(w http.ResponseWriter, r *http.Request, b core.Bucket, name 
 		}
 	}
 	ip := a.clientIP(r)
-	if !a.allowStart(w, r, ip) {
+	if !a.allowStart(w, r, ip, p) {
 		return
 	}
 	id, err := a.svc.StartUpload(r.Context(), b, p, core.UploadSpec{
@@ -137,7 +145,7 @@ func (a *API) media(w http.ResponseWriter, r *http.Request, b core.Bucket, name 
 		res.setField(core.FieldContentType, t)
 	}
 	ip := a.clientIP(r)
-	if !a.allowStart(w, r, ip) {
+	if !a.allowStart(w, r, ip, p) {
 		return
 	}
 	body := a.pace(w, r)
@@ -154,15 +162,26 @@ func (a *API) media(w http.ResponseWriter, r *http.Request, b core.Bucket, name 
 }
 
 // allowStart takes an upload start from the client's address (upload_starts_per_minute_per_ip,
-// then the process's upload_starts_per_second), and answers 503 with a Retry-After when it is
-// refused: iOS retries a 503 and not a 429 (A §5.3).
-func (a *API) allowStart(w http.ResponseWriter, r *http.Request, ip netip.Addr) bool {
-	ok, wait := a.svc.AllowUploadStart(ip)
+// then the process's upload_starts_per_second; an admin's under the second alone), and answers
+// 503 with a Retry-After when it is refused: iOS retries a 503 and not a 429 (A §5.3).
+func (a *API) allowStart(w http.ResponseWriter, r *http.Request, ip netip.Addr, p core.Principal) bool {
+	ok, wait := a.svc.AllowUploadStart(startAddr(ip, p))
 	if !ok {
 		a.svc.Metrics().Rejections.WithLabelValues("start_rate").Inc()
 		a.writeRetry(w, r, http.StatusServiceUnavailable, wait)
 	}
 	return ok
+}
+
+// startAddr is the address a start is counted on: the client's, or none for an admin (a
+// service account, or the owner's CLI token), whose starts upload_starts_per_second alone
+// bounds. An Admin SDK import runs from one address, and Node's save() without a precondition
+// does not retry, so the clients' per-address rate would fail it (ADR-022 §17, ADR-023 §3-81).
+func startAddr(ip netip.Addr, p core.Principal) netip.Addr {
+	if p.Kind == core.PrincipalAdmin {
+		return netip.Addr{}
+	}
+	return ip
 }
 
 // received counts n object bytes in from this surface.
@@ -180,6 +199,8 @@ func (a *API) writeBodyError(w http.ResponseWriter, r *http.Request, body *paced
 		a.writeError(w, r, errTooSlow)
 	case body.err != nil:
 		a.writeError(w, r, errBodyCut)
+	case errors.Is(err, wire.ErrBadContentType):
+		a.writeError(w, r, statusError(http.StatusBadRequest, errBadContentType))
 	case errors.Is(err, wire.ErrBadMultipart):
 		a.writeError(w, r, statusError(http.StatusBadRequest, "Invalid multipart/related body."))
 	default:
@@ -195,6 +216,11 @@ var (
 	// errBodyCut is a body that broke before its end.
 	errBodyCut = statusError(http.StatusBadRequest, "The request body ended before its length.")
 )
+
+// errBadContentType is the message of a multipart upload whose Content-Type is not
+// multipart/related with a boundary, the words the conformance tests look for (CT,
+// firebase.endpoints.test.ts:144-152).
+const errBadContentType = "Bad content type. A multipart upload is multipart/related with a boundary."
 
 // uploadSession serves a POST or PUT on an upload session URL (?upload_id=): a chunk, a query,
 // a cancel or a finalize, by X-Goog-Upload-Command (A §3.11-3.13). id is the session id from the

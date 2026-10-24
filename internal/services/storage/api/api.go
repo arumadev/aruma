@@ -13,6 +13,7 @@ package api
 import (
 	"cmp"
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"net/netip"
@@ -215,6 +216,11 @@ func (a *API) serve(w http.ResponseWriter, r *http.Request) {
 	}
 	b, err := a.svc.Bucket(ctx, path.Bucket)
 	if err != nil {
+		if rt == routeUpload && resumable(r.Header) && errors.Is(err, core.ErrBucketNotFound) {
+			// Production ends a resumable start on an unknown bucket (and not a multipart
+			// upload) with X-Goog-Upload-Status: final (bucket_probe.json).
+			wire.Set(w.Header(), wire.UploadStatus, wire.StatusFinal)
+		}
 		a.writeError(w, r, err)
 		return
 	}

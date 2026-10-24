@@ -3,6 +3,7 @@ package api
 import (
 	"bufio"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -200,6 +201,67 @@ func TestUploadRefusals(t *testing.T) {
 			t.Errorf("%s: %d %v, want %d without a status: %s", c.name, rec.Code, rec.Header(), c.code, rec.Body)
 		}
 		wiretest.AssertNoNull(t, rec.Body.Bytes())
+	}
+}
+
+// A multipart upload whose Content-Type is not multipart/related with a boundary is 400 with
+// "Bad content type." (CT, firebase.endpoints.test.ts:144-152); a body that breaks the
+// multipart/related shape keeps its own message.
+func TestMultipartBadContentType(t *testing.T) {
+	h := New(routeService(t), Options{}, nil).Handler()
+	target := "/v0/b/" + routeBucket + "/o/?name=testing%2FtestFile"
+	for _, c := range []struct {
+		contentType, body, prefix string
+	}{
+		{"foo", "", "Bad content type."},
+		{"multipart/related", "x", "Bad content type."},
+		{"multipart/related; boundary=b", "x", "Invalid multipart/related body."},
+	} {
+		req := httptest.NewRequest("POST", target, strings.NewReader(c.body))
+		req.Header.Set("X-Goog-Upload-Protocol", "multipart")
+		req.Header.Set("Content-Type", c.contentType)
+		rec := httptest.NewRecorder()
+		if reached := serveRecover(h, rec, req); reached != "" {
+			t.Fatalf("%s: reached %s", c.contentType, reached)
+		}
+		var body struct {
+			Error struct {
+				Code    int    `json:"code"`
+				Message string `json:"message"`
+			} `json:"error"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil || rec.Code != 400 || body.Error.Code != 400 ||
+			!strings.HasPrefix(body.Error.Message, c.prefix) {
+			t.Errorf("%s: %d %s, want 400 %q", c.contentType, rec.Code, rec.Body, c.prefix)
+		}
+	}
+}
+
+// On an unknown bucket a resumable start is 404 with X-Goog-Upload-Status: final, and a
+// multipart upload 404 without it, as production answers both (bucket_probe.json).
+func TestUnknownBucketUpload(t *testing.T) {
+	h := New(routeService(t), Options{}, nil).Handler()
+	target := "/v0/b/zz-no-such-bucket.aruma.test/o?name=x"
+	for _, c := range []struct {
+		header map[string]string
+		status string
+	}{
+		{map[string]string{"X-Goog-Upload-Protocol": "resumable", "X-Goog-Upload-Command": "start"}, wire.StatusFinal},
+		{map[string]string{"X-Goog-Upload-Command": "start"}, wire.StatusFinal},
+		{map[string]string{"X-Goog-Upload-Protocol": "multipart", "Content-Type": "multipart/related; boundary=b"}, ""},
+		{map[string]string{"Content-Type": "text/plain"}, ""},
+	} {
+		req := httptest.NewRequest("POST", target, strings.NewReader("{}"))
+		for k, v := range c.header {
+			req.Header.Set(k, v)
+		}
+		rec := httptest.NewRecorder()
+		if reached := serveRecover(h, rec, req); reached != "" {
+			t.Fatalf("%v: reached %s", c.header, reached)
+		}
+		if rec.Code != 404 || headerExact(rec.Header(), wire.UploadStatus) != c.status {
+			t.Errorf("%v: %d %v, want 404 with status %q", c.header, rec.Code, rec.Header(), c.status)
+		}
 	}
 }
 

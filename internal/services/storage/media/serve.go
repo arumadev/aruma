@@ -71,6 +71,9 @@ func serve(w http.ResponseWriter, r *http.Request, it Item, body io.ReadSeeker, 
 			mh.Set("Accept-Ranges", "none")
 			send(w, mh, http.StatusOK)
 			if !head {
+				// The status line goes now: otherwise net/http gives a reply that fits its
+				// buffer a Content-Length, which a decompressed one never carries (CT gzip).
+				_ = http.NewResponseController(w).Flush()
 				cut(lim, gunzip(w, r, body, lim.DecompressedBytes, p))
 			}
 			return nil

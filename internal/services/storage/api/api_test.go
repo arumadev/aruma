@@ -147,10 +147,11 @@ func TestRoutes(t *testing.T) {
 		{"POST", "/v0/b/unknown.aruma.test/o?name=x", map[string]string{"X-Goog-Upload-Protocol": "multipart"}, "404"},
 		{"OPTIONS", "/v0/b/unknown.aruma.test/o?name=x", nil, "404"},
 		{"POST", "/v0/b/unknown.aruma.test/o?name=x&upload_id=y", nil, "404"},
-		// A credential that is not one: 401 (no verifier is configured here).
+		// A credential that is not one: 401, and a Bearer that is no admin's 403 (no verifier is
+		// configured here; ADR-023 §3-67).
 		{"GET", obj, map[string]string{"Authorization": "Basic YTpi"}, "401"},
 		{"GET", obj, map[string]string{"Authorization": "Firebase"}, "401"},
-		{"GET", list, map[string]string{"Authorization": "Bearer not-an-admin-token"}, "401"},
+		{"GET", list, map[string]string{"Authorization": "Bearer not-an-admin-token"}, "403"},
 		{"DELETE", obj, map[string]string{"Authorization": "Firebase not-a-token"}, "401"},
 	} {
 		req := httptest.NewRequest(c.method, c.target, nil)

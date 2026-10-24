@@ -198,7 +198,11 @@ func TestPatchObject(t *testing.T) {
 	gcsErr(t, e.do("PATCH", objA+"p.txt?generation=1", tokenA, strings.NewReader(`{}`)), 404, "notFound")
 	gcsErr(t, e.do("PATCH", objA+"p.txt?generation=1&ifGenerationMatch=1", tokenA, strings.NewReader(`{}`)), 404, "notFound")
 	gcsErr(t, e.do("PATCH", objA+"missing", tokenA, strings.NewReader(`{}`)), 404, "notFound")
-	for _, body := range []string{`[1]`, `{"contentType":5}`, `{"metadata":{"a":1}}`, `{"metadata":[]}`, `not json`} {
+	// A boolean or number custom value is stored as its text (CT, gcs-js-sdk.test.ts:942-951).
+	if o = patch(`{"metadata":{"booleanValue":true,"numberValue":-1}}`, ""); o.Metadata["booleanValue"] != "true" || o.Metadata["numberValue"] != "-1" {
+		t.Errorf("non-string custom values: %+v", o.Metadata)
+	}
+	for _, body := range []string{`[1]`, `{"contentType":5}`, `{"metadata":{"a":{}}}`, `{"metadata":[]}`, `not json`} {
 		gcsErr(t, e.do("PATCH", objA+"p.txt", tokenA, strings.NewReader(body)), 400, "invalid")
 	}
 	for _, body := range []string{`{"acl":[{"entity":"allUsers","role":"READER"}]}`, `{"temporaryHold":true}`,
@@ -268,6 +272,12 @@ func TestRewrite(t *testing.T) {
 		`{"contentType":"application/json","metadata":{"x":"y"}}`)
 	if r.Resource.ContentType != "application/json" || r.Resource.CacheControl != "" || !maps.Equal(r.Resource.Metadata, map[string]string{"x": "y"}) {
 		t.Errorf("Go's copy with attributes: %+v", r.Resource)
+	}
+	// A null custom value of the new object is stored empty (CT, gcs-js-sdk.test.ts:637-670;
+	// ADR-023 §3-92), where a PATCH's deletes the key.
+	r, _ = rw("nulls.txt", "?", `{"metadata":{"foo":"bar","nullMetadata":null},"cacheControl":"private,max-age=10,immutable"}`)
+	if !maps.Equal(r.Resource.Metadata, map[string]string{"foo": "bar", "nullMetadata": ""}) || r.Resource.CacheControl != "private,max-age=10,immutable" {
+		t.Errorf("null custom value on a copy: %+v", r.Resource)
 	}
 	gen := strconv.FormatInt(src.Generation, 10)
 	rw("three.txt", "?sourceGeneration="+gen+"&ifSourceMetagenerationMatch=1", "")

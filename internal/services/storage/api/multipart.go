@@ -26,7 +26,7 @@ import (
 // part is 400.
 func (a *API) multipart(w http.ResponseWriter, r *http.Request, b core.Bucket, name string, p core.Principal) {
 	ip := a.clientIP(r)
-	if !a.allowStart(w, r, ip) {
+	if !a.allowStart(w, r, ip, p) {
 		return
 	}
 	body := a.pace(w, r)

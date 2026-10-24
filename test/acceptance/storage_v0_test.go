@@ -224,9 +224,10 @@ func TestStorageV0Metadata(t *testing.T) {
 		{"anonymous reads alice's", "", 403},
 		{"the project's service account bypasses the rules", bearer(e.sa), 200},
 		{"the owner's CLI token bypasses the rules", bearer(e.pat), 200},
-		{"another project's service account", bearer(e.otherSA), 401},
+		{"another project's service account", bearer(e.otherSA), 403},
 		{"a forged ID token", firebase(e.alice[:len(e.alice)-4] + "AAAA"), 401},
-		{"a bearer that is an ID token", bearer(e.alice), 401},
+		{"a bearer that is an ID token", bearer(e.alice), 403},
+		{"a bearer that is no token", "Bearer somethingElse", 403},
 		{"another scheme", "Basic YTpi", 401},
 	} {
 		r := e.call("GET", e.obj("users/alice/p.png"), c.auth, "", nil)
@@ -411,7 +412,7 @@ func TestStorageV0Routing(t *testing.T) {
 		{"GET", "/firebasestorage.googleapis.com/v0/b/", "", 400, "Invalid HTTP method/URL pair."},
 		{"GET", "/v0/b/zz-no-such-bucket.appspot.com/o?maxResults=1", "", 404, "Not Found."},
 		{"GET", "/v0/b/zz-no-such-bucket.appspot.com/o/x", "Firebase not-a-token", 404, "Not Found."},
-		{"GET", "/v0/b/other-app." + e.App.Config.ProjectDomain + "/o/x", bearer(e.sa), 401, "Invalid authentication credentials."},
+		{"GET", "/v0/b/other-app." + e.App.Config.ProjectDomain + "/o/x", bearer(e.sa), 403, "Permission denied."},
 		{"OPTIONS", "/v0/b/zz-no-such-bucket.appspot.com/o?name=x", "", 404, "Not Found."},
 	} {
 		r := e.call(c.method, c.path, c.auth, "", nil)
