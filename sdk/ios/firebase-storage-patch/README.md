@@ -27,9 +27,13 @@ delivered through a SwiftPM **mirror**.
 - **Without `ArumaURL`** FirebaseStorage behaves exactly as the official one
   (`https://firebasestorage.googleapis.com`, port 443) and logs one line saying so; ArumaRedirect, if
   present, catches those requests. FirebaseStorage's own unit tests pass unchanged.
-- **A refused `ArumaURL`** (not `scheme://host[:port]`, a path, a query, `http` to another host)
-  is logged, and Storage uses `arumaurl.invalid`, which never resolves: it fails instead of
-  reaching Google. Aruma serves Storage from the root of its host, so `ArumaURL` has no path.
+- **A refused `ArumaURL`** (not `scheme://host[:port]`, a path, a query, `http` to another host,
+  a port outside 1-65535, or a Google host: `*.googleapis.com`, `*.firebasestorage.app`,
+  `*.appspot.com`) is logged, and Storage uses `arumaurl.invalid`, which never resolves: it fails
+  instead of reaching Google. Aruma serves Storage from the root of its host, so `ArumaURL` has no
+  path.
+- **The marker:** the Objective-C class `FIRArumaStorageBuild` exists only in the patched build.
+  ArumaRedirect checks it at launch (see its README).
 - `Tests/Unit/ArumaStorageOriginTests.swift`: `ArumaURL` without a port gives `url.port == nil` in
   requests and download URLs, plus the cases above.
 
@@ -41,7 +45,8 @@ Every modified file says so in its header (Apache-2.0 §4(b)).
 (`git apply --check` first), runs `FirebaseStorageUnit` (the official tests and the patch's) on
 macOS, and pushes **one commit with no parent, tagged with the official name itself**:
 `12.19.3` in the mirror is the patched 12.19.3. The mirror never carries an unpatched commit or
-tag, and the commit is dated as the official one, so rebuilding it gives the same revision.
+tag, and the commit has a fixed identity (The Aruma Authors) and the official commit's date, so
+rebuilding it on any machine gives the same revision.
 
 ```sh
 ARUMA_MIRROR=git@github.com:arumadev/firebase-ios-sdk.git sdk/ios/firebase-storage-patch/make-mirror.sh 12.19.3
@@ -72,6 +77,19 @@ that file for a package; run it in any directory with a `Package.swift` and copy
 `Package.resolved` keeps the official URL as `location` with the mirror's revision; one that pins
 the official revision is re-pinned to the mirror's (measured with SwiftPM 6.1.2), and the e2e
 resolves afresh anyway.
+
+**The CI gate (recommended).** SwiftPM never refuses the official package, so check what it
+resolved: [`check-firebase-storage.sh`](check-firebase-storage.sh) fails when the
+firebase-ios-sdk checkout has no `ARUMA-NOTICE.md`. Run it in CI after resolution, or as the app
+target's first "Run Script" build phase (User Script Sandboxing off for that target):
+
+```sh
+"${SRCROOT}/<aruma>/sdk/ios/firebase-storage-patch/check-firebase-storage.sh"            # Xcode's SourcePackages
+sdk/ios/firebase-storage-patch/check-firebase-storage.sh <-clonedSourcePackagesDirPath>  # CI
+```
+
+The e2e app has it as its first build phase. At run time, ArumaRedirect also checks the build
+(the `FIRArumaStorageBuild` class) and, with `ArumaStorageRedirect` false, stops the app.
 
 Then add `ArumaURL` to the app's Info.plist (and ArumaRedirect for Auth):
 
@@ -120,6 +138,8 @@ FirebaseStorage مبنية من المصدر برقعة صغيرة، تُسلَ�
 - **الاستعمال:** `swift package config set-mirror --original https://github.com/firebase/firebase-ios-sdk --mirror
   https://github.com/arumadev/firebase-ios-sdk`، وفي مشروع Xcode ملف `mirrors.json` تحت
   `xcshareddata/swiftpm/configuration/`، وتُضاف `ArumaURL` إلى Info.plist. ويحترم `xcodebuild` و`flutter build ios` المرآة (مقيس).
+- **بوابة CI:** `check-firebase-storage.sh` يُفشل البناء إن لم يكن في نسخة firebase-ios-sdk المحلولة `ARUMA-NOTICE.md`، في CI
+  أو مرحلة "Run Script" أولى في هدف التطبيق. وفي التشغيل تبحث `ArumaRedirect` عن صنف العلامة `FIRArumaStorageBuild`.
 - **لا يُكتب رابط المرآة مكان الرسمي:** إن طلبت حزمة أخرى (FlutterFire) الرابط الرسمي، لا يرفض SwiftPM ولا يحذّر، بل يأخذ
   المستودع الرسمي غير المرقّع بصمت (مقيس بـ SwiftPM 6.1.2). فـ `set-mirror` وحده الطريق الآمن.
 - **CocoaPods** للإصدارات المجمّدة (آخرها 12.19.0) بـ `aruma_storage.rb`، و**Firebase.zip** يأخذ الاحتياط وحده.

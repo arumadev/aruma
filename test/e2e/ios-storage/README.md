@@ -26,9 +26,14 @@ both modes:
 - **Background upload:** FirebaseStorage turns the background session off on the simulator; the
   test keeps it on (`BackgroundUploads`), so `putFile` runs as on a device. The chunk must come from a
   background session and go to the upload URL on Aruma.
-- **The guard:** no URLSession request leaves the machine (LoopbackGuard), no Storage request goes
-  to Google (ArumaRedirect's fallback is off: `ArumaStorageRedirect=false`), and the app's sockets
-  all end on loopback (lsof).
+- **The build:** `ArumaRedirect.firebaseStorageBuild` is `.patched`, and in SwiftPM mode the host
+  app's first build phase, `check-firebase-storage.sh`, passed (run.sh also checks that it fails
+  on a checkout without the patch).
+- **The guard:** the proof is in the tests. LoopbackGuard refuses every URLSession request that
+  leaves the machine, no Storage request may go to Google (ArumaRedirect's fallback is off:
+  `ArumaStorageRedirect=false`), and FetcherLog records the address of every GTMSessionFetcher
+  request, the background chunks included. run.sh also samples the app's sockets with lsof; that
+  can miss a short connection, so it is a second look, not proof.
 
 ## Results (2026-10-24, Xcode 16.4, Swift 6.1.2, iPhone 16 Pro Max simulator, iOS 18.5)
 
@@ -39,7 +44,7 @@ both modes:
 | Names | 3 references, same `fullPath` and bytes | the same |
 | Background `putFile` | 1 chunk, background session, `PUT 127.0.0.1:9440/v0/b/…/o?upload_id=…` | the same |
 | Requests to Google | 0 Storage; Auth (2) through ArumaRedirect | the same |
-| App sockets off the machine | 0 | 0 |
+| App sockets off the machine (lsof samples) | 0 | 0 |
 
 - The patched FirebaseStorage logs `FirebaseStorage (Aruma build): Storage uses http://localhost:9440 (ArumaURL)`.
 - The simulator's `nsurlsessiond` talks to Apple (17.253.0.0/16) and CDNs for itself; its sockets are

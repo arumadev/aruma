@@ -135,6 +135,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 17768D99E516DDF9FC0FEE01 /* Build configuration list for PBXNativeTarget "StorageE2EHost" */;
 			buildPhases = (
+				0D027BFD1BBA31F0CCDD8CA6 /* Check FirebaseStorage is the Aruma build */,
 				AF1C68DC02AF2E26C866C3F2 /* Sources */,
 				29BF425514B87C25F3546565 /* Resources */,
 			);
@@ -196,6 +197,28 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		0D027BFD1BBA31F0CCDD8CA6 /* Check FirebaseStorage is the Aruma build */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Check FirebaseStorage is the Aruma build";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/../../../sdk/ios/firebase-storage-patch/check-firebase-storage.sh\"";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		25FA597322EBA909A78794A6 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -245,8 +268,10 @@
 		3ED9E773845F97A3359A2809 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARUMA_SOURCE_PACKAGES_DIR = "";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -343,8 +368,10 @@
 		96D5AEB90562CC11E8CCCF3D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARUMA_SOURCE_PACKAGES_DIR = "";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -19,14 +19,30 @@ final class ArumaUrlsTests: XCTestCase {
        "https://aruma.example.com/firebasestorage.googleapis.com/v0/b/p.appspot.com/o/a%2Fb?uploadType=resumable&name=a%2Fb"),
     ] {
       XCTAssertEqual(AuthEndpoints.rewrite(URL(string: google)!, to: base)?.absoluteString, aruma)
-      XCTAssertTrue(AuthEndpoints.isStorage(URL(string: google)!))
+      XCTAssertTrue(AuthEndpoints.isStorageHost(URL(string: google)!))
     }
+    // Not rewritable, but still Storage's host: ArumaRedirect takes them, and they fail.
     for other in ["http://firebasestorage.googleapis.com/v0/b/p/o",
                   "https://firebasestorage.googleapis.com:8443/v0/b/p/o",
-                  "https://firebasestorage.googleapis.com/v0/../../console"] {
-      XCTAssertFalse(AuthEndpoints.matches(URL(string: other)!), other)
+                  "https://firebasestorage.googleapis.com/v0/../../console",
+                  "https://FirebaseStorage.googleapis.com./v0/b/p/o/./x"] {
+      XCTAssertNil(AuthEndpoints.rewrite(URL(string: other)!, to: base), other)
+      XCTAssertTrue(AuthEndpoints.isStorageHost(URL(string: other)!), other)
     }
-    XCTAssertFalse(AuthEndpoints.isStorage(URL(string: "https://securetoken.googleapis.com/v1/token")!))
+    XCTAssertFalse(AuthEndpoints.isStorageHost(URL(string: "https://securetoken.googleapis.com/v1/token")!))
+    XCTAssertFalse(AuthEndpoints.isStorageHost(URL(string: "https://firebasestorage.googleapis.com.evil.example/v0")!))
+  }
+
+  /// FirebaseStorage would collapse these to another object (StoragePath.standardizedPathForString).
+  func testFromArumaUrlRefusesNamesThatCollapse() {
+    for bad in ["https://a.example/v0/b/p/o/a%2F%2Fb", "https://a.example/v0/b/p/o/%2Fa",
+                "https://a.example/v0/b/p/o/a%2F", "https://a.example/v0/b/p/o/%2F",
+                "gs://p/a//b", "gs://p//a", "gs://p/a/"] {
+      XCTAssertThrowsError(try ArumaUrls.fromArumaUrl(bad), bad) {
+        guard case .notStorageURL? = $0 as? ArumaUrlError else { return XCTFail("\(bad): \($0)") }
+      }
+    }
+    XCTAssertEqual(try ArumaUrls.fromArumaUrl("https://a.example/v0/b/p/o/a%2F.%2F..%2Fb"), "gs://p/a/./../b")
   }
 
   /// The name is decoded and written raw: FirebaseStorage reads a gs:// name as it is.
@@ -77,6 +93,11 @@ final class ArumaUrlsTests: XCTestCase {
                       "https://firebasestorage.googleapis.com:8443/v0/b/p/o/x"] {
       XCTAssertEqual(try ArumaUrls.toArumaUrl(unchanged), unchanged)
     }
+    // The default port and a trailing dot are dropped, as the unified form has neither.
+    try ArumaRedirect.install(urlString: "https://Aruma.Example.com.:443")
+    XCTAssertEqual(try ArumaUrls.toArumaUrl(google), "https://aruma.example.com/v0/b/p.appspot.com/o/a%2Fb?alt=media&token=T")
+    try ArumaRedirect.install(urlString: "https://aruma.example.com:8443")
+    XCTAssertEqual(try ArumaUrls.toArumaUrl(google), "https://aruma.example.com:8443/v0/b/p.appspot.com/o/a%2Fb?alt=media&token=T")
     try ArumaRedirect.install(urlString: "https://example.com/aruma")
     XCTAssertThrowsError(try ArumaUrls.toArumaUrl(google)) {
       guard case .notConfigured? = $0 as? ArumaUrlError else { return XCTFail("\($0)") }

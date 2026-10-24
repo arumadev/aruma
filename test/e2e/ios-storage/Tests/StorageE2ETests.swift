@@ -88,6 +88,13 @@ final class StorageE2ETests: XCTestCase {
     return storage.reference().child("e2e/\(uid)/\(Self.run)")
   }
 
+  // MARK: 0. ArumaRedirect found the patched build at launch.
+
+  func testFirebaseStorageIsTheArumaBuild() {
+    XCTAssertEqual(ArumaRedirect.firebaseStorageBuild, .patched)
+    XCTAssertNotNil(NSClassFromString("FIRArumaStorageBuild"))
+  }
+
   // MARK: 1. The eleven operations, and the download URL in the unified form.
 
   func testElevenOperations() async throws {

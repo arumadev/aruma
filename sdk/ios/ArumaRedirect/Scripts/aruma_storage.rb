@@ -28,34 +28,64 @@ module ArumaStorage
 
   module_function
 
-  # Patches Pods/FirebaseStorage and, after the project is generated (post_install), adds the new
-  # source files to the FirebaseStorage target. Returns the patched FirebaseStorage version.
+  # Patches Pods/FirebaseStorage and, after the projects are generated (post_install), adds the new
+  # source files to every FirebaseStorage pod target. Returns the patched FirebaseStorage version.
+  #
+  # All or nothing: every hunk and every Xcode target is resolved before any file is written.
   def patch!(installer, patch: ENV['ARUMA_STORAGE_PATCH'] || DEFAULT_PATCH)
-    target = installer.pod_targets.find { |t| t.pod_name == 'FirebaseStorage' }
-    raise PatchError, 'ArumaStorage: the Podfile has no FirebaseStorage pod' if target.nil?
+    pod_targets = installer.pod_targets.select { |t| t.pod_name == 'FirebaseStorage' }
+    raise PatchError, 'ArumaStorage: the Podfile has no FirebaseStorage pod' if pod_targets.empty?
 
-    version = target.root_spec.version.to_s
+    version = pod_targets.first.root_spec.version.to_s
     pod_dir = installer.sandbox.pod_dir('FirebaseStorage').to_s
-    begin
-      added = apply(pod_dir, patch)
+    planned = begin
+      plan_all(pod_dir, patch)
     rescue PatchError => e
       raise PatchError, "#{e.message}\n(FirebaseStorage #{version}; the helper supports the releases " \
                         'still published to CocoaPods, and SwiftPM with the mirror is the main path)'
     end
-    project = installer.respond_to?(:pods_project) ? installer.pods_project : nil
-    add_to_target(project, pod_dir, added) if project
+    native = native_targets(installer, pod_targets)
+    write(pod_dir, planned)
+    created = planned.map(&:first).select(&:created).map(&:path)
+    native.each { |t| add_to_target(t, pod_dir, created) }
     Pod::UI.puts "ArumaStorage: FirebaseStorage #{version} patched with #{File.basename(patch)} " \
-                 '(it reads ArumaURL from Info.plist)'
+                 "(it reads ArumaURL from Info.plist), in #{native.map(&:name).join(', ')}"
     version
   end
 
   # Applies the patch's FirebaseStorage/Sources files under root. Returns the paths it created.
   def apply(root, patch_path)
+    planned = plan_all(root, patch_path)
+    write(root, planned)
+    planned.map(&:first).select(&:created).map(&:path)
+  end
+
+  # [[FilePatch, new text or nil when already patched]] for every file, or a PatchError.
+  def plan_all(root, patch_path)
     files = parse(File.read(patch_path)).select { |f| f.path.start_with?(SOURCES) }
     raise PatchError, "ArumaStorage: #{patch_path} changes no file under #{SOURCES}" if files.empty?
 
-    # Check every file before writing any, so that a failure leaves the pod as it was.
-    planned = files.map { |f| [f, plan(root, f, patch_path)] }
+    files.map { |f| [f, plan(root, f, patch_path)] }
+  end
+
+  # The Xcode targets of the FirebaseStorage pod targets (by label, which differs from the pod's
+  # name when it is built for several platforms), in the Pods project and in the generated
+  # projects of `generate_multiple_pod_projects`. Before the projects exist (pre_install), none.
+  def native_targets(installer, pod_targets)
+    projects = [installer.respond_to?(:pods_project) ? installer.pods_project : nil]
+    projects += Array(installer.generated_projects) if installer.respond_to?(:generated_projects)
+    projects = projects.compact.uniq
+    return [] if projects.empty?
+
+    pod_targets.map(&:label).uniq.map do |label|
+      found = projects.flat_map(&:targets).find { |t| t.name == label }
+      raise PatchError, "ArumaStorage: no Xcode target #{label} for the FirebaseStorage pod" if found.nil?
+
+      found
+    end
+  end
+
+  def write(root, planned)
     planned.each do |f, text|
       next if text.nil?
 
@@ -63,7 +93,6 @@ module ArumaStorage
       File.chmod(File.stat(dest).mode | 0o200, dest) if File.exist?(dest)
       File.write(dest, text)
     end
-    files.select(&:created).map(&:path)
   end
 
   # The new text of one file, or nil when it is already patched.
@@ -133,17 +162,13 @@ module ArumaStorage
   end
 
   # post_install: the project was generated before the new files existed.
-  def add_to_target(project, pod_dir, paths)
-    return if paths.empty?
-
-    target = project.targets.find { |t| t.name == 'FirebaseStorage' }
-    raise PatchError, 'ArumaStorage: no FirebaseStorage target in Pods.xcodeproj' if target.nil?
-
+  def add_to_target(target, pod_dir, paths)
+    project = target.project
     paths.each do |path|
       full = File.join(pod_dir, path)
       next if target.source_build_phase.files_references.any? { |r| r.real_path.to_s == full }
 
-      group = project.pod_group('FirebaseStorage') || project.main_group
+      group = (project.respond_to?(:pod_group) && project.pod_group('FirebaseStorage')) || project.main_group
       target.add_file_references([group.new_file(full)])
     end
   end

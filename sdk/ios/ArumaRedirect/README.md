@@ -54,19 +54,30 @@ The production path for Storage is the **patched FirebaseStorage** from the Swif
 `ArumaURL`, talks to Aruma directly, and `downloadURL()` returns the unified form
 `https://<aruma-host>/v0/b/<bucket>/o/<name>?alt=media&token=<uuid>`, which works in any loader
 (`AsyncImage`, `AVPlayer`, `WKWebView`, a shared link) without passing through Google. This package
-adds three things:
+adds four things:
 
+- **The launch check.** SwiftPM can silently resolve the official firebase-ios-sdk (no
+  `mirrors.json`, or the mirror URL named next to the official one), and resolution still
+  succeeds. At install, ArumaRedirect looks for `FIRStorage` and the patched build's marker class
+  `FIRArumaStorageBuild` (`ArumaRedirect.firebaseStorageBuild`: `.absent`, `.patched` or
+  `.official`). The official build is logged in a loud banner. With `ArumaStorageRedirect` false it
+  is refused: the app stops at launch (`install(url:)` in code throws
+  `ArumaRedirectError.officialFirebaseStorage` and blocks every Auth and Storage request). In CI,
+  [`check-firebase-storage.sh`](../firebase-storage-patch/check-firebase-storage.sh) fails the
+  build before that.
 - **The fallback.** Requests of an official FirebaseStorage to `firebasestorage.googleapis.com` are
   rewritten like Auth's, and the first one logs that the build is the official one. Uploads,
   downloads, metadata, list and delete then work, but `downloadURL()` still names Google
   (`https://firebasestorage.googleapis.com:443/…`), and anything outside the app's URLSessions
   sends it there. Set `ArumaStorageRedirect` to `false` in an app built with the patch to make
-  the patch mandatory: such a request then fails instead.
+  the patch mandatory. Any request to that host that cannot be rewritten (dot segments, http,
+  another port) fails rather than reaching Google, in both modes.
 - **`ArumaUrls.fromArumaUrl(url, bucket:)`** checks a download URL (the unified form, Google's,
   with or without `:443`) and returns the `gs://<bucket>/<name>` that `Storage.reference(forURL:)`
   reads back to the same object. `reference(forURL:)` ends the app (`fatalError`) on a URL it
   cannot parse or on another bucket; this throws instead. The name is written raw, not
-  percent-encoded, because FirebaseStorage reads a `gs://` name as it is.
+  percent-encoded, because FirebaseStorage reads a `gs://` name as it is. Names that FirebaseStorage
+  would collapse into another object (an empty segment, a leading or trailing `/`) are refused.
 
   ```swift
   let ref = storage.reference(forURL: try ArumaUrls.fromArumaUrl(link, bucket: storage.reference().bucket))
@@ -96,7 +107,7 @@ adds three things:
 | `ArumaURL` | String | The Aruma server. Absent or empty: the package does nothing. The patched FirebaseStorage reads it too, and needs it at the root of the host (no path). |
 | `ArumaAllowInsecureURL` | Bool | Accept `http` to a host that is not loopback. Development only. |
 | `ArumaRedirectLog` | Bool | Log each rewrite: method, host and path. |
-| `ArumaStorageRedirect` | Bool | Default `true`: rewrite an official FirebaseStorage's requests. `false`: refuse them (the patch is then mandatory). |
+| `ArumaStorageRedirect` | Bool | Default `true`: rewrite an official FirebaseStorage's requests. `false`: the patch is mandatory, and an app linking the official FirebaseStorage stops at launch. |
 
 Safety:
 - **https only.** `http` is accepted only for `localhost`, `127.0.0.0/8` and `::1`, unless
@@ -184,6 +195,9 @@ Aruma. أضف الحزمة ومفتاحًا واحدًا في Info.plist، دو�
 - المسار الأساسي هو **FirebaseStorage المرقّعة** من مرآة SwiftPM ([`../firebase-storage-patch`](../firebase-storage-patch)،
   ADR-022 §16.3): تقرأ `ArumaURL` نفسه، وتتصل بـ Aruma مباشرةً، ويعيد `downloadURL()` الرابط الموحّد
   `https://<aruma-host>/v0/b/<bucket>/o/<name>?alt=media&token=<uuid>`.
+- **فحص الإقلاع:** قد يحلّ SwiftPM المكتبة الرسمية بصمت. فتبحث الحزمة عند التثبيت عن `FIRStorage` وعن صنف العلامة
+  `FIRArumaStorageBuild` في البناء المرقّع، وتسجّل البناء الرسمي بتحذير صاخب، ومع `ArumaStorageRedirect=false` يتوقف التطبيق
+  عند الإقلاع. وفي CI يُفشل `check-firebase-storage.sh` البناء قبل ذلك.
 - **الاحتياط:** طلبات FirebaseStorage الرسمية إلى `firebasestorage.googleapis.com` تُحوَّل كطلبات Auth، ويُسجَّل
   أول طلب منها أن المكتبة رسمية. فتعمل العمليات، لكن رابط التنزيل يبقى على Google (بـ `:443`). و`ArumaStorageRedirect=false`
   يجعل الرقعة إلزامية: يُرفض الطلب بدل تحويله.

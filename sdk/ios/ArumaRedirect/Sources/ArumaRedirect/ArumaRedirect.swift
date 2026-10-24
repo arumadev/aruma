@@ -87,12 +87,35 @@ public enum ArumaRedirect {
   }
 
   /// String form of ``install(url:allowInsecure:)``.
+  ///
+  /// It also checks which FirebaseStorage the app links (``firebaseStorageBuild``). The official
+  /// build is logged loudly; with ``storageRedirect`` false it is refused: every Auth and Storage
+  /// request then fails, and this throws ``ArumaRedirectError/officialFirebaseStorage(_:)``.
   public static func install(urlString: String, allowInsecure: Bool = false) throws {
     let base = try ArumaBase(urlString, allowInsecure: allowInsecure)
+    let build = StorageBuildCheck.build(lookup: classLookup)
+    lock.lock(); _storageBuild = build; lock.unlock()
+    let (lines, refusal) = StorageBuildCheck.verdict(build, storageRedirect: AuthEndpoints.storageRedirect)
+    lines.forEach(log)
+    if let refusal {
+      set(.blocked(refusal))
+      throw ArumaRedirectError.officialFirebaseStorage(refusal)
+    }
     set(.forward(base))
     log("installed: Firebase Auth requests go to \(base.url.absoluteString)"
       + (AuthEndpoints.storageRedirect ? ", and so do requests to \(AuthEndpoints.storageHost)" : ""))
   }
+
+  /// The FirebaseStorage install found in the process, or nil before install.
+  public static var firebaseStorageBuild: FirebaseStorageBuild? {
+    lock.lock(); defer { lock.unlock() }
+    return _storageBuild
+  }
+
+  private static var _storageBuild: FirebaseStorageBuild?
+  /// Test hooks: how classes are looked up, and how the launch refusal stops the app.
+  static var classLookup: (String) -> AnyClass? = { NSClassFromString($0) }
+  static var stop: (String) -> Void = { fatalError("ArumaRedirect: \($0)") }
 
   /// Reads ``InfoKey`` values from `bundle` and installs the redirect. Called at launch by the loader.
   ///
@@ -111,6 +134,9 @@ public enum ArumaRedirect {
     lock.unlock()
     do {
       try install(urlString: raw, allowInsecure: allowInsecure)
+    } catch ArumaRedirectError.officialFirebaseStorage(let reason) {
+      // The documented fail-closed mode: the app stops at launch, as on Android.
+      stop(reason)
     } catch {
       set(.blocked(String(describing: error)))
       log("refused: \(error). Firebase Auth requests will fail instead of reaching Google")
@@ -137,8 +163,10 @@ public enum ArumaRedirect {
 
   /// Test hook: forget the installed mode. The URLProtocol stays registered and passes everything through.
   static func reset() {
-    lock.lock(); _mode = nil; _logRequests = false; lock.unlock()
+    lock.lock(); _mode = nil; _logRequests = false; _storageBuild = nil; lock.unlock()
     AuthEndpoints.resetStorage()
+    classLookup = { NSClassFromString($0) }
+    stop = { fatalError("ArumaRedirect: \($0)") }
   }
 
   static func setLogRequests(_ on: Bool) {

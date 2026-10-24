@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/FirebaseStorage/Sources/Internal/ArumaStorageOrigin.swift
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,146 @@
 +// Copyright 2026 The Aruma Authors
 +// SPDX-License-Identifier: Apache-2.0
 +//
@@ -8,6 +8,14 @@
 +// https://github.com/arumadev/aruma). It is not part of the official firebase-ios-sdk.
 +
 +import Foundation
++
++/// The marker of the patched build. ArumaRedirect looks it up at launch
++/// (`NSClassFromString("FIRArumaStorageBuild")`) next to `FIRStorage`: FirebaseStorage without it
++/// is the official build, whose download URLs name Google.
++@objc(FIRArumaStorageBuild) public final class ArumaStorageBuild: NSObject {
++  /// The patch this build carries.
++  @objc public static let patch = "sdk/ios/firebase-storage-patch/storage-host.patch"
++}
 +
 +/// Where Storage sends its requests and builds its download URLs: `scheme://host[:port]`.
 +///
@@ -36,6 +44,7 @@
 +
 +  /// Read from the main bundle's Info.plist once per process, and logged once.
 +  static let main: ArumaStorageOrigin = {
++    _ = ArumaStorageBuild.patch  // keeps the marker in every link
 +    let (origin, message) = resolve(Bundle.main.infoDictionary ?? [:])
 +    NSLog("FirebaseStorage (Aruma build): %@", message)
 +    return origin
@@ -66,8 +75,20 @@
 +  static func parse(_ raw: String, allowInsecure: Bool) -> Result<ArumaStorageOrigin, Refusal> {
 +    guard let c = URLComponents(string: raw),
 +          let scheme = c.scheme?.lowercased(), scheme == "https" || scheme == "http",
-+          let host = c.host?.lowercased(), !host.isEmpty else {
++          var host = c.host?.lowercased(), !host.isEmpty else {
 +      return .failure(Refusal(text: "not an absolute http(s) URL with a host"))
++    }
++    if host.hasSuffix(".") {
++      host.removeLast()
++    }
++    if host.isEmpty {
++      return .failure(Refusal(text: "not an absolute http(s) URL with a host"))
++    }
++    if isGoogle(host) {
++      return .failure(Refusal(text: "\(host) is Google's, not an Aruma server"))
++    }
++    if let port = c.port, !(1 ... 65535).contains(port) {
++      return .failure(Refusal(text: "port \(port) is not in 1-65535"))
 +    }
 +    if c.query != nil || c.fragment != nil || c.user != nil || c.password != nil {
 +      return .failure(Refusal(text: "it has a query, a fragment or credentials"))
@@ -92,6 +113,14 @@
 +    c.host = host
 +    c.port = port
 +    return c.string ?? "\(scheme)://\(host)"
++  }
++
++  /// Google's own Storage hosts: `googleapis.com`, `firebasestorage.app` and `appspot.com`, and
++  /// every name under them.
++  static func isGoogle(_ host: String) -> Bool {
++    ["googleapis.com", "firebasestorage.app", "appspot.com"].contains { domain in
++      host == domain || host.hasSuffix("." + domain)
++    }
 +  }
 +
 +  /// `localhost`, `127.0.0.0/8` and `::1`, as in ArumaRedirect.
@@ -231,7 +260,7 @@
    var maxUploadRetryInterval: TimeInterval
 --- /dev/null
 +++ b/FirebaseStorage/Tests/Unit/ArumaStorageOriginTests.swift
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,138 @@
 +// Copyright 2026 The Aruma Authors
 +// SPDX-License-Identifier: Apache-2.0
 +//
@@ -334,6 +363,31 @@
 +    }
 +    XCTAssertTrue(ArumaStorageOrigin.resolve(["ArumaURL": "https://a.example/prefix"]).1
 +      .contains("served from the root"))
++  }
++
++  func testPortsOutOfRangeAndGoogleHostsAreRefused() {
++    for bad in ["https://aruma.example.com:0", "https://aruma.example.com:65536",
++                "https://aruma.example.com:99999", "https://firebasestorage.googleapis.com",
++                "https://storage.googleapis.com", "https://googleapis.com", "https://p.firebasestorage.app",
++                "https://P.AppSpot.com.", "https://appspot.com"] {
++      XCTAssertEqual(origin(["ArumaURL": bad]), .refused, bad)
++    }
++    XCTAssertEqual(origin(["ArumaURL": "https://aruma.example.com:65535"]).port, 65535)
++    XCTAssertEqual(origin(["ArumaURL": "https://notgoogleapis.com"]).host, "notgoogleapis.com")
++  }
++
++  func testTrailingDotIsDropped() {
++    XCTAssertEqual(origin(["ArumaURL": "https://Aruma.Example.com.:8443/"]),
++                   ArumaStorageOrigin(scheme: "https", host: "aruma.example.com", port: 8443))
++    XCTAssertEqual(origin(["ArumaURL": "http://localhost.:9440"]),
++                   ArumaStorageOrigin(scheme: "http", host: "localhost", port: 9440))
++  }
++
++  /// ArumaRedirect tells this build from the official one by these two classes.
++  func testMarkerClassIsInTheRuntime() {
++    XCTAssertNotNil(NSClassFromString("FIRStorage"))
++    XCTAssertTrue(NSClassFromString("FIRArumaStorageBuild") === ArumaStorageBuild.self)
++    XCTAssertEqual(ArumaStorageBuild.patch, "sdk/ios/firebase-storage-patch/storage-host.patch")
 +  }
 +
 +  /// useEmulator still wins over ArumaURL.

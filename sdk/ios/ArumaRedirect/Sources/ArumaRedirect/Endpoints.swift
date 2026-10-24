@@ -9,6 +9,8 @@ public enum ArumaRedirectError: Error, Equatable, CustomStringConvertible {
   case invalidURL(String)
   /// `http` to a host that is not loopback, without the explicit insecure flag.
   case insecureURL(String)
+  /// The app links the official FirebaseStorage while ArumaStorageRedirect is false.
+  case officialFirebaseStorage(String)
 
   public var description: String {
     switch self {
@@ -16,6 +18,8 @@ public enum ArumaRedirectError: Error, Equatable, CustomStringConvertible {
       return "ArumaURL \"\(url)\" is not an absolute http(s) URL with a host and no query"
     case .insecureURL(let url):
       return "ArumaURL \"\(url)\" uses http to a non-loopback host; use https, or set ArumaAllowInsecureURL for development"
+    case .officialFirebaseStorage(let reason):
+      return reason
     }
   }
 }
@@ -94,9 +98,13 @@ enum AuthEndpoints {
     target(of: url) != nil
   }
 
-  /// True for a Cloud Storage request that ``matches(_:)``.
-  static func isStorage(_ url: URL) -> Bool {
-    target(of: url)?.host == storageHost
+  /// True for any request to Cloud Storage's host, whatever its scheme, port or path. ArumaRedirect
+  /// takes all of them: the ones ``rewrite(_:to:)`` cannot map (dot segments, another port, http)
+  /// fail instead of reaching Google.
+  static func isStorageHost(_ url: URL) -> Bool {
+    guard var host = url.host?.lowercased() else { return false }
+    if host.hasSuffix(".") { host.removeLast() }
+    return host == storageHost
   }
 
   /// `https://<google host><path>?<query>` → `<base>/<google host><path>?<query>`, or nil when

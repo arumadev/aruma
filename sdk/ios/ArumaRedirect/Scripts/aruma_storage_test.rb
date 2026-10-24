@@ -77,6 +77,50 @@ class ArumaStorageTest < Minitest::Test
     assert_match(/StorageUtils\.swift has 2 copies/, err.message)
   end
 
+  # patch! with a CocoaPods installer: the pod targets are found by label, in the generated projects
+  # too, and a missing Xcode target fails before any file is written.
+  Spec = Struct.new(:version)
+  PodTarget = Struct.new(:pod_name, :label, :root_spec)
+  Sandbox = Struct.new(:dir) do
+    def pod_dir(_name) = Pathname(dir)
+  end
+  Installer = Struct.new(:pod_targets, :sandbox, :pods_project, :generated_projects)
+
+  def installer(labels:, project_targets:)
+    require 'xcodeproj'
+    require 'pathname'
+    project = Xcodeproj::Project.new(File.join(@root, 'Pods.xcodeproj'))
+    project_targets.each { |name| project.new_target(:static_library, name, :ios) }
+    targets = labels.map { |l| PodTarget.new('FirebaseStorage', l, Spec.new(Gem::Version.new('12.19.0'))) } +
+              [PodTarget.new('FirebaseCore', 'FirebaseCore', Spec.new(Gem::Version.new('12.19.0')))]
+    [Installer.new(targets, Sandbox.new(@root), nil, [project]), project]
+  end
+
+  def test_patch_bang_adds_the_new_file_to_every_labelled_target
+    unless defined?(Pod::UI)
+      Object.const_set(:Pod, Module.new)
+      Pod.const_set(:UI, Module.new { def self.puts(*) = nil })
+    end
+    inst, project = installer(labels: %w[FirebaseStorage-iOS15.0 FirebaseStorage-iOS16.0],
+                              project_targets: %w[FirebaseStorage-iOS15.0 FirebaseStorage-iOS16.0 FirebaseCore])
+    assert_equal '12.19.0', ArumaStorage.patch!(inst)
+    %w[FirebaseStorage-iOS15.0 FirebaseStorage-iOS16.0].each do |name|
+      t = project.targets.find { |x| x.name == name }
+      assert(t.source_build_phase.files_references.any? { |r| r.path.end_with?('ArumaStorageOrigin.swift') }, name)
+    end
+    core = project.targets.find { |x| x.name == 'FirebaseCore' }
+    assert_empty core.source_build_phase.files_references
+  end
+
+  def test_patch_bang_without_its_xcode_target_writes_nothing
+    inst, = installer(labels: %w[FirebaseStorage-iOS15.0], project_targets: %w[FirebaseStorage])
+    before = @files.reject(&:created).to_h { |f| [f.path, read(f.path)] }
+    err = assert_raises(ArumaStorage::PatchError) { ArumaStorage.patch!(inst) }
+    assert_match(/no Xcode target FirebaseStorage-iOS15\.0/, err.message)
+    before.each { |p, text| assert_equal text, read(p), p }
+    refute File.exist?(File.join(@root, 'FirebaseStorage/Sources/Internal/ArumaStorageOrigin.swift'))
+  end
+
   def test_a_missing_file_fails
     FileUtils.rm(File.join(@root, 'FirebaseStorage/Sources/Internal/StorageFetcherService.swift'))
     err = assert_raises(ArumaStorage::PatchError) { ArumaStorage.apply(@root, PATCH) }

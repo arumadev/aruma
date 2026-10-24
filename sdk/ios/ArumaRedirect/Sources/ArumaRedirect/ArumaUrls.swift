@@ -74,17 +74,33 @@ public enum ArumaUrls {
     guard base.components.percentEncodedPath.isEmpty else {
       throw ArumaUrlError.notConfigured("ArumaURL \(base.url.absoluteString) has a path")
     }
+    // The unified form: host in lower case without a trailing dot, no default port.
     var out = URLComponents()
     out.scheme = base.components.scheme
-    out.host = base.components.host?.lowercased()
-    out.port = base.components.port
+    var arumaHost = base.components.host?.lowercased() ?? ""
+    if arumaHost.hasSuffix(".") { arumaHost.removeLast() }
+    out.host = arumaHost
+    let defaultPort = base.components.scheme == "https" ? 443 : 80
+    out.port = base.components.port == defaultPort ? nil : base.components.port
     out.percentEncodedPath = c.percentEncodedPath
     out.percentEncodedQuery = c.percentEncodedQuery
     return out.string ?? url
   }
 
   /// The bucket and the decoded object name of a `gs://` or download URL.
+  ///
+  /// FirebaseStorage collapses `//` and trims leading and trailing `/` in a path
+  /// (`StoragePath.standardizedPathForString`), so a name with an empty segment would read back as
+  /// another object: such names are refused.
   static func location(of url: String) throws -> (bucket: String, name: String) {
+    let (bucket, name) = try split(url)
+    guard !name.hasPrefix("/"), !name.hasSuffix("/"), !name.contains("//") else {
+      throw ArumaUrlError.notStorageURL(url)
+    }
+    return (bucket, name)
+  }
+
+  private static func split(_ url: String) throws -> (bucket: String, name: String) {
     if url.hasPrefix("gs://") {
       let rest = url.dropFirst("gs://".count)
       guard let slash = rest.firstIndex(of: "/"), slash != rest.startIndex,

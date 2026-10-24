@@ -14,7 +14,7 @@ public final class ArumaRedirectURLProtocol: URLProtocol {
   override public class func canInit(with request: URLRequest) -> Bool {
     guard ArumaRedirect.mode != nil, let url = request.url else { return false }
     if URLProtocol.property(forKey: handledKey, in: request) != nil { return false }
-    return AuthEndpoints.matches(url)
+    return AuthEndpoints.matches(url) || AuthEndpoints.isStorageHost(url)
   }
 
   override public class func canonicalRequest(for request: URLRequest) -> URLRequest {
@@ -40,7 +40,7 @@ public final class ArumaRedirectURLProtocol: URLProtocol {
     case .blocked(let reason):
       fail(URLError(.cannotConnectToHost, userInfo: [NSLocalizedDescriptionKey: "ArumaRedirect: \(reason)"]))
     case .forward(let base):
-      if AuthEndpoints.isStorage(original) {
+      if AuthEndpoints.isStorageHost(original) {
         // Only an official FirebaseStorage sends this: the patched one goes to ArumaURL itself.
         guard AuthEndpoints.storageRedirect else {
           if AuthEndpoints.firstStorageRequest() {

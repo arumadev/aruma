@@ -11,7 +11,9 @@
 #   1. The mirror: built with make-mirror.sh (and FirebaseStorage's unit tests) unless it already
 #      has the tag.
 #   2. set-mirror, into the project's xcshareddata/swiftpm/configuration/mirrors.json.
-#   3. Resolution: Package.resolved and the firebase-ios-sdk checkout must be the mirror's commit.
+#   3. Resolution: Package.resolved and the firebase-ios-sdk checkout must be the mirror's commit,
+#      and check-firebase-storage.sh (the CI gate, also the host app's first build phase) passes on
+#      it and fails on a checkout without the patch.
 #   4. The tests (StorageE2ETests): the eleven operations with the download URL in the unified
 #      form, names that round-trip through their links, and putFile with a background session.
 #
@@ -22,11 +24,13 @@
 #   3. `pod install`, then again (nothing to change): the pod is patched and the new file compiled.
 # and step 4 runs the same tests in that app.
 #
-# The network guard has two halves: LoopbackGuard refuses and reports every URLSession request that
-# neither goes to this machine nor is taken by ArumaRedirect (and the tests fail on any Storage
-# request to Google), and this script samples the host app's sockets (lsof); the run fails on any
-# far end off this machine. Background uploads run in the simulator's nsurlsessiond, which also
-# talks to Apple for itself: its sockets are listed, not judged.
+# The proof that nothing reaches Google is in the tests: LoopbackGuard refuses and reports every
+# URLSession request that neither goes to this machine nor is taken by ArumaRedirect (and the tests
+# fail on any Storage request to Google), and FetcherLog records the address of every
+# GTMSessionFetcher request, the background chunks included (which no URLProtocol sees). This
+# script also samples the host app's sockets with lsof every 200 ms and fails on a far end off this
+# machine; sampling can miss a short connection, so it is a second look, not proof. The simulator's
+# nsurlsessiond, which carries background uploads and talks to Apple for itself, is listed only.
 #
 #   test/e2e/ios-storage/run.sh [--cocoapods] [xcodebuild arguments, e.g. -only-testing:StorageE2ETests/StorageE2ETests/testElevenOperations]
 #
@@ -150,6 +154,17 @@ print(p["location"], p["state"].get("version"), p["state"]["revision"])' "$swift
   [[ -f "$checkout/ARUMA-NOTICE.md" && -f "$checkout/FirebaseStorage/Sources/Internal/ArumaStorageOrigin.swift" ]] \
     || { echo "the firebase-ios-sdk checkout is not the patched one" >&2; exit 1; }
   echo "the checkout is the patched FirebaseStorage"
+  # The CI gate (also the host app's first build phase): it passes here, and fails on a checkout
+  # without the patch.
+  check=$root/sdk/ios/firebase-storage-patch/check-firebase-storage.sh
+  "$check" "$cache/spm"
+  mkdir -p "$gen/official/checkouts/firebase-ios-sdk/FirebaseStorage/Sources"
+  if "$check" "$gen/official" 2>"$gen/check-official.log"; then
+    echo "check-firebase-storage.sh passed an official checkout" >&2
+    exit 1
+  fi
+  echo "check-firebase-storage.sh on a checkout without the patch: $(head -1 "$gen/check-official.log")"
+  xcb_build=(ARUMA_SOURCE_PACKAGES_DIR="$cache/spm")
 else
   # CocoaPods' own home and cache (v03-brief rule 7).
   unset CP_HOME_DIR CP_CACHE_DIR
@@ -160,6 +175,8 @@ else
   ruby "$root/sdk/ios/ArumaRedirect/Scripts/aruma_storage_test.rb" | tail -1
 
   log "2. pod install with a patch line that FirebaseStorage $pod_version does not have"
+  # From a clean Pods/: a pod patched by an earlier version of the patch is refused, not re-patched.
+  rm -rf "$pods/Pods" "$pods/Podfile.lock" "$pods/StorageE2EPods.xcworkspace"
   (cd "$pods" && xcodegen generate --quiet)
   sed 's/^ *  var scheme: String$/   var scheme: String \/\/ not in any release/' \
     "$root/sdk/ios/firebase-storage-patch/storage-host.patch" >"$gen/missing-line.patch"
@@ -189,6 +206,7 @@ else
     || { echo "a second pod install changed the patched pod" >&2; exit 1; }
   echo "the pod is patched, ArumaStorageOrigin.swift is in the FirebaseStorage target, and a second pod install changed nothing"
   xcb=(-workspace "$pods/StorageE2EPods.xcworkspace" -scheme StorageE2E -derivedDataPath "$cache/dd-pods")
+  xcb_build=()
 fi
 
 log "starting Aruma with Cloud Storage and its rules, and generating GoogleService-Info.plist"
@@ -212,8 +230,12 @@ status=0
 TEST_RUNNER_ARUMA_URL=$ARUMA_URL TEST_RUNNER_ARUMA_STORAGE_URL=$storage_url TEST_RUNNER_ARUMA_PROJECT_ID=$ARUMA_PROJECT_ID \
   xcodebuild test "${xcb[@]}" -destination "platform=iOS Simulator,id=$sim" \
   -resultBundlePath "$gen/StorageE2E.xcresult" \
-  ARUMA_URL="$storage_url" "$@" >"$gen/xcodebuild.log" 2>&1 || status=$?
+  ARUMA_URL="$storage_url" ${xcb_build[@]+"${xcb_build[@]}"} "$@" >"$gen/xcodebuild.log" 2>&1 || status=$?
 stop_watcher
+if [[ $mode == spm ]]; then
+  grep -q "note: firebase-ios-sdk in .* is the Aruma mirror's patched build" "$gen/xcodebuild.log" \
+    || { echo "the host app's build phase did not check FirebaseStorage" >&2; status=1; }
+fi
 
 grep -E "^Test Case|Executed [0-9]+ test|error:|ARUMA_E2E |FirebaseStorage \(Aruma build\)" "$gen/xcodebuild.log" \
   | grep -v '^ld: warning' | sed 's/^.*\(FirebaseStorage (Aruma build)\)/\1/' || true

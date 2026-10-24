@@ -237,6 +237,70 @@ final class ForwardingTests: XCTestCase {
     XCTAssertEqual(response?.statusCode, 200)
   }
 
+  /// A Storage request that cannot be rewritten (dot segments, http, another port, a trailing-dot
+  /// host) fails in either mode instead of passing through to Google.
+  func testUnmappableStorageRequestsFail() throws {
+    for storageRedirect in [true, false] {
+      ArumaRedirect.storageRedirect = storageRedirect
+      for url in ["https://firebasestorage.googleapis.com/v0/b/p/o/../../x",
+                  "http://firebasestorage.googleapis.com/v0/b/p/o/x",
+                  "https://firebasestorage.googleapis.com:8443/v0/b/p/o/x",
+                  "https://firebasestorage.googleapis.com./v0/b/p/o/x"] {
+        XCTAssertTrue(ArumaRedirectURLProtocol.canInit(with: URLRequest(url: URL(string: url)!)), url)
+        let (_, _, error) = load(URLRequest(url: URL(string: url)!))
+        XCTAssertNotNil(error as? URLError, url)
+      }
+    }
+    XCTAssertTrue(FakeAruma.seen.isEmpty)
+  }
+
+  /// The patched FirebaseStorage is told apart from the official one at install.
+  func testFirebaseStorageBuildAtInstall() throws {
+    final class Marker: NSObject {}
+    let present: [String: AnyClass] = ["FIRStorage": Marker.self, "FIRArumaStorageBuild": Marker.self]
+    for (classes, build) in [([:], FirebaseStorageBuild.absent),
+                             (present, .patched),
+                             (present.filter { $0.key == "FIRStorage" }, .official)] as [([String: AnyClass], FirebaseStorageBuild)] {
+      ArumaRedirect.reset()
+      ArumaRedirect.classLookup = { classes[$0] }
+      try ArumaRedirect.install(urlString: "https://fake.aruma.test")
+      XCTAssertEqual(ArumaRedirect.firebaseStorageBuild, build)
+      XCTAssertNotNil(ArumaRedirect.baseURL, "the official build with the fallback on still installs")
+    }
+    XCTAssertEqual(StorageBuildCheck.build(), .absent, "no FirebaseStorage in this test process")
+  }
+
+  /// ArumaStorageRedirect=false makes the patch mandatory: the official build is refused at
+  /// launch (the app stops), and nothing reaches Google or Aruma meanwhile.
+  func testOfficialFirebaseStorageIsRefusedWhenThePatchIsMandatory() throws {
+    final class Marker: NSObject {}
+    ArumaRedirect.reset()
+    ArumaRedirect.classLookup = { $0 == "FIRStorage" ? Marker.self : nil }
+    var stopped: [String] = []
+    ArumaRedirect.stop = { stopped.append($0) }
+    ArumaRedirect.installFromInfoPlist(try makeBundle(["ArumaURL": "https://fake.aruma.test", "ArumaStorageRedirect": false]))
+    XCTAssertEqual(stopped.count, 1)
+    XCTAssertTrue(stopped.first?.contains("official build") ?? false)
+    XCTAssertEqual(ArumaRedirect.firebaseStorageBuild, .official)
+    XCTAssertNil(ArumaRedirect.baseURL)
+    let (_, _, authError) = load(URLRequest(url: URL(string: "https://securetoken.googleapis.com/v1/token")!))
+    XCTAssertEqual((authError as? URLError)?.code, .cannotConnectToHost)
+    XCTAssertTrue(FakeAruma.seen.isEmpty)
+
+    // In code, install throws instead.
+    ArumaRedirect.reset()
+    ArumaRedirect.classLookup = { $0 == "FIRStorage" ? Marker.self : nil }
+    ArumaRedirect.storageRedirect = false
+    XCTAssertThrowsError(try ArumaRedirect.install(urlString: "https://fake.aruma.test")) {
+      guard case .officialFirebaseStorage? = $0 as? ArumaRedirectError else { return XCTFail("\($0)") }
+    }
+    // The patched build with the patch mandatory installs.
+    ArumaRedirect.classLookup = { _ in Marker.self }
+    try ArumaRedirect.install(urlString: "https://fake.aruma.test")
+    XCTAssertEqual(ArumaRedirect.firebaseStorageBuild, .patched)
+    XCTAssertNotNil(ArumaRedirect.baseURL)
+  }
+
   /// A refused ArumaURL blocks Storage too.
   func testRefusedURLBlocksStorage() throws {
     ArumaRedirect.installFromInfoPlist(try makeBundle(["ArumaURL": "ftp://aruma.example.com"]))
