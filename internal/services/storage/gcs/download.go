@@ -42,8 +42,8 @@ func (a *API) download(w http.ResponseWriter, r *http.Request, b core.Bucket, na
 		return
 	}
 	defer body.Close()
-	if err := holds(o, pre); err != nil {
-		a.writeError(w, err, b.Name, name)
+	if !holds(o, pre) {
+		a.writeError(w, core.ErrPreconditionFailed, b.Name, name)
 		return
 	}
 	lim := a.svc.Limits()
@@ -64,19 +64,6 @@ func (a *API) download(w http.ResponseWriter, r *http.Request, b core.Bucket, na
 		return
 	}
 	a.countOut(cw)
-}
-
-// holds checks GCS's preconditions on the object a download reads (B §10.2-8):
-// ifGenerationMatch=0 requires that no object exists, so it fails on any.
-func holds(o core.Object, pre core.Preconditions) error {
-	switch {
-	case pre.IfGenerationMatch != nil && *pre.IfGenerationMatch != o.Generation,
-		pre.IfGenerationNotMatch != nil && *pre.IfGenerationNotMatch == o.Generation,
-		pre.IfMetagenerationMatch != nil && *pre.IfMetagenerationMatch != o.Metageneration,
-		pre.IfMetagenerationNotMatch != nil && *pre.IfMetagenerationNotMatch == o.Metageneration:
-		return core.ErrPreconditionFailed
-	}
-	return nil
 }
 
 // item is what media.Serve needs of an object. The ETag follows the generation alone, so a
