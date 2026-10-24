@@ -350,6 +350,46 @@ func TestStorageV0DownloadGzipCut(t *testing.T) {
 	}
 }
 
+// A gzip object under the bucket's CORS varies on both: Origin and Accept-Encoding, each once,
+// on the stored bytes, the decompressed ones and a 304, so a cache never gives one origin's reply
+// to another.
+func TestStorageV0DownloadVary(t *testing.T) {
+	e := newV0Env(t)
+	if _, err := e.App.Storage.SetCORS(context.Background(), e.bucket, storage.Principal{Kind: storage.PrincipalAdmin},
+		[]storage.CORSRule{{Origins: []string{"*"}, Methods: []string{"GET"}, MaxAgeSeconds: 3600}}); err != nil {
+		t.Fatal(err)
+	}
+	o := e.putV0("public/v.txt", gzipped(t, strings.Repeat("vary ", 50)), map[string]string{
+		storage.FieldContentType: "text/plain", storage.FieldContentEncoding: "gzip"})
+	path := e.obj(o.Name) + "?alt=media&token=" + o.DownloadTokens[0]
+	etag := e.media("GET", path, "", nil).header.Get("ETag")
+	for _, c := range []struct {
+		name   string
+		header map[string]string
+		status int
+	}{
+		{"gzip", map[string]string{"Accept-Encoding": "gzip"}, 200},
+		{"identity", map[string]string{"Accept-Encoding": "identity"}, 200},
+		{"304", map[string]string{"Accept-Encoding": "gzip", "If-None-Match": etag}, 304},
+	} {
+		c.header["Origin"] = "https://app.example"
+		r := e.media("GET", path, "", c.header)
+		if r.status != c.status || r.header.Get("Access-Control-Allow-Origin") != "https://app.example" {
+			t.Fatalf("%s: %d %v", c.name, r.status, r.header)
+		}
+		var names []string
+		for _, v := range r.header.Values("Vary") {
+			for n := range strings.SplitSeq(v, ",") {
+				names = append(names, strings.ToLower(strings.TrimSpace(n)))
+			}
+		}
+		slices.Sort(names)
+		if !slices.Equal(names, []string{"accept-encoding", "origin"}) {
+			t.Errorf("%s: Vary %q", c.name, r.header.Values("Vary"))
+		}
+	}
+}
+
 // An object whose file is gone is the server's fault: 503, and no Retry-After, since it is not
 // passing pressure and iOS would retry a Retry-After forever (ADR-023 §3-65).
 func TestStorageV0DownloadUnavailable(t *testing.T) {
