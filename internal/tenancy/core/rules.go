@@ -325,7 +325,12 @@ func (s *Service) PublishRelease(ctx context.Context, p *authn.Principal, projec
 			return apierr.New(apierr.InvalidArgument, "The release %s takes a %s ruleset; %s is for %s.",
 				release, want, rulesetName(pr.ID, id), rs.Service)
 		}
-		if row, err = q.UpsertRelease(ctx, queries.UpsertReleaseParams{ProjectNumber: proj.ProjectNumber, Name: stored, RulesetID: id}); err != nil {
+		row, err = q.UpsertRelease(ctx, queries.UpsertReleaseParams{ProjectNumber: proj.ProjectNumber, Name: stored, RulesetID: id})
+		if pg, ok := errors.AsType[*pgconn.PgError](err); ok && pg.Code == "23503" {
+			// DeleteRuleset removed the ruleset after GetRuleset read it: gone, as if never read.
+			return errNotFound()
+		}
+		if err != nil {
 			return err
 		}
 		return s.audit(ctx, q, p, proj.ProjectNumber, "rules.release.publish", shownRelease(pr, stored),

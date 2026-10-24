@@ -174,6 +174,7 @@ func TestDeleteRulesetRacesPublish(t *testing.T) {
 			t.Fatalf("round %d: both the delete and the publish succeeded", i)
 		case delErr == nil:
 			deleted++
+			wantCode(t, "the losing publish", pubErr, apierr.NotFound)
 		case pubErr == nil:
 			published++
 			wantCode(t, "the losing delete", delErr, apierr.FailedPrecondition)
@@ -225,6 +226,45 @@ func TestDeleteRulesetWaitsForAPublishInFlight(t *testing.T) {
 	wantCode(t, "the delete", <-done, apierr.FailedPrecondition)
 	if _, err := s.GetRuleset(ctx, p, proj.ID, rs.Name); err != nil {
 		t.Errorf("the released ruleset: %v", err)
+	}
+}
+
+// A publish that read the ruleset before a delete committed: the foreign key refuses the
+// release, and the answer is NOT_FOUND, as for a ruleset that never existed.
+func TestPublishReleaseLosesToADeleteInFlight(t *testing.T) {
+	pool := storetest.NewPool(t)
+	s := rulesService(t, pool, rulesDomain, nil)
+	ctx := t.Context()
+	p, proj := rulesOwner(t, s, pool, "o@example.com", "chat-app")
+	rs, _, err := s.CreateRuleset(ctx, p, proj.ID, rules.Storage, storageFile("true"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	if _, err := tx.Exec(ctx, `DELETE FROM control.rulesets WHERE ruleset_id = $1`, rs.Name[len(rs.Name)-36:]); err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan error, 1)
+	go func() {
+		_, err := s.PublishRelease(ctx, p, proj.ID, "firebase.storage/"+proj.StorageBucket, rs.Name)
+		done <- err
+	}()
+	// The publish read the ruleset, and its foreign key check waits on the deleted row.
+	waitFor(t, func() bool {
+		var n int
+		_ = pool.QueryRow(ctx, `SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND query LIKE '%UpsertRelease%'`).Scan(&n)
+		return n > 0
+	})
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	wantCode(t, "the publish", <-done, apierr.NotFound)
+	if _, err := s.GetRelease(ctx, p, proj.ID, "firebase.storage/"+proj.StorageBucket); err == nil {
+		t.Error("a release points at the deleted ruleset")
 	}
 }
 
