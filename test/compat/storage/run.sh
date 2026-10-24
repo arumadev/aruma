@@ -294,6 +294,9 @@ adapter() {
     kill "$adapter_pid" 2>/dev/null || true
     wait "$adapter_pid" 2>/dev/null || true
   fi
+  # The last adapter's ADAPTER_READY must not pass for this one's: the redirection below empties
+  # the file only once the background process is under way.
+  rm -f "$work/adapter.out"
   node "$here/adapter.mjs" --aruma "http://127.0.0.1:$port" --listen "$adapter_port" --bucket "$(field "$p" bucket)" \
     --api-key "$(field "$p" apiKey)" --service-account "$work/$p-key.json" >"$work/adapter.out" 2>>"$work/adapter.log" &
   adapter_pid=$!
