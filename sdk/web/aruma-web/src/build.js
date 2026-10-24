@@ -105,6 +105,14 @@ function rollupVerify(rw, ctx, bundle, { browser }) {
     const info = ctx.getModuleInfo(id);
     return { id, code: info?.code, external: Boolean(info?.isExternal) };
   });
+  // Rolldown does not list external modules among the module ids; the chunks' imports name them
+  // (an import that is not a file of this bundle is external).
+  for (const f of Object.values(bundle)) {
+    if (f.type !== 'chunk') continue;
+    for (const id of [...(f.imports ?? []), ...(f.dynamicImports ?? [])]) {
+      if (!(id in bundle)) modules.push({ id, external: true });
+    }
+  }
   const files = Object.values(bundle).map((f) => ({ name: f.fileName, code: f.type === 'chunk' ? f.code : String(f.source ?? '') }));
   const problems = [...rw.verify(modules, { browser, watch: Boolean(ctx.meta?.watchMode) }), ...rw.scanOutput(files)];
   if (problems.length) ctx.error(problems.join('\n'));

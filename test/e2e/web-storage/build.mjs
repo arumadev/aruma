@@ -6,7 +6,8 @@
 // - dist/<bundler>/: the app, served under /<bundler>/ by serve.mjs.
 // - dist/fallback/: src/fallback.js bundled by esbuild with no plugin: the run-time fallback.
 // - For each bundler, src/no-storage.js (no @firebase/storage module) and src/gstatic.js (the SDK
-//   from www.gstatic.com) must fail with @aruma/web's error, not with the bundler's own.
+//   from www.gstatic.com) must fail with @aruma/web's error, not with the bundler's own; and so must
+//   src/ssr.js with the SDK left external (a Vite SSR build with ssr.external, webpack externals).
 //
 // It prints one line per build ("ok vite", "fails as it must: webpack no-storage: …") and exits 1
 // on anything else. ARUMA_URL is the server the rewrite targets.
@@ -26,9 +27,9 @@ const builders = {
     if (entry) Object.assign(inline, { build: { outDir, emptyOutDir: true, rolldownOptions: { input: entry } } });
     await build(inline);
   },
-  async webpack(entry, outDir) {
+  async webpack(entry, outDir, base) {
     const { default: webpack } = await import('webpack');
-    const config = await fresh('webpack.config.mjs');
+    const config = base ?? (await fresh('webpack.config.mjs'));
     if (entry) Object.assign(config, { entry, output: { ...config.output, path: outDir } });
     await new Promise((resolve, reject) =>
       webpack(config, (err, stats) => {
@@ -46,6 +47,22 @@ const builders = {
     await esbuild.build({ ...config, logLevel: 'silent' });
     if (!entry) writeFileSync(`${here}dist/esbuild/index.html`, html('main.js'));
   },
+  // Only as a build that must fail: an SSR build that keeps the Storage SDK external (ssr.external
+  // wins over the ssr.noExternal the plugin sets), so the server would load Google's host.
+  async 'vite-ssr'(entry, outDir) {
+    const { build } = await import('vite');
+    await build({
+      configFile: `${here}vite.config.mjs`, root: here, logLevel: 'silent',
+      build: { ssr: entry, outDir, emptyOutDir: true },
+      ssr: { external: ['firebase', '@firebase/storage'] },
+    });
+  },
+  // Only as a build that must fail: webpack with the Storage SDK in `externals`.
+  async 'webpack-externals'(entry, outDir) {
+    const config = await fresh('webpack.config.mjs');
+    Object.assign(config, { externals: { 'firebase/storage': 'var {}' } });
+    await builders.webpack.call(null, entry, outDir, config);
+  },
   async fallback() {
     const esbuild = await import('esbuild');
     const config = await fresh('esbuild.config.mjs');
@@ -62,9 +79,11 @@ const builders = {
 const failures = [
   ['no-storage', './src/no-storage.js', /no @firebase\/storage module was in this build/],
   ['gstatic', './src/gstatic.js', /loads the Firebase SDK from www\.gstatic\.com/],
+  ['ssr-external', './src/ssr.js', /is external to this bundle/, 'vite-ssr'],
+  ['externals', './src/ssr.js', /is external to this bundle/, 'webpack-externals'],
 ];
 
-const names = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(builders);
+const names = process.argv.slice(2).length ? process.argv.slice(2) : ['vite', 'webpack', 'esbuild', 'fallback'];
 let bad = 0;
 for (const name of names) {
   mkdirSync(`${here}dist`, { recursive: true });
@@ -75,9 +94,10 @@ for (const name of names) {
     bad++;
     console.log(`FAILED ${name}: ${e.message}`);
   }
-  for (const [what, entry, want] of name === 'fallback' ? [] : failures) {
+  for (const [what, entry, want, only] of name === 'fallback' ? [] : failures) {
+    if (only && !only.startsWith(name)) continue;
     try {
-      await builders[name](entry, `${here}dist/fail/${name}-${what}`);
+      await builders[only ?? name](entry, `${here}dist/fail/${name}-${what}`);
       bad++;
       console.log(`FAILED ${name} ${what}: the build succeeded`);
     } catch (e) {
