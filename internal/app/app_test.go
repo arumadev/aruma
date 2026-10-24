@@ -226,7 +226,10 @@ func TestStorageWiring(t *testing.T) {
 	for _, path := range []string{"/v0/b/chat-app.aruma.test/o", "/firebasestorage.googleapis.com/v0/b/x/o", "/storage/v1/b/x", "/upload/storage/v1/b/x/o"} {
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
-		if rec.Code != http.StatusNotImplemented {
+		// The GCS surface routes since S4-A: its own error shape, not the server's 404, shows it
+		// is mounted.
+		gcs := strings.Contains(path, "/storage/v1/") && strings.Contains(rec.Body.String(), `"errors":[{"domain":"global"`)
+		if rec.Code != http.StatusNotImplemented && !gcs {
 			t.Errorf("%s: %d %s, want the contract's 501", path, rec.Code, rec.Body)
 		}
 	}
