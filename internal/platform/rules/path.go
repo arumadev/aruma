@@ -78,7 +78,7 @@ func urlDecode(s string) (string, error) {
 		return s, nil
 	}
 	fail := func(why string) error {
-		return errorf("Unable to decode %s to url. Error: URLDecoder: %s", s, why)
+		return errorf("Unable to decode %s to url. Error: URLDecoder: %s", clip(s), why)
 	}
 	out := make([]byte, 0, len(s))
 	var run []byte
@@ -157,7 +157,7 @@ func parsePath(m *meter, s string) (Value, error) {
 	parts := strings.Split(body, "/")
 	for _, p := range parts {
 		if p == "" {
-			return Value{}, errorf("Invalid Path Template %s. Empty segment is not allowed.", s)
+			return Value{}, errorf("Invalid Path Template %s. Empty segment is not allowed.", clip(s))
 		}
 	}
 	for i, p := range parts {
@@ -258,7 +258,7 @@ func pathMethod(m *meter, segs []string, name string, args []Value) (Value, erro
 	}
 	if len(missing) > 0 {
 		sort.Strings(missing)
-		return Value{}, errorf("Variable(s) %s do not exist in the path template.", strings.Join(missing, ", "))
+		return Value{}, errorf("Variable(s) %s do not exist in the path template.", clip(strings.Join(missing, ", ")))
 	}
 	return pathOf(out), nil
 }

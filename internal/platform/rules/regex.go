@@ -821,7 +821,7 @@ type replacement struct {
 // invalid replacement with an internal error (HTTP 500, the review's probes), whose text is not
 // observable; here it is an evaluation error, a denial.
 func parseReplacement(p *compiledRegex, repl string) ([]replacement, error) {
-	invalid := errorf("Invalid replacement string: %s.", repl)
+	invalid := errorf("Invalid replacement string: %s.", clip(repl))
 	// Sized up front (replacementBytes): the literal text of every piece in one buffer, and
 	// at most a group and a text for every $.
 	out := make([]replacement, 0, replacementPieces(repl))

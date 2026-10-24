@@ -143,26 +143,37 @@ func (ev *evaluator) eval(e expr, fr *frame) (Value, error) {
 		err = errorf("Unsupported expression.")
 	}
 	if err != nil {
+		// An error new here is a value the evaluation built, and may hold until it ends (the
+		// operands and arguments keep theirs): its message is charged like any other (the
+		// review's SR3-03), once, where it is placed.
+		if ee, ok := err.(*evalError); ok && ee.at == (span{}) {
+			if aerr := ev.m.alloc(errorBytes + int64(len(ee.msg))); aerr != nil {
+				return Value{}, aerr
+			}
+		}
 		return Value{}, spanned(err, e.pos())
 	}
 	return v, nil
 }
 
 // operands evaluates exprs, the last first, and returns their values, or the first error in
-// source order. An abort ends it at once.
+// source order. An abort ends it at once. Only that error is kept: each one met, the last
+// first, comes before those met earlier.
 func (ev *evaluator) operands(exprs []expr, fr *frame) ([]Value, error) {
 	vals := make([]Value, len(exprs))
-	errs := make([]error, len(exprs))
+	var first error
 	for i := len(exprs) - 1; i >= 0; i-- {
-		vals[i], errs[i] = ev.eval(exprs[i], fr)
-		if isAbort(errs[i]) {
-			return nil, errs[i]
-		}
-	}
-	for _, err := range errs {
-		if err != nil {
+		v, err := ev.eval(exprs[i], fr)
+		if isAbort(err) {
 			return nil, err
 		}
+		if err != nil {
+			first = err
+		}
+		vals[i] = v
+	}
+	if first != nil {
+		return nil, first
 	}
 	return vals, nil
 }
@@ -356,7 +367,7 @@ func (ev *evaluator) call(e *callExpr, fr *frame) (Value, error) {
 		return callMethod(ev.m, recv, e.name, args)
 	}
 	// A function that does not exist fails before its arguments are evaluated.
-	return Value{}, errorf(msgFunctionNotFound, e.name)
+	return Value{}, errorf(msgFunctionNotFound, clip(e.name))
 }
 
 // callUser calls a function of the file. Its arguments (the last first) and then its lets in
@@ -366,7 +377,7 @@ func (ev *evaluator) call(e *callExpr, fr *frame) (Value, error) {
 func (ev *evaluator) callUser(e *callExpr, fr *frame) (Value, error) {
 	f := e.user
 	if f == nil {
-		return Value{}, errorf(msgFunctionNotFound, e.name)
+		return Value{}, errorf(msgFunctionNotFound, clip(e.name))
 	}
 	if len(e.args) != len(f.params) {
 		return Value{}, errorf("Incorrect number of arguments. Received: %d. Expected: %d.", len(e.args), len(f.params))

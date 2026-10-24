@@ -109,7 +109,7 @@ func (ev *evaluator) lookup(e *callExpr, fr *frame) (Value, error) {
 		return Value{}, errorf(msgTypeError, arg.Kind(), KindPath)
 	}
 	if !isDocumentPath(segs) {
-		return Value{}, errorf("Service call error. Function: [%s], Argument: [/%s].", e.name, strings.Join(segs, "/"))
+		return Value{}, errorf("Service call error. Function: [%s], Argument: [/%s].", e.name, clip(strings.Join(segs, "/")))
 	}
 	doc, found, err := ev.read(segs, strings.HasSuffix(e.name, "After"))
 	if err != nil {
