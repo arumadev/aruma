@@ -145,11 +145,12 @@ describe('resumableUpload', () => {
   });
 
   it('stops doubling at the largest chunk', async () => {
-    const size = 70 * 1024 * 1024;
+    const size = 50 * 1024 * 1024;
     const server = new FakeSession(size);
-    await run(server, bytes(size)).promise;
-    expect(Math.max(...server.requests.map((r) => r.size))).toBe(MAX_CHUNK);
-  });
+    await run(server, new Blob([new Uint8Array(size)])).promise;
+    expect(server.requests.map((r) => r.size / BASE_CHUNK)).toEqual([1, 2, 4, 8, 16, 32, 64, 64, 9]);
+    expect(MAX_CHUNK).toBe(64 * BASE_CHUNK);
+  }, 20_000);
 
   it('sends an empty file as one finalize', async () => {
     const server = new FakeSession(0);

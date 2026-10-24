@@ -27,9 +27,9 @@ export const test = base.extend<Options & Fixtures>({
   appLocale: ['ar', { option: true }],
 
   api: [
-    async ({ page, appLocale }, use) => {
+    async ({ page, appLocale, baseURL }, use) => {
       const api = new MockApi(appLocale);
-      await api.install(page);
+      await api.install(page, baseURL ?? '');
       await page.clock.setFixedTime(new Date(NOW));
       // The language this device last used, as a returning visitor would have it.
       await page.addInitScript((locale) => localStorage.setItem('aruma.locale', locale), appLocale);

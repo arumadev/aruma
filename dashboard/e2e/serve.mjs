@@ -28,19 +28,24 @@ const TYPES = {
 
 const styleHashes = JSON.parse(await readFile(join(ROOT, 'csp.json'), 'utf8')).styleSrcElem;
 
-/** The page's policy, built like the Go server's: no inline script or style without a hash. */
-function policy(html) {
+/**
+ * The page's policy, built like the Go server's (internal/admin/web): no inline script or style
+ * without a hash, and scripts, stylesheets and fonts from <host>/_next/static/ alone, never
+ * 'self', where Storage serves user files.
+ */
+function policy(html, host) {
   const scripts = new Set();
   for (const [, attrs = '', body] of html.matchAll(/<script(\s[^>]*)?>([\s\S]*?)<\/script>/g)) {
     if (attrs.includes('src=') || !body.trim()) continue;
     scripts.add(`'sha256-${createHash('sha256').update(body).digest('base64')}'`);
   }
+  const statics = /^[A-Za-z0-9.-]+(:\d{1,5})?$/.test(host ?? '') ? `${host}/_next/static/` : "'none'";
   return [
-    "default-src 'self'",
-    `script-src 'self' ${[...scripts].join(' ')}`,
-    `style-src 'self' ${styleHashes.join(' ')}`,
+    "default-src 'none'",
+    `script-src ${statics} ${[...scripts].join(' ')}`,
+    `style-src ${statics} ${styleHashes.join(' ')}`,
+    `font-src ${statics}`,
     "img-src 'self' data:",
-    "font-src 'self'",
     "connect-src 'self'",
     "object-src 'none'",
     "base-uri 'none'",
@@ -49,9 +54,9 @@ function policy(html) {
   ].join('; ');
 }
 
-async function sendHtml(res, file, status) {
+async function sendHtml(req, res, file, status) {
   const html = await readFile(file, 'utf8');
-  res.writeHead(status, { 'Content-Type': TYPES['.html'], 'Cache-Control': 'no-store', 'Content-Security-Policy': policy(html) });
+  res.writeHead(status, { 'Content-Type': TYPES['.html'], 'Cache-Control': 'no-store', 'Content-Security-Policy': policy(html, req.headers.host) });
   res.end(html);
 }
 
@@ -86,14 +91,15 @@ function proxy(req, res) {
 
 createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', 'http://localhost');
-  if (url.pathname.startsWith('/console/v1/')) {
+  // /v0 too: the dashboard's uploads send their chunks to the session URLs the console issues.
+  if (url.pathname.startsWith('/console/v1/') || (API && url.pathname.startsWith('/v0/'))) {
     if (API) return proxy(req, res);
     return res.writeHead(404, { 'Content-Type': 'application/json' }).end('{"error":{"code":404,"status":"NOT_FOUND","message":"No API."}}');
   }
   const file = await resolveFile(url.pathname);
   if (file?.redirect) return res.writeHead(308, { Location: file.redirect + url.search }).end();
-  if (!file) return sendHtml(res, join(ROOT, '404.html'), 404);
-  if (file.endsWith('.html')) return sendHtml(res, file, 200);
+  if (!file) return sendHtml(req, res, join(ROOT, '404.html'), 404);
+  if (file.endsWith('.html')) return sendHtml(req, res, file, 200);
   res.writeHead(200, { 'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store' });
   createReadStream(file).pipe(res);
 }).listen(PORT, '127.0.0.1', () => {
