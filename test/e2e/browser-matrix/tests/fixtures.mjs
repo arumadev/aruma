@@ -116,12 +116,16 @@ export function mediaCheck(page, { url, tag }) {
 
 // mediaDocument checks the media document a browser shows for a clip or a song browsed to. Its
 // sandbox runs no script, so no event listener or timer either: the test reads and sets the
-// element from outside and polls.
+// element from outside and polls. The document plays the song aloud before the test can mute
+// it, so the engine needs a sound device: on a Linux machine without one Firefox fails the
+// element with MEDIA_ERR_DECODE, whatever the codec (its console says NS_ERROR_DOM_MEDIA_MEDIASINK_ERR,
+// OnMediaSinkAudioError). The CI job gives the runner a PulseAudio null sink.
 export async function mediaDocument(page) {
   const state = () => page.evaluate(() => {
     const el = document.querySelector('video, audio');
     return el ? { readyState: el.readyState, duration: Math.round(el.duration || 0), currentTime: el.currentTime,
-      seeking: el.seeking, error: el.error?.code ?? 0 } : { missing: document.contentType };
+      seeking: el.seeking, error: el.error?.code ?? 0, ...(el.error && { message: el.error.message }) }
+      : { missing: document.contentType };
   });
   await expect.poll(async () => (await state()).readyState ?? -1, { timeout: 15_000 }).toBeGreaterThanOrEqual(1);
   await page.evaluate(() => {

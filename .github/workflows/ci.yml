@@ -251,6 +251,17 @@ jobs:
           go mod download
           npm ci --no-audit --no-fund
           npx playwright install --with-deps ${{ matrix.engine }}
+      # The runner has no sound device. Case 14 browses to the song, whose media document plays
+      # it aloud, and Firefox then fails the element with MEDIA_ERR_DECODE
+      # (NS_ERROR_DOM_MEDIA_MEDIASINK_ERR, OnMediaSinkAudioError) for MP3, Opus and WAV alike:
+      # it is the output, not the decoder. A null sink is the sound device a desktop has.
+      - name: A sound device (PulseAudio null sink)
+        run: |
+          sudo apt-get install -y --no-install-recommends pulseaudio
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=matrix
+          pactl set-default-sink matrix
+          echo "PULSE_SERVER=$(pactl info | sed -n 's/^Server String: //p')" >> "$GITHUB_ENV"
       - name: Egress guard on
         run: test/ci/egress-guard.sh on
       - name: Aruma's download replies in ${{ matrix.engine }}

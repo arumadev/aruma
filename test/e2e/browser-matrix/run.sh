@@ -12,7 +12,9 @@
 #   ARUMA_E2E_DB_PREFIX  prefix of the throwaway database (default aruma_e2e_)
 #
 # It needs the local Postgres (ARUMA_TEST_DATABASE_URL), Go and Node. Playwright's browsers go to
-# PLAYWRIGHT_BROWSERS_PATH (.cache/env.sh keeps them off the system disk).
+# PLAYWRIGHT_BROWSERS_PATH (.cache/env.sh keeps them off the system disk). On Linux the engines need
+# a sound device, a PulseAudio null sink will do (as the CI job has): Firefox fails case 14's song
+# without one.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
