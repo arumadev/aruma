@@ -397,6 +397,14 @@ type ruleOp struct { Method rules.Method; Name string; List bool; Resource, Inco
 - **المقاييس في العقد** (§18، `core/metrics.go`): أسماؤها وتسمياتها ثابتة، ولكل مقياس مالكه في تعليقه (D للجلسات والحصة والقرص وGC والمسح والالتزامات الملتبسة والقفل، وE للقواعد، وS3/S4 للبايتات وفك الضغط المقطوع)، ويسجّلها `app` على سجل الخادم، وتبقى صفرًا حتى يبلّغ مالكها.
 - **`ctx` في `core.New`** لا يُستعمل اليوم، و`app.New` يمرر `context.Background()`.
 
+#### قرارات S2-E (لم تكن في المسودة)
+
+- **`prepareRules` قبل كل معاملة تقفل صفًا ثم تقرر:** `ctx, err := s.prepareRules(ctx, b, p)` قبل `inTx` أو `begin`، ثم `authorize` بهذا الـ `ctx` داخل القفل، فلا تأخذ اتصالًا ثانيًا من المجمّع لتحميل إصدارة غائبة عن الذاكرة (وإلا تقف الكتابات حين يمتلئ المجمّع). على C في `Update` و`Delete` وتعديل الرموز، وعلى D في `Insert` والإنهاء و`Rewrite` (للـ bucketين). Admin ومن يقرر بـ `authorizeHook` لا يحتاجانه. `TestDecidingUnderALockNeedsNoConnection` (مجمّع من اتصالين). وتحميل الإصدارة يحمل مهلة الطلب الأول، بسقف 10 ثوانٍ.
+- **ذاكرة `CompiledRelease` معلّقة بمفتاح ضعيف على `*tenancy.Service`** في `tenancy/core/rules.go`، لأن حقول `Service` من العقد (`service.go`). تزول مع الخدمة (`runtime.AddCleanup`).
+- **`etag` في القواعد** يُحسب في `core/rules_fields.go` (`objectETag`) بصيغة `wire.ETag` نفسها (S2-B)، فـ `core` لا تستورد `wire`. وأي تغيير في إحداهما يغيّر الأخرى.
+- **الإصدارة الغائبة لا تُكتب صفًا:** `CompiledRelease` يعيد القاعدة المقفلة المترجمة مرة واحدة، و`GetRelease` يرد NOT_FOUND، فتكتب firebase-tools القالب (C §2.2).
+- **`PublishRelease`** يقبل اسم الـ ruleset كاملًا (بمعرّف المشروع أو رقمه) أو الـ uuid وحده، ويرفض ruleset خدمة أخرى لإصدارتَي Storage و`cloud.firestore`. و`firebase.storage/default` من الخارج NOT_FOUND كأي bucket آخر.
+
 ## المهام
 
 ### S2: النواة (بعد S2-0، متوازية)

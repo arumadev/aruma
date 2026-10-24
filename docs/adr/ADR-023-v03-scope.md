@@ -145,6 +145,14 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 36. `etag` يتغير مع PATCH، و`generation` بالميكروثانية، و`x-goog-metageneration` بالتهجئة الصحيحة.
 37. لا تقييم مزدوج للقواعد (ADR-021 §5.4).
 
+**ربط القواعد (S2-E، لم تكن في المسودة؛ المدمج يعيد ترقيمها بعد بنود C وD):**
+
+50. **مؤقت: ترتيب `metadata` في `resource` و`request.resource` بالمفتاح** (`rules.Map`)، فـ `values()` مرتبة كـ `keys()`. Test API وحدها تحفظ ترتيب الطلب، وهي تأخذ `request` حرفيًا، وjsonb لا يحفظ ترتيبًا، ولا قياس من المحاكي ولا المنشور. فلا تخزين يحفظ الترتيب على استنتاج. `core/rules_fields.go` (`metadataValue`).
+51. **مؤقت: `resource` سبعة عشر مفتاحًا:** الخمسة عشر التي قاسها PY-RR في `request.resource`، و`timeCreated` و`updated` timestamp. والحقل غير المضبوط `null`، و`contentEncoding` غير المضبوط `'identity'` كما قاسه PY-RR في `request.resource` (عند الإنشاء والتعديل)، و`storageClass` = `'STANDARD'`. مجموعة المفاتيح الدقيقة في `resource` لم تُقس. `core/rules_fields.go` (`existing`).
+52. **مؤقت: list ببادئة لا تنتهي بـ `/` يُقرَّر على مجلدها** (ما قبل آخر `/`) ومقطع مجهول، فلا تسمح قاعدة `p/a/{x}` بقائمة `p/a` التي تعيد `p/ab`. المكتبات ترسل `<مسار>/` أو البادئة الفارغة دائمًا. `core/rules.go` (`rulePaths`).
+53. **قيد: اسم بأكثر من 1021 مقطعًا يُرفض 403** (حد `request_segments` الافتراضي 1024 مع `b/<bucket>/o`)، لا 503 تعيد المكتبات عليه بلا نهاية. ومن يخفض `request_segments` يرد 503 للأسماء بين الحدين. `core/rules.go` (`maxRulePathSegments`).
+54. **قيد: مصدر قواعد فيه NUL يُرفض 400** (jsonb لا يحفظه)، و2,500 ruleset لكل مشروع ثابتة في الكود (`maxRulesets`) لا في الإعداد. `tenancy/core/rules.go`.
+
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 
 ## البدائل المرفوضة
