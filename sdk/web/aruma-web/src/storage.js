@@ -21,7 +21,9 @@
 import { ArumaConfigError, parseBase } from './index.js';
 
 /** The host @firebase/storage compiles in. */
-export const STORAGE_HOST = 'firebasestorage.googleapis.com';
+// Not written as the bare quoted literal: the build's output check takes a bundle holding the SDK
+// and that literal for an unrewritten SDK, and this module may share the SDK's chunk.
+export const STORAGE_HOST = new URL('https://firebasestorage.googleapis.com/').hostname;
 
 const LOG_PREFIX = '[aruma]';
 const STATE = Symbol.for('aruma.web.storage');
@@ -43,8 +45,15 @@ export function storageBase(url, { allowInsecure = false } = {}) {
   if (stripDot(new URL(base.origin).hostname).endsWith('googleapis.com')) {
     throw new ArumaConfigError('the Aruma URL cannot be a Google host');
   }
+  // The host goes into a JS string literal of the SDK: only a host name, an IPv4 address or a
+  // bracketed IPv6 address, and a port (the WHATWG parser lets through characters such as quotes).
+  if (!HOST_SHAPE.test(base.host)) {
+    throw new ArumaConfigError('the Aruma URL for Storage must have a plain host: letters, digits, dots and hyphens, or an IP address, and an optional port');
+  }
   return base;
 }
+
+const HOST_SHAPE = /^(?:[a-z0-9.-]+|\[[0-9a-f:.]+\])(?::[0-9]{1,5})?$/;
 
 const stripDot = (hostname) => (hostname.endsWith('.') ? hostname.slice(0, -1) : hostname);
 
@@ -60,8 +69,14 @@ export function isStorageModule(id) {
   return STORAGE_DIST.test(String(id).split('?')[0]);
 }
 
-/** The Firebase JS SDK on Google's CDN: it never passes through a bundler, so it is never rewritten. */
-export const GSTATIC_FIREBASE = /https?:\/\/www\.gstatic\.com\/firebasejs\//;
+/**
+ * The Firebase JS SDK from a CDN, which never passes through a bundler, so it is never rewritten:
+ * anything from www.gstatic.com/firebasejs/ (also protocol-relative), and the Storage SDK from any
+ * absolute URL (firebase-storage.js, @firebase/storage or firebase@…/storage on jsdelivr, unpkg,
+ * esm.sh …). A relative or root-relative import is local and not matched.
+ */
+export const GSTATIC_FIREBASE =
+  /(?:https?:)?\/\/(?:www\.gstatic\.com\/firebasejs\/|[^\s"'`()<>]*?(?:\/firebase-storage(?:-compat)?(?:\.min)?\.js|\/@firebase\/storage|\/firebase@[^\/\s"'`]*\/(?:compat\/)?storage))/;
 
 const HOST_LITERAL = /(["'])firebasestorage\.googleapis\.com\1/g;
 // `this._protocol = 'https';` in the constructor of FirebaseStorageImpl (`this._protocol="https"`
@@ -83,14 +98,14 @@ const PROTOCOL_LITERAL = /(_protocol\s*=\s*)(["'])https\2/g;
 export function rewriteStorageLiterals(code, base) {
   let hosts = 0;
   let schemes = 0;
-  let out = code.replace(HOST_LITERAL, (_, q) => {
+  let out = code.replace(HOST_LITERAL, () => {
     hosts++;
-    return `${q}${base.host}${q}`;
+    return JSON.stringify(base.host);
   });
   if (base.protocol !== 'https') {
-    out = out.replace(PROTOCOL_LITERAL, (_, key, q) => {
+    out = out.replace(PROTOCOL_LITERAL, (_, key) => {
       schemes++;
-      return `${key}${q}${base.protocol}${q}`;
+      return `${key}${JSON.stringify(base.protocol)}`;
     });
   }
   const ok = hosts === 1 && (base.protocol === 'https' || schemes === 1);

@@ -20,6 +20,13 @@ for (const { name, url } of apps) {
     const summary = expectEleven(done);
     console.log(`${name}:\n  ${summary.join('\n  ')}`);
     expectStorageOnRoot(network, { signedIn });
+    // The app's Web Worker (src/main.js ends with one): its own bundle, rewritten too.
+    if (done.worker) {
+      expect(done.worker, JSON.stringify(done.worker)).toMatchObject({ ok: true, host: new URL(e2e.aruma).host });
+      expect(done.worker.url.startsWith(`${e2e.aruma}/v0/b/${encodeURIComponent(e2e.bucket)}/o/open%2Fworker-`)).toBe(true);
+      expect(network.aruma.some((r) => r.method === 'POST' && r.search.includes('open%2Fworker-'))).toBe(true);
+      console.log(`  worker: ${done.worker.host}`);
+    }
     // The <img> loaded the unified link itself, from Aruma's root.
     const src = await page.locator('#img').getAttribute('src');
     expect(src.startsWith(`${e2e.aruma}/v0/b/${encodeURIComponent(e2e.bucket)}/o/`)).toBe(true);

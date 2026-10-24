@@ -41,7 +41,9 @@ const externalized = (id) =>
 const noneSeen =
   "@aruma/web: no @firebase/storage module was in this build, so nothing was rewritten. Import Storage from the 'firebase/storage' npm package, or pass required: false if this bundle does not use Storage";
 const gstatic = (where) =>
-  `@aruma/web: ${where} loads the Firebase SDK from www.gstatic.com, which never passes through the build and keeps Google's Storage host. Import it from the 'firebase' npm package instead`;
+  `@aruma/web: ${where} loads the Firebase SDK from a CDN (www.gstatic.com, or the Storage SDK from jsdelivr, unpkg and the like), which never passes through the build and keeps Google's Storage host. Import it from the 'firebase' npm package instead`;
+const unrewrittenCopy = (file) =>
+  `@aruma/web: ${file} holds a copy of the Storage SDK that still names firebasestorage.googleapis.com: a bundle the plugin did not reach (a Web Worker, a child compiler). Add the plugin there too (Vite: worker.plugins, which the Vite plugin sets)`;
 
 /**
  * The options every adapter takes.
@@ -88,9 +90,20 @@ export function storageRewriter(options) {
       if (storage === 0 && required && browser && !watch) problems.push(noneSeen);
       return problems;
     },
-    /** The output check: problems for the files ([{ name, code }]) that load the SDK from gstatic. */
+    /**
+     * The output check on the files ([{ name, code }]) the build emits, wherever they came from
+     * (worker bundles included): one that loads the SDK from a CDN, and one that carries the Storage
+     * SDK (its X-Firebase-Storage-Version header) with Google's host literal still in it.
+     */
     scanOutput(files) {
-      return files.filter((f) => GSTATIC_FIREBASE.test(f.code)).map((f) => gstatic(f.name));
+      const problems = [];
+      for (const f of files) {
+        if (GSTATIC_FIREBASE.test(f.code)) problems.push(gstatic(f.name));
+        if (f.code.includes('X-Firebase-Storage-Version') && /["'`]firebasestorage\.googleapis\.com["'`]/.test(f.code)) {
+          problems.push(unrewrittenCopy(f.name));
+        }
+      }
+      return problems;
     },
     resolveGstatic(id) {
       if (GSTATIC_FIREBASE.test(id)) throw new Error(gstatic(`the import ${id}`));
@@ -113,7 +126,10 @@ function rollupVerify(rw, ctx, bundle, { browser }) {
       if (!(id in bundle)) modules.push({ id, external: true });
     }
   }
-  const files = Object.values(bundle).map((f) => ({ name: f.fileName, code: f.type === 'chunk' ? f.code : String(f.source ?? '') }));
+  // Code and pages only: a source map holds the original sources, Google's literal included.
+  const files = Object.values(bundle)
+    .filter((f) => /\.(?:m?js|cjs|html)$/.test(f.fileName))
+    .map((f) => ({ name: f.fileName, code: f.type === 'chunk' ? f.code : String(f.source ?? '') }));
   const problems = [...rw.verify(modules, { browser, watch: Boolean(ctx.meta?.watchMode) }), ...rw.scanOutput(files)];
   if (problems.length) ctx.error(problems.join('\n'));
 }

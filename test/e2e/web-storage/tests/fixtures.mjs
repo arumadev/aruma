@@ -92,7 +92,9 @@ export function expectStorageOnRoot(network, { signedIn = true } = {}) {
   for (const k of ['POST api', 'GET api', 'GET media', 'DELETE api']) expect(kinds, [...kinds].join(', ')).toContain(k);
   // The SDK's own requests (XHR in the browser) carry the ID token; the link in <img> and fetch
   // carries its download token in the query instead. Chunks go to the absolute X-Goog-Upload-URL.
-  const sdk = storage.filter((r) => r.type === 'xhr' && r.method !== 'OPTIONS' && !r.search.includes('upload_id'));
+  // The worker's requests (open/worker-…) are signed out by design (src/worker.js).
+  const worker = (r) => (r.path + r.search).includes('open%2Fworker-');
+  const sdk = storage.filter((r) => r.type === 'xhr' && r.method !== 'OPTIONS' && !r.search.includes('upload_id') && !worker(r));
   expect(sdk.length).toBeGreaterThan(5);
   if (signedIn) expect(sdk.filter((r) => r.auth !== 'Firebase').map((r) => `${r.method} ${r.path}`), 'SDK requests without the ID token').toEqual([]);
   const img = storage.filter((r) => r.type === 'image');

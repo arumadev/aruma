@@ -75,7 +75,15 @@ describe('vite plugin, storage', () => {
   test('config: ssr.noExternal, and the optimizer of the Vite in use', () => {
     const p = storagePlugin({ url: URL_ });
     const v8 = p.config.call({ meta: { rolldownVersion: '1.0.0' } });
-    assert.deepEqual(v8.ssr, { noExternal: ['@firebase/storage', 'firebase'] });
+    assert.deepEqual(v8.ssr, { noExternal: ['@firebase/storage', '@firebase/storage-compat', 'firebase'] });
+    // Workers: an instance of their own, which adds no config and does not require Storage.
+    const [w] = v8.worker.plugins();
+    assert.equal(w.name, 'aruma-web:storage');
+    assert.equal(w.config.call({ meta: {} }), null);
+    assert.equal(w.transform(ESM_SNIPPET, ID).code, rewritten);
+    const wctx = (ids) => ({ getModuleIds: () => ids.map((m) => m.id), getModuleInfo: (id) => ids.find((m) => m.id === id), error(m) { throw new Error(m); }, meta: {} });
+    assert.doesNotThrow(() => w.generateBundle.handler.call(wctx([]), {}, {}));
+    assert.throws(() => w.generateBundle.handler.call(wctx([{ id: ID, code: ESM_SNIPPET }]), {}, {}), /still names/);
     const [rolldown] = v8.optimizeDeps.rolldownOptions.plugins;
     assert.equal(rolldown.name, 'aruma-web:storage:http://127.0.0.1:9421');
     assert.equal(rolldown.transform(ESM_SNIPPET, ID).code, rewritten);

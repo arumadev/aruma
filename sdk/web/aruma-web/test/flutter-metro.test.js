@@ -108,7 +108,7 @@ describe('metro', () => {
       writeFileSync(upstream, 'exports.transform = (a) => ({ src: a.src, filename: a.filename }); exports.getCacheKey = () => "up";');
       process.env.ARUMA_WEB_METRO = JSON.stringify({ url: 'http://127.0.0.1:9420', allowInsecure: false, upstream });
       const id = '/app/node_modules/@firebase/storage/dist/index.node.cjs.js';
-      assert.match(transform({ filename: id, src: ESM_SNIPPET }).src, /const DEFAULT_HOST = '127\.0\.0\.1:9420';/);
+      assert.match(transform({ filename: id, src: ESM_SNIPPET }).src, /const DEFAULT_HOST = "127\.0\.0\.1:9420";/);
       assert.equal(transform({ filename: '/app/App.js', src: 'x' }).src, 'x');
       assert.throws(() => transform({ filename: id, src: 'const x = 1;' }), /not supported by the build-time rewrite/);
       assert.equal(getCacheKey(), ['up', 'aruma-web-storage-1', 'http://127.0.0.1:9420', 'false'].join('\0'));

@@ -43,7 +43,7 @@ const builders = {
   async esbuild(entry, outDir) {
     const esbuild = await import('esbuild');
     const config = await fresh('esbuild.config.mjs');
-    if (entry) Object.assign(config, { entryPoints: [entry], outfile: `${outDir}/main.js` });
+    if (entry) Object.assign(config, { entryPoints: [entry], outdir: outDir });
     await esbuild.build({ ...config, logLevel: 'silent' });
     if (!entry) writeFileSync(`${here}dist/esbuild/index.html`, html('main.js'));
   },
@@ -82,6 +82,14 @@ const builders = {
     );
     if (!entry) writeFileSync(`${config.output.path}/index.html`, html('main.js'));
   },
+  // Only as a build that must fail: the Vite plugin without its config hook, so no worker.plugins:
+  // the worker bundle keeps Google's host, and the output check on the page's build must see it.
+  async 'vite-worker'(entry, outDir) {
+    const { build } = await import('vite');
+    const { storagePlugin } = await import('@aruma/web/vite');
+    const storage = { ...storagePlugin({ url: process.env.ARUMA_URL }), config: undefined };
+    await build({ configFile: false, root: here, logLevel: 'silent', base: '/x/', plugins: [storage], build: { outDir, emptyOutDir: true } });
+  },
   // Only as a build that must fail: webpack with the Storage SDK in `externals`.
   async 'webpack-externals'(entry, outDir) {
     const config = await fresh('webpack.config.mjs');
@@ -91,6 +99,7 @@ const builders = {
   async fallback() {
     const esbuild = await import('esbuild');
     const config = await fresh('esbuild.config.mjs');
+    delete config.outdir;
     await esbuild.build({ ...config, entryPoints: ['./src/fallback.js'], outfile: 'dist/fallback/main.js', plugins: [], logLevel: 'silent' });
     // Not rewritten: what reaches Aruma in the browser is the fallback's doing.
     if (!readFileSync(`${here}dist/fallback/main.js`, 'utf8').includes('"firebasestorage.googleapis.com"')) {
@@ -103,9 +112,10 @@ const builders = {
 // The builds that must fail, and the start of @aruma/web's message each must fail with.
 const failures = [
   ['no-storage', './src/no-storage.js', /no @firebase\/storage module was in this build/],
-  ['gstatic', './src/gstatic.js', /loads the Firebase SDK from www\.gstatic\.com/],
+  ['gstatic', './src/gstatic.js', /loads the Firebase SDK from a CDN/],
   ['ssr-external', './src/ssr.js', /is external to this bundle/, 'vite-ssr'],
   ['externals', './src/ssr.js', /is external to this bundle/, 'webpack-externals'],
+  ['worker', 'index.html', /worker-[^ ]*\.js holds a copy of the Storage SDK that still names/, 'vite-worker'],
 ];
 
 const names = process.argv.slice(2).length ? process.argv.slice(2) : ['vite', 'webpack', 'esbuild', 'rollup', 'rspack', 'fallback'];

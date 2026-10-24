@@ -39,7 +39,7 @@ describe('the build-time rule', () => {
   test('rewrites the definition of DEFAULT_HOST and leaves the comment', () => {
     const r = rewriteStorageLiterals(ESM_SNIPPET, storageBase('https://aruma.example.com'));
     assert.deepEqual([r.hosts, r.schemes, r.ok], [1, 0, true]);
-    assert.match(r.code, /const DEFAULT_HOST = 'aruma\.example\.com';/);
+    assert.match(r.code, /const DEFAULT_HOST = "aruma\.example\.com";/);
     assert.match(r.code, /http\[s\]:\/\/firebasestorage\.googleapis\.com\//);
     assert.match(r.code, /this\._protocol = 'https';/);
   });
