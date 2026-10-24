@@ -415,7 +415,7 @@ type genCase struct {
 // timeout.", seeds 3 and 7 on 2026-10-24), so no case reuses another's.
 func (c *genCase) doc() string { return fmt.Sprintf("c/d%d", c.Index) }
 
-var aliceToken =map[string]any{"email": "alice@example.com", "admin": true, "role": "editor", "groups": []any{"g1", "g2"}}
+var aliceToken = map[string]any{"email": "alice@example.com", "admin": true, "role": "editor", "groups": []any{"g1", "g2"}}
 
 func (g *gen) value() any {
 	switch g.r.IntN(7) {
