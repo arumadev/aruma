@@ -202,6 +202,22 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 67. **مؤقت: `maxResults` غير عدد صحيح موجب 400** (المكتبات تفحص 1 إلى 1000 بنفسها، A §3.7)، والقيمة الفارغة غائبة، و`startOffset`/`endOffset` على `/v0` تُتجاهل. `api/list.go`.
 68. **مؤقت: جسم PATCH.** قيمة ليست نصًا ولا `null` لحقل قابل للكتابة أو لمفتاح metadata 400، وجسم ليس كائن JSON واحدًا 400، وفوق `json_body_bytes` 413، والجسم الفارغ لا يغيّر إلا الـ metageneration. `api/objects.go`.
 
+**أضافها S4-A** (أساس GCS JSON؛ تفصيلها في `docs/compat/storage-v0.3.md`):
+
+62. **قيد: سطح GCS لحسابات الخدمة وحدها** (`aruma_sat_`): رمز CLI الشخصي ورمز المستخدم 401 `authError`، كما بلا رمز 401 `required`. وحساب مشروع على bucket غيره 403 `forbidden` بنص GCS، لا `NOT_FOUND`: استثناء Storage من ADR-010 S-11 (ADR-022 §14)، والرفض قبل أي بحث عن كائن. `gcs/auth.go`.
+63. **مؤقت: الـ bucket يُحل قبل الاعتماد،** فـ bucket غير موجود 404 لأي طالب، كما رد الإنتاج على المجهول (`bucket_probe.json`)، والموجود 401 بلا رمز و403 لحساب مشروع آخر (استثناء S-11، ADR-022 §14)، وكل ذلك قبل أي بحث عن كائن. `gcs/gcs.go` (`route`)، و`gcs/auth.go` (`admit`).
+64. **مؤقت: الشروط المسبقة كلها على الصف الذي تقع عليه العملية** (بعد مراجعة S4-A): `sourceGeneration` و`ifSource*` في rewrite على صف المصدر الذي يُنسخ ملفه (`core.SourceConditions`)، و`ifMetagenerationMatch`/`NotMatch` على صف إعدادات الـ bucket المقفل في معاملة `SetCORS` (`core.BucketConditions`)، و`?generation=` على PATCH وDELETE يصير `ifGenerationMatch` على الصف المقفل؛ والجيل غير الحالي 404 لا 412. `gcs/objects.go` (`pinned`)، و`core/insert.go` (`Rewrite`)، و`core/cors.go` (`SetCORS`).
+65. **قيد: حقول الكائن المؤجلة في الجسم 501** (`acl` و`temporaryHold` و`eventBasedHold` و`customTime` و`retention` و`contexts` و`kmsKeyName` و`customerEncryption` و`storageClass` غير `STANDARD`)، وقيمها الفارغة تُتجاهل؛ وقيمة `metadata` غير نصية 400. و`buckets.patch` بغير `cors` 400، و`ifGenerationMatch` على الـ bucket 400. `gcs/resource.go` (`decodeAttrs`)، و`gcs/buckets.go`.
+66. **مؤقت: ما ليس في v0.3 من الواجهة 501** (`copyTo` و`compose` و`moveTo` والـ ACL وIAM والإشعارات وقائمة الـ buckets وإنشاؤها وحذفها و`objects.update` بـ PUT وCSEK)، و`rewriteToken` مُرسَل 400 (لا نصدر رموزًا)، وما لا تعرفه الواجهة 404. `gcs/gcs.go`.
+67. **مؤقت: مورد الـ bucket** موقعه اسمي (`US`، `multi-region`)، و`timeCreated` إنشاء المشروع. وأسباب الأخطاء حيث لا تسجيل: 413 `uploadTooLarge`، و429 `rateLimitExceeded` لكثرة الجلسات ولتجاوز `upload_requests_per_ip`، و410 للجلسة الملغاة. و`Retry-After` على الضغط العابر وحده (تجاوز `upload_requests_per_ip`، و`core.ErrOverloaded`، وبدء رفع فوق معدله)، ولا يُرسل أبدًا على 503 الخادم نفسه (`core.ErrUnavailable`). `gcs/resource.go`، `gcs/errors.go`.
+
+**أضافها S4-BC** (الرفع والوسائط على GCS؛ تفصيلها في `docs/compat/storage-v0.3.md`):
+
+68. **مؤقت: `DELETE` على رابط الجلسة يلغيها بـ 499** (وثيقة GCS)، وطلب على الجلسة بلا `Content-Range` هو الكائن كله. `gcs/upload.go`.
+69. **مؤقت: بدء الرفع على GCS يُحسب على `upload_starts_per_minute_per_ip`** بعنوان العميل (`trusted_proxies`، كحد الطلبات لكل IP)، والتجاوز 429 `rateLimitExceeded` مع `Retry-After`. `gcs/upload.go`.
+70. **مؤقت: أسباب رفض الرفع حيث لا تسجيل:** البطء تحت `min_bytes_per_second` 408، والجسم المنقطع 400، و`Content-Length` يخالف `Content-Range` 400، وتناقض checksum بين JSON و`X-Goog-Hash` 400. `gcs/upload.go`.
+71. **قيد: لا `Retry-After` على 503 من عطل الخادم** (`core.ErrUnavailable`) في الرفع والتنزيل، بل على الضغط وحده. `gcs/errors.go` (`writeError`).
+
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 
 ## البدائل المرفوضة

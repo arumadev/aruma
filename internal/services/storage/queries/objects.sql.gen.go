@@ -157,6 +157,33 @@ func (q *Queries) ListObjects(ctx context.Context, arg ListObjectsParams) ([]Sto
 	return items, nil
 }
 
+const lockBucketSettings = `-- name: LockBucketSettings :one
+INSERT INTO storage.buckets (project_number, updated)
+VALUES ($1, $2)
+ON CONFLICT (project_number) DO UPDATE SET metageneration = storage.buckets.metageneration
+RETURNING project_number, cors, metageneration, updated
+`
+
+type LockBucketSettingsParams struct {
+	ProjectNumber int64
+	Now           time.Time
+}
+
+// The bucket's settings row, locked for the rest of the transaction: made first when absent, as
+// the bucket is before any change (metageneration 1, no CORS), so a conditional change decides
+// on a row that every other change waits for (SetCORS's BucketConditions).
+func (q *Queries) LockBucketSettings(ctx context.Context, arg LockBucketSettingsParams) (StorageBucket, error) {
+	row := q.db.QueryRow(ctx, lockBucketSettings, arg.ProjectNumber, arg.Now)
+	var i StorageBucket
+	err := row.Scan(
+		&i.ProjectNumber,
+		&i.Cors,
+		&i.Metageneration,
+		&i.Updated,
+	)
+	return i, err
+}
+
 const setBucketCORS = `-- name: SetBucketCORS :one
 INSERT INTO storage.buckets (project_number, cors, metageneration, updated)
 VALUES ($1, $2, 2, $3)

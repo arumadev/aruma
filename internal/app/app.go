@@ -221,7 +221,11 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 			Projects:       svc,
 			IDTokens:       idTokens,
 		}, logger).Handler()
-		handlers.GCS = gcs.New(storageSvc, gcs.Options{PublicURL: publicURL, Credentials: svc, Projects: svc}, logger).Handler()
+		handlers.GCS = gcs.New(storageSvc, gcs.Options{
+			PublicURL:      publicURL,
+			TrustedProxies: cfg.TrustedProxyPrefixes(),
+			Credentials:    svc,
+		}, logger).Handler()
 		// A purged project's objects, sessions and files go with it.
 		svc.OnProjectPurged(storageSvc.PurgeProject)
 	}
