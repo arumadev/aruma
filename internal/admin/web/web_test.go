@@ -97,6 +97,84 @@ func TestCSPHashesInlineScripts(t *testing.T) {
 	}
 }
 
+// directives splits a policy into its directives' sources, by name.
+func directives(t *testing.T, csp string) map[string][]string {
+	t.Helper()
+	out := map[string][]string{}
+	for d := range strings.SplitSeq(csp, ";") {
+		f := strings.Fields(d)
+		if len(f) == 0 {
+			t.Fatalf("empty directive in %q", csp)
+		}
+		if _, dup := out[f[0]]; dup {
+			t.Fatalf("%s twice in %q", f[0], csp)
+		}
+		out[f[0]] = f[1:]
+	}
+	return out
+}
+
+// TestCSPCodeOnlyFromStaticDir pins the dashboard's policy (ADR-022 §10.1): scripts,
+// stylesheets and fonts load from <host>/_next/static/ and the page's hashes alone. Never
+// 'self', which would let an object Storage serves on this origin run as the dashboard's
+// script: on plain http no Sec-Fetch-* header lets media refuse it.
+func TestCSPCodeOnlyFromStaticDir(t *testing.T) {
+	fsys := export()
+	style := "'sha256-38RhXrc7EdReTKsOm23ZPOCUgniTUUcjky8QOOrQx6o='"
+	fsys["csp.json"] = &fstest.MapFile{Data: []byte(`{"styleSrcElem":["` + style + `"]}`)}
+	h, err := New(fsys)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hash := func(s string) string {
+		sum := sha256.Sum256([]byte(s))
+		return "'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'"
+	}
+	scripts := hash("self.__next_f=self.__next_f||[]") + " " + hash(`self.__next_f.push([1,"x"])`)
+	cases := []struct {
+		host, static string
+	}{
+		{"console.example.com", "console.example.com/_next/static/"},
+		{"127.0.0.1:9360", "127.0.0.1:9360/_next/static/"},
+		{"[::1]:9360", "[::1]:9360/_next/static/"},
+		{"localhost", "localhost/_next/static/"},
+		// A Host that would add a source or a directive loads nothing.
+		{"evil.example; script-src *", "'none'"},
+		{"a.example *", "'none'"},
+		{"", "'none'"},
+		{"a.example/x", "'none'"},
+		{"'self'", "'none'"},
+	}
+	for _, c := range cases {
+		r := httptest.NewRequest("GET", "/", nil)
+		r.Host = c.host
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, r)
+		csp := rec.Header().Get("Content-Security-Policy")
+		want := "default-src 'none'; script-src " + c.static + " " + scripts + "; style-src " + c.static + " " + style +
+			"; font-src " + c.static + "; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
+			"form-action 'self'; frame-ancestors 'none'"
+		if csp != want {
+			t.Errorf("Host %q:\n got %s\nwant %s", c.host, csp, want)
+			continue
+		}
+		d := directives(t, csp)
+		for _, name := range []string{"script-src", "style-src", "font-src"} {
+			for _, src := range d[name] {
+				if src == c.static || (name != "font-src" && strings.HasPrefix(src, "'sha256-")) {
+					continue
+				}
+				t.Errorf("Host %q: %s allows %s", c.host, name, src)
+			}
+		}
+		for _, name := range []string{"default-src", "object-src", "base-uri", "frame-ancestors"} {
+			if got := strings.Join(d[name], " "); got != "'none'" {
+				t.Errorf("Host %q: %s %s", c.host, name, got)
+			}
+		}
+	}
+}
+
 func TestETag(t *testing.T) {
 	h, _ := New(export())
 	etag := get(t, h, "/").Header().Get("ETag")
@@ -135,7 +213,7 @@ func TestStyleHashesFromManifest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if csp := get(t, h, "/").Header().Get("Content-Security-Policy"); !strings.Contains(csp, "style-src 'self' "+good+";") {
+	if csp := get(t, h, "/").Header().Get("Content-Security-Policy"); !strings.Contains(csp, "style-src example.com/_next/static/ "+good+";") {
 		t.Fatalf("style hash missing: %s", csp)
 	}
 	for _, bad := range []string{`'unsafe-inline'`, `* data:`, `'sha256-x'; script-src *`} {

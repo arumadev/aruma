@@ -4,6 +4,12 @@
 // file lookup with no rewrites. Every HTML page gets its own Content-Security-Policy listing
 // the SHA-256 of each inline script Next.js emitted, computed once at startup, so scripts
 // never need 'unsafe-inline' (ADR-010 S-9).
+//
+// The policy loads scripts, stylesheets and fonts from the build's own directory alone,
+// <origin>/_next/static/, never from 'self' (ADR-022 §10.1). Storage serves user files from
+// this origin, and on plain http browsers send none of the Sec-Fetch-* headers media would
+// refuse a <script src> by, so this path is what keeps an uploaded file from running as the
+// dashboard's script.
 package web
 
 import (
@@ -20,6 +26,7 @@ import (
 	"net/http"
 	"path"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -42,7 +49,7 @@ type file struct {
 	body        []byte
 	contentType string
 	etag        string
-	csp         string // HTML only
+	page        *pagePolicy // HTML only
 	immutable   bool
 }
 
@@ -77,7 +84,7 @@ func New(fsys fs.FS) (*Handler, error) {
 			immutable:   strings.HasPrefix(p, "_next/static/"),
 		}
 		if strings.HasSuffix(p, ".html") {
-			f.csp = policy(body, styles)
+			f.page = &pagePolicy{scripts: scriptHashes(body), styles: styles}
 		}
 		h.files[p] = f
 		return nil
@@ -132,33 +139,56 @@ func styleHashes(fsys fs.FS) ([]string, error) {
 	return manifest.StyleSrcElem, nil
 }
 
-// policy builds the page's CSP: same-origin everything, plus the hash of each inline script and
-// of each known runtime stylesheet.
-func policy(html []byte, styles []string) string {
+// scriptHashes lists the hash of each inline script of a page, once each, in page order.
+func scriptHashes(html []byte) []string {
 	var hashes []string
-	seen := map[string]bool{}
 	for _, m := range inlineScript.FindAllSubmatch(html, -1) {
 		attrs, body := m[1], m[2]
 		if bytes.Contains(attrs, []byte("src=")) || len(bytes.TrimSpace(body)) == 0 {
 			continue
 		}
 		sum := sha256.Sum256(body)
-		h := "'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'"
-		if !seen[h] {
-			seen[h] = true
+		if h := "'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'"; !slices.Contains(hashes, h) {
 			hashes = append(hashes, h)
 		}
 	}
-	scripts := "'self'"
-	if len(hashes) > 0 {
-		scripts += " " + strings.Join(hashes, " ")
+	return hashes
+}
+
+// pagePolicy is what a page's CSP lists besides its origin: the hashes of its inline scripts
+// and of the known runtime stylesheets.
+type pagePolicy struct {
+	scripts, styles []string
+}
+
+// staticDir is where the build's own files are, each named by its content's hash.
+const staticDir = "/_next/static/"
+
+// validHost matches a Host header that can stand in a CSP host-source as it is: a name or an
+// IPv4 address, or a bracketed IPv6 address, with an optional port. Any other (a space or a ';'
+// would start another source or directive) gets a policy that loads nothing.
+var validHost = regexp.MustCompile(`^(?:[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?|\[[0-9A-Fa-f:.]{2,45}\])(?::[0-9]{1,5})?$`)
+
+// policy builds a page's CSP for a request to host. Scripts, stylesheets and fonts load from
+// host + /_next/static/ alone, never 'self': a file Storage serves on this origin, under /v0
+// or as a console download, is never the dashboard's script or stylesheet (ADR-022 §10.1).
+// The source has no scheme, so it matches the page's own (and its upgrade to https). It is the
+// Host the browser sent, so the dashboard works under every name it is reached by; a proxy in
+// front must pass the Host on, as the console's cross-origin check already needs.
+//
+// The rest stays on the origin: the console API, /v0 for uploads and the prefetched pages
+// (connect-src), and images, an object's preview among them (img-src). Nothing frames the
+// dashboard or is framed by it, and nothing runs as a worker or a plugin.
+func (pp *pagePolicy) policy(host string) string {
+	static := "'none'"
+	if validHost.MatchString(host) {
+		static = host + staticDir
 	}
-	style := "'self'"
-	if len(styles) > 0 {
-		style += " " + strings.Join(styles, " ")
-	}
-	return "default-src 'self'; script-src " + scripts + "; style-src " + style + "; img-src 'self' data:; " +
-		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+	scripts := strings.Join(append([]string{static}, pp.scripts...), " ")
+	styles := strings.Join(append([]string{static}, pp.styles...), " ")
+	return "default-src 'none'; script-src " + scripts + "; style-src " + styles + "; font-src " + static +
+		"; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; " +
+		"frame-ancestors 'none'"
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -204,8 +234,8 @@ func (h *Handler) serve(w http.ResponseWriter, r *http.Request, f *file, status 
 	hd := w.Header()
 	hd.Set("Content-Type", f.contentType)
 	hd.Set("ETag", f.etag)
-	if f.csp != "" {
-		hd.Set("Content-Security-Policy", f.csp)
+	if f.page != nil {
+		hd.Set("Content-Security-Policy", f.page.policy(r.Host))
 	}
 	switch {
 	case f.immutable:
