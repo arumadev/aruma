@@ -74,3 +74,20 @@
 59. **مؤقت: list ببادئة لا تنتهي بـ `/` يُقرَّر على مجلدها** ومقطع مجهول، فلا تسمح قاعدة `p/a/{x}` بقائمة `p/a` التي تعيد `p/ab`. `core/rules.go` (`rulePaths`).
 60. **قيد: اسم بمقاطع أكثر من `request_segments` للـ ruleset** (1024 افتراضيًا) **يُرفض 403**، لا 503. `core/rules.go` (`ruleRequest`).
 61. **قيد: مصدر قواعد فيه NUL يُرفض 400**، والـ rulesets لكل مشروع حتى `rules.limits.rulesets_per_project` (2,500). `tenancy/core/rules.go`.
+
+### واجهة `/v0` (S3-A)
+
+يختبرها `api/api_test.go` (`TestRoutes`: كل طلب ترسله المكتبات الثلاث يصل معالجه، وردود الموجّه بشكل الإنتاج 400 و404)، و`api/objects_test.go` (أجسام PATCH، وكل خطأ مسمّى بحالته)، و`test/acceptance/storage_v0_test.go` (كل عملية غير الرفع والتنزيل على خادم حقيقي، و`wiretest.AssertNoNull` على كل رد).
+
+- **ترتيب الرد كالإنتاج** (`bucket_probe.json`): مسار لا يسمّي عملية 400 «Invalid HTTP method/URL pair.» أيًا كان الـ bucket، ثم bucket مجهول 404 «Not Found.» قبل أي اعتماد، ثم الاعتماد. ورابط جلسة الرفع يتجاهل `Authorization`.
+- **CORS:** `*` على كل رد غير التنزيل، والأخطاء منه، بلا `Allow-Credentials`؛ و`nosniff` و`private, max-age=0` على كل رد JSON (E §1).
+
+| # (ADR-023 §3) | الفرق | التصنيف | المصدر | الموضع |
+|---|---|---|---|---|
+| 62 | الاعتماد الذي لا يُقبل 401، ومنه `Bearer <idToken>` وحساب خدمة مشروع آخر | مؤقت | E §7 | `api.principal` |
+| 63 | رمز CLI للمالك يتجاوز القواعد، ويُربط بالحساب فيُفحص عند إنهاء الرفع | مؤقت | ADR-022 §15 | `api.admin` |
+| 64 | preflight على bucket مجهول 404، وعلى موجود 204؛ وCORS التنزيل من قواعد الـ bucket بدلالة GCS | مؤقت | `bucket_probe.json`، ADR-022 §11 | `api.preflight`، `api.mediaCORS` |
+| 65 | `upload_requests_per_ip` 503 مع `Retry-After`، و`ErrTooManyUploads` 429، و`Retry-After` بين 1 و60 ثانية | مؤقت | A §5.3، ADR-022 §12 | `api.ipCounter`، `api.writeError` |
+| 66 | `create_token` يغلب `delete_token` حين يجتمعان | مؤقت | `tokens.json` | `api.tokens` |
+| 67 | `maxResults` غير عدد صحيح موجب 400، و`startOffset`/`endOffset` تُتجاهل | مؤقت | A §3.7 | `api.list` |
+| 68 | جسم PATCH بقيمة غير نصية 400، وفوق الحد 413، والفارغ لا يغيّر إلا الـ metageneration | مؤقت | A §3.5 | `api.readPatch` |
