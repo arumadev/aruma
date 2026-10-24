@@ -180,6 +180,8 @@ func (a *API) writeBodyError(w http.ResponseWriter, r *http.Request, body *paced
 		a.writeError(w, r, errTooSlow)
 	case body.err != nil:
 		a.writeError(w, r, errBodyCut)
+	case errors.Is(err, wire.ErrBadContentType):
+		a.writeError(w, r, statusError(http.StatusBadRequest, errBadContentType))
 	case errors.Is(err, wire.ErrBadMultipart):
 		a.writeError(w, r, statusError(http.StatusBadRequest, "Invalid multipart/related body."))
 	default:
@@ -195,6 +197,11 @@ var (
 	// errBodyCut is a body that broke before its end.
 	errBodyCut = statusError(http.StatusBadRequest, "The request body ended before its length.")
 )
+
+// errBadContentType is the message of a multipart upload whose Content-Type is not
+// multipart/related with a boundary, the words the conformance tests look for (CT,
+// firebase.endpoints.test.ts:144-152).
+const errBadContentType = "Bad content type. A multipart upload is multipart/related with a boundary."
 
 // uploadSession serves a POST or PUT on an upload session URL (?upload_id=): a chunk, a query,
 // a cancel or a finalize, by X-Goog-Upload-Command (A §3.11-3.13). id is the session id from the

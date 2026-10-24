@@ -317,6 +317,9 @@ func (a *API) uploadError(w http.ResponseWriter, body *requestBody, err error, b
 		return
 	}
 	switch {
+	case errors.Is(cause, wire.ErrBadContentType):
+		// The words of the conformance tests (CT, gcs.endpoints.test.ts:320-330).
+		a.writeError(w, invalidf("Bad content type. A multipart upload is multipart/related with a boundary."), "", "")
 	case errors.Is(cause, wire.ErrBadMultipart):
 		a.writeError(w, invalidf("The multipart/related body is malformed: one JSON part, then the media."), "", "")
 	case body.err != nil && errors.Is(body.err, os.ErrDeadlineExceeded):

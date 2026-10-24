@@ -13,6 +13,11 @@ import (
 // whose JSON part is over its cap.
 var ErrBadMultipart = errors.New("wire: malformed multipart/related body")
 
+// ErrBadContentType is the ErrBadMultipart of a request whose Content-Type is not
+// multipart/related with a valid boundary: the body is not read at all. The surfaces answer it
+// "Bad content type." (CT, firebase.endpoints.test.ts:144-152, gcs.endpoints.test.ts:320-330).
+var ErrBadContentType = fmt.Errorf("%w: Content-Type is not multipart/related with a boundary", ErrBadMultipart)
+
 // RelatedReader is a multipart/related upload, read as a stream: the JSON part whole, then the
 // media part as it arrives (ADR-022 §6.1). Nothing is held in memory but the JSON.
 type RelatedReader struct {
@@ -92,15 +97,15 @@ func NewRelatedReader(body io.Reader, contentType string, maxJSON int64) (*Relat
 func relatedBoundary(contentType string) (string, error) {
 	t, params, err := mime.ParseMediaType(contentType)
 	if err != nil || t != "multipart/related" {
-		return "", fmt.Errorf("%w: Content-Type is not multipart/related", ErrBadMultipart)
+		return "", ErrBadContentType
 	}
 	b := params["boundary"]
 	if b == "" || len(b) > maxBoundary || b[len(b)-1] == ' ' {
-		return "", fmt.Errorf("%w: bad boundary", ErrBadMultipart)
+		return "", fmt.Errorf("%w: bad boundary", ErrBadContentType)
 	}
 	for i := range len(b) {
 		if !bchar(b[i]) {
-			return "", fmt.Errorf("%w: bad boundary", ErrBadMultipart)
+			return "", fmt.Errorf("%w: bad boundary", ErrBadContentType)
 		}
 	}
 	return b, nil
