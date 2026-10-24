@@ -17,7 +17,7 @@ func TestConcurrentEvaluate(t *testing.T) {
 	isOwner := fn("isOwner", []string{"p"}, []*let{letb("seen", call("exists", ident("p")))}, ident("seen"))
 	body := block{functions: []*function{isOwner}, matches: []*match{
 		matchb("/{all=**}", block{allows: []*allow{
-			allowb("get", and(or(list(tru(), ident("all")), tru()), call("isOwner", ident("all")))),
+			allowb("get", and(or(listx(tru(), ident("all")), tru()), call("isOwner", ident("all")))),
 			allowb("list", ternary(call("exists", ident("all")), tru(), errExpr())),
 		}}),
 	}}
@@ -78,7 +78,7 @@ func TestInflightIsBounded(t *testing.T) {
 		elems[i] = tru()
 	}
 	body := block{matches: []*match{matchb("/{all=**}", block{allows: []*allow{
-		allowb("get", and(or(list(elems...), tru()), call("exists", ident("all")))),
+		allowb("get", and(or(listx(elems...), tru()), call("exists", ident("all")))),
 	}})}}
 	rs := compile(t, Firestore, rulesFile("2", Firestore, body))
 	perEval := int64(len(elems))*valueBytes + 5*16 + 24 // the list, and the path {all=**} took

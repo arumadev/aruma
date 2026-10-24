@@ -136,14 +136,16 @@ func TestLexUnquote(t *testing.T) {
 	}
 }
 
-// The lone surrogate is WTF-8's form, distinct from U+FFFD, for every surrogate.
-func TestLexAppendSurrogate(t *testing.T) {
+// A lone surrogate escape lexes to WTF-8's form (wtf8.go), distinct from U+FFFD, for every
+// surrogate; the library decodes it back to the surrogate.
+func TestLexLoneSurrogate(t *testing.T) {
 	for r := rune(0xD800); r <= 0xDFFF; r++ {
-		var b strings.Builder
-		lexAppendSurrogate(&b, r)
-		got := b.String()
-		if len(got) != 3 || got[0] != 0xED || got[1] < 0xA0 || got[1] > 0xBF || got[2] < 0x80 || got[2] > 0xBF {
-			t.Fatalf("%U: % x", r, got)
+		got := lexUnquote(fmt.Sprintf(`'\u%04X'`, r))
+		if got != lone(r) {
+			t.Fatalf("%U: % x, want % x", r, got, lone(r))
+		}
+		if d, n := decodeWTF8(got); d != r || n != 3 {
+			t.Fatalf("%U: decodes to %U in %d bytes", r, d, n)
 		}
 	}
 }

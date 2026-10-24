@@ -210,7 +210,7 @@ func show(b *compiledBlock, version int, path []Segment) string {
 	for i, v := range vars {
 		val := "?"
 		if v.lazy {
-			v.v, _ = pathOf(m, v.run)
+			v.v, _ = globPath(m, v.run)
 		}
 		if v.ok {
 			if s, ok := v.v.AsString(); ok {

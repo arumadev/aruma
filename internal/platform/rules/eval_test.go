@@ -21,7 +21,7 @@ func and(x, y expr) expr               { return &binaryExpr{op: tokAnd, x: x, y:
 func or(x, y expr) expr                { return &binaryExpr{op: tokOr, x: x, y: y} }
 func not(x expr) expr                  { return &unaryExpr{op: tokNot, x: x} }
 func ternary(c, a, b expr) expr        { return &condExpr{test: c, yes: a, no: b} }
-func list(xs ...expr) expr             { return &listExpr{elems: xs} }
+func listx(xs ...expr) expr            { return &listExpr{elems: xs} }
 func call(n string, args ...expr) expr { return &callExpr{fn: ident(n), args: args} }
 func nscall(ns, n string, args ...expr) expr {
 	return &callExpr{fn: &memberExpr{x: ident(ns), name: n}, args: args}
@@ -228,8 +228,8 @@ func TestErrorAbsorption(t *testing.T) {
 		{"true ? E : true", ternary(tru(), E(), tru()), OutcomeError},
 		{"true ? 32 : true", ternary(tru(), n32(), tru()), OutcomeError},
 		{"a condition that is not a boolean", n32(), OutcomeError},
-		{"a list", list(tru()), OutcomeError},
-		{"E in a list", list(E(), tru()), OutcomeError},
+		{"a list", listx(tru()), OutcomeError},
+		{"E in a list", listx(E(), tru()), OutcomeError},
 		{"null", lit(Null()), OutcomeError},
 		{"true", tru(), OutcomeTrue},
 		{"false", fls(), OutcomeFalse},
@@ -430,7 +430,7 @@ func TestExpressionLimit(t *testing.T) {
 // it can (ADR-021 §4, abort against evalError).
 func TestAbortIsNotAbsorbed(t *testing.T) {
 	body := docsBlock(block{matches: []*match{matchb("/c/{id}", block{allows: []*allow{
-		allowb("get", or(list(tru()), tru())),
+		allowb("get", or(listx(tru()), tru())),
 	}})}})
 	rs := compile(t, Firestore, rulesFile("2", Firestore, body))
 	if d := evaluate(t, rs, request(MethodGet, docPath("c", "d"), nil)); !d.Allow {
@@ -486,7 +486,7 @@ func TestContextCancelled(t *testing.T) {
 // is returned when it ends.
 func TestOverloadedIsAnOutage(t *testing.T) {
 	body := docsBlock(block{matches: []*match{matchb("/c/{id}", block{allows: []*allow{
-		allowb("get", or(list(tru(), tru()), tru())),
+		allowb("get", or(listx(tru(), tru()), tru())),
 	}})}})
 	rs := compile(t, Firestore, rulesFile("2", Firestore, body))
 	req := request(MethodGet, docPath("c", "d"), nil)

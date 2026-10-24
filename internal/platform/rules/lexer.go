@@ -415,7 +415,7 @@ func lexUnquote(lit string) string {
 						continue
 					}
 				}
-				lexAppendSurrogate(&b, r)
+				b.WriteString(lone(r)) // WTF-8's form (wtf8.go)
 				continue
 			}
 		default:
@@ -466,15 +466,6 @@ func (c *posCursor) at(s span) Position {
 	// at 128 ends at 130); an empty span ends where it starts.
 	n := utf8.RuneCountInString(c.src[start:end])
 	return Position{Line: c.line, Column: c.col, CurrentOffset: c.cp, EndOffset: c.cp + max(n-1, 0)}
-}
-
-// lexAppendSurrogate writes a lone surrogate, U+D800 to U+DFFF, as WTF-8 does: the three bytes
-// UTF-8 would give it (ED A0..BF 80..BF), which no valid UTF-8 holds. S1-B's wtf8.go has the
-// shared form; this copy goes when the tasks merge (S1-E).
-func lexAppendSurrogate(b *strings.Builder, r rune) {
-	b.WriteByte(byte(0xE0 | r>>12))
-	b.WriteByte(byte(0x80 | r>>6&0x3F))
-	b.WriteByte(byte(0x80 | r&0x3F))
 }
 
 // lexBytesHasU reports whether a bytes literal, as written, holds a \u escape, which the

@@ -109,7 +109,8 @@ func TestTrace(t *testing.T) {
 	rs := compile(t, Storage, f)
 	req := request(MethodGet, Literals("b", "x", "o"), nil)
 	d := evaluate(t, rs, req)
-	want := StatementResult{Position: Position{Line: 3, Column: 5, CurrentOffset: 50, EndOffset: 74},
+	// EndOffset is the statement's last code point, inclusive, as the emulator reports it (issues.go).
+	want := StatementResult{Position: Position{Line: 3, Column: 5, CurrentOffset: 50, EndOffset: 73},
 		Methods: []string{"read", "write"}, Outcome: OutcomeError, Message: "Type error. Received: [int] Expected: [bool]."}
 	if d.Allow || len(d.Statements) != 1 || !equalResult(d.Statements[0], want) {
 		t.Fatalf("%+v\nwant %+v", d.Statements, want)

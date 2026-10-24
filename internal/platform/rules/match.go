@@ -167,8 +167,8 @@ func bind(vars []binding, s matchSeg, took []Segment) {
 	vars[s.slot] = binding{ok: true, run: took, lazy: true}
 }
 
-// pathOf builds the Path value of a {x=**} run, charging it to m.
-func pathOf(m *meter, run []Segment) (Value, error) {
+// globPath builds the Path value of a {x=**} run, charging it to m.
+func globPath(m *meter, run []Segment) (Value, error) {
 	if err := m.value(0, int64(len(run))); err != nil {
 		return Value{}, err
 	}

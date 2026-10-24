@@ -77,9 +77,9 @@ func isAbort(err error) bool {
 	return errors.As(err, &a)
 }
 
-// place gives an evaluation error that has no place yet the span of the expression it arose in.
+// spanned gives an evaluation error that has no place yet the span of the expression it arose in.
 // It copies the error, which the library may share.
-func place(err error, at span) error {
+func spanned(err error, at span) error {
 	if e, ok := err.(*evalError); ok && e.at == (span{}) {
 		c := *e
 		c.at = at
@@ -143,7 +143,7 @@ func (ev *evaluator) eval(e expr, fr *frame) (Value, error) {
 		err = errorf("Unsupported expression.")
 	}
 	if err != nil {
-		return Value{}, place(err, e.pos())
+		return Value{}, spanned(err, e.pos())
 	}
 	return v, nil
 }
@@ -198,7 +198,7 @@ func (ev *evaluator) pathVar(slot int) (Value, error) {
 	case !b.ok:
 		return Value{}, &evalError{} // took an unknown segment: no value, no message
 	case b.lazy:
-		v, err := pathOf(ev.m, b.run)
+		v, err := globPath(ev.m, b.run)
 		if err != nil {
 			return Value{}, err
 		}
@@ -230,9 +230,9 @@ func (ev *evaluator) logical(e *binaryExpr, fr *frame) (Value, error) {
 			if rb, ok := r.AsBool(); ok {
 				return Bool(rb), nil
 			}
-			return Value{}, place(notBool(r), e.y.pos())
+			return Value{}, spanned(notBool(r), e.y.pos())
 		}
-		lerr = place(notBool(l), e.x.pos())
+		lerr = spanned(notBool(l), e.x.pos())
 	}
 	if err := ev.spend(1); err != nil {
 		return Value{}, err
@@ -267,7 +267,7 @@ func (ev *evaluator) cond(e *condExpr, fr *frame) (Value, error) {
 	}
 	b, ok := c.AsBool()
 	if !ok {
-		return Value{}, place(notBool(c), e.test.pos())
+		return Value{}, spanned(notBool(c), e.test.pos())
 	}
 	if b {
 		return ev.eval(e.yes, fr)
@@ -504,7 +504,7 @@ func (ev *evaluator) mapLit(e *mapExpr, fr *frame) (Value, error) {
 	for i := 0; i < len(vals); i += 2 {
 		k, ok := vals[i].AsString()
 		if !ok {
-			return Value{}, place(errorf(msgTypeError, vals[i].Kind(), KindString), e.keys[i/2].pos())
+			return Value{}, spanned(errorf(msgTypeError, vals[i].Kind(), KindString), e.keys[i/2].pos())
 		}
 		size += int64(len(k))
 	}
