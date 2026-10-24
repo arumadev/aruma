@@ -3,7 +3,7 @@
 
 import Foundation
 
-/// Handles the Firebase Auth endpoints only (see ``ArumaRedirect``): it performs the rewritten request
+/// Handles the Firebase Auth endpoints and the Cloud Storage fallback only (see ``ArumaRedirect``): it performs the rewritten request
 /// with its own URLSession and relays the response, data and errors to the original client.
 /// The client still sees the original Google URL on the response.
 @objc(ArumaRedirectURLProtocol)
@@ -14,7 +14,7 @@ public final class ArumaRedirectURLProtocol: URLProtocol {
   override public class func canInit(with request: URLRequest) -> Bool {
     guard ArumaRedirect.mode != nil, let url = request.url else { return false }
     if URLProtocol.property(forKey: handledKey, in: request) != nil { return false }
-    return AuthEndpoints.matches(url)
+    return AuthEndpoints.matches(url) || AuthEndpoints.isStorageHost(url)
   }
 
   override public class func canonicalRequest(for request: URLRequest) -> URLRequest {
@@ -40,6 +40,23 @@ public final class ArumaRedirectURLProtocol: URLProtocol {
     case .blocked(let reason):
       fail(URLError(.cannotConnectToHost, userInfo: [NSLocalizedDescriptionKey: "ArumaRedirect: \(reason)"]))
     case .forward(let base):
+      if AuthEndpoints.isStorageHost(original) {
+        // Only an official FirebaseStorage sends this: the patched one goes to ArumaURL itself.
+        guard AuthEndpoints.storageRedirect else {
+          if AuthEndpoints.firstStorageRequest() {
+            ArumaRedirect.log("refused a Cloud Storage request to \(AuthEndpoints.storageHost): "
+              + "FirebaseStorage is the official build and ArumaStorageRedirect is false. "
+              + "Use the patched FirebaseStorage (sdk/ios/firebase-storage-patch)")
+          }
+          return fail(URLError(.cannotConnectToHost, userInfo: [NSLocalizedDescriptionKey:
+              "ArumaRedirect: Cloud Storage requests to Google are refused (ArumaStorageRedirect is false)"]))
+        }
+        if AuthEndpoints.firstStorageRequest() {
+          ArumaRedirect.log("Cloud Storage requests to \(AuthEndpoints.storageHost) are redirected at "
+            + "run time: FirebaseStorage is the official build, so its download URLs name Google. "
+            + "Use the patched FirebaseStorage (sdk/ios/firebase-storage-patch), or ArumaUrls.toArumaUrl")
+        }
+      }
       guard let target = AuthEndpoints.rewrite(original, to: base) else {
         return fail(URLError(.unsupportedURL))
       }

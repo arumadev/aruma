@@ -1,0 +1,19 @@
+# The CocoaPods variant of the iOS Cloud Storage e2e (../cocoapods.sh): FirebaseStorage 12.19.0,
+# the last release Firebase published to CocoaPods, patched by ArumaRedirect's helper.
+platform :ios, '15.0'
+project 'StorageE2EPods.xcodeproj'
+
+target 'StorageE2EHost' do
+end
+
+target 'StorageE2ETests' do
+  use_frameworks! :linkage => :static
+  pod 'FirebaseStorage', '12.19.0'
+  pod 'FirebaseAuth', '12.19.0'
+  pod 'ArumaRedirect', :path => '../../../../sdk/ios/ArumaRedirect'
+end
+
+post_install do |installer|
+  require_relative '../../../../sdk/ios/ArumaRedirect/Scripts/aruma_storage'
+  ArumaStorage.patch!(installer)
+end

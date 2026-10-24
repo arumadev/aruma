@@ -43,3 +43,19 @@ com.google.firebase.storage.network.NetworkRequest with the Aruma server's
 base URL, and changes nothing else. No firebase-storage code is included in
 this repository. Every app built with the plugin carries a notice of the
 change in META-INF/aruma/firebase-storage-MODIFIED.txt.
+
+firebase-ios-sdk (https://github.com/firebase/firebase-ios-sdk)
+Copyright Google LLC
+Licensed under the Apache License, Version 2.0.
+sdk/ios/firebase-storage-patch/storage-host.patch modifies FirebaseStorage
+(FirebaseStorage/Sources/Storage.swift, Internal/StorageUtils.swift,
+Internal/StorageGetDownloadURLTask.swift and Internal/StorageFetcherService.swift,
+and adds Internal/ArumaStorageOrigin.swift and a unit test) so that it reads
+its server from ArumaURL in the app's Info.plist, and makes its port optional;
+nothing else is changed. make-mirror.sh builds the patched release as a
+SwiftPM mirror whose every commit carries ARUMA-NOTICE.md
+(sdk/ios/firebase-storage-patch/MIRROR-NOTICE.md), and
+sdk/ios/ArumaRedirect/Scripts/aruma_storage.rb applies the same patch to the
+FirebaseStorage pod of a CocoaPods app. Each modified file states the change
+in its header. No firebase-ios-sdk code is included in this repository other
+than the context lines of the patch.
