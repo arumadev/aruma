@@ -204,7 +204,7 @@ func (e *env) read(b Bucket, name string) string {
 	if err != nil || row == nil {
 		e.t.Fatalf("read %s: %v, %v", name, row, err)
 	}
-	r, err := e.store.Open(row.BlobKey)
+	r, err := e.s.store.Open(row.BlobKey)
 	if err != nil {
 		e.t.Fatalf("open %s's file: %v", name, err)
 	}
