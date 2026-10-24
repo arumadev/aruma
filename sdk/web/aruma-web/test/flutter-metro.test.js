@@ -101,6 +101,17 @@ describe('metro', () => {
     assert.throws(() => withArumaStorage(config, { url: 'http://aruma.example.com' }), /not loopback/);
   });
 
+  test('the serializer refuses a @firebase/storage module a later transformer did not rewrite', () => {
+    const seen = [];
+    const c = withArumaStorage({ transformer: { babelTransformerPath: '/upstream.js' }, serializer: { processModuleFilter: (m) => seen.push(m.path) > 0 } }, { url: 'http://127.0.0.1:9420' });
+    const mod = (path, code) => ({ path, output: [{ data: { code } }] });
+    const id = '/app/node_modules/@firebase/storage/dist/index.esm.js';
+    assert.equal(c.serializer.processModuleFilter(mod(id, 'var DEFAULT_HOST = "127.0.0.1:9420";')), true);
+    assert.equal(c.serializer.processModuleFilter(mod('/app/App.js', 'x')), true);
+    assert.deepEqual(seen, [id, '/app/App.js']);
+    assert.throws(() => c.serializer.processModuleFilter(mod(id, ESM_SNIPPET)), /bundled without the Storage rewrite.*apply withArumaStorage last/);
+  });
+
   test('transform rewrites @firebase/storage and hands every file to the upstream transformer', () => {
     const dir = mkdtempSync(join(tmpdir(), 'aruma-metro-'));
     try {

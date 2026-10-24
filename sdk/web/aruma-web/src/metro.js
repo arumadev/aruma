@@ -18,9 +18,14 @@
 // The settings reach the workers through the environment (ARUMA_WEB_METRO), which Metro's workers
 // inherit from the process that loaded metro.config.js; they are part of the cache key, so a new
 // URL transforms the files again.
+//
+// A config wrapper applied after this one (react-native-svg-transformer, …) may set its own
+// babelTransformerPath and drop the rewrite. Metro gives a transformer no end of build, but its
+// serializer asks serializer.processModuleFilter about every module it writes: there a
+// @firebase/storage module whose code still names Google, or not Aruma, fails the bundle.
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { isStorageModule, literalProblem, rewriteStorageLiterals, storageBase } from './storage.js';
+import { isStorageModule, literalProblem, rewriteStorageLiterals, storageBase, storageModuleRewritten } from './storage.js';
 
 const require = createRequire(import.meta.url);
 const ENV = 'ARUMA_WEB_METRO';
@@ -74,5 +79,22 @@ export function withArumaStorage(config, { url, allowInsecure = false } = {}) {
   const current = config.transformer?.babelTransformerPath;
   const upstreamPath = current && current !== self ? current : require.resolve('@react-native/metro-babel-transformer');
   process.env[ENV] = JSON.stringify({ url: base.origin, allowInsecure: Boolean(allowInsecure), upstream: upstreamPath });
-  return { ...config, transformer: { ...config.transformer, babelTransformerPath: self } };
+  const filter = config.serializer?.processModuleFilter;
+  return {
+    ...config,
+    transformer: { ...config.transformer, babelTransformerPath: self },
+    serializer: {
+      ...config.serializer,
+      processModuleFilter(module) {
+        if (isStorageModule(module.path)) {
+          const code = (module.output ?? []).map((o) => o?.data?.code ?? '').join('\n');
+          if (!storageModuleRewritten(code, base)) throw new Error(notRewritten(module.path));
+        }
+        return filter ? filter(module) : true;
+      },
+    },
+  };
 }
+
+const notRewritten = (path) =>
+  `@aruma/web/metro: ${path} was bundled without the Storage rewrite, so it keeps firebasestorage.googleapis.com. A config wrapper applied after withArumaStorage replaced transformer.babelTransformerPath (react-native-svg-transformer and the like): apply withArumaStorage last, around the others`;

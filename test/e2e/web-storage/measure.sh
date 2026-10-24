@@ -176,33 +176,40 @@ literals() {
 
 expo_app() {
   local dir=$apps/expo
-  log "Expo: Metro, the web export in the browser, the Android bundle"
-  rm -rf "$dir/dist" "$dir/dist-android" "$dir/.expo"
+  log "Expo: Metro, the web export in the browser, the Android bundle, react-native-svg-transformer"
+  rm -rf "$dir/dist" "$dir/dist-"* "$dir/.expo"
   mkdir -p "$dir"
-  package "$dir" '{"expo": "^58", "firebase": "^13"}' '{"main": "index.js", "type": "commonjs"}'
+  package "$dir" '{"expo": "^58", "firebase": "^13", "react-native-svg-transformer": "^1"}' '{"main": "index.js", "type": "commonjs"}'
   cp apps/expo/metro.config.js apps/expo/app.json apps/expo/index.js "$dir/"
   cp src/ops.js "$dir/ops.js"
   install_app "$dir"
   # React, React Native and the web packages at the versions this Expo bundles (what `expo install`
   # would pick, without asking Expo's servers).
   local peers
-  peers=$(cd "$dir" && node -p 'const b = require("expo/bundledNativeModules.json"); ["react", "react-dom", "react-native", "react-native-web", "@expo/metro-runtime"].map((k) => `${k}@${b[k]}`).join(" ")')
+  peers=$(cd "$dir" && node -p 'const b = require("expo/bundledNativeModules.json"); ["react", "react-dom", "react-native", "react-native-web", "@expo/metro-runtime", "react-native-svg"].map((k) => `${k}@${b[k]}`).join(" ")')
   # shellcheck disable=SC2086
   (cd "$dir" && npm install --no-audit --no-fund --silent --install-links $peers)
-  note "expo: $(cd "$dir" && node -p 'require("expo/package.json").version'), react-native $(cd "$dir" && node -p 'require("react-native/package.json").version'), metro $(cd "$dir" && node -p 'require("metro/package.json").version')"
-  if (cd "$dir" && EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 CI=1 npx expo export -p web --output-dir dist --clear >"$gen/build-expo-web.log" 2>&1); then
-    note "        expo web bundle: $(literals $(find "$dir/dist" -name '*.js'))"
-    playwright expo "expo=$dir/dist" expo-web
-  else
-    note "FAILED  expo-web: expo export failed (see $gen/build-expo-web.log)"
-    grep -m5 -i "aruma\|error" "$gen/build-expo-web.log" | sed 's/^/          /'
-  fi
-  if (cd "$dir" && EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 CI=1 npx expo export -p android --output-dir dist-android --no-bytecode --clear >"$gen/build-expo-android.log" 2>&1); then
-    note "ok      expo-android bundle: $(literals $(find "$dir/dist-android" -name '*.js' -o -name '*.hbc'))"
-  else
-    note "FAILED  expo-android: expo export failed (see $gen/build-expo-android.log)"
-    grep -m5 -i "aruma\|error" "$gen/build-expo-android.log" | sed 's/^/          /'
-  fi
+  note "expo: $(cd "$dir" && node -p 'require("expo/package.json").version'), react-native $(cd "$dir" && node -p 'require("react-native/package.json").version'), metro $(cd "$dir" && node -p 'require("metro/package.json").version'), react-native-svg-transformer $(cd "$dir" && node -p 'require("react-native-svg-transformer/package.json").version')"
+  local svg platform out
+  # web and android; the SVG transformer not at all, before @aruma/web (supported) and after it (refused).
+  for svg in none before after; do
+    for platform in web android; do
+      out=dist-$platform-$svg
+      if (cd "$dir" && ARUMA_E2E_SVG=$svg EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 CI=1 npx expo export -p "$platform" --output-dir "$out" --no-bytecode --clear >"$gen/build-expo-$platform-$svg.log" 2>&1); then
+        if [[ $svg == after ]]; then
+          note "FAILED  expo-$platform-svg-after: the bundle was written without the rewrite: $(literals $(find "$dir/$out" -name '*.js'))"
+        else
+          note "ok      expo-$platform-svg-$svg bundle: $(literals $(find "$dir/$out" -name '*.js'))"
+          if [[ $platform == web ]]; then playwright expo "expo=$dir/$out" "expo-web-svg-$svg"; fi
+        fi
+      elif [[ $svg == after ]] && grep -q 'was bundled without the Storage rewrite' "$gen/build-expo-$platform-$svg.log"; then
+        note "ok      expo-$platform-svg-after: refused: $(grep -o '@aruma/web/metro: [^,]*' "$gen/build-expo-$platform-$svg.log" | head -1 | cut -c1-110)"
+      else
+        note "FAILED  expo-$platform-svg-$svg: expo export failed (see $gen/build-expo-$platform-$svg.log)"
+        grep -m5 -i "aruma\|error" "$gen/build-expo-$platform-$svg.log" | sed 's/^/          /'
+      fi
+    done
+  done
 }
 
 flutter_app() {
