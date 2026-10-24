@@ -330,14 +330,15 @@ type Service struct {
 
 // sessionLocks is a lock per upload session, held by a chunk across its append, Sync and the
 // update of received, and taken by finalize, cancel and expiry too (ADR-022 §6.1). An entry
-// lives while a request holds or waits for it.
+// lives while a request holds or waits for it. A waiter leaves when its request's context ends,
+// so requests piled on a session held by a slow one do not outlive their clients.
 type sessionLocks struct {
 	mu   sync.Mutex
 	held map[string]*sessionLock // by the id hash, as a string
 }
 
 type sessionLock struct {
-	mu   sync.Mutex
+	held chan struct{} // one slot: full while a request holds the lock
 	refs int
 }
 
