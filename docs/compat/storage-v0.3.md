@@ -1,8 +1,26 @@
 # توافق Cloud Storage for Firebase: الإصدار 0.3
 
-- **الحالة:** بدأه S2-B وS2-C وS2-E كلٌّ على فرعه (2026-10-24)، وجمعه دمج S2 في وثيقة واحدة بقسم لكل مجال، وأضاف دمج S3 إلى S5 أقسام واجهاتها. وملأ S3-D قسم «اختبارات Firebase الرسمية» بنتائج `test/compat/storage` (2026-10-24)، ويضيف S7 أرقامه (storage-layout.md).
+- **الحالة:** بدأه S2-B وS2-C وS2-E كلٌّ على فرعه (2026-10-24)، وجمعه دمج S2 في وثيقة واحدة بقسم لكل مجال، وأضاف دمج S3 إلى S5 أقسام واجهاتها. وملأ S3-D قسم «اختبارات Firebase الرسمية» بنتائج `test/compat/storage` (2026-10-24)، ويضيف S7 أرقامه (storage-layout.md)، وثبّتها S7-C من آخر تشغيل أخضر لـ CI على `main` (القسم التالي).
 - **المرجع السلوكي:** الإنتاج حيث رُصد (`test/oracle/storage/production`، وملاحظات Pyric على Storage حقيقي)، ثم المحاكي الرسمي من firebase-tools 15.34.0 (`test/oracle/storage/emulator`)، ثم مجموعات Google.
 - **التصنيف:** الفروق كلها في ADR-023 §3 بأرقامها، كل منها بمصدره وتصنيفه: **قيد** (أشد من Firebase عمدًا)، أو **مؤقت** (بلا دليل إنتاج)، أو **أصح من المحاكي**. وكل قرار مؤقت موضع واحد في الكود، وكل صف أو بند هنا يحمل رقم بنده في ADR-023 §3.
+
+## أرقام الإصدار (S7-C)
+
+من تشغيل CI [40111454561](https://github.com/arumadev/aruma/actions/runs/40111454561) على `main` عند `d9391be` (2026-10-24، Go 1.26.0 على المشغّل؛ وبعده يبني CI بـ Go 1.27.3)، وكل وظيفة فيه خضراء. لم يُعَد تشغيل شيء منها محليًا. والوظائف الموسومة بالحارس تعمل تحت `test/ci/egress-guard.sh`، وفي كل منها «no packet went to an address off the machine».
+
+| المجموعة | وظيفة CI | النتيجة |
+|---|---|---|
+| اختبارات Firebase الرسمية (القسم التالي) | Storage compat | js-node 13/13، وjs-browser 13/13، وjs-compat 8/8، و`ct` 111/119 (ب 6، ج 2، أ 0): **145 من 153**. و`emulatorOnly` الأربعة خارج العدد (2 تنجح). و«0 connections refused off this machine, 131 to loopback» |
+| إعادة تسجيلات المحاكي | Storage compat | 13 سيناريو، و188 خطوة، و836 فرقًا من 64 نوعًا: أ 0، وب 24 نوعًا (293)، وج 40 نوعًا (543) |
+| مصفوفة المتصفحات (ADR-022 §10.6) | Browser matrix (chromium، firefox، webkit) | 14/14 على كل محرك |
+| الويب: البناءات وSvelteKit (S6-W) | Web Storage e2e | Vite 8 وwebpack وesbuild وRollup وRspack والاحتياط وAuth وحده تُبنى، والبناءات التي يجب أن تفشل تفشل، وPlaywright 9/9 |
+| الويب: Vite 5 إلى 8 وNext.js وExpo (S6-W) | Web Storage measured | 36/36 فحصًا (Vite 5.4.21 و6.4.5 و7.3.7 و8.3.5، وNext.js 16.4.3 بـ webpack وTurbopack وdev، وExpo 58.0.19 بـ Metro 0.87.1) |
+| Flutter web (S6-W) | Web Storage measured (Flutter web) | 4/4: Firebase JS SDK 13.1.0، ومقطع واحد في `index.html` بعد تشغيلين، و`firebase-storage-13.1.0.js` بلا نص نطاق Google |
+| مكتبات Admin وأداة `firebase` (S4-D، S5-D) | Storage Admin SDKs and firebase-tools | `TestStorageGCSWithTheAdminSDKs`: Node 12/12 خطوة، وGo 12/12 (ومعها حارس الشبكة: كل اتصال إلى loopback)؛ و`TestStorageWithTheFirebaseCLI` ناجح |
+| حزم Admin (smoke) | SDK smoke | `@aruma/admin-storage` 15/15، وNode على loopback وTLS 9/9 و9/9، و`adminstorage` وsmoke Go ناجحان؛ والمجموعات الإحدى عشرة كلها «smoke tests passed» |
+| web-rtdb (v0.2، للتراجع) | Web Realtime Database e2e | 10/10 لكل من firebase 11 و12 و13، وفخ الـ long-polling (`rtdb-lp-browser.sh`) ناجح |
+| web-auth (v0.1، للتراجع) | Web Auth e2e | وضع المحاكي ووضع بناء الإنتاج: 8 ناجحة وواحدة متخطّاة لكل من firebase 11 و12 و13؛ ووضع الإنتاج 9/9 لكل منها؛ واختبارات الوحدة 80/80 |
+| Go | Go (lint, unit, acceptance, isolation) | `make lint` و`make sqlc-check` و`make test` نظيفة، ومنها أوراكل القواعد (`rules-v0.3.md`) |
 
 ## اختبارات Firebase الرسمية
 
@@ -174,6 +192,7 @@ firebase-tools 15.34.0 نفسها (مثبّتة في `test/acceptance/testdata/f
 
 | # (ADR-023 §3) | الفرق | التصنيف | المصدر | الموضع |
 |---|---|---|---|---|
+| 17 | `"metadata": null` في PATCH يمسح الـ metadata المخصّصة كلها ثم يدمج ما بعده، والرموز تبقى (على GCS تُمسح معها، البند 48). **وiOS يرسله**: `updateMetadata(StorageMetadata())` بحقل واحد يرسل `{"metadata": null, "bucket": "", "cacheControl": "no-cache"}` كلما كانت `customMetadata` فارغة، فتُمسح metadata الكائن المخصّصة كما في المحاكي ودلالة GCS؛ وبعد `getMetadata()` يرسل الخريطة كاملة و`null` لما لا يمثّله (`etag` و`downloadTokens` …)، فيبقى الرمز. وفي جسم بدء الرفع `null` لا يمسح شيئًا | مؤقت: طلب iOS مقيس، ورد الإنتاج على `/v0` غير مقيس | D، وB §4.3، وA §8.1؛ والطلب مسجّل في `test/e2e/ios-storage/recorded/update-metadata.json` (S6-I، firebase-ios-sdk 12.19.3، والـ pod 12.19.0 بالأجسام نفسها) و`test/e2e/ios-storage/README.md` | `api.readPatch`، `core.applyPatch`؛ `TestReadPatch`، و`TestParseResource` (بدء الرفع) |
 | 67 | `Firebase` برمز لا يُتحقق منه ومخطط آخر 401 (تجدّد المكتبات رمزها)؛ و`Bearer` ليس Admin لمشروع الـ bucket، ومنه `Bearer <idToken>` وحساب خدمة مشروع آخر، 403 «Permission denied.» قبل أي بحث عن كائن (مراجعة S3-D) | مؤقت | E §7، وCT (`firebase.endpoints.test.ts:662-667`، `:712-717`) | `api.principal`، `api.admin` |
 | 68 | رمز CLI للمالك يتجاوز القواعد، ويُربط بالحساب فيُفحص عند إنهاء الرفع | مؤقت | ADR-022 §15 | `api.admin` |
 | 69 | preflight على bucket مجهول 404، وعلى موجود 204؛ وCORS التنزيل من قواعد الـ bucket، و`Allow-Headers` يعيد الترويسات المطلوبة كـ GCS JSON | مؤقت | `bucket_probe.json`، ADR-022 §11 | `api.preflight`، `api.mediaCORS` |
@@ -253,6 +272,20 @@ firebase-tools 15.34.0 نفسها (مثبّتة في `test/acceptance/testdata/f
 - **لم يُقَس:** Rolldown منفردًا (قيس داخل Vite 8)، وwebpack في وضع المراقبة، وFirefox وWebKit، وmetro على جهاز. والبناء من npm وحده: لم يُقارن `firebase-storage.js` في npm بنسخة gstatic بايتًا ببايت (لا طلب إلى Google).
 - **رابط Google بعد التبديل:** `ref(storage, link)` لرابط على `firebasestorage.googleapis.com` يرمي `storage/invalid-url` (مقيس على بناء Node المبدَّل)، كما يرفض Firebase رابطًا على مضيف غير مضيفه. والمخرج `toArumaUrl(link, url)` قبله؛ و`gs://` والرابط الموحّد يعملان.
 - **قيود مقصودة:** عنوان Aruma لـ Storage جذر النطاق (بلا مسار) واسم مضيف أو IP ومنفذ وحسب، وNode 20.19 فأحدث، وبناء الخادم لا يفشل لغياب Storage، وتطبيق Flutter web التجريبي يوجّه خطوط المحرك بعيدًا عن `fonts.gstatic.com` (ليس من Storage).
+
+### الرابط الموحّد عبر المنصات (`refFromURL`، S7-C)
+
+بديل خفيف لمصفوفة S6-X التي أُسقطت: لكل منصة، هل يعود رابط تنزيل من Aruma (`https://<aruma>/v0/b/<bucket>/o/<path>?alt=media&token=…`) إلى الكائن نفسه، ومن أي اختبار موجود. لم تُضف مجموعة جديدة، ولم يُحلَّل رابط منصة على منصة أخرى.
+
+| المنصة (مسار الإنتاج) | `refFromURL(link)` | عبر `fromArumaUrl` | الدليل |
+|---|---|---|---|
+| الويب (`@aruma/web`، التبديل وقت البناء) | ✓ الـ bucket والمسار نفساهما: المكتبة تحلّل الرابط على `storage.host`، والتبديل يجعله مضيف Aruma. ورابط على `firebasestorage.googleapis.com` يرمي `storage/invalid-url`، فـ `toArumaUrl(link, url)` قبله | لا حاجة (`gs://` يعمل) | تجربة S0-B `test/experiments/storage-path/web/node-host.mjs` (`refFromURL.setter.root` على بناء Node بـ `storage.host`، وهو ما يضبطه التبديل)، وقياس S6-W اليدوي على بناء Node المبدَّل (أعلاه)، و`toArumaUrl` في `sdk/web/aruma-web/test/storage.test.js`. **لا خطوة له في `test/e2e/web-storage`** |
+| Android (`dev.aruma.storage`) | ✓ (`Util.normalize` على المضيف بأحرف صغيرة) | ✓ `ArumaUrls.fromArumaUrl` ← `gs://` | `test/e2e/android-storage`: `StorageE2ETest.twelveOperations` (خطوة `getDownloadURL`) و`encodedNamesInEveryForm` (`a b+é.txt` و`صورة ١.png`، بالبايتات نفسها من الثلاثة)؛ و`ArumaUrlsTest` في `aruma-redirect` |
+| iOS (المرآة المرقّعة) | ✓ `reference(forURL: link)` | ✓ `ArumaUrls.fromArumaUrl(link, bucket:)` | `test/e2e/ios-storage`: `testNamesRoundTripThroughTheirLinks` (`fullPath` والـ bucket والبايتات)؛ و`ArumaUrlsTests` في `ArumaRedirect` |
+| Flutter على الجوال (الإضافة والمرآة) | ✗ يرمي: `firebase_storage` يحلّل الرابط في Dart ولا يقبل إلا مضيف Google و`localhost` و`10.0.2.2` | ✓ `fromArumaUrl` في `aruma_storage` ← `gs://` | على فرع `s6-f-flutter`، **لم يُدمج في `main` بعد**: `test/e2e/flutter-storage/app/lib/scenario.dart` (خطوة الرابط و`names`، ومعها أن `refFromURL(link)` يرمي)، و`sdk/flutter/aruma_storage/test/urls_test.dart` |
+| Admin Node (`@aruma/admin-storage`) وAdmin Go (`adminstorage`) | لا `refFromURL` في مكتبات Admin: الكائن يُسمّى باسمه | — | الاتجاه الآخر وحده: `getDownloadURL` و`DownloadURL` يعطيان الرابط الموحّد ويُفتح بلا اعتماد (`test/smoke/admin-node/storage.test.mjs` «getDownloadURL returns the unified link, which serves the bytes»، و`test/smoke/admin-go/storage` الفرعي `DownloadURL`)، في CI |
+
+- e2e Android وiOS شغّلها S6-A وS6-I على المحاكيات محليًا، وليست في CI على `main` (iOS في GitHub Actions وCodemagic يأتي مع `s6-f-flutter`). وFlutter web يستعمل مكتبة الويب، ولم يُقس `refFromURL` فيه.
 
 ### من اختبارات Firebase الرسمية (S3-D)
 
