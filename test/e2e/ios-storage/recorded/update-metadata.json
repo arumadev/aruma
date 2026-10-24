@@ -2,7 +2,7 @@
   "about": "The PATCH bodies FirebaseStorage for iOS sends for updateMetadata (ADR-023 §3-17, A §8.1), recorded from its own GTMSessionFetcher requests (kGTMSessionFetcherStartedNotification) by StorageE2ETests.updateMetadata, and what Aruma made of them. The object had customMetadata {\"origin\": \"ios-e2e\"} and one download token before case 1. Key order in the bodies is NSJSONSerialization's and varies between runs.",
   "provenance": {
     "source": "test/e2e/ios-storage/run.sh against Aruma (s6-i-ios), 2026-10-24",
-    "sdk": "firebase-ios-sdk 12.19.3 (FirebaseStorage patched by sdk/ios/firebase-storage-patch, which does not touch StorageMetadata or StorageUpdateMetadataTask), GTMSessionFetcher 5.x",
+    "sdk": "firebase-ios-sdk 12.19.3 (FirebaseStorage patched by sdk/ios/firebase-storage-patch, which does not touch StorageMetadata or StorageUpdateMetadataTask), GTMSessionFetcher 5.3.1 (and 3.5.0 in an earlier run: the same bodies); the CocoaPods run on the FirebaseStorage 12.19.0 pod sent the same bodies",
     "device": "iPhone 16 Pro Max simulator, iOS 18.5, Xcode 16.4"
   },
   "cases": [

@@ -3,8 +3,10 @@ import Foundation
 
 /// The network guard: every URLSession request in the process passes through it first.
 /// - To this machine (the Aruma server): allowed and recorded.
-/// - A Firebase Auth request to Google that ArumaRedirect takes: recorded and left to ArumaRedirect,
+/// - A Firebase request to Google that ArumaRedirect takes: recorded and left to ArumaRedirect,
 ///   which sends it to Aruma from its own session (where this guard sees it again, on loopback).
+///   Here that is Auth only: a Storage request would be refused (ArumaStorageRedirect is false),
+///   and the tests fail on any.
 /// - Anything else: refused (not connected to the internet) and recorded, and the test fails.
 ///
 /// URLProtocol.registerClass alone misses sessions built from their own configuration, as

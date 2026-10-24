@@ -68,9 +68,10 @@ An Xcode project reads its mirrors from
 `<App>.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/configuration/mirrors.json` (or the
 `.xcworkspace`'s `xcshareddata/swiftpm/configuration/`). `swift package config set-mirror` writes
 that file for a package; run it in any directory with a `Package.swift` and copy
-`.swiftpm/configuration/mirrors.json` there, as `test/e2e/ios-storage/run.sh` does. Then delete
-`Package.resolved` (or run "Reset Package Caches"): its pin is the official revision of the tag,
-which the mirror does not have.
+`.swiftpm/configuration/mirrors.json` there, as `test/e2e/ios-storage/run.sh` does. A
+`Package.resolved` keeps the official URL as `location` with the mirror's revision; one that pins
+the official revision is re-pinned to the mirror's (measured with SwiftPM 6.1.2), and the e2e
+resolves afresh anyway.
 
 Then add `ArumaURL` to the app's Info.plist (and ArumaRedirect for Auth):
 
@@ -82,10 +83,14 @@ Then add `ArumaURL` to the app's Info.plist (and ArumaRedirect for Auth):
 Measured on this repository's machine (Xcode 16.4, Swift 6.1.2); see
 `test/e2e/ios-storage/README.md` for the numbers:
 
-- `xcodebuild` honours the project's `mirrors.json`, with `exactVersion`, `from:` and a range.
-- `flutter build ios` in Swift Package Manager mode: see the e2e README.
-- Two URLs with the identity `firebase-ios-sdk` in one graph (the mirror named directly by the app,
-  the official URL by FlutterFire): see the e2e README.
+- `xcodebuild` honours the project's `mirrors.json`; SwiftPM resolves `exact:`, `from:` and a range
+  to the mirror's patched commit.
+- `flutter build ios` in Swift Package Manager mode honours `mirrors.json` in
+  `ios/Runner.xcworkspace/xcshareddata/swiftpm/configuration/`.
+- **Do not name the mirror URL directly instead.** With the mirror URL in the app and the official
+  URL in another package (FlutterFire's `exact:`), SwiftPM neither refuses nor warns: it silently
+  checks out the official, unpatched repository for the identity `firebase-ios-sdk`, in either
+  order. That alternative is safe only for an app whose graph names firebase-ios-sdk nowhere else.
 
 **CocoaPods** (the frozen releases Firebase still published there, the last being 12.19.0):
 `sdk/ios/ArumaRedirect/Scripts/aruma_storage.rb` applies this same patch in `post_install`.
@@ -114,6 +119,8 @@ FirebaseStorage مبنية من المصدر برقعة صغيرة، تُسلَ�
   غير مرقّع فيها. وتاريخه تاريخ الـ commit الرسمي، فإعادة بنائها تعطي المراجعة نفسها.
 - **الاستعمال:** `swift package config set-mirror --original https://github.com/firebase/firebase-ios-sdk --mirror
   https://github.com/arumadev/firebase-ios-sdk`، وفي مشروع Xcode ملف `mirrors.json` تحت
-  `xcshareddata/swiftpm/configuration/`، ثم حذف `Package.resolved` لأنه يثبّت المراجعة الرسمية. وتُضاف `ArumaURL` إلى Info.plist.
+  `xcshareddata/swiftpm/configuration/`، وتُضاف `ArumaURL` إلى Info.plist. ويحترم `xcodebuild` و`flutter build ios` المرآة (مقيس).
+- **لا يُكتب رابط المرآة مكان الرسمي:** إن طلبت حزمة أخرى (FlutterFire) الرابط الرسمي، لا يرفض SwiftPM ولا يحذّر، بل يأخذ
+  المستودع الرسمي غير المرقّع بصمت (مقيس بـ SwiftPM 6.1.2). فـ `set-mirror` وحده الطريق الآمن.
 - **CocoaPods** للإصدارات المجمّدة (آخرها 12.19.0) بـ `aruma_storage.rb`، و**Firebase.zip** يأخذ الاحتياط وحده.
 - **الرخصة:** Apache-2.0، وكل ملف معدَّل يذكر التعديل في رأسه، والإشعار في `NOTICE`.

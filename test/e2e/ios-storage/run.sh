@@ -131,8 +131,9 @@ if [[ $mode == spm ]]; then
   swift package --package-path "$gen/mirror-config" config set-mirror --original "$official" --mirror "$mirror_url"
   mkdir -p "$swiftpm_config/configuration"
   cp "$gen/mirror-config/.swiftpm/configuration/mirrors.json" "$swiftpm_config/configuration/mirrors.json"
-  # Pins of an earlier resolution name revisions of another build: resolve afresh.
-  rm -f "$swiftpm_config/Package.resolved"
+  # Pins of an earlier resolution name revisions of another build: resolve afresh. The checkouts'
+  # state counts as a preference too (it kept GTMSessionFetcher at 3.5.0 once), so it goes as well.
+  rm -f "$swiftpm_config/Package.resolved" "$cache/spm/workspace-state.json"
   xcb=(-project "$project" -scheme StorageE2E -clonedSourcePackagesDirPath "$cache/spm"
     -packageCachePath "$cache/spm-cache" -derivedDataPath "$cache/dd")
 
