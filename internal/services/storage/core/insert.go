@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/services/storage/blob"
@@ -222,6 +223,10 @@ func (s *Service) incomingObject(b Bucket, name string, attrs Patch, sf Surface)
 		if v == nil {
 			continue
 		}
+		if k == "" || strings.ContainsFunc(k, isControl) || strings.ContainsRune(*v, 0) {
+			// jsonb keeps no NUL, and a key with control characters is no header GCS shows.
+			return Object{}, invalid("A custom metadata key may not be empty or hold control characters, nor a value NUL.")
+		}
 		if o.Metadata == nil {
 			o.Metadata = map[string]string{}
 		}
@@ -257,6 +262,8 @@ func (s *Service) checkHeaderField(name, v string) error {
 	}
 	return nil
 }
+
+func isControl(r rune) bool { return r < 0x20 || r == 0x7f }
 
 // reservation is the quota one request holds for the bytes it brings: n bytes in
 // storage.usage, and in its session's row when it writes to one.

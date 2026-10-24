@@ -474,6 +474,8 @@ func TestStartUploadChecks(t *testing.T) {
 		{"an unknown field", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Fields: map[string]*string{"size": strPtr("1")}}}, nil},
 		{"custom metadata too large", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Metadata: map[string]*string{"k": strPtr(strings.Repeat("v", 9<<10))}}}, nil},
 		{"the token key in custom metadata", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Metadata: map[string]*string{TokensKey: strPtr("t")}}}, nil},
+		{"an empty metadata key", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Metadata: map[string]*string{"": strPtr("v")}}}, nil},
+		{"a NUL in a metadata value", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Metadata: map[string]*string{"k": strPtr("a\x00b")}}}, nil},
 	} {
 		_, err := e.s.StartUpload(ctx, e.a, asAdmin(), c.sp)
 		var inv *InvalidError
