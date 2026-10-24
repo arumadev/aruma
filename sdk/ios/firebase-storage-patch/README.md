@@ -48,6 +48,12 @@ macOS, and pushes **one commit with no parent, tagged with the official name its
 tag, and the commit has a fixed identity (The Aruma Authors) and the official commit's date, so
 rebuilding it on any machine gives the same revision.
 
+**A published tag is never moved.** SwiftPM records each tag's revision on first use
+(`~/Library/org.swift.swiftpm/security/fingerprints`), and a machine that saw `12.19.3` refuses a
+moved one: "Revision … does not match previously recorded value" (measured, Xcode 16.4). So
+`make-mirror.sh` refuses to move a tag, and a fix to the patch ships with the next official
+release's tag.
+
 ```sh
 ARUMA_MIRROR=git@github.com:arumadev/firebase-ios-sdk.git sdk/ios/firebase-storage-patch/make-mirror.sh 12.19.3
 ```
