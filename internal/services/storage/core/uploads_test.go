@@ -35,7 +35,7 @@ func (e *env) chunk(b Bucket, name, id string, offset int64, data string, finali
 
 func TestUploadOffsets(t *testing.T) {
 	e := newEnv(t)
-	id := e.start(e.a, user("u1"), spec("a.txt", SurfaceFirebase))
+	id := e.start(e.a, asUser("u1"), uploadSpec("a.txt", SurfaceFirebase))
 	steps := []struct {
 		name     string
 		offset   int64
@@ -78,7 +78,7 @@ func TestUploadOffsets(t *testing.T) {
 func TestUploadFinalReplays(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()
-	id := e.start(e.a, user("u1"), spec("a.txt", SurfaceFirebase))
+	id := e.start(e.a, asUser("u1"), uploadSpec("a.txt", SurfaceFirebase))
 	first, err := e.chunk(e.a, "a.txt", id, 0, "data", true)
 	if err != nil || first.Object == nil || len(first.Object.DownloadTokens) != 1 {
 		t.Fatalf("finalize: %+v, %v", first, err)
@@ -119,24 +119,24 @@ func TestUploadTerminalRefusals(t *testing.T) {
 		chunk Chunk
 		want  error
 	}{
-		{"rules", spec("a", SurfaceFirebase), user("u1"),
+		{"rules", uploadSpec("a", SurfaceFirebase), asUser("u1"),
 			func(_ context.Context, _ Bucket, _ Principal, op ruleOp) error { return ErrPermissionDenied }, nil,
 			Chunk{Length: 3, Finalize: true, Total: -1}, ErrPermissionDenied},
-		{"declared size", UploadSpec{Name: "a", Surface: SurfaceFirebase, Declared: 4}, user("u1"), nil, nil,
+		{"declared size", UploadSpec{Name: "a", Surface: SurfaceFirebase, Declared: 4}, asUser("u1"), nil, nil,
 			Chunk{Length: 3, Finalize: true, Total: -1}, ErrSizeMismatch},
-		{"past the declared size", UploadSpec{Name: "a", Surface: SurfaceFirebase, Declared: 2}, user("u1"), nil, nil,
+		{"past the declared size", UploadSpec{Name: "a", Surface: SurfaceFirebase, Declared: 2}, asUser("u1"), nil, nil,
 			Chunk{Length: 3, Total: -1}, ErrSizeMismatch},
-		{"md5Hash on /v0", UploadSpec{Name: "a", Surface: SurfaceFirebase, Declared: -1, Want: Checksums{MD5: md5Of("xyz")}}, user("u1"), nil, nil,
+		{"md5Hash on /v0", UploadSpec{Name: "a", Surface: SurfaceFirebase, Declared: -1, Want: Checksums{MD5: md5Of("xyz")}}, asUser("u1"), nil, nil,
 			Chunk{Length: 3, Finalize: true, Total: -1}, ErrChecksumMismatch},
-		{"crc32c on the last request", spec("a", SurfaceGCS), admin(), nil, nil,
+		{"crc32c on the last request", uploadSpec("a", SurfaceGCS), asAdmin(), nil, nil,
 			Chunk{Length: 3, Finalize: true, Total: 3, Want: Checksums{CRC32C: &wrong}}, ErrChecksumMismatch},
-		{"claims that contradict", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Want: Checksums{MD5: md5Of("abc")}}, admin(), nil, nil,
+		{"claims that contradict", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Want: Checksums{MD5: md5Of("abc")}}, asAdmin(), nil, nil,
 			Chunk{Length: 3, Finalize: true, Total: 3, Want: Checksums{MD5: md5Of("abd")}}, ErrChecksumMismatch},
-		{"a disabled user", spec("a", SurfaceFirebase), user("u1"), nil, func(e *env) { e.users.disable("u1") },
+		{"a disabled user", uploadSpec("a", SurfaceFirebase), asUser("u1"), nil, func(e *env) { e.users.disable("u1") },
 			Chunk{Length: 3, Finalize: true, Total: -1}, ErrUnauthenticated},
-		{"a total other than declared", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: 3}, admin(), nil, nil,
+		{"a total other than declared", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: 3}, asAdmin(), nil, nil,
 			Chunk{Length: 3, Total: 9}, ErrSizeMismatch},
-		{"over object_bytes", spec("a", SurfaceGCS), admin(), nil, func(e *env) { e.s.limits.ObjectBytes = 2 },
+		{"over object_bytes", uploadSpec("a", SurfaceGCS), asAdmin(), nil, func(e *env) { e.s.limits.ObjectBytes = 2 },
 			Chunk{Length: -1, Total: -1}, ErrTooLarge},
 	}
 	for _, c := range cases {
@@ -177,7 +177,7 @@ func TestUploadTerminalRefusals(t *testing.T) {
 // active, and the next finalize succeeds.
 func TestUploadTransientRefusals(t *testing.T) {
 	e := newEnv(t)
-	id := e.start(e.a, user("u1"), spec("a", SurfaceFirebase))
+	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase))
 	if _, err := e.chunk(e.a, "a", id, 0, "abc", false); err != nil {
 		t.Fatal(err)
 	}
@@ -208,14 +208,14 @@ func TestUploadIdentityIsTheStarts(t *testing.T) {
 		seen, op = append(seen, p), o
 		return nil
 	}
-	start := user("alice")
+	start := asUser("alice")
 	start.Token["role"] = "editor"
 	id := e.start(e.a, start, UploadSpec{Name: "a", Surface: SurfaceFirebase, Declared: -1,
 		Attrs: Patch{Fields: map[string]*string{FieldContentType: strPtr("text/plain")}}})
 	if len(seen) != 0 {
 		t.Fatal("the rules ran at start")
 	}
-	mallory := user("mallory")
+	mallory := asUser("mallory")
 	got, err := e.s.WriteUpload(context.Background(), e.a, "a", id, &mallory,
 		Chunk{Body: strings.NewReader("abc"), Length: 3, Finalize: true, Total: -1})
 	if err != nil || got.Status != UploadFinal {
@@ -227,11 +227,11 @@ func TestUploadIdentityIsTheStarts(t *testing.T) {
 	}
 	// Admins bypass the rules; others answer to them, through the hook until S2-E.
 	e.s.authorizeHook = func(context.Context, Bucket, Principal, ruleOp) error { return ErrPermissionDenied }
-	id = e.start(e.a, admin(), spec("b", SurfaceGCS))
+	id = e.start(e.a, asAdmin(), uploadSpec("b", SurfaceGCS))
 	if got, err := e.chunk(e.a, "b", id, 0, "x", true); err != nil || got.Status != UploadFinal {
 		t.Errorf("an admin: %+v, %v", got, err)
 	}
-	id = e.start(e.a, Principal{Kind: PrincipalAnonymous}, spec("c", SurfaceFirebase))
+	id = e.start(e.a, Principal{Kind: PrincipalAnonymous}, uploadSpec("c", SurfaceFirebase))
 	if _, err := e.chunk(e.a, "c", id, 0, "x", true); !errors.Is(err, ErrPermissionDenied) {
 		t.Errorf("an anonymous client the rules refuse: %v", err)
 	}
@@ -243,10 +243,10 @@ func TestUploadConsoleSession(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()
 	console := Principal{Kind: PrincipalAdmin, ConsoleAccount: ownerA}
-	if _, err := e.s.StartUpload(ctx, e.a, console, spec("a", SurfaceConsole)); err == nil {
+	if _, err := e.s.StartUpload(ctx, e.a, console, uploadSpec("a", SurfaceConsole)); err == nil {
 		t.Error("a dashboard session without a declared size")
 	}
-	if _, err := e.s.StartUpload(ctx, e.a, user("u1"), UploadSpec{Name: "a", Surface: SurfaceConsole, Declared: 3}); !errors.Is(err, ErrPermissionDenied) {
+	if _, err := e.s.StartUpload(ctx, e.a, asUser("u1"), UploadSpec{Name: "a", Surface: SurfaceConsole, Declared: 3}); !errors.Is(err, ErrPermissionDenied) {
 		t.Errorf("a dashboard session for a user: %v", err)
 	}
 	id := e.start(e.a, console, UploadSpec{Name: "a", Surface: SurfaceConsole, Declared: 3})
@@ -276,7 +276,7 @@ func TestUploadConsoleSession(t *testing.T) {
 func TestUploadIDIsACapability(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()
-	id := e.start(e.a, Principal{Kind: PrincipalAnonymous}, spec("a.txt", SurfaceFirebase))
+	id := e.start(e.a, Principal{Kind: PrincipalAnonymous}, uploadSpec("a.txt", SurfaceFirebase))
 	if raw, err := base64.RawURLEncoding.DecodeString(id); err != nil || len(raw) != 16 {
 		t.Fatalf("the id %q is not 128 bits: %v", id, err)
 	}
@@ -311,7 +311,7 @@ func TestUploadIDIsACapability(t *testing.T) {
 func TestUploadCancel(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()
-	id := e.start(e.a, user("u1"), spec("a", SurfaceFirebase))
+	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase))
 	if _, err := e.chunk(e.a, "a", id, 0, "abc", false); err != nil {
 		t.Fatal(err)
 	}
@@ -339,7 +339,7 @@ func TestUploadCancel(t *testing.T) {
 // first wrote and ignores them, and nothing is written twice.
 func TestUploadConcurrentChunks(t *testing.T) {
 	e := newEnv(t)
-	id := e.start(e.a, user("u1"), spec("a", SurfaceFirebase))
+	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase))
 	data := strings.Repeat("0123456789abcdef", 64<<10) // 1 MiB
 	var wg sync.WaitGroup
 	for range 4 {
@@ -357,7 +357,7 @@ func TestUploadConcurrentChunks(t *testing.T) {
 	}
 	// And a chunk racing the finalize: it either lands before (and is part of the object) or
 	// finds the session final.
-	id = e.start(e.a, user("u1"), spec("b", SurfaceFirebase))
+	id = e.start(e.a, asUser("u1"), uploadSpec("b", SurfaceFirebase))
 	if _, err := e.chunk(e.a, "b", id, 0, "ab", false); err != nil {
 		t.Fatal(err)
 	}
@@ -376,7 +376,7 @@ func TestUploadConcurrentChunks(t *testing.T) {
 func TestUploadUnknownLength(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()
-	id := e.start(e.a, user("u1"), spec("a", SurfaceGCS))
+	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceGCS))
 	data := bytes.Repeat([]byte("x"), 20<<20)
 	got, err := e.s.WriteUpload(ctx, e.a, "a", id, nil, Chunk{Body: bytes.NewReader(data), Length: -1, Total: -1})
 	if err != nil || got.Received != int64(len(data)) {
@@ -409,7 +409,7 @@ func (r errReader) Read([]byte) (int, error) { return 0, r.err }
 // A store that writes other than it read announces nothing: the next request cuts the file back.
 func TestUploadStoreMismatch(t *testing.T) {
 	e := newEnv(t)
-	id := e.start(e.a, user("u1"), spec("a", SurfaceFirebase))
+	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase))
 	if _, err := e.chunk(e.a, "a", id, 0, "abc", false); err != nil {
 		t.Fatal(err)
 	}
@@ -429,7 +429,7 @@ func TestUploadStoreMismatch(t *testing.T) {
 func TestUploadExpiresAt(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()
-	id := e.start(e.a, user("u1"), spec("a", SurfaceFirebase))
+	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase))
 	life := func() time.Duration {
 		var expires, created time.Time
 		if err := e.pool.QueryRow(ctx, `SELECT expires_at, created_at FROM storage.upload_sessions`).Scan(&expires, &created); err != nil {
@@ -466,8 +466,8 @@ func TestStartUploadChecks(t *testing.T) {
 		sp   UploadSpec
 		want error
 	}{
-		{"a bad name", spec("", SurfaceFirebase), nil},
-		{"no surface", spec("a", 0), ErrInvalidArgument},
+		{"a bad name", uploadSpec("", SurfaceFirebase), nil},
+		{"no surface", uploadSpec("a", 0), ErrInvalidArgument},
 		{"over object_bytes", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: 6 << 30}, ErrTooLarge},
 		{"a header field too long", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Fields: map[string]*string{FieldContentType: &long}}}, nil},
 		{"a header field with a line feed", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Fields: map[string]*string{FieldCacheControl: strPtr("a\nb")}}}, nil},
@@ -475,7 +475,7 @@ func TestStartUploadChecks(t *testing.T) {
 		{"custom metadata too large", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Metadata: map[string]*string{"k": strPtr(strings.Repeat("v", 9<<10))}}}, nil},
 		{"the token key in custom metadata", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Metadata: map[string]*string{TokensKey: strPtr("t")}}}, nil},
 	} {
-		_, err := e.s.StartUpload(ctx, e.a, admin(), c.sp)
+		_, err := e.s.StartUpload(ctx, e.a, asAdmin(), c.sp)
 		var inv *InvalidError
 		if (c.want == nil && !errors.As(err, &inv)) || (c.want != nil && !errors.Is(err, c.want)) {
 			t.Errorf("%s: %v", c.name, err)
@@ -486,7 +486,7 @@ func TestStartUploadChecks(t *testing.T) {
 	}
 	// An admin's tokens on GCS go with the session, sealed, to the object.
 	tokens := []string{"t1", "t2"}
-	id := e.start(e.a, admin(), UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Tokens: &tokens}})
+	id := e.start(e.a, asAdmin(), UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Tokens: &tokens}})
 	got, err := e.chunk(e.a, "a", id, 0, "x", true)
 	if err != nil || strings.Join(got.Object.DownloadTokens, ",") != "t1,t2" {
 		t.Errorf("an admin's tokens: %+v, %v", got, err)

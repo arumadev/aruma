@@ -176,21 +176,21 @@ func (e *env) checkUsage(project int64) {
 	}
 }
 
-func admin() Principal { return Principal{Kind: PrincipalAdmin, ServiceAccount: "sa@chat-app"} }
+func asAdmin() Principal { return Principal{Kind: PrincipalAdmin, ServiceAccount: "sa@chat-app"} }
 
-func user(uid string) Principal {
+func asUser(uid string) Principal {
 	t := time.Now().Add(-time.Minute)
 	return Principal{Kind: PrincipalUser, UID: uid, Token: map[string]any{"sub": uid}, AuthTime: t, IssuedAt: t}
 }
 
-func spec(name string, sf Surface) UploadSpec {
+func uploadSpec(name string, sf Surface) UploadSpec {
 	return UploadSpec{Name: name, Surface: sf, Declared: -1}
 }
 
 // insert stores name with body through Insert.
 func (e *env) insert(b Bucket, name string, body string) Object {
 	e.t.Helper()
-	o, err := e.s.Insert(context.Background(), b, admin(), spec(name, SurfaceGCS), strings.NewReader(body), int64(len(body)))
+	o, err := e.s.Insert(context.Background(), b, asAdmin(), uploadSpec(name, SurfaceGCS), strings.NewReader(body), int64(len(body)))
 	if err != nil {
 		e.t.Fatalf("insert %s: %v", name, err)
 	}

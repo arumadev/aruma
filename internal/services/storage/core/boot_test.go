@@ -160,7 +160,7 @@ func TestBootCandidates(t *testing.T) {
 	ctx := context.Background()
 	kept := e.insert(e.a, "kept", "x")
 	_, keptRow, _ := e.s.storedObject(ctx, e.a, "kept")
-	id := e.start(e.a, user("u1"), spec("live", SurfaceFirebase))
+	id := e.start(e.a, asUser("u1"), uploadSpec("live", SurfaceFirebase))
 	if _, err := e.chunk(e.a, "live", id, 0, "abc", false); err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +197,7 @@ func TestBootReconcilesUsage(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()
 	e.insert(e.a, "a", "abcd")
-	id := e.start(e.a, Principal{Kind: PrincipalAnonymous}, spec("b", SurfaceFirebase))
+	id := e.start(e.a, Principal{Kind: PrincipalAnonymous}, uploadSpec("b", SurfaceFirebase))
 	if _, err := e.chunk(e.a, "b", id, 0, "xy", false); err != nil {
 		t.Fatal(err)
 	}

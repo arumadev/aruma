@@ -32,7 +32,7 @@ func TestInsert(t *testing.T) {
 		t.Errorf("stored %q", got)
 	}
 	// Firebase REST stores its default disposition and a new download token (ADR-022 §9, §10.4).
-	f, err := e.s.Insert(ctx, e.a, admin(), UploadSpec{Name: "b.png", Surface: SurfaceFirebase, Declared: -1,
+	f, err := e.s.Insert(ctx, e.a, asAdmin(), UploadSpec{Name: "b.png", Surface: SurfaceFirebase, Declared: -1,
 		Attrs: Patch{Fields: map[string]*string{FieldContentType: strPtr("image/png")}, Metadata: map[string]*string{"k": strPtr("v")}}},
 		strings.NewReader("png"), -1)
 	if err != nil || len(f.DownloadTokens) != 1 || f.ContentType != "image/png" || f.ContentDisposition != "inline; filename*=utf-8''b.png" ||
@@ -84,7 +84,7 @@ func TestCommitConcurrentOverwrites(t *testing.T) {
 	objs := make([]Object, n)
 	for i := range n {
 		wg.Go(func() {
-			objs[i], errs[i] = e.s.Insert(context.Background(), e.a, admin(), spec("hot.txt", SurfaceGCS),
+			objs[i], errs[i] = e.s.Insert(context.Background(), e.a, asAdmin(), uploadSpec("hot.txt", SurfaceGCS),
 				strings.NewReader(fmt.Sprint("version ", i)), -1)
 		})
 	}
@@ -133,7 +133,7 @@ func TestCommitRetriesAfterConcurrentDelete(t *testing.T) {
 			}
 		}
 	}
-	o, err := e.s.Insert(ctx, e.a, admin(), spec("a.txt", SurfaceGCS), strings.NewReader("two"), 3)
+	o, err := e.s.Insert(ctx, e.a, asAdmin(), uploadSpec("a.txt", SurfaceGCS), strings.NewReader("two"), 3)
 	if err != nil || deletes != 1 || e.read(e.a, "a.txt") != "two" || o.Metageneration != 1 {
 		t.Fatalf("Insert = %+v, %v after %d deletes", o, err, deletes)
 	}
@@ -155,7 +155,7 @@ func TestCommitRetriesAfterConcurrentDelete(t *testing.T) {
 		}
 	})
 	for i := range 40 {
-		if _, err := e.s.Insert(ctx, e.a, admin(), spec("race.txt", SurfaceGCS), strings.NewReader(fmt.Sprint(i)), -1); err != nil {
+		if _, err := e.s.Insert(ctx, e.a, asAdmin(), uploadSpec("race.txt", SurfaceGCS), strings.NewReader(fmt.Sprint(i)), -1); err != nil {
 			t.Errorf("write %d racing a delete: %v", i, err)
 		}
 	}
@@ -170,9 +170,9 @@ func TestIfGenerationMatchZero(t *testing.T) {
 	ctx := context.Background()
 	zero := int64(0)
 	create := func(name, body string) (Object, error) {
-		sp := spec(name, SurfaceGCS)
+		sp := uploadSpec(name, SurfaceGCS)
 		sp.Pre.IfGenerationMatch = &zero
-		return e.s.Insert(ctx, e.a, admin(), sp, strings.NewReader(body), int64(len(body)))
+		return e.s.Insert(ctx, e.a, asAdmin(), sp, strings.NewReader(body), int64(len(body)))
 	}
 	if _, err := create("a.txt", "first"); err != nil {
 		t.Fatal(err)
@@ -228,14 +228,14 @@ func TestPreconditions(t *testing.T) {
 		{"generation not match on a missing object", "none.txt", Preconditions{IfGenerationNotMatch: i(5)}, false},
 		{"metageneration match on a missing object", "none.txt", Preconditions{IfMetagenerationMatch: i(1)}, false},
 	} {
-		sp := spec(c.obj, SurfaceGCS)
+		sp := uploadSpec(c.obj, SurfaceGCS)
 		sp.Pre = c.pre
 		// The clock stands still here, so each overwrite is the previous generation + 1.
 		cur, _, _ := e.s.storedObject(ctx, e.a, "a.txt")
 		if c.pre.IfGenerationMatch != nil && c.obj == "a.txt" {
 			sp.Pre.IfGenerationMatch = i(cur.Generation + *c.pre.IfGenerationMatch - o.Generation)
 		}
-		_, err := e.s.Insert(ctx, e.a, admin(), sp, strings.NewReader("y"), 1)
+		_, err := e.s.Insert(ctx, e.a, asAdmin(), sp, strings.NewReader("y"), 1)
 		if c.ok != (err == nil) || (!c.ok && !errors.Is(err, ErrPreconditionFailed)) {
 			t.Errorf("%s: %v", c.name, err)
 		}
@@ -259,15 +259,15 @@ func TestInsertRefusalsLeaveNothing(t *testing.T) {
 		hook func(context.Context, Bucket, Principal, ruleOp) error
 		want error
 	}{
-		{"rules", spec("a.txt", SurfaceFirebase), "abc", 3, func(context.Context, Bucket, Principal, ruleOp) error { return ErrPermissionDenied }, ErrPermissionDenied},
-		{"overloaded rules", spec("a.txt", SurfaceFirebase), "abc", 3, func(context.Context, Bucket, Principal, ruleOp) error { return ErrOverloaded }, ErrOverloaded},
+		{"rules", uploadSpec("a.txt", SurfaceFirebase), "abc", 3, func(context.Context, Bucket, Principal, ruleOp) error { return ErrPermissionDenied }, ErrPermissionDenied},
+		{"overloaded rules", uploadSpec("a.txt", SurfaceFirebase), "abc", 3, func(context.Context, Bucket, Principal, ruleOp) error { return ErrOverloaded }, ErrOverloaded},
 		{"crc32c", UploadSpec{Name: "a.txt", Surface: SurfaceGCS, Declared: -1, Want: Checksums{CRC32C: &wrong}}, "abc", -1, nil, ErrChecksumMismatch},
 		{"declared size", UploadSpec{Name: "a.txt", Surface: SurfaceGCS, Declared: 5}, "abc", -1, nil, ErrSizeMismatch},
 		{"over the declared size", UploadSpec{Name: "a.txt", Surface: SurfaceGCS, Declared: 2}, "abc", -1, nil, ErrSizeMismatch},
-		{"short body", spec("a.txt", SurfaceGCS), "abc", 5, nil, errShortBody},
+		{"short body", uploadSpec("a.txt", SurfaceGCS), "abc", 5, nil, errShortBody},
 	} {
 		e.s.authorizeHook = c.hook
-		_, err := e.s.Insert(ctx, e.a, user("u1"), c.sp, strings.NewReader(c.body), c.len)
+		_, err := e.s.Insert(ctx, e.a, asUser("u1"), c.sp, strings.NewReader(c.body), c.len)
 		if !errors.Is(err, c.want) {
 			t.Errorf("%s: %v, want %v", c.name, err, c.want)
 		}
@@ -280,19 +280,19 @@ func TestInsertRefusalsLeaveNothing(t *testing.T) {
 	}
 	e.s.authorizeHook = nil
 	// Before S2-E, the contract refuses everyone but admins.
-	if _, err := e.s.Insert(ctx, e.a, user("u1"), spec("a.txt", SurfaceFirebase), strings.NewReader("x"), 1); !errors.Is(err, ErrPermissionDenied) {
+	if _, err := e.s.Insert(ctx, e.a, asUser("u1"), uploadSpec("a.txt", SurfaceFirebase), strings.NewReader("x"), 1); !errors.Is(err, ErrPermissionDenied) {
 		t.Errorf("a user without rules: %v", err)
 	}
-	if _, err := e.s.Insert(ctx, e.a, admin(), spec("a.txt", SurfaceFirebase), strings.NewReader("x"), 1); err != nil {
+	if _, err := e.s.Insert(ctx, e.a, asAdmin(), uploadSpec("a.txt", SurfaceFirebase), strings.NewReader("x"), 1); err != nil {
 		t.Errorf("an admin without rules: %v", err)
 	}
 	lim := e.s.limits
 	lim.ObjectBytes = 4
 	e.s.limits = lim
-	if _, err := e.s.Insert(ctx, e.a, admin(), spec("big", SurfaceGCS), strings.NewReader("12345"), -1); !errors.Is(err, ErrTooLarge) {
+	if _, err := e.s.Insert(ctx, e.a, asAdmin(), uploadSpec("big", SurfaceGCS), strings.NewReader("12345"), -1); !errors.Is(err, ErrTooLarge) {
 		t.Errorf("over object_bytes: %v", err)
 	}
-	if _, err := e.s.Insert(ctx, e.a, admin(), spec("big", SurfaceGCS), strings.NewReader("12345"), 5); !errors.Is(err, ErrTooLarge) {
+	if _, err := e.s.Insert(ctx, e.a, asAdmin(), uploadSpec("big", SurfaceGCS), strings.NewReader("12345"), 5); !errors.Is(err, ErrTooLarge) {
 		t.Errorf("a stated length over object_bytes: %v", err)
 	}
 	e.checkUsage(projectA)
@@ -306,7 +306,7 @@ func TestInsertRulesOp(t *testing.T) {
 	var op ruleOp
 	var who Principal
 	e.s.authorizeHook = func(_ context.Context, _ Bucket, p Principal, o ruleOp) error { op, who = o, p; return nil }
-	if _, err := e.s.Insert(ctx, e.a, user("u1"), spec("a.txt", SurfaceFirebase), strings.NewReader("new!"), -1); err != nil {
+	if _, err := e.s.Insert(ctx, e.a, asUser("u1"), uploadSpec("a.txt", SurfaceFirebase), strings.NewReader("new!"), -1); err != nil {
 		t.Fatal(err)
 	}
 	if op.Method.String() != "create" || op.Resource == nil || op.Resource.Size != 3 || op.Incoming == nil ||
@@ -326,7 +326,7 @@ func TestAmbiguousCommit(t *testing.T) {
 			}
 			return errors.New("connection reset by peer")
 		}
-		o, err := e.s.Insert(ctx, e.a, admin(), spec("a.txt", SurfaceGCS), strings.NewReader("kept"), 4)
+		o, err := e.s.Insert(ctx, e.a, asAdmin(), uploadSpec("a.txt", SurfaceGCS), strings.NewReader("kept"), 4)
 		if err != nil || o.Size != 4 || e.read(e.a, "a.txt") != "kept" {
 			t.Fatalf("Insert = %+v, %v", o, err)
 		}
@@ -347,7 +347,7 @@ func TestAmbiguousCommit(t *testing.T) {
 			}
 			return tx.Commit(ctx)
 		}
-		_, err := e.s.Insert(ctx, e.a, admin(), spec("a.txt", SurfaceGCS), strings.NewReader("gone"), 4)
+		_, err := e.s.Insert(ctx, e.a, asAdmin(), uploadSpec("a.txt", SurfaceGCS), strings.NewReader("gone"), 4)
 		if !errors.Is(err, ErrUnavailable) || errors.Is(err, errCommitUnknown) {
 			t.Fatalf("Insert = %v, want an aborted commit", err)
 		}
@@ -367,7 +367,7 @@ func TestAmbiguousCommit(t *testing.T) {
 			cancel() // the client hangs up as COMMIT goes out
 			return tx.Commit(ctx)
 		}
-		o, err := e.s.Insert(rctx, e.a, admin(), spec("a.txt", SurfaceGCS), strings.NewReader("stays"), 5)
+		o, err := e.s.Insert(rctx, e.a, asAdmin(), uploadSpec("a.txt", SurfaceGCS), strings.NewReader("stays"), 5)
 		if err != nil || e.read(e.a, "a.txt") != "stays" || o.Size != 5 {
 			t.Fatalf("a commit cancelled by its client: %+v, %v", o, err)
 		}
@@ -382,7 +382,7 @@ func TestAmbiguousCommit(t *testing.T) {
 			return errors.New("i/o timeout")
 		}
 		xactStatusOf = func(context.Context, string) (string, error) { return "", errors.New("connection refused") }
-		_, err := e.s.Insert(ctx, e.a, admin(), spec("a.txt", SurfaceGCS), strings.NewReader("new"), 3)
+		_, err := e.s.Insert(ctx, e.a, asAdmin(), uploadSpec("a.txt", SurfaceGCS), strings.NewReader("new"), 3)
 		if !errors.Is(err, errCommitUnknown) || !errors.Is(err, ErrUnavailable) {
 			t.Fatalf("Insert = %v, want an unknown outcome", err)
 		}
@@ -413,13 +413,13 @@ func TestAmbiguousCommit(t *testing.T) {
 func TestRewrite(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()
-	src, err := e.s.Insert(ctx, e.a, admin(), UploadSpec{Name: "src.txt", Surface: SurfaceFirebase, Declared: -1,
+	src, err := e.s.Insert(ctx, e.a, asAdmin(), UploadSpec{Name: "src.txt", Surface: SurfaceFirebase, Declared: -1,
 		Attrs: Patch{Fields: map[string]*string{FieldCacheControl: strPtr("no-cache")}, Metadata: map[string]*string{"k": strPtr("v")}}},
 		strings.NewReader("payload"), -1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cp, err := e.s.Rewrite(ctx, e.a, "src.txt", e.a, "dst.txt", admin(), nil, Preconditions{})
+	cp, err := e.s.Rewrite(ctx, e.a, "src.txt", e.a, "dst.txt", asAdmin(), nil, Preconditions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -432,18 +432,18 @@ func TestRewrite(t *testing.T) {
 		t.Errorf("the destination's tokens did not open for its name: %+v, %v", stored, err)
 	}
 	// New metadata replaces the source's, tokens included.
-	cp, err = e.s.Rewrite(ctx, e.a, "src.txt", e.a, "dst2.txt", admin(), &Patch{Fields: map[string]*string{FieldContentType: strPtr("text/plain")}}, Preconditions{})
+	cp, err = e.s.Rewrite(ctx, e.a, "src.txt", e.a, "dst2.txt", asAdmin(), &Patch{Fields: map[string]*string{FieldContentType: strPtr("text/plain")}}, Preconditions{})
 	if err != nil || cp.ContentType != "text/plain" || cp.CacheControl != "" || cp.Metadata != nil || cp.DownloadTokens != nil {
 		t.Errorf("Rewrite with metadata = %+v, %v", cp, err)
 	}
-	if _, err := e.s.Rewrite(ctx, e.a, "none", e.a, "x", admin(), nil, Preconditions{}); !errors.Is(err, ErrNotFound) {
+	if _, err := e.s.Rewrite(ctx, e.a, "none", e.a, "x", asAdmin(), nil, Preconditions{}); !errors.Is(err, ErrNotFound) {
 		t.Errorf("a missing source: %v", err)
 	}
-	if _, err := e.s.Rewrite(ctx, e.a, "src.txt", e.b, "x", admin(), nil, Preconditions{}); !errors.Is(err, ErrPermissionDenied) {
+	if _, err := e.s.Rewrite(ctx, e.a, "src.txt", e.b, "x", asAdmin(), nil, Preconditions{}); !errors.Is(err, ErrPermissionDenied) {
 		t.Errorf("into another project: %v", err)
 	}
 	zero := int64(0)
-	if _, err := e.s.Rewrite(ctx, e.a, "src.txt", e.a, "dst.txt", admin(), nil, Preconditions{IfGenerationMatch: &zero}); !errors.Is(err, ErrPreconditionFailed) {
+	if _, err := e.s.Rewrite(ctx, e.a, "src.txt", e.a, "dst.txt", asAdmin(), nil, Preconditions{IfGenerationMatch: &zero}); !errors.Is(err, ErrPreconditionFailed) {
 		t.Errorf("ifGenerationMatch=0 on an existing destination: %v", err)
 	}
 	// The quota counts the copy.
@@ -451,7 +451,7 @@ func TestRewrite(t *testing.T) {
 	lim.ProjectBytes = e.count(`SELECT used_bytes FROM storage.usage WHERE project_number = $1`, projectA) + 3
 	lim.ObjectBytes = 3
 	e.s.limits = lim
-	if _, err := e.s.Rewrite(ctx, e.a, "src.txt", e.a, "over.txt", admin(), nil, Preconditions{}); !errors.Is(err, ErrQuotaExceeded) {
+	if _, err := e.s.Rewrite(ctx, e.a, "src.txt", e.a, "over.txt", asAdmin(), nil, Preconditions{}); !errors.Is(err, ErrQuotaExceeded) {
 		t.Errorf("a copy over the quota: %v", err)
 	}
 	if e.store.has("") || len(e.store.keys("p/")) != int(e.count(`SELECT count(*) FROM storage.objects`)+e.count(`SELECT count(*) FROM storage.blob_gc`)) {

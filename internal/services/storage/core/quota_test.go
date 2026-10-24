@@ -28,7 +28,7 @@ func TestStartReservesNothing(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()
 	for range 5 {
-		e.start(e.a, user("u1"), UploadSpec{Name: "big", Surface: SurfaceFirebase, Declared: 5 << 30})
+		e.start(e.a, asUser("u1"), UploadSpec{Name: "big", Surface: SurfaceFirebase, Declared: 5 << 30})
 		e.start(e.a, Principal{Kind: PrincipalAnonymous}, UploadSpec{Name: "big", Surface: SurfaceFirebase, Declared: 1 << 30})
 	}
 	if _, reserved, _, _ := e.usage(projectA); reserved != 0 {
@@ -38,11 +38,11 @@ func TestStartReservesNothing(t *testing.T) {
 		t.Errorf("an anonymous start declaring more than its share: %v", err)
 	}
 	small := limited(t, 1<<20)
-	if _, err := small.s.StartUpload(ctx, small.a, user("u1"), UploadSpec{Name: "a", Surface: SurfaceFirebase, Declared: 2 << 20}); !errors.Is(err, ErrTooLarge) {
+	if _, err := small.s.StartUpload(ctx, small.a, asUser("u1"), UploadSpec{Name: "a", Surface: SurfaceFirebase, Declared: 2 << 20}); !errors.Is(err, ErrTooLarge) {
 		t.Errorf("a start over object_bytes: %v", err)
 	}
 	small.insert(small.a, "fill", strings.Repeat("x", 600<<10))
-	if _, err := small.s.StartUpload(ctx, small.a, user("u1"), UploadSpec{Name: "a", Surface: SurfaceFirebase, Declared: 500 << 10}); !errors.Is(err, ErrQuotaExceeded) {
+	if _, err := small.s.StartUpload(ctx, small.a, asUser("u1"), UploadSpec{Name: "a", Surface: SurfaceFirebase, Declared: 500 << 10}); !errors.Is(err, ErrQuotaExceeded) {
 		t.Errorf("a start that does not fit: %v", err)
 	}
 	// Anonymous: the declaration must fit the anonymous share too (20% of 1 MiB).
@@ -67,10 +67,10 @@ func TestQuotaUnderConcurrency(t *testing.T) {
 					data := bytes.Repeat([]byte{byte(i)}, size)
 					var err error
 					if mode == "insert" {
-						_, err = e.s.Insert(ctx, e.a, user("u1"), spec(name, SurfaceFirebase), bytes.NewReader(data), size)
+						_, err = e.s.Insert(ctx, e.a, asUser("u1"), uploadSpec(name, SurfaceFirebase), bytes.NewReader(data), size)
 					} else {
 						var id string
-						if id, err = e.s.StartUpload(ctx, e.a, user("u1"), spec(name, SurfaceFirebase)); err == nil {
+						if id, err = e.s.StartUpload(ctx, e.a, asUser("u1"), uploadSpec(name, SurfaceFirebase)); err == nil {
 							length := int64(size)
 							if mode == "unknown length" {
 								length = -1 // Node's single request
@@ -110,8 +110,8 @@ func TestAnonymousShare(t *testing.T) {
 	e := limited(t, 10<<20)
 	anon := Principal{Kind: PrincipalAnonymous}
 	mib := strings.Repeat("x", 1<<20)
-	ids := []string{e.start(e.a, anon, spec("a1", SurfaceFirebase)), e.start(e.a, anon, spec("a2", SurfaceFirebase)),
-		e.start(e.a, anon, spec("a3", SurfaceFirebase))}
+	ids := []string{e.start(e.a, anon, uploadSpec("a1", SurfaceFirebase)), e.start(e.a, anon, uploadSpec("a2", SurfaceFirebase)),
+		e.start(e.a, anon, uploadSpec("a3", SurfaceFirebase))}
 	for i, id := range ids[:2] {
 		if _, err := e.chunk(e.a, fmt.Sprint("a", i+1), id, 0, mib, false); err != nil {
 			t.Fatal(err)
@@ -125,7 +125,7 @@ func TestAnonymousShare(t *testing.T) {
 		t.Errorf("anonymous_quota rejections: %v", v)
 	}
 	// A user still has the rest.
-	id := e.start(e.a, user("u1"), spec("u", SurfaceFirebase))
+	id := e.start(e.a, asUser("u1"), uploadSpec("u", SurfaceFirebase))
 	if _, err := e.chunk(e.a, "u", id, 0, strings.Repeat("y", 7<<20), true); err != nil {
 		t.Fatalf("a user next to the anonymous: %v", err)
 	}
@@ -145,7 +145,7 @@ func TestEmptySessions(t *testing.T) {
 	e := newEnv(t, func(o *Options) { o.Limits.UploadSessionsPerIP = 3 })
 	ctx := context.Background()
 	ip := netip.MustParseAddr("2001:db8::1")
-	sp := spec("a", SurfaceFirebase)
+	sp := uploadSpec("a", SurfaceFirebase)
 	sp.IP = ip
 	for range 20 {
 		e.start(e.a, Principal{Kind: PrincipalAnonymous}, sp)
@@ -185,18 +185,18 @@ func TestSessionLimitsPerUserAndProject(t *testing.T) {
 	})
 	ctx := context.Background()
 	live := func(p Principal) {
-		id := e.start(e.a, p, spec("a", SurfaceFirebase))
+		id := e.start(e.a, p, uploadSpec("a", SurfaceFirebase))
 		if _, err := e.chunk(e.a, "a", id, 0, "x", false); err != nil {
 			t.Fatal(err)
 		}
 	}
-	live(user("u1"))
-	live(user("u1"))
-	if _, err := e.s.StartUpload(ctx, e.a, user("u1"), spec("a", SurfaceFirebase)); !errors.Is(err, ErrTooManyUploads) {
+	live(asUser("u1"))
+	live(asUser("u1"))
+	if _, err := e.s.StartUpload(ctx, e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase)); !errors.Is(err, ErrTooManyUploads) {
 		t.Errorf("a third session for u1: %v", err)
 	}
-	live(user("u2"))
-	if _, err := e.s.StartUpload(ctx, e.a, user("u3"), spec("a", SurfaceFirebase)); !errors.Is(err, ErrTooManyUploads) {
+	live(asUser("u2"))
+	if _, err := e.s.StartUpload(ctx, e.a, asUser("u3"), uploadSpec("a", SurfaceFirebase)); !errors.Is(err, ErrTooManyUploads) {
 		t.Errorf("a fourth session in the project: %v", err)
 	}
 }
@@ -206,7 +206,7 @@ func TestSessionLimitsPerUserAndProject(t *testing.T) {
 func TestIdleRelease(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()
-	id := e.start(e.a, user("u1"), spec("a", SurfaceFirebase))
+	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase))
 	if _, err := e.chunk(e.a, "a", id, 0, "abc", false); err != nil {
 		t.Fatal(err)
 	}
@@ -255,13 +255,13 @@ func TestDiskFloor(t *testing.T) {
 		t.Fatalf("%d reservations of 1 MiB passed a floor 10 MiB away; %d in flight", ok.Load(), e.s.diskInflight.Load())
 	}
 	e.s.releaseDisk(10 << 20)
-	id := e.start(e.a, user("u1"), spec("a", SurfaceFirebase))
+	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase))
 	big := strings.Repeat("x", 11<<20)
 	got, err := e.chunk(e.a, "a", id, 0, big, false)
 	if !errors.Is(err, ErrUnavailable) || got.Status != UploadActive {
 		t.Fatalf("a chunk below the floor: %+v, %v", got, err)
 	}
-	if _, err := e.s.Insert(context.Background(), e.a, admin(), spec("b", SurfaceGCS), strings.NewReader(big), -1); !errors.Is(err, ErrUnavailable) {
+	if _, err := e.s.Insert(context.Background(), e.a, asAdmin(), uploadSpec("b", SurfaceGCS), strings.NewReader(big), -1); !errors.Is(err, ErrUnavailable) {
 		t.Errorf("an insert below the floor: %v", err)
 	}
 	if e.s.diskInflight.Load() != 0 {
@@ -280,7 +280,7 @@ func TestUsage(t *testing.T) {
 		t.Errorf("a project without an account: %+v, %v", u, err)
 	}
 	e.insert(e.a, "a", "abc")
-	id := e.start(e.a, user("u1"), spec("b", SurfaceFirebase))
+	id := e.start(e.a, asUser("u1"), uploadSpec("b", SurfaceFirebase))
 	if _, err := e.chunk(e.a, "b", id, 0, "de", false); err != nil {
 		t.Fatal(err)
 	}
