@@ -52,29 +52,30 @@ type StorageObject struct {
 }
 
 type StorageUploadSession struct {
-	IDHash           []byte
-	ProjectNumber    int64
-	Name             string
-	Surface          string
-	State            string
-	PrincipalKind    string
-	Principal        json.RawMessage
-	ClientIp         *netip.Addr
-	DeclaredSize     *int64
-	Attrs            json.RawMessage
-	Preconditions    json.RawMessage
-	Checksums        json.RawMessage
-	Received         int64
-	HashState        []byte
-	StagingKey       string
-	BlobKey          *string
-	FinalStatus      *string
-	FinalBody        *string
-	ResultGeneration *int64
-	ReservedBytes    int64
-	CreatedAt        time.Time
-	ProgressedAt     time.Time
-	ExpiresAt        time.Time
+	IDHash         []byte
+	ProjectNumber  int64
+	Name           string
+	Surface        string
+	State          string
+	PrincipalKind  string
+	Principal      json.RawMessage
+	ClientIp       *netip.Addr
+	DeclaredSize   *int64
+	Attrs          json.RawMessage
+	DownloadTokens []byte
+	Preconditions  json.RawMessage
+	Checksums      json.RawMessage
+	Received       int64
+	HashState      []byte
+	StagingKey     string
+	BlobKey        *string
+	FinalStatus    *string
+	FinalBody      *string
+	ResultObject   []byte
+	ReservedBytes  int64
+	CreatedAt      time.Time
+	ProgressedAt   time.Time
+	ExpiresAt      time.Time
 }
 
 type StorageUsage struct {

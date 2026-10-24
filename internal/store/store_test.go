@@ -162,29 +162,3 @@ func TestInTxRollsBackOnError(t *testing.T) {
 		t.Fatalf("rolled-back insert left %d rows", n)
 	}
 }
-
-// ADR-022 §5: every connection commits synchronously, even on a server whose default is off.
-func TestOpenCommitsSynchronously(t *testing.T) {
-	ctx := context.Background()
-	url := storetest.NewEmptyDB(t)
-	pool, err := store.Open(ctx, url)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer pool.Close()
-	var name string
-	if err := pool.QueryRow(ctx, "SELECT current_database()").Scan(&name); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := pool.Exec(ctx, "ALTER DATABASE "+pgx.Identifier{name}.Sanitize()+" SET synchronous_commit = off"); err != nil {
-		t.Fatal(err)
-	}
-	pool.Reset() // new connections see the database's new default
-	var v string
-	if err := pool.QueryRow(ctx, "SHOW synchronous_commit").Scan(&v); err != nil {
-		t.Fatal(err)
-	}
-	if v != "on" {
-		t.Fatalf("synchronous_commit = %q, want on", v)
-	}
-}

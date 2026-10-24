@@ -11,7 +11,7 @@ import (
 
 const getUploadSession = `-- name: GetUploadSession :one
 
-SELECT id_hash, project_number, name, surface, state, principal_kind, principal, client_ip, declared_size, attrs, preconditions, checksums, received, hash_state, staging_key, blob_key, final_status, final_body, result_generation, reserved_bytes, created_at, progressed_at, expires_at FROM storage.upload_sessions WHERE id_hash = $1 AND project_number = $2
+SELECT id_hash, project_number, name, surface, state, principal_kind, principal, client_ip, declared_size, attrs, download_tokens, preconditions, checksums, received, hash_state, staging_key, blob_key, final_status, final_body, result_object, reserved_bytes, created_at, progressed_at, expires_at FROM storage.upload_sessions WHERE id_hash = $1 AND project_number = $2
 `
 
 type GetUploadSessionParams struct {
@@ -34,6 +34,7 @@ func (q *Queries) GetUploadSession(ctx context.Context, arg GetUploadSessionPara
 		&i.ClientIp,
 		&i.DeclaredSize,
 		&i.Attrs,
+		&i.DownloadTokens,
 		&i.Preconditions,
 		&i.Checksums,
 		&i.Received,
@@ -42,7 +43,7 @@ func (q *Queries) GetUploadSession(ctx context.Context, arg GetUploadSessionPara
 		&i.BlobKey,
 		&i.FinalStatus,
 		&i.FinalBody,
-		&i.ResultGeneration,
+		&i.ResultObject,
 		&i.ReservedBytes,
 		&i.CreatedAt,
 		&i.ProgressedAt,

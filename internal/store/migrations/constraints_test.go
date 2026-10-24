@@ -129,6 +129,39 @@ func TestStorageSchemaConstraints(t *testing.T) {
 		"s/482915736204/1b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f", "active", nil)
 	mustExec(t, pool, session, bytes.Repeat([]byte{1}, 32), "s/482915736204/1b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f", "final", "permission_denied")
 
+	// Every key a row holds names the row's own project (review: four inserts that passed).
+	const other = "p/582915736204/2b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f"
+	mustFail(t, pool, "an object's file is in its own project", insert, 482915736204, "c.txt", other)
+	mustFail(t, pool, "a session's staging file is in its own project", session, bytes.Repeat([]byte{2}, 32),
+		"s/582915736204/3b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f", "active", nil)
+	mustFail(t, pool, "a session's object key is in its own project",
+		`INSERT INTO storage.upload_sessions (id_hash, project_number, name, surface, principal_kind, staging_key, blob_key, expires_at)
+		 VALUES ($1, 482915736204, 'a.txt', 'firebase', 'anonymous', 's/482915736204/4b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f', $2, now())`,
+		bytes.Repeat([]byte{3}, 32), other)
+	mustFail(t, pool, "a queued file is in its own project",
+		`INSERT INTO storage.blob_gc (blob_key, project_number) VALUES ($1, 482915736204)`, other)
+	mustExec(t, pool, `INSERT INTO storage.blob_gc (blob_key, project_number) VALUES ('s/482915736204/5b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f', 482915736204)`)
+
+	// No download token in the clear: not in an object's metadata, not in a session's attrs.
+	mustFail(t, pool, "an object's metadata holds no token",
+		`INSERT INTO storage.objects (project_number, name, generation, blob_key, size, md5, crc32c, metadata, time_created, updated)
+		 VALUES (482915736204, 'd.txt', 1, 'p/482915736204/6b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f', 0, decode('d41d8cd98f00b204e9800998ecf8427e', 'hex'), 0,
+		 '{"firebaseStorageDownloadTokens": "planted"}', now(), now())`)
+	for _, attrs := range []string{`{"firebaseStorageDownloadTokens": "x"}`, `{"metadata": {"firebaseStorageDownloadTokens": "x"}}`} {
+		mustFail(t, pool, "a session's attrs hold no token: "+attrs,
+			`INSERT INTO storage.upload_sessions (id_hash, project_number, name, surface, principal_kind, staging_key, attrs, expires_at)
+			 VALUES ($1, 482915736204, 'a.txt', 'gcs', 'admin', 's/482915736204/7b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f', $2, now())`,
+			bytes.Repeat([]byte{4}, 32), attrs)
+	}
+	mustFail(t, pool, "a final session has one outcome, not both",
+		`INSERT INTO storage.upload_sessions (id_hash, project_number, name, surface, principal_kind, staging_key, state, final_status, result_object, expires_at)
+		 VALUES ($1, 482915736204, 'a.txt', 'gcs', 'admin', 's/482915736204/8b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f', 'final', 'too_large', '{}', now())`,
+		bytes.Repeat([]byte{5}, 32))
+	mustFail(t, pool, "a final session has an outcome",
+		`INSERT INTO storage.upload_sessions (id_hash, project_number, name, surface, principal_kind, staging_key, state, expires_at)
+		 VALUES ($1, 482915736204, 'a.txt', 'gcs', 'admin', 's/482915736204/9b7c3f4e-8a1d-4c2b-9e5f-6a7b8c9d0e1f', 'final', now())`,
+		bytes.Repeat([]byte{6}, 32))
+
 	mustFail(t, pool, "anonymous bytes are part of the reserved bytes",
 		`INSERT INTO storage.usage (project_number, reserved_bytes, anonymous_reserved_bytes) VALUES (482915736204, 1, 2)`)
 	mustExec(t, pool, `INSERT INTO storage.instance (id) VALUES ('00000000-0000-4000-8000-000000000001')`)
