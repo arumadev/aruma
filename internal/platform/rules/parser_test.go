@@ -489,7 +489,7 @@ func TestParseNestingReportsAChainOnce(t *testing.T) {
 	for _, c := range []struct{ first, want string }{
 		{"resource.data.n.m", "L5:22 " + msgTooComplex + "\nL5:43 " + msgTooComplex},
 		{"resource.data.n.m()", "L5:22 " + msgTooComplex + "\nL5:45 " + msgTooComplex},
-		{"(resource.data).n[0]", "L5:23 " + msgTooComplex + "\nL5:46 " + msgTooComplex},
+		{"(resource.data).n[0]", "L5:22 " + msgTooComplex + "\nL5:46 " + msgTooComplex},
 	} {
 		// 100 terms: the first two are at depth 99.
 		cond := c.first + strings.Repeat(" && true", 99)
@@ -742,6 +742,60 @@ func syntaxEachExpr(f *file, fn func(expr)) {
 			for _, s := range e.segs {
 				stack = append(stack, s.x)
 			}
+		}
+	}
+}
+
+// syntaxParens is n parentheses around x.
+func syntaxParens(n int, x string) string { return syntaxRepeat("(", n, x, ")") }
+
+// A minus adds no level of its own to the nesting; the parenthesis of -(x) does, and so does !
+// (production, S1-A review round 2).
+func TestParseMinusAddsNoLevel(t *testing.T) {
+	for _, c := range []struct{ cond, want string }{
+		{syntaxParens(98, "-1"), ""},
+		{syntaxParens(98, "-1.5"), ""},
+		{syntaxParens(98, "-resource.data.n"), ""},
+		{syntaxParens(97, "-1 < 2"), ""},
+		{syntaxParens(98, "-9223372036854775808"), ""},
+		{syntaxParens(98, "-(1)"), "L5:122 " + msgTooComplex},
+		{syntaxParens(98, "!true"), "L5:121 " + msgTooComplex},
+		{syntaxParens(97, "-(1)"), ""},
+	} {
+		_, issues := parse("t.rules", syntaxInMatch("allow read: if "+c.cond+";"), DefaultLimits())
+		if got := syntaxIssues(issues); got != c.want {
+			t.Errorf("%.40s…: %q, want %q", c.cond, got, c.want)
+		}
+	}
+}
+
+// An access on a parenthesized value starts at its outermost parenthesis, where production
+// reports an error of the access; the value inside keeps its own span.
+func TestParseAccessOnParentheses(t *testing.T) {
+	for _, c := range []struct{ cond, outer, inner string }{
+		{"(resource.data).n[0]", "(resource.data).n[0]", "resource.data"},
+		{"(resource.data).n.x", "(resource.data).n.x", "resource.data"},
+		{"(resource.data.n)[0]", "(resource.data.n)[0]", "resource.data.n"},
+		{"((a)).b", "((a)).b", "a"},
+	} {
+		src := syntaxInMatch("allow read: if " + c.cond + ";")
+		e := syntaxParse(t, src).body.matches[0].body.matches[0].body.allows[0].cond
+		text := func(e expr) string { return src[e.pos().start:e.pos().end] }
+		// The value accessed first: walk down while the span starts at the parenthesis.
+		inner := e
+	walk:
+		for src[inner.pos().start] == '(' {
+			switch x := inner.(type) {
+			case *memberExpr:
+				inner = x.x
+			case *indexExpr:
+				inner = x.x
+			default:
+				break walk
+			}
+		}
+		if text(e) != c.outer || text(inner) != c.inner {
+			t.Errorf("%s: outer %q, inner %q", c.cond, text(e), text(inner))
 		}
 	}
 }

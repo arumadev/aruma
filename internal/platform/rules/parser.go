@@ -1231,7 +1231,12 @@ func (p *parser) postfix() expr {
 			p.tooComplex()
 			return x
 		}
+		// An access on a parenthesized value starts at its outermost parenthesis, where
+		// production places errors of (resource.data).n.
 		start := x.pos().start
+		if ps := p.parens[x]; len(ps) > 0 {
+			start = ps[0].start
+		}
 		if p.la(1) == tkDot {
 			// A field may be named by any word but rules_version; a method only by an
 			// identifier.
@@ -1473,15 +1478,14 @@ loop:
 // checkDepth reports "Expression is too complex to evaluate safely." at every expression, and
 // every parenthesis, nested exactly lim.ExpressionDepth+1 deep in a statement's expression,
 // counting from 0 at the statement. Every operand, argument, index, element, key, value, branch
-// and parenthesis is one level deeper; an accessed value and a method's receiver are not, and
-// -(x) is one level, not two (hidane's measurements). Without recursion: a chain of operators
-// can be thousands deep.
+// and parenthesis is one level deeper; an accessed value, a method's receiver and the operand of
+// a minus are not (hidane's measurements and production's). Without recursion: a chain of
+// operators can be thousands deep.
 func (p *parser) checkDepth(root expr) {
 	limit := p.lim.ExpressionDepth + 1
 	type item struct {
-		e       expr
-		level   int
-		negated bool
+		e     expr
+		level int
 		// covered is an accessed value or a receiver whose parent is reported at the same
 		// depth: production reports the chain once (oracle and_field_100).
 		covered bool
@@ -1491,9 +1495,6 @@ func (p *parser) checkDepth(root expr) {
 		it := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
 		parens := p.parens[it.e]
-		if it.negated && len(parens) > 0 {
-			parens = parens[1:]
-		}
 		level := it.level
 		for _, at := range parens {
 			if level == limit && !it.covered {
@@ -1547,7 +1548,13 @@ func (p *parser) checkDepth(root expr) {
 			}
 			deeper(e.args...)
 		case *unaryExpr:
-			children = append(children, item{e: e.x, level: level + 1, negated: e.op == tokMinus})
+			if e.op == tokMinus {
+				// A minus adds no level of its own (production: 98 parentheses around -1 or
+				// -resource.data.n compile); the parenthesis of -(x) counts.
+				children = append(children, item{e: e.x, level: level, covered: level == limit && (reported || it.covered)})
+			} else {
+				deeper(e.x)
+			}
 		case *binaryExpr:
 			deeper(e.x, e.y)
 		case *isExpr:
