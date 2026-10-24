@@ -97,7 +97,7 @@ vite_app() {
   mkdir -p "$dir/src"
   package "$dir" "{\"firebase\": \"$firebase\", \"vite\": \"${vite_versions[major - 5]}\"}"
   cp index.html "$dir/"
-  cp src/main.js src/ops.js "$dir/src/"
+  cp src/main.js src/ops.js src/worker.js "$dir/src/"
   cp apps/vite/vite.config.mjs "$dir/"
   install_app "$dir" && rm -rf "$dir/node_modules/.vite"
   [[ -z $install_only ]] || return 0
