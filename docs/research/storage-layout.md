@@ -173,7 +173,7 @@
 | `internal/admin/mgmt/storage.go` **جديد** | `GET /v1alpha/projects/{p}/defaultBucket`، و`GET /v1beta/projects/{p}/buckets`، و`GET /v1/projects/{p}/services/{name}` (`ENABLED`) و`:enable` | S5-A |
 | `internal/app/testdata/console_routes.txt` | مسارات الكونسول الجديدة، بـ `-update` ومراجعة الفرق | S5-B |
 | `dashboard/src/features/storage/` **جديد** | الملفات (والرفع ببروتوكول `/v0` إلى رابط الجلسة التي تصدرها اللوحة)، ومحرر القواعد (أخطاء `issues[]` على الأسطر)، والإعدادات (CORS)، والاستعمال | S5-C |
-| `internal/admin/web/web.go` | **تضييق CSP اللوحة** إلى مصادر بمسار (`<origin>/_next/static/`) حيث أمكن، والثمن مكتوب (ADR-022 §10.1) | S5-C |
+| `internal/admin/web/web.go` | **تضييق CSP اللوحة إلزامًا:** `script-src` و`style-src` إلى مصادر بمسار (`<origin>/_next/static/`) لا `'self'`، فهي الحماية الوحيدة على HTTP العادي حيث لا ترسل المتصفحات `Sec-Fetch-*` (ADR-022 §10.1) | S5-C |
 | `test/acceptance/storage_*_test.go` **جديد** | فوق خادم حقيقي وPostgres: كل عملية `/v0` وGCS، والانهيار المحاكى (قتل العملية بين الخطوات في `tools/storage-chaos`، اختياري في S7) | S3، S4 |
 | `test/acceptance/isolation_storage_*_test.go` | حالات Storage (ADR-022 §3)، **ملف لكل مالك**: `isolation_storage_test.go` (العقد: bucket لكل مشروع)، و`_s2c_` (رمز التنزيل و`pageToken`)، و`_s2d_` (رابط الرفع)، و`_s2e_` (الـ ruleset)، و`_s4a_` (حساب الخدمة وrewrite) | 0، C، D، E، S4-A |
 | `test/acceptance/harness_test.go` | `startStorage`: `Boot` ثم `Run` ثم `Close` كما يفعل `Serve`، والاختبار يُتخطى باسم المالك حتى يكتب S2-D `Boot` (`storage_boot_test.go`) | 0 |
@@ -437,7 +437,7 @@ type ruleOp struct { Method rules.Method; Name string; List bool; Resource, Inco
 |---|---|---|
 | **S5-A: واجهات الأداة** | `internal/admin/mgmt/rules.go` و`storage.go`، واختباراتهما | كل طلب في C §1.5 و§1.3 و§1.4 بالحالة 200 حرفيًا وأشكاله، و`:test` بـ `issues[]` على الخطأ |
 | **S5-B: واجهة اللوحة** | `internal/services/storage/console/`، و`console_routes.txt` | كل مسار يطلب اعتمادًا (ADR-010 S-4) ويمر بـ CSRF، ومسار إصدار جلسة الرفع يعيد رابط `/v0` بهوية Admin وحساب اللوحة، بعمر ساعة وحجم معلن إلزامي، ويُكتب الإصدار والإنهاء في سجل التدقيق، ولا مسار كونسول يقبل جسمًا فوق 1 MiB، والتنزيل `attachment` دائمًا بترويسات `media` |
-| **S5-C: الواجهة** | `dashboard/src/features/storage/`، وتضييق CSP في `internal/admin/web/web.go` | الملفات (تصفح، ورفع متقطع كبير بجلسة تصدرها اللوحة وقطع إلى `/v0`، وحذف، وmetadata، ورموز)، ومحرر القواعد بأخطائه على الأسطر، وCORS، والاستعمال. وe2e في Playwright |
+| **S5-C: الواجهة** | `dashboard/src/features/storage/`، وتضييق CSP في `internal/admin/web/web.go` | **CSP اللوحة بلا `'self'` في `script-src` و`style-src`** (مصادر بمسار `<origin>/_next/static/` وحدها، واختبار يثبتها)، والملفات (تصفح، ورفع متقطع كبير بجلسة تصدرها اللوحة وقطع إلى `/v0`، وحذف، وmetadata، ورموز)، ومحرر القواعد بأخطائه على الأسطر، وCORS، والاستعمال. وe2e في Playwright |
 | **S5-D: أداة `firebase`** | e2e في `test/acceptance` أو `test/e2e/cli-storage` | `firebase init storage` يكتب القالب أو القواعد المنشورة، و`firebase deploy --only storage` ينشر وتطبَّق القواعد فورًا على `/v0`، والنشر الثاني بلا تغيير «already up to date»، وخطأ ترجمة يطبع `[E] line:column` |
 
 ### S6: مسار الإنتاج لكل منصة (يبدأ بعد S3-B على خادم يعمل)

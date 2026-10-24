@@ -30,7 +30,8 @@ func TestModesAreDistinct(t *testing.T) {
 	if got := strings.Join(names, "; "); got != want {
 		t.Errorf("Item:\n got %s\nwant %s", got, want)
 	}
-	if got := fmt.Sprintf("%d %s %s", reflect.TypeFor[Limits]().NumField(), reflect.TypeFor[Limits]().Field(0).Name, reflect.TypeFor[Limits]().Field(1).Name); got != "2 DecompressedBytes MinBytesPerSecond" {
+	lt := reflect.TypeFor[Limits]()
+	if got := fmt.Sprintf("%d %s %s %s %s", lt.NumField(), lt.Field(0).Name, lt.Field(1).Name, lt.Field(2).Name, lt.Field(2).Type); got != "3 DecompressedBytes MinBytesPerSecond Cut func(error)" {
 		t.Errorf("Limits: %s", got)
 	}
 }

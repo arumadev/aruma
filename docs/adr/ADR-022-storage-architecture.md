@@ -288,8 +288,8 @@ x-goog-generation ، x-goog-metageneration ، x-goog-hash: crc32c=<b64>,md5=<b64
 - **رفض العمّال:** طلب تنزيل فيه `Service-Worker: script`، أو `Sec-Fetch-Dest` = `serviceworker` أو `sharedworker` أو `worker`، يُرد **403**. ملف JS مرفوع يُسجَّل Service Worker على أصل اللوحة (بثغرة XSS في أي صفحة) يعترض كل تنزيلات الـ bucket ويبقى بعد إصلاح الثغرة (F §2.2-3).
 - **ورفض التحميل كسكربت من أصل اللوحة نفسه (قرار المسؤول):** CSP اللوحة `script-src 'self'` و`style-src 'self'` (`internal/admin/web/web.go:152-161`)، وملف مرفوع بـ `text/javascript` يمر بـ nosniff، و`sandbox` في CSP الرد لا ينطبق على سكربت يُحمَّل موردًا فرعيًا. فأي حقن HTML في اللوحة كان سيصير تنفيذ سكربت كامل على أصلها (يُبطل ADR-010 S-9). لذلك طلب على مسار وسائط فيه `Sec-Fetch-Site: same-origin` و`Sec-Fetch-Dest` من `script` أو `style` أو `worker` أو `sharedworker` أو `serviceworker` أو `audioworklet` أو `paintworklet` أو `xslt` يُرد **403**.
   - التضمين من أصول التطبيقات (`cross-site` و`same-site`) لا يتأثر، ولا `<img>` و`<video>` من اللوحة نفسها (`image` و`video`).
-  - **وحيث أمكن تضيق CSP اللوحة** إلى مصادر بمسار (`<origin>/_next/static/` بدل `'self'`) في S5-C، فتغطي المتصفحات التي لا ترسل Fetch Metadata.
-  - **الثمن:** متصفح لا يرسل `Sec-Fetch-*` لا تحميه القاعدة الأولى، فتبقى له CSP المضيَّقة إن اعتُمدت. ولا يتأثر أي استعمال مشروع لرابط تنزيل.
+  - **وتُضيَّق CSP اللوحة إلزامًا** إلى مصادر بمسار (`script-src` و`style-src` = `<origin>/_next/static/` بدل `'self'`) في S5-C، فلا يُحمَّل من أصل اللوحة سكربت ولا أسلوب إلا من أصولها المبنية، مهما أرسل المتصفح.
+  - **على HTTP العادي لا تعمل القاعدة الأولى أبدًا:** المتصفحات لا ترسل `Sec-Fetch-*` إلى أصل ليس «potentially trustworthy» (Fetch Metadata §3)، فطلب السكربت من اللوحة على `http://` غير محلي لا يُميَّز من `<img>`، و`media` لا تستطيع رفضه. حمايته هناك CSP اللوحة المضيَّقة وحدها، ويكتب الخادم تحذيرًا عند الإقلاع حين Storage مفعّل و`public_url` بـ `http` على مضيف غير loopback (`internal/app`). وكذلك متصفح لا يرسل Fetch Metadata أصلًا. ولا يتأثر أي استعمال مشروع لرابط تنزيل.
 
 #### 10.2 CSP حسب النوع: `sandbox` لكل نوع في v0.3
 
@@ -495,6 +495,7 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
 | `gc_grace` | دقيقة | 5 |
 
 - **القواعد العدائية** محدودة بحدود ADR-021 §4، و`Inflight` واحد للعملية يشترك فيه Storage وواجهة `:test`.
+- **التنزيل البطيء حد تشغيلي معروف:** عميل يقرأ بـ `min_bytes_per_second` تمامًا يمسك goroutine وملفًا مفتوحًا طوال تنزيل كائن ضخم، والتنزيلات لا تُحد لكل IP عمدًا (عملاء كثيرون خلف NAT واحد). من يحتاج سقفًا يضع أمام Aruma وكيلًا عكسيًا يحدّ الاتصالات.
 - **لا معالجة على الخادم** (صور، ضغط) في v0.3، فلا قنابل إلا عبر فك الضغط، وهو محدود.
 - **الأسماء تُفحص بـ fuzz** في `wire` (فك المسار من `EscapedPath()` مرة واحدة دون تقسيم قبل الفك، A §2.2؛ و`Content-Range`؛ و`X-Goog-Upload-Command`؛ وmultipart).
 
@@ -562,6 +563,17 @@ Playwright على Chromium وFirefox وWebKit، بحالات F §2.4 الأرب�
   15. CORS `*` على ردود الـ API والـ preflight (البند 11).
   16. `Range` غير صحيح الصيغة (وحدة أخرى، أو `a-b` و`b < a`، أو رقم ناقص) يُتجاهل فيُرد 200 كاملًا، و`bytes=-0` على كائن غير فارغ 416 (البند 10.3؛ RFC 9110 §14.2 يسمح بالتجاهل، والإنتاج غير مقيس). في `wire.ParseRange` (S2-B).
   17. **صيغ السلك أشد من المقيس حيث لم يُقس الإنتاج** (S2-B): `multipart/related` جزءان بالضبط، أولهما `application/json`، وبلا `Content-Transfer-Encoding` غير `7bit`/`8bit`/`binary`، والحد حسب RFC 2046 (70 حرفًا)؛ و`X-Goog-Upload-Command` بأحرف صغيرة كما ترسلها المكتبات الثلاث؛ و`Content-Range` بأشكاله الستة وحدها. وكل خروج عنها 400. وكل الحالات في `wire` (`multipart.go` و`upload.go`).
+  18. **خدمة البايتات حيث سكت هذا البند أو لم يُقس الإنتاج** (S2-F، كلها في `media`):
+      - `Cache-Control` على GCS بلا قيمة مخزّنة `private, max-age=0`، كما يرسله GCS لكائن غير عام (البند 10.5).
+      - على تنزيل قررته القواعد يُضاف `private` حين يغيب، لا يُستبدل `public` وحده: `must-revalidate` أيضًا يسمح لمخبأ مشترك بخزن رد طلب فيه `Authorization` (RFC 9111 §3.5).
+      - تنزيل اللوحة `no-store`، ويبقى على `CORP: same-origin` العامة: يُطلب بكعكة الجلسة، ولا سبب لأصل آخر أن يضمّنه.
+      - `attachment` القسري (PDF واللوحة) يُبقي معاملات القيمة المخزّنة (`filename`)، ويأخذ آخر مقطع من الاسم إن غابت.
+      - 304 على `If-None-Match` (مقارنة ضعيفة) ثم `If-Modified-Since`، **قبل `Range`** (RFC 9110 §13.2.2)، فنسخة مخبأة 304 ولو كان النطاق 416. و`If-Range` بتاريخ يُرد 200 كاملًا (البند 10.3 يقارن بالـ ETag وحده).
+      - `Content-Type` مخزّن فيه فاصلة، أو لا يقبله `mime.ParseMediaType` نوعًا/نوعًا فرعيًا، يُخدم `application/octet-stream`: Fetch يأخذ آخر نوع صالح في القائمة، فـ `text/plain,application/pdf` PDF عند المتصفح، وكان سيفلت من `attachment` القسري.
+      - `gzip;q=0` صريحًا يغلب `*` في `Accept-Encoding` (RFC 9110 §12.5.3).
+      - جسم 416 بشكل السطح: «The requested range cannot be satisfied.»، وفي GCS `reason` = `requestedRangeNotSatisfiable`.
+      - الرد المفكوك بلا `Content-Length` ومعه `Accept-Ranges: none`، و`Vary: Accept-Encoding` على كل كائن مخزّن gzip، و`ETag` كما هو. وكائن مخزّن gzip ليس gzip يُخدم كما خُزّن بترميزه، لا 500.
+      - مهلة الكتابة نافذة 30 ثانية تُمدّ كلما حملت `min_bytes_per_second × 30` بايتًا، فتنزيل أطول من دقيقة يكمل، وعميل لا يقرأ يُقطع (البند 17). و`Serve` يمدّها بنفسه. **وكل فشل بعد سطر الحالة يقطعه `Serve` نفسه:** يبلّغ `Limits.Cut` ثم `panic(http.ErrAbortHandler)`، فلا يُختم رد مقطوع كأنه كامل ولو عاد المعالج عاديًا. ولا يعيد خطأ إلا قبل أول بايت، وترويسات `w` كما كانت.
 - **ما يُقاس في S6 قبل اعتماده** (وإلا يُكتب البديل): التبديل إلى النطاق وحده في متصفح حقيقي، وTurbopack، وVite 5 إلى 7، وخطوة بناء Flutter web، واحترام Xcode و`flutter build ios` للمرآة، وبقاء إشعار `META-INF/aruma/` في APK وفي APK من AAB. **وفي S2 وS4:** كلفة fsync على القرص المستهدف، و`universeDomain` على مفتاح فيه `universe_domain`.
 - **قطع العلاقة مع Google في الإنتاج يحتاج تعديل كود Google** على Android وiOS، بإذن الرخصة وإشعاراتها، وصيانة تفشل بصوت عالٍ مع كل إصدار جديد. ومستعملو xcframework اليدوي وما لا يمر بالمحوّل يأخذون الاحتياط وحده.
 - **`firestore.get()` في قواعد Storage يرفض حتى v0.4**، وv0.4 يغيّر سطرًا في `internal/app`.
