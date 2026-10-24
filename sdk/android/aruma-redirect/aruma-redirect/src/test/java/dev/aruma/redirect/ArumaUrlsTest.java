@@ -36,6 +36,9 @@ public class ArumaUrlsTest {
             {"https://a.example/v0/b/b/o/100%25%20sure%3F%23x", "gs://b/100% sure?#x"},
             {"https://a.example/v0/b/b/o/a%20b%2B%C3%A9.txt", "gs://b/a b+é.txt"},
             {"https://a.example/v0/b/b/o/%D8%B5%D9%88%D8%B1%D8%A9%20%D9%A1.png", "gs://b/صورة ١.png"},
+            // Dot segments are names like any other: Slashes.normalizeSlashes leaves them.
+            {"https://a.example/v0/b/b/o/a%2F.%2Fb", "gs://b/a/./b"},
+            {"https://a.example/v0/b/b/o/a%2F..%2Fb", "gs://b/a/../b"},
             {"gs://b/already", "gs://b/already"},
         };
         for (String[] c : cases) {
@@ -59,6 +62,12 @@ public class ArumaUrlsTest {
             "https://a.example/v0/b/b/o/%zz",
             "https://a.example/v0/b/b/o/%C3",
             "https://a.example/b/b/o/x",
+            // Names getReferenceFromUrl would read as another object (Slashes.normalizeSlashes):
+            // a//b as a/b, /lead as lead, trail/ as trail.
+            "https://a.example/v0/b/b/o/a%2F%2Fb",
+            "https://a.example/v0/b/b/o/%2Flead",
+            "https://a.example/v0/b/b/o/trail%2F",
+            "https://a.example/v0/b/b/o/%2F",
         };
         for (String url : bad) {
             try {
@@ -99,6 +108,16 @@ public class ArumaUrlsTest {
         assertTrue(ArumaRedirect.installFromValues("https://aruma.example.com", null, null, false));
         assertEquals("https://storage.example.com/v0/b/p/o/a",
                 ArumaUrls.toArumaUrl("https://firebasestorage.googleapis.com/v0/b/p/o/a"));
+    }
+
+    @Test
+    public void toArumaUrlKeepsThoseNamesByteForByte() {
+        // Only the origin changes: the server reads the same object the Google link named.
+        assertTrue(ArumaRedirect.installFromValues("https://aruma.example.com", null, null, false));
+        for (String name : new String[] {"a%2F%2Fb", "%2Flead", "trail%2F", "a%2F.%2Fb"}) {
+            assertEquals("https://aruma.example.com/v0/b/p/o/" + name + "?" + TOKEN,
+                    ArumaUrls.toArumaUrl("https://firebasestorage.googleapis.com/v0/b/p/o/" + name + "?" + TOKEN));
+        }
     }
 
     @Test
