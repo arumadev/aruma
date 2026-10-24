@@ -131,8 +131,11 @@ func (d *Disk) Delete(key string) error {
 // It may be called again after it failed, or after the process stopped, at any step: the
 // session's blob_key, written before the first call, names the key (ADR-022 §5). When the
 // staging file is gone and a file is at key, the rename happened and its entry may not be
-// durable yet, so Promote syncs that file, the key's directories and the staging directory,
-// and returns nil. Only then may the row that points to key be committed.
+// durable yet; and after a power loss both names may hold the one file. Promote then makes the
+// file at key durable (and drops the staging name), and returns an error that wraps
+// ErrPromotedEarlier, never nil: it cannot tell that file is the session's, so the caller
+// hashes it against the session before it commits a row that points to it. A different file
+// at key with the staging file still there is fs.ErrExist, and both stay as they are.
 func (d *Disk) Promote(staging, key string) error {
 	sdir, sname, err := keyPath(staging, "s")
 	if err != nil {
@@ -156,7 +159,10 @@ func (d *Disk) Promote(staging, key string) error {
 		} else if err != nil {
 			return wrap(err)
 		}
-		return d.syncPromoted(sdir, ddir, wrap)
+		if err := d.syncPromoted(sdir, ddir, wrap); err != nil {
+			return err
+		}
+		return wrap(ErrPromotedEarlier)
 	}
 	if err != nil {
 		return wrap(err)
@@ -165,9 +171,23 @@ func (d *Disk) Promote(staging, key string) error {
 		return wrap(err)
 	}
 	// rename(2) replaces its target. The key is fresh and the lock makes this process the only
-	// writer, so the check only turns a reused key (a bug) into an error instead of a lost file.
-	if _, err := d.fs.Lstat(dname); err == nil {
-		return wrap(fs.ErrExist)
+	// writer, so the check only turns a reused key (a bug) into an error instead of a lost file;
+	// or finds the one file under both names, which a power loss after a rename may leave.
+	if at, err := d.fs.Lstat(dname); err == nil {
+		from, err := d.fs.Lstat(sname)
+		if err != nil {
+			return wrap(err)
+		}
+		if !at.Mode().IsRegular() || !os.SameFile(at, from) {
+			return wrap(fs.ErrExist)
+		}
+		if err := d.fs.Remove(sname); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return wrap(err)
+		}
+		if err := d.syncPromoted(sdir, ddir, wrap); err != nil {
+			return err
+		}
+		return wrap(ErrPromotedEarlier)
 	} else if !errors.Is(err, fs.ErrNotExist) {
 		return wrap(err)
 	}

@@ -65,8 +65,8 @@ func TestPromoteResumesAfterAFailedSync(t *testing.T) {
 				}
 			}
 			r.trace()
-			if err := d.Promote(promoteStaging, promoteObject); err != nil {
-				t.Fatalf("Promote again: %v", err)
+			if err := d.Promote(promoteStaging, promoteObject); !errors.Is(err, ErrPromotedEarlier) {
+				t.Fatalf("Promote again: %v, want ErrPromotedEarlier", err)
 			}
 			want := []string{"sync " + promoteOName, "sync p/1/0b", "sync s/1/ab"}
 			if got := r.trace(); !slices.Equal(got, want) {
@@ -102,7 +102,10 @@ func TestPromoteResumesAfterTheProcessDies(t *testing.T) {
 		}
 		r2 := &recFS{inner: next.fs, model: r.model}
 		next.fs = r2
-		if err := next.Promote(promoteStaging, promoteObject); err != nil {
+		// Killed before the rename, the next call does it; after it, the next call says so.
+		renamed := slices.ContainsFunc(r.ops, func(op string) bool { return strings.HasPrefix(op, "rename ") })
+		err = next.Promote(promoteStaging, promoteObject)
+		if renamed && !errors.Is(err, ErrPromotedEarlier) || !renamed && err != nil {
 			t.Errorf("the next process, after a kill at call %d (%q): %v", k, r.ops, err)
 		}
 		promoted(t, r2, "the next process")
@@ -116,6 +119,51 @@ func TestPromoteOfNothingFails(t *testing.T) {
 	if err := d.Promote(promoteStaging, promoteObject); !errors.Is(err, os.ErrNotExist) {
 		t.Errorf("Promote with neither file: %v", err)
 	}
+}
+
+// Any file at the key with the staging file gone is "promoted earlier", never a plain yes: the
+// store cannot tell it is the session's, and the caller hashes it. Its bytes are not touched.
+func TestPromoteNeverTrustsAFileAtTheKey(t *testing.T) {
+	d := newTestDisk(t)
+	writeObject(t, d, promoteObject, []byte("someone else's"))
+	err := d.Promote(promoteStaging, promoteObject)
+	if !errors.Is(err, ErrPromotedEarlier) {
+		t.Fatalf("Promote onto another file with no staging file: %v", err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(d.root, promoteOName)); string(b) != "someone else's" {
+		t.Errorf("the file at the key holds %q", b)
+	}
+	// With the staging file there, a different file at the key is a reused key: both stay.
+	s, _ := d.CreateStaging(promoteStaging)
+	s.Append(strings.NewReader("mine"), 4)
+	s.Close()
+	if err := d.Promote(promoteStaging, promoteObject); !errors.Is(err, os.ErrExist) || errors.Is(err, ErrPromotedEarlier) {
+		t.Errorf("Promote onto another file: %v", err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(d.root, promoteSName)); string(b) != "mine" {
+		t.Errorf("the staging file holds %q", b)
+	}
+}
+
+// After a power loss both names may hold the one file: the staging name goes, durably.
+func TestPromoteResolvesBothNames(t *testing.T) {
+	d, _ := stagedDisk(t)
+	os.MkdirAll(filepath.Join(d.root, "p/1/0b"), 0o700)
+	if err := os.Link(filepath.Join(d.root, promoteSName), filepath.Join(d.root, promoteOName)); err != nil {
+		t.Fatal(err)
+	}
+	d.fs = d.fs.(*recFS).inner
+	r := record(t, d) // the model: both names durable, as the power loss left them
+	if err := d.Promote(promoteStaging, promoteObject); !errors.Is(err, ErrPromotedEarlier) {
+		t.Fatalf("Promote with both names: %v", err)
+	}
+	if _, err := os.Lstat(filepath.Join(d.root, promoteSName)); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("the staging name is still there: %v", err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(d.root, promoteOName)); string(b) != "the whole file" {
+		t.Errorf("the object holds %q", b)
+	}
+	promoted(t, r, "Promote with both names")
 }
 
 // A directory found, not made, gets its parent synced (NewDisk's root), and so does the data
