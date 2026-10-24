@@ -1,5 +1,5 @@
 import {
-  test, expect, manifest, objects, noCORS, aruma, appOrigin, otherOrigin, dashboardPage, sdkRead,
+  test, expect, manifest, objects, noCORS, appOrigin, otherOrigin, dashboardPage, sdkRead,
   browse, browseToDownload, probe, ran, mediaCheck, mediaDocument, playable, childFrames, frame,
 } from './fixtures.mjs';
 
@@ -80,7 +80,7 @@ test.describe('browsing to an active document runs no script', () => {
 // COEP require-corp; the control is an image without CORP, which COEP refuses.
 test.describe('6. embedding from another origin', () => {
   for (const path of ['/blank', '/coep']) {
-    test(`on ${path}`, async ({ page }) => {
+    test(`on ${path}`, async ({ page, browserName }) => {
       await page.goto(`${otherOrigin}${path}`);
       if (path === '/coep') {
         expect(await page.evaluate(() => self.crossOriginIsolated), 'the page is cross-origin isolated').toBe(true);
@@ -101,7 +101,7 @@ test.describe('6. embedding from another origin', () => {
         }), objects[key].url);
         expect(w, key).toBeGreaterThan(0);
       }
-      const can = await playable(page);
+      const can = await playable(page, browserName);
       for (const key of ['mp4', 'webm'].filter((k) => can[k])) {
         const v = await mediaCheck(page, { url: objects[key].url, tag: 'video' });
         expect(v, key).toMatchObject({ duration: 4, currentTime: 2.5 });
@@ -135,9 +135,10 @@ test('7. fetch and the SDK from another origin, by the bucket\'s CORS', async ({
 });
 
 // 8. On the dashboard's origin: a download is never registered as a service worker, nor loaded as
-// a script. The control registers a script of that origin that is not a download.
+// a script. The control registers a service worker of the pages' origin, the same script served
+// without Aruma's refusal: the engine registers one. (Playwright's Firefox does not route a
+// service worker's script, so the control cannot be a fulfilled script on Aruma's origin.)
 test('8. service worker and script from the dashboard\'s origin', async ({ page }) => {
-  await page.goto(dashboardPage);
   const register = (url) => page.evaluate(async (url) => {
     if (!navigator.serviceWorker) return 'unsupported';
     try {
@@ -148,11 +149,10 @@ test('8. service worker and script from the dashboard\'s origin', async ({ page 
       return `refused ${e.name}`;
     }
   }, url);
-  const control = await register(`${aruma}/__matrix/sw-ok.js`);
-  const refused = await register(objects.sw.url);
-  expect(refused).not.toBe('registered');
-  test.info().annotations.push({ type: 'service worker', description: `control ${control}, download ${refused}` });
-  if (control !== 'unsupported') expect(control, 'control: a script of the origin registers').toBe('registered');
+  await page.goto(`${appOrigin}/blank`);
+  expect(await register(`${appOrigin}/sw.js`), 'control: a service worker of the pages\' origin').toBe('registered');
+  await page.goto(dashboardPage);
+  expect(await register(objects.sw.url)).toMatch(/^refused /);
 
   const load = (url) => page.evaluate((url) => new Promise((resolve) => {
     const s = document.createElement('script');
@@ -215,7 +215,7 @@ test('13. report.pdf', async ({ page }) => {
 // WebKit must play the MP4 (Safari seeks with Range, F §2.2-5).
 test('14. media browsed to', async ({ page, browserName }) => {
   await page.goto(`${otherOrigin}/blank`);
-  const can = await playable(page);
+  const can = await playable(page, browserName);
   if (browserName === 'webkit') expect(can.mp4, 'WebKit plays H.264 in MP4').toBe(true);
   const keys = ['mp4', 'webm'].filter((k) => can[k]);
   expect(keys.length, 'the engine plays one of the clips').toBeGreaterThan(0);

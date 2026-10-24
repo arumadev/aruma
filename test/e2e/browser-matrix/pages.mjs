@@ -11,6 +11,7 @@
 //   /evil.html  the matrix's evil page, with no protection: the control that its script runs
 //   /frame.html a page that may be framed: the control that a frame's content is seen
 //   /nocorp.png an image without CORP: the control that COEP is enforced
+//   /sw.js      a service worker: the control that the engine registers one
 //   /firebasejs/13.1.0/firebase-{app,storage}.js  the official web SDK
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -32,6 +33,7 @@ const routes = {
     page(`<p>evil page</p><script>console.log("${marker}"); document.title = "executed";</script>`)],
   '/frame.html': [{ 'content-type': 'text/html; charset=utf-8' }, page('MATRIX-FRAME-CONTENT')],
   '/nocorp.png': [{ 'content-type': 'image/png' }, png],
+  '/sw.js': [{ 'content-type': 'text/javascript' }, 'self.addEventListener("fetch", () => {});'],
 };
 
 // The official web SDK, the CDN build (what an app loads from www.gstatic.com), from the

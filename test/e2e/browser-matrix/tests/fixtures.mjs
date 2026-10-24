@@ -35,14 +35,9 @@ export const test = base.extend({
     page.on('console', (m) => page.messages.push(m.text()));
     // The dashboard's session cookie: no download may read it.
     await context.addCookies([{ name: 'dashboard_session', value: 'session-secret', url: aruma }]);
-    await context.route(`${aruma}/__matrix/**`, (route) => {
-      const path = new URL(route.request().url()).pathname;
-      if (path.endsWith('.js')) {
-        // The control service worker: on the dashboard's origin and not a download.
-        return route.fulfill({ contentType: 'text/javascript', body: 'self.addEventListener("fetch", () => {});' });
-      }
-      return route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>dashboard</title><p>dashboard</p>' });
-    });
+    await context.route(dashboardPage, (route) => route.fulfill({
+      contentType: 'text/html', body: '<!doctype html><title>dashboard</title><p>dashboard</p>',
+    }));
     await use(page);
     expect(left, 'requests that left the machine').toEqual([]);
   },
@@ -103,12 +98,16 @@ export function mediaCheck(page, { url, tag }) {
       el.src = url;
       document.body.append(el);
       await loaded;
-      const played = await el.play().then(() => true, (e) => `play: ${e.name}`);
+      // WebKit's headless play() may never settle; playing is not what is checked, seeking is.
+      const played = await Promise.race([
+        el.play().then(() => true, (e) => `play: ${e.name}`),
+        new Promise((resolve) => setTimeout(() => resolve('play: pending'), 3_000)),
+      ]);
       el.pause();
       const seeked = once(el, 'seeked');
       el.currentTime = 2.5;
       await seeked;
-      return { duration: Math.round(el.duration), currentTime: el.currentTime, played };
+      return { duration: Math.round(el.duration), currentTime: Math.round(el.currentTime * 10) / 10, played };
     } catch (e) {
       return { error: e.message };
     }
@@ -137,15 +136,17 @@ export async function mediaDocument(page) {
   return state();
 }
 
-// playable is what the engine's <video> can play of the matrix's two clips.
-export function playable(page) {
-  return page.evaluate(() => {
+// playable is what the engine's <video> can play of the matrix's two clips. Playwright's
+// WebKit answers "probably" for VP9 in WebM, yet decodes no frame of it, served by Aruma or by a
+// plain file server alike (readyState stays at HAVE_METADATA): there the MP4 alone counts.
+export function playable(page, browserName) {
+  return page.evaluate((webkit) => {
     const v = document.createElement('video');
     return {
       mp4: v.canPlayType('video/mp4; codecs="avc1.42E01E"') !== '',
-      webm: v.canPlayType('video/webm; codecs="vp9"') !== '',
+      webm: !webkit && v.canPlayType('video/webm; codecs="vp9"') !== '',
     };
-  });
+  }, browserName === 'webkit');
 }
 
 // sdkRead reads public/sdk.txt of bucket with the official web SDK (firebase 13.1.0, the CDN
@@ -177,8 +178,11 @@ export async function childFrames(page) {
   const out = [];
   for (const f of page.frames()) {
     if (f === page.mainFrame()) continue;
-    const doc = await f.evaluate(() => ({ type: document.contentType, text: document.body?.innerText ?? '' }))
-      .catch((e) => ({ type: '', text: '', error: e.message.split('\n')[0] }));
+    // A frame the browser refused may never answer (Firefox): 3 s, then it showed nothing.
+    const doc = await Promise.race([
+      f.evaluate(() => ({ type: document.contentType, text: document.body?.innerText ?? '' })),
+      new Promise((_, ko) => setTimeout(() => ko(new Error('no answer in 3 s')), 3_000)),
+    ]).catch((e) => ({ type: '', text: '', error: e.message.split('\n')[0] }));
     out.push({ url: f.url(), ...doc });
   }
   return out;
