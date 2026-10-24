@@ -142,7 +142,7 @@ func (s *Service) Open(ctx context.Context, b Bucket, name string, p Principal, 
 }
 
 // Update applies a metadata change after the rules allow an update, and advances the
-// metageneration (ADR-022 §8, §14).
+// metageneration (ADR-022 §8, §14). Like every writer it passes the shutdown gate (enter).
 //
 // The change is checked before anything is read (checkPatch), and its result after the rules,
 // which see the object as it is and as the change leaves it (request.resource), with the same
@@ -161,6 +161,11 @@ func (s *Service) Update(ctx context.Context, b Bucket, name string, p Principal
 	if err := s.checkPatch(u); err != nil {
 		return Object{}, err
 	}
+	leave, err := s.enter()
+	if err != nil {
+		return Object{}, err
+	}
+	defer leave()
 	if ctx, err = s.prepareRules(ctx, b, p); err != nil {
 		return Object{}, err
 	}
@@ -188,7 +193,7 @@ func (s *Service) Update(ctx context.Context, b Bucket, name string, p Principal
 }
 
 // Delete removes an object after the rules allow a delete; its file goes to blob_gc in the same
-// transaction (releaseObject). Preconditions come from the GCS surface alone. The rules and the
+// transaction (releaseObject). Like every writer it passes the shutdown gate (enter). Preconditions come from the GCS surface alone. The rules and the
 // preconditions decide on the row locked for the delete.
 func (s *Service) Delete(ctx context.Context, b Bucket, name string, p Principal, sf Surface, pre Preconditions) error {
 	if err := checkPre(sf, pre); err != nil {
@@ -197,8 +202,12 @@ func (s *Service) Delete(ctx context.Context, b Bucket, name string, p Principal
 	if err := validateName(name); err != nil {
 		return err
 	}
-	ctx, err := s.prepareRules(ctx, b, p)
+	leave, err := s.enter()
 	if err != nil {
+		return err
+	}
+	defer leave()
+	if ctx, err = s.prepareRules(ctx, b, p); err != nil {
 		return err
 	}
 	err = s.inTx(ctx, func(q *queries.Queries) error {

@@ -63,6 +63,11 @@ func (s *Service) SetCORS(ctx context.Context, b Bucket, p Principal, rules []CO
 	if p.Kind != PrincipalAdmin {
 		return BucketInfo{}, ErrPermissionDenied
 	}
+	leave, err := s.enter()
+	if err != nil {
+		return BucketInfo{}, err
+	}
+	defer leave()
 	enc, err := s.encodeCORS(rules)
 	if err != nil {
 		return BucketInfo{}, err
