@@ -315,7 +315,19 @@ watch_sockets() {
 }
 watch_sockets &
 watcher=$!
-xcrun simctl launch --terminate-running-process --stdout="$gen/app-stdout.txt" --stderr="$gen/app-stderr.txt" "$sim" "$app_id" >/dev/null
+# Right after a boot, SpringBoard can deny the launch for a while: retry.
+for try in $(seq 1 10); do
+  xcrun simctl launch --terminate-running-process --stdout="$gen/app-stdout.txt" --stderr="$gen/app-stderr.txt" \
+    "$sim" "$app_id" >/dev/null 2>"$gen/launch.log" && break
+  if [[ $try -eq 10 ]]; then
+    cat "$gen/launch.log" >&2
+    echo "SpringBoard's and FrontBoard's last words on it:" >&2
+    xcrun simctl spawn "$sim" log show --last 3m --style compact \
+      --predicate "process == \"SpringBoard\" AND eventMessage CONTAINS[c] \"$app_id\"" 2>/dev/null | tail -25 >&2
+    exit 1
+  fi
+  sleep 3
+done
 for _ in $(seq 1 600); do
   [[ -s "$data/tmp/aruma-e2e.json" ]] && break
   sleep 0.5
