@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"cmp"
 	"fmt"
 	"slices"
 	"strings"
@@ -85,6 +86,7 @@ func check(f *file, svc Service, lim Limits) (*Ruleset, []Issue) {
 		c.rs.blocks = nil
 	}
 
+	c.positions()
 	for _, is := range c.issues {
 		if is.Severity == SeverityError {
 			return nil, c.issues
@@ -101,6 +103,7 @@ type checker struct {
 	version int
 	rs      *Ruleset
 	issues  []Issue
+	spans   []issueSpan // the issues still without their Position, filled by positions
 
 	fns   []*fnInfo // every function, in the order declared
 	info  map[*function]*fnInfo
@@ -161,8 +164,26 @@ func (c *checker) warnf(at span, format string, args ...any) {
 }
 
 func (c *checker) issue(at span, sev Severity, desc string) {
-	pos := position(c.f.src, at)
-	c.issues = append(c.issues, Issue{File: c.f.name, Position: &pos, Severity: sev, Description: desc})
+	c.spans = append(c.spans, issueSpan{i: len(c.issues), at: at})
+	c.issues = append(c.issues, Issue{File: c.f.name, Position: new(Position), Severity: sev, Description: desc})
+}
+
+// issueSpan is where an issue of c.issues lies, until positions converts it.
+type issueSpan struct {
+	i  int
+	at span
+}
+
+// positions gives every issue its Position in one pass over the source: the spans in order of
+// their start, through one posCursor, so a check with n issues costs O(n log n) and one scan,
+// not a scan from the start per issue. Each Position is what position(src, at) returns.
+func (c *checker) positions() {
+	slices.SortStableFunc(c.spans, func(a, b issueSpan) int { return cmp.Compare(a.at.start, b.at.start) })
+	cur := newPosCursor(c.f.src)
+	for _, s := range c.spans {
+		*c.issues[s.i].Position = cur.at(s.at)
+	}
+	c.spans = nil
 }
 
 // versions reads rules_version: none or '1' is version 1, warned about as old; '2' is 2; any

@@ -1,9 +1,45 @@
 package rules
 
 import (
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 )
+
+// A source at the size limit made of unused functions gives one warning per function, about
+// 9,400 of them, and still compiles fast: the checker places its issues in one ordered pass
+// (checker.positions), not with a scan from the start per issue, which took seconds. Each one
+// is where position puts it, and the warnings come in source order.
+func TestManyIssuesCompileFast(t *testing.T) {
+	lim := DefaultLimits()
+	var b strings.Builder
+	b.WriteString("rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n")
+	for i := 0; b.Len() < lim.SourceBytes-200; i++ {
+		fmt.Fprintf(&b, "function a%d(){return 1;}", i)
+	}
+	b.WriteString("\n  }\n}\n")
+	src := b.String()
+	start := time.Now()
+	rs, issues := Compile(Storage, File{Name: "storage.rules", Content: src}, lim)
+	took := time.Since(start)
+	if rs == nil || len(issues) < 9000 {
+		t.Fatalf("compiled %v with %d issues: %v", rs != nil, len(issues), issues.Err())
+	}
+	// Generous for -race on a loaded machine; the placement from the start per issue took 5 s.
+	if took > 2*time.Second {
+		t.Errorf("%d issues took %v", len(issues), took)
+	}
+	// A sample, each placed from the start of the file as position does.
+	for i := 0; i < len(issues); i += max(1, i/4) {
+		is, name := issues[i], fmt.Sprintf("a%d", i)
+		at := strings.Index(src, "function "+name+"(") + len("function ")
+		if want := position(src, span{at, at + len(name)}); is.Position == nil || *is.Position != want ||
+			is.Description != fmt.Sprintf(msgUnusedFunction, name) {
+			t.Fatalf("issue %d: %+v, want %+v", i, is, want)
+		}
+	}
+}
 
 // Positions count code points, lines end at \n alone, and EndOffset is the span's last code
 // point, as the emulator reports them (ADR-021 §2.1).
