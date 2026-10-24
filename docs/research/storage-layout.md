@@ -46,8 +46,10 @@
 |---|---|---|
 | `doc.go` | وصف الحزمة: bucket واحد لكل مشروع، والقرارات المؤقتة (ADR-023 §3) بموضعها في الكود | 0 |
 | `api.go` | **العقد العام** (القسم «عقد S2-0»): `Service` **بكل حقوله الخاصة** (فلا تضيف مهمة حقلًا) و`New` و`Options` و`Principal` و`Bucket` و`Object` و`Patch` و`Preconditions` و`Checksums` و`UploadSpec` و`Chunk` و`UploadState` و`ListOptions` و`ListPage` و`CORSRule` و`Usage`، وتوقيعات كل الطرق | 0 |
-| `helpers.go` | **مساعدات مشتركة تعمل من العقد** (لا تذعر)، ليتشاركها C وD وE بلا انتظار: `validateName` و`segments` و`applyDefaults` (ومنها `defaultDisposition`، **دالة الهروب الوحيدة** المطابقة لـ PY-RR) و`StripClientTokens` و`newDownloadToken` و`sealTokens`/`openTokens` (KEK، البيانات الإضافية `(project, name)`). ولها اختباراتها في العقد. تغييرها يمر بالمدمج | 0 |
-| `errors.go` | الأخطاء المسمّاة (`ErrNotFound` و`ErrBucketNotFound` و`ErrPermissionDenied` …، و`InvalidError{Reason, Message}` و`OffsetError{Received}`). كل واجهة تربطها بحالتها وجسمها | 0 |
+| `helpers.go` | **مساعدات مشتركة تعمل من العقد** (لا تذعر)، ليتشاركها C وD وE بلا انتظار: `validateName` و`segments` و`applyDefaults` (ومنها `defaultDisposition`، **دالة الهروب الوحيدة** المطابقة لـ PY-RR) و`StripClientTokens` و`newDownloadToken` و`sealTokens`/`openTokens` (KEK، البيانات الإضافية `(project, name)`)، و`sealSessionTokens`/`openSessionTokens` (`(project, name, id_hash)`)، و`encodeAttrs`/`decodeAttrs` و`encodeSnapshot`/`decodeSnapshot` لصف الجلسة. ولها اختباراتها في العقد. تغييرها يمر بالمدمج | 0 |
+| `durability.go` | **مساعد المعاملات الوحيد:** `begin` و`inTx` (`SET LOCAL synchronous_commit TO on`، و`COMMIT` تحت `WithoutCancel`)، تمر به كل معاملة Storage في C وD وE؛ و`warnUnsafeDurability` (`SHOW fsync`) يستدعيه `Boot`؛ و**`releaseObject`** (نقص `used_bytes` و`object_count` وصف `blob_gc`) يستعمله `Delete` في C والكتابة فوق موجود في D | 0 |
+| `metrics.go` | المقاييس (ADR-022 §18) بأسمائها وتسمياتها، ولكل مقياس مالكه في تعليقه، و`Collectors()` يسجّلها `app` | 0 |
+| `errors.go` | الأخطاء المسمّاة (`ErrNotFound` و`ErrBucketNotFound` و`ErrPermissionDenied` …، و`InvalidError{Reason, Message}` و`OffsetError{Received}`). كل واجهة تربطها بحالتها وجسمها. و`finalError`: قائمة الأخطاء النهائية وحدها (§6.1)، و`encodeError` يرفض غيرها | 0 |
 | `limits.go` | `Limits` (ADR-022 §17) و`DefaultLimits()` و`Validate()` | 0 |
 | `bucket.go` | `Bucket(ctx, name)`: الحل عبر `tenancy.ProjectForBucket`، و`ErrBucketNotFound` لغير `ACTIVE` | 0 |
 | `names.go` | «مقطع فارغ» لاستبعاد `/v0` من القوائم، وحالات fuzz لـ `validateName` (في `helpers.go`) | C |
@@ -62,7 +64,7 @@
 | `uploads.go` | آلة حالات الجلسة: **قفل لكل جلسة في الذاكرة** (خريطة بعدّاد مراجع) يأخذه كل طلب والإنهاء والإلغاء والانتهاء، ثم إعادة قراءة الحالة. `StartUpload` (فحص المعلن مقابل الحصة **بلا أي حجز**، وإنشاء ملف staging، وحدود الجلسات التي لا تعد الجلسات الفارغة، وللجلسات التي تصدرها اللوحة: عمر ساعة وحجم معلن إلزامي مربوط)، و`WriteUpload` (الإزاحة: إلحاق، أو تجاهل التداخل، أو `OffsetError`؛ والتدفق إلى staging مع `Sync` قبل تحديث `received` و`progressed_at`؛ وقص الملف إلى `received` بعد انهيار؛ وملف staging لا يُنشأ هنا أبدًا)، و`QueryUpload`، و`CancelUpload`، والإنهاء (الحجم المعلن، و`md5Hash` العميل، وحالة المستخدم الحية عبر `idtoken.Users`، وملكية حساب اللوحة للمشروع وسجل التدقيق لجلسات اللوحة، والقواعد بهوية `start`، و`blob_key` قبل النقل، ثم `commitObject`). **كل رفض نهائي يجعل الجلسة `final`** ويحفظ `final_status` و`final_body`، والإنهاء المكرر و`query` يعيدانهما | D |
 | `insert.go` | `Insert` لرفع media وmultipart (جسم واحد): الكتابة المباشرة إلى مفتاح جديد، والقواعد، و`commitObject`. و**`Rewrite`** (من C إلى D، فلا ينتظر C الـ `commitObject`): ينسخ الملف إلى مفتاح جديد، ويُحسب على الحصة وأرضية القرص، وينسخ الرموز ويختمها لاسم الوجهة ما لم تُستبدل الـ metadata | D |
 | `hashes.go` | `crc32c` (Castagnoli) و`md5` أثناء التدفق، وحفظ حالتهما مع الإزاحة (`encoding.BinaryMarshaler`) واستعادتها | D |
-| `commit.go` | **`commitObject`**: المعاملة الوحيدة التي تجعل ملفًا مرئيًا (ADR-022 §5): `INSERT … ON CONFLICT DO UPDATE … RETURNING old.blob_key, old.size` (و`DO NOTHING` لـ `ifGenerationMatch=0`، و`FOR UPDATE` لبقية الشروط)، و`generation = GREATEST(now_µs, السابق+1)`، وصف `blob_gc` للقديم، وتحويل الحصة. `xid` قبل `COMMIT`، و`COMMIT` تحت `context.WithoutCancel`. **الحذف المتزامن للملف الجديد على أخطاء ما قبل `COMMIT` وحدها**، والملتبس يُحسم بـ `pg_xact_status` أو يُترك للمسح | D |
+| `commit.go` | **`commitObject`**: المعاملة الوحيدة التي تجعل ملفًا مرئيًا (ADR-022 §5): بجمل `queries/commit.sql` المكتوبة في العقد: `InsertObject` (`DO NOTHING`، وهو وحده لـ `ifGenerationMatch=0`)، ثم عند التعارض `LockObject` (`FOR UPDATE`) والشروط على الصف المقفل و`ReplaceObject`، و`releaseObject` للقديم، و`generation = GREATEST(now_µs, السابق+1)`، وصف `blob_gc` للقديم، وتحويل الحصة. `xid` قبل `COMMIT`، و`COMMIT` تحت `context.WithoutCancel`. **الحذف المتزامن للملف الجديد على أخطاء ما قبل `COMMIT` وحدها**، والملتبس يُحسم بـ `pg_xact_status` أو يُترك للمسح | D |
 | `quota.go` | صف `usage` بـ upsert، والحجز لكل قطعة من البايتات الواصلة (`… WHERE used+reserved+$n <= quota`)، وخطوات 8 MiB حين لا يُعرف الطول، والرد والتحويل، و**كل الحجوزات في القاعدة** (`Insert` و`Rewrite` منها)، وسقف بايتات المجهولين (`anonymous_staged_fraction`)، و**عدّاد البايتات الجارية للعملية** مع `free − inflight − n ≥ min_free` فحصًا وإضافة ذريين (CAS) عند كل خطوة | D |
 | `gc.go` | عامل `blob_gc` بعد `gc_grace`، وانتهاء الجلسات بالعمر (حذف staging و`blob_key` غير المشار إليه، وتحرير الحجز)، والانتهاء الخامل (`upload_idle_ttl`: يحرر `reserved − received`، وينهي الجلسة إن كان `received = 0`) | D |
 | `boot.go` | **`Boot(ctx)` قبل فتح المستمع:** القفل على `data_dir` (`blob.Lock`)، وربط `INSTANCE` بصف `storage.instance` ورفض الإقلاع عند عدم التطابق، وقائمة المرشحين بالمشي على `p/` و`s/`، ومصالحة الحصة لكل المشاريع، وتحذير إن كان `fsync` في Postgres `off` | D |
@@ -149,6 +151,7 @@
 |---|---|---|
 | `objects.sql` | الكائنات، والقائمة بالقفز، والرموز، وCORS | 0 (المخطط والهياكل) ثم C |
 | `uploads.sql`، `usage.sql`، `gc.sql` | الجلسات، والحصة، وoutbox الحذف، والمسح. استعلامات العامل والمسح `-- scope: global` بسببها | 0 ثم D |
+| `commit.sql` | جمل `commitObject` و`releaseObject`: `InsertObject` و`LockObject` و`ReplaceObject` و`QueueBlobGC` و`ReleaseUsage` (بلا `RETURNING old.*`، الذي لا يولّده sqlc 1.31.1) | 0، ويستعملها C وD |
 | `scope_test.go` | **الجداول الخمسة الخاصة بالمشاريع في `TestQueriesAreProjectScoped`**، و`storage.instance` باستعلامات `-- scope: global` | 0 |
 | `*.sql.gen.go`، `db.gen.go`، `models.gen.go` | مولّدة بـ sqlc، تُودَع مع كل تغيير | كل من يغيّر SQL |
 
@@ -159,12 +162,11 @@
 | `internal/store/migrations/storage/00001_init.sql` **جديد** | `storage.objects` (و`blob_key` فريد، و`download_tokens bytea` مختومة) و`upload_sessions` (ومعه `final_body` و`progressed_at`) و`blob_gc` و`usage` و`buckets` و`storage.instance` (صف واحد، ليس لمشروع) (ADR-022 §3)، وفي كل جدول مشروع `project_number … REFERENCES control.projects … ON DELETE CASCADE`، والأسماء `COLLATE "C"`. وسطر في `migrations.Schemas` ونمط `embed` و`sqlc.yaml`، ثم `-update` لـ `released.lock` | 0 |
 | `internal/store/migrations/control/` (migration جديد) | `control.rulesets` و`control.rules_releases` كما في rules-layout.md:115 | E |
 | `internal/tenancy/core/storage.go` **جديد** | `ProjectForBucket(ctx, bucket) (Project, error)` (اللاحق `.<project_domain>`، و`ACTIVE` وحده) | 0 |
-| `internal/tenancy/core/rules.go` و`internal/tenancy/queries/` | حفظ الـ rulesets ونشر الإصدارات، و`CompiledRelease` بـ LRU بالوزن، وإصدارة Storage باسمها المنطقي `firebase.storage/default` (والتحويل من `firebase.storage/<bucket>` وإليه، **والردود باسم الـ bucket الحالي دائمًا** لأن firebase-tools يطابق القائمة بـ `startsWith`)، والإصدارة الافتراضية المقفلة عند أول قراءة لمشروع بلا إصدارة، والجدولان في `scope_test.go` (rules-layout.md:115-117)، **وحذفهما في معاملة `PurgeExpired`** (`projects.go:406-414`) | E |
+| `internal/tenancy/core/rules.go` و`internal/tenancy/queries/` | حفظ الـ rulesets ونشر الإصدارات، و`CompiledRelease` بـ LRU بالوزن، وإصدارة Storage باسمها المنطقي `firebase.storage/default` (والتحويل من `firebase.storage/<bucket>` وإليه، **والردود باسم الـ bucket الحالي دائمًا** لأن firebase-tools يطابق القائمة بـ `startsWith`)، والإصدارة الافتراضية المقفلة عند أول قراءة لمشروع بلا إصدارة، والجدولان في `scope_test.go` (rules-layout.md:115-117)، **وحذفهما في معاملة `PurgeExpired`** (`projects.go:406-414`). **التوقيعات في العقد:** `CreateRuleset` و`GetRelease` و`PublishRelease` و`CompiledRelease` (E)، و`GetRuleset` و`ListRulesets` و`DeleteRuleset` و`ListReleases` (S5-A)، والنوعان `Ruleset` و`Release`، و`Options.RulesLimits` | E، S5-A |
 | `internal/archtest/archtest_test.go` | قاعدتا `blob` و`wire`، و`gcs` و`media` في قائمة منع `core`، والمنع المتبادل بين `api` و`gcs` و`console` و`media`، و`sdk/go/adminstorage`، وحالات `TestRulesThemselves` | 0 |
 | `internal/config/config.go` | قسم `storage`: `enabled` و`data_dir` (**إلزامي ومطلق حين Storage مفعّل**) و`limits` (`config.StorageLimits`، ADR-022 §17) و`gc_grace`، ومتغيرات `ARUMA_STORAGE_*`، والفحص والفحوص المتقاطعة في `config` عند التحميل | 0 |
 | `internal/platform/crypto/keys.go` | غرض جديد `aruma/v1/storage-page-token` و`PageTokenMAC`، واختباره | 0 |
 | `internal/platform/idtoken/idtoken.go` | واجهة `Users` (`State(ctx, project, uid)`: موجود، ومعطّل، و`tokensValidAfter`) | 0، وتنفيذها في `internal/services/auth/core` في S2-D |
-| `internal/store/store.go` | `synchronous_commit=on` في `RuntimeParams` لمجمّع الاتصالات | 0 |
 | `internal/server/server.go` | `Handlers.Storage` و`Handlers.GCS`، والبادئات (ADR-022 §1)، وتركيبهما بـ `CommonWithLimit` بحد `object_bytes + 1 MiB`، و`/v1/` و`/v1alpha/` لـ `Mgmt`. وحالات في اختبار جدول البادئات | 0 |
 | `internal/app/app.go` | `core.New` بـ `blob.NewDisk(cfg.Storage.DataDir)` و`rules.NoDocuments{}` و`rulesInflight` و`svc` (tenancy) و`idtoken.Users` من Auth، و`svc.OnProjectPurged(storageSvc.PurgeProject)`، و**`storageSvc.Boot(ctx)` قبل فتح المستمع** في `Serve`، و`go storageSvc.Run(ctx)` بعده، وتركيب `api` و`gcs` و`console.Routes`. **كله في S2-0** (بأجسام تذعر)، فلا تلمسه المهام بعدها إلا عبر المدمج | 0 |
 | `internal/admin/mgmt/rules.go` **جديد** | firebaserules v1 (R1 إلى R8، C §1.5) فوق `tenancy`، و`:test` بـ `rules.Compile` و`Inflight` نفسه | S5-A |
@@ -173,7 +175,8 @@
 | `dashboard/src/features/storage/` **جديد** | الملفات (والرفع ببروتوكول `/v0` إلى رابط الجلسة التي تصدرها اللوحة)، ومحرر القواعد (أخطاء `issues[]` على الأسطر)، والإعدادات (CORS)، والاستعمال | S5-C |
 | `internal/admin/web/web.go` | **تضييق CSP اللوحة** إلى مصادر بمسار (`<origin>/_next/static/`) حيث أمكن، والثمن مكتوب (ADR-022 §10.1) | S5-C |
 | `test/acceptance/storage_*_test.go` **جديد** | فوق خادم حقيقي وPostgres: كل عملية `/v0` وGCS، والانهيار المحاكى (قتل العملية بين الخطوات في `tools/storage-chaos`، اختياري في S7) | S3، S4 |
-| `test/acceptance/isolation_test.go` | حالات Storage (ADR-022 §3): رابط رفع عبر مشروعين، ورمز تنزيل، وحساب خدمة على bucket آخر وrewrite إليه، و`pageToken`، وruleset | D، C، S4-A، E |
+| `test/acceptance/isolation_storage_*_test.go` | حالات Storage (ADR-022 §3)، **ملف لكل مالك**: `isolation_storage_test.go` (العقد: bucket لكل مشروع)، و`_s2c_` (رمز التنزيل و`pageToken`)، و`_s2d_` (رابط الرفع)، و`_s2e_` (الـ ruleset)، و`_s4a_` (حساب الخدمة وrewrite) | 0، C، D، E، S4-A |
+| `test/acceptance/harness_test.go` | `startStorage`: `Boot` ثم `Run` ثم `Close` كما يفعل `Serve`، والاختبار يُتخطى باسم المالك حتى يكتب S2-D `Boot` (`storage_boot_test.go`) | 0 |
 | `test/compat/storage/` **جديد** | مجموعة Storage في firebase-js-sdk عبر حاضنة `test/compat/firebase-js`، واختبارات المطابقة في firebase-tools (غير `emulatorOnly`)، وإعادة `test/oracle/storage/emulator/*.json` على Aruma مع جدول الفروق | S3-D |
 | `test/smoke/admin-node`، `test/smoke/admin-go` | سيناريو Storage بـ `@aruma/admin-storage` و`adminstorage` (الرفع بأنواعه، والتنزيل بتحقق CRC، و`getDownloadURL`، والنسخ) | S4-D |
 | `test/e2e/{web,android,ios,flutter}-storage/` **جديد** | تطبيقات بالمكتبات الرسمية في وضع الإنتاج، وحارس شبكة يرفض كل طلب إلى Google (نمط `test/experiments/storage-path`)، ومصفوفة `refFromURL` | S6 |
@@ -276,6 +279,7 @@ type Chunk struct {
 	Length   int64 // -1 when unknown (chunked)
 	Finalize bool
 	Total    int64 // -1 when unknown
+	Want     Checksums // this request's claim (Go's X-Goog-Hash on the last one); merged at finalize
 }
 type UploadStatus uint8 // UploadActive, UploadFinal, UploadCancelled
 type UploadState struct {
@@ -297,7 +301,9 @@ type Options struct {
 	Documents rules.Documents   // rules.NoDocuments{} until v0.4
 	Inflight  *rules.Inflight
 	Users     idtoken.Users     // live user state at finalize
+	DataDir   string            // storage.data_dir, which Boot locks
 	GCGrace   time.Duration     // storage.gc_grace; 0 is one minute
+	Metrics   *Metrics          // nil: unregistered collectors
 	Now       func() time.Time
 }
 
@@ -317,7 +323,8 @@ func (s *Service) Rewrite(ctx context.Context, src Bucket, srcName string, dst B
 func (s *Service) CreateToken(ctx context.Context, b Bucket, name string, p Principal) (Object, error)       // C
 func (s *Service) DeleteToken(ctx context.Context, b Bucket, name string, p Principal, token string) (Object, error) // C
 func (s *Service) CORS(ctx context.Context, b Bucket) ([]CORSRule, error)                                   // C
-func (s *Service) SetCORS(ctx context.Context, b Bucket, p Principal, rules []CORSRule) error               // C
+func (s *Service) SetCORS(ctx context.Context, b Bucket, p Principal, rules []CORSRule) (BucketInfo, error) // C
+func (s *Service) BucketInfo(ctx context.Context, b Bucket) (BucketInfo, error)                              // C: metageneration, created, updated, CORS
 func (s *Service) MatchCORS(rules []CORSRule, origin, method string) (allow bool, rule CORSRule)            // C
 func (s *Service) Usage(ctx context.Context, b Bucket) (Usage, error)                                      // D
 func (s *Service) Insert(ctx context.Context, b Bucket, p Principal, spec UploadSpec, body io.Reader, length int64) (Object, error) // D
@@ -328,6 +335,9 @@ func (s *Service) CancelUpload(ctx context.Context, b Bucket, name, id string) (
 func (s *Service) PurgeProject(ctx context.Context, project int64) error                                   // D
 func (s *Service) Boot(ctx context.Context) error   // D: before the listener opens: lock, instance marker, candidates, quota reconcile
 func (s *Service) Run(ctx context.Context) error    // D: after: candidate deletion, GC, expiry, reports
+func (s *Service) Close() error                     // D: releases the lock once Server.Run has drained
+func (s *Service) AllowUploadStart(ip netip.Addr) (bool, time.Duration) // 0: per IP, then the process, for both surfaces
+func (s *Service) Metrics() *Metrics                // 0
 
 // inside the package
 func (s *Service) commitObject(ctx context.Context, w objectWrite) (Object, error) // D: the only transaction that makes a blob visible
@@ -349,7 +359,7 @@ type ruleOp struct { Method rules.Method; Name string; List bool; Resource, Inco
 - **`authorize` في العقد ترفض كل شيء لغير Admin** (`ErrPermissionDenied`) حتى تُدمج E. فتعمل اختبارات C وD بـ Admin، أو بـ `authorizeHook` اختباري في الحزمة.
 - **`wire` و`media`:** الأنواع والتوقيعات كاملة في العقد (الجداول أعلاه)، والأجسام تذعر.
 - **`api` و`gcs`:** `New` و`Handler()` في العقد، و`Handler` يرد 501 لكل مسار حتى تُدمج S3 وS4. والتركيب في `server` و`app` يعمل من العقد.
-- **وفيه:** المخطط، وsqlc بهياكل الجداول، وقواعد archtest كلها، وقسم الإعداد بفحوصه، و`ProjectForBucket`، وغرض المفتاح الجديد في `keys.go`، وواجهة `idtoken.Users`، و`RuntimeParams` في `store.Open`، والتركيب في `app` و`server` كاملًا (`Boot` و`Run` و`OnProjectPurged` تذعر حتى D). فلا تلمس مهمة بعد العقد `app.go` ولا `server.go` إلا عبر المدمج.
+- **وفيه:** المخطط، وsqlc بهياكل الجداول، وقواعد archtest كلها، وقسم الإعداد بفحوصه، و`ProjectForBucket`، وغرض المفتاح الجديد في `keys.go`، وواجهة `idtoken.Users`، ومساعد المعاملات `begin`/`inTx` (لا `RuntimeParams`، انظر القرارات أدناه)، والتركيب في `app` و`server` كاملًا (`Boot` و`Run` و`OnProjectPurged` تذعر حتى D). فلا تلمس مهمة بعد العقد `app.go` ولا `server.go` إلا عبر المدمج.
 
 #### قرارات commit العقد (لم تكن في المسودة)
 
@@ -360,6 +370,18 @@ type ruleOp struct { Method rules.Method; Name string; List bool; Resource, Inco
 - **`Principal.AuthTime` و`IssuedAt`، و`idtoken.UserState.Admits(authTime, issuedAt)`:** فحص الحالة الحية عند الإنهاء يحتاجهما بترتيب `Verifier` نفسه (محذوف، ثم معطّل، ثم مُبطل أو رمز أقدم من المستخدم). و`UserState` فيها `Created` لهذا. وتنفيذ `Users()` في `auth/core/userstate.go`، و`State` يذعر حتى S2-D. لا مستأجرين في v0.3، فلا `tenant` في التوقيع.
 - **`UploadSpec.IP` وعمود `client_ip`:** حد الجلسات لكل IP يحتاج العنوان عند `start`، ولا موضع له في التوقيع.
 - **`final_status` و`final_body` يحفظان رمز خطأ `core` ورسالته، لا حالة HTTP:** `core` لا تعرف HTTP. و`encodeError`/`decodeError` في `errors.go` تعملان من العقد، وكل واجهة تربط الخطأ بحالتها. وأُضيفت `ErrUnauthenticated` (401 عند الإنهاء) و`ErrUploadCancelled` و`ErrTooManyUploads` و`ErrUnavailable` إلى الأخطاء المسمّاة.
+- **الأخطاء النهائية قائمة مغلقة (`finalError`، مراجعة S2-0):** القواعد 403، والحصة 402، والحجم المخالف 400، و`md5` المخالف 400، والحد 413، والهوية التي سقطت 401، والجلسة الملغاة. و`encodeError` يرفض غيرها، فلا يصير 503 ولا `ErrOverloaded` ولا «غير موجود» `final` أبدًا. والنجاح يحفظ لقطة الكائن الملتزم (`result_object`، والرموز مختومة في `download_tokens` للجلسة)، فيعيد التكرار ما أرسله الرد الأول ولو كُتب فوق الكائن أو حُذف.
+- **`synchronous_commit` لكل معاملة Storage، لا للمجمّع (مراجعة S2-0):** `store.Open` عاد كما كان، فـ PgBouncer الافتراضي يرفض معامل البدء، والإعداد كان يشمل كل الخدمات. والمساعد الوحيد `begin`/`inTx` في `durability.go`، وتحذير `fsync` في `warnUnsafeDurability`. ADR-022 §5 معدَّل.
+- **لا `RETURNING old.*` (مراجعة S2-0):** sqlc 1.31.1 لا يولّده. فـ `commitObject` = `InsertObject` (`DO NOTHING`) ثم `LockObject` (`FOR UPDATE`) ثم `ReplaceObject`، والجمل مكتوبة ومولّدة في العقد، ومعها اختبار الكتابتين المتزامنتين وسباق `ifGenerationMatch=0`. ADR-022 §5 معدَّل.
+- **قيود المخطط (مراجعة S2-0):** كل مفتاح ملف في صف يسمّي مشروع الصف (`split_part(key, '/', 2) = project_number::text` على `objects` و`upload_sessions` و`blob_gc`)، ولا `firebaseStorageDownloadTokens` في `objects.metadata` ولا في `attrs` الجلسة، ولجلسة `final` نتيجة واحدة بالضبط. والرموز التي يضبطها Admin عند البدء في `upload_sessions.download_tokens` مختومة.
+- **الفهارس والانتهاء (مراجعة S2-0):** حد الجلسات لكل IP **لكل مشروع**، بفهرس `(project_number, client_ip) WHERE state='active'`، و`(progressed_at) WHERE state='active'` للانتهاء الخامل. والجلسة الفارغة: `expires_at = start + empty_session_ttl`، ويُمدّ إلى عمر الجلسة عند أول بايت متين، فيخدم فهرس `expires_at` الانتهاءين.
+- **سقف الجسم:** `object_bytes` ≤ 5 TiB و`json_body_bytes` ≤ 1 MiB، و`Limits.BodyCap()` = المجموع و64 KiB للحدود (والنسخة نفسها في `config.StorageLimits`)، فلا فيض.
+- **`storage.*` لا يُفحص وStorage معطّل،** و`/v1/projects/` و`/v1alpha/projects/` لا تُركَّب إلا مع Storage (حتى يحتاجها Firestore)، فخادم بلا Storage يوجّه كما كان على main (`TestStorageRouting`).
+- **التركيب كامل لـ E وS5 (مراجعة S2-0):** `tenancy.Options.RulesLimits`، و`mgmt.Options{RulesLimits, Inflight}`، و`console.Options{PublicURL, ProjectDomain, Rules, Audit}` (و`console.Rules` واجهة على `tenancy`)، وتوقيعات الـ rulesets والإصدارات في `tenancy/core/rules.go` تذعر بأسماء مالكيها. فلا تلمس مهمة `app.go` ولا `mgmt.go` ولا `tenancy/core/service.go`.
+- **`BucketInfo` و`SetCORS` يعيدان مورد الـ bucket** (الـ metageneration والوقتان وCORS) لـ `buckets.get/patch`.
+- **`Options.DataDir`** يعطي `Boot` مجلد القفل بلا تحويل نوع، و`Close` (D) يحرر القفل بعد أن يصرف `Server.Run` طلباته، وهو في `app.go` و`startStorage`.
+- **`AllowUploadStart(ip)`:** محدِّد واحد للعملية ولكل IP (`upload_starts_per_minute_per_ip` ثم `upload_starts_per_second`) تستعمله الواجهتان واللوحة.
+- **`storage/core` لا تستورد `storage/wire`** (قاعدة archtest خاصة بـ Storage).
 - **`download_tokens` بقيمة NULL حين لا رموز:** هي `bytea` مختومة، فشرط «بلا رموز» في §9 يصير `download_tokens IS NULL` لا `cardinality(...) = 0`.
 - **أعمدة زائدة على §3:** `upload_sessions.surface` (`firebase`/`gcs`/`console`) بدل `protocol`، لأن جلسة اللوحة تختلف في عمرها وحجمها المعلن وإعادة فحص الحساب؛ و`hash_state` لحالة الهاشين مع `received` (§6.3)؛ و`usage.anonymous_reserved_bytes` لسقف المجهولين؛ و`buckets.metageneration` و`updated` لمورد GCS؛ و`instance.one_row` لفرض الصف الواحد.
 - **الاستعلامات في العقد قراءة واحدة لكل جدول** (`GetObject` و`GetBucketSettings` و`GetUploadSession` و`GetUsage` و`GetInstance`): sqlc وscopecheck يحتاجان استعلامًا في كل ملف، ويضيف C وD الباقي.
@@ -371,7 +393,7 @@ type ruleOp struct { Method rules.Method; Name string; List bool; Resource, Inco
 - **`wire` في العقد:** `ObjectPath` (ناتج `SplitObjectPath`، ومعه `Rest` لـ `rewriteTo`)، و`UploadCommands` (مجموعة بتّات)، و`ContentRange` مع `Query()` و`Final()` العاملتين، و`RelatedReader`، و`Range`، وثوابت البادئات وأسماء الترويسات، و`Time(time.Time)`.
 - **`server`:** البادئات `/v1/projects/` و`/v1alpha/projects/` (أضيق، كما في جدول §1)، والتوجيه إلى Storage بالبادئة وحدها بلا `ServeMux`، فلا يُنظَّف مسار فيه اسم كائن ولا يُعاد توجيهه. و`mgmt.Options.Storage` جاهز لـ S5-A.
 - **`Run` يبدأ بجانب `Server.Run`** (قبله مباشرة في goroutine)، لا بعد فتح المستمع بالضبط: لا خطّاف في `server` لذلك، ولا ضرر، فالمرشحون أُخذوا في `Boot`.
-- **لا مقاييس في العقد** (§18): لا خدمة تستعمل `platform/metrics` بعد، ويضيفها المدمج.
+- **المقاييس في العقد** (§18، `core/metrics.go`): أسماؤها وتسمياتها ثابتة، ولكل مقياس مالكه في تعليقه (D للجلسات والحصة والقرص وGC والمسح والالتزامات الملتبسة والقفل، وE للقواعد، وS3/S4 للبايتات وفك الضغط المقطوع)، ويسجّلها `app` على سجل الخادم، وتبقى صفرًا حتى يبلّغ مالكها.
 - **`ctx` في `core.New`** لا يُستعمل اليوم، و`app.New` يمرر `context.Background()`.
 
 ## المهام
