@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -127,7 +128,7 @@ func gcsErr(t *testing.T, rec *httptest.ResponseRecorder, status int, reason str
 	if rec.Code != status || json.Unmarshal(rec.Body.Bytes(), &raw) != nil || json.Unmarshal(rec.Body.Bytes(), &body) != nil {
 		t.Fatalf("status %d, want %d: %s", rec.Code, status, rec.Body)
 	}
-	if string(raw.Error.Code) != itoa(status) || len(body.Error.Errors) != 1 || body.Error.Errors[0].Reason != reason ||
+	if string(raw.Error.Code) != strconv.Itoa(status) || len(body.Error.Errors) != 1 || body.Error.Errors[0].Reason != reason ||
 		body.Error.Errors[0].Domain != "global" || body.Error.Message == "" {
 		t.Fatalf("error body %s, want code %d reason %s", rec.Body, status, reason)
 	}
@@ -136,8 +137,6 @@ func gcsErr(t *testing.T, rec *httptest.ResponseRecorder, status int, reason str
 	}
 	return body.Error
 }
-
-func itoa(n int) string { b, _ := json.Marshal(n); return string(b) }
 
 // testProjects is the control plane of the two projects.
 type testProjects struct{}
@@ -252,9 +251,9 @@ func TestRoutingReachesTheStubs(t *testing.T) {
 		{"DELETE", "/download" + o + "?alt=media", tokenA, nil, "", 404},
 		{"GET", o + "?alt=proto", tokenA, nil, "", 400},
 		// The JSON API's own requests reach no stub.
-		{"GET", o, tokenA, nil, "", 0},               // objects.get
-		{"GET", o + "?alt=json", tokenA, nil, "", 0}, // objects.get
-		{"GET", "/download" + o, tokenA, nil, "", 0}, // objects.get
+		{"GET", o, tokenA, nil, "", 0},                 // objects.get
+		{"GET", o + "?alt=json", tokenA, nil, "", 404}, // objects.get
+		{"GET", "/download" + o, tokenA, nil, "", 404}, // objects.get
 	}
 	for _, c := range cases {
 		r := httptest.NewRequest(c.method, c.target, strings.NewReader(""))

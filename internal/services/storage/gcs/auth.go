@@ -75,13 +75,13 @@ func admitted(sa *authn.Principal, b core.Bucket, perm string) error {
 	if sa.ProjectNumber == b.Project {
 		return nil
 	}
-	return forbidden(sa, perm)
+	return forbidden(sa.Email, perm)
 }
 
 // forbidden is GCS's refusal of a caller without perm.
-func forbidden(sa *authn.Principal, perm string) error {
+func forbidden(email, perm string) error {
 	return &apiError{status: http.StatusForbidden, reason: wire.ReasonForbidden,
-		message: sa.Email + " does not have " + perm + " access to the Google Cloud Storage " + noun(perm) +
+		message: email + " does not have " + perm + " access to the Google Cloud Storage " + noun(perm) +
 			". Permission '" + perm + "' denied on resource (or it may not exist)."}
 }
 
