@@ -19,8 +19,13 @@
 //   the dev server's dependency optimizer (Rolldown's on Vite 8, esbuild's on Vite 5 to 7). The
 //   build fails when a module is not rewritten, when a browser build has no @firebase/storage
 //   module, and when anything loads the SDK from www.gstatic.com.
+//
+// Without storage: true the build fails on a @firebase/storage module (SR3-06): that SDK sends the
+// app's ID token, here Aruma's, with every request (`Authorization: Firebase <token>`), and its
+// host would stay Google's. At run time install() refuses such a request too (index.js).
 import { parseBase } from './index.js';
 import { esbuildOptimizerPlugin, rollupVerify, storageRewriter } from './build.js';
+import { isStorageModule } from './storage.js';
 
 const VIRTUAL = 'virtual:aruma-web/install';
 const RESOLVED = `\0${VIRTUAL}`;
@@ -147,17 +152,31 @@ export default function aruma(options = {}) {
   if (url === undefined || url === null || String(url).trim() === '') return { name: 'aruma-web' };
   // Refused: stop the build or the dev server instead of shipping an app that talks to Google.
   const base = parseBase(url, { allowInsecure });
-  const auth = authPlugin(base, { allowInsecure, log, mode });
+  const auth = authPlugin(base, { allowInsecure, log, mode, storage: Boolean(storage) });
   if (!storage) return auth;
   const required = typeof storage === 'object' && storage.required === false ? false : true;
   return [auth, storagePlugin({ url, allowInsecure, log, required })];
 }
 
-function authPlugin(base, { allowInsecure, log, mode }) {
+/** The error of a build that has Auth on Aruma and @firebase/storage left on Google. */
+export const storageOff = (id) =>
+  `@aruma/web: this build includes @firebase/storage (${id}) but Storage is not enabled, so its requests would go to firebasestorage.googleapis.com carrying the Aruma ID token. Add storage: true: aruma({ url, storage: true })`;
+
+// Without the Storage half, a @firebase/storage module stops the build (SR3-06).
+function refuseStorage(id) {
+  if (isStorageModule(id)) throw new Error(storageOff(id.split('?')[0]));
+}
+
+function authPlugin(base, { allowInsecure, log, mode, storage }) {
+  const guard = storage ? () => {} : refuseStorage;
 
   if (mode === 'build') {
     // The name carries the URL so that Vite's dependency cache is rebuilt when it changes.
     const rewriter = buildModeRewriter(base, `aruma-web:build:${base.href}`);
+    const transform = (code, id) => {
+      guard(id);
+      return rewriter.transform(code, id);
+    };
     return {
       name: 'aruma-web:build',
       enforce: 'pre',
@@ -167,10 +186,10 @@ function authPlugin(base, { allowInsecure, log, mode }) {
         if (!this?.meta?.rolldownVersion) {
           throw new Error("@aruma/web/vite: mode 'build' needs Vite 8 or later (Rolldown); use mode 'fetch'");
         }
-        return { optimizeDeps: { rolldownOptions: { plugins: [rewriter] } } };
+        return { optimizeDeps: { rolldownOptions: { plugins: [{ ...rewriter, transform }] } } };
       },
       buildStart: rewriter.buildStart,
-      transform: rewriter.transform,
+      transform,
       buildEnd: rewriter.buildEnd,
     };
   }
@@ -184,6 +203,11 @@ function authPlugin(base, { allowInsecure, log, mode }) {
     },
     resolveId(id) {
       return id === VIRTUAL ? RESOLVED : null;
+    },
+    // The dev server pre-bundles @firebase/storage without this hook; there install() refuses.
+    transform(_, id) {
+      guard(id);
+      return null;
     },
     load(id) {
       if (id !== RESOLVED) return null;

@@ -1,0 +1,9 @@
+# The Aruma mirror's tags (make-mirror.sh): one line per tag, never changed once committed.
+#
+#   <tag> <commit> <tree>
+#
+# make-mirror.sh builds each tag reproducibly (one parentless commit, fixed identity, the official
+# commit's date), so these are the revisions of every honest mirror, whoever built it.
+# check-firebase-storage.sh fails on a firebase-ios-sdk checkout whose HEAD is not a line here: a
+# moved tag, or a mirror that serves other code. A new tag's line is the one make-mirror.sh prints.
+12.19.3 f749478ff473cb2cdc741f99a68472b4eccf54f8 c2f1efee517c9d4847cf385d778f81cfbabab006

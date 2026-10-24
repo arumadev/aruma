@@ -105,6 +105,34 @@ public class AuthEndpointsTest {
     }
 
     @Test
+    public void storageIsRefusedWhenTheRedirectIsOff() throws Exception {
+        AuthEndpoints.storageRedirect = false;
+        try {
+            for (String url : new String[] {
+                "https://firebasestorage.googleapis.com/v0/b/p.aruma.dev/o/a?alt=media&token=SECRET",
+                "https://FirebaseStorage.GoogleAPIs.com./v0/b/p/o",
+                "https://firebasestorage.googleapis.com:443/v0/b/p/o",
+                "http://firebasestorage.googleapis.com/v0/b/p/o/a?alt=media&token=SECRET",
+            }) {
+                try {
+                    rewrite(url);
+                    fail("expected refusal for " + url);
+                } catch (AuthEndpoints.StorageRefusedException e) {
+                    assertTrue(e.getMessage(), e.getMessage().contains("ArumaStorageRedirect is false"));
+                    assertFalse(e.getMessage().contains("SECRET"));
+                }
+            }
+            // Auth and every other host are unchanged.
+            assertEquals("https://aruma.example.com/securetoken.googleapis.com/v1/token",
+                    rewrite("https://securetoken.googleapis.com/v1/token"));
+            assertNull(rewrite("https://storage.googleapis.com/b/o"));
+            assertNull(rewrite("http://identitytoolkit.googleapis.com/v1/accounts:signUp"));
+        } finally {
+            AuthEndpoints.storageRedirect = true;
+        }
+    }
+
+    @Test
     public void refusalMessageHasNoQuery() throws Exception {
         try {
             rewrite("https://securetoken.googleapis.com:8443/v1/token?key=SECRET");

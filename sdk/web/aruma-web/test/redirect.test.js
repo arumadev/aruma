@@ -15,6 +15,7 @@ import {
   status,
   uninstall,
 } from '../src/index.js';
+import { installStorage } from '../src/storage.js';
 
 const KEY = 'AIzaFakeKeyForTests';
 
@@ -408,5 +409,120 @@ describe('idempotence', () => {
     await b.g.fetch('https://securetoken.googleapis.com/v1/token');
     assert.equal(a.calls[0].input, 'https://a.example.com/securetoken.googleapis.com/v1/token');
     assert.equal(b.calls[0].input, 'https://b.example.com/securetoken.googleapis.com/v1/token');
+  });
+});
+
+// SR3-06: with Auth redirected and Storage not, a Storage SDK request to Google's host would carry
+// the Aruma ID token there (@firebase/storage 0.14.6, request.ts:237).
+describe('the Storage guard', () => {
+  const google = 'https://firebasestorage.googleapis.com/v0/b/p.appspot.com/o/a?alt=media';
+
+  // A browser-like global: the recording fetch and an XMLHttpRequest that records what reaches it.
+  function browserGlobal() {
+    const { g, calls } = fakeGlobal();
+    const xhr = [];
+    class XHR extends EventTarget {
+      open(method, url) {
+        this.log = { method, url, headers: {} };
+      }
+      setRequestHeader(name, value) {
+        this.log.headers[name] = value;
+      }
+      send() {
+        xhr.push(this.log);
+      }
+    }
+    g.XMLHttpRequest = XHR;
+    return { g, calls, xhr };
+  }
+
+  // What the SDK's XhrConnection does: open, its headers, send; resolves with the status on load,
+  // or 'error'.
+  function sdkXHR(g, url, headers) {
+    const x = new g.XMLHttpRequest();
+    const done = new Promise((resolve) => {
+      x.addEventListener('error', () => resolve('error'));
+      x.addEventListener('load', () => resolve({ status: x.status, statusText: x.statusText, body: JSON.parse(x.response) }));
+    });
+    x.open('GET', url, true);
+    for (const [k, v] of Object.entries(headers)) x.setRequestHeader(k, v);
+    x.send();
+    return done;
+  }
+
+  const sdkHeaders = { Authorization: 'Firebase ID_TOKEN', 'X-Firebase-Storage-Version': 'webjs/13.1.0' };
+
+  test('an SDK XHR to Google is never sent, its token never set, and it gets a 403 the SDK does not retry', async () => {
+    const { g, xhr } = browserGlobal();
+    install({ url: 'https://aruma.example.com', globalObject: g });
+    const lines = await captureConsole(async () => {
+      const r = await sdkXHR(g, google, sdkHeaders);
+      assert.equal(r.status, 403);
+      assert.match(r.statusText, /Storage request to firebasestorage\.googleapis\.com was blocked/);
+      assert.equal(r.body.error.code, 403);
+      assert.equal((await sdkXHR(g, google, { 'X-Firebase-Storage-Version': 'webjs/13.1.0' })).status, 403); // signed out
+    });
+    assert.deepEqual(xhr, []);
+    assert.equal(lines.length, 1, 'reported once');
+    assert.match(lines[0], /Storage request to firebasestorage\.googleapis\.com was blocked.*storage: true/);
+  });
+
+  test('an SDK fetch to Google gets a 403 (the Node build), a plain link fetch is sent', async () => {
+    const { g, calls } = fakeGlobal();
+    install({ url: 'https://aruma.example.com', globalObject: g });
+    await captureConsole(async () => {
+      const r = await g.fetch(google, { headers: sdkHeaders });
+      assert.equal(r.status, 403);
+      assert.match((await r.json()).error.message, /Storage request .* was blocked/);
+      assert.equal((await g.fetch(new Request(google, { headers: { authorization: 'Firebase t' } }))).status, 403);
+    });
+    assert.equal(calls.length, 0);
+    await g.fetch(`${google}&token=abc`); // a download link: no ID token, left alone
+    assert.equal(calls[0].input, `${google}&token=abc`);
+  });
+
+  test('other hosts, Aruma, and Storage not on Google pass', async () => {
+    const { g, xhr } = browserGlobal();
+    install({ url: 'https://aruma.example.com', globalObject: g });
+    sdkXHR(g, 'https://aruma.example.com/v0/b/p.appspot.com/o/a', sdkHeaders);
+    sdkXHR(g, 'https://example.com/x', { Authorization: 'Bearer x' });
+    assert.deepEqual(xhr.map((r) => [r.url, r.headers.Authorization]), [
+      ['https://aruma.example.com/v0/b/p.appspot.com/o/a', 'Firebase ID_TOKEN'],
+      ['https://example.com/x', 'Bearer x'],
+    ]);
+  });
+
+  test('not installed, or uninstalled: no guard', async () => {
+    const { g, xhr } = browserGlobal();
+    sdkXHR(g, google, sdkHeaders);
+    assert.equal(xhr.length, 1);
+    assert.equal(install({ globalObject: g }), false);
+    install({ url: 'https://aruma.example.com', globalObject: g });
+    uninstall({ globalObject: g });
+    sdkXHR(g, google, sdkHeaders);
+    assert.equal(xhr.length, 2);
+  });
+
+  test('a refused Aruma URL guards too', async () => {
+    const { g, xhr } = browserGlobal();
+    await captureConsole(async () => {
+      assert.throws(() => install({ url: 'http://aruma.example.com', globalObject: g }), ArumaConfigError);
+      assert.equal((await sdkXHR(g, google, sdkHeaders)).status, 403);
+    });
+    assert.deepEqual(xhr, []);
+  });
+
+  test('with the Storage fallback installed, in either order, the request goes to Aruma', () => {
+    for (const order of [['auth', 'storage'], ['storage', 'auth']]) {
+      const { g, xhr } = browserGlobal();
+      for (const what of order) {
+        if (what === 'auth') install({ url: 'https://aruma.example.com', globalObject: g });
+        else installStorage({ url: 'https://aruma.example.com', globalObject: g });
+      }
+      sdkXHR(g, google, sdkHeaders);
+      assert.deepEqual(xhr.map((r) => [r.url, r.headers.Authorization]), [
+        ['https://aruma.example.com/v0/b/p.appspot.com/o/a?alt=media', 'Firebase ID_TOKEN'],
+      ], order.join(' then '));
+    }
   });
 });

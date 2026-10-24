@@ -218,6 +218,46 @@ public class ForwardingTest {
         assertEquals(0, seen.size());
     }
 
+    /**
+     * SR3-07: with the Storage redirect off, a Storage request, on https or plain http, gets a 403 made locally (which
+     * firebase-storage does not retry, unlike an IOException) and sends nothing, ID token and body included. Other http
+     * goes to the platform handler.
+     */
+    @Test
+    public void refusedStorageIsAnsweredLocallyWith403() throws Exception {
+        ArumaBase base = new ArumaBase("http://127.0.0.1:" + port(), false, false);
+        ArumaStreamHandlerFactory f = new ArumaStreamHandlerFactory(base, new URL("https://aruma.invalid/"),
+                new URL("http://aruma.invalid/"), null);
+        AuthEndpoints.storageRedirect = false;
+        try {
+            for (String spec : new String[] {
+                "https://firebasestorage.googleapis.com/v0/b/p/o?name=a",
+                "http://firebasestorage.googleapis.com/v0/b/p/o/a?alt=media&token=SECRET",
+            }) {
+                URLStreamHandler h = f.createURLStreamHandler(new URL(spec).getProtocol());
+                HttpURLConnection c = (HttpURLConnection) new URL(null, spec, h).openConnection();
+                c.setRequestMethod("POST");
+                c.setDoOutput(true);
+                c.setRequestProperty("Authorization", "Firebase ID_TOKEN");
+                try (OutputStream out = c.getOutputStream()) {
+                    out.write("body".getBytes(StandardCharsets.UTF_8));
+                }
+                assertEquals(spec, 403, c.getResponseCode());
+                String body = new String(readAll(c.getErrorStream()), StandardCharsets.UTF_8);
+                assertTrue(body, body.contains("ArumaStorageRedirect is false"));
+                assertFalse(body.contains("SECRET"));
+                assertEquals("application/json; charset=UTF-8", c.getContentType());
+            }
+            HttpURLConnection other = (HttpURLConnection) new URL(null, "http://127.0.0.1:" + port() + "/plain",
+                    f.createURLStreamHandler("http")).openConnection();
+            assertEquals(200, other.getResponseCode());
+            assertEquals(1, seen.size());
+            assertEquals("/plain", seen.get(0));
+        } finally {
+            AuthEndpoints.storageRedirect = true;
+        }
+    }
+
     @Test
     public void handlerIsOnlyForHttps() throws Exception {
         ArumaBase base = new ArumaBase("https://aruma.example.com", false, false);
