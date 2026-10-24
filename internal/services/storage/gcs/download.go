@@ -38,7 +38,7 @@ func (a *API) download(w http.ResponseWriter, r *http.Request, b core.Bucket, na
 	}
 	o, body, err := a.svc.Open(r.Context(), b, name, p, "", gen)
 	if err != nil {
-		a.writeError(w, err, b.Name, name)
+		a.refuse(w, err, b.Name, name)
 		return
 	}
 	defer body.Close()
@@ -60,7 +60,7 @@ func (a *API) download(w http.ResponseWriter, r *http.Request, b core.Bucket, na
 	})
 	if err != nil {
 		// Before the status line: the object's file would not seek.
-		a.writeError(w, fmt.Errorf("%w: serve %q: %w", core.ErrUnavailable, name, err), b.Name, name)
+		a.refuse(w, fmt.Errorf("%w: serve %q: %w", core.ErrUnavailable, name, err), b.Name, name)
 		return
 	}
 	a.countOut(cw)

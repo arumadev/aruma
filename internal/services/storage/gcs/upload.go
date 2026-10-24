@@ -98,7 +98,7 @@ func (a *API) startResumable(w http.ResponseWriter, r *http.Request, b core.Buck
 	}
 	id, err := a.svc.StartUpload(r.Context(), b, p, spec)
 	if err != nil {
-		a.writeError(w, err, b.Name, spec.Name)
+		a.refuse(w, err, b.Name, spec.Name)
 		return
 	}
 	h := w.Header()
@@ -129,7 +129,7 @@ func (a *API) resumeUpload(w http.ResponseWriter, r *http.Request, b core.Bucket
 	ctx := r.Context()
 	if r.Method == http.MethodDelete {
 		if _, err := a.svc.CancelUpload(ctx, b, name, id); err != nil {
-			a.writeError(w, err, b.Name, name)
+			a.refuse(w, err, b.Name, name)
 			return
 		}
 		w.Header().Set("Content-Length", "0")
@@ -187,7 +187,7 @@ func (a *API) resumeUpload(w http.ResponseWriter, r *http.Request, b core.Bucket
 func (a *API) uploadState(w http.ResponseWriter, r *http.Request, st core.UploadState, err error, bucket, name string) {
 	switch {
 	case err != nil:
-		a.writeError(w, err, bucket, name)
+		a.refuse(w, err, bucket, name)
 	case st.Status == core.UploadFinal && st.Object != nil:
 		a.writeJSON(w, http.StatusOK, a.object(*st.Object))
 	case st.Status == core.UploadActive:
@@ -321,8 +321,30 @@ func (a *API) uploadError(w http.ResponseWriter, body *requestBody, err error, b
 	case body.err != nil:
 		a.writeError(w, invalidf("The request body could not be read."), "", "")
 	default:
-		a.writeError(w, err, bucket, name)
+		a.refuse(w, err, bucket, name)
 	}
+}
+
+// refuse answers a refusal from core with writeError, keeping Retry-After for real pressure:
+// core.ErrOverloaded here, and the start rate (allowStart). Clients that honour Retry-After
+// retry without a limit (gtm-session-fetcher skips its interval and elapsed checks when it is
+// there, and Node and Go honour it too), so a 503 of the server's own failure
+// (core.ErrUnavailable: the disk floor, the database, an unsettled commit) goes without it.
+func (a *API) refuse(w http.ResponseWriter, err error, bucket, name string) {
+	if !errors.Is(err, core.ErrOverloaded) {
+		w = noRetryAfter{w}
+	}
+	a.writeError(w, err, bucket, name)
+}
+
+// noRetryAfter drops a Retry-After set on its way to a 503.
+type noRetryAfter struct{ http.ResponseWriter }
+
+func (n noRetryAfter) WriteHeader(status int) {
+	if status == http.StatusServiceUnavailable {
+		n.Header().Del("Retry-After")
+	}
+	n.ResponseWriter.WriteHeader(status)
 }
 
 // countIn adds the bytes a request brought to the bytes received on this surface.

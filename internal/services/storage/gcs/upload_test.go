@@ -427,3 +427,32 @@ func TestUploadBodyErrors(t *testing.T) {
 		t.Fatal("an object was stored")
 	}
 }
+
+// Retry-After goes with real pressure alone (the start rate, core.ErrOverloaded): a 503 of the
+// server's own failure has none, or clients that honour it would retry without a limit.
+func TestUploadUnavailableHasNoRetryAfter(t *testing.T) {
+	e := newEnv(t)
+	loc := e.start(t, "late.txt", "", `{}`)
+	if err := e.svc.Close(); err != nil {
+		t.Fatal(err)
+	}
+	for _, rec := range []*httptest.ResponseRecorder{
+		e.do("POST", upload+"?uploadType=media&name=closed.txt", tokenA, strings.NewReader("x")),
+		e.chunk(t, "PUT", loc, "bytes 0-*/*", "late", nil),
+	} {
+		gcsErr(t, rec, 503, wire.ReasonBackendError)
+		if v := rec.Header().Get("Retry-After"); v != "" {
+			t.Errorf("Retry-After %q on a plain 503", v)
+		}
+	}
+	rec := httptest.NewRecorder()
+	e.api.refuse(rec, core.ErrOverloaded, bucketA, "x")
+	if rec.Code != 503 || rec.Header().Get("Retry-After") == "" {
+		t.Fatalf("overloaded: %d %v", rec.Code, rec.Header())
+	}
+	rec = httptest.NewRecorder()
+	e.api.refuse(rec, core.ErrUnavailable, bucketA, "x")
+	if rec.Code != 503 || rec.Header().Get("Retry-After") != "" {
+		t.Fatalf("unavailable: %d %v", rec.Code, rec.Header())
+	}
+}
