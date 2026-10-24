@@ -31,16 +31,22 @@ module ArumaStorage
   # Patches Pods/FirebaseStorage and, after the project is generated (post_install), adds the new
   # source files to the FirebaseStorage target. Returns the patched FirebaseStorage version.
   def patch!(installer, patch: ENV['ARUMA_STORAGE_PATCH'] || DEFAULT_PATCH)
-    spec = installer.sandbox.specification('FirebaseStorage')
-    raise PatchError, 'ArumaStorage: the Podfile has no FirebaseStorage pod' if spec.nil?
+    target = installer.pod_targets.find { |t| t.pod_name == 'FirebaseStorage' }
+    raise PatchError, 'ArumaStorage: the Podfile has no FirebaseStorage pod' if target.nil?
 
+    version = target.root_spec.version.to_s
     pod_dir = installer.sandbox.pod_dir('FirebaseStorage').to_s
-    added = apply(pod_dir, patch)
+    begin
+      added = apply(pod_dir, patch)
+    rescue PatchError => e
+      raise PatchError, "#{e.message}\n(FirebaseStorage #{version}; the helper supports the releases " \
+                        'still published to CocoaPods, and SwiftPM with the mirror is the main path)'
+    end
     project = installer.respond_to?(:pods_project) ? installer.pods_project : nil
     add_to_target(project, pod_dir, added) if project
-    Pod::UI.puts "ArumaStorage: FirebaseStorage #{spec.version} patched with #{File.basename(patch)} " \
+    Pod::UI.puts "ArumaStorage: FirebaseStorage #{version} patched with #{File.basename(patch)} " \
                  '(it reads ArumaURL from Info.plist)'
-    spec.version.to_s
+    version
   end
 
   # Applies the patch's FirebaseStorage/Sources files under root. Returns the paths it created.

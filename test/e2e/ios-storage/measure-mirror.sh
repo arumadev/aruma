@@ -68,7 +68,10 @@ set_mirror() {
 # resolve <case> <dir>: prints the outcome and the firebase-ios-sdk pin.
 resolve() {
   local name=$1 dir=$2 status=0
-  swift package --package-path "$dir" --scratch-path "$dir/.build" --cache-path "$cache/spm-cache" resolve \
+  # A case of its own cache when asked (FRESH_CACHE=1): the shared one already holds both repositories.
+  local repos=$cache/spm-cache
+  [[ -n "${FRESH_CACHE:-}" ]] && repos=$dir/.cache
+  swift package --package-path "$dir" --scratch-path "$dir/.build" --cache-path "$repos" resolve \
     >"$dir/resolve.log" 2>&1 || status=$?
   local pin=none
   if [[ -f "$dir/Package.resolved" ]]; then
@@ -77,13 +80,17 @@ pins = json.load(open(sys.argv[1]))["pins"]
 p = [p for p in pins if p["identity"] == "firebase-ios-sdk"]
 print("%s %s %s" % (p[0]["location"], p[0]["state"].get("version"), p[0]["state"]["revision"]) if p else "none")' "$dir/Package.resolved")
   fi
-  local where=official
+  local where=official checkout=none
   [[ "$pin" == *"$mirror_commit"* ]] && where=MIRROR
   [[ "$pin" == none ]] && where=-
-  printf '%-16s exit=%d  firebase-ios-sdk -> %s (%s)\n' "$name" "$status" "$where" "$pin"
-  grep -iE "error|warning|conflict|identity" "$dir/resolve.log" | grep -v '^Fetching\|^Fetched\|^Computing\|^Computed\|^Creating\|^Working' \
+  if [[ -d "$dir/.build/checkouts/firebase-ios-sdk" ]]; then
+    checkout=official
+    [[ -f "$dir/.build/checkouts/firebase-ios-sdk/ARUMA-NOTICE.md" ]] && checkout=PATCHED
+  fi
+  printf '%-16s exit=%d  pin -> %s, checkout %s (%s)\n' "$name" "$status" "$where" "$checkout" "$pin"
+  grep -iE "error|warning|conflict|identity" "$dir/resolve.log" | grep -v 'Fetching\|Fetched\|Computing\|Computed\|Creating\|Working\|Downloading' \
     | head -4 | sed 's/^/                   /' || true
-  rm -rf "$dir/.build"
+  rm -rf "$dir/.build" "$dir/.cache"
 }
 
 echo
@@ -101,7 +108,11 @@ done
 # FlutterFire's firebase_storage names the official URL with exact: (Package.swift:22).
 package "$work/identity/plugin" Plugin ".package(url: \"$official\", exact: \"$version\")"
 package "$work/identity/app" App ".package(url: \"$mirror_url\", exact: \"$version\")" ".package(path: \"../plugin\")"
-resolve identity "$work/identity/app"
+FRESH_CACHE=1 resolve identity "$work/identity/app"
+# The same, with the plugin listed first.
+package "$work/identity-rev/plugin" Plugin ".package(url: \"$official\", exact: \"$version\")"
+package "$work/identity-rev/app" App ".package(path: \"../plugin\")" ".package(url: \"$mirror_url\", exact: \"$version\")"
+FRESH_CACHE=1 resolve identity-rev "$work/identity-rev/app"
 
 package "$work/identity-mirror/plugin" Plugin ".package(url: \"$official\", exact: \"$version\")"
 package "$work/identity-mirror/app" App ".package(url: \"$official\", exact: \"$version\")" ".package(path: \"../plugin\")"
