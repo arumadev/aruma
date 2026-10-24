@@ -10,6 +10,8 @@
 //     revoked).
 //   - Revocations tells a consumer, as it happens, that a user's tokens are no longer valid, so
 //     it can end the sessions it authenticated earlier (RTDB's auth_revoked).
+//   - Users reports a user's live state on demand, for a consumer that acts for a user long after
+//     it verified the token (Storage, when an upload started days ago finalizes, ADR-022 §7).
 package idtoken
 
 import (
@@ -115,4 +117,35 @@ type Revocations interface {
 	// Subscribe starts delivering the project's revocations. The caller must Close the
 	// subscription when it no longer listens.
 	Subscribe(project int64) *Subscription
+}
+
+// Users reports the live state of a project's users.
+type Users interface {
+	// State returns the user's state now. A user who does not exist is a UserState with Exists
+	// false, not an error; an error is an outage and says nothing about the user.
+	State(ctx context.Context, project int64, uid string) (UserState, error)
+}
+
+// UserState is what decides whether a user's earlier sign-in still stands.
+type UserState struct {
+	Exists           bool
+	Disabled         bool
+	TokensValidAfter time.Time // revokeRefreshTokens and the like; zero when never set
+	Created          time.Time // a token issued before it belonged to an earlier user of the uid
+}
+
+// Admits reports, as the Verifier would for a token of that session, whether a session whose
+// token was issued at issuedAt for a sign-in at authTime still stands: nil, or ErrUserNotFound,
+// ErrDisabled or ErrRevoked, checked in the Verifier's order. Times compare at second
+// precision, as the Verifier and Firebase's validSince do.
+func (u UserState) Admits(authTime, issuedAt time.Time) error {
+	switch {
+	case !u.Exists:
+		return ErrUserNotFound
+	case u.Disabled:
+		return ErrDisabled
+	case authTime.Unix() < u.TokensValidAfter.Unix() || u.Created.Unix() > issuedAt.Unix():
+		return ErrRevoked
+	}
+	return nil
 }

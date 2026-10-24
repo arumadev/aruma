@@ -188,3 +188,26 @@ func TestCSRFTokenIsBoundToSession(t *testing.T) {
 }
 
 func base64Of(b []byte) string { return base64.RawURLEncoding.EncodeToString(b) }
+
+// A page token's MAC is stable for a master key and differs from every other purpose's.
+func TestPageTokenMAC(t *testing.T) {
+	k := testKeys(t)
+	msg := []byte("482915736204|chat-app.aruma.test|photos/|/|photos/a.png")
+	a, b := k.PageTokenMAC(msg), k.PageTokenMAC(msg)
+	if !EqualHash(a, b) || len(a) != 32 {
+		t.Fatalf("PageTokenMAC is not a stable 32-byte MAC: %x %x", a, b)
+	}
+	if EqualHash(a, k.HashToken(string(msg))) {
+		t.Error("the page token key is the token key")
+	}
+	if EqualHash(a, k.PageTokenMAC(append(msg, 'x'))) {
+		t.Error("the MAC ignores its message")
+	}
+	other, err := NewKeys(bytes.Repeat([]byte{8}, 32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if EqualHash(a, other.PageTokenMAC(msg)) {
+		t.Error("the MAC does not depend on the master key")
+	}
+}

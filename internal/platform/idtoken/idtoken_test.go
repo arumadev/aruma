@@ -117,3 +117,27 @@ func TestHubOverflowDoesNotBlock(t *testing.T) {
 		t.Fatal("Close after overflow cleared the error")
 	}
 }
+
+func TestUserStateAdmits(t *testing.T) {
+	signIn := time.Unix(1_700_000_000, 0)
+	issued := signIn.Add(time.Hour)
+	cases := []struct {
+		name string
+		u    UserState
+		want error
+	}{
+		{"live", UserState{Exists: true, Created: signIn.Add(-time.Hour)}, nil},
+		{"deleted", UserState{Disabled: true}, ErrUserNotFound},
+		{"disabled", UserState{Exists: true, Disabled: true}, ErrDisabled},
+		{"revoked after the sign-in", UserState{Exists: true, TokensValidAfter: signIn.Add(time.Second)}, ErrRevoked},
+		// The session a revocation itself returns starts at the revocation and survives it.
+		{"revoked at the sign-in", UserState{Exists: true, TokensValidAfter: signIn}, nil},
+		{"within the second", UserState{Exists: true, TokensValidAfter: signIn.Add(500 * time.Millisecond)}, nil},
+		{"an earlier user of the uid", UserState{Exists: true, Created: issued.Add(time.Second)}, ErrRevoked},
+	}
+	for _, c := range cases {
+		if got := c.u.Admits(signIn, issued); got != c.want {
+			t.Errorf("%s: Admits = %v, want %v", c.name, got, c.want)
+		}
+	}
+}

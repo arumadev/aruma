@@ -11,13 +11,16 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Open connects a pool and verifies the connection.
+// Open connects a pool and verifies the connection. Every connection commits synchronously:
+// a commit that returns is durable, whatever the server's default, which Storage's write order
+// relies on (ADR-022 §5).
 func Open(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("database url: %w", err)
 	}
 	cfg.ConnConfig.RuntimeParams["application_name"] = "aruma"
+	cfg.ConnConfig.RuntimeParams["synchronous_commit"] = "on"
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, err

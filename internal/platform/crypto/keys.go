@@ -14,10 +14,11 @@ import (
 
 // Keys are the per-purpose keys derived from the master key.
 type Keys struct {
-	tokenMAC []byte
-	csrfMAC  []byte
-	kek      map[uint32][]byte
-	current  uint32
+	tokenMAC     []byte
+	csrfMAC      []byte
+	pageTokenMAC []byte
+	kek          map[uint32][]byte
+	current      uint32
 }
 
 // NewKeys derives every purpose key from a 32-byte master key. The key-encryption key is
@@ -34,11 +35,15 @@ func NewKeys(master []byte) (*Keys, error) {
 	if err != nil {
 		return nil, err
 	}
+	page, err := derive(master, "aruma/v1/storage-page-token")
+	if err != nil {
+		return nil, err
+	}
 	kek, err := derive(master, "aruma/v1/kek")
 	if err != nil {
 		return nil, err
 	}
-	return &Keys{tokenMAC: mac, csrfMAC: csrf, kek: map[uint32][]byte{1: kek}, current: 1}, nil
+	return &Keys{tokenMAC: mac, csrfMAC: csrf, pageTokenMAC: page, kek: map[uint32][]byte{1: kek}, current: 1}, nil
 }
 
 // AddKEK registers the key-encryption key derived from a newer master key under version v and

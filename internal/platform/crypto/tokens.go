@@ -56,3 +56,12 @@ func (k *Keys) CSRFToken(sessionToken string) string {
 func (k *Keys) CheckCSRF(sessionToken, token string) bool {
 	return hmac.Equal([]byte(k.CSRFToken(sessionToken)), []byte(token))
 }
+
+// PageTokenMAC returns the HMAC-SHA256 of a list page token's contents, under a key of its own
+// so a page token can never pass for any other token (ADR-022 §13). Storage signs with it what a
+// page continues: the project, the bucket, the prefix, the delimiter and the last name returned.
+func (k *Keys) PageTokenMAC(msg []byte) []byte {
+	m := hmac.New(sha256.New, k.pageTokenMAC)
+	m.Write(msg)
+	return m.Sum(nil)
+}
