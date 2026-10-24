@@ -38,10 +38,9 @@ func (a *API) getBucket(w http.ResponseWriter, r *http.Request, b core.Bucket, p
 // patchBucket is buckets.patch with a body of cors alone: Node's setCorsConfiguration and
 // setMetadata({cors}), Go's Update with BucketAttrsToUpdate.CORS. Any other field is 400: v0.3
 // keeps no other bucket setting, and a field ignored would look applied. "cors": null or []
-// removes every rule; a body without cors changes nothing.
-//
-// The metageneration preconditions are checked on the bucket as read before the change:
-// core.SetCORS takes none, so two changes that race may both pass the same check.
+// removes every rule; a body without cors changes nothing. The metageneration preconditions
+// are checked by core on the settings row it locks (core.BucketConditions), so of two changes
+// with the same ifMetagenerationMatch one is 412.
 func (a *API) patchBucket(w http.ResponseWriter, r *http.Request, b core.Bucket, p core.Principal) {
 	q := r.URL.Query()
 	if q.Get("predefinedAcl") != "" || q.Get("predefinedDefaultObjectAcl") != "" {
@@ -63,12 +62,15 @@ func (a *API) patchBucket(w http.ResponseWriter, r *http.Request, b core.Bucket,
 		a.writeError(w, err, b.Name, "")
 		return
 	}
-	info, err := a.svc.BucketInfo(r.Context(), b)
-	if err == nil && !holdsBucket(info, pre) {
-		err = core.ErrPreconditionFailed
-	}
-	if err == nil && set {
-		info, err = a.svc.SetCORS(r.Context(), b, p, rules)
+	cond := core.BucketConditions{IfMetagenerationMatch: pre.IfMetagenerationMatch, IfMetagenerationNotMatch: pre.IfMetagenerationNotMatch}
+	var info core.BucketInfo
+	if set {
+		info, err = a.svc.SetCORS(r.Context(), b, p, rules, cond)
+	} else {
+		// Nothing changes: the conditions hold on the bucket as it is.
+		if info, err = a.svc.BucketInfo(r.Context(), b); err == nil && !holdsBucket(info, pre) {
+			err = core.ErrPreconditionFailed
+		}
 	}
 	if err != nil {
 		a.writeError(w, err, b.Name, "")

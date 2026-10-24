@@ -1,10 +1,8 @@
 package gcs
 
 import (
-	"context"
 	"errors"
 	"net/http"
-	"net/url"
 	"strconv"
 
 	"github.com/arumadev/aruma/internal/services/storage/core"
@@ -170,10 +168,8 @@ func (a *API) pinned(r *http.Request, b core.Bucket, name string, p core.Princip
 // and Go, which loops until done, both stop at once. The destination is in the source's
 // project: another project's bucket is 403 (ADR-022 §3). A body that sets metadata replaces the
 // destination's; an empty one ({}, as Node sends) copies the source's.
-//
-// sourceGeneration and the ifSource preconditions are checked on the source as read before the
-// copy: core.Rewrite takes no source generation, so a source replaced between the two is copied
-// as it is then.
+// sourceGeneration and the ifSource preconditions are checked by core on the row whose file it
+// copies (core.SourceConditions).
 func (a *API) rewrite(w http.ResponseWriter, r *http.Request, b core.Bucket, name, dest string, p core.Principal) {
 	q := r.URL.Query()
 	path, err := wire.SplitObjectPath(dest)
@@ -208,7 +204,13 @@ func (a *API) rewrite(w http.ResponseWriter, r *http.Request, b core.Bucket, nam
 		a.writeError(w, err, dst.Name, path.Object)
 		return
 	}
-	if err := a.checkSource(r.Context(), q, b, name, p); err != nil {
+	srcGen, err := positive(q, "sourceGeneration")
+	if err != nil {
+		a.writeError(w, err, b.Name, name)
+		return
+	}
+	srcPre, err := sourcePreconditions(q)
+	if err != nil {
 		a.writeError(w, err, b.Name, name)
 		return
 	}
@@ -226,7 +228,8 @@ func (a *API) rewrite(w http.ResponseWriter, r *http.Request, b core.Bucket, nam
 	if attrs.Set {
 		patch = &attrs.Patch
 	}
-	o, err := a.svc.Rewrite(r.Context(), b, name, dst, path.Object, p, patch, pre)
+	o, err := a.svc.Rewrite(r.Context(), b, name, dst, path.Object, p, patch, pre,
+		core.SourceConditions{Generation: srcGen, Pre: srcPre})
 	if err != nil {
 		bucket, object := dst.Name, path.Object
 		if errors.Is(err, core.ErrNotFound) {
@@ -238,29 +241,6 @@ func (a *API) rewrite(w http.ResponseWriter, r *http.Request, b core.Bucket, nam
 	res := a.object(o)
 	a.writeJSON(w, http.StatusOK, wire.GCSRewrite{Kind: wire.KindRewrite, TotalBytesRewritten: wire.Int(o.Size),
 		ObjectSize: wire.Int(o.Size), Done: true, Resource: &res})
-}
-
-// checkSource checks a rewrite's sourceGeneration and ifSource preconditions on the source.
-func (a *API) checkSource(ctx context.Context, q url.Values, b core.Bucket, name string, p core.Principal) error {
-	gen, err := positive(q, "sourceGeneration")
-	if err != nil {
-		return err
-	}
-	pre, err := sourcePreconditions(q)
-	if err != nil {
-		return err
-	}
-	if gen == 0 && pre == (core.Preconditions{}) {
-		return nil
-	}
-	o, err := a.svc.Stat(ctx, b, name, p, core.SurfaceGCS, gen)
-	if err != nil {
-		return err
-	}
-	if !holds(o, pre) {
-		return core.ErrPreconditionFailed
-	}
-	return nil
 }
 
 // holds reports whether GCS's preconditions hold on an object that exists: ifGenerationMatch=0

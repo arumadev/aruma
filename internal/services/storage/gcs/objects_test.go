@@ -275,6 +275,21 @@ func TestRewrite(t *testing.T) {
 	gcsErr(t, e.do("POST", target+"two.txt?ifGenerationMatch=0", tokenA, strings.NewReader("{}")), 412, "conditionNotMet")
 	gcsErr(t, e.do("POST", target+"four.txt?sourceGeneration=1", tokenA, strings.NewReader("{}")), 404, "notFound")
 	gcsErr(t, e.do("POST", target+"four.txt?ifSourceGenerationMatch=1", tokenA, strings.NewReader("{}")), 412, "conditionNotMet")
+	// The source replaced after the caller saw it: its old generation is not copied in its place
+	// (core checks the conditions on the row whose file it copies).
+	next := e.put(e.a, "src.txt", "replaced", core.Patch{})
+	gcsErr(t, e.do("POST", target+"five.txt?sourceGeneration="+gen, tokenA, strings.NewReader("{}")), 404, "notFound")
+	for _, q := range []string{"ifSourceGenerationMatch=" + gen, "ifSourceGenerationNotMatch=" + strconv.FormatInt(next.Generation, 10),
+		"ifSourceMetagenerationMatch=2", "ifSourceMetagenerationNotMatch=1"} {
+		gcsErr(t, e.do("POST", target+"five.txt?"+q, tokenA, strings.NewReader("{}")), 412, "conditionNotMet")
+	}
+	if _, err := e.svc.Stat(context.Background(), e.a, "five.txt", core.Principal{Kind: core.PrincipalAdmin}, core.SurfaceGCS, 0); err == nil {
+		t.Error("a refused rewrite made its destination")
+	}
+	r, _ = rw("five.txt", "?ifSourceGenerationMatch="+strconv.FormatInt(next.Generation, 10), "{}")
+	if r.Resource.CRC32C != wire.CRC32C(next.CRC32C) {
+		t.Errorf("the current source: %+v", r.Resource)
+	}
 	gcsErr(t, e.do("POST", target+"four.txt?rewriteToken=abc", tokenA, strings.NewReader("{}")), 400, "invalid")
 	gcsErr(t, e.do("POST", target+"four.txt?destinationPredefinedAcl=publicRead", tokenA, strings.NewReader("{}")), 501, "notImplemented")
 	body := gcsErr(t, e.do("POST", objA+"missing/rewriteTo/b/"+bucketA+"/o/x", tokenA, strings.NewReader("{}")), 404, "notFound")
@@ -310,6 +325,25 @@ func TestServiceAccountIsBoundToItsProject(t *testing.T) {
 		body := gcsErr(t, e.do(c.method, c.target, tokenA, strings.NewReader(c.body)), http.StatusForbidden, "forbidden")
 		if !strings.HasPrefix(body.Message, emailA+" does not have storage.") {
 			t.Errorf("%s %s: %q", c.method, c.target, body.Message)
+		}
+	}
+	// The 403 comes before any object is looked up (ADR-022 §14, storage's exception to S-11): an
+	// object that exists and one that does not get the same reply, byte for byte.
+	for _, c := range []struct{ method, exists, missing, body string }{
+		{"GET", objB + "b.txt", objB + "missing.txt", ""},
+		{"GET", objB + "b.txt?alt=media", objB + "missing.txt?alt=media", ""},
+		{"PATCH", objB + "b.txt", objB + "missing.txt", `{"metadata":{"x":"y"}}`},
+		{"DELETE", objB + "b.txt", objB + "missing.txt", ""},
+		{"DELETE", objB + "b.txt?generation=1", objB + "missing.txt?generation=1", ""},
+		{"GET", objB + "?prefix=b.txt", objB + "?prefix=missing", ""},
+		{"POST", objB + "b.txt/rewriteTo/b/" + bucketA + "/o/x.txt", objB + "missing.txt/rewriteTo/b/" + bucketA + "/o/x.txt", "{}"},
+		{"POST", objA + "a.txt/rewriteTo/b/" + bucketB + "/o/b.txt", objA + "a.txt/rewriteTo/b/" + bucketB + "/o/missing.txt", "{}"},
+		{"POST", objA + "a.txt/rewriteTo/b/" + bucketB + "/o/b.txt?ifGenerationMatch=0", objA + "a.txt/rewriteTo/b/" + bucketB + "/o/missing.txt?ifGenerationMatch=0", "{}"},
+	} {
+		one := e.do(c.method, c.exists, tokenA, strings.NewReader(c.body))
+		other := e.do(c.method, c.missing, tokenA, strings.NewReader(c.body))
+		if one.Code != 403 || one.Code != other.Code || one.Body.String() != other.Body.String() {
+			t.Errorf("%s: an existing object %d %s, a missing one %d %s", c.method, one.Code, one.Body, other.Code, other.Body)
 		}
 	}
 	admin := core.Principal{Kind: core.PrincipalAdmin}
