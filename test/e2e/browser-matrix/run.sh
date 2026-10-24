@@ -12,7 +12,9 @@
 #   ARUMA_E2E_DB_PREFIX  prefix of the throwaway database (default aruma_e2e_)
 #
 # It needs the local Postgres (ARUMA_TEST_DATABASE_URL), Go and Node. Playwright's browsers go to
-# PLAYWRIGHT_BROWSERS_PATH (.cache/env.sh keeps them off the system disk).
+# PLAYWRIGHT_BROWSERS_PATH (.cache/env.sh keeps them off the system disk). On Linux the engines need
+# a sound device, a PulseAudio null sink will do (as the CI job has): Firefox fails case 14's song
+# without one.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -50,11 +52,13 @@ for _ in $(seq 1 240); do
 done
 grep -q ready "$gen/server.out" || { echo "Aruma did not start" >&2; exit 1; }
 
-(cd "$here" && npm ci --no-audit --no-fund --silent)
+# Under test/ci/egress-guard.sh nothing is installed: the job installed the packages, the engine
+# and its system dependencies before turning the guard on.
+[[ -n ${ARUMA_EGRESS_GUARD:-} ]] || (cd "$here" && npm ci --no-audit --no-fund --silent)
 status=0
 for engine in "${engines[@]}"; do
   printf '\n==> browser matrix: %s\n' "$engine"
-  (cd "$here" && npx playwright install ${CI:+--with-deps} "$engine" >/dev/null)
+  [[ -n ${ARUMA_EGRESS_GUARD:-} ]] || (cd "$here" && npx playwright install "$engine" >/dev/null)
   (cd "$here" && npx playwright test --project "$engine" "$@") || status=1
 done
 exit $status

@@ -27,15 +27,20 @@ ssr_port=${ARUMA_E2E_SSR_PORT:-9422}
 
 start_aruma
 cd "$here"
-npm ci --no-audit --no-fund --silent
-npx playwright install ${CI:+--with-deps} chromium >/dev/null
+# Under test/ci/egress-guard.sh nothing is installed: the job installed the packages, Chromium and
+# its system dependencies before turning the guard on.
+if [[ -z ${ARUMA_EGRESS_GUARD:-} ]]; then
+  npm ci --no-audit --no-fund --silent
+  (cd apps/sveltekit && npm ci --no-audit --no-fund --silent)
+  npx playwright install chromium >/dev/null
+fi
 
 log "builds: Vite 8, webpack, esbuild, Rollup, Rspack and the fallback, and the builds that must fail"
 node build.mjs
 
 if [[ "${ARUMA_E2E_SSR:-on}" != off ]]; then
   log "SvelteKit (SSR): build, and serve with Node under the network guard"
-  (cd apps/sveltekit && npm ci --no-audit --no-fund --silent && npx vite build --logLevel error)
+  (cd apps/sveltekit && npx vite build --logLevel error)
   ARUMA_NETGUARD_LOG=$gen/ssr-netguard.log NODE_OPTIONS="--require $root/test/experiments/netguard.cjs" \
     PORT=$ssr_port HOST=127.0.0.1 ORIGIN="http://127.0.0.1:$ssr_port" \
     node apps/sveltekit/build/index.js >"$gen/ssr.log" 2>&1 &
@@ -46,9 +51,16 @@ fi
 
 log "Playwright: Vite 8, webpack, esbuild, Rollup, Rspack, the fallback${ARUMA_E2E_SSR_URL:+, SvelteKit}"
 ARUMA_E2E_APPS=vite,webpack,esbuild,rollup,rspack,fallback npx playwright test "$@"
-if [[ -n "${ARUMA_E2E_SSR_URL:-}" ]] && grep -q BLOCK "$gen/ssr-netguard.log" 2>/dev/null; then
-  echo "the SvelteKit server tried to leave the machine:" >&2
-  grep BLOCK "$gen/ssr-netguard.log" >&2
-  exit 1
+if [[ -n "${ARUMA_E2E_SSR_URL:-}" ]]; then
+  if grep -q BLOCK "$gen/ssr-netguard.log" 2>/dev/null; then
+    echo "the SvelteKit server tried to leave the machine:" >&2
+    grep BLOCK "$gen/ssr-netguard.log" >&2
+    exit 1
+  fi
+  # The server's page reads the link from Aruma, so a loaded netguard saw that connection.
+  if ! grep -q ALLOW "$gen/ssr-netguard.log" 2>/dev/null; then
+    echo "the SvelteKit server's netguard saw no connection: it was not loaded" >&2
+    exit 1
+  fi
 fi
 log "web Storage e2e passed"

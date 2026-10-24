@@ -15,6 +15,9 @@ export default defineConfig({
   workers: 1,
   timeout: 60_000,
   forbidOnly: Boolean(process.env.CI),
+  // On GitHub Actions Playwright would otherwise git fetch the pull request's base commit from
+  // github.com for the report's diff: the suite reaches nothing off this machine.
+  captureGitInfo: { commit: false, diff: false },
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: { trace: 'retain-on-failure', acceptDownloads: true },
   projects: [

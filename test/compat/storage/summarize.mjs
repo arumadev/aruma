@@ -10,7 +10,8 @@
 //   c  a bug in the emulator, with the evidence that production differs
 // The conformance tests firebase-tools marks emulatorOnly run as well, and are reported apart:
 // they are outside the count (ARUMA_CT_SOURCES names their sources). It exits 1 when a test
-// fails without a class, or a classified test is missing from the run.
+// fails without a class, or a classified test is missing from the run, and when the network guard
+// refused a connection off this machine or never saw one to loopback (it was not loaded).
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -102,8 +103,15 @@ for (const key of Object.keys(classified)) {
   }
 }
 const guard = path.join(dir, 'netguard.log');
-const blocked = fs.existsSync(guard) ? fs.readFileSync(guard, 'utf8').split('\n').filter((l) => l.startsWith('BLOCK')) : [];
-console.log(`\nnetwork: ${blocked.length} connections refused off this machine${blocked.length ? '\n  ' + [...new Set(blocked.map((l) => l.replace(/ pid=\d+$/, '')))].join('\n  ') : ''}`);
+const guardLines = fs.existsSync(guard) ? fs.readFileSync(guard, 'utf8').split('\n') : [];
+const blocked = guardLines.filter((l) => l.startsWith('BLOCK'));
+const allowed = guardLines.filter((l) => l.startsWith('ALLOW')).length;
+console.log(`\nnetwork: ${blocked.length} connections refused off this machine, ${allowed} to loopback${blocked.length ? '\n  ' + [...new Set(blocked.map((l) => l.replace(/ pid=\d+$/, '')))].join('\n  ') : ''}`);
+if (blocked.length) bad++;
+if (!allowed) {
+  console.log('  [network guard] it saw no connection to loopback: it was not loaded');
+  bad++;
+}
 if (suites.includes('captures') && fs.existsSync(path.join(dir, 'captures-diff.txt'))) {
   console.log('\n' + fs.readFileSync(path.join(dir, 'captures-diff.txt'), 'utf8'));
 }

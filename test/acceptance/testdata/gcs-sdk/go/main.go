@@ -7,6 +7,8 @@
 //	ARUMA_GCS_ENDPOINT=http://127.0.0.1:<port>/storage/v1/ KEY_FILE=… BUCKET=… go run .
 //
 // It prints one JSON line, {"results": [{"op", "ok", "detail"}]}, and exits 1 when a step failed.
+// The last step is the network guard's: the Google libraries' transports clone
+// http.DefaultTransport, whose dialer here refuses and reports every connection beyond loopback.
 package main
 
 import (
@@ -17,14 +19,56 @@ import (
 	"fmt"
 	"hash/crc32"
 	"io"
+	"net"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 )
+
+// loopbackOnly makes the default transport's dialer refuse every address beyond loopback, before
+// any client clones it, and returns the guard's step: how many dials went to loopback, or an
+// error naming those it refused (or saying it saw none, so it was not in the path).
+func loopbackOnly() func() (string, error) {
+	var (
+		mu      sync.Mutex
+		allowed int
+		refused []string
+	)
+	t := http.DefaultTransport.(*http.Transport)
+	dial := t.DialContext
+	t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		host, _, _ := net.SplitHostPort(addr)
+		ip := net.ParseIP(host)
+		mu.Lock()
+		ok := host == "localhost" || ip != nil && ip.IsLoopback()
+		if ok {
+			allowed++
+		} else {
+			refused = append(refused, network+" "+addr)
+		}
+		mu.Unlock()
+		if !ok {
+			return nil, fmt.Errorf("dial %s %s: refused by the network guard", network, addr)
+		}
+		return dial(ctx, network, addr)
+	}
+	return func() (string, error) {
+		mu.Lock()
+		defer mu.Unlock()
+		switch {
+		case len(refused) > 0:
+			return "", fmt.Errorf("refused %d dials beyond loopback: %v", len(refused), refused)
+		case allowed == 0:
+			return "", errors.New("saw no dial: the clients did not go through it")
+		}
+		return fmt.Sprintf("%d dials, all to loopback", allowed), nil
+	}
+}
 
 type result struct {
 	Op     string `json:"op"`
@@ -46,7 +90,9 @@ func main() {
 		}
 		results = append(results, result{op, true, detail})
 	}
+	guard := loopbackOnly()
 	defer func() {
+		step("network guard", guard)
 		_ = json.NewEncoder(os.Stdout).Encode(map[string]any{"results": results})
 		if failed {
 			os.Exit(1)

@@ -92,6 +92,15 @@ test('3. two clients: writes reach the other\'s listeners in order, with the ser
   expect(await call(b, (e, room) => e.dbSdk.push(e.dbSdk.ref(e.db, room), { from: 'b', text: 'late', ts: 1 }).then(() => 'ok'), room)).toEqual({ value: 'ok' });
   expect(await call(b, (e, room) => e.dbSdk.push(e.dbSdk.ref(e.db, room), { from: 'b', text: 'future', ts: Date.now() + 3_600_000 }), room)).toEqual({ code: 'PERMISSION_DENIED' });
 
+  // The server's timestamps follow the order of the writes, within the test's clock.
+  const stored = (await admin('GET', room)).body;
+  const ts = keys.map((k) => stored[k].ts);
+  expect(ts).toEqual([...ts].sort((x, y) => x - y));
+  for (const t of ts) {
+    expect(t).toBeGreaterThanOrEqual(t0 - 5);
+    expect(t).toBeLessThanOrEqual(t1 + 5);
+  }
+
   // B saw its refused message come and go (child_added, then child_removed when the server said
   // no); A never did.
   const written = (m) => keys.includes(m.key);
@@ -101,11 +110,15 @@ test('3. two clients: writes reach the other\'s listeners in order, with the ser
     // The texts arrive as written, A's before B's before the admin's.
     expect(added.map((m) => m.val.text)).toEqual(['a1', 'a2', 'a3', 'b1', 'b2', 'admin']);
     expect(added.map((m) => m.key)).toEqual(keys);
-    for (const m of added) {
-      expect(m.val.ts).toBeGreaterThanOrEqual(t0 - 5);
-      expect(m.val.ts).toBeLessThanOrEqual(t1 + 5);
-    }
-    expect(added.map((m) => m.val.ts)).toEqual([...added.map((m) => m.val.ts)].sort((x, y) => x - y));
+    // The child_added of a client's own write carries the SDK's estimate of the server's clock
+    // (Date.now() + .info/serverTimeOffset, off by the handshake's latency: B's was 8 ms behind
+    // on CI, so its b1 sorted before A's a3), and the server's value replaces it as it comes
+    // back. So the estimates are near the server's, and the query settles on the server's.
+    for (const m of added) expect(Math.abs(m.val.ts - stored[m.key].ts), m.val.text).toBeLessThan(1000);
+    await expect.poll(async () => {
+      const last = (await events(page, 'all')).at(-1);
+      return keys.map((k) => last.val[k]?.ts);
+    }).toEqual(ts);
     // The query's value event lists the children in the order of ts, the stray ts: 1 first.
     const all = (await events(page, 'all')).at(-1);
     expect(all.keys.slice(1)).toEqual(keys);

@@ -8,6 +8,8 @@
 
 `test/compat/storage/run.sh` (تفصيله في `test/compat/storage/README.md`) يشغّل اختبارات Storage التي تنشرها Firebase، بلا تعديل، على Aruma مبني من الفرع وعلى قاعدة تُنشأ وتُحذف، ويعيد تسجيلات `test/oracle/storage/emulator` عليه. وكل فرق مصنّف في `test/compat/storage/classified.json` بواحد من ثلاثة: **أ** خطأ في Aruma (أُصلح ومعه اختبار، أو أُدرج)، و**ب** فرق في ADR-023 §3 برقمه، و**ج** خطأ في المحاكي ومعه دليل أن الإنتاج يخالفه. والتشغيل محلي وحده: كل عملية Node تحت `test/experiments/netguard.cjs` فلا اتصال خارج الجهاز (لم يُرفض اتصال واحد)، والمتصفح لا يحل إلا loopback وأسماء الواجهة المحلية. مسار الإنتاج لكل منصة في S6.
 
+وفي CI (`ci.yml`) تعمل هذه المجموعات وأخواتها تحت `test/ci/egress-guard.sh`: iptables يرفض كل حزمة ترسلها عمليات المجموعة إلى عنوان خارج الجهاز ويعدّها، ولا يُثبَّت شيء تحته، ولا يصل sudo إلى root (`no_new_privs`). وحدوده: الـ DNS يذهب إلى المحلّل المحلي `127.0.0.53` (systemd-resolved) الذي يرسل الاستعلام خارج الجهاز باسمه هو، فاستعلام الاسم لا يُعدّ خروجًا (تذكر الخطوة الأخيرة عدد حزم المنفذ 53 إليه)، وحراس المجموعات يرفضون أسماء Google قبل أي استعلام؛ وIPv6 يُفحص حين يكون للمشغّل مسار IPv6 وحده، وبدونه يفشل الاتصال عند التوجيه قبل القواعد فلا يُعدّ، ولا يخرج شيء.
+
 | المجموعة | المصدر | الاختبارات | نجح | أ | ب | ج |
 |---|---|---|---|---|---|---|
 | js-node | firebase-js-sdk `firebase@13.0.0`، `packages/storage/test/integration` (vitest في Node) | 13 | 13 | 0 | 0 | 0 |
@@ -226,7 +228,7 @@ firebase-tools 15.34.0 نفسها (مثبّتة في `test/acceptance/testdata/f
 - **PDF يُنزَّل** تصفحًا مباشرًا، ولا يُعرض في `<iframe>` ولا `<embed>` من أصل آخر (`X-Frame-Options: DENY`).
 - **CORS:** bucket بلا إعداد يرفض `fetch` و`getBytes` و`getBlob` من أصل آخر، و`cors.json` الموثّق (`{origin: ["*"], method: ["GET"], maxAgeSeconds: 3600}`) يسمح بها ومعها الـ preflight. المكتبة هي `firebase` 13.1.0 (بناء CDN) بـ `connectStorageEmulator` للمضيف وحده، لأن مسار الإنتاج للويب في S6.
 - **Service Worker** من أصل اللوحة يُرفض، وكذلك `<script>` من أصلها، ويُحمَّل `<script>` من أصل تطبيق. والرفض 403 وحده هو المانع، بالطفرة على Chromium وFirefox (2026-10-24): مع إيقاف `media.refused` يُسجَّل رابط التنزيل Service Worker على أصل Aruma في Firefox (`registered`) فتفشل الحالة 8، ومعه تنجح. والحالة الضابطة في Firefox تسجّل عاملًا من أصل الصفحات، لأن Firefox في Playwright لا يمرر سكربت العامل عبر `route`.
-- **حدود المصفوفة:** H.264 غير موجود في Chromium الذي يوزعه Playwright، فيُفحص فيه WebM (VP9)؛ وWebKit يعلن VP9 ولا يفك منه إطارًا (من Aruma ومن خادم ملفات عادي سواء)، فيُفحص فيه MP4 وحده. والحالة 11 (قنبلة gzip) في اختبارات `media` والقبول لا في المتصفح، والحالة 12 (`file.download()` في Node) لمسار GCS في S4-C.
+- **حدود المصفوفة:** H.264 غير موجود في Chromium الذي يوزعه Playwright، فيُفحص فيه WebM (VP9)؛ وWebKit يعلن VP9 ولا يفك منه إطارًا (من Aruma ومن خادم ملفات عادي سواء)، فيُفحص فيه MP4 وحده. وFirefox على Linux بلا جهاز صوت (مشغّل GitHub) يفك MP3 ويقفز فيه (`decodeAudioData` و`<audio>` مكتومًا)، لكن صفحة الوسائط تشغّل الأغنية بصوت قبل أن يكتمها الاختبار فيفشل العنصر بـ `MEDIA_ERR_DECODE` (3)، وفي الطرفية `NS_ERROR_DOM_MEDIA_MEDIASINK_ERR` (`OnMediaSinkAudioError`). وكذلك Opus في WebM وOgg وWAV سواء (Firefox 157، Playwright 1.64.1، صورة `playwright:v1.64.1-noble`، 2026-10-24): العطل في المخرج لا في فك الترميز، فلا يُستبدل MP3 ولا تُخفَّف الحالة، ويعطي CI المشغّلَ مخرجًا صامتًا (PulseAudio null sink) ومعه تنجح. والحالة 11 (قنبلة gzip) في اختبارات `media` والقبول لا في المتصفح، والحالة 12 (`file.download()` في Node) لمسار GCS في S4-C.
 
 | # (ADR-023 §3) | الفرق | التصنيف | المصدر | الموضع |
 |---|---|---|---|---|
