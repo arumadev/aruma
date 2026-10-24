@@ -77,5 +77,29 @@ func TestRules(t *testing.T) {
 	}
 }
 
+// The publish and the read back through tenancy itself, as app wires it: a GET after a PUT reads
+// the ruleset the release points to with tenancy's GetRuleset (S5-A's), not rulesStub's.
+func TestRulesThroughTenancy(t *testing.T) {
+	e := newEnv(t, true, withTenancyRules())
+	if got := e.do(amalSession, "GET", path("/rules"), nil); got.code != http.StatusOK || got.json["published"] != false {
+		t.Fatalf("before any: %d %s", got.code, got.body)
+	}
+	put := e.do(amalSession, "PUT", path("/rules"), map[string]any{"source": openRules})
+	if put.code != http.StatusOK {
+		t.Fatalf("publish: %d %s", put.code, put.body)
+	}
+	got := e.do(amalSession, "GET", path("/rules"), nil)
+	if got.code != http.StatusOK || got.json["published"] != true || got.json["source"] != openRules ||
+		got.json["rulesetName"] != put.json["rulesetName"] {
+		t.Errorf("read back: %d %s", got.code, got.body)
+	}
+	if got := e.do(amalSession, "PUT", path("/rules"), map[string]any{"source": badRules}); got.code != http.StatusBadRequest {
+		t.Errorf("publish a bad source: %d %s", got.code, got.body)
+	}
+	if got := e.do(amalSession, "GET", path("/rules"), nil); got.json["source"] != openRules {
+		t.Errorf("after a refused publish: %s", got.body)
+	}
+}
+
 // The stub stands for tenancy's rulesets until S5-A: it must keep tenancy's interface.
 var _ Rules = (*tcore.Service)(nil)

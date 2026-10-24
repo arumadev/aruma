@@ -50,6 +50,17 @@ func TestEveryRouteNeedsCredentialsAndCSRF(t *testing.T) {
 	}
 }
 
+// A {project} that can name no project is not found, never a server error: it never reaches
+// Postgres, which refuses a NUL or invalid UTF-8.
+func TestImpossibleProjectIsNotFound(t *testing.T) {
+	e := newEnv(t, true)
+	for _, p := range []string{"other-app%00", "chat-app%00", "chat-app%0D%0A", "chat-app%FF", strings.Repeat("a", 64)} {
+		if got := e.do(amalSession, "GET", "/console/v1/projects/"+p+"/storage/objects", nil); got.code != http.StatusNotFound {
+			t.Errorf("project %q: %d %s, want 404", p, got.code, got.body)
+		}
+	}
+}
+
 // A write sent with another session's CSRF token is refused like one without.
 func TestCSRFIsTheSessions(t *testing.T) {
 	e := newEnv(t, true)

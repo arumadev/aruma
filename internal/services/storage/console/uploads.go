@@ -53,8 +53,18 @@ func (u uploadRequest) attrs() core.Patch {
 // issueUpload starts a resumable upload session for the dashboard (ADR-022 §15) and returns its
 // /v0 URL, to which the dashboard sends the chunks with the X-Goog-Upload-* protocol and
 // without the cookie. The session is an admin's, bound to the caller's account, which must
-// still own the project when it finalizes; it lives console_session_ttl (an hour), and its
-// size is declared here and bound. The issue is audited here, and the finalize by core.
+// still own the project when it finalizes; its size is declared here and bound. The issue is
+// audited here, and the finalize by core.
+//
+// The reply is {uploadUrl, bucket, name, size, startBy, expireTime}. The session has two
+// deadlines, as core keeps them (ADR-022 §6.5, §15):
+//   - startBy (now + empty_session_ttl, 10 minutes): a session with no durable byte by then
+//     expires, and the dashboard must issue another;
+//   - expireTime (now + console_session_ttl, an hour): the whole life of a session whose first
+//     byte arrived in time; the upload must finalize before it.
+//
+// Both are read from the clock just before the session starts, so they are never later than
+// the session's own.
 //
 // The URL carries the upload id, the session's only credential: it is in the reply's body
 // alone (no-store), and neither the id nor the URL is logged or audited.
@@ -105,12 +115,14 @@ func (h *handlers) issueUpload(w http.ResponseWriter, r *http.Request) {
 		h.m.Fail(w, r, err)
 		return
 	}
+	lim := h.svc.Limits()
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{
 		"uploadUrl":  h.sessionURL(t.bucket.Name, in.Name, id),
 		"bucket":     t.bucket.Name,
 		"name":       in.Name,
 		"size":       *in.Size,
-		"expireTime": wire.Time(now.Add(h.svc.Limits().ConsoleSessionTTL)),
+		"startBy":    wire.Time(now.Add(lim.EmptySessionTTL)),
+		"expireTime": wire.Time(now.Add(lim.ConsoleSessionTTL)),
 	})
 }
 

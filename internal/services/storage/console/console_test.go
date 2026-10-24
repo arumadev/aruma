@@ -115,8 +115,26 @@ type env struct {
 	failAudit bool
 }
 
-func newEnv(t *testing.T, enabled bool, tune ...func(*core.Limits)) *env {
+// envConfig is how a test tunes its bed: the limits, and whether the rules go to tenancy itself
+// rather than rulesStub.
+type envConfig struct {
+	limits       func(*core.Limits)
+	tenancyRules bool
+}
+
+type envOption func(*envConfig)
+
+func withLimits(f func(*core.Limits)) envOption { return func(c *envConfig) { c.limits = f } }
+
+// withTenancyRules gives the routes tenancy's rulesets and releases as app wires them.
+func withTenancyRules() envOption { return func(c *envConfig) { c.tenancyRules = true } }
+
+func newEnv(t *testing.T, enabled bool, opts ...envOption) *env {
 	t.Helper()
+	var cfg envConfig
+	for _, o := range opts {
+		o(&cfg)
+	}
 	pool := storetest.NewPool(t)
 	ctx := t.Context()
 	for _, sql := range []string{
@@ -145,8 +163,8 @@ func newEnv(t *testing.T, enabled bool, tune ...func(*core.Limits)) *env {
 		}
 		lim := core.DefaultLimits()
 		lim.MinFreeBytes = 1 << 20
-		for _, f := range tune {
-			f(&lim)
+		if cfg.limits != nil {
+			cfg.limits(&lim)
 		}
 		svc, err := core.New(ctx, pool, disk, core.Options{Limits: lim, Keys: keys, Projects: ten,
 			Inflight: rules.NewInflight(1 << 20), DataDir: dir}, discard)
@@ -188,8 +206,11 @@ func newEnv(t *testing.T, enabled bool, tune ...func(*core.Limits)) *env {
 	if enabled {
 		svc = e.svc
 	}
-	Routes(svc, Options{PublicURL: publicURL, ProjectDomain: domain, Audit: audit,
-		Rules: &rulesStub{Service: ten, saved: map[string]tcore.Ruleset{}}})(m)
+	var rs Rules = &rulesStub{Service: ten, saved: map[string]tcore.Ruleset{}}
+	if cfg.tenancyRules {
+		rs = ten
+	}
+	Routes(svc, Options{PublicURL: publicURL, ProjectDomain: domain, Audit: audit, Rules: rs})(m)
 	e.h = http.NewCrossOriginProtection().Handler(r)
 	return e
 }

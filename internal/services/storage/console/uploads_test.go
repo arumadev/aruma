@@ -47,19 +47,35 @@ func TestIssueUploadSession(t *testing.T) {
 	if got.json["size"] != float64(5) || got.json["name"] != name || got.json["bucket"] != "chat-app.aruma.test" {
 		t.Errorf("reply: %s", got.body)
 	}
-	exp, err := time.Parse(time.RFC3339, got.json["expireTime"].(string))
-	if err != nil || time.Until(exp) < 59*time.Minute || time.Until(exp) > 61*time.Minute {
-		t.Errorf("expireTime %v: want an hour from now", got.json["expireTime"])
+	startBy, err := time.Parse(time.RFC3339, got.json["startBy"].(string))
+	if err != nil {
+		t.Fatalf("startBy %v: %v", got.json["startBy"], err)
+	}
+	expireTime, err := time.Parse(time.RFC3339, got.json["expireTime"].(string))
+	if err != nil {
+		t.Fatalf("expireTime %v: %v", got.json["expireTime"], err)
 	}
 
 	// The session as stored: the dashboard's, an admin's bound to amal, the size declared.
 	var surface, kind, principal string
 	var declared int64
-	err = e.pool.QueryRow(t.Context(), `SELECT surface, principal_kind, principal::text, declared_size
+	var created, expires time.Time
+	err = e.pool.QueryRow(t.Context(), `SELECT surface, principal_kind, principal::text, declared_size, created_at, expires_at
 		FROM storage.upload_sessions WHERE project_number = $1 AND name = $2`, chatApp, name).
-		Scan(&surface, &kind, &principal, &declared)
+		Scan(&surface, &kind, &principal, &declared, &created, &expires)
 	if err != nil {
 		t.Fatal(err)
+	}
+	// The two deadlines the reply gives are the stored session's, never later: startBy is when a
+	// session without a byte expires (empty_session_ttl), expireTime its whole life
+	// (console_session_ttl, an hour).
+	lim := e.svc.Limits()
+	near := func(got, want time.Time) bool { return !got.After(want) && want.Sub(got) < time.Second }
+	if !near(startBy, expires) || !near(startBy, created.Add(lim.EmptySessionTTL)) {
+		t.Errorf("startBy %v; the session without a byte expires at %v (created %v)", startBy, expires, created)
+	}
+	if !near(expireTime, created.Add(lim.ConsoleSessionTTL)) || lim.ConsoleSessionTTL != time.Hour {
+		t.Errorf("expireTime %v; the session was created %v and lives %v", expireTime, created, lim.ConsoleSessionTTL)
 	}
 	if surface != "console" || kind != "admin" || !strings.Contains(principal, amal) || declared != 5 {
 		t.Errorf("session: surface %s, kind %s, principal %s, declared %d", surface, kind, principal, declared)
@@ -84,6 +100,13 @@ func TestIssueUploadSession(t *testing.T) {
 	}
 	if life != time.Hour {
 		t.Errorf("a dashboard session lives %v, want an hour", life)
+	}
+	if err := e.pool.QueryRow(t.Context(), `SELECT expires_at FROM storage.upload_sessions
+		WHERE project_number = $1 AND name = $2`, chatApp, name).Scan(&expires); err != nil {
+		t.Fatal(err)
+	}
+	if !near(expireTime, expires) {
+		t.Errorf("expireTime %v; after its first byte the session expires at %v", expireTime, expires)
 	}
 	st, err = e.svc.WriteUpload(t.Context(), e.bucket, name, id, nil,
 		core.Chunk{Offset: 3, Body: strings.NewReader("lo"), Length: 2, Finalize: true, Total: 5})
@@ -166,7 +189,7 @@ func TestUploadNotIssuedWithoutAudit(t *testing.T) {
 
 // The upload starts per address apply to the dashboard's sessions as to /v0's.
 func TestUploadStartRate(t *testing.T) {
-	e := newEnv(t, true, func(l *core.Limits) { l.UploadStartsPerSecond = 2 })
+	e := newEnv(t, true, withLimits(func(l *core.Limits) { l.UploadStartsPerSecond = 2 }))
 	n := e.svc.Limits().UploadStartsPerSecond
 	limited := false
 	for range n + 1 {
