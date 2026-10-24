@@ -11,7 +11,10 @@ machine, fails the run.
 | [android-auth](android-auth) | `firebase-auth` (BoM 35), instrumented tests | production, through `aruma-redirect` | `android-auth/run.sh` | GitHub Actions emulator, weekly and by hand (`devices.yml`) |
 | [ios-auth](ios-auth) | `FirebaseAuth` 12, XCTest in an empty host app | production, through `ArumaRedirect` | `ios-auth/run.sh` | Codemagic, twice a week (`codemagic.yaml`, `ios-auth`) |
 | [web-rtdb](web-rtdb) | `firebase` 11, 12, 13 (Auth and Realtime Database) in Chromium (Playwright) | production; Auth through `@aruma/web` | `web-rtdb/run.sh` | GitHub Actions, pull requests and main (`ci.yml`) |
-| [web-storage](web-storage) | `firebase` 13 (Auth and Storage) built with Vite 8, webpack, esbuild, Rollup, Rspack and SvelteKit, in Chromium (Playwright) | production; Storage rewritten at build time by `@aruma/web`, and the run-time fallback | `web-storage/run.sh`; `web-storage/measure.sh` for Vite 5 to 8 and their dev servers, Next.js (webpack, Turbopack), Expo and Flutter web | by hand |
+| [web-storage](web-storage) | `firebase` 13 (Auth and Storage) built with Vite 8, webpack, esbuild, Rollup, Rspack and SvelteKit, in Chromium (Playwright) | production; Storage rewritten at build time by `@aruma/web`, and the run-time fallback | `web-storage/run.sh`; `web-storage/measure.sh` for Vite 5 to 8 and their dev servers, Next.js (webpack, Turbopack), Expo and Flutter web | GitHub Actions, pull requests and main (`ci.yml`: `web-storage`, `web-storage-measure`, `web-storage-flutter`) |
+| [browser-matrix](browser-matrix) | Aruma's download replies, and `firebase` 13.1.0 `getBytes`/`getBlob`, in Chromium, Firefox and WebKit (Playwright) | pages on other origins and on the dashboard's own | `browser-matrix/run.sh [engine…]` | GitHub Actions, pull requests and main (`ci.yml`, `browser-matrix`, one job per engine) |
+| [android-storage](android-storage) | `firebase-storage` and `firebase-auth`, instrumented tests, debug and release builds | production, through the Gradle plugin `dev.aruma.storage` and `aruma-redirect` | `android-storage/run.sh` | by hand |
+| [ios-storage](ios-storage) | `FirebaseStorage` 12.19.3 from the Aruma mirror (SwiftPM) or 12.19.0 patched (CocoaPods), XCTest in a host app | production, `ArumaURL` in Info.plist; Auth through `ArumaRedirect` | `ios-storage/run.sh [--cocoapods]` | by hand (Codemagic later) |
 | [android-rtdb](android-rtdb) | `firebase-database` and `firebase-auth` (BoM 35), instrumented tests | production; Auth through `aruma-redirect` | `android-rtdb/run.sh` | GitHub Actions emulator, weekly and by hand (`devices.yml`) |
 | [ios-rtdb](ios-rtdb) | `FirebaseDatabase` and `FirebaseAuth` 12, XCTest in an empty host app | production; Auth through `ArumaRedirect` | `ios-rtdb/run.sh` | Codemagic, by hand (`codemagic.yaml`, `ios-rtdb`) |
 
@@ -54,6 +57,45 @@ WebSocket is checked. On Android the iptables half covers the database's WebSock
 sockets of the app's uid). On iOS the database's WebSockets do not go through URLSession, so
 `ios-rtdb/run.sh` samples the host app's sockets with `lsof` every 200 ms and fails on one whose
 far end is not loopback.
+
+## In CI
+
+`ci.yml` runs on pull requests and on pushes to main. Besides the Auth and RTDB suites above, the
+v0.3 Storage suites have a job each:
+
+| Job | What | Command |
+|---|---|---|
+| `storage-sdks` | `@google-cloud/storage` 8.4.0 and `cloud.google.com/go/storage` 1.62.1 (`TestStorageGCSWithTheAdminSDKs`), firebase-tools 15.34.0 (`TestStorageWithTheFirebaseCLI`) | `ARUMA_GCS_SDK=1 ARUMA_FIREBASE_CLI=1 go test -run '^(TestStorageGCSWithTheAdminSDKs\|TestStorageWithTheFirebaseCLI)$' ./test/acceptance/` |
+| `browser-matrix` | Chromium, Firefox and WebKit, in parallel | `test/e2e/browser-matrix/run.sh <engine>` |
+| `web-storage` | Vite 8, webpack, esbuild, Rollup, Rspack, the fallback, SvelteKit | `test/e2e/web-storage/run.sh` |
+| `web-storage-measure` | Vite 5.4.21, 6.4.5, 7.3.7, 8.3.5 (build and dev server), Next.js 16.4.3 (webpack, Turbopack, dev), Expo 58.0.19 (web export in the browser, the Android bundle) | `test/e2e/web-storage/measure.sh vite5 vite6 vite7 vite8 next expo` |
+| `web-storage-flutter` | Flutter 3.44.2 web with `firebase_storage` 14.0.1 | `test/e2e/web-storage/measure.sh flutter` |
+| `storage-compat` | firebase-js-sdk 13.0.0's Storage suites (Node, Chromium, compat), firebase-tools 15.34.0's conformance tests, the captures | `test/compat/storage/run.sh` |
+
+Every version is pinned: Node 24.21.0, Go from go.mod, the lockfiles, Playwright 1.64.1, the
+versions and registry date in `measure.sh`, Flutter 3.44.2, and the upstream commits in
+`test/compat/storage/run.sh`. The caches are keyed on them: npm, Go modules and builds, the
+Playwright browsers, Flutter, and `.cache/upstream/storage` (the upstream sources and their
+installs, on the pinned commits and the lockfiles).
+
+**The network.** Each job installs everything first (`npm ci`, `go mod download`, `playwright
+install`, `measure.sh --install`, `run.sh --prepare`), then runs its suite under
+[test/ci/egress-guard.sh](../ci/egress-guard.sh): iptables rejects, logs and counts every packet a
+process of the suite sends beyond loopback and the job's Postgres container, whatever the program,
+and npm runs from its cache only. The guard proves itself with a probe before the suite, and the
+job's last step fails when it was not turned on or counted a packet. The suites' own guards stay on
+under it: netguard.cjs in every Node process that has one, the browsers' resolver rules and request
+checks, the Go programs' loopback-only dialers, and in `TestStorageWithTheFirebaseCLI` netguard
+alone (sandbox-exec is macOS only). Nothing in CI needs a secret or reaches Google.
+
+**Manual, not on GitHub's Ubuntu runners:**
+
+| Suite | Why | Command |
+|---|---|---|
+| android-auth, android-rtdb | an emulator run costs about as many minutes as the whole of `ci.yml`: weekly and by hand in `devices.yml` | `test/e2e/android-auth/run.sh`, `test/e2e/android-rtdb/run.sh` |
+| android-storage | the same cost, and two builds (debug and release) with bundletool; not in `devices.yml` yet | `test/e2e/android-storage/run.sh` (a `google_apis` emulator for the iptables half) |
+| ios-auth, ios-rtdb | Xcode and a simulator: macOS only; Codemagic (`codemagic.yaml`) | `test/e2e/ios-auth/run.sh`, `test/e2e/ios-rtdb/run.sh` |
+| ios-storage | Xcode, the Aruma mirror of firebase-ios-sdk; for Codemagic later | `test/e2e/ios-storage/run.sh`, `test/e2e/ios-storage/run.sh --cocoapods` |
 
 ## Running locally
 

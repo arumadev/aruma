@@ -169,7 +169,7 @@ jobs:
   # and the job fails on any. The suites keep their own guards as well (netguard.cjs, the
   # browsers' resolver rules, the Go programs' dialers).
   storage-sdks:
-    name: Storage with the Admin SDKs and the Firebase CLI (@google-cloud/storage 8.4.0, cloud.google.com/go/storage 1.62.1, firebase-tools 15.34.0)
+    name: Storage Admin SDKs and firebase-tools
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
@@ -216,7 +216,7 @@ jobs:
         run: test/ci/egress-guard.sh check
 
   browser-matrix:
-    name: Browser matrix, Storage downloads (${{ matrix.engine }})
+    name: Browser matrix (${{ matrix.engine }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -262,13 +262,14 @@ jobs:
         if: failure()
         with:
           name: browser-matrix-${{ matrix.engine }}
+          include-hidden-files: true
           path: |
             test/e2e/browser-matrix/playwright-report
             test/e2e/browser-matrix/test-results
             test/e2e/browser-matrix/.generated/server.log
 
   web-storage:
-    name: Web Storage e2e (firebase 13 built with Vite 8, webpack, esbuild, Rollup, Rspack, SvelteKit; Chromium)
+    name: Web Storage e2e (bundlers, SvelteKit)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
@@ -289,16 +290,19 @@ jobs:
           node-version: 24.21.0
           cache: npm
           cache-dependency-path: |
+            sdk/web/aruma-web/package-lock.json
             test/e2e/web-storage/package-lock.json
             test/e2e/web-storage/apps/sveltekit/package-lock.json
       - uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-chromium-${{ hashFiles('test/e2e/web-storage/package-lock.json') }}
-      - name: Install (Go modules, the bundlers, SvelteKit, Chromium)
+      # @aruma/web is a file: link here, so its own dependency (unplugin) comes from its directory.
+      - name: Install (Go modules, @aruma/web, the bundlers, SvelteKit, Chromium)
         working-directory: test/e2e/web-storage
         run: |
           go mod download
+          (cd ../../../sdk/web/aruma-web && npm ci --no-audit --no-fund)
           npm ci --no-audit --no-fund
           (cd apps/sveltekit && npm ci --no-audit --no-fund)
           npx playwright install --with-deps chromium
@@ -313,12 +317,13 @@ jobs:
         if: failure()
         with:
           name: web-storage
+          include-hidden-files: true
           path: |
             test/e2e/web-storage/test-results
             test/e2e/web-storage/.generated/*.log
 
   web-storage-measure:
-    name: Web Storage measured (Vite 5.4.21, 6.4.5, 7.3.7, 8.3.5 build and dev; Next.js 16.4.3 webpack and Turbopack; Expo 58.0.19)
+    name: Web Storage measured (Vite 5-8, Next.js, Expo)
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
@@ -367,12 +372,13 @@ jobs:
         if: failure()
         with:
           name: web-storage-measure
+          include-hidden-files: true
           path: |
             test/e2e/web-storage/test-results
             test/e2e/web-storage/.generated/*.log
 
   storage-compat:
-    name: Firebase's own Storage tests (firebase-js-sdk 13.0.0 in Node and Chromium, firebase-tools 15.34.0 conformance, captures)
+    name: Storage compat (Firebase's own tests)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -420,6 +426,11 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-chromium-${{ hashFiles('test/compat/storage/js/package-lock.json') }}
+      # ct's puppeteer starts Chromium with its sandbox, which needs unprivileged user namespaces;
+      # Ubuntu 24.04's AppArmor refuses them by default ("No usable sandbox!"). Playwright, in
+      # the other suites, starts Chromium without the sandbox instead.
+      - name: Unprivileged user namespaces for Chromium's sandbox
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Install (Go modules, Chromium 1248, the upstream sources and their installs)
         run: |
           go mod download
@@ -436,7 +447,70 @@ jobs:
         if: always()
         with:
           name: storage-compat-results
+          include-hidden-files: true
           path: .cache/upstream/storage/results
+
+  web-storage-flutter:
+    name: Web Storage measured (Flutter web)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ARUMA_E2E_APPS_DIR: ${{ github.workspace }}/.cache/web-storage-apps
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: |
+            sdk/web/aruma-web/package-lock.json
+            test/e2e/web-storage/package-lock.json
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: 3.44.2
+          channel: stable
+          cache: true
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-chromium-${{ hashFiles('test/e2e/web-storage/package-lock.json') }}
+      - name: Install (Go modules, Chromium, Flutter's web artifacts, the app's packages)
+        working-directory: test/e2e/web-storage
+        run: |
+          flutter config --no-analytics --no-cli-animations
+          dart --disable-analytics
+          flutter precache --web
+          go mod download
+          (cd ../../../sdk/web/aruma-web && npm ci --no-audit --no-fund)
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          ./measure.sh --install flutter
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: Build and drive the Flutter web app (measure.sh flutter)
+        run: test/ci/egress-guard.sh run test/e2e/web-storage/measure.sh flutter
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: web-storage-flutter
+          include-hidden-files: true
+          path: |
+            test/e2e/web-storage/test-results
+            test/e2e/web-storage/.generated/*.log
 
   dashboard:
     name: Dashboard (lint, unit, build, e2e in both directions)
