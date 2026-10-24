@@ -1,0 +1,69 @@
+{
+  "recordedAt": "2026-10-24T01:48:20.314Z",
+  "api": "firebaserules.googleapis.com v1 projects.test",
+  "project": "chatapp-8ae21",
+  "storage": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /enc_space/{f} { allow get: if f == 'a b.txt'; }\n    match /enc_space_raw/{f} { allow get: if f == 'a%20b.txt'; }\n    match /enc_plus/{f} { allow get: if f == 'a b.txt'; }\n    match /enc_plus_raw/{f} { allow get: if f == 'a+b.txt'; }\n    match /enc_slash_one/{f} { allow get: if f == 'a/b.txt'; }\n    match /enc_slash_two/{a}/{b} { allow get: if a == 'a' && b == 'b.txt'; }\n    match /enc_pct/{f} { allow get: if f == 'a%b.txt'; }\n    match /enc_utf8/{f} { allow get: if f == 'é.txt'; }\n    match /enc_path/{f} { allow get: if request.path == /b/demo-oracle.appspot.com/o/enc_path/a%20b.txt; }\n    match /rest_string/{rest=**} { allow get: if string(rest) == '/a/b.txt'; }\n    match /rest_string_one/{rest=**} { allow get: if string(rest) == '/a'; }\n    match /rest_string_enc/{rest=**} { allow get: if string(rest) == '/a%20b'; }\n  }\n}\n",
+  "firestore": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /enc_space/{id} { allow get: if id == 'a b'; }\n    match /enc_space_raw/{id} { allow get: if id == 'a%20b'; }\n    match /rest_string/{rest=**} { allow get: if string(rest) == '/a/b'; }\n  }\n}\n",
+  "results": {
+    "enc_space": {
+      "path": "/b/demo-oracle.appspot.com/o/enc_space/a%20b.txt",
+      "result": "allow"
+    },
+    "enc_space_raw": {
+      "path": "/b/demo-oracle.appspot.com/o/enc_space_raw/a%20b.txt",
+      "result": "deny "
+    },
+    "enc_plus": {
+      "path": "/b/demo-oracle.appspot.com/o/enc_plus/a+b.txt",
+      "result": "allow"
+    },
+    "enc_plus_raw": {
+      "path": "/b/demo-oracle.appspot.com/o/enc_plus_raw/a+b.txt",
+      "result": "deny "
+    },
+    "enc_slash_one": {
+      "path": "/b/demo-oracle.appspot.com/o/enc_slash_one/a%2Fb.txt",
+      "result": "allow"
+    },
+    "enc_slash_two": {
+      "path": "/b/demo-oracle.appspot.com/o/enc_slash_two/a%2Fb.txt",
+      "result": "deny "
+    },
+    "enc_pct": {
+      "path": "/b/demo-oracle.appspot.com/o/enc_pct/a%25b.txt",
+      "result": "allow"
+    },
+    "enc_utf8": {
+      "path": "/b/demo-oracle.appspot.com/o/enc_utf8/%C3%A9.txt",
+      "result": "allow"
+    },
+    "enc_path": {
+      "path": "/b/demo-oracle.appspot.com/o/enc_path/a%20b.txt",
+      "result": "allow"
+    },
+    "rest_string": {
+      "path": "/b/demo-oracle.appspot.com/o/rest_string/a/b.txt",
+      "result": "allow"
+    },
+    "rest_string_one": {
+      "path": "/b/demo-oracle.appspot.com/o/rest_string_one/a",
+      "result": "allow"
+    },
+    "rest_string_enc": {
+      "path": "/b/demo-oracle.appspot.com/o/rest_string_enc/a%20b",
+      "result": "deny "
+    },
+    "fs_enc_space": {
+      "path": "/databases/(default)/documents/enc_space/a%20b",
+      "result": "allow"
+    },
+    "fs_enc_space_raw": {
+      "path": "/databases/(default)/documents/enc_space_raw/a%20b",
+      "result": "deny "
+    },
+    "fs_rest_string": {
+      "path": "/databases/(default)/documents/rest_string/a/b",
+      "result": "allow"
+    }
+  }
+}

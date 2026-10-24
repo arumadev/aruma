@@ -1,0 +1,346 @@
+{
+ "schema": "aruma.rules-oracle/v1",
+ "topic": "s1e-paths-storage",
+ "service": "storage",
+ "set": "development",
+ "source": "aruma",
+ "provenance": "rules-test-api",
+ "project": "chatapp-8ae21",
+ "recordedAt": "2026-10-24T01:48:20.314Z",
+ "version": "firebaserules.googleapis.com v1 projects.test",
+ "note": "S1-E probe after the held-out run (paths.mjs in .cache/briefs/reviews/s1e-artifacts): how the Test API reads a percent-encoded request path, and string() of a {x=**} path. Nothing was deployed.",
+ "rulesets": {
+  "probe": "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /enc_space/{f} { allow get: if f == 'a b.txt'; }\n    match /enc_space_raw/{f} { allow get: if f == 'a%20b.txt'; }\n    match /enc_plus/{f} { allow get: if f == 'a b.txt'; }\n    match /enc_plus_raw/{f} { allow get: if f == 'a+b.txt'; }\n    match /enc_slash_one/{f} { allow get: if f == 'a/b.txt'; }\n    match /enc_slash_two/{a}/{b} { allow get: if a == 'a' && b == 'b.txt'; }\n    match /enc_pct/{f} { allow get: if f == 'a%b.txt'; }\n    match /enc_utf8/{f} { allow get: if f == 'é.txt'; }\n    match /enc_path/{f} { allow get: if request.path == /b/demo-oracle.appspot.com/o/enc_path/a%20b.txt; }\n    match /rest_string/{rest=**} { allow get: if string(rest) == '/a/b.txt'; }\n    match /rest_string_one/{rest=**} { allow get: if string(rest) == '/a'; }\n    match /rest_string_enc/{rest=**} { allow get: if string(rest) == '/a%20b'; }\n  }\n}\n"
+ },
+ "resources": {},
+ "cases": [
+  {
+   "id": "aruma/s1e-paths/enc_space",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "a percent-encoded space in an object name is decoded: {f} == 'a b.txt'",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/enc_space/a%20b.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/s1e-paths/enc_space_raw",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "the encoded form is not what {f} holds",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/enc_space_raw/a%20b.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/s1e-paths/enc_plus",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "+ in an object name reads as a space, as URLDecoder does",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/enc_plus/a+b.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/s1e-paths/enc_plus_raw",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "+ is not kept",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/enc_plus_raw/a+b.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/s1e-paths/enc_slash_one",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "%2F stays inside its segment: {f} == 'a/b.txt'",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/enc_slash_one/a%2Fb.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/s1e-paths/enc_slash_two",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "%2F does not split the segment",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/enc_slash_two/a%2Fb.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  },
+  {
+   "id": "aruma/s1e-paths/enc_pct",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "%25 is a percent sign",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/enc_pct/a%25b.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/s1e-paths/enc_utf8",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "%C3%A9 is é",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/enc_utf8/%C3%A9.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/s1e-paths/enc_path",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "request.path holds the decoded segments, as a path literal does",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/enc_path/a%20b.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/s1e-paths/rest_string",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: string({rest=**}) is the path's text",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/rest_string/a/b.txt",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/s1e-paths/rest_string_one",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "v2: string() of a one-segment {rest=**}",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/rest_string_one/a",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "allow"
+   }
+  },
+  {
+   "id": "aruma/s1e-paths/rest_string_enc",
+   "service": "storage",
+   "source": "aruma",
+   "provenance": "rules-test-api",
+   "recordedAt": "2026-10-24T01:48:20.314Z",
+   "version": "firebaserules.googleapis.com v1 projects.test",
+   "description": "string() of a decoded {rest=**} does not encode it again",
+   "rulesetRef": "probe",
+   "request": {
+    "method": "get",
+    "path": "/b/demo-oracle.appspot.com/o/rest_string_enc/a%20b",
+    "auth": {
+     "uid": "alice",
+     "token": {
+      "sub": "alice",
+      "firebase": {
+       "sign_in_provider": "password"
+      }
+     }
+    },
+    "time": "2026-01-15T10:20:30.123Z"
+   },
+   "expected": {
+    "outcome": "deny",
+    "reason": "false"
+   }
+  }
+ ]
+}

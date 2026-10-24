@@ -107,26 +107,25 @@ func TestValueReaders(t *testing.T) {
 	}
 }
 
-// The contract's provisional position (S1-A replaces it and its cases): lines end at \n, and
-// columns and offsets count code points.
-func TestProvisionalPosition(t *testing.T) {
-	src := "ab\nنص 🙂 x\r\ny"
-	x := strings.Index(src, "x") // after the emoji, four bytes and one code point
-	for _, c := range []struct {
-		at   span
-		want Position
-	}{
-		{span{0, 0}, Position{Line: 1, Column: 1}},
-		{span{1, 2}, Position{Line: 1, Column: 2, CurrentOffset: 1, EndOffset: 2}},
-		{span{3, 7}, Position{Line: 2, Column: 1, CurrentOffset: 3, EndOffset: 5}},
-		{span{x, x + 1}, Position{Line: 2, Column: 6, CurrentOffset: 8, EndOffset: 9}},
-		{span{len(src) - 1, len(src)}, Position{Line: 3, Column: 1, CurrentOffset: 11, EndOffset: 12}},
-		{span{-5, 1 << 20}, Position{Line: 1, Column: 1, EndOffset: 12}},
-	} {
-		if got := position(src, c.at); got != c.want {
-			t.Errorf("position(%v) = %+v, want %+v", c.at, got, c.want)
-		}
+// MapInOrder gives values() the order given, a repeated key its first place and its last value;
+// keys() is sorted, and Map sorts both. A length mismatch is the caller's bug and panics.
+func TestMapInOrder(t *testing.T) {
+	rs, _ := compileSource(t, grantingSource("request.resource.data.values() == [3, 2] && "+
+		"request.resource.data.keys() == ['a', 'b'] && request.auth.values() == [2, 1]"))
+	req := request(MethodGet, docPath("c", "d"), nil)
+	req.Variables["request"] = Map(map[string]Value{
+		"resource": Map(map[string]Value{"data": MapInOrder([]string{"b", "a", "b"}, []Value{Int(1), Int(2), Int(3)})}),
+		"auth":     Map(map[string]Value{"b": Int(1), "a": Int(2)}),
+	})
+	if d := evaluate(t, rs, req); !d.Allow {
+		t.Errorf("values() and keys(): %+v", d.Statements)
 	}
+	defer func() {
+		if recover() == nil {
+			t.Error("MapInOrder with 2 keys and 1 value did not panic")
+		}
+	}()
+	MapInOrder([]string{"a", "b"}, []Value{Int(1)})
 }
 
 func TestSegments(t *testing.T) {

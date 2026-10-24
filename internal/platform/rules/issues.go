@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"unicode/utf8"
 )
 
 // Severity is how grave an issue is. Only an error stops a file from compiling.
@@ -78,31 +77,16 @@ func (is Issues) Err() error {
 const (
 	msgTooComplex       = "Expression is too complex to evaluate safely."
 	msgCallDepth        = "Maximum allowed call depth of %d is reached for [%s] call stack."
-	msgLetVersion1      = `Let bindings are not allowed in rules_version="1"`
-	msgNoMatch          = "No matching allow statements"
+	msgLetVersion1      = `Let bindings are not allowed in rules_version="1";`
 	msgTypeError        = "Type error. Received: [%s] Expected: [%s]."
 	msgFunctionNotFound = "Function not found error: Name: [%s]."
 )
 
-// position converts a span of byte offsets in src to the Position an issue reports. Lines end at
-// "\n"; columns and offsets count code points, as the emulator does (ADR-021 §2.1). Offsets
-// outside src are clamped to it.
-//
-// This is the contract's provisional version, so that S1-C's tests have positions before S1-A
-// merges: S1-A replaces it (CRLF, the unit production uses) and owns its tests.
+// position converts a span of byte offsets in src to the Position an issue reports (ADR-021
+// §2.1). Lines end at "\n" alone, as ANTLR counts them, so CRLF ends one line and a lone CR is a
+// character. Columns and offsets count code points, as the emulator does, until S0-A measures
+// production. EndOffset is the span's last code point, inclusive, as the emulator reports it;
+// an empty span ends where it starts. Offsets outside src are clamped to it.
 func position(src string, at span) Position {
-	clamp := func(off int) int { return min(max(off, 0), len(src)) }
-	start, end := clamp(at.start), clamp(at.end)
-	end = max(end, start)
-	p := Position{Line: 1, Column: 1}
-	for _, r := range src[:start] {
-		p.CurrentOffset++
-		if r == '\n' {
-			p.Line, p.Column = p.Line+1, 1
-		} else {
-			p.Column++
-		}
-	}
-	p.EndOffset = p.CurrentOffset + utf8.RuneCountInString(src[start:end])
-	return p
+	return newPosCursor(src).at(at)
 }
