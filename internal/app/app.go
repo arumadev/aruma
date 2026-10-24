@@ -279,6 +279,11 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 	if err := a.AnnounceSetup(ctx); err != nil {
 		return err
 	}
+	// Everything started below ends with the server: on a cancelled ctx, and also when the
+	// server stops by itself (a listen that fails, a listener that breaks), which ctx alone would
+	// not say, so Storage's Run would hold its gate and Close would wait for it in vain.
+	ctx, endWork := context.WithCancel(ctx)
+	defer endWork()
 	if a.Storage != nil {
 		// Before the listener opens (ADR-022 §5.1): the data directory's lock, which a new
 		// instance waits for while the old one runs, its binding to this database, the list of
@@ -298,8 +303,10 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 	go a.Auth.RunMailer(ctx)
 	logger.Info("starting aruma", "version", version, "public_url", cfg.PublicBaseURL().String())
 	runErr := a.Server.Run(ctx)
-	// The shutdown, once the server has drained its requests: each data service finishes its
-	// writes while the pool is still open, and the pool closes only after both (its defer).
+	endWork()
+	// The shutdown, once the server has drained its requests and the background work is told to
+	// end: each data service finishes its writes while the pool is still open, and the pool
+	// closes only after both (its defer).
 	if a.RTDB != nil {
 		// The connections are closed and their onDisconnect writes queued; let the writers
 		// finish them.
