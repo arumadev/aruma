@@ -29,7 +29,8 @@ public final class ArumaUrls {
      * {@code gs://} URL comes back unchanged.
      *
      * @throws IllegalArgumentException when {@code url} is not a download URL of that shape, including the prefixed
-     *     form {@code <aruma>/firebasestorage.googleapis.com/v0/...}, which no platform reads.
+     *     form {@code <aruma>/firebasestorage.googleapis.com/v0/...}, which no platform reads, and when the name has
+     *     an empty segment or a leading or trailing '/', which getReferenceFromUrl would map to another object.
      */
     public static String fromArumaUrl(String url) {
         if (url == null) {
@@ -57,7 +58,11 @@ public final class ArumaUrls {
         }
         String bucket = decode(rest.substring(0, o), url);
         String name = decode(rest.substring(o + 3), url);
-        if (bucket.contains("/")) {
+        // firebase-storage also drops empty segments from a gs:// path (Slashes.normalizeSlashes, in
+        // Util.normalize and StorageReferenceUri), so "a//b", "/a" and "a/" would name a/b, a and a: no
+        // gs:// URL names those objects, and the call fails rather than give another one. Dot segments
+        // are kept as they are.
+        if (bucket.contains("/") || name.startsWith("/") || name.endsWith("/") || name.contains("//")) {
             throw notStorage(url);
         }
         // The name as it is, decoded: getReferenceFromUrl encodes a gs:// path itself (Util.normalize,
