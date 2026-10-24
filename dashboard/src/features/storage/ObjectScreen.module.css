@@ -1,0 +1,113 @@
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.name {
+  flex: 1 1 280px;
+  min-inline-size: 0;
+  color: var(--md-sys-color-on-surface);
+  font: var(--md-sys-typescale-title-large);
+  overflow-wrap: anywhere;
+}
+
+.buttons,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.preview {
+  display: block;
+  max-inline-size: 100%;
+  max-block-size: 360px;
+  margin-inline: auto;
+  border-radius: var(--md-sys-shape-corner-small);
+  background: var(--md-sys-color-surface-container);
+  object-fit: contain;
+}
+
+.muted {
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-medium);
+}
+
+.tokens {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.token {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  min-block-size: 48px;
+  border-block-end: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.token:last-child {
+  border-block-end: 0;
+}
+
+.url {
+  flex: 1;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.tokenActions {
+  display: inline-flex;
+  flex: none;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: var(--space-3) var(--space-4);
+}
+
+.custom {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-block-end: var(--space-2);
+  color: var(--md-sys-color-on-surface);
+  font: var(--md-sys-typescale-title-small);
+}
+
+.customRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.customRow > :last-child {
+  margin-block-start: var(--space-5);
+}

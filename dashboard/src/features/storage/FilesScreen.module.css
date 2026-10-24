@@ -1,0 +1,106 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.crumbs {
+  flex: 1 1 280px;
+  min-inline-size: 0;
+}
+
+/* Folder paths read left to right in both languages, like the names in them. */
+.crumbList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  direction: ltr;
+  justify-content: flex-start;
+  font: var(--md-sys-typescale-title-small);
+}
+
+.crumbList > li {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  min-inline-size: 0;
+}
+
+.crumb {
+  color: var(--md-sys-color-primary);
+  text-decoration: none;
+  outline: none;
+  cursor: pointer;
+}
+
+.crumb[data-hovered] {
+  text-decoration: underline;
+}
+
+.crumb[data-focus-visible],
+.entry[data-focus-visible] {
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.current {
+  color: var(--md-sys-color-on-surface);
+}
+
+.separator {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.entry {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  color: var(--md-sys-color-primary);
+  font-weight: 500;
+  text-decoration: none;
+  outline: none;
+  cursor: pointer;
+}
+
+.entry[data-hovered] {
+  text-decoration: underline;
+}
+
+.entry svg {
+  flex: none;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.refused,
+.replaceList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.replaceList {
+  margin-block-start: var(--space-2);
+}

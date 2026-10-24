@@ -6,7 +6,7 @@ export interface NavItem {
   href: string;
   icon: IconName;
   /** Key in the "nav" message namespace. */
-  label: 'projects' | 'overview' | 'auth' | 'database' | 'keys' | 'serviceAccounts' | 'audit' | 'settings' | 'account' | 'limits';
+  label: 'projects' | 'overview' | 'auth' | 'database' | 'storage' | 'keys' | 'serviceAccounts' | 'audit' | 'settings' | 'account' | 'limits';
   /** Pathnames that highlight this item. */
   paths: string[];
 }
@@ -53,6 +53,13 @@ export function navItems(projectId: string | null): NavItem[] {
       icon: 'bolt',
       label: 'database',
       paths: ['/project/database/', '/project/database/rules/'],
+    },
+    {
+      id: 'storage',
+      href: routes.storage(projectId),
+      icon: 'cloud',
+      label: 'storage',
+      paths: ['/project/storage/', '/project/storage/object/', '/project/storage/rules/', '/project/storage/usage/', '/project/storage/cors/'],
     },
     { id: 'keys', href: routes.keys(projectId), icon: 'key', label: 'keys', paths: ['/project/keys/'] },
     {
