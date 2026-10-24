@@ -201,42 +201,31 @@ func seedAuth(ctx context.Context, hc *http.Client, c *apiClient, base, project,
 }
 
 // parallel runs fn(0..n-1) on up to workers goroutines and returns the first error. The first
-// error cancels the context fn is given: no index starts after it, and the calls under way end.
+// error cancels the context fn is given, with that error as its cause: no index starts after
+// it, and the calls under way end.
 func parallel(ctx context.Context, n, workers int, fn func(ctx context.Context, i int) error) error {
-	runCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	runCtx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
 	var (
-		next     atomic.Int64
-		wg       sync.WaitGroup
-		mu       sync.Mutex
-		firstErr error
+		next atomic.Int64
+		wg   sync.WaitGroup
 	)
 	for range min(workers, n) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for {
 				i := int(next.Add(1) - 1)
 				if i >= n || runCtx.Err() != nil {
 					return
 				}
 				if err := fn(runCtx, i); err != nil {
-					mu.Lock()
-					if firstErr == nil {
-						firstErr = err
-					}
-					mu.Unlock()
-					cancel() // stop the others
+					cancel(err) // the first cause stays; this stops the others
 					return
 				}
 			}
-		}()
+		})
 	}
 	wg.Wait()
-	if firstErr == nil {
-		firstErr = ctx.Err()
-	}
-	return firstErr
+	return context.Cause(runCtx)
 }
 
 // authCall posts a client call from a spread address, as the scenarios do, and decodes the

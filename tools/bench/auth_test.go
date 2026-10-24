@@ -31,7 +31,7 @@ func TestSpreadAddrCyclesThroughThePool(t *testing.T) {
 
 func TestParallelRunsEveryIndexAndStopsAtTheFirstError(t *testing.T) {
 	var seen [100]atomic.Bool
-	if err := parallel(context.Background(), 100, 4, func(_ context.Context, i int) error { seen[i].Store(true); return nil }); err != nil {
+	if err := parallel(t.Context(), 100, 4, func(_ context.Context, i int) error { seen[i].Store(true); return nil }); err != nil {
 		t.Fatal(err)
 	}
 	for i := range seen {
@@ -44,7 +44,7 @@ func TestParallelRunsEveryIndexAndStopsAtTheFirstError(t *testing.T) {
 	// waiting call on each of the other three workers.
 	boom := errors.New("boom")
 	var ran atomic.Int64
-	err := parallel(context.Background(), 1000, 4, func(ctx context.Context, i int) error {
+	err := parallel(t.Context(), 1000, 4, func(ctx context.Context, i int) error {
 		ran.Add(1)
 		switch {
 		case i == 10:
