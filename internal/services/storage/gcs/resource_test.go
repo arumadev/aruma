@@ -2,7 +2,9 @@ package gcs
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"slices"
 	"testing"
 
@@ -94,5 +96,36 @@ func TestResources(t *testing.T) {
 		CORS: []core.CORSRule{{Origins: []string{"*"}, Methods: []string{"GET"}, MaxAgeSeconds: 60}}})
 	if b.ProjectNumber != "7" || b.ETag != "CBE=" || len(b.CORS) != 1 || b.CORS[0].MaxAgeSeconds != 60 || b.CORS[0].Origin[0] != "*" {
 		t.Errorf("bucket %+v", b)
+	}
+}
+
+// Retry-After goes on passing pressure alone: never on a 503 of the server itself, which a
+// client that honours Retry-After would retry with no end (S4-A's review).
+func TestRetryAfter(t *testing.T) {
+	a := New(nil, Options{}, nil)
+	for _, c := range []struct {
+		err    error
+		status int
+		retry  string
+	}{
+		{core.ErrUnavailable, 503, ""},
+		{fmt.Errorf("%w: the database", core.ErrUnavailable), 503, ""},
+		{core.ErrOverloaded, 503, "1"},
+		{errTooManyWrites, 429, "1"},
+		{core.ErrTooManyUploads, 429, ""},
+		{core.ErrNotFound, 404, ""},
+	} {
+		rec := httptest.NewRecorder()
+		a.writeError(rec, c.err, "b", "o")
+		if rec.Code != c.status || rec.Header().Get("Retry-After") != c.retry {
+			t.Errorf("%v: %d Retry-After %q, want %d %q", c.err, rec.Code, rec.Header().Get("Retry-After"), c.status, c.retry)
+		}
+	}
+	// A handler that knows the wait (AllowUploadStart's) keeps its own.
+	rec := httptest.NewRecorder()
+	rec.Header().Set("Retry-After", "7")
+	a.writeError(rec, errTooManyWrites, "", "")
+	if rec.Header().Get("Retry-After") != "7" {
+		t.Errorf("the handler's Retry-After became %q", rec.Header().Get("Retry-After"))
 	}
 }

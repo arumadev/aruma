@@ -15,30 +15,26 @@ import (
 // send it in Authorization: Bearer. Nothing else: no anonymous caller (the emulator mode of Node
 // and Go sends none, and accepting it would be more permissive than Firebase, E §9), no ID
 // token, no personal CLI token. An upload session is the one exception: its upload_id is the
-// credential, bound at its start (routeUpload).
+// credential, bound at its start.
 //
 // The bucket is resolved before the credential is looked at, so a bucket that does not exist
 // is 404 to anyone, as production answers an anonymous caller (bucket_probe.json); one that
-// exists is 401 without a valid token, and 403 to another project's account.
+// exists is 401 without a valid token, and 403 to another project's account. That 403 is
+// storage's exception to ADR-010 S-11 (ADR-022 §14): a bucket's existence is no secret (its
+// name is the project id every app's config carries), and the refusal comes before any object
+// is looked up, so it says nothing of what the bucket holds.
 
-// admit resolves a request's bucket and checks its caller may act on it with perm. It answers
-// the refusal itself and reports false; otherwise it returns the bucket and the admin principal
-// core acts as.
-func (a *API) admit(w http.ResponseWriter, r *http.Request, bucket, perm string) (core.Bucket, core.Principal, bool) {
-	b, err := a.svc.Bucket(r.Context(), bucket)
-	if err != nil {
-		a.writeError(w, err, bucket, "")
-		return core.Bucket{}, core.Principal{}, false
-	}
+// admit checks that a request's caller may act on a resolved bucket with perm, and returns the
+// admin principal core acts as.
+func (a *API) admit(r *http.Request, b core.Bucket, perm string) (core.Principal, error) {
 	sa, err := a.authenticate(r, perm)
 	if err == nil {
 		err = admitted(sa, b, perm)
 	}
 	if err != nil {
-		a.writeError(w, err, bucket, "")
-		return core.Bucket{}, core.Principal{}, false
+		return core.Principal{}, err
 	}
-	return b, principal(sa), true
+	return principal(sa), nil
 }
 
 // authenticate returns the service account a request's Bearer token belongs to.

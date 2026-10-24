@@ -2,7 +2,9 @@ package gcs
 
 import (
 	"encoding/json"
+	"slices"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/arumadev/aruma/internal/services/storage/wire"
@@ -85,6 +87,22 @@ func TestPatchBucket(t *testing.T) {
 		t.Errorf("cleared: %+v", b)
 	}
 	gcsErr(t, e.do("PATCH", target+"&ifMetagenerationMatch=2", tokenA, strings.NewReader(`{"cors":[]}`)), 412, "conditionNotMet")
+	// Concurrent patches with the same ifMetagenerationMatch: one passes, the others are 412.
+	var wg sync.WaitGroup
+	codes := make([]int, 6)
+	for i := range codes {
+		wg.Go(func() {
+			codes[i] = e.do("PATCH", target+"&ifMetagenerationMatch=3", tokenA, strings.NewReader(`{"cors":[]}`)).Code
+		})
+	}
+	wg.Wait()
+	if n := slices.Index(codes, 200); n < 0 || slices.Index(codes[n+1:], 200) >= 0 || slices.ContainsFunc(codes, func(c int) bool { return c != 200 && c != 412 }) {
+		t.Errorf("concurrent patches on metageneration 3: %v", codes)
+	}
+	if b, _ := decodeBucket(t, e.do("GET", "/storage/v1/b/"+bucketA, tokenA, nil).Body.Bytes()); b.Metageneration != "4" {
+		t.Errorf("after the concurrent patches: metageneration %s", b.Metageneration)
+	}
+	gcsErr(t, e.do("PATCH", target+"&ifMetagenerationNotMatch=4", tokenA, strings.NewReader(`{}`)), 412, "conditionNotMet")
 	for _, body := range []string{`{"labels":{"a":"b"}}`, `{"cors":[],"versioning":{"enabled":true}}`, `{"cors":[{"origins":["x"]}]}`,
 		`{"cors":{"origin":["x"]}}`, `{"cors":[{"maxAgeSeconds":"60"}]}`, `[]`} {
 		gcsErr(t, e.do("PATCH", target, tokenA, strings.NewReader(body)), 400, "invalid")

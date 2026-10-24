@@ -42,19 +42,35 @@ var (
 	errNotFoundPath = &apiError{status: http.StatusNotFound, reason: wire.ReasonNotFound, message: "Not Found"}
 )
 
-// retryAfter is the Retry-After of a 503, in seconds: short and bounded, since the SDKs retry
-// on 503 by themselves (B §8).
+// errTooManyWrites is a client over upload_requests_per_ip (ADR-022 §17): passing pressure,
+// which the SDKs retry on 429 (B §8).
+var errTooManyWrites = &apiError{status: http.StatusTooManyRequests, reason: "rateLimitExceeded",
+	message: "Too many requests in flight from this address."}
+
+// retryAfter is the Retry-After of passing pressure alone, in seconds, and bounded: too many
+// writes in flight from one address (errTooManyWrites), a rules engine over its budget
+// (core.ErrOverloaded), and an upload start over its rate, whose handler sets the wait
+// AllowUploadStart gives before it calls writeError. A client that honours
+// Retry-After may drop its own caps on retries (gtm-session-fetcher skips its maximum interval
+// and total time, GTMSessionFetcher.m:3682, :3854), so a 503 of the server itself
+// (core.ErrUnavailable: the database, the disk floor) gets none, and the client's usual backoff
+// ends.
 const retryAfter = "1"
+
+// pressure reports whether err is passing pressure, whose reply carries a Retry-After.
+func pressure(err error) bool {
+	return errors.Is(err, errTooManyWrites) || errors.Is(err, core.ErrOverloaded)
+}
 
 // writeError answers err in GCS's shape. bucket and name word a not-found: "No such object:
 // <bucket>/<name>", or the bucket's message when name is "". An error core does not name is the
 // server's, logged and answered 500.
 func (a *API) writeError(w http.ResponseWriter, err error, bucket, name string) {
 	e := a.gcsError(err, bucket, name)
-	switch e.status {
-	case http.StatusUnauthorized:
+	if e.status == http.StatusUnauthorized {
 		w.Header().Set("WWW-Authenticate", `Bearer realm="aruma"`)
-	case http.StatusServiceUnavailable:
+	}
+	if pressure(err) && w.Header().Get("Retry-After") == "" {
 		w.Header().Set("Retry-After", retryAfter)
 	}
 	a.writeJSON(w, e.status, wire.NewGCSError(e.status, e.reason, e.message))

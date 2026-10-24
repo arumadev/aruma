@@ -12,35 +12,33 @@
 package gcs
 
 import (
-	"context"
 	"io"
 	"log/slog"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/platform/ratelimit"
 	"github.com/arumadev/aruma/internal/services/storage/core"
 	"github.com/arumadev/aruma/internal/services/storage/wire"
-	tcore "github.com/arumadev/aruma/internal/tenancy/core"
 )
-
-// Projects lets an admin credential prove it may act on a project: the control plane's
-// ownership gate.
-type Projects interface {
-	GetProject(ctx context.Context, p *authn.Principal, ref string) (tcore.Project, error)
-}
 
 // Options configure the API.
 type Options struct {
 	// PublicURL is the server's address without a trailing slash: the session Location and
 	// the resources' links are absolute from it.
 	PublicURL string
+	// TrustedProxies are the proxies whose X-Forwarded-For is believed, for the limits per IP:
+	// the server's trusted_proxies, as /v0 has them.
+	TrustedProxies []netip.Prefix
 	// Credentials verifies the Bearer access tokens of service accounts.
 	Credentials authn.Verifier
-	// Projects checks that a credential may act on the bucket's project.
-	Projects Projects
 }
 
 // API is the GCS JSON endpoint.
@@ -48,6 +46,11 @@ type API struct {
 	svc  *core.Service
 	opts Options
 	log  *slog.Logger
+	// writes counts the write requests in flight per client address (upload_requests_per_ip,
+	// ADR-022 §17), as /v0 does.
+	writes *ipCounter
+	// warnedForwarded is set once an X-Forwarded-For from an untrusted peer was logged.
+	warnedForwarded atomic.Bool
 }
 
 // New returns the API.
@@ -56,7 +59,7 @@ func New(svc *core.Service, opts Options, log *slog.Logger) *API {
 		log = slog.New(slog.DiscardHandler)
 	}
 	opts.PublicURL = strings.TrimSuffix(opts.PublicURL, "/")
-	return &API{svc: svc, opts: opts, log: log}
+	return &API{svc: svc, opts: opts, log: log, writes: &ipCounter{n: map[string]int{}}}
 }
 
 // Handler returns the handler of every request under the three GCS prefixes.
@@ -76,6 +79,73 @@ const (
 	permObjectsCreate = "storage.objects.create"
 )
 
+// route is what a request asks for, once its path, method and query are read.
+type route uint8
+
+const (
+	routeNone route = iota
+	routeGetBucket
+	routePatchBucket
+	routeList
+	routeGetObject
+	routePatchObject
+	routeDeleteObject
+	routeRewrite
+	routeDownload
+	routeUploadMedia
+	routeUploadMultipart
+	routeStartResumable
+	routeSession
+)
+
+var routeNames = [...]string{"none", "buckets.get", "buckets.patch", "objects.list", "objects.get", "objects.patch",
+	"objects.delete", "objects.rewrite", "download", "upload.media", "upload.multipart", "upload.resumable", "session"}
+
+func (r route) String() string { return routeNames[r] }
+
+// perm is the permission a route needs; a session needs none, its upload_id is the credential.
+func (r route) perm() string {
+	switch r {
+	case routeGetBucket:
+		return permBucketsGet
+	case routePatchBucket:
+		return permBucketsUpdate
+	case routeList:
+		return permObjectsList
+	case routeGetObject, routeDownload, routeRewrite:
+		return permObjectsGet
+	case routePatchObject:
+		return permObjectsUpdate
+	case routeDeleteObject:
+		return permObjectsDelete
+	case routeUploadMedia, routeUploadMultipart, routeStartResumable:
+		return permObjectsCreate
+	}
+	return ""
+}
+
+// writes reports whether a route writes, so it counts against upload_requests_per_ip.
+func (r route) writes() bool {
+	switch r {
+	case routePatchBucket, routePatchObject, routeDeleteObject, routeRewrite, routeUploadMedia, routeUploadMultipart,
+		routeStartResumable, routeSession:
+		return true
+	}
+	return false
+}
+
+// target is a classified request: its route, the bucket and object it names (the object decoded
+// once from the escaped path, or for an upload the query's name), a rewrite's escaped
+// destination after rewriteTo/, and a session's upload_id. A request that names no route has
+// err instead: 404 for what the JSON API does not have, 501 for what v0.3 defers, 400 for a
+// malformed path or query.
+type target struct {
+	route          route
+	bucket, object string
+	dest, uploadID string
+	err            error
+}
+
 // deferredBucketParts are the bucket subresources of the GCS JSON API that v0.3 does not serve
 // (ADR-023 §2): 501, not 404, so a caller knows the API is right and the server is not there yet.
 var deferredBucketParts = map[string]bool{
@@ -90,201 +160,256 @@ var deferredObjectParts = map[string]bool{
 	"compose": true, "acl": true, "moveTo": true, "restore": true, "copyTo": true, "bulkRestore": true,
 }
 
-func (a *API) route(w http.ResponseWriter, r *http.Request) {
+// classify finds a request's route from its escaped path, method, query and headers alone,
+// before anything is looked up.
+func classify(r *http.Request) target {
 	escaped := r.URL.EscapedPath()
 	if rest, ok := strings.CutPrefix(escaped, wire.GCSUploadPrefix); ok {
-		a.routeUpload(w, r, rest)
-		return
+		return classifyUpload(r, rest)
 	}
 	if rest, ok := strings.CutPrefix(escaped, wire.GCSDownloadPrefix); ok {
-		a.routeJSON(w, r, rest, true)
-		return
+		return classifyJSON(r, rest, true)
 	}
 	if rest, ok := strings.CutPrefix(escaped, wire.GCSPrefix); ok {
-		a.routeJSON(w, r, rest, false)
-		return
+		return classifyJSON(r, rest, false)
 	}
-	a.writeError(w, errNotFoundPath, "", "")
+	return target{err: errNotFoundPath}
 }
 
-// routeJSON routes the JSON API under /storage/v1/, and under /download/storage/v1/, which
-// serves an object's metadata and media alone (its mediaLink, B §10.1).
-func (a *API) routeJSON(w http.ResponseWriter, r *http.Request, rest string, download bool) {
+// classifyJSON classifies the JSON API under /storage/v1/, and under /download/storage/v1/,
+// which serves an object's metadata and media alone (its mediaLink, B §10.1).
+func classifyJSON(r *http.Request, rest string, download bool) target {
 	q := r.URL.Query()
 	alt := q.Get("alt")
 	if alt != "" && alt != "json" && alt != "media" {
-		a.writeError(w, invalidf("Invalid alt parameter: %q.", alt), "", "")
-		return
+		return target{err: invalidf("Invalid alt parameter: %q.", alt)}
 	}
 	if rest == "b" || rest == "b/" || strings.HasPrefix(rest, "projects/") {
 		// buckets.list and insert, HMAC keys, the project's service account.
-		a.writeError(w, errDeferred, "", "")
-		return
+		return target{err: errDeferred}
 	}
 	path, err := wire.SplitObjectPath(rest)
 	if err != nil {
 		if strings.HasPrefix(rest, "b/") {
-			a.writeError(w, invalidf("The request path is malformed."), "", "")
-		} else {
-			a.writeError(w, errNotFoundPath, "", "")
+			return target{err: invalidf("The request path is malformed.")}
 		}
-		return
+		return target{err: errNotFoundPath}
 	}
+	read := r.Method == http.MethodGet || r.Method == http.MethodHead
 	media := alt == "media"
 	object := path.Objects && path.Object != "" && path.Rest == ""
-	if (download && !object) || (media && !(object && (r.Method == http.MethodGet || r.Method == http.MethodHead))) {
-		if media && !download {
-			a.writeError(w, invalidf("alt=media is only for reading an object."), "", "")
-		} else {
-			a.writeError(w, errNotFoundPath, "", "")
-		}
-		return
+	switch {
+	case download && !object, download && media && !read:
+		return target{err: errNotFoundPath}
+	case media && !(object && read):
+		return target{err: invalidf("alt=media is only for reading an object.")}
+	case hasEncryptionHeaders(r.Header):
+		return target{err: errDeferred} // CSEK (ADR-023 §2)
 	}
-	if hasEncryptionHeaders(r.Header) {
-		a.writeError(w, errDeferred, "", "") // CSEK (ADR-023 §2)
-		return
-	}
-
+	t := target{bucket: path.Bucket, object: path.Object}
 	switch {
 	case !path.Objects && path.Rest == "":
 		switch r.Method {
 		case http.MethodGet, http.MethodHead:
-			a.serveBucket(w, r, path.Bucket, permBucketsGet, a.getBucket)
+			t.route = routeGetBucket
 		case http.MethodPatch:
-			a.serveBucket(w, r, path.Bucket, permBucketsUpdate, a.patchBucket)
+			t.route = routePatchBucket
 		case http.MethodPut, http.MethodDelete:
-			a.writeError(w, errDeferred, "", "") // buckets.update, buckets.delete
+			t.err = errDeferred // buckets.update, buckets.delete
 		default:
-			a.writeError(w, errNotFoundPath, "", "")
+			t.err = errNotFoundPath
 		}
 	case !path.Objects:
 		part, _, _ := strings.Cut(path.Rest, "/")
 		if deferredBucketParts[part] {
-			a.writeError(w, errDeferred, "", "")
+			t.err = errDeferred
 		} else {
-			a.writeError(w, errNotFoundPath, "", "")
+			t.err = errNotFoundPath
 		}
 	case path.Object == "" && path.Rest == "":
 		switch r.Method {
 		case http.MethodGet, http.MethodHead:
-			a.serveBucket(w, r, path.Bucket, permObjectsList, a.listObjects)
+			t.route = routeList
 		case http.MethodPost:
-			a.writeError(w, errDeferred, "", "") // objects.insert without a body: uploads go to /upload
+			t.err = errDeferred // objects.insert without a body: uploads go to /upload
 		default:
-			a.writeError(w, errNotFoundPath, "", "")
+			t.err = errNotFoundPath
 		}
 	case path.Rest == "":
 		switch {
-		case (r.Method == http.MethodGet || r.Method == http.MethodHead) && media:
-			a.serveObject(w, r, path.Bucket, path.Object, permObjectsGet, a.download)
-		case r.Method == http.MethodGet || r.Method == http.MethodHead:
-			a.serveObject(w, r, path.Bucket, path.Object, permObjectsGet, a.getObject)
+		case read && media:
+			t.route = routeDownload
+		case read:
+			t.route = routeGetObject
 		case download:
-			a.writeError(w, errNotFoundPath, "", "")
+			t.err = errNotFoundPath
 		case r.Method == http.MethodPatch:
-			a.serveObject(w, r, path.Bucket, path.Object, permObjectsUpdate, a.patchObject)
+			t.route = routePatchObject
 		case r.Method == http.MethodDelete:
-			a.serveObject(w, r, path.Bucket, path.Object, permObjectsDelete, a.deleteObject)
+			t.route = routeDeleteObject
 		case r.Method == http.MethodPut:
-			a.writeError(w, errDeferred, "", "") // objects.update: the SDKs PATCH
+			t.err = errDeferred // objects.update: the SDKs PATCH
 		default:
-			a.writeError(w, errNotFoundPath, "", "")
+			t.err = errNotFoundPath
 		}
 	default:
 		part, dest, _ := strings.Cut(path.Rest, "/")
 		switch {
 		case part == "rewriteTo" && r.Method == http.MethodPost:
-			a.serveObject(w, r, path.Bucket, path.Object, permObjectsGet, func(w http.ResponseWriter, r *http.Request, b core.Bucket, name string, p core.Principal) {
-				a.rewrite(w, r, b, name, dest, p)
-			})
+			t.route, t.dest = routeRewrite, dest
 		case deferredObjectParts[part]:
-			a.writeError(w, errDeferred, "", "")
+			t.err = errDeferred
 		default:
-			a.writeError(w, errNotFoundPath, "", "")
+			t.err = errNotFoundPath
 		}
 	}
+	return t
 }
 
-// routeUpload routes /upload/storage/v1/b/<bucket>/o. An upload_id makes the request one on an
-// existing session whatever its method and uploadType, since Go sends its chunks as POST to a
-// URL that carries uploadType=resumable (B §5.3, ADR-022 §6.2); its Authorization is ignored.
-// Without one, uploadType picks the protocol.
-func (a *API) routeUpload(w http.ResponseWriter, r *http.Request, rest string) {
+// classifyUpload classifies /upload/storage/v1/b/<bucket>/o. An upload_id makes the request one
+// on an existing session whatever its method and uploadType, since Go sends its chunks as POST
+// to a URL that carries uploadType=resumable (B §5.3, ADR-022 §6.2). Without one, uploadType
+// picks the protocol.
+func classifyUpload(r *http.Request, rest string) target {
 	path, err := wire.SplitObjectPath(rest)
 	switch {
 	case err != nil && strings.HasPrefix(rest, "b/"):
-		a.writeError(w, invalidf("The request path is malformed."), "", "")
-		return
+		return target{err: invalidf("The request path is malformed.")}
 	case err != nil || !path.Objects || path.Object != "" || path.Rest != "":
-		a.writeError(w, errNotFoundPath, "", "")
-		return
+		return target{err: errNotFoundPath}
 	}
 	q := r.URL.Query()
-	name := q.Get("name")
-	if id := q.Get("upload_id"); id != "" {
+	t := target{bucket: path.Bucket, object: q.Get("name")}
+	if t.uploadID = q.Get("upload_id"); t.uploadID != "" {
 		switch r.Method {
 		case http.MethodPut, http.MethodPost, http.MethodDelete:
+			t.route = routeSession
 		default:
-			a.writeError(w, errNotFoundPath, "", "")
-			return
+			t.err = errNotFoundPath
 		}
-		b, err := a.svc.Bucket(r.Context(), path.Bucket)
-		if err != nil {
-			a.writeError(w, err, path.Bucket, "")
-			return
-		}
-		a.resumeUpload(w, r, b, name, id)
-		return
+		return t
 	}
 	if r.Method != http.MethodPost {
-		a.writeError(w, errNotFoundPath, "", "")
-		return
+		return target{err: errNotFoundPath}
 	}
-	var start objectHandler
-	switch t := q.Get("uploadType"); t {
+	switch ut := q.Get("uploadType"); ut {
 	case "media":
-		start = a.uploadMedia
+		t.route = routeUploadMedia
 	case "multipart":
-		start = a.uploadMultipart
+		t.route = routeUploadMultipart
 	case "resumable":
-		start = a.startResumable
+		t.route = routeStartResumable
 	case "":
-		a.writeError(w, requiredf("Upload requests must include an uploadType URL parameter and a URL-encoded object name."), "", "")
-		return
+		return target{err: requiredf("Upload requests must include an uploadType URL parameter and a URL-encoded object name.")}
 	default:
-		a.writeError(w, invalidf("Invalid upload type: %q.", t), "", "")
-		return
+		return target{err: invalidf("Invalid upload type: %q.", ut)}
 	}
 	if hasEncryptionHeaders(r.Header) {
-		a.writeError(w, errDeferred, "", "")
-		return
+		return target{err: errDeferred}
 	}
-	b, p, ok := a.admit(w, r, path.Bucket, permObjectsCreate)
-	if !ok {
-		return
-	}
-	start(w, r, b, name, p)
+	return t
 }
 
-// bucketHandler serves a request on a bucket once it is resolved and the caller admitted.
-type bucketHandler func(w http.ResponseWriter, r *http.Request, b core.Bucket, p core.Principal)
-
-// objectHandler serves a request on an object once its bucket is resolved and the caller
-// admitted; name is the object's name, decoded once.
-type objectHandler func(w http.ResponseWriter, r *http.Request, b core.Bucket, name string, p core.Principal)
-
-func (a *API) serveBucket(w http.ResponseWriter, r *http.Request, bucket, perm string, h bucketHandler) {
-	b, p, ok := a.admit(w, r, bucket, perm)
-	if ok {
-		h(w, r, b, p)
+// route serves a request: it classifies it, resolves its bucket, takes a place under
+// upload_requests_per_ip for a write, admits the caller (a session needs no credential), and
+// hands the handler the bucket, the name and the admin principal. Every refusal before the
+// handler comes before any object is looked up, so a caller refused on a bucket learns nothing
+// of what is in it (ADR-022 §14).
+func (a *API) route(w http.ResponseWriter, r *http.Request) {
+	t := classify(r)
+	if t.err != nil {
+		a.writeError(w, t.err, "", "")
+		return
+	}
+	b, err := a.svc.Bucket(r.Context(), t.bucket)
+	if err != nil {
+		a.writeError(w, err, t.bucket, "")
+		return
+	}
+	if t.route.writes() {
+		release, ok := a.writes.acquire(a.clientIP(r), a.svc.Limits().UploadRequestsPerIP)
+		if !ok {
+			a.writeError(w, errTooManyWrites, "", "")
+			return
+		}
+		defer release()
+	}
+	if t.route == routeSession {
+		a.resumeUpload(w, r, b, t.object, t.uploadID)
+		return
+	}
+	p, err := a.admit(r, b, t.route.perm())
+	if err != nil {
+		a.writeError(w, err, b.Name, "")
+		return
+	}
+	switch t.route {
+	case routeGetBucket:
+		a.getBucket(w, r, b, p)
+	case routePatchBucket:
+		a.patchBucket(w, r, b, p)
+	case routeList:
+		a.listObjects(w, r, b, p)
+	case routeGetObject:
+		a.getObject(w, r, b, t.object, p)
+	case routePatchObject:
+		a.patchObject(w, r, b, t.object, p)
+	case routeDeleteObject:
+		a.deleteObject(w, r, b, t.object, p)
+	case routeRewrite:
+		a.rewrite(w, r, b, t.object, t.dest, p)
+	case routeDownload:
+		a.download(w, r, b, t.object, p)
+	case routeUploadMedia:
+		a.uploadMedia(w, r, b, t.object, p)
+	case routeUploadMultipart:
+		a.uploadMultipart(w, r, b, t.object, p)
+	case routeStartResumable:
+		a.startResumable(w, r, b, t.object, p)
 	}
 }
 
-func (a *API) serveObject(w http.ResponseWriter, r *http.Request, bucket, name, perm string, h objectHandler) {
-	b, p, ok := a.admit(w, r, bucket, perm)
-	if ok {
-		h(w, r, b, name, p)
+// clientIP is the client's address, for the limits per IP: X-Forwarded-For from a trusted proxy
+// alone. The first X-Forwarded-For from a peer that is not one is logged once: behind a proxy
+// left out of trusted_proxies every client looks like the proxy (ADR-022 §17).
+func (a *API) clientIP(r *http.Request) netip.Addr {
+	ip := httpx.ClientIP(r, a.opts.TrustedProxies)
+	if r.Header.Get("X-Forwarded-For") != "" && !a.warnedForwarded.Load() {
+		if peer, err := netip.ParseAddrPort(r.RemoteAddr); err == nil && ip == peer.Addr().Unmap() &&
+			!a.warnedForwarded.Swap(true) {
+			a.log.Warn("gcs: X-Forwarded-For from a peer that is not a trusted proxy; the limits per IP count the proxy",
+				"peer", peer.Addr().String())
+		}
 	}
+	return ip
+}
+
+// ipCounter counts requests in flight per client address, IPv6 per /64 (ratelimit.AddrKey).
+type ipCounter struct {
+	mu sync.Mutex
+	n  map[string]int
+}
+
+// acquire takes a place for a request from ip, under limit; the caller calls release once the
+// request is done. The zero Addr, and a limit of 0, are never limited.
+func (c *ipCounter) acquire(ip netip.Addr, limit int) (release func(), ok bool) {
+	if !ip.IsValid() || limit <= 0 {
+		return func() {}, true
+	}
+	key := ratelimit.AddrKey(ip)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.n[key] >= limit {
+		return nil, false
+	}
+	c.n[key]++
+	return sync.OnceFunc(func() {
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		if c.n[key]--; c.n[key] <= 0 {
+			delete(c.n, key)
+		}
+	}), true
 }
 
 // hasEncryptionHeaders reports a customer-supplied encryption key (CSEK), which v0.3 defers.

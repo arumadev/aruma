@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"strconv"
 	"strings"
 	"testing"
@@ -50,7 +51,7 @@ type env struct {
 	a, b core.Bucket
 }
 
-func newEnv(t *testing.T) *env {
+func newEnv(t *testing.T, tune ...func(*core.Limits)) *env {
 	t.Helper()
 	pool := storetest.NewPool(t)
 	ctx := context.Background()
@@ -75,6 +76,9 @@ func newEnv(t *testing.T) *env {
 	}
 	lim := core.DefaultLimits()
 	lim.MinFreeBytes = 1 << 20
+	for _, f := range tune {
+		f(&lim)
+	}
 	svc, err := core.New(ctx, pool, disk, core.Options{Limits: lim, Keys: keys, Projects: testProjects{},
 		Inflight: rules.NewInflight(1 << 20), DataDir: dir}, nil)
 	if err != nil {
@@ -190,122 +194,184 @@ func (testCredentials) VerifyServiceToken(_ context.Context, token string) (*aut
 	return nil, errBadToken
 }
 
-// reached runs the handler on r and returns the message of the stub it panicked in, "" when it
-// answered without one.
-func (e *env) reached(r *http.Request) (stub string, rec *httptest.ResponseRecorder) {
-	rec = httptest.NewRecorder()
-	defer func() {
-		if p := recover(); p != nil {
-			s, ok := p.(string)
-			if !ok {
-				panic(p)
-			}
-			stub = s
-		}
-	}()
-	e.h.ServeHTTP(rec, r)
-	return "", rec
-}
-
-// The routing contract (s3-wave-brief): every upload and download request reaches its stub in
-// upload.go or download.go, by method, query and headers, and nothing else does.
-func TestRoutingReachesTheStubs(t *testing.T) {
-	e := newEnv(t)
+// The routing contract (s3-wave-brief): classify sends every request to its route by method,
+// query and headers alone, and hands the handler the bucket, the name decoded once, a
+// rewrite's destination and a session's id. It looks nothing up and calls no handler, so the
+// rows hold whatever the handlers do.
+func TestClassify(t *testing.T) {
 	const o = "/storage/v1/b/" + bucketA + "/o/dir%2Fa%20b.txt"
 	const up = "/upload/storage/v1/b/" + bucketA + "/o"
 	cases := []struct {
 		method, target string
-		bearer         string
 		header         []string
-		want           string // the stub's panic, or "" for a reply
-		status         int    // the reply's status when want is "", 0 for any
+		route          string // routeNames, or the refusal's status
+		status         int
 	}{
-		// uploadType picks the start; the Bearer must be the bucket's project's.
-		{"POST", up + "?uploadType=media&name=a.txt", tokenA, nil, "S4-B: uploadMedia", 0},
-		{"POST", up + "?alt=json&name=a.txt&prettyPrint=false&projection=full&uploadType=multipart", tokenA, nil, "S4-B: uploadMultipart", 0},
-		{"POST", up + "?uploadType=multipart", tokenA, nil, "S4-B: uploadMultipart", 0}, // the name in the JSON part
-		{"POST", up + "?name=a.txt&uploadType=resumable", tokenA, nil, "S4-B: startResumable", 0},
-		{"POST", up + "?uploadType=resumable&name=a.txt", tokenB, nil, "", 403},
-		{"POST", up + "?uploadType=resumable&name=a.txt", "", nil, "", 401},
-		{"POST", up + "?uploadType=media&name=a.txt", authn.ServiceTokenPrefix + "nobody", nil, "", 401},
-		{"POST", up + "?name=a.txt", tokenA, nil, "", 400},
-		{"POST", up + "?uploadType=chunked&name=a.txt", tokenA, nil, "", 400},
-		{"PUT", up + "?uploadType=media&name=a.txt", tokenA, nil, "", 404},
-		{"POST", "/upload/storage/v1/b/nobody-app.aruma.test/o?uploadType=media&name=a.txt", tokenA, nil, "", 404},
-		{"POST", up + "/a.txt?uploadType=media", tokenA, nil, "", 404},
-		// An upload_id is a session request whatever the method and uploadType, without a
-		// Bearer, and with anyone's (Go's chunks are POST to a URL with uploadType=resumable).
-		{"PUT", up + "?name=a.txt&uploadType=resumable&upload_id=xyz", "", []string{"Content-Range", "bytes 0-*/*"}, "S4-B: resumeUpload", 0},
-		{"POST", up + "?name=a.txt&uploadType=resumable&upload_id=xyz", "", []string{wire.GUploaderNo308, "yes"}, "S4-B: resumeUpload", 0},
-		{"POST", up + "?upload_id=xyz", tokenB, nil, "S4-B: resumeUpload", 0},
-		{"DELETE", up + "?upload_id=xyz", "", nil, "S4-B: resumeUpload", 0},
-		{"GET", up + "?upload_id=xyz", "", nil, "", 404},
-		{"PUT", "/upload/storage/v1/b/nobody-app.aruma.test/o?upload_id=xyz", "", nil, "", 404},
+		// uploadType picks the start.
+		{"POST", up + "?uploadType=media&name=a.txt", nil, "upload.media", 0},
+		{"POST", up + "?alt=json&name=a.txt&prettyPrint=false&projection=full&uploadType=multipart", nil, "upload.multipart", 0},
+		{"POST", up + "?uploadType=multipart", nil, "upload.multipart", 0}, // the name in the JSON part
+		{"POST", up + "?name=a.txt&uploadType=resumable", nil, "upload.resumable", 0},
+		{"POST", up + "?name=a.txt", nil, "", 400},
+		{"POST", up + "?uploadType=chunked&name=a.txt", nil, "", 400},
+		{"PUT", up + "?uploadType=media&name=a.txt", nil, "", 404},
+		{"POST", up + "/a.txt?uploadType=media", nil, "", 404},
+		{"POST", up + "?uploadType=media&name=a", []string{"X-Goog-Encryption-Key", "k"}, "", 501},
+		// An upload_id is a session request whatever the method and uploadType (Go's chunks
+		// are POST to a URL with uploadType=resumable).
+		{"PUT", up + "?name=a.txt&uploadType=resumable&upload_id=xyz", []string{"Content-Range", "bytes 0-*/*"}, "session", 0},
+		{"POST", up + "?name=a.txt&uploadType=resumable&upload_id=xyz", []string{wire.GUploaderNo308, "yes"}, "session", 0},
+		{"POST", up + "?upload_id=xyz", nil, "session", 0},
+		{"DELETE", up + "?upload_id=xyz", nil, "session", 0},
+		{"GET", up + "?upload_id=xyz", nil, "", 404},
 		// alt=media under /storage/v1 and /download/storage/v1.
-		{"GET", o + "?alt=media", tokenA, nil, "S4-C: download", 0},
-		{"HEAD", o + "?alt=media&generation=12", tokenA, nil, "S4-C: download", 0},
-		{"GET", o + "?alt=media&prettyPrint=false&projection=full", tokenA, []string{"Range", "bytes=0-3"}, "S4-C: download", 0},
-		{"GET", "/download" + o + "?generation=1&alt=media", tokenA, nil, "S4-C: download", 0},
-		{"GET", o + "?alt=media", "", nil, "", 401},
-		{"GET", o + "?alt=media", tokenB, nil, "", 403},
-		{"GET", "/storage/v1/b/nobody-app.aruma.test/o/x?alt=media", tokenA, nil, "", 404},
-		{"PATCH", o + "?alt=media", tokenA, nil, "", 400},
-		{"GET", "/storage/v1/b/" + bucketA + "/o?alt=media", tokenA, nil, "", 400},
-		{"GET", "/download/storage/v1/b/" + bucketA + "/o?alt=media", tokenA, nil, "", 404},
-		{"DELETE", "/download" + o + "?alt=media", tokenA, nil, "", 404},
-		{"GET", o + "?alt=proto", tokenA, nil, "", 400},
-		// The JSON API's own requests reach no stub.
-		{"GET", o, tokenA, nil, "", 0},                 // objects.get
-		{"GET", o + "?alt=json", tokenA, nil, "", 404}, // objects.get
-		{"GET", "/download" + o, tokenA, nil, "", 404}, // objects.get
+		{"GET", o + "?alt=media", nil, "download", 0},
+		{"HEAD", o + "?alt=media&generation=12", nil, "download", 0},
+		{"GET", o + "?alt=media&prettyPrint=false&projection=full", []string{"Range", "bytes=0-3"}, "download", 0},
+		{"GET", "/download" + o + "?generation=1&alt=media", nil, "download", 0},
+		{"PATCH", o + "?alt=media", nil, "", 400},
+		{"GET", "/storage/v1/b/" + bucketA + "/o?alt=media", nil, "", 400},
+		{"GET", "/download/storage/v1/b/" + bucketA + "/o?alt=media", nil, "", 404},
+		{"DELETE", "/download" + o + "?alt=media", nil, "", 404},
+		{"GET", o + "?alt=proto", nil, "", 400},
+		// The JSON API's own.
+		{"GET", o, nil, "objects.get", 0},
+		{"GET", o + "?alt=json", nil, "objects.get", 0},
+		{"GET", "/download" + o, nil, "objects.get", 0},
+		{"PATCH", o, nil, "objects.patch", 0},
+		{"DELETE", o, nil, "objects.delete", 0},
+		{"POST", o + "/rewriteTo/b/" + bucketB + "/o/x", nil, "objects.rewrite", 0},
+		{"GET", "/storage/v1/b/" + bucketA + "/o", nil, "objects.list", 0},
+		{"GET", "/storage/v1/b/" + bucketA, nil, "buckets.get", 0},
+		{"PATCH", "/storage/v1/b/" + bucketA, nil, "buckets.patch", 0},
+		{"PUT", o, nil, "", 501},
+		{"GET", "/elsewhere", nil, "", 404},
 	}
 	for _, c := range cases {
-		r := httptest.NewRequest(c.method, c.target, strings.NewReader(""))
-		if c.bearer != "" {
-			r.Header.Set("Authorization", "Bearer "+c.bearer)
-		}
+		r := httptest.NewRequest(c.method, c.target, nil)
 		for i := 0; i+1 < len(c.header); i += 2 {
 			r.Header.Set(c.header[i], c.header[i+1])
 		}
-		stub, rec := e.reached(r)
-		switch {
-		case stub != c.want:
-			t.Errorf("%s %s: reached %q, want %q", c.method, c.target, stub, c.want)
-		case c.want == "" && c.status != 0 && rec.Code != c.status:
-			t.Errorf("%s %s: %d, want %d: %s", c.method, c.target, rec.Code, c.status, rec.Body)
+		got := classify(r)
+		if c.status != 0 {
+			e, ok := errors.AsType[*apiError](got.err)
+			if !ok || e.status != c.status || got.route != routeNone {
+				t.Errorf("%s %s: %v %v, want %d", c.method, c.target, got.route, got.err, c.status)
+			}
+			continue
+		}
+		if got.err != nil || got.route.String() != c.route {
+			t.Errorf("%s %s: %v %v, want %s", c.method, c.target, got.route, got.err, c.route)
+		}
+	}
+	// What the handlers get: the bucket, the name decoded once ("+" a plus in a path, a space in
+	// a query), the destination still escaped, the session's id.
+	for _, c := range []struct {
+		method, target string
+		want           target
+	}{
+		{"GET", "/storage/v1/b/" + bucketA + "/o/dir%2Fa+b%20c.txt?alt=media", target{route: routeDownload, bucket: bucketA, object: "dir/a+b c.txt"}},
+		{"POST", "/storage/v1/b/" + bucketA + "/o/a%2Fb/rewriteTo/b/" + bucketB + "/o/c%2Fd", target{route: routeRewrite, bucket: bucketA, object: "a/b", dest: "b/" + bucketB + "/o/c%2Fd"}},
+		{"POST", "/upload/storage/v1/b/" + bucketA + "/o?uploadType=media&name=dir%2Fa+b.txt", target{route: routeUploadMedia, bucket: bucketA, object: "dir/a b.txt"}},
+		{"PUT", "/upload/storage/v1/b/" + bucketA + "/o?name=x&upload_id=id-1", target{route: routeSession, bucket: bucketA, object: "x", uploadID: "id-1"}},
+	} {
+		if got := classify(httptest.NewRequest(c.method, c.target, nil)); got != c.want {
+			t.Errorf("%s %s: %+v, want %+v", c.method, c.target, got, c.want)
 		}
 	}
 }
 
-// The router hands the stubs the bucket, the name decoded once, and the principal; a session
-// request also gets its id.
-func TestRoutingHandsTheStubsTheirArguments(t *testing.T) {
+// The router's own refusals, before any handler: the bucket is resolved first (404 to anyone),
+// then the credential (401 without one, 403 for another project's), and a session needs none.
+func TestRouterRefusals(t *testing.T) {
 	e := newEnv(t)
-	type call struct {
-		b          core.Bucket
-		name, id   string
-		p          core.Principal
-		uploadType string
+	const o = "/storage/v1/b/" + bucketA + "/o/a.txt"
+	const up = "/upload/storage/v1/b/" + bucketA + "/o"
+	for _, c := range []struct {
+		method, target, bearer string
+		status                 int
+		reason                 string
+	}{
+		{"POST", up + "?uploadType=resumable&name=a.txt", tokenB, 403, "forbidden"},
+		{"POST", up + "?uploadType=resumable&name=a.txt", "", 401, "required"},
+		{"POST", up + "?uploadType=media&name=a.txt", authn.ServiceTokenPrefix + "nobody", 401, "authError"},
+		{"POST", "/upload/storage/v1/b/nobody-app.aruma.test/o?uploadType=media&name=a.txt", tokenA, 404, "notFound"},
+		{"PUT", "/upload/storage/v1/b/nobody-app.aruma.test/o?upload_id=xyz", "", 404, "notFound"},
+		{"GET", o + "?alt=media", "", 401, "required"},
+		{"GET", o + "?alt=media", tokenB, 403, "forbidden"},
+		{"GET", "/storage/v1/b/nobody-app.aruma.test/o/x?alt=media", tokenA, 404, "notFound"},
+	} {
+		gcsErr(t, e.do(c.method, c.target, c.bearer, nil), c.status, c.reason)
 	}
-	var got call
-	record := func(w http.ResponseWriter, r *http.Request, b core.Bucket, name string, p core.Principal) {
-		got = call{b: b, name: name, p: p, uploadType: r.URL.Query().Get("uploadType")}
+}
+
+// upload_requests_per_ip holds every write route, IPv6 per /64, the address from
+// X-Forwarded-For of a trusted proxy alone; reads are not counted, and a place is freed when its
+// request ends. The refusal is 429 with a Retry-After.
+func TestWritesPerIP(t *testing.T) {
+	e := newEnv(t, func(l *core.Limits) { l.UploadRequestsPerIP = 1 })
+	e.put(e.a, "a.txt", "x", core.Patch{})
+	writes := []struct{ method, target, body string }{
+		{"PATCH", objA + "a.txt", "{}"},
+		{"DELETE", objA + "missing", ""},
+		{"POST", objA + "a.txt/rewriteTo/b/" + bucketA + "/o/b.txt", "{}"},
+		{"PATCH", "/storage/v1/b/" + bucketA, "{}"},
+		{"POST", "/upload/storage/v1/b/" + bucketA + "/o?uploadType=media&name=x", "x"},
+		{"POST", "/upload/storage/v1/b/" + bucketA + "/o?uploadType=multipart", "x"},
+		{"POST", "/upload/storage/v1/b/" + bucketA + "/o?uploadType=resumable&name=x", "{}"},
+		{"PUT", "/upload/storage/v1/b/" + bucketA + "/o?upload_id=x", ""},
 	}
-	// The routes as routeJSON and routeUpload resolve them, on a test double of each stub.
-	r := httptest.NewRequest("GET", "/storage/v1/b/"+bucketA+"/o/dir%2Fa+b%20c.txt?alt=media", nil)
-	r.Header.Set("Authorization", "Bearer "+tokenA)
-	e.api.serveObject(httptest.NewRecorder(), r, bucketA, "dir/a+b c.txt", permObjectsGet, record)
-	want := core.Principal{Kind: core.PrincipalAdmin, ServiceAccount: emailA}
-	if got.b != e.a || got.name != "dir/a+b c.txt" || got.p.Kind != want.Kind || got.p.ServiceAccount != want.ServiceAccount {
-		t.Fatalf("download got %+v", got)
+	reads := []string{objA + "a.txt", "/storage/v1/b/" + bucketA, "/storage/v1/b/" + bucketA + "/o"}
+	run := func(api *API, method, target, body, remote string, header ...string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(method, target, strings.NewReader(body))
+		r.RemoteAddr = remote
+		r.Header.Set("Authorization", "Bearer "+tokenA)
+		for i := 0; i+1 < len(header); i += 2 {
+			r.Header.Set(header[i], header[i+1])
+		}
+		rec := httptest.NewRecorder()
+		func() {
+			defer func() { _ = recover() }() // a stub of S4-B before its merge
+			api.Handler().ServeHTTP(rec, r)
+		}()
+		return rec
 	}
-	path, err := wire.SplitObjectPath(strings.TrimPrefix("/storage/v1/b/"+bucketA+"/o/dir%2Fa+b%20c.txt", wire.GCSPrefix))
-	if err != nil || path.Object != "dir/a+b c.txt" || path.Bucket != bucketA {
-		t.Fatalf("the path decodes to %+v, %v", path, err)
+	// One place for 2001:db8::/64, held as by a request in flight.
+	release, ok := e.api.writes.acquire(netip.MustParseAddr("2001:db8::1"), 1)
+	if !ok {
+		t.Fatal("the first place")
 	}
-	// An upload's name comes from the query with form rules: "+" is a space there.
-	q := httptest.NewRequest("POST", "/upload/storage/v1/b/"+bucketA+"/o?uploadType=media&name=dir%2Fa+b.txt", nil).URL.Query()
-	if q.Get("name") != "dir/a b.txt" {
-		t.Fatalf("query name %q", q.Get("name"))
+	for _, w := range writes {
+		rec := run(e.api, w.method, w.target, w.body, "[2001:db8::99]:4000")
+		gcsErr(t, rec, http.StatusTooManyRequests, "rateLimitExceeded")
+		if rec.Header().Get("Retry-After") != "1" {
+			t.Errorf("%s %s: Retry-After %q", w.method, w.target, rec.Header().Get("Retry-After"))
+		}
+	}
+	for _, target := range reads {
+		if rec := run(e.api, "GET", target, "", "[2001:db8::99]:4000"); rec.Code != 200 {
+			t.Errorf("a read from the full /64: %d %s", rec.Code, rec.Body)
+		}
+	}
+	// Another /64, and the same /64 once the place is free.
+	if rec := run(e.api, "PATCH", objA+"a.txt", "{}", "[2001:db8:0:1::1]:4000"); rec.Code != 200 {
+		t.Errorf("another /64: %d %s", rec.Code, rec.Body)
+	}
+	release()
+	if rec := run(e.api, "PATCH", objA+"a.txt", "{}", "[2001:db8::99]:4000"); rec.Code != 200 {
+		t.Errorf("after the release: %d %s", rec.Code, rec.Body)
+	}
+	// Behind a proxy: X-Forwarded-For counts only from a trusted one.
+	release, _ = e.api.writes.acquire(netip.MustParseAddr("198.51.100.7"), 1)
+	defer release()
+	trusted := New(e.svc, Options{PublicURL: baseURL, Credentials: testCredentials{},
+		TrustedProxies: []netip.Prefix{netip.MustParsePrefix("192.0.2.0/24")}}, nil)
+	trusted.writes = e.api.writes // the same counts
+	gcsErr(t, run(trusted, "PATCH", objA+"a.txt", "{}", "192.0.2.10:4000", "X-Forwarded-For", "198.51.100.7"), 429, "rateLimitExceeded")
+	if rec := run(trusted, "PATCH", objA+"a.txt", "{}", "192.0.2.10:4000", "X-Forwarded-For", "198.51.100.8"); rec.Code != 200 {
+		t.Errorf("another client behind the proxy: %d %s", rec.Code, rec.Body)
+	}
+	if rec := run(e.api, "PATCH", objA+"a.txt", "{}", "192.0.2.10:4000", "X-Forwarded-For", "198.51.100.7"); rec.Code != 200 {
+		t.Errorf("X-Forwarded-For from an untrusted peer counted: %d %s", rec.Code, rec.Body)
 	}
 }
