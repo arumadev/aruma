@@ -237,6 +237,34 @@ func TestMultipartBadContentType(t *testing.T) {
 	}
 }
 
+// On an unknown bucket a resumable start is 404 with X-Goog-Upload-Status: final, and a
+// multipart upload 404 without it, as production answers both (bucket_probe.json).
+func TestUnknownBucketUpload(t *testing.T) {
+	h := New(routeService(t), Options{}, nil).Handler()
+	target := "/v0/b/zz-no-such-bucket.aruma.test/o?name=x"
+	for _, c := range []struct {
+		header map[string]string
+		status string
+	}{
+		{map[string]string{"X-Goog-Upload-Protocol": "resumable", "X-Goog-Upload-Command": "start"}, wire.StatusFinal},
+		{map[string]string{"X-Goog-Upload-Command": "start"}, wire.StatusFinal},
+		{map[string]string{"X-Goog-Upload-Protocol": "multipart", "Content-Type": "multipart/related; boundary=b"}, ""},
+		{map[string]string{"Content-Type": "text/plain"}, ""},
+	} {
+		req := httptest.NewRequest("POST", target, strings.NewReader("{}"))
+		for k, v := range c.header {
+			req.Header.Set(k, v)
+		}
+		rec := httptest.NewRecorder()
+		if reached := serveRecover(h, rec, req); reached != "" {
+			t.Fatalf("%v: reached %s", c.header, reached)
+		}
+		if rec.Code != 404 || headerExact(rec.Header(), wire.UploadStatus) != c.status {
+			t.Errorf("%v: %d %v, want 404 with status %q", c.header, rec.Code, rec.Header(), c.status)
+		}
+	}
+}
+
 // pacedServer serves h behind the server's real timeouts scaled down: ReadTimeout and
 // WriteTimeout of one second, and pace windows of 200 ms.
 func pacedServer(t *testing.T, h http.HandlerFunc) *httptest.Server {

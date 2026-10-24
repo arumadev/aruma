@@ -57,9 +57,9 @@ var errNoName = statusError(http.StatusBadRequest, "The upload names no object."
 // (with X-Goog-Upload-Status set first where the protocol wants it) and writeObject.
 func (a *API) upload(w http.ResponseWriter, r *http.Request, b core.Bucket, name string, p core.Principal) {
 	protocol := strings.Trim(r.Header.Get(wire.UploadProtocol), " \t")
-	command, hasCommand := r.Header[http.CanonicalHeaderKey(wire.UploadCommand)]
+	command := r.Header[http.CanonicalHeaderKey(wire.UploadCommand)]
 	switch {
-	case strings.EqualFold(protocol, "resumable") || (protocol == "" && hasCommand):
+	case resumable(r.Header):
 		cmds, err := wire.ParseUploadCommand(strings.Join(command, ","))
 		if err != nil || cmds != wire.CommandStart {
 			a.writeError(w, r, errBadCommand)
@@ -71,6 +71,14 @@ func (a *API) upload(w http.ResponseWriter, r *http.Request, b core.Bucket, name
 	default:
 		a.writeError(w, r, statusError(http.StatusBadRequest, "Invalid X-Goog-Upload-Protocol."))
 	}
+}
+
+// resumable reports an upload request of the resumable protocol: X-Goog-Upload-Protocol:
+// resumable, or an X-Goog-Upload-Command without a protocol.
+func resumable(h http.Header) bool {
+	protocol := strings.Trim(h.Get(wire.UploadProtocol), " \t")
+	_, hasCommand := h[http.CanonicalHeaderKey(wire.UploadCommand)]
+	return strings.EqualFold(protocol, "resumable") || (protocol == "" && hasCommand)
 }
 
 // start begins a resumable upload (A §3.10): the name from ?name= or the path, the metadata
