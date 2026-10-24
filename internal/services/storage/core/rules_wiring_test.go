@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/arumadev/aruma/internal/platform/rules"
+	tcore "github.com/arumadev/aruma/internal/tenancy/core"
 )
 
 // The S2 integration's tests of the rules' wiring: every operation that decides resolves the
@@ -20,6 +21,14 @@ type wiredProjects struct {
 	*testProjects
 	rs    atomic.Pointer[rules.Ruleset]
 	asked atomic.Int64
+}
+
+// ProjectForBucket resolves project A's bucket, which SetCORS reads its creation time from.
+func (p *wiredProjects) ProjectForBucket(ctx context.Context, bucket string) (tcore.Project, error) {
+	if bucket != "chat-app.aruma.test" {
+		return p.testProjects.ProjectForBucket(ctx, bucket)
+	}
+	return tcore.Project{Number: projectA, State: "ACTIVE", StorageBucket: bucket}, nil
 }
 
 func (p *wiredProjects) CompiledRelease(ctx context.Context, project int64, release string) (*rules.Ruleset, error) {
