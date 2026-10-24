@@ -6,11 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
-	"weak"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -447,24 +445,16 @@ type releaseLoad struct {
 	err  error
 }
 
-// The cache belongs to its Service, but the Service's fields are the contract's (service.go): it
-// hangs off a weak key and goes when the Service does.
-var compiledCaches sync.Map // weak.Pointer[Service] → *releaseCache
-
+// compiledCache is the Service's cache of compiled releases, made on first use.
 func (s *Service) compiledCache() *releaseCache {
-	key := weak.Make(s)
-	if c, ok := compiledCaches.Load(key); ok {
-		return c.(*releaseCache)
-	}
-	c, loaded := compiledCaches.LoadOrStore(key, &releaseCache{
-		max: s.opts.RulesLimits.CompiledRulesetsBytes, order: list.New(),
-		entries: map[releaseKey]*list.Element{}, loading: map[releaseKey]*releaseLoad{},
-		locked: map[rules.Service]*rules.Ruleset{},
+	s.compiledOnce.Do(func() {
+		s.compiled = &releaseCache{
+			max: s.opts.RulesLimits.CompiledRulesetsBytes, order: list.New(),
+			entries: map[releaseKey]*list.Element{}, loading: map[releaseKey]*releaseLoad{},
+			locked: map[rules.Service]*rules.Ruleset{},
+		}
 	})
-	if !loaded {
-		runtime.AddCleanup(s, func(k weak.Pointer[Service]) { compiledCaches.Delete(k) }, key)
-	}
-	return c.(*releaseCache)
+	return s.compiled
 }
 
 // load returns the cached ruleset for key, or the result of the load in flight for it, starting

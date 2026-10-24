@@ -53,6 +53,10 @@ type Service struct {
 	// purgeHooks remove the data services' data of a purged project (OnProjectPurged). Set
 	// while wiring, before the server runs.
 	purgeHooks []func(ctx context.Context, project int64) error
+
+	// compiled caches the compiled rulesets of the releases (rules.go), made on first use.
+	compiledOnce sync.Once
+	compiled     *releaseCache
 }
 
 // New returns the service.
