@@ -60,6 +60,23 @@ type Limits struct {
 // request (403 for service workers, and for scripts, styles, workers and xslt loaded from the
 // dashboard's own origin, ADR-022 §10.1). It returns why serving stopped early, for the
 // metrics: nil when the reply was complete.
+//
+// A complete reply includes a refusal, a 416 and a 304. An error means the client got less
+// than the reply promised: the body ended or failed, the client stopped reading (the write
+// deadline, below), the request's context ended, or gzip decompression passed
+// lim.DecompressedBytes (ErrDecompressedTooLarge). The headers are gone by then, and a
+// decompressed reply has no Content-Length, so ending the handler normally would close a
+// chunked body as if it were whole. **The caller, once it has counted the error, ends the
+// handler with panic(http.ErrAbortHandler)**, which cuts the connection (HTTP/1) or resets
+// the stream (HTTP/2) on every surface alike.
+//
+// Serve lifts the server's write deadline itself, through http.ResponseController, a window
+// at a time (pace.go): a client that reads fewer than lim.MinBytesPerSecond × 30 bytes in a
+// 30 seconds window is cut. The caller sets nothing; on a writer without deadlines (a test
+// recorder) the pacing is off.
+//
+// Serve reads body from its start, never all at once: memory is a few buffers of 32 KiB
+// whatever the object's size or its decompressed size.
 func Serve(w http.ResponseWriter, r *http.Request, it Item, body io.ReadSeeker, m Mode, lim Limits) error {
-	panic("S2-F: Serve")
+	return serve(w, r, it, body, m, lim)
 }
