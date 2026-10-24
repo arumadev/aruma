@@ -1,0 +1,20 @@
+{
+  "name": "aruma-e2e-web-storage",
+  "private": true,
+  "type": "module",
+  "description": "The official firebase package (Auth and Storage in production mode), built with Vite 8, webpack and esbuild through @aruma/web's build-time Storage rewrite, driven by Playwright against a real Aruma server.",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "firebase": "^13"
+  },
+  "devDependencies": {
+    "@aruma/web": "file:../../../sdk/web/aruma-web",
+    "@playwright/test": "1.64.1",
+    "esbuild": "^0.28",
+    "vite": "^8",
+    "webpack": "^5"
+  }
+}

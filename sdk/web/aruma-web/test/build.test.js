@@ -83,14 +83,10 @@ describe('vite plugin, storage', () => {
     assert.equal(v7.optimizeDeps.esbuildOptions.plugins[0].name, 'aruma-web:storage:http://127.0.0.1:9421');
   });
 
-  test('index.html that loads the SDK from gstatic fails', () => {
+  test('generateBundle checks the module set and the output (index.html too) in a build, not in serve', () => {
     const p = storagePlugin({ url: URL_ });
-    assert.equal(p.transformIndexHtml.handler('<html></html>', {}), '<html></html>');
-    assert.throws(() => p.transformIndexHtml.handler('<script type="module">import "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js"</script>', { filename: 'index.html' }), /www\.gstatic\.com/);
-  });
-
-  test('generateBundle checks the module set in a build, not in serve', () => {
-    const p = storagePlugin({ url: URL_ });
+    assert.equal(p.generateBundle.order, 'post');
+    const gen = (c, bundle) => p.generateBundle.handler.call(c, {}, bundle);
     const ctx = (ids) => ({
       getModuleIds: () => ids.map((m) => m.id),
       getModuleInfo: (id) => ids.find((m) => m.id === id),
@@ -101,14 +97,16 @@ describe('vite plugin, storage', () => {
       meta: {},
     });
     p.configResolved({ command: 'serve', build: {} });
-    assert.doesNotThrow(() => p.generateBundle.call(ctx([]), {}, {}));
+    assert.doesNotThrow(() => gen(ctx([]), {}));
     p.configResolved({ command: 'build', build: {} });
-    assert.throws(() => p.generateBundle.call(ctx([]), {}, {}), /no @firebase\/storage module/);
-    assert.doesNotThrow(() => p.generateBundle.call(ctx([{ id: ID, code: rewritten }]), {}, { 'a.js': { type: 'chunk', fileName: 'a.js', code: '' } }));
+    assert.throws(() => gen(ctx([]), {}), /no @firebase\/storage module/);
+    assert.doesNotThrow(() => gen(ctx([{ id: ID, code: rewritten }]), { 'a.js': { type: 'chunk', fileName: 'a.js', code: '' } }));
     const ssr = { ...ctx([{ id: '@firebase/storage', isExternal: true }]), environment: { config: { consumer: 'server' } } };
-    assert.throws(() => p.generateBundle.call(ssr, {}, {}), /external to this bundle/);
+    assert.throws(() => gen(ssr, {}), /external to this bundle/);
     const ssrNone = { ...ctx([]), environment: { config: { consumer: 'server' } } };
-    assert.doesNotThrow(() => p.generateBundle.call(ssrNone, {}, {}));
+    assert.doesNotThrow(() => gen(ssrNone, {}));
+    const cdn = '<script type="module">import "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js"</script>';
+    assert.throws(() => gen(ctx([{ id: ID, code: rewritten }]), { 'index.html': { type: 'asset', fileName: 'index.html', source: cdn } }), /index\.html loads the Firebase SDK/);
   });
 
   test("Vite 5 to 7: the optimizer's esbuild plugin rewrites the file it loads", async () => {

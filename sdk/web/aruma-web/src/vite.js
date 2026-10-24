@@ -20,7 +20,6 @@
 //   build fails when a module is not rewritten, when a browser build has no @firebase/storage
 //   module, and when anything loads the SDK from www.gstatic.com.
 import { parseBase } from './index.js';
-import { GSTATIC_FIREBASE } from './storage.js';
 import { esbuildOptimizerPlugin, rollupVerify, storageRewriter } from './build.js';
 
 const VIRTUAL = 'virtual:aruma-web/install';
@@ -114,20 +113,16 @@ export function storagePlugin(options) {
     transform(code, id) {
       return rw.transform(code, id);
     },
-    transformIndexHtml: {
-      order: 'pre',
-      handler(html, ctx) {
-        if (GSTATIC_FIREBASE.test(html)) {
-          throw new Error(rw.scanOutput([{ name: ctx?.filename ?? 'index.html', code: html }])[0]);
-        }
-        return html;
+    // Last, so that index.html, which Vite emits in its own generateBundle, is in the bundle too.
+    // (Not transformIndexHtml: SvelteKit and other frameworks without an index.html warn about it.)
+    generateBundle: {
+      order: 'post',
+      handler(_, bundle) {
+        if (resolved?.command !== 'build') return;
+        const env = this.environment?.config;
+        const server = env ? env.consumer === 'server' : Boolean(resolved.build?.ssr);
+        rollupVerify(rw, this, bundle, { browser: !server });
       },
-    },
-    generateBundle(_, bundle) {
-      if (resolved?.command !== 'build') return;
-      const env = this.environment?.config;
-      const server = env ? env.consumer === 'server' : Boolean(resolved.build?.ssr);
-      rollupVerify(rw, this, bundle, { browser: !server });
     },
   };
 }

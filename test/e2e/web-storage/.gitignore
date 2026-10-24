@@ -1,0 +1,10 @@
+node_modules/
+.generated/
+test-results/
+playwright-report/
+dist/
+build/
+.svelte-kit/
+.next/
+.expo/
+.dart_tool/
