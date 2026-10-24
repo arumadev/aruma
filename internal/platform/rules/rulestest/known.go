@@ -31,7 +31,10 @@ func Exclusion(c *Case) string {
 	}
 	if c.Provenance == TestAPI {
 		if strings.Contains(c.Expected.Message, "Function not found error: Name: [debug]") {
-			return "Test API artefact: debug() is missing there; the emulator and production have it"
+			return "Test API artefact: debug() is missing there; the emulator has it, and the reference says production does (unmeasured: the engine follows the Test API, provisionally)"
+		}
+		if contradictoryMocks(c) {
+			return "Test API artefact: get() and exists() of one document are mocked apart and disagree; a real document exists or not"
 		}
 		if c.Expected.Allows() && distinctLookups(c) > lookupLimit(c.Service) {
 			return "Test API artefact: it applies no lookup limit to mocked documents"
@@ -79,6 +82,36 @@ func distinctLookups(c *Case) int {
 		seen[k] = true
 	}
 	return len(seen)
+}
+
+// contradictoryMocks reports whether a case mocks get() of a document with a document and
+// exists() of it as false, or get() as null and exists() as true. The Test API answers each
+// function from its own mock (Pyric simcase-mock-and-path-fidelity, "exists mocked false with a
+// get mock"); the engine reads a document once for both, as a service does.
+func contradictoryMocks(c *Case) bool {
+	type doc struct {
+		path  string
+		after bool
+	}
+	got, exists := map[doc]bool{}, map[doc]bool{}
+	for _, m := range c.Mocks {
+		get, after, err := mockTarget(m.Function)
+		if err != nil || !m.Result.Present() {
+			continue
+		}
+		d := doc{strings.TrimPrefix(m.Path, "/"), after}
+		if get {
+			got[d] = !m.Result.IsNull()
+			continue
+		}
+		exists[d] = strings.TrimSpace(string(m.Result.Raw())) == "true"
+	}
+	for d, found := range got {
+		if e, ok := exists[d]; ok && e != found {
+			return true
+		}
+	}
+	return false
 }
 
 func firstLine(s string) string {

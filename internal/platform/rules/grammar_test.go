@@ -44,6 +44,11 @@ func compileCases(set *rulestest.Set) []*compileCase {
 		if c.Ruleset == "" || c.Skip != "" {
 			continue
 		}
+		if c.Provenance == rulestest.Deployed && c.Request == nil {
+			// The block Pyric's runner placed into the rules it deployed, with <prefix> for
+			// the run's: not the file deployed (stdlib-realstorage-request-resource-fields).
+			continue
+		}
 		exp := c.Expected
 		cc := &compileCase{svc: c.Service, src: c.Ruleset, name: c.FileName(), prov: c.Provenance, ids: []string{c.ID}}
 		switch {
@@ -212,7 +217,7 @@ func TestGrammar(t *testing.T) {
 }
 
 // grammarFiles pins the distinct rules files TestGrammar counts (see oracleCounts).
-const grammarFiles = 1936
+const grammarFiles = 1935
 
 // pct is n of of in percent, and 0 when there is nothing: no case is not 100%.
 func pct(n, of int) float64 {

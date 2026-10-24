@@ -110,6 +110,11 @@ func (e Expected) FirstError() (line, col int, desc string, ok bool) {
 		}
 		line, _ = strconv.Atoi(m[1])
 		col, _ = strconv.Atoi(m[2])
+		if line == 0 && col == 0 {
+			// The emulator writes no severity, and puts the whole file's warning, the old
+			// version's, at L0:0; production gives it no position (aruma/limits/let_rules_v1).
+			continue
+		}
 		return line, col, m[3], true
 	}
 	return 0, 0, "", false

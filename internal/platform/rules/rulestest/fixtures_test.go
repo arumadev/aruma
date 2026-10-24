@@ -467,6 +467,8 @@ func TestFirstError(t *testing.T) {
 		{"ERROR L5:35 Invalid regular expression pattern. Pattern: a(?=b).*.", 5, 35, "Invalid regular expression pattern. Pattern: a(?=b).*."},
 		{"Error compiling rules:\nL5:25 Missing a closing '\nL5:25 Unexpected 'b'.", 5, 25, "Missing a closing '"},
 		{"WARNING Lundefined:undefined Ruleset uses old version.\nWARNING L4:14 Unused function: f.\nERROR L3:1 Unexpected 'x'.", 3, 1, "Unexpected 'x'."},
+		{"Error compiling rules:\nL0:0 Ruleset uses old version (version [1]).\nL4:24 Let bindings are not allowed in rules_version=\"1\";",
+			4, 24, "Let bindings are not allowed in rules_version=\"1\";"},
 	} {
 		line, col, desc, ok := Expected{Message: c.msg}.FirstError()
 		if !ok || line != c.line || col != c.col || desc != c.desc {

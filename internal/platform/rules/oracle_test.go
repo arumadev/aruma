@@ -52,7 +52,7 @@ func loadOracle(tb testing.TB) *rulestest.Set {
 // change of the oracle (S0-A) updates them, with the reason in its commit.
 var oracleCounts = map[rulestest.Provenance]rulestest.Count{
 	rulestest.Deployed: {Counted: 0, Excluded: 274}, // no request to replay yet: S2 binds Storage
-	rulestest.TestAPI:  {Counted: 3629, Excluded: 54},
+	rulestest.TestAPI:  {Counted: 3628, Excluded: 55},
 	rulestest.Emulator: {Counted: 1985, Excluded: 49},
 }
 
