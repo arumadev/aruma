@@ -44,11 +44,18 @@ npm install @aruma/admin-storage firebase-admin@^14
 The server URL is the server's `public_url`: an origin without a path, `https` (plain `http`
 only on loopback), never a Google address. The client sends its token to that origin only: a
 request to any other origin, port or scheme fails before it is sent, a resumable session whose
-URL is elsewhere included, and uploads follow no redirect. One limit remains: the JSON
-requests (metadata, list, copy, delete, downloads) are sent by `teeny-request`, which gives no
-way to turn redirects off, so a redirect that the Aruma origin itself answered to another port
-of the same host would carry the token. Aruma answers none on these paths, and its tests hold it
-to that (`internal/services/storage/gcs/redirect_test.go`).
+URL is elsewhere included, and uploads follow no redirect (`maxRedirects: 0`, resumable chunks
+included). One limit remains: the JSON requests (metadata, list, copy, delete, downloads) are
+sent by `teeny-request` 11.1.1 through `node-fetch` 3.3.2 with its default `redirect: 'follow'`,
+which gives no way to turn redirects off. node-fetch keeps the `Authorization` header across a
+redirect whenever the new URL has the same protocol and the same host or any subdomain of it, on
+any port (`node-fetch/src/index.js:209`, `isDomainOrSubdomain` in `src/utils/is.js`), for up to
+20 hops. So a redirect answered on the Aruma origin, by Aruma or by a proxy in front of it, to
+another port of the same host or to any subdomain of it (`https://aruma.example.com` →
+`https://evil.aruma.example.com`) carries the token there; to any other host it is dropped.
+Aruma answers no redirect on these paths, and its tests hold it to that
+(`internal/services/storage/gcs/redirect_test.go`). Do not put Aruma on a host whose subdomains
+someone else controls, or behind a proxy that redirects.
 
 **How it reaches Aruma.** The client's `apiEndpoint` is the Aruma origin with
 `useAuthWithCustomEndpoint`, and its `universeDomain` is the Aruma host: without it, `save()` and
