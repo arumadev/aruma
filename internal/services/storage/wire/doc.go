@@ -20,5 +20,5 @@
 // a slice (a billion ranges or commands cost one pass), numbers stop at an int64, and a
 // multipart body's preamble and part headers are read under a fixed budget, so only the media
 // streams without one, under its caller's cap. Content-Disposition is not here: its one escaping
-// is core's defaultDisposition.
+// is internal/platform/disposition, which core and media share.
 package wire

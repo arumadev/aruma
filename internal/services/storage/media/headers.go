@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/arumadev/aruma/internal/platform/disposition"
 	"github.com/arumadev/aruma/internal/services/storage/wire"
 )
 
@@ -56,7 +57,7 @@ func setHeaders(h http.Header, it Item, m Mode) {
 	if m != Console {
 		h.Set("Cross-Origin-Resource-Policy", "cross-origin")
 	}
-	h.Set("Content-Disposition", disposition(it, m, mt == "application/pdf"))
+	h.Set("Content-Disposition", replyDisposition(it, m, mt == "application/pdf"))
 	h.Set("Cache-Control", cacheControl(it.CacheControl, m))
 	if it.ETag != "" {
 		h.Set("ETag", it.ETag)
@@ -83,12 +84,12 @@ func setHeaders(h http.Header, it Item, m Mode) {
 	}
 }
 
-// disposition returns the Content-Disposition of a reply (§10.4): the stored value when there
+// replyDisposition returns the Content-Disposition of a reply (§10.4): the stored value when there
 // is one, and attachment with the object's last segment when there is not. The dashboard's
 // download and every PDF are attachment whatever is stored, keeping the stored parameters: a
 // PDF under sandbox would show Chromium's viewer broken (§10.2), and the dashboard never
 // displays a file on its own origin.
-func disposition(it Item, m Mode, pdf bool) string {
+func replyDisposition(it Item, m Mode, pdf bool) string {
 	stored := cleanValue(it.ContentDisposition)
 	if stored != "" && m != Console && !pdf {
 		return stored
@@ -98,47 +99,12 @@ func disposition(it Item, m Mode, pdf bool) string {
 		params = strings.TrimSpace(p)
 	}
 	if params == "" {
-		params = filenameParam(it.Name)
+		params = disposition.Filename(it.Name) // core's escaping (platform/disposition)
 	}
 	if params == "" {
 		return "attachment"
 	}
 	return "attachment; " + params
-}
-
-// filenameParam returns the filename* parameter (UTF-8, no language) of the name's last
-// segment, escaped by RFC 8187 the way core's stored default is (core.defaultDisposition;
-// PY-RR: + kept, ' as %27), or "" for a name that ends with a slash. media cannot import core,
-// so the escaping is written twice, and TestFilenameMatchesStoredDefault holds the two together
-// on the published case.
-func filenameParam(name string) string {
-	last := name[strings.LastIndexByte(name, '/')+1:]
-	if last == "" {
-		return ""
-	}
-	const hex = "0123456789ABCDEF"
-	var b strings.Builder
-	b.WriteString("filename*=utf-8''")
-	for i := 0; i < len(last); i++ {
-		c := last[i]
-		if attrChar(c) {
-			b.WriteByte(c)
-		} else {
-			b.WriteByte('%')
-			b.WriteByte(hex[c>>4])
-			b.WriteByte(hex[c&0xf])
-		}
-	}
-	return b.String()
-}
-
-// attrChar reports RFC 8187's attr-char.
-func attrChar(c byte) bool {
-	switch {
-	case 'a' <= c && c <= 'z', 'A' <= c && c <= 'Z', '0' <= c && c <= '9':
-		return true
-	}
-	return strings.IndexByte("!#$&+-.^_`|~", c) >= 0
 }
 
 // cacheControl returns the Cache-Control of a reply in mode m (§10.5).

@@ -38,6 +38,9 @@ var allowed = map[string][]string{
 	// The Firestore and Storage rules language imports nothing internal: the services feed it
 	// values and documents through its own types, and app wires it (ADR-021, rules-layout.md).
 	"internal/platform/rules": {},
+	// Storage's one escaping of a file name in Content-Disposition, shared by core and media,
+	// which may not import each other (ADR-022 §10.4).
+	"internal/platform/disposition": {},
 	// The console mounts the services' routes through platform/consolemount; only app wires them.
 	"internal/admin":  {"internal/tenancy", "internal/configgen", "internal/events", "internal/store", "internal/platform", "internal/config"},
 	"internal/server": {"internal/admin", "internal/services/", "internal/tenancy", "internal/platform", "internal/config", "internal/store"},
@@ -249,6 +252,11 @@ func TestRulesThemselves(t *testing.T) {
 		{"internal/services/storage/core", "internal/services/storage/media", false},
 		{"internal/services/storage/core", "internal/platform/httpx", false},
 		{"internal/services/storage/media", "internal/services/storage/wire", true},
+		{"internal/services/storage/core", "internal/platform/disposition", true},
+		{"internal/services/storage/media", "internal/platform/disposition", true},
+		{"internal/platform/disposition", "internal/platform/log", false},
+		{"internal/platform/disposition", "internal/services/storage/core", false},
+		{"internal/platform/disposition", "internal/services/storage/wire", false},
 		{"internal/services/storage/media", "internal/services/storage/core", false},
 		{"internal/services/storage/media", "internal/services/storage/api", false},
 		{"internal/services/storage/media", "internal/services/storage/gcs", false},
@@ -301,12 +309,17 @@ func TestRulesThemselves(t *testing.T) {
 // What a package may import of this module besides is listed with it, exactly:
 //   - rulestest, the oracle's reader, imports the contract and nothing else;
 //   - the external tests of the rules package (package rules_test: the oracle, grammar and fuzz
-//     tests, which use the public contract alone) import the package and rulestest.
+//     tests, which use the public contract alone) import the package and rulestest;
+//   - wire's external tests (package wire_test) import wire and wiretest, the checks the surfaces'
+//     tests run on what they send; wire itself and its own tests never import wiretest.
 var stdlibOnly = map[string]struct{ files, externalTests []string }{
 	"internal/platform/rules":           {externalTests: []string{"internal/platform/rules", "internal/platform/rules/rulestest"}},
 	"internal/platform/rules/rulestest": {files: []string{"internal/platform/rules"}},
 	"internal/services/storage/blob":    {},
-	"internal/services/storage/wire":    {},
+	"internal/services/storage/wire": {externalTests: []string{"internal/services/storage/wire",
+		"internal/services/storage/wire/wiretest"}},
+	"internal/services/storage/wire/wiretest": {},
+	"internal/platform/disposition":           {},
 }
 
 func TestStandardLibraryOnly(t *testing.T) {

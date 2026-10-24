@@ -46,7 +46,7 @@
 |---|---|---|
 | `doc.go` | وصف الحزمة: bucket واحد لكل مشروع، والقرارات المؤقتة (ADR-023 §3) بموضعها في الكود | 0 |
 | `api.go` | **العقد العام** (القسم «عقد S2-0»): `Service` **بكل حقوله الخاصة** (فلا تضيف مهمة حقلًا) و`New` و`Options` و`Principal` و`Bucket` و`Object` و`Patch` و`Preconditions` و`Checksums` و`UploadSpec` و`Chunk` و`UploadState` و`ListOptions` و`ListPage` و`CORSRule` و`Usage`، وتوقيعات كل الطرق | 0 |
-| `helpers.go` | **مساعدات مشتركة تعمل من العقد** (لا تذعر)، ليتشاركها C وD وE بلا انتظار: `validateName` و`segments` و`applyDefaults` (ومنها `defaultDisposition`، **دالة الهروب الوحيدة** المطابقة لـ PY-RR) و`StripClientTokens` و`newDownloadToken` و`sealTokens`/`openTokens` (KEK، البيانات الإضافية `(project, name)`)، و`sealSessionTokens`/`openSessionTokens` (`(project, name, id_hash)`)، و`encodeAttrs`/`decodeAttrs` و`encodeSnapshot`/`decodeSnapshot` لصف الجلسة. ولها اختباراتها في العقد. تغييرها يمر بالمدمج | 0 |
+| `helpers.go` | **مساعدات مشتركة تعمل من العقد** (لا تذعر)، ليتشاركها C وD وE بلا انتظار: `validateName` و`segments` و`applyDefaults` (ومنها `defaultDisposition`، على **دالة الهروب الوحيدة** المطابقة لـ PY-RR في `internal/platform/disposition`) و`StripClientTokens` و`newDownloadToken` و`sealTokens`/`openTokens` (KEK، البيانات الإضافية `(project, name)`)، و`sealSessionTokens`/`openSessionTokens` (`(project, name, id_hash)`)، و`encodeAttrs`/`decodeAttrs` و`encodeSnapshot`/`decodeSnapshot` لصف الجلسة. ولها اختباراتها في العقد. تغييرها يمر بالمدمج | 0 |
 | `durability.go` | **مساعد المعاملات الوحيد:** `begin` و`inTx` (`SET LOCAL synchronous_commit TO on`، و`COMMIT` تحت `WithoutCancel`)، تمر به كل معاملة Storage في C وD وE؛ و`warnUnsafeDurability` (`SHOW fsync`) يستدعيه `Boot`؛ و**`releaseObject`** (نقص `used_bytes` و`object_count` وصف `blob_gc`) يستعمله `Delete` في C والكتابة فوق موجود في D | 0 |
 | `metrics.go` | المقاييس (ADR-022 §18) بأسمائها وتسمياتها، ولكل مقياس مالكه في تعليقه، و`Collectors()` يسجّلها `app` | 0 |
 | `errors.go` | الأخطاء المسمّاة (`ErrNotFound` و`ErrBucketNotFound` و`ErrPermissionDenied` …، و`InvalidError{Reason, Message}` و`OffsetError{Received}`). كل واجهة تربطها بحالتها وجسمها. و`finalError`: قائمة الأخطاء النهائية وحدها (§6.1)، و`encodeError` يرفض غيرها | 0 |
@@ -167,6 +167,7 @@
 | `internal/config/config.go` | قسم `storage`: `enabled` و`data_dir` (**إلزامي ومطلق حين Storage مفعّل**) و`limits` (`config.StorageLimits`، ADR-022 §17) و`gc_grace`، ومتغيرات `ARUMA_STORAGE_*`، والفحص والفحوص المتقاطعة في `config` عند التحميل | 0 |
 | `internal/platform/crypto/keys.go` | غرض جديد `aruma/v1/storage-page-token` و`PageTokenMAC`، واختباره | 0 |
 | `internal/platform/idtoken/idtoken.go` | واجهة `Users` (`State(ctx, project, uid)`: موجود، ومعطّل، و`tokensValidAfter`) | 0، وتنفيذها في `internal/services/auth/core` في S2-D |
+| `internal/platform/disposition/` **جديد** (لم يكن في المسودة) | هروب اسم الملف في `Content-Disposition` (`filename*`، حالة PY-RR)، بـ Go القياسية وحدها، يستورده `core` و`media`، وفي `stdlibOnly` في archtest | دمج S2 |
 | `internal/server/server.go` | `Handlers.Storage` و`Handlers.GCS`، والبادئات (ADR-022 §1)، وتركيبهما بـ `CommonWithLimit` بحد `object_bytes + 1 MiB`، و`/v1/` و`/v1alpha/` لـ `Mgmt`. وحالات في اختبار جدول البادئات | 0 |
 | `internal/app/app.go` | `core.New` بـ `blob.NewDisk(cfg.Storage.DataDir)` و`rules.NoDocuments{}` و`rulesInflight` و`svc` (tenancy) و`idtoken.Users` من Auth، و`svc.OnProjectPurged(storageSvc.PurgeProject)`، و**`storageSvc.Boot(ctx)` قبل فتح المستمع** في `Serve`، و`go storageSvc.Run(ctx)` بعده، وتركيب `api` و`gcs` و`console.Routes`. **كله في S2-0** (بأجسام تذعر)، فلا تلمسه المهام بعدها إلا عبر المدمج | 0 |
 | `internal/admin/mgmt/rules.go` **جديد** | firebaserules v1 (R1 إلى R8، C §1.5) فوق `tenancy`، و`:test` بـ `rules.Compile` و`Inflight` نفسه | S5-A |
@@ -200,7 +201,7 @@
 - **`wire` بلا `core`:** الصيغ قيم بسيطة، والتحويل من `core.Object` في كل واجهة (`resource.go`)، لأن `/v0` وGCS يختلفان في الرموز و`contentEncoding` والأرقام.
 - **`rules_fields.go` جدول منفصل:** مفاتيح `request.resource` و`resource` تُطابَق بأوراكل منشور، وتتغير وحدها إن ظهرت ملاحظة جديدة.
 - **كل كتابة تجعل ملفًا مرئيًا في D:** `commitObject` و`Insert` والإنهاء و**`Rewrite`**، فلا ينتظر C شيئًا من D. والمساعدات التي يحتاجها C وD وE معًا (الأسماء، والمقاطع، والقيم الافتراضية، وتنقية الرموز، وتوليدها وختمها) **تعمل من العقد** في `helpers.go`، كما عملت `position` من عقد S1-0، فلا ينتظر D ولا E شيئًا من C.
-- **دالة هروب واحدة** لـ `Content-Disposition` الافتراضي، في `core/helpers.go`.
+- **دالة هروب واحدة** لـ `Content-Disposition` الافتراضي، في `internal/platform/disposition` (Go القياسية وحدها)، يستوردها `core` للقيمة المخزّنة و`media` لـ `attachment` كائن بلا قيمة، لأن أحدهما لا يستورد الآخر. (تعديل، دمج S2: كانت في `core/helpers.go`، وكتبها `media` مرة ثانية.)
 - **لا واجهة `Service` مجردة بين `api` و`core`:** كما في RTDB، الاختبارات فوق `core` حقيقية وPostgres (`storetest`)، لا مزيفات.
 
 ## عقد S2-0 (يسبق الجميع)
@@ -347,7 +348,7 @@ func (s *Service) authorize(ctx context.Context, b Bucket, p Principal, op ruleO
 func validateName(name string) error
 func segments(name string) []string
 func applyDefaults(o *Object, sf Surface)             // contentType, and defaultDisposition on SurfaceFirebase
-func defaultDisposition(name string) string           // the one escaping function (PY-RR)
+func defaultDisposition(name string) string           // through platform/disposition, the one escaping (PY-RR)
 func StripClientTokens(md map[string]*string)
 func newDownloadToken() string
 func (s *Service) sealTokens(project int64, name string, tokens []string) ([]byte, error)

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/arumadev/aruma/internal/platform/disposition"
 )
 
 // TestHeadersByModeAndType is ADR-022 §10.1-§10.5's table: every type a browser could run or
@@ -116,26 +118,28 @@ func TestContentDisposition(t *testing.T) {
 	}
 	for _, c := range cases {
 		it := Item{Name: c.name, ContentDisposition: c.stored, ContentType: c.ct}
-		if got := disposition(it, c.m, mediaType(c.ct) == "application/pdf"); got != c.want {
+		if got := replyDisposition(it, c.m, mediaType(c.ct) == "application/pdf"); got != c.want {
 			t.Errorf("%q %q mode %d: %q, want %q", c.name, c.stored, c.m, got, c.want)
 		}
 	}
 }
 
-// TestFilenameMatchesStoredDefault holds filenameParam to core.defaultDisposition's escaping
-// on PY-RR storedObjects, the one case production shows: + kept, ' as %27.
-func TestFilenameMatchesStoredDefault(t *testing.T) {
-	const stored = "inline; filename*=utf-8''na%C3%AFve%20%27q%27%201+1%25%3Bx.txt" // PY-RR
-	if got := "inline; " + filenameParam("naïve 'q' 1+1%;x.txt"); got != stored {
-		t.Errorf("%q, want %q", got, stored)
-	}
-	if got := filenameParam("plain.txt"); got != "filename*=utf-8''plain.txt" {
-		t.Errorf("%q", got)
+// TestDefaultDispositionIsCores: an object stored without a disposition downloads under the
+// name core stores by default, through platform/disposition's one escaping: PY-RR storedObjects
+// (+ kept, ' as %27), and every byte alone.
+func TestDefaultDispositionIsCores(t *testing.T) {
+	const pyrr = "attachment; filename*=utf-8''na%C3%AFve%20%27q%27%201+1%25%3Bx.txt" // PY-RR
+	if got := replyDisposition(Item{Name: "x/naïve 'q' 1+1%;x.txt"}, GCS, false); got != pyrr {
+		t.Errorf("%q, want %q", got, pyrr)
 	}
 	for c := range 256 {
-		esc := filenameParam(string([]byte{byte(c)}))
-		if strings.ContainsAny(esc, "\r\n\"; \x00") {
-			t.Errorf("byte %#x escapes to %q", c, esc)
+		name := "dir/" + string([]byte{byte(c)})
+		want := "attachment; " + disposition.Filename(name)
+		if c == '/' {
+			want = "attachment"
+		}
+		if got := replyDisposition(Item{Name: name}, RulesDecided, false); got != want {
+			t.Errorf("byte %#x: %q, want %q", c, got, want)
 		}
 	}
 }

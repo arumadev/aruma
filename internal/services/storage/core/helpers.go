@@ -10,6 +10,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/google/uuid"
+
+	"github.com/arumadev/aruma/internal/platform/disposition"
 )
 
 // The helpers S2-C, S2-D and S2-E share. They work from the contract, as rules' position did
@@ -75,35 +77,10 @@ func applyDefaults(o *Object, sf Surface) {
 }
 
 // defaultDisposition is the Content-Disposition production stores for an object created
-// through Firebase REST: inline; filename*=utf-8”<the last segment, escaped>. It is the one
-// escaping of it in the code base (wire has none).
-//
-// The escaping keeps RFC 5987's attr-char (letters, digits and !#$&+-.^_`|~) and percent-encodes
-// every other byte in upper-case hex. The one case production shows (PY-RR storedObjects) is
-// matched exactly: naïve 'q' 1+1%;x.txt stores as na%C3%AFve%20%27q%27%201+1%25%3Bx.txt, with +
-// kept and ' encoded. Provisional beyond it (ADR-023 §3).
+// through Firebase REST: inline; filename*=utf-8”<the last segment, escaped>. The escaping is
+// platform/disposition's, the one in the code base, which media's download default shares.
 func defaultDisposition(name string) string {
-	last := name[strings.LastIndexByte(name, '/')+1:]
-	var b strings.Builder
-	b.WriteString("inline; filename*=utf-8''")
-	for i := 0; i < len(last); i++ {
-		c := last[i]
-		if attrChar(c) {
-			b.WriteByte(c)
-		} else {
-			fmt.Fprintf(&b, "%%%02X", c)
-		}
-	}
-	return b.String()
-}
-
-// attrChar reports RFC 5987's attr-char.
-func attrChar(c byte) bool {
-	switch {
-	case 'a' <= c && c <= 'z', 'A' <= c && c <= 'Z', '0' <= c && c <= '9':
-		return true
-	}
-	return strings.IndexByte("!#$&+-.^_`|~", c) >= 0
+	return "inline; " + disposition.Prefix + disposition.Escape(disposition.LastSegment(name))
 }
 
 // StripClientTokens removes firebaseStorageDownloadTokens from custom metadata a Firebase client
