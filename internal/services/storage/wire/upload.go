@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -61,10 +62,8 @@ func ParseUploadCommand(v string) (UploadCommands, error) {
 }
 
 func commandBit(name string) UploadCommands {
-	for i, n := range commandNames {
-		if n == name {
-			return 1 << i
-		}
+	if i := slices.Index(commandNames[:], name); i >= 0 {
+		return 1 << i
 	}
 	return 0
 }
@@ -198,7 +197,7 @@ func ParseLength(v string) (int64, error) {
 		return 0, ErrBadLength
 	}
 	var n int64
-	for i := 0; i < len(v); i++ {
+	for i := range len(v) {
 		c := v[i]
 		if c < '0' || c > '9' {
 			return 0, ErrBadLength

@@ -187,7 +187,7 @@ func FuzzRelated(f *testing.F) {
 		}
 		if err == nil {
 			// The media streams without a cap of its own; its caller sets one.
-			if _, err := io.CopyN(io.Discard, rr.Media, 1<<20); err != nil && err != io.EOF && !errors.Is(err, ErrBadMultipart) {
+			if _, err := io.CopyN(io.Discard, rr.Media, 1<<20); err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, ErrBadMultipart) {
 				t.Fatalf("media: %v", err)
 			}
 		}

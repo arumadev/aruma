@@ -131,8 +131,7 @@ func TestRelatedReaderBodyErrors(t *testing.T) {
 	if err == nil {
 		_, err = io.ReadAll(rr.Media)
 	}
-	var mbe *http.MaxBytesError
-	if !errors.As(err, &mbe) {
+	if _, ok := errors.AsType[*http.MaxBytesError](err); !ok {
 		t.Errorf("%v, want *http.MaxBytesError", err)
 	}
 }

@@ -121,7 +121,7 @@ const (
 // SplitObjectPath read it back unchanged, in a path and in a query alike.
 func EscapeComponent(s string) string {
 	n := 0
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if !unreservedComponent(s[i]) {
 			n++
 		}
@@ -131,7 +131,7 @@ func EscapeComponent(s string) string {
 	}
 	const hex = "0123456789ABCDEF"
 	b := make([]byte, 0, len(s)+2*n)
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if c := s[i]; unreservedComponent(c) {
 			b = append(b, c)
 		} else {
