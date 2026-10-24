@@ -410,11 +410,19 @@ func (s *Service) PurgeExpired(ctx context.Context) (int, error) {
 			if err := q.PurgeProjectServiceAccounts(ctx, n); err != nil {
 				return err
 			}
-			return q.PurgeProjectAPIKeys(ctx, n)
+			if err := q.PurgeProjectAPIKeys(ctx, n); err != nil {
+				return err
+			}
+			// The rules (ADR-022 §2): the releases first, as they point at the rulesets.
+			if err := q.PurgeProjectReleases(ctx, n); err != nil {
+				return err
+			}
+			return q.PurgeProjectRulesets(ctx, n)
 		})
 		if err != nil {
 			return 0, internal(err)
 		}
+		s.compiledCache().forgetProject(n)
 		s.log.Info("purged expired project", "project_number", n)
 	}
 	apps, err := s.q.PurgeExpiredApps(ctx)
