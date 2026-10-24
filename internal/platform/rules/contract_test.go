@@ -227,6 +227,27 @@ func TestRulesetWeight(t *testing.T) {
 	}
 }
 
+// RequestSegments (S2-E) tells a service the longest path Evaluate takes, so it denies a longer
+// one itself rather than answer the invalid request UNAVAILABLE.
+func TestRulesetRequestSegments(t *testing.T) {
+	var _ func(*Ruleset) int = (*Ruleset).RequestSegments
+	lim := DefaultLimits()
+	lim.RequestSegments = 7
+	rs, issues := Compile(Storage, File{Name: "storage.rules", Content: "rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    match /{all=**} { allow read; }\n  }\n}\n"}, lim)
+	if rs == nil {
+		t.Fatal(issues)
+	}
+	if rs.RequestSegments() != 7 {
+		t.Errorf("RequestSegments() = %d", rs.RequestSegments())
+	}
+	req := &Request{Method: MethodGet, Path: Literals("b", "x", "o", "1", "2", "3", "4", "5"),
+		Variables: map[string]Value{"request": Map(nil), "resource": Null()},
+		Documents: NoDocuments{}, Budget: NewBudget(), Inflight: NewInflight(1 << 20)}
+	if _, err := rs.Evaluate(context.Background(), req); err == nil {
+		t.Error("Evaluate takes a path past RequestSegments")
+	}
+}
+
 func TestNoDocuments(t *testing.T) {
 	var d Documents = NoDocuments{}
 	_, found, err := d.Get(context.Background(), 1, []string{"databases", "(default)", "documents", "c", "d"}, false)

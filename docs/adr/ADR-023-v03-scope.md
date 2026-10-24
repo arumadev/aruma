@@ -176,6 +176,14 @@ ADR-020 حدّ 0.2 بما يحتاجه تطبيق RTDB حقيقي، وترك ا�
 50. مؤقت: على GCS، شرط مسبق يفشل عند إنهاء الرفع المتقطع نهائي (412 محفوظ يُعاد، والبايتات وحجزها تُحرَّر فورًا).
 51. قيد: الجلسات الفارغة تُحسب عند `start` في حدّي IP و`uid`، وأول بايت متين لجلسة يُفحص من جديد على الحدود الثلاثة، وتجاوزها عنده 402 و`final`.
 
+**ربط القواعد (S2-E، لم تكن في المسودة؛ المدمج يعيد ترقيمها بعد بنود C وD):**
+
+50. **مؤقت: ترتيب `metadata` في `resource` و`request.resource` بالمفتاح** (`rules.Map`)، فـ `values()` مرتبة كـ `keys()`. Test API وحدها تحفظ ترتيب الطلب، وهي تأخذ `request` حرفيًا، وjsonb لا يحفظ ترتيبًا، ولا قياس من المحاكي ولا المنشور. فلا تخزين يحفظ الترتيب على استنتاج. `core/rules_fields.go` (`metadataValue`).
+51. **مؤقت: `resource` سبعة عشر مفتاحًا:** الخمسة عشر التي قاسها PY-RR في `request.resource`، و`timeCreated` و`updated` timestamp. والحقل غير المضبوط `null`، و`contentEncoding` غير المضبوط `'identity'` كما قاسه PY-RR في `request.resource` (عند الإنشاء والتعديل)، و`storageClass` = `'STANDARD'`. مجموعة المفاتيح الدقيقة في `resource` لم تُقس. `core/rules_fields.go` (`existing`).
+52. **مؤقت: list ببادئة لا تنتهي بـ `/` يُقرَّر على مجلدها** (ما قبل آخر `/`) ومقطع مجهول، فلا تسمح قاعدة `p/a/{x}` بقائمة `p/a` التي تعيد `p/ab`. المكتبات ترسل `<مسار>/` أو البادئة الفارغة دائمًا. `core/rules.go` (`rulePaths`).
+53. **قيد: اسم بمقاطع أكثر من `request_segments` للـ ruleset** (1024 افتراضيًا مع `b/<bucket>/o`) **يُرفض 403**، لا 503 تعيد المكتبات عليه بلا نهاية. `core/rules.go` (`ruleRequest`، و`Ruleset.RequestSegments`).
+54. **قيد: مصدر قواعد فيه NUL يُرفض 400** (jsonb لا يحفظه). وعدد الـ rulesets لكل مشروع `rules.limits.rulesets_per_project` (2,500 افتراضيًا، ولا يتجاوز حد Firebase، ADR-021 §7). `tenancy/core/rules.go`.
+
 **خصائص Test API** التي لا نحاكيها (ADR-021 §6) تبقى في `docs/compat/rules-v0.3.md`.
 
 ## البدائل المرفوضة

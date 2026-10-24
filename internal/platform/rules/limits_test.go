@@ -13,7 +13,7 @@ func TestDefaultLimitsFollowADR021(t *testing.T) {
 	want := Limits{
 		CallDepth: 20, FunctionLets: 10, FunctionArgs: 7, ExpressionDepth: 98, MatchDepth: 10,
 		MatchSegments: 100, MatchVariables: 20, SourceBytes: 262_144, Expressions: 1000,
-		LookupsPerOperation: 10, LookupsPerRequest: 20, StorageLookups: 2,
+		LookupsPerOperation: 10, LookupsPerRequest: 20, StorageLookups: 2, RulesetsPerProject: 2500,
 		MemberChain: 2000, Work: 1 << 26, ValueBytes: 2 << 20, ValueElements: 1 << 20,
 		AllocBytes: 16 << 20, InflightBytes: 512 << 20, RegexInstructions: 10_000,
 		RequestSegments: 1024, RegexCacheEntries: 256, RegexCacheBytes: 4 << 20,
@@ -41,6 +41,7 @@ func TestValidateRefusesRaisedFirebaseLimits(t *testing.T) {
 		{"lookups_per_operation", func(l *Limits) { l.LookupsPerOperation = 11 }},
 		{"lookups_per_request", func(l *Limits) { l.LookupsPerRequest = 21 }},
 		{"storage_lookups", func(l *Limits) { l.StorageLookups = 3 }},
+		{"rulesets_per_project", func(l *Limits) { l.RulesetsPerProject = 2501 }},
 	} {
 		l := DefaultLimits()
 		c.set(&l)
@@ -55,7 +56,7 @@ func TestValidateAcceptsLoweredAndFreeLimits(t *testing.T) {
 	l := Limits{
 		CallDepth: 1, FunctionLets: 1, FunctionArgs: 1, ExpressionDepth: 1, MatchDepth: 1,
 		MatchSegments: 1, MatchVariables: 1, SourceBytes: 1, Expressions: 1,
-		LookupsPerOperation: 1, LookupsPerRequest: 1, StorageLookups: 1,
+		LookupsPerOperation: 1, LookupsPerRequest: 1, StorageLookups: 1, RulesetsPerProject: 1,
 		// Aruma's limits have no ceiling.
 		MemberChain: 1 << 30, Work: 1 << 40, ValueBytes: 1 << 40, ValueElements: 1 << 30,
 		AllocBytes: 1 << 40, InflightBytes: 1 << 40, RegexInstructions: 1 << 30,
@@ -76,7 +77,7 @@ func TestValidateRefusesLimitsBelowOne(t *testing.T) {
 	for _, name := range []string{
 		"call_depth", "function_lets", "function_args", "expression_depth", "match_depth",
 		"match_segments", "match_variables", "source_bytes", "expressions",
-		"lookups_per_operation", "lookups_per_request", "storage_lookups",
+		"lookups_per_operation", "lookups_per_request", "storage_lookups", "rulesets_per_project",
 		"member_chain", "work", "value_bytes", "value_elements", "alloc_bytes", "inflight_bytes",
 		"regex_instructions", "request_segments", "regex_cache_entries", "regex_cache_bytes",
 		"compiled_rulesets_bytes",

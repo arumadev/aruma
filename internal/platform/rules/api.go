@@ -121,6 +121,11 @@ type Ruleset struct {
 // Version returns the file's rules_version: 1 or 2.
 func (rs *Ruleset) Version() int { return rs.version }
 
+// RequestSegments returns the longest request path the ruleset evaluates (request_segments):
+// Evaluate refuses a longer one as an invalid request, which a service answers UNAVAILABLE, so
+// the service denies such a path itself.
+func (rs *Ruleset) RequestSegments() int { return rs.lim.RequestSegments }
+
 // Service returns the service the ruleset was compiled for.
 func (rs *Ruleset) Service() Service { return rs.service }
 

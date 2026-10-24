@@ -397,6 +397,14 @@ type ruleOp struct { Method rules.Method; Name string; List bool; Resource, Inco
 - **المقاييس في العقد** (§18، `core/metrics.go`): أسماؤها وتسمياتها ثابتة، ولكل مقياس مالكه في تعليقه (D للجلسات والحصة والقرص وGC والمسح والالتزامات الملتبسة والقفل، وE للقواعد، وS3/S4 للبايتات وفك الضغط المقطوع)، ويسجّلها `app` على سجل الخادم، وتبقى صفرًا حتى يبلّغ مالكها.
 - **`ctx` في `core.New`** لا يُستعمل اليوم، و`app.New` يمرر `context.Background()`.
 
+#### قرارات S2-E (لم تكن في المسودة)
+
+- **`prepareRules` قبل كل قرار، وقبل أي معاملة:** `ctx, err := s.prepareRules(ctx, b, p)`، ثم `authorize` بهذا الـ `ctx`. و`authorize` لا يقرأ الإصدارة أبدًا: بلا العلامة يسجّل خطأ ويرد `ErrUnavailable`، مع `authorizeHook` أيضًا، فتكشف اختبارات C وD النداء المنسي. فلا تأخذ قرارًا تحت قفل صف اتصالًا ثانيًا من المجمّع (وإلا تقف الكتابات حين يمتلئ). على C في `Stat` و`Open` و`List` و`Update` و`Delete` والرموز، وعلى D في `Insert` والإنهاء و`Rewrite` (للـ bucketين). وAdmin يأخذ العلامة بلا قراءة. `TestDecidingUnderALockNeedsNoConnection` (مجمّع من اتصالين) و`TestAuthorizeWithoutPrepareRulesFails`. وتحميل الإصدارة المشترك يجري تحت `WithoutCancel` بمهلة 10 ثوانٍ، وكل منتظر يتوقف بسياقه.
+- **ذاكرة `CompiledRelease` معلّقة بمفتاح ضعيف على `*tenancy.Service`** في `tenancy/core/rules.go`، لأن حقول `Service` من العقد (`service.go`). تزول مع الخدمة (`runtime.AddCleanup`).
+- **`etag` في القواعد** يُحسب في `core/rules_fields.go` (`objectETag`) بصيغة `wire.ETag` نفسها (S2-B)، فـ `core` لا تستورد `wire`. وأي تغيير في إحداهما يغيّر الأخرى.
+- **الإصدارة الغائبة لا تُكتب صفًا:** `CompiledRelease` يعيد القاعدة المقفلة المترجمة مرة واحدة، و`GetRelease` يرد NOT_FOUND، فتكتب firebase-tools القالب (C §2.2).
+- **`PublishRelease`** يقبل اسم الـ ruleset كاملًا (بمعرّف المشروع أو رقمه) أو الـ uuid وحده، ويرفض ruleset خدمة أخرى لإصدارتَي Storage و`cloud.firestore`. و`firebase.storage/default` من الخارج NOT_FOUND كأي bucket آخر.
+
 ## المهام
 
 ### S2: النواة (بعد S2-0، متوازية)

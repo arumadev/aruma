@@ -63,7 +63,8 @@ SELECT project_number FROM control.projects
 WHERE state = 'DELETED' AND expire_time <= now()
   AND EXISTS (SELECT 1 FROM control.apps a WHERE a.project_number = control.projects.project_number
               UNION ALL SELECT 1 FROM control.api_keys k WHERE k.project_number = control.projects.project_number
-              UNION ALL SELECT 1 FROM control.service_accounts s WHERE s.project_number = control.projects.project_number)
+              UNION ALL SELECT 1 FROM control.service_accounts s WHERE s.project_number = control.projects.project_number
+              UNION ALL SELECT 1 FROM control.rulesets r WHERE r.project_number = control.projects.project_number)
 LIMIT 100;
 
 -- name: PurgeProjectApps :exec
