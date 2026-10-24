@@ -772,7 +772,7 @@ func (s *Service) replay(b Bucket, sess queries.StorageUploadSession) (UploadSta
 		o.Bucket = b.Name
 		return UploadState{Status: UploadFinal, Received: sess.Received, Object: &o}, nil
 	}
-	e := decodeError(deref(sess.FinalStatus))
+	e := decodeError(unsetIfNil(sess.FinalStatus))
 	return UploadState{Status: UploadFinal, Received: sess.Received, Err: e}, e
 }
 

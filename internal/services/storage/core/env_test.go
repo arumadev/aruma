@@ -183,7 +183,9 @@ func user(uid string) Principal {
 	return Principal{Kind: PrincipalUser, UID: uid, Token: map[string]any{"sub": uid}, AuthTime: t, IssuedAt: t}
 }
 
-func spec(name string, sf Surface) UploadSpec { return UploadSpec{Name: name, Surface: sf, Declared: -1} }
+func spec(name string, sf Surface) UploadSpec {
+	return UploadSpec{Name: name, Surface: sf, Declared: -1}
+}
 
 // insert stores name with body through Insert.
 func (e *env) insert(b Bucket, name string, body string) Object {
@@ -362,7 +364,7 @@ func (m *memStore) Open(key string) (blob.Reader, error) {
 	if !ok {
 		return nil, fs.ErrNotExist
 	}
-	return &memReader{Reader: bytes.NewReader(slices.Clone(f.data))}, nil
+	return &memBlobReader{Reader: bytes.NewReader(slices.Clone(f.data))}, nil
 }
 
 func (m *memStore) Delete(key string) error {
@@ -516,9 +518,9 @@ func (w *memWriter) Commit() error {
 
 func (w *memWriter) Abort() error { return w.m.Delete(w.key) }
 
-type memReader struct{ *bytes.Reader }
+type memBlobReader struct{ *bytes.Reader }
 
-func (r *memReader) Close() error { return nil }
+func (r *memBlobReader) Close() error { return nil }
 
 type memStaging struct {
 	m *memStore

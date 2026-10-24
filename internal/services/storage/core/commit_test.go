@@ -33,7 +33,7 @@ func TestInsert(t *testing.T) {
 	}
 	// Firebase REST stores its default disposition and a new download token (ADR-022 §9, §10.4).
 	f, err := e.s.Insert(ctx, e.a, admin(), UploadSpec{Name: "b.png", Surface: SurfaceFirebase, Declared: -1,
-		Attrs: Patch{Fields: map[string]*string{FieldContentType: ptr("image/png")}, Metadata: map[string]*string{"k": ptr("v")}}},
+		Attrs: Patch{Fields: map[string]*string{FieldContentType: strPtr("image/png")}, Metadata: map[string]*string{"k": strPtr("v")}}},
 		strings.NewReader("png"), -1)
 	if err != nil || len(f.DownloadTokens) != 1 || f.ContentType != "image/png" || f.ContentDisposition != "inline; filename*=utf-8''b.png" ||
 		f.Metadata["k"] != "v" {
@@ -414,7 +414,7 @@ func TestRewrite(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()
 	src, err := e.s.Insert(ctx, e.a, admin(), UploadSpec{Name: "src.txt", Surface: SurfaceFirebase, Declared: -1,
-		Attrs: Patch{Fields: map[string]*string{FieldCacheControl: ptr("no-cache")}, Metadata: map[string]*string{"k": ptr("v")}}},
+		Attrs: Patch{Fields: map[string]*string{FieldCacheControl: strPtr("no-cache")}, Metadata: map[string]*string{"k": strPtr("v")}}},
 		strings.NewReader("payload"), -1)
 	if err != nil {
 		t.Fatal(err)
@@ -432,7 +432,7 @@ func TestRewrite(t *testing.T) {
 		t.Errorf("the destination's tokens did not open for its name: %+v, %v", stored, err)
 	}
 	// New metadata replaces the source's, tokens included.
-	cp, err = e.s.Rewrite(ctx, e.a, "src.txt", e.a, "dst2.txt", admin(), &Patch{Fields: map[string]*string{FieldContentType: ptr("text/plain")}}, Preconditions{})
+	cp, err = e.s.Rewrite(ctx, e.a, "src.txt", e.a, "dst2.txt", admin(), &Patch{Fields: map[string]*string{FieldContentType: strPtr("text/plain")}}, Preconditions{})
 	if err != nil || cp.ContentType != "text/plain" || cp.CacheControl != "" || cp.Metadata != nil || cp.DownloadTokens != nil {
 		t.Errorf("Rewrite with metadata = %+v, %v", cp, err)
 	}
@@ -462,13 +462,13 @@ func TestRewrite(t *testing.T) {
 
 func TestCheckPreconditionsWithoutRow(t *testing.T) {
 	zero, one := int64(0), int64(1)
-	if checkPreconditions(Preconditions{IfGenerationMatch: &zero}, nil) != nil || checkPreconditions(Preconditions{}, nil) != nil {
+	if checkRowPreconditions(Preconditions{IfGenerationMatch: &zero}, nil) != nil || checkRowPreconditions(Preconditions{}, nil) != nil {
 		t.Error("a create's preconditions on no row")
 	}
 	row := &queries.StorageObject{Generation: 1, Metageneration: 1}
-	if checkPreconditions(Preconditions{IfGenerationMatch: &zero}, row) == nil || checkPreconditions(Preconditions{IfGenerationNotMatch: &one}, row) == nil {
+	if checkRowPreconditions(Preconditions{IfGenerationMatch: &zero}, row) == nil || checkRowPreconditions(Preconditions{IfGenerationNotMatch: &one}, row) == nil {
 		t.Error("preconditions that fail on the row pass")
 	}
 }
 
-func ptr(s string) *string { return &s }
+func strPtr(s string) *string { return &s }

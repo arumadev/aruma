@@ -22,8 +22,13 @@ import (
 // two requests never pass one check together.
 
 // reserveStep is what a body of unknown length reserves at a time; the rest goes back when the
-// request ends.
-const reserveStep = 8 << 20
+// request ends. Near the quota, a step that does not fit is halved down to minReserveStep before
+// the request is refused, so a small body of unknown length is not refused for the 8 MiB it
+// would never have used.
+const (
+	reserveStep    = 8 << 20
+	minReserveStep = 64 << 10
+)
 
 // Usage returns a project's storage use and quota.
 func (s *Service) Usage(ctx context.Context, b Bucket) (Usage, error) {
@@ -70,10 +75,23 @@ func (s *Service) reserve(ctx context.Context, q *queries.Queries, project, n in
 		if u, err := q.GetUsage(ctx, project); err == nil && anonymous && u.AnonymousReservedBytes+n > s.anonymousCap() {
 			reason = "anonymous_quota"
 		}
-		s.metrics.Rejections.WithLabelValues(reason).Inc()
-		return ErrQuotaExceeded
+		return &quotaRefusal{reason: reason}
 	}
 	return nil
+}
+
+// quotaRefusal is ErrQuotaExceeded with its reason, which the request counts once it gives up.
+type quotaRefusal struct{ reason string }
+
+func (e *quotaRefusal) Error() string { return ErrQuotaExceeded.Error() }
+func (e *quotaRefusal) Unwrap() error { return ErrQuotaExceeded }
+
+// countRefusal counts a write refused for the quota, by its reason.
+func (s *Service) countRefusal(err error) {
+	var q *quotaRefusal
+	if errors.As(err, &q) {
+		s.metrics.Rejections.WithLabelValues(q.reason).Inc()
+	}
 }
 
 // unreserve gives n reserved bytes back in the caller's transaction.

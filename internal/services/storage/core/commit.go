@@ -67,7 +67,7 @@ func (s *Service) commitObject(ctx context.Context, w objectWrite) (Object, erro
 	if err != nil {
 		return Object{}, err
 	}
-	md, err := encodeMetadata(o.Metadata)
+	md, err := commitMetadata(o.Metadata)
 	if err != nil {
 		return Object{}, err
 	}
@@ -109,7 +109,7 @@ func (s *Service) commitObject(ctx context.Context, w objectWrite) (Object, erro
 		ProjectNumber: project}); err != nil {
 		return Object{}, fmt.Errorf("%w: usage: %w", ErrUnavailable, err)
 	}
-	obj, err := s.rowObject(w.bucket, row, o.DownloadTokens)
+	obj, err := s.commitRowObject(w.bucket, row, o.DownloadTokens)
 	if err != nil {
 		return Object{}, err
 	}
@@ -169,7 +169,7 @@ func (s *Service) writeObjectRow(ctx context.Context, q *queries.Queries, w obje
 		case err != nil:
 			return queries.StorageObject{}, nil, fmt.Errorf("%w: lock the object: %w", ErrUnavailable, err)
 		}
-		if err := checkPreconditions(w.pre, &old); err != nil {
+		if err := checkRowPreconditions(w.pre, &old); err != nil {
 			return queries.StorageObject{}, nil, err
 		}
 		row, err := q.ReplaceObject(ctx, queries.ReplaceObjectParams{
@@ -187,9 +187,9 @@ func (s *Service) writeObjectRow(ctx context.Context, q *queries.Queries, w obje
 	return queries.StorageObject{}, nil, fmt.Errorf("%w: the object kept changing under the write", ErrUnavailable)
 }
 
-// checkPreconditions checks GCS's preconditions on the current row, nil when there is none
+// checkRowPreconditions checks GCS's preconditions on the current row, nil when there is none
 // (B §10.2-8). Without an object only ifGenerationMatch=0 holds: the others need one to compare.
-func checkPreconditions(pre Preconditions, row *queries.StorageObject) error {
+func checkRowPreconditions(pre Preconditions, row *queries.StorageObject) error {
 	if row == nil {
 		if pre.IfGenerationNotMatch != nil || pre.IfMetagenerationMatch != nil || pre.IfMetagenerationNotMatch != nil ||
 			(pre.IfGenerationMatch != nil && *pre.IfGenerationMatch != 0) {
@@ -255,15 +255,15 @@ func (s *Service) xactStatus(ctx context.Context, xid string) (string, error) {
 	}
 }
 
-// rowObject is the Object a row of storage.objects holds, with the download tokens the caller
+// commitRowObject is the Object a row of storage.objects holds, with the download tokens the caller
 // already has in the clear.
-func (s *Service) rowObject(b Bucket, row queries.StorageObject, tokens []string) (Object, error) {
+func (s *Service) commitRowObject(b Bucket, row queries.StorageObject, tokens []string) (Object, error) {
 	o := Object{
 		Bucket: b.Name, Name: row.Name, Generation: row.Generation, Metageneration: row.Metageneration,
 		Size: row.Size, CRC32C: uint32(row.Crc32c),
-		ContentType: deref(row.ContentType), ContentEncoding: deref(row.ContentEncoding),
-		ContentDisposition: deref(row.ContentDisposition), ContentLanguage: deref(row.ContentLanguage),
-		CacheControl: deref(row.CacheControl), DownloadTokens: tokens,
+		ContentType: unsetIfNil(row.ContentType), ContentEncoding: unsetIfNil(row.ContentEncoding),
+		ContentDisposition: unsetIfNil(row.ContentDisposition), ContentLanguage: unsetIfNil(row.ContentLanguage),
+		CacheControl: unsetIfNil(row.CacheControl), DownloadTokens: tokens,
 		Created: row.TimeCreated, Updated: row.Updated,
 	}
 	copy(o.MD5[:], row.Md5)
@@ -289,15 +289,15 @@ func (s *Service) storedObject(ctx context.Context, b Bucket, name string) (*Obj
 	if err != nil {
 		return nil, nil, err
 	}
-	o, err := s.rowObject(b, row, tokens)
+	o, err := s.commitRowObject(b, row, tokens)
 	if err != nil {
 		return nil, nil, err
 	}
 	return &o, &row, nil
 }
 
-// encodeMetadata returns the metadata column: a JSON object of strings, {} when empty.
-func encodeMetadata(md map[string]string) (json.RawMessage, error) {
+// commitMetadata returns the metadata column: a JSON object of strings, {} when empty.
+func commitMetadata(md map[string]string) (json.RawMessage, error) {
 	if len(md) == 0 {
 		return json.RawMessage(`{}`), nil
 	}
@@ -314,7 +314,7 @@ func optional(s string) *string {
 	return &s
 }
 
-func deref(s *string) string {
+func unsetIfNil(s *string) string {
 	if s == nil {
 		return ""
 	}

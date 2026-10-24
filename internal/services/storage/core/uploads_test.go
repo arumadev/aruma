@@ -211,7 +211,7 @@ func TestUploadIdentityIsTheStarts(t *testing.T) {
 	start := user("alice")
 	start.Token["role"] = "editor"
 	id := e.start(e.a, start, UploadSpec{Name: "a", Surface: SurfaceFirebase, Declared: -1,
-		Attrs: Patch{Fields: map[string]*string{FieldContentType: ptr("text/plain")}}})
+		Attrs: Patch{Fields: map[string]*string{FieldContentType: strPtr("text/plain")}}})
 	if len(seen) != 0 {
 		t.Fatal("the rules ran at start")
 	}
@@ -470,10 +470,10 @@ func TestStartUploadChecks(t *testing.T) {
 		{"no surface", spec("a", 0), ErrInvalidArgument},
 		{"over object_bytes", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: 6 << 30}, ErrTooLarge},
 		{"a header field too long", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Fields: map[string]*string{FieldContentType: &long}}}, nil},
-		{"a header field with a line feed", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Fields: map[string]*string{FieldCacheControl: ptr("a\nb")}}}, nil},
-		{"an unknown field", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Fields: map[string]*string{"size": ptr("1")}}}, nil},
-		{"custom metadata too large", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Metadata: map[string]*string{"k": ptr(strings.Repeat("v", 9<<10))}}}, nil},
-		{"the token key in custom metadata", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Metadata: map[string]*string{TokensKey: ptr("t")}}}, nil},
+		{"a header field with a line feed", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Fields: map[string]*string{FieldCacheControl: strPtr("a\nb")}}}, nil},
+		{"an unknown field", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Fields: map[string]*string{"size": strPtr("1")}}}, nil},
+		{"custom metadata too large", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Metadata: map[string]*string{"k": strPtr(strings.Repeat("v", 9<<10))}}}, nil},
+		{"the token key in custom metadata", UploadSpec{Name: "a", Surface: SurfaceGCS, Declared: -1, Attrs: Patch{Metadata: map[string]*string{TokensKey: strPtr("t")}}}, nil},
 	} {
 		_, err := e.s.StartUpload(ctx, e.a, admin(), c.sp)
 		var inv *InvalidError

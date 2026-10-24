@@ -169,7 +169,7 @@ func (s *Service) decideCreate(ctx context.Context, b Bucket, p Principal, o *Ob
 	if err != nil {
 		return err
 	}
-	if err := checkPreconditions(pre, row); err != nil {
+	if err := checkRowPreconditions(pre, row); err != nil {
 		return err
 	}
 	return s.authorize(ctx, b, p, ruleOp{Method: rules.MethodCreate, Name: o.Name, Resource: existing, Incoming: o, Surface: sf})
@@ -344,27 +344,37 @@ var errStoreMismatch = errors.New("storage: the store wrote other than what it r
 // says so.
 func (s *Service) stream(ctx context.Context, app appendFunc, body io.Reader, h *hasher, length, limit int64, res *reservation) (int64, error) {
 	hr := &hashingReader{r: body, h: h}
-	step := func(n int64) (int64, error) {
+	// step writes at most n bytes, fewer when the quota leaves less for a body of unknown
+	// length, and returns how many it wrote and how many it meant to.
+	step := func(n int64) (int64, int64, error) {
 		// The request holds quota for every byte it wrote, and now for n more.
-		if err := s.ensureReserved(ctx, res, hr.n+n); err != nil {
-			return 0, err
+		for {
+			err := s.ensureReserved(ctx, res, hr.n+n)
+			if err == nil {
+				break
+			}
+			if !errors.Is(err, ErrQuotaExceeded) || length >= 0 || n <= minReserveStep {
+				s.countRefusal(err)
+				return 0, n, err
+			}
+			n = max(n/2, minReserveStep)
 		}
 		if err := s.reserveDisk(n); err != nil {
-			return 0, err
+			return 0, n, err
 		}
 		before := hr.n
 		w, err := app(hr, n)
 		s.releaseDisk(n)
 		if w != hr.n-before {
-			return w, errStoreMismatch
+			return w, n, errStoreMismatch
 		}
-		return w, err
+		return w, n, err
 	}
 	if length >= 0 {
 		if length > limit {
 			return 0, errOverLimit
 		}
-		w, err := step(length)
+		w, _, err := step(length)
 		switch {
 		case err != nil:
 			return w, err
@@ -388,9 +398,9 @@ func (s *Service) stream(ctx context.Context, app appendFunc, body io.Reader, h 
 			}
 			return total, nil
 		}
-		w, err := step(n)
+		w, size, err := step(n)
 		total += w
-		if err != nil || w < n {
+		if err != nil || w < size {
 			return total, err
 		}
 	}
