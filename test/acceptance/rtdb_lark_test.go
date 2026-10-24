@@ -113,53 +113,64 @@ func TestRTDBNonASCIIFramesAtBoundaries(t *testing.T) {
 	}
 }
 
-// slowConn is a client's end of a slow link: it reads at most rate bytes per second, and
-// asks the kernel for a small receive buffer, so the server soon has to wait for it.
-type slowConn struct {
+// slowLink is the server's end of a slow link: what the server writes leaves at rate bytes
+// per second, so a write takes as long as the link needs to carry it. The link is slowed at
+// the server's writes, not the client's reads, to keep the kernel's socket buffers out of the
+// timing. On Linux the loopback send buffer starts at about 2.5 MB and a writer that filled
+// it waits until a third of it has drained, so behind a client reading slowly one frame's
+// write took seconds, past the write timeout, and the client's small receive buffer against
+// loopback's 64 KB segments read at a third of the rate it asked for.
+type slowLink struct {
 	net.Conn
 	rate int
 }
 
-func newSlowConn(c net.Conn, rate int) net.Conn {
-	if tc, ok := c.(*net.TCPConn); ok {
-		_ = tc.SetReadBuffer(16 << 10)
+func (c *slowLink) Write(p []byte) (int, error) {
+	n := 0
+	for len(p) > 0 {
+		chunk := p[:min(len(p), max(c.rate/50, 1))]
+		time.Sleep(time.Duration(len(chunk)) * time.Second / time.Duration(c.rate))
+		m, err := c.Conn.Write(chunk)
+		n += m
+		if err != nil {
+			return n, err
+		}
+		p = p[m:]
 	}
-	return &slowConn{Conn: c, rate: rate}
-}
-
-func (c *slowConn) Read(p []byte) (int, error) {
-	if chunk := max(c.rate/50, 1); len(p) > chunk {
-		p = p[:chunk]
-	}
-	n, err := c.Conn.Read(p)
-	time.Sleep(time.Duration(n) * time.Second / time.Duration(c.rate))
-	return n, err
+	return n, nil
 }
 
 // A large first sync reaches a client on a slow link whole: the write timeout bounds each
 // frame, at most 49152 bytes, never the whole message, so a client that keeps reading is not
 // dropped however long the message takes. Lark 0.3.0 dropped such clients with a flat
-// deadline. Here the timeout is 1 s and the client reads at 1 MB/s: a frame takes about 30 ms
-// at most, the 4 MB message about 4 s, far past what the kernel's buffers hold.
+// deadline. Here the timeout is 1 s and the link carries 1 MB/s: a frame takes about 50 ms,
+// the 3.9 MB message about 4 s, and a deadline over the whole message closes the connection
+// after 1 s, which the client sees at once. Its wait for the reply only guards against a hang.
 func TestRTDBSlowClientLargeSync(t *testing.T) {
 	const timeout = time.Second
-	e := newEnv(t, rtdbSettings(false, nil), app.WithRTDBWriteTimeout(timeout))
+	const rate = 1 << 20
+	slow := func(c net.Conn) net.Conn { return &slowLink{Conn: c, rate: rate} }
+	e := newEnvOnLink(t, slow, rtdbSettings(false, nil), app.WithRTDBWriteTimeout(timeout))
 	ns := e.owner().projectNS("chat-app")
 	value := strings.Repeat("abcdefghij", 300_000) + strings.Repeat("مرحبا بكم ", 50_000)
-	if r := restAs(t, e, "PUT", "/sync.json?ns="+ns, string(mustJSON(value)), "", nil); r.status != 200 {
+	// Silent, so the value does not come back over the slow link.
+	if r := restAs(t, e, "PUT", "/sync.json?print=silent&ns="+ns, string(mustJSON(value)), "", nil); r.status != 204 {
 		t.Fatalf("seed: %d %s", r.status, r.body)
 	}
-	c := e.dial(ns, dialOpts{readRate: 1 << 20})
+	c := e.dial(ns, dialOpts{})
 	start := time.Now()
-	got := c.get("/sync")
+	r, err := c.awaitQuiet(c.request("g", map[string]any{"p": "/sync", "q": map[string]any{}}), time.Minute)
 	took := time.Since(start)
-	if got != string(mustJSON(value)) {
-		t.Fatal("the sync differs")
+	if err != nil {
+		t.Fatalf("the sync, after %v: %v", took.Round(time.Millisecond), err)
+	}
+	if r.Status != "ok" || string(r.Data) != string(mustJSON(value)) {
+		t.Fatalf("the sync differs: %s, %d bytes", r.Status, len(r.Data))
 	}
 	if took < 3*timeout {
-		t.Fatalf("the sync took %v: the server never waited long for the client", took)
+		t.Fatalf("the sync took %v: the server never waited long for the link", took)
 	}
-	t.Logf("%d bytes in %d frames at 1 MB/s in %v, with a %v write timeout", len(got), len(c.frames), took.Round(time.Millisecond), timeout)
+	t.Logf("%d bytes in %d frames at 1 MB/s in %v, with a %v write timeout", len(r.Data), len(c.frames), took.Round(time.Millisecond), timeout)
 	// Still the same connection.
 	c.put("/after", true)
 }

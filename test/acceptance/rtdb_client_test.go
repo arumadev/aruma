@@ -58,8 +58,6 @@ type dialOpts struct {
 	query  string // replaces ?v=5&ns=...
 	// forwardedHost is sent as X-Forwarded-Host, as a proxy in front would.
 	forwardedHost string
-	// readRate, when set, caps how fast the client reads, in bytes per second: a slow link.
-	readRate int
 }
 
 // dial opens /.ws on the test server for namespace ns and reads the handshake.
@@ -95,11 +93,7 @@ func (e *Env) tryDial(ns string, o dialOpts) (*wsClient, *http.Response, error) 
 	}
 	client := &http.Client{Transport: &http.Transport{
 		DialContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
-			conn, err := (&net.Dialer{}).DialContext(ctx, network, addr)
-			if err != nil || o.readRate == 0 {
-				return conn, err
-			}
-			return newSlowConn(conn, o.readRate), nil
+			return (&net.Dialer{}).DialContext(ctx, network, addr)
 		},
 	}}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
