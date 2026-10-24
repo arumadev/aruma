@@ -30,13 +30,20 @@ Points worth keeping in mind:
   { "styleSrcElem": ["'sha256-38RhXrc7EdReTKsOm23ZPOCUgniTUUcjky8QOOrQx6o='", "'sha256-gYiS/BvZvRcK27JIXTuwhZ3hs2+VJ1X+2gUlE+farlg='"] }
   ```
 
-  Please read it in `web.New` and append its entries to `style-src` (`style-src 'self' <hashes>`).
+  `web.New` reads it and appends its entries to `style-src`.
   `src/lib/csp.test.ts` recomputes the hashes from the installed `react-aria`, so a dependency
   upgrade that changes the injected text fails `npm test` until `csp.json` is updated.
   The Playwright test server (`e2e/serve.mjs`) sends this exact policy (inline script hashes
   plus `csp.json`) and every e2e test fails on any CSP violation, so a regression shows up there.
   The exported HTML has no inline `style` attributes or `<style>` elements; inline scripts are
   only Next's own, as before.
+- **No `'self'` for code (ADR-022 §10.1).** Storage serves user files on the dashboard's
+  origin, so `script-src`, `style-src` and `font-src` name `<host>/_next/static/` (the request's
+  Host, without a scheme) and the hashes, never `'self'`, and `default-src` is `'none'`
+  (`internal/admin/web`, pinned by `TestCSPCodeOnlyFromStaticDir`). Everything the export loads
+  is under `/_next/static/`; keep it so. `e2e/serve.mjs` sends the same policy, and
+  `e2e/live-storage.spec.ts` (with `ARUMA_DASHBOARD_URL`) runs on the Go server itself and
+  checks that an uploaded script or stylesheet is blocked.
 - Next 16 writes per-segment prefetch files with `!` in their names, such as
   `login/__next.!KGF1dGgp.login.__PAGE__.txt`. They must be served as-is (the current handler
   does). `csp.json` is also served publicly, which is harmless.
