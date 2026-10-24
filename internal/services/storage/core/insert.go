@@ -5,9 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strconv"
-	"strings"
-	"unicode/utf8"
+	"slices"
 
 	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/services/storage/blob"
@@ -215,98 +213,35 @@ func (s *Service) dropNew(ctx context.Context, key string, res *reservation, cau
 // surface, and its download tokens: a new one on Firebase REST and the dashboard, the admin's
 // own on GCS, none otherwise (ADR-022 §9).
 //
-// The checks are S2-C's checkPatch and checkObjectMetadata (metadata.go), the same rules
-// written here until the two merge: a content field known, at most header_field_bytes, valid
-// UTF-8 without control characters; a custom metadata key non-empty, valid UTF-8 without control
-// characters; a value valid UTF-8 without NUL; and the custom metadata with the tokens, as GCS
-// holds them, within metadata_bytes. Bad input is 400, never a database error.
+// The checks are a change's (checkPatch, then checkObjectMetadata on the result), so an upload
+// and a PATCH refuse the same metadata. The tokens' key is refused even with a null value: the
+// surfaces strip it or turn it into Tokens before core sees it. Bad input is 400, never a
+// database error.
 func (s *Service) incomingObject(b Bucket, name string, attrs Patch, sf Surface) (Object, error) {
-	o := Object{Bucket: b.Name, Name: name}
-	for k, v := range attrs.Fields {
-		var f *string
-		switch k {
-		case FieldContentType:
-			f = &o.ContentType
-		case FieldContentEncoding:
-			f = &o.ContentEncoding
-		case FieldContentDisposition:
-			f = &o.ContentDisposition
-		case FieldContentLanguage:
-			f = &o.ContentLanguage
-		case FieldCacheControl:
-			f = &o.CacheControl
-		default:
-			return Object{}, invalid("The metadata field " + strconv.Quote(k) + " cannot be set.")
-		}
-		if v == nil {
-			continue
-		}
-		if len(*v) > s.limits.HeaderFieldBytes {
-			return Object{}, invalid(fmt.Sprintf("The %s is longer than %d bytes.", k, s.limits.HeaderFieldBytes))
-		}
-		if !uploadHeaderSafe(*v) {
-			return Object{}, invalid("The " + k + " may not contain control characters.")
-		}
-		*f = *v
+	if _, ok := attrs.Metadata[TokensKey]; ok {
+		return Object{}, invalid("The custom metadata may not hold " + TokensKey + ".")
 	}
-	for k, v := range attrs.Metadata {
-		if k == TokensKey {
-			return Object{}, invalid("The custom metadata may not hold " + TokensKey + ".")
-		}
-		if k == "" || !uploadHeaderSafe(k) {
-			return Object{}, invalid("A custom metadata key must be non-empty, without control characters.")
-		}
-		if v == nil {
-			continue
-		}
-		if !utf8.ValidString(*v) || strings.IndexByte(*v, 0) >= 0 {
-			return Object{}, invalid("The custom metadata value of " + strconv.Quote(k) + " is not valid UTF-8 without NUL.")
-		}
-		if o.Metadata == nil {
-			o.Metadata = map[string]string{}
-		}
-		o.Metadata[k] = *v
+	if err := s.checkPatch(attrs); err != nil {
+		return Object{}, err
+	}
+	o := applyPatch(Object{Bucket: b.Name, Name: name}, Patch{Fields: attrs.Fields, Metadata: attrs.Metadata})
+	if len(o.Metadata) == 0 {
+		o.Metadata = nil
 	}
 	switch {
 	case sf == SurfaceFirebase || sf == SurfaceConsole:
 		o.DownloadTokens = []string{newDownloadToken()}
 	case sf == SurfaceGCS && attrs.Tokens != nil:
-		o.DownloadTokens = append([]string(nil), (*attrs.Tokens)...)
+		o.DownloadTokens = slices.Clone(*attrs.Tokens)
 	}
-	if n := uploadMetadataSize(o); n > s.limits.MetadataBytes {
-		return Object{}, invalid(fmt.Sprintf("The custom metadata is %d bytes, over the limit of %d.", n, s.limits.MetadataBytes))
+	if err := s.checkObjectMetadata(o); err != nil {
+		return Object{}, err
 	}
 	if _, err := s.sealTokens(b.Project, name, o.DownloadTokens); err != nil {
 		return Object{}, err
 	}
 	applyDefaults(&o, sf)
 	return o, nil
-}
-
-// uploadHeaderSafe is S2-C's headerSafe: valid UTF-8 without a character below U+0020 or DEL.
-func uploadHeaderSafe(v string) bool {
-	if !utf8.ValidString(v) {
-		return false
-	}
-	for i := 0; i < len(v); i++ {
-		if v[i] < 0x20 || v[i] == 0x7f {
-			return false
-		}
-	}
-	return true
-}
-
-// uploadMetadataSize is S2-C's metadataSize: the custom metadata's keys and values, and the
-// download tokens as GCS holds them, under firebaseStorageDownloadTokens.
-func uploadMetadataSize(o Object) int {
-	n := 0
-	for k, v := range o.Metadata {
-		n += len(k) + len(v)
-	}
-	if len(o.DownloadTokens) > 0 {
-		n += len(TokensKey) + len(strings.Join(o.DownloadTokens, ","))
-	}
-	return n
 }
 
 // reservation is the quota one request holds for the bytes it brings: n bytes in

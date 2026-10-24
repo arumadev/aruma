@@ -11,7 +11,8 @@ import (
 
 // The writable metadata (ADR-022 §17, A §3.5): the five content fields, which become response
 // headers, and the custom metadata, a map of strings. checkPatch bounds what a change brings,
-// applyPatch applies it, and checkObjectMetadata bounds the result.
+// applyPatch applies it, and checkObjectMetadata bounds the result. An upload's metadata goes
+// through the same three (incomingObject), so a write and a PATCH refuse the same.
 
 // contentFields are the keys of Patch.Fields.
 var contentFields = []string{FieldContentType, FieldContentEncoding, FieldContentDisposition, FieldContentLanguage, FieldCacheControl}
