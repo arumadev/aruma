@@ -93,7 +93,9 @@ func TestDecidingUnderALockNeedsNoConnection(t *testing.T) {
 	var wg sync.WaitGroup
 	errs := make(chan error, 200)
 	for i := range 200 {
-		wg.Go(func() { errs <- write(deadline, s, buckets[i%len(buckets)], true, func() { time.Sleep(time.Millisecond) }) })
+		wg.Go(func() {
+			errs <- write(deadline, s, buckets[i%len(buckets)], true, func() { time.Sleep(time.Millisecond) })
+		})
 	}
 	wg.Wait()
 	close(errs)
