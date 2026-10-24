@@ -1,7 +1,7 @@
 {
   "name": "@aruma/web",
   "version": "0.1.0",
-  "description": "Send the official Firebase web Auth SDK, in production mode, to an Aruma server: one line in vite.config, no change in the app.",
+  "description": "Send the official Firebase web SDK (Auth and Storage), in production mode, to an Aruma server: one line in the bundler's config, no change in the app.",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -17,9 +17,28 @@
       "types": "./vite.d.ts",
       "default": "./src/vite.js"
     },
+    "./storage": {
+      "types": "./storage.d.ts",
+      "default": "./src/storage.js"
+    },
+    "./unplugin": {
+      "types": "./unplugin.d.ts",
+      "default": "./src/unplugin.js"
+    },
+    "./metro": {
+      "types": "./metro.d.ts",
+      "default": "./src/metro.js"
+    },
+    "./flutter-web": {
+      "types": "./flutter-web.d.ts",
+      "default": "./src/flutter-web.js"
+    },
     "./package.json": "./package.json"
   },
   "types": "./index.d.ts",
+  "bin": {
+    "aruma-web": "src/cli.js"
+  },
   "sideEffects": [
     "./src/auto.js"
   ],
@@ -28,11 +47,18 @@
     "index.d.ts",
     "auto.d.ts",
     "vite.d.ts",
+    "storage.d.ts",
+    "unplugin.d.ts",
+    "metro.d.ts",
+    "flutter-web.d.ts",
     "README.md",
     "LICENSE"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19"
+  },
+  "dependencies": {
+    "unplugin": "^3.4.0"
   },
   "scripts": {
     "test": "node --test test/*.test.js"

@@ -12,7 +12,16 @@
 //   time ("identitytoolkit.googleapis.com" → "<aruma host>/identitytoolkit.googleapis.com", the
 //   same for securetoken, and the scheme when Aruma is on http), in `vite build` and in the dev
 //   server's dependency optimizer. The build fails if the literals are not found.
+//
+// storage: true adds the build-time Storage rewrite (ADR-022 §16.1, storage.js and unplugin.js):
+//   DEFAULT_HOST in @firebase/storage becomes Aruma's host, in `vite build`, in SSR (it sets
+//   ssr.noExternal, since Vite externalizes dependencies from the SSR transform by default) and in
+//   the dev server's dependency optimizer (Rolldown's on Vite 8, esbuild's on Vite 5 to 7). The
+//   build fails when a module is not rewritten, when a browser build has no @firebase/storage
+//   module, and when anything loads the SDK from www.gstatic.com.
 import { parseBase } from './index.js';
+import { GSTATIC_FIREBASE } from './storage.js';
+import { esbuildOptimizerPlugin, rollupVerify, storageRewriter } from './build.js';
 
 const VIRTUAL = 'virtual:aruma-web/install';
 const RESOLVED = `\0${VIRTUAL}`;
@@ -70,14 +79,76 @@ function buildModeRewriter(base, name) {
 }
 
 /**
- * @param {{ url?: string, allowInsecure?: boolean, log?: boolean, mode?: 'fetch' | 'build' }} [options]
+ * The Storage half of the Vite plugin. Exported for tests.
+ * @param {{ url: string, allowInsecure?: boolean, log?: boolean, required?: boolean }} options
+ */
+export function storagePlugin(options) {
+  const rw = storageRewriter(options);
+  // The optimizer's own plugin: it cannot see the whole app, so it never asks for a module. Its
+  // name carries the URL, which Vite hashes into the dependency cache, so a new URL rebuilds it.
+  const name = `aruma-web:storage:${rw.base.origin}`;
+  const rolldownOptimizer = {
+    name,
+    resolveId: (id) => rw.resolveGstatic(id),
+    transform: (code, id) => rw.transform(code, id),
+  };
+  let resolved;
+  return {
+    name: 'aruma-web:storage',
+    enforce: 'pre',
+    config() {
+      const rolldown = Boolean(this?.meta?.rolldownVersion);
+      return {
+        ssr: { noExternal: ['@firebase/storage', 'firebase'] },
+        optimizeDeps: rolldown
+          ? { rolldownOptions: { plugins: [rolldownOptimizer] } }
+          : { esbuildOptions: { plugins: [esbuildOptimizerPlugin(rw, name)] } },
+      };
+    },
+    configResolved(config) {
+      resolved = config;
+    },
+    resolveId(id) {
+      return rw.resolveGstatic(id);
+    },
+    transform(code, id) {
+      return rw.transform(code, id);
+    },
+    transformIndexHtml: {
+      order: 'pre',
+      handler(html, ctx) {
+        if (GSTATIC_FIREBASE.test(html)) {
+          throw new Error(rw.scanOutput([{ name: ctx?.filename ?? 'index.html', code: html }])[0]);
+        }
+        return html;
+      },
+    },
+    generateBundle(_, bundle) {
+      if (resolved?.command !== 'build') return;
+      const env = this.environment?.config;
+      const server = env ? env.consumer === 'server' : Boolean(resolved.build?.ssr);
+      rollupVerify(rw, this, bundle, { browser: !server });
+    },
+  };
+}
+
+/**
+ * @param {{ url?: string, allowInsecure?: boolean, log?: boolean, mode?: 'fetch' | 'build',
+ *   storage?: boolean | { required?: boolean } }} [options]
  */
 export default function aruma(options = {}) {
-  const { url, allowInsecure = false, log = false, mode = 'fetch' } = options;
+  const { url, allowInsecure = false, log = false, mode = 'fetch', storage = false } = options;
   // Not configured: the plugin does nothing.
   if (url === undefined || url === null || String(url).trim() === '') return { name: 'aruma-web' };
   // Refused: stop the build or the dev server instead of shipping an app that talks to Google.
   const base = parseBase(url, { allowInsecure });
+  const auth = authPlugin(base, { allowInsecure, log, mode });
+  if (!storage) return auth;
+  const required = typeof storage === 'object' && storage.required === false ? false : true;
+  return [auth, storagePlugin({ url, allowInsecure, log, required })];
+}
+
+function authPlugin(base, { allowInsecure, log, mode }) {
 
   if (mode === 'build') {
     // The name carries the URL so that Vite's dependency cache is rebuilt when it changes.
