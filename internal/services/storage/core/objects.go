@@ -359,8 +359,10 @@ func (s *Service) objectFromRow(b Bucket, r queries.StorageObject) (Object, erro
 	return o, nil
 }
 
-// rowObject returns an object's row as an Object without its tokens. When the metadata does not
-// read, the error comes with the object as far as it reads, its metadata nil.
+// rowObject returns an object's row as an Object without its tokens: the one converter of
+// storage.objects rows, for reads, lists and commits alike. Empty custom metadata is nil. When
+// the metadata does not read, the error comes with the object as far as it reads, its metadata
+// nil.
 func rowObject(b Bucket, r queries.StorageObject) (Object, error) {
 	o := Object{
 		Bucket: b.Name, Name: r.Name, Generation: r.Generation, Metageneration: r.Metageneration, Size: r.Size,
@@ -372,6 +374,9 @@ func rowObject(b Bucket, r queries.StorageObject) (Object, error) {
 	if err := json.Unmarshal(r.Metadata, &o.Metadata); err != nil {
 		o.Metadata = nil
 		return o, fmt.Errorf("%w: the metadata of %q: %w", ErrUnavailable, r.Name, err)
+	}
+	if len(o.Metadata) == 0 {
+		o.Metadata = nil
 	}
 	return o, nil
 }

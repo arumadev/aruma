@@ -109,10 +109,12 @@ func (s *Service) commitObject(ctx context.Context, w objectWrite) (Object, erro
 		ProjectNumber: project}); err != nil {
 		return Object{}, fmt.Errorf("%w: usage: %w", ErrUnavailable, err)
 	}
-	obj, err := s.commitRowObject(w.bucket, row, o.DownloadTokens)
+	// The tokens are the ones just sealed into the row: no need to open them again.
+	obj, err := rowObject(w.bucket, row)
 	if err != nil {
 		return Object{}, err
 	}
+	obj.DownloadTokens = o.DownloadTokens
 	if w.session != nil {
 		if err := s.finishSession(ctx, q, sess, obj); err != nil {
 			return Object{}, err
@@ -144,9 +146,9 @@ func (s *Service) writeObjectRow(ctx context.Context, q *queries.Queries, w obje
 		if !mustExist {
 			row, err := q.InsertObject(ctx, queries.InsertObjectParams{
 				ProjectNumber: project, Name: o.Name, Generation: now.UnixMicro(), BlobKey: w.blobKey, Size: o.Size,
-				Md5: o.MD5[:], Crc32c: int64(o.CRC32C), ContentType: optional(o.ContentType),
-				ContentEncoding: optional(o.ContentEncoding), ContentDisposition: optional(o.ContentDisposition),
-				ContentLanguage: optional(o.ContentLanguage), CacheControl: optional(o.CacheControl),
+				Md5: o.MD5[:], Crc32c: int64(o.CRC32C), ContentType: nullable(o.ContentType),
+				ContentEncoding: nullable(o.ContentEncoding), ContentDisposition: nullable(o.ContentDisposition),
+				ContentLanguage: nullable(o.ContentLanguage), CacheControl: nullable(o.CacheControl),
 				Metadata: md, DownloadTokens: tokens, Now: now,
 			})
 			switch {
@@ -174,9 +176,9 @@ func (s *Service) writeObjectRow(ctx context.Context, q *queries.Queries, w obje
 		}
 		row, err := q.ReplaceObject(ctx, queries.ReplaceObjectParams{
 			Generation: now.UnixMicro(), BlobKey: w.blobKey, Size: o.Size, Md5: o.MD5[:], Crc32c: int64(o.CRC32C),
-			ContentType: optional(o.ContentType), ContentEncoding: optional(o.ContentEncoding),
-			ContentDisposition: optional(o.ContentDisposition), ContentLanguage: optional(o.ContentLanguage),
-			CacheControl: optional(o.CacheControl), Metadata: md, DownloadTokens: tokens, Now: now,
+			ContentType: nullable(o.ContentType), ContentEncoding: nullable(o.ContentEncoding),
+			ContentDisposition: nullable(o.ContentDisposition), ContentLanguage: nullable(o.ContentLanguage),
+			CacheControl: nullable(o.CacheControl), Metadata: md, DownloadTokens: tokens, Now: now,
 			ProjectNumber: project, Name: o.Name,
 		})
 		if err != nil {
@@ -255,27 +257,6 @@ func (s *Service) xactStatus(ctx context.Context, xid string) (string, error) {
 	}
 }
 
-// commitRowObject is the Object a row of storage.objects holds, with the download tokens the caller
-// already has in the clear.
-func (s *Service) commitRowObject(b Bucket, row queries.StorageObject, tokens []string) (Object, error) {
-	o := Object{
-		Bucket: b.Name, Name: row.Name, Generation: row.Generation, Metageneration: row.Metageneration,
-		Size: row.Size, CRC32C: uint32(row.Crc32c),
-		ContentType: unsetIfNil(row.ContentType), ContentEncoding: unsetIfNil(row.ContentEncoding),
-		ContentDisposition: unsetIfNil(row.ContentDisposition), ContentLanguage: unsetIfNil(row.ContentLanguage),
-		CacheControl: unsetIfNil(row.CacheControl), DownloadTokens: tokens,
-		Created: row.TimeCreated, Updated: row.Updated,
-	}
-	copy(o.MD5[:], row.Md5)
-	if err := json.Unmarshal(row.Metadata, &o.Metadata); err != nil {
-		return Object{}, fmt.Errorf("storage: the metadata of %q: %w", row.Name, err)
-	}
-	if len(o.Metadata) == 0 {
-		o.Metadata = nil
-	}
-	return o, nil
-}
-
 // storedObject reads an object's row and opens its tokens; nil when there is none.
 func (s *Service) storedObject(ctx context.Context, b Bucket, name string) (*Object, *queries.StorageObject, error) {
 	row, err := s.reads.GetObject(ctx, queries.GetObjectParams{ProjectNumber: b.Project, Name: name})
@@ -285,11 +266,7 @@ func (s *Service) storedObject(ctx context.Context, b Bucket, name string) (*Obj
 	case err != nil:
 		return nil, nil, fmt.Errorf("%w: read the object: %w", ErrUnavailable, err)
 	}
-	tokens, err := s.openTokens(b.Project, name, row.DownloadTokens)
-	if err != nil {
-		return nil, nil, err
-	}
-	o, err := s.commitRowObject(b, row, tokens)
+	o, err := s.objectFromRow(b, row)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -305,18 +282,4 @@ func commitMetadata(md map[string]string) (json.RawMessage, error) {
 		return nil, invalid("The custom metadata may not hold " + TokensKey + ".")
 	}
 	return json.Marshal(md)
-}
-
-func optional(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
-func unsetIfNil(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
 }
