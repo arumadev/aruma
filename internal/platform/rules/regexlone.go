@@ -149,8 +149,9 @@ func rewriteLone(re *syntax.Regexp, base rune) {
 	}
 }
 
-// loneCacheBlocks is how many blocks' forms a pattern keeps; the forms for another block are
-// compiled for each evaluation that needs them.
+// loneCacheBlocks is how many blocks' forms a literal pattern keeps; the forms for another
+// block, and those of a pattern built during evaluation, are compiled for each evaluation that
+// needs them.
 const loneCacheBlocks = 4
 
 // loneForms returns the pattern's three forms for the view with sentinels at base, charged to
@@ -194,7 +195,7 @@ func (p *compiledRegex) loneForms(m *meter, limit int, base rune) (*regexForms, 
 		p.loneErr = ferr
 		return nil, p.loneErr
 	}
-	if len(p.lone) < loneCacheBlocks {
+	if p.keepLone && len(p.lone) < loneCacheBlocks {
 		if p.lone == nil {
 			p.lone = map[rune]*regexForms{}
 		}

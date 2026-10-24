@@ -36,6 +36,8 @@ const (
 	msgGlobChildren      = "Glob(**) resource rules should not have child resource rules."
 	msgVariableInPattern = "Variable %s already exists in the PathTemplate."
 	msgSourceTooLarge    = "Total size of sources must be smaller than %d."
+	// Aruma's, for its limits (ADR-021 §4).
+	msgRulesetWeight = "The rules are too large to keep compiled: they would take about %d bytes, more than the %d one ruleset may."
 )
 
 // hierarchyLimit is how deep match blocks may nest before the checker stops descending, as the
@@ -85,6 +87,13 @@ func check(f *file, svc Service, lim Limits) (*Ruleset, []Issue) {
 	if !known {
 		c.rs.blocks = nil
 	}
+	// A ruleset the cache could not keep would be compiled again for every request that needs
+	// it (the review's SR3-02): it does not compile. Its patterns are bounded already
+	// (regex_bytes); what is left is the text and the tree, which a 256 KiB source keeps far
+	// below the share with the default limits.
+	if w := c.rs.Weight(); w > c.lim.rulesetBytes() {
+		c.issues = append(c.issues, Issue{File: f.name, Severity: SeverityError, Description: fmt.Sprintf(msgRulesetWeight, w, c.lim.rulesetBytes())})
+	}
 
 	c.positions()
 	for _, is := range c.issues {
@@ -108,6 +117,9 @@ type checker struct {
 	fns   []*fnInfo // every function, in the order declared
 	info  map[*function]*fnInfo
 	nodes int64 // expressions seen, for Weight
+	// regexFull is set once a literal pattern is past regex_bytes: the patterns after it are
+	// not compiled, so the check of a hostile file stops building programs at the budget.
+	regexFull bool
 }
 
 // fnInfo is what the checker knows of a function.
@@ -608,8 +620,12 @@ func (c *checker) methodArity(at span, name string, n int) {
 
 // literalRegex compiles the pattern a string literal passes to matches, split or replace, so
 // that an invalid one, or one whose program is too large, fails compilation; an invalid one of
-// replace() fails only when evaluated (below).
+// replace() fails only when evaluated (below). So does the first pattern that takes the file's
+// patterns past regex_bytes, at its literal, and the patterns after it are not compiled.
 func (c *checker) literalRegex(e *callExpr) {
+	if c.regexFull {
+		return
+	}
 	switch e.name {
 	case "matches", "split", "replace":
 	default:
@@ -633,6 +649,9 @@ func (c *checker) literalRegex(e *callExpr) {
 		err := compileLiteralRegex(c.rs.regexes, pattern)
 		if err != nil && !(e.name == "replace" && err.Error() == errRegex(pattern).Error()) {
 			c.issue(lit.span, SeverityError, err.Error())
+		}
+		if err != nil && err.Error() == errRegexBudget(pattern, c.lim.RegexBytes).Error() {
+			c.regexFull = true
 		}
 	}
 }

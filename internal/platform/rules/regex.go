@@ -2,6 +2,7 @@ package rules
 
 import (
 	"container/list"
+	"math"
 	"regexp"
 	"regexp/syntax"
 	"strconv"
@@ -55,10 +56,14 @@ type compiledRegex struct {
 	weight    int64 // estimated bytes held
 
 	// The forms for strings that hold lone surrogates, compiled when one first comes
-	// (regexlone.go).
-	loneMu  sync.Mutex
-	lone    map[rune]*regexForms // by the base of the sentinels' block
-	loneErr error
+	// (regexlone.go). Only a literal pattern keeps them (keepLone), up to loneCacheBlocks: its
+	// ruleset's weight counts them (literalWeight). A pattern built during evaluation compiles
+	// them for each evaluation, on its meter, so the cache of those patterns holds no more
+	// than regex_cache_bytes counts.
+	keepLone bool
+	loneMu   sync.Mutex
+	lone     map[rune]*regexForms // by the base of the sentinels' block
+	loneErr  error
 }
 
 // regexForms are the three forms of a pattern the library runs.
@@ -78,21 +83,32 @@ type regexCache struct {
 	insts      int // the instruction limit of one program
 	maxEntries int
 	maxBytes   int64
+	maxLiteral int64 // regex_bytes: the budget of literalSize
 
 	literal     map[string]*compiledRegex
-	literalSize int64
+	literalSize int64 // the literal patterns' estimated programs, without their forms for lone surrogates
 
 	built map[string]*list.Element // of *compiledRegex
 	lru   *list.List               // front: most recently used
 	bytes int64
 }
 
-// literalBytes estimates the bytes of the literal patterns' programs, which a ruleset's weight
-// counts.
+// literalBytes estimates the bytes of the literal patterns' programs, which regex_bytes bounds.
 func (rx *regexCache) literalBytes() int64 {
 	rx.mu.Lock()
 	defer rx.mu.Unlock()
 	return rx.literalSize
+}
+
+// literalWeight is what a ruleset's weight counts for literal patterns whose programs are
+// estimated at n bytes: the programs, and the forms for lone surrogates each may keep, about
+// as large, for up to loneCacheBlocks blocks. It saturates rather than overflow.
+func literalWeight(n int64) int64 {
+	const k = 1 + loneCacheBlocks
+	if n > math.MaxInt64/k {
+		return math.MaxInt64
+	}
+	return n * k
 }
 
 // newRegexCache returns an empty cache bounded by lim.
@@ -101,6 +117,7 @@ func newRegexCache(lim *Limits) *regexCache {
 		insts:      lim.RegexInstructions,
 		maxEntries: lim.RegexCacheEntries,
 		maxBytes:   lim.RegexCacheBytes,
+		maxLiteral: lim.RegexBytes,
 		literal:    map[string]*compiledRegex{},
 		built:      map[string]*list.Element{},
 		lru:        list.New(),
@@ -110,7 +127,13 @@ func newRegexCache(lim *Limits) *regexCache {
 // compileLiteralRegex compiles a string literal passed to matches, split or replace when the
 // file compiles, and keeps its program in rx. A pattern that is not valid RE2, or whose program
 // exceeds the instruction limit (measured with regexp/syntax before regexp.Compile runs), is a
-// compilation error with the returned message.
+// compilation error with the returned message; so is one whose program would take the literal
+// patterns of the file together past regex_bytes, refused before its program is built.
+//
+// The budget is the file's, not the pattern's: each pattern within the instruction limit may
+// still weigh 2 MB, and a hundred of them in 10 KB of source took 206 MiB to compile and
+// weighed more than the whole cache of compiled rulesets, which then compiled the ruleset again
+// on every request (the review's SR3-02).
 //
 // An invalid literal fails compilation even under || true: production (Rules Test API, S0-A;
 // the review's probes: '(a)\1' and 'a(?=b)b' fail compilation), and hidane's emulator
@@ -119,21 +142,38 @@ func newRegexCache(lim *Limits) *regexCache {
 func compileLiteralRegex(rx *regexCache, pattern string) error {
 	rx.mu.Lock()
 	_, ok := rx.literal[pattern]
+	used := rx.literalSize
 	rx.mu.Unlock()
 	if ok {
 		return nil
 	}
-	p, err := compilePattern(pattern, rx.insts, nil)
+	p, err := compilePattern(pattern, rx.insts, patternCharges{
+		programs: func(weight, _ int64) error {
+			if weight > rx.maxLiteral-used {
+				return errRegexBudget(pattern, rx.maxLiteral)
+			}
+			return nil
+		},
+	})
 	if err != nil {
 		return err
 	}
+	p.keepLone = true
 	rx.mu.Lock()
 	defer rx.mu.Unlock()
 	if _, ok := rx.literal[pattern]; !ok {
+		if p.weight > rx.maxLiteral-rx.literalSize {
+			return errRegexBudget(pattern, rx.maxLiteral)
+		}
 		rx.literal[pattern] = p
 		rx.literalSize += p.weight
 	}
 	return nil
+}
+
+// errRegexBudget is the compilation error for a literal pattern past the file's regex_bytes.
+func errRegexBudget(pattern string, budget int64) *evalError {
+	return errorf("Regular expressions are too complex to compile safely: with %.40q, the patterns of the file would take more than %d bytes.", pattern, budget)
 }
 
 // errTooComplex is the error for a pattern past the limits.
@@ -284,16 +324,23 @@ func classChar(text string, i int) (rune, int, bool) {
 	return r, i + 1 + n, true
 }
 
-// compilePattern compiles text within limit instructions. charge, when set, is charged before
-// each step allocates: the four parses before the first, the three programs once their size is
-// known.
-func compilePattern(text string, limit int, charge func(alloc, work int64) error) (*compiledRegex, error) {
+// patternCharges are what compilePattern charges before each step allocates. Either may be nil.
+type patternCharges struct {
+	// parses is charged the four parses' bytes and work before the first.
+	parses func(alloc, work int64) error
+	// programs is charged the three programs' estimated bytes (the pattern's weight) and work
+	// once their size is known, before any is built.
+	programs func(weight, work int64) error
+}
+
+// compilePattern compiles text within limit instructions, charging ch before each step.
+func compilePattern(text string, limit int, ch patternCharges) (*compiledRegex, error) {
 	parse := parseCost(text)
 	if parse > int64(limit)*parseBytesPerInst {
 		return nil, errTooComplex(text, -1, limit)
 	}
-	if charge != nil {
-		if err := charge(compiles*parse, compiles*(int64(len(text))+foldCost(text))); err != nil {
+	if ch.parses != nil {
+		if err := ch.parses(compiles*parse, compiles*(int64(len(text))+foldCost(text))); err != nil {
 			return nil, err
 		}
 	}
@@ -306,8 +353,8 @@ func compilePattern(text string, limit int, charge func(alloc, work int64) error
 		return nil, errTooComplex(text, limit+1, limit)
 	}
 	weight := 3*int64(est+8)*progBytesPerInst + 3*int64(len(text))
-	if charge != nil {
-		if err := charge(weight, 4*int64(est)); err != nil {
+	if ch.programs != nil {
+		if err := ch.programs(weight, 4*int64(est)); err != nil {
 			return nil, err
 		}
 	}
@@ -428,12 +475,13 @@ func (rx *regexCache) get(m *meter, text string) (*compiledRegex, error) {
 	}
 	rx.mu.Unlock()
 
-	p, err := compilePattern(text, rx.insts, func(alloc, work int64) error {
+	charge := func(alloc, work int64) error {
 		if err := m.work(work); err != nil {
 			return err
 		}
 		return m.alloc(alloc)
-	})
+	}
+	p, err := compilePattern(text, rx.insts, patternCharges{parses: charge, programs: charge})
 	if err != nil {
 		return nil, err
 	}
