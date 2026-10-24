@@ -637,10 +637,23 @@ func (c *checker) literalRegex(e *callExpr) {
 	}
 }
 
+// What the errors of the call graph name, so that their text stays linear in the source: a
+// file of 6,200 functions each calling f0 and the next made 6,200 errors naming the whole
+// stack, 104 MiB of text (the review's SR3-04).
+const (
+	// maxCycleNames is how many functions an error of a cycle names; it counts the others.
+	maxCycleNames = 32
+	// maxCycleErrors is how many cycles a check reports: the file fails at the first.
+	maxCycleErrors = 100
+)
+
 // calls checks the call graph: a function that calls itself, a cycle of calls, and a chain of
 // calls longer than the limit, which are errors whether or not the functions are used. As the
 // emulator measures (rules_compile.json, "calls 22 deep"), a chain of CallDepth+1 functions
 // compiles; one more fails at the function past the limit, naming the stack that reached it.
+//
+// Each cycle is reported once, at the function the search found it back at, naming the stack
+// from there (cycleNames); the search is linear in the calls.
 func (c *checker) calls() {
 	// Cycles, depth first from the functions in the order declared.
 	const (
@@ -648,12 +661,15 @@ func (c *checker) calls() {
 		onStack
 		done
 	)
-	state := map[*function]int{}
+	state := make(map[*function]int, len(c.fns))
+	at := make(map[*function]int, len(c.fns)) // where a function on the stack is in it
+	reported := map[*function]bool{}          // the functions a cycle was reported at
 	var stack []*function
 	cyclic := false
 	var visit func(f *function)
 	visit = func(f *function) {
 		state[f] = onStack
+		at[f] = len(stack)
 		stack = append(stack, f)
 		fi := c.info[f]
 		for _, g := range uniq(fi.calls) {
@@ -662,15 +678,15 @@ func (c *checker) calls() {
 				visit(g)
 			case onStack:
 				cyclic = true
-				cycle := stack[slices.Index(stack, g):]
+				if reported[g] || len(reported) >= maxCycleErrors {
+					continue
+				}
+				reported[g] = true
+				cycle := stack[at[g]:]
 				if len(cycle) == 1 {
 					c.errorf(g.name.span, msgRecursive)
 				} else {
-					names := make([]string, len(cycle))
-					for i, h := range cycle {
-						names[i] = h.name.text
-					}
-					c.errorf(g.name.span, msgCycle, strings.Join(names, ","))
+					c.errorf(g.name.span, msgCycle, cycleNames(cycle))
 				}
 			}
 		}
@@ -709,7 +725,7 @@ func (c *checker) calls() {
 		var names []string
 		f := fi.fn
 		for len(names) < allowed {
-			names = append(names, f.name.text)
+			names = append(names, clip(f.name.text))
 			next := c.info[f].calls[0]
 			for _, g := range c.info[f].calls {
 				if longest[g] > longest[next] {
@@ -723,11 +739,30 @@ func (c *checker) calls() {
 	}
 }
 
+// cycleNames lists the functions of a cycle for its error, comma-separated: all of them, or the
+// first maxCycleNames and how many more.
+func cycleNames(cycle []*function) string {
+	var b strings.Builder
+	for i, h := range cycle {
+		if i == maxCycleNames {
+			fmt.Fprintf(&b, " and %d more", len(cycle)-i)
+			break
+		}
+		if i > 0 {
+			b.WriteByte(',')
+		}
+		b.WriteString(clip(h.name.text))
+	}
+	return b.String()
+}
+
 // uniq returns fs without repeats, in order.
 func uniq(fs []*function) []*function {
-	var out []*function
+	seen := make(map[*function]bool, len(fs))
+	out := make([]*function, 0, len(fs))
 	for _, f := range fs {
-		if !slices.Contains(out, f) {
+		if !seen[f] {
+			seen[f] = true
 			out = append(out, f)
 		}
 	}
