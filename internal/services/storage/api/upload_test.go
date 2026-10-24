@@ -125,6 +125,11 @@ func TestWriteSession(t *testing.T) {
 		if c.code == 200 && !c.object && rec.Body.Len() != 0 {
 			t.Errorf("%s: a body on a reply that has none: %s", c.name, rec.Body)
 		}
+		// Retry-After on pressure alone: with it iOS retries without its limits (A §5.3), so a
+		// server that is down must not send it.
+		if ra := h.Get("Retry-After"); (ra != "") != (c.err == core.ErrOverloaded) {
+			t.Errorf("%s: Retry-After %q", c.name, ra)
+		}
 	}
 }
 
