@@ -460,7 +460,8 @@ func scenario(t *testing.T, s *server) {
 				t.Fatal(err)
 			}
 			re := "^" + regexp.QuoteMeta(s.origin+"/v0/b/"+s.bucket+"/o/"+escaped[name]) + `\?alt=media&token=[0-9a-f-]{36}$`
-			if !regexp.MustCompile(re).MatchString(u) || strings.Contains(u, ":443") {
+			// An explicit :443 after the host, not any port that starts with 443 (a loopback port can).
+			if !regexp.MustCompile(re).MatchString(u) || regexp.MustCompile(`^[a-z]+://[^/]*:443(/|$)`).MatchString(u) {
 				t.Errorf("DownloadURL(%q) = %q, want the unified form", name, u)
 			}
 			requireBearer(t, s.origin, rec.since(from), false)
