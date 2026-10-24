@@ -66,13 +66,17 @@ func TestTestAPIBindingKeepsOrderAndAfter(t *testing.T) {
 	if rs == nil {
 		t.Fatal(issues)
 	}
-	for _, method := range []string{"create", "delete"} {
-		c := testAPICase(`{"method": "`+method+`", "path": "/databases/(default)/documents/u/new",
-			"resource": {"data": {"b": "y", "a": "x", "n": 1}}}`, "")
-		mocked(t, c, `[{"function": "get", "args": [{"exactValue": "/databases/(default)/documents/o/x"}], "result": {"value": {"data": {"k": 1}}}}]`)
-		d, err := rs.Evaluate(context.Background(), build(t, c))
-		if err != nil || !d.Allow {
-			t.Errorf("%s: %+v, %v", method, d, err)
+	// The request's own document is held under its decoded path, which getAfter(request.path)
+	// reads: u/a%20b is u/a b.
+	for _, id := range []string{"new", "a%20b"} {
+		for _, method := range []string{"create", "delete"} {
+			c := testAPICase(`{"method": "`+method+`", "path": "/databases/(default)/documents/u/`+id+`",
+				"resource": {"data": {"b": "y", "a": "x", "n": 1}}}`, "")
+			mocked(t, c, `[{"function": "get", "args": [{"exactValue": "/databases/(default)/documents/o/x"}], "result": {"value": {"data": {"k": 1}}}}]`)
+			d, err := rs.Evaluate(context.Background(), build(t, c))
+			if err != nil || !d.Allow {
+				t.Errorf("%s %s: %+v, %v", method, id, d, err)
+			}
 		}
 	}
 }

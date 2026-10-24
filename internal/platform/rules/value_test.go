@@ -339,16 +339,3 @@ func TestReservedValuesAreErrors(t *testing.T) {
 		}
 	}
 }
-
-// MapInOrder keeps the order given, which values() follows, a repeated key in its first place
-// with its last value; Map sorts.
-func TestMapInOrder(t *testing.T) {
-	m := MapInOrder([]string{"b", "a", "b"}, []Value{Int(1), Int(2), Int(3)})
-	mv := m.x.(*mapValue)
-	if strings.Join(mv.keys, ",") != "b,a" || mv.entries["b"].x != int64(3) {
-		t.Errorf("MapInOrder: keys %v, b = %v", mv.keys, mv.entries["b"])
-	}
-	if got := Map(map[string]Value{"b": Int(1), "a": Int(2)}).x.(*mapValue).keys; strings.Join(got, ",") != "a,b" {
-		t.Errorf("Map: keys %v", got)
-	}
-}

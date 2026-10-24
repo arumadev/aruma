@@ -161,9 +161,14 @@ func Map(m map[string]Value) Value {
 // values() returns them in: a service whose source keeps an order gives it, as a Storage
 // object's metadata keeps the order the request sent (Rules Test API, Pyric
 // upload-primitives-boundaries "metadata values() keeps the order the request sent"). keys()
-// is sorted whatever the order. A key given twice keeps its first place and its last value.
+// is sorted whatever the order. A key given twice keeps its first place and its last value. It
+// panics when keys and vals differ in length, a bug of the caller (buildMap's error for a
+// literal).
 func MapInOrder(keys []string, vals []Value) Value {
-	n := min(len(keys), len(vals))
+	if len(keys) != len(vals) {
+		panic(fmt.Sprintf("rules: MapInOrder with %d keys and %d values", len(keys), len(vals)))
+	}
+	n := len(keys)
 	order := make([]string, 0, n)
 	entries := make(map[string]Value, n)
 	for i := range n {

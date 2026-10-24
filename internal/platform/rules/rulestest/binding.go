@@ -79,11 +79,14 @@ func Segments(path string) []string {
 	return strings.Split(strings.TrimPrefix(path, "/"), "/")
 }
 
-// testAPISegments splits a request path as the Test API reads it: each segment URL-decoded, +
-// a space and %2F a slash inside its segment, as a service hands the engine an object's name
-// decoded (S1-E probe, 2026-10-24: p/a%20b.txt matches {f} == 'a b.txt', p/a%2Fb.txt
-// matches {f} == 'a/b.txt' and not {a}/{b}, a+b.txt is 'a b.txt', %C3%A9 is é, in Storage
-// and Firestore; request.path holds the decoded segments too).
+// testAPISegments splits a request path as the Test API reads its path input: split on /, then
+// each segment URL-decoded (S1-E probe, 2026-10-24, in Storage and Firestore: p/a%20b.txt
+// matches {f} == 'a b.txt', a+b.txt is 'a b.txt', p/a%2Fb.txt matches {f} == 'a/b.txt' and
+// not {a}/{b}, %C3%A9 is é; request.path holds the decoded segments too). That + is a space
+// and that %2F stays inside its segment are facts about this input alone. A service does it
+// the other way round: it decodes the object name once, then splits it on / (clients send + as
+// %2B; storage research A-client-protocol.md and B-admin-gcs-protocol.md), and never decodes
+// twice.
 func testAPISegments(path string) ([]string, error) {
 	segs := Segments(path)
 	for i, s := range segs {
@@ -407,7 +410,7 @@ func (b *binder) testAPIDocuments(vars map[string]rules.Value) (*MemoryDocuments
 	// existsAfter() themselves come below, and win.
 	docs.AfterFallsBack = true
 	if b.c.Service == rules.Firestore {
-		path := b.c.Request.Path
+		path := strings.Join(b.segs, "/") // decoded, as the engine reads it
 		req, _ := vars["request"].AsMap()
 		switch b.c.Request.Method {
 		case "create", "update":

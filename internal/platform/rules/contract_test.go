@@ -107,6 +107,27 @@ func TestValueReaders(t *testing.T) {
 	}
 }
 
+// MapInOrder gives values() the order given, a repeated key its first place and its last value;
+// keys() is sorted, and Map sorts both. A length mismatch is the caller's bug and panics.
+func TestMapInOrder(t *testing.T) {
+	rs, _ := compileSource(t, grantingSource("request.resource.data.values() == [3, 2] && "+
+		"request.resource.data.keys() == ['a', 'b'] && request.auth.values() == [2, 1]"))
+	req := request(MethodGet, docPath("c", "d"), nil)
+	req.Variables["request"] = Map(map[string]Value{
+		"resource": Map(map[string]Value{"data": MapInOrder([]string{"b", "a", "b"}, []Value{Int(1), Int(2), Int(3)})}),
+		"auth":     Map(map[string]Value{"b": Int(1), "a": Int(2)}),
+	})
+	if d := evaluate(t, rs, req); !d.Allow {
+		t.Errorf("values() and keys(): %+v", d.Statements)
+	}
+	defer func() {
+		if recover() == nil {
+			t.Error("MapInOrder with 2 keys and 1 value did not panic")
+		}
+	}()
+	MapInOrder([]string{"a", "b"}, []Value{Int(1)})
+}
+
 func TestSegments(t *testing.T) {
 	segs := Literals("b", "bucket", "o", "")
 	for i, want := range []string{"b", "bucket", "o", ""} {
