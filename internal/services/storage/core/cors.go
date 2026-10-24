@@ -91,14 +91,15 @@ func (s *Service) SetCORS(ctx context.Context, b Bucket, p Principal, rules []CO
 //
 // A rule matches when one of its origins is the request's origin, byte for byte, or "*", and one
 // of its methods is the request's method (for a preflight, Access-Control-Request-Method), byte
-// for byte. The first rule that matches decides, as in GCS. Patterns within an origin and "*" as
-// a method are not matched: provisional (ADR-023 §3-38), never wider than GCS.
+// for byte, or "*": "'*' is permitted in the list of methods, and means 'any method'" (GCS
+// json_api/v1/buckets, cors[].method[]). The first rule that matches decides, as in GCS.
+// Patterns within an origin are not matched: provisional (ADR-023 §3-38), never wider than GCS.
 func (s *Service) MatchCORS(rules []CORSRule, origin, method string) (allow bool, rule CORSRule) {
 	if origin == "" || method == "" {
 		return false, CORSRule{}
 	}
 	for _, r := range rules {
-		if containsOrStar(r.Origins, origin) && contains(r.Methods, method) {
+		if containsOrStar(r.Origins, origin) && containsOrStar(r.Methods, method) {
 			return true, r
 		}
 	}
@@ -108,15 +109,6 @@ func (s *Service) MatchCORS(rules []CORSRule, origin, method string) (allow bool
 func containsOrStar(list []string, v string) bool {
 	for _, x := range list {
 		if x == v || x == "*" {
-			return true
-		}
-	}
-	return false
-}
-
-func contains(list []string, v string) bool {
-	for _, x := range list {
-		if x == v {
 			return true
 		}
 	}

@@ -89,6 +89,7 @@ func TestMatchCORS(t *testing.T) {
 	s := &Service{}
 	app := CORSRule{Origins: []string{"https://app.example.com", "http://localhost:5173"}, Methods: []string{"GET", "HEAD"}, MaxAgeSeconds: 60}
 	star := CORSRule{Origins: []string{"*"}, Methods: []string{"GET"}}
+	anyMethod := CORSRule{Origins: []string{"https://app.example.com"}, Methods: []string{"*"}}
 	for _, c := range []struct {
 		rules          []CORSRule
 		origin, method string
@@ -108,7 +109,8 @@ func TestMatchCORS(t *testing.T) {
 		{[]CORSRule{star, app}, "https://app.example.com", "GET", true, star}, // the first that matches
 		{[]CORSRule{star, app}, "https://app.example.com", "HEAD", true, app},
 		{[]CORSRule{{Origins: []string{"https://*.example.com"}, Methods: []string{"GET"}}}, "https://app.example.com", "GET", false, CORSRule{}},
-		{[]CORSRule{{Origins: []string{"*"}, Methods: []string{"*"}}}, "https://app.example.com", "GET", false, CORSRule{}},
+		{[]CORSRule{anyMethod}, "https://app.example.com", "DELETE", true, anyMethod}, // GCS: "*" is any method
+		{[]CORSRule{anyMethod}, "https://app.example.com", "", false, CORSRule{}},
 	} {
 		allow, rule := s.MatchCORS(c.rules, c.origin, c.method)
 		if allow != c.allow || !reflect.DeepEqual(rule, c.rule) {
