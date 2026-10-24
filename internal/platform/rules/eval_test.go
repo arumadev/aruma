@@ -490,12 +490,12 @@ func TestOverloadedIsAnOutage(t *testing.T) {
 	}})}})
 	rs := compile(t, Firestore, rulesFile("2", Firestore, body))
 	req := request(MethodGet, docPath("c", "d"), nil)
-	req.Inflight = NewInflight(valueBytes)
+	req.Inflight = NewInflight(elemBytes)
 	d, err := rs.Evaluate(context.Background(), req)
 	if !errors.Is(err, ErrOverloaded) || d.Allow {
 		t.Fatalf("Evaluate = %+v, %v; want ErrOverloaded", d, err)
 	}
-	req.Inflight = NewInflight(2 * valueBytes)
+	req.Inflight = NewInflight(2 * elemBytes)
 	if d := evaluate(t, rs, req); !d.Allow {
 		t.Fatalf("denied with room: %+v", d)
 	}

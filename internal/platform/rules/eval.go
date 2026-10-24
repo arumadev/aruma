@@ -467,26 +467,18 @@ func (ev *evaluator) is(e *isExpr, fr *frame) (Value, error) {
 	return typeIs(x, e.typ)
 }
 
-// valueBytes estimates the memory of one Value in a list or a map the interpreter builds.
-const valueBytes = 32
-
-// list evaluates a list literal.
+// list evaluates a list literal, which the library builds and charges.
 func (ev *evaluator) list(e *listExpr, fr *frame) (Value, error) {
 	vals, err := ev.operands(e.elems, fr)
 	if err != nil {
 		return Value{}, err
 	}
-	if err := ev.m.value(0, int64(len(vals))); err != nil {
-		return Value{}, err
-	}
-	if err := ev.m.alloc(int64(len(vals)) * valueBytes); err != nil {
-		return Value{}, err
-	}
-	return List(vals), nil
+	return buildList(ev.m, vals)
 }
 
-// mapLit evaluates a map literal: its keys must be strings, and a repeated key keeps the last
-// value.
+// mapLit evaluates a map literal, which the library builds and charges: its keys must be
+// strings, and a repeated key keeps the place of its first and the value of its last, so that
+// keys() and values() give the written order.
 func (ev *evaluator) mapLit(e *mapExpr, fr *frame) (Value, error) {
 	if len(e.keys) != len(e.vals) {
 		return Value{}, errorf("Unsupported expression.")
@@ -499,27 +491,15 @@ func (ev *evaluator) mapLit(e *mapExpr, fr *frame) (Value, error) {
 	if err != nil {
 		return Value{}, err
 	}
-	n := int64(len(e.keys))
-	size := n * 2 * valueBytes
+	keys := make([]Value, 0, len(e.keys))
+	elems := make([]Value, 0, len(e.keys))
 	for i := 0; i < len(vals); i += 2 {
-		k, ok := vals[i].AsString()
-		if !ok {
+		if _, ok := vals[i].AsString(); !ok {
 			return Value{}, spanned(errorf(msgTypeError, vals[i].Kind(), KindString), e.keys[i/2].pos())
 		}
-		size += int64(len(k))
+		keys, elems = append(keys, vals[i]), append(elems, vals[i+1])
 	}
-	if err := ev.m.value(0, n); err != nil {
-		return Value{}, err
-	}
-	if err := ev.m.alloc(size); err != nil {
-		return Value{}, err
-	}
-	m := make(map[string]Value, n)
-	for i := 0; i < len(vals); i += 2 {
-		k, _ := vals[i].AsString()
-		m[k] = vals[i+1]
-	}
-	return Map(m), nil
+	return buildMap(ev.m, keys, elems)
 }
 
 // path evaluates a path literal: its $(…) parts the last first, each literal segment counting

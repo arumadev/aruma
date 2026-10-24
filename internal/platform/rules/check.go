@@ -517,6 +517,7 @@ func (c *checker) call(e *callExpr, cx exprCtx) {
 			e.kind = callsLookup
 		case isLibraryFunction(fn.name):
 			e.kind = callsFunction
+			c.libraryArity(fn.span, fn.name, len(e.args))
 		default:
 			c.warnf(fn.span, msgInvalidFunction, fn.name)
 		}
@@ -531,6 +532,7 @@ func (c *checker) call(e *callExpr, cx exprCtx) {
 				e.kind = callsLookup
 			case isLibraryFunction(e.name):
 				e.kind = callsFunction
+				c.libraryArity(fn.nameAt, e.name, len(e.args))
 			default:
 				c.warnf(fn.nameAt, msgInvalidFunction, e.name)
 			}
@@ -544,6 +546,21 @@ func (c *checker) call(e *callExpr, cx exprCtx) {
 	}
 	for _, a := range e.args {
 		c.expr(a, cx)
+	}
+}
+
+// libraryArities are the global functions whose number of arguments production checks when it
+// compiles, with a warning at the function's name; the call still fails when evaluated (Rules
+// Test API: "debug(1, 2)" warns, then "Function not found error: Name: [debug]." as every
+// debug() does, S1-B review; "math.abs(1, 2)" warns at abs, S0-A raw/math.json). Only the
+// measured ones are listed.
+var libraryArities = map[string]int{"debug": 1, "math.abs": 1}
+
+// libraryArity warns about a call of the global function name with n arguments, as production
+// does where it is measured.
+func (c *checker) libraryArity(at span, name string, n int) {
+	if want, ok := libraryArities[name]; ok && n != want {
+		c.warnf(at, msgArity, name)
 	}
 }
 

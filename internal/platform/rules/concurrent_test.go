@@ -81,7 +81,7 @@ func TestInflightIsBounded(t *testing.T) {
 		allowb("get", and(or(listx(elems...), tru()), call("exists", ident("all")))),
 	}})}}
 	rs := compile(t, Firestore, rulesFile("2", Firestore, body))
-	perEval := int64(len(elems))*valueBytes + 5*16 + 24 // the list, and the path {all=**} took
+	perEval := int64(len(elems))*elemBytes + 5*16 + 24 // the list, and the path {all=**} took
 	inflight := NewInflight(holding * perEval)
 
 	release := make(chan struct{})
