@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
@@ -62,15 +63,26 @@ func TestStorageWithTheFirebaseCLI(t *testing.T) {
 		storage.UploadSpec{Name: "public/hello.txt", Declared: 5, Surface: storage.SurfaceGCS}, strings.NewReader("hello"), 5); err != nil {
 		t.Fatal(err)
 	}
-	// An anonymous getMetadata on /v0, as the client SDKs send it: the rules alone decide it.
+	// An anonymous getMetadata and an anonymous download (alt=media, no token) on /v0, as the
+	// client SDKs send them: the rules alone decide both, so they flip together, and a download
+	// let through serves the bytes.
 	read := func() int {
 		t.Helper()
-		resp, err := http.Get(e.URL + "/v0/b/" + bucket + "/o/public%2Fhello.txt")
-		if err != nil {
-			t.Fatal(err)
+		get := func(query string) (int, string) {
+			resp, err := http.Get(e.URL + "/v0/b/" + bucket + "/o/public%2Fhello.txt" + query)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+			return resp.StatusCode, string(body)
 		}
-		resp.Body.Close()
-		return resp.StatusCode
+		meta, _ := get("")
+		media, body := get("?alt=media")
+		if media != meta || media == 200 && body != "hello" {
+			t.Errorf("getMetadata %d, but the download %d %q: the rules decided them apart", meta, media, body)
+		}
+		return meta
 	}
 	if s := read(); s != 403 {
 		t.Fatalf("before any deploy /v0 answers %d, want 403 (no release)", s)
