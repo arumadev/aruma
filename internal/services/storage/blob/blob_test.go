@@ -8,7 +8,8 @@ import (
 	"time"
 )
 
-// The tests of the contract commit (S2-0): keys. S2-A tests the disk.
+// The tests of the contract commit (S2-0): keys. The disk's are in disk_test.go and
+// durability_test.go, the lock's in lock_test.go.
 
 func TestKeys(t *testing.T) {
 	seen := map[string]bool{}
@@ -56,10 +57,12 @@ func TestNewDiskNeedsAnAbsoluteRoot(t *testing.T) {
 	if _, err := NewDisk("data/storage"); err == nil {
 		t.Error("a relative data directory is accepted")
 	}
-	d, err := NewDisk("/var/lib/aruma/storage/")
-	if err != nil || d.Root() != "/var/lib/aruma/storage" {
-		t.Errorf("NewDisk = %v, %v", d, err)
+	root := t.TempDir()
+	d, err := NewDisk(root + "/")
+	if err != nil || d.Root() != root {
+		t.Fatalf("NewDisk = %v, %v", d, err)
 	}
+	d.Close()
 }
 
 var _ func(context.Context, string, func(time.Duration)) (Lock, error) = AcquireLock
