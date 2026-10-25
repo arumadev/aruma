@@ -5,17 +5,18 @@ import { IconButton } from '@/components/ui/Button';
 import { routes } from '@/lib/routes';
 import { AccountMenu } from './AccountMenu';
 import { LocaleSwitch } from './LocaleSwitch';
-import { ProjectSwitcher } from './ProjectSwitcher';
 import styles from './TopAppBar.module.css';
 import { Wordmark } from './Wordmark';
 
-export function TopAppBar({ projectId, onOpenDrawer }: { projectId: string | null; onOpenDrawer: () => void }) {
+/** The bar above the page: the language switch and the account menu, plus the menu button on narrow screens. */
+export function TopAppBar({ onOpenDrawer }: { onOpenDrawer: () => void }) {
   const t = useTranslations('shell');
   return (
     <header className={styles.bar}>
       <IconButton icon="menu" label={t('openNavigation')} className={styles.menuButton} onPress={onOpenDrawer} />
-      <Wordmark href={routes.projects} />
-      {projectId && <ProjectSwitcher projectId={projectId} />}
+      <span className={styles.wordmark}>
+        <Wordmark href={routes.projects} />
+      </span>
       <div className={styles.end}>
         <LocaleSwitch />
         <AccountMenu />

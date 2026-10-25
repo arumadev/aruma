@@ -17,6 +17,8 @@
   justify-content: center;
   min-block-size: 48px;
   padding-inline: var(--space-4);
+  border-start-start-radius: var(--md-sys-shape-corner-small);
+  border-start-end-radius: var(--md-sys-shape-corner-small);
   color: var(--md-sys-color-on-surface-variant);
   font: var(--md-sys-typescale-title-small);
   text-decoration: none;
@@ -43,8 +45,7 @@
   inset-block-end: 0;
   inset-inline: var(--space-2);
   block-size: 3px;
-  border-start-start-radius: 3px;
-  border-start-end-radius: 3px;
+  border-radius: var(--md-sys-shape-corner-full);
   background: var(--md-sys-color-primary);
   content: '';
 }

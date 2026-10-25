@@ -1,13 +1,16 @@
 .popover {
   min-inline-size: 200px;
   max-inline-size: 320px;
-  border-radius: var(--md-sys-shape-corner-extra-small);
-  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-lowest);
   box-shadow: var(--md-sys-elevation-2);
 }
 
 .menu {
-  padding-block: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-1);
   outline: none;
 }
 
@@ -15,8 +18,9 @@
   display: flex;
   gap: var(--space-3);
   align-items: center;
-  min-block-size: 48px;
+  min-block-size: 44px;
   padding-inline: var(--space-3) var(--space-4);
+  border-radius: var(--md-sys-shape-corner-small);
   color: var(--md-sys-color-on-surface);
   font: var(--md-sys-typescale-label-large);
   text-decoration: none;

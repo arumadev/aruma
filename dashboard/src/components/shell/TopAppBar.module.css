@@ -6,17 +6,14 @@
   gap: var(--space-2);
   align-items: center;
   block-size: var(--top-app-bar-height);
-  padding-inline: var(--space-2) var(--space-3);
-  background: var(--md-sys-color-surface-container);
+  padding-inline: var(--space-6);
+  background: color-mix(in srgb, var(--md-sys-color-surface) 85%, transparent);
+  backdrop-filter: blur(12px);
 }
 
-.menuButton {
+.menuButton,
+.wordmark {
   display: none;
-}
-
-.switcher {
-  flex: 0 1 280px;
-  min-inline-size: 0;
 }
 
 .end {
@@ -26,16 +23,19 @@
   margin-inline-start: auto;
 }
 
+@media (width < 900px) {
+  .bar {
+    padding-inline: var(--space-2) var(--space-3);
+  }
+
+  .menuButton,
+  .wordmark {
+    display: inline-flex;
+  }
+}
+
 @media (width < 600px) {
   .bar {
     padding-inline: var(--space-1);
-  }
-
-  .menuButton {
-    display: inline-grid;
-  }
-
-  .bar:has(.switcher) .end span[lang] {
-    display: none;
   }
 }

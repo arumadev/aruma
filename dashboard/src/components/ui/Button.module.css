@@ -56,22 +56,14 @@
   --content: var(--md-sys-color-on-primary);
 }
 
-.filled[data-hovered] {
-  box-shadow: var(--md-sys-elevation-1);
-}
-
 .tonal {
   --container: var(--md-sys-color-secondary-container);
   --content: var(--md-sys-color-on-secondary-container);
 }
 
 .outlined {
-  border: 1px solid var(--md-sys-color-outline);
-}
-
-.outlined[data-disabled] {
-  border-color: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-disabled-container), transparent);
-  background: transparent;
+  --container: var(--md-sys-color-surface-container-high);
+  --content: var(--md-sys-color-on-surface);
 }
 
 .text {
@@ -156,6 +148,7 @@
   padding-inline: var(--space-2);
   border-radius: var(--md-sys-shape-corner-extra-small);
   background: var(--md-sys-color-inverse-surface);
+  box-shadow: var(--md-sys-elevation-2);
   color: var(--md-sys-color-inverse-on-surface);
   font: var(--md-sys-typescale-body-small);
 }

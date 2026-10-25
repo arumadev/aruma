@@ -1,0 +1,17 @@
+/* The current project as a card at the top of the navigation; it opens the list of projects. */
+.switcher {
+  min-inline-size: 0;
+}
+
+.switcher button {
+  min-block-size: 52px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-lowest);
+  box-shadow: var(--md-sys-elevation-1);
+  font: var(--md-sys-typescale-title-small);
+}
+
+.switcher button[data-hovered] {
+  background: var(--md-sys-color-surface-container-lowest);
+  box-shadow: var(--md-sys-elevation-2);
+}

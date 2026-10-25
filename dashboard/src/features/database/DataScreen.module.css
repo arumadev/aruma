@@ -23,9 +23,8 @@
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: var(--md-sys-shape-corner-medium);
-  background: var(--md-sys-color-surface);
+  background: var(--md-sys-color-surface-container-low);
   overflow: auto;
 }
 

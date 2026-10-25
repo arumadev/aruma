@@ -112,8 +112,8 @@ npm run dev          # http://localhost:3000, /console/v1 proxied to ARUMA_DEV_A
 
 `ARUMA_DEV_API` defaults to `http://127.0.0.1:18081`. The proxy and the dev-only
 `skipTrailingSlashRedirect` exist only under `next dev`; the export has neither.
-`npm run tokens` regenerates `src/styles/colors.css` after a change to the brand seed in
-`scripts/generate-tokens.ts`.
+Colours are written by hand in `src/styles/colors.css`; `src/styles/contrast.test.ts` checks
+every pair the screens use, in both schemes.
 
 ## Authentication screens (Phase 2)
 

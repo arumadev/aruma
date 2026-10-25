@@ -9,7 +9,7 @@ import * as api from '@/lib/api/console';
 import { useResource } from '@/lib/hooks/useResource';
 import { routes } from '@/lib/routes';
 import { normalizePath } from './navigation';
-import styles from './TopAppBar.module.css';
+import styles from './ProjectSwitcher.module.css';
 
 // Pages tied to one app make no sense in another project, so switching lands on its overview.
 const APP_PAGES = new Set(['/project/app/', '/project/apps/new/']);

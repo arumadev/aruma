@@ -27,17 +27,20 @@
   min-block-size: 48px;
   padding-block: 0;
   padding-inline: var(--space-4) var(--space-3);
-  border: 1px solid var(--md-sys-color-outline);
-  border-radius: var(--md-sys-shape-corner-extra-small);
-  background: var(--md-sys-color-surface);
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-small);
+  background: var(--md-sys-color-surface-container-low);
   color: var(--md-sys-color-on-surface);
   font: var(--md-sys-typescale-body-large);
   text-align: start;
   cursor: pointer;
 }
 
+.trigger[data-hovered] {
+  background: var(--md-sys-color-surface-container-high);
+}
+
 .trigger[data-focus-visible] {
-  border-color: var(--md-sys-color-primary);
   outline: var(--focus-ring);
   outline-offset: 2px;
 }
@@ -66,13 +69,16 @@
   min-inline-size: var(--trigger-width);
   max-block-size: 320px;
   overflow: auto;
-  border-radius: var(--md-sys-shape-corner-extra-small);
-  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-lowest);
   box-shadow: var(--md-sys-elevation-2);
 }
 
 .list {
-  padding-block: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-1);
   outline: none;
 }
 
@@ -80,9 +86,10 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-block-size: 48px;
+  min-block-size: 44px;
   padding-block: var(--space-1);
-  padding-inline: var(--space-4);
+  padding-inline: var(--space-3);
+  border-radius: var(--md-sys-shape-corner-small);
   color: var(--md-sys-color-on-surface);
   font: var(--md-sys-typescale-body-large);
   cursor: pointer;

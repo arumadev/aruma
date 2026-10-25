@@ -65,21 +65,24 @@
 .editor {
   display: flex;
   overflow: hidden;
-  border: 1px solid var(--md-sys-color-outline);
-  border-radius: var(--md-sys-shape-corner-extra-small);
-  background: var(--md-sys-color-surface);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-low);
   font: var(--md-sys-typescale-code);
   font-size: 0.875rem;
   line-height: 1.5rem;
 }
 
 .editor:has(:focus) {
-  border-color: var(--md-sys-color-primary);
-  box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
+  background: var(--md-sys-color-surface-container-lowest);
+  box-shadow: inset 0 0 0 2px var(--md-sys-color-primary);
 }
 
 .field[data-invalid] .editor {
-  border-color: var(--md-sys-color-error);
+  box-shadow: inset 0 0 0 1px var(--md-sys-color-error);
+}
+
+.field[data-invalid] .editor:has(:focus) {
+  box-shadow: inset 0 0 0 2px var(--md-sys-color-error);
 }
 
 .gutter {

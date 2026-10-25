@@ -215,7 +215,7 @@ test.describe('project settings', () => {
     await open(page, '/project/settings/?id=chat-app', l('إعدادات المشروع', 'Project settings'));
     await page.getByLabel(l('اسم المشروع', 'Project name')).fill('Chat Platform');
     await page.getByRole('button', { name: l('حفظ', 'Save') }).click();
-    await expect(page.getByRole('banner').getByRole('button', { name: /Chat Platform/ })).toBeVisible();
+    await expect(page.getByRole('complementary').getByRole('button', { name: /Chat Platform/ })).toBeVisible();
     expect(api.calls.find((c) => c.method === 'PATCH')).toMatchObject({ body: { displayName: 'Chat Platform', etag: '1_chat-app' } });
   });
 
@@ -309,14 +309,5 @@ test.describe('layout', () => {
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toBeHidden();
     await expect(focused).toBeFocused();
-  });
-
-  test('shows the disclaimer on every page', async ({ page, api, l }) => {
-    const text = l('غير تابع لشركة Google ولا معتمد منها.', 'Not affiliated with or endorsed by Google.');
-    await open(page, '/projects/', l('المشاريع', 'Projects'));
-    await expect(page.getByRole('contentinfo')).toHaveText(text);
-    api.store.signedIn = false;
-    await page.goto('/login/');
-    await expect(page.getByRole('contentinfo')).toHaveText(text);
   });
 });

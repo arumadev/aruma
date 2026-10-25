@@ -17,7 +17,7 @@
   max-block-size: calc(100dvb - 2 * var(--space-4));
   overflow: auto;
   border-radius: var(--md-sys-shape-corner-extra-large);
-  background: var(--md-sys-color-surface-container-high);
+  background: var(--md-sys-color-surface-container-lowest);
   box-shadow: var(--md-sys-elevation-3);
 }
 

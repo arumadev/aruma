@@ -1,92 +1,60 @@
-.item {
-  display: flex;
-  color: var(--md-sys-color-on-surface-variant);
-  text-decoration: none;
-  outline: none;
-  cursor: pointer;
-}
-
-.item[aria-current='page'] {
-  color: var(--md-sys-color-on-surface);
-}
-
-.indicator {
-  display: grid;
-  flex: none;
-  place-items: center;
-  border-radius: var(--md-sys-shape-corner-full);
-  transition: background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
-}
-
-/* Rail: the icon sits in a pill that carries the state; the label goes underneath. */
-.rail {
+.sections {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding-block: var(--space-3);
+  gap: var(--space-4);
 }
 
-.rail .item {
+.section {
+  display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  align-items: center;
-  padding-inline: var(--space-1);
-  text-align: center;
 }
 
-.rail .indicator {
-  inline-size: 56px;
-  block-size: 32px;
-}
-
-.rail .item[data-hovered] .indicator {
-  background: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-hover), transparent);
-}
-
-.rail .item[data-focus-visible] .indicator {
-  outline: var(--focus-ring);
-  outline-offset: 2px;
-}
-
-.rail .item[aria-current='page'] .indicator {
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
-}
-
-.rail .label {
+.heading {
+  padding-inline: var(--space-3);
+  color: var(--md-sys-color-on-surface-variant);
   font: var(--md-sys-typescale-label-medium);
 }
 
-.rail .item[aria-current='page'] .label {
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  min-block-size: 40px;
+  padding-inline: var(--space-3);
+  border-radius: var(--md-sys-shape-corner-full);
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-label-large);
+  text-decoration: none;
+  outline: none;
+  cursor: pointer;
+  transition: background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+}
+
+.item[data-hovered] {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-hover), transparent);
+  color: var(--md-sys-color-on-surface);
+}
+
+.item[data-focus-visible] {
+  outline: var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.item[aria-current='page'] {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
   font-weight: 600;
 }
 
-/* Drawer: the whole row carries the state. */
-.drawer {
-  display: flex;
-  flex-direction: column;
-  padding: var(--space-3);
-}
-
-.drawer .item {
-  gap: var(--space-3);
-  align-items: center;
-  min-block-size: 56px;
-  padding-inline: var(--space-4) var(--space-6);
-  border-radius: var(--md-sys-shape-corner-full);
-  font: var(--md-sys-typescale-label-large);
-}
-
-.drawer .item[data-hovered] {
-  background: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-hover), transparent);
-}
-
-.drawer .item[data-focus-visible] {
-  outline: var(--focus-ring);
-  outline-offset: -3px;
-}
-
-.drawer .item[aria-current='page'] {
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
