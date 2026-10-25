@@ -2,9 +2,6 @@
   "brand": {
     "name": "Aruma"
   },
-  "footer": {
-    "disclaimer": "Not affiliated with or endorsed by Google."
-  },
   "common": {
     "loading": "Loading",
     "dismiss": "Dismiss",
@@ -88,7 +85,9 @@
     "audit": "Audit log",
     "settings": "Settings",
     "account": "Account",
-    "limits": "Limits"
+    "limits": "Limits",
+    "groupBuild": "Build",
+    "groupProject": "Project"
   },
   "shell": {
     "navigation": "Main navigation",

@@ -2,9 +2,6 @@
   "brand": {
     "name": "أروما"
   },
-  "footer": {
-    "disclaimer": "غير تابع لشركة Google ولا معتمد منها."
-  },
   "common": {
     "loading": "جارٍ التحميل",
     "dismiss": "إغلاق",
@@ -88,7 +85,9 @@
     "audit": "سجل التدقيق",
     "settings": "الإعدادات",
     "account": "الحساب",
-    "limits": "الحدود"
+    "limits": "الحدود",
+    "groupBuild": "البناء",
+    "groupProject": "المشروع"
   },
   "shell": {
     "navigation": "التنقّل الرئيسي",
