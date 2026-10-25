@@ -16,7 +16,7 @@
   min-block-size: 48px;
   max-inline-size: 560px;
   padding-inline: var(--space-4) var(--space-1);
-  border-radius: var(--md-sys-shape-corner-extra-small);
+  border-radius: var(--md-sys-shape-corner-medium);
   background: var(--md-sys-color-inverse-surface);
   color: var(--md-sys-color-inverse-on-surface);
   box-shadow: var(--md-sys-elevation-3);

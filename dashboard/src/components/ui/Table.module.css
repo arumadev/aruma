@@ -1,8 +1,8 @@
 .scroller {
   overflow: auto;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-medium);
+  border-radius: var(--md-sys-shape-corner-large);
   background: var(--md-sys-color-surface-container-lowest);
+  box-shadow: var(--md-sys-elevation-1);
 }
 
 .table {
@@ -25,7 +25,7 @@
   padding-inline: var(--space-4);
   border-block-end: 1px solid var(--md-sys-color-outline-variant);
   color: var(--md-sys-color-on-surface-variant);
-  font: var(--md-sys-typescale-title-small);
+  font: var(--md-sys-typescale-label-large);
   text-align: start;
   white-space: nowrap;
 }

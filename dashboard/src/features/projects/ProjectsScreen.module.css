@@ -28,9 +28,9 @@
   gap: var(--space-2);
   block-size: 100%;
   padding: var(--space-5);
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-medium);
+  border-radius: var(--md-sys-shape-corner-large);
   background: var(--md-sys-color-surface-container-lowest);
+  box-shadow: var(--md-sys-elevation-1);
   color: var(--md-sys-color-on-surface);
   text-decoration: none;
   outline: none;
@@ -40,8 +40,7 @@
 }
 
 .card[data-hovered] {
-  background: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-hover), var(--md-sys-color-surface-container-lowest));
-  box-shadow: var(--md-sys-elevation-1);
+  box-shadow: var(--md-sys-elevation-2);
 }
 
 .card[data-focus-visible] {

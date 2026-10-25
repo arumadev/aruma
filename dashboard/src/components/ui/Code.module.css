@@ -11,8 +11,7 @@
 
 .block {
   overflow: hidden;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-small);
+  border-radius: var(--md-sys-shape-corner-medium);
   background: var(--md-sys-color-surface-container-low);
 }
 
