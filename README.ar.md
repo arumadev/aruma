@@ -61,6 +61,27 @@ Aruma قبل الإصدار 1.0 وتحت تطوير نشط. الخدمات تص�
 
 العزل بين المشاريع تفرضه PostgreSQL بأمان مستوى الصف ويُختبر في CI. التصميم في [ADR-008](docs/adr/ADR-008-single-entry.md) و[ADR-015](docs/adr/ADR-015-services-layout.md) و[ADR-017](docs/adr/ADR-017-postgres-rls.md).
 
+## اللوحة
+
+كل خادم Aruma يأتي بلوحة تحكم مدمجة في الملف التنفيذي نفسه. أنشئ المشاريع والتطبيقات، وأدر المستخدمين، وعدّل القواعد، وتصفّح البيانات والملفات، ونزّل ملفات الإعداد التي تحتاجها تطبيقاتك.
+
+</div>
+
+<p align="center">
+  <img src="docs/assets/console-auth.png" alt="لوحة Aruma: المصادقة وقائمة مستخدمي المشروع" width="100%">
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/console-rtdb.png" alt="لوحة Aruma: قواعد قاعدة البيانات اللحظية وعنوان databaseURL"></td>
+    <td width="50%"><img src="docs/assets/console-storage.png" alt="لوحة Aruma: استخدام Cloud Storage"></td>
+  </tr>
+</table>
+
+<div dir="rtl">
+
+اللوحة بالإنجليزية والعربية (من اليمين إلى اليسار).
+
 ## البدء السريع
 
 المتطلبات: Go 1.26 أو أحدث، وPostgreSQL 18 (مثلًا عبر [DBngin](https://dbngin.com) أو [Postgres.app](https://postgresapp.com))، وNode 24 لبناء اللوحة.

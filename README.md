@@ -81,6 +81,23 @@ flowchart LR
 
 Projects are isolated from each other, enforced by PostgreSQL row-level security and tested in CI. The design is in [ADR-008](docs/adr/ADR-008-single-entry.md), [ADR-015](docs/adr/ADR-015-services-layout.md) and [ADR-017](docs/adr/ADR-017-postgres-rls.md).
 
+## The console
+
+Every Aruma server ships with a console, embedded in the same binary. Create projects and apps, manage users, edit rules, browse data and files, and download the configuration files your apps need.
+
+<p align="center">
+  <img src="docs/assets/console-auth.png" alt="Aruma console: Authentication, listing a project's users" width="100%">
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/console-rtdb.png" alt="Aruma console: Realtime Database rules and databaseURL"></td>
+    <td width="50%"><img src="docs/assets/console-storage.png" alt="Aruma console: Cloud Storage usage"></td>
+  </tr>
+</table>
+
+The console is in English and Arabic (right to left).
+
 ## Quick start
 
 Requirements: Go 1.26+, PostgreSQL 18 (for example through [DBngin](https://dbngin.com) or [Postgres.app](https://postgresapp.com)), and Node 24 to build the console.
