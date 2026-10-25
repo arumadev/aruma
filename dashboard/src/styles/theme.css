@@ -1,4 +1,4 @@
-/* Material 3 system tokens other than colour (colours live in the generated colors.css). */
+/* System tokens other than colour (colours live in colors.css). */
 
 :root {
   --font-sans: 'IBM Plex Sans Arabic', system-ui, sans-serif;
@@ -6,9 +6,9 @@
 
   /* Type scale: weight size/line-height. */
   --md-sys-typescale-display-small: 400 2.25rem/2.75rem var(--font-sans);
-  --md-sys-typescale-headline-medium: 400 1.75rem/2.25rem var(--font-sans);
-  --md-sys-typescale-headline-small: 400 1.5rem/2rem var(--font-sans);
-  --md-sys-typescale-title-large: 500 1.375rem/1.875rem var(--font-sans);
+  --md-sys-typescale-headline-medium: 600 1.625rem/2.25rem var(--font-sans);
+  --md-sys-typescale-headline-small: 600 1.25rem/1.875rem var(--font-sans);
+  --md-sys-typescale-title-large: 600 1.125rem/1.75rem var(--font-sans);
   --md-sys-typescale-title-medium: 500 1rem/1.5rem var(--font-sans);
   --md-sys-typescale-title-small: 500 0.875rem/1.25rem var(--font-sans);
   --md-sys-typescale-body-large: 400 1rem/1.5rem var(--font-sans);
@@ -19,24 +19,24 @@
   --md-sys-typescale-label-small: 500 0.6875rem/1rem var(--font-sans);
   --md-sys-typescale-code: 400 0.8125rem/1.25rem var(--font-mono);
 
-  /* Shape. */
-  --md-sys-shape-corner-extra-small: 4px;
-  --md-sys-shape-corner-small: 8px;
-  --md-sys-shape-corner-medium: 12px;
-  --md-sys-shape-corner-large: 16px;
-  --md-sys-shape-corner-extra-large: 28px;
+  /* Shape: soft edges. Controls are pills, fields and menus round, cards and dialogs larger. */
+  --md-sys-shape-corner-extra-small: 8px;
+  --md-sys-shape-corner-small: 12px;
+  --md-sys-shape-corner-medium: 16px;
+  --md-sys-shape-corner-large: 22px;
+  --md-sys-shape-corner-extra-large: 26px;
   --md-sys-shape-corner-full: 9999px;
 
-  /* Elevation. */
+  /* Elevation: faint shadows instead of borders. Level 1 sits under cards, 2 under menus and 3 under dialogs. */
   --md-sys-elevation-1:
-    0 1px 2px color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent),
-    0 1px 3px 1px color-mix(in srgb, var(--md-sys-color-shadow) 15%, transparent);
+    0 1px 2px color-mix(in srgb, var(--md-sys-color-shadow) 5%, transparent),
+    0 1px 3px color-mix(in srgb, var(--md-sys-color-shadow) 4%, transparent);
   --md-sys-elevation-2:
-    0 1px 2px color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent),
-    0 2px 6px 2px color-mix(in srgb, var(--md-sys-color-shadow) 15%, transparent);
+    0 1px 2px color-mix(in srgb, var(--md-sys-color-shadow) 6%, transparent),
+    0 10px 30px color-mix(in srgb, var(--md-sys-color-shadow) 12%, transparent);
   --md-sys-elevation-3:
-    0 4px 8px 3px color-mix(in srgb, var(--md-sys-color-shadow) 15%, transparent),
-    0 1px 3px color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent);
+    0 2px 6px color-mix(in srgb, var(--md-sys-color-shadow) 8%, transparent),
+    0 24px 60px color-mix(in srgb, var(--md-sys-color-shadow) 20%, transparent);
 
   /* State layers. */
   --md-sys-state-hover: 8%;
@@ -64,9 +64,9 @@
 
   /* Layout. */
   --top-app-bar-height: 64px;
-  --nav-rail-width: 88px;
+  --side-panel-width: 256px;
   --content-max-width: 1120px;
-  --focus-ring: 3px solid var(--md-sys-color-secondary);
+  --focus-ring: 2px solid var(--md-sys-color-secondary);
 }
 
 @media (prefers-reduced-motion: reduce) {

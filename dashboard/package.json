@@ -11,8 +11,7 @@
     "build": "next build",
     "lint": "eslint . --max-warnings=0 && stylelint \"src/**/*.css\" && tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test",
-    "tokens": "node scripts/generate-tokens.ts"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "5.3.0",
@@ -25,7 +24,6 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
-    "@material/material-color-utilities": "0.3.0",
     "@playwright/test": "1.64.1",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
