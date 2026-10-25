@@ -1,0 +1,98 @@
+---
+title: احتفظ بمكتبات Firebase، وامتلك خادمك
+description: خادم ذاتي الاستضافة يتحدث مع مكتبات Firebase الرسمية. ملف تنفيذي واحد بلغة Go وقاعدة PostgreSQL، وكود تطبيقك لا يتغيّر. مفتوح المصدر بترخيص Apache 2.0.
+template: splash
+hero:
+  title: احتفظ بمكتبات Firebase، وامتلك خادمك
+  tagline: خادم ذاتي الاستضافة يتحدث مع مكتبات Firebase الرسمية. ملف تنفيذي واحد بلغة Go وقاعدة PostgreSQL، وكود تطبيقك لا يتغيّر.
+  actions:
+    - text: ابدأ الآن
+      link: /aruma/docs/getting-started/
+      icon: right-arrow
+    - text: GitHub
+      link: https://github.com/arumadev/aruma
+      variant: minimal
+      icon: external
+---
+
+import { Card, CardGrid, Steps } from '@astrojs/starlight/components';
+
+## لماذا Aruma
+
+يقدّم Firebase مكتبات عميل ممتازة وخادمًا مُدارًا لا تستطيع مغادرته. Aruma تُبقي الأولى وتستبدل الثاني.
+
+<CardGrid>
+  <Card title="تبقى المكتبات الرسمية" icon="puzzle">
+    مكتبات الويب وiOS وAndroid وFlutter ومكتبات Admin تعمل بوضعها الإنتاجي المعتاد، دون وضع المحاكي. تبدّل ملف الإعداد، وفي بعض المنصات تضيف سطرًا واحدًا إلى إعداد البناء. كود تطبيقك نفسه لا يتغيّر.
+  </Card>
+  <Card title="بياناتك عندك" icon="seti:db">
+    شغّله على خادم افتراضي رخيص أو على خوادمك أو حيث تعمل PostgreSQL. ملف تنفيذي واحد وقاعدة واحدة، بلا فوترة على كل عملية.
+  </Card>
+  <Card title="مفتوح المصدر" icon="github">
+    Apache 2.0. اقرأ الكود، شغّل الاختبارات، وأرسل تعديلك.
+  </Card>
+  <Card title="مبني ليُتحقَّق منه" icon="approve-check">
+    يُقارَن السلوك بـ Firebase الحقيقي وبالمحاكيات الرسمية، وتُشغَّل اختبارات Firebase الرسمية على Aruma. الأرقام في جدول الحالة أدناه.
+  </Card>
+</CardGrid>
+
+## كيف يعمل
+
+<Steps>
+
+1. أنشئ مشروعًا وتطبيقًا من اللوحة أو بأداة `arumactl`.
+2. نزّل ملف إعداد التطبيق: `google-services.json` أو `GoogleService-Info.plist` أو ما يقابلهما للويب وFlutter.
+3. ضعه في تطبيقك بدل ملف Firebase. كود تطبيقك لا يتغيّر. وحيث تحتاج المنصة، أضف سطر البناء الواحد الموصوف في [`sdk/`](https://github.com/arumadev/aruma/tree/main/sdk).
+
+</Steps>
+
+العزل بين المشاريع تفرضه PostgreSQL بأمان مستوى الصف ويُختبر في CI. التصميم في [ADR-008](/aruma/docs/adr/adr-008-single-entry/) و[ADR-015](/aruma/docs/adr/adr-015-services-layout/) و[ADR-017](/aruma/docs/adr/adr-017-postgres-rls/).
+
+## الحالة
+
+Aruma قبل الإصدار 1.0 وتحت تطوير نشط. الخدمات تصل واحدة بعد أخرى، وتُغلَق كل واحدة بتقرير توافق قبل أن تبدأ التي بعدها.
+
+| الخدمة | الحالة | الدليل |
+|---|---|---|
+| **المنصة**: المشاريع والتطبيقات ومفاتيح API وحسابات الخدمة واللوحة وManagement API | متاحة | اختبارات القبول، واختبارات العزل بين المشاريع في CI، وأداة `firebase` تعمل عليها |
+| **المصادقة (Auth)** | صدرت في [v0.1.0](/aruma/docs/compat/auth-v01/) | 27 من 27 سيناريو P0، و180 اختبار Auth رسميًا ناجحًا من Firebase JS، والتحقق على Web وiOS وAndroid وNode |
+| **قاعدة البيانات اللحظية (RTDB)** | صدرت في [v0.2.0](/aruma/docs/compat/rtdb-v02/)، وتُفعَّل بـ `ARUMA_RTDB_ENABLED` | 332 من 332 اختبارًا رسميًا لـ RTDB على `databaseURL` بنمط الإنتاج |
+| **قواعد الأمان (Security Rules)** و**Storage** | قيد التطوير للإصدار v0.3 ([storage](/aruma/docs/compat/storage-v03/)، [rules](/aruma/docs/compat/rules-v03/)) | اختبارات Storage الرسمية ومسارات الإنتاج على iOS وAndroid والويب قيد الإنجاز |
+| **Firestore** | مخطَّط | |
+| **الإشعارات وApp Check وRemote Config وFunctions** | مخطَّطة بعد الخدمات الأساسية | |
+
+كل فرق عن Firebase موثَّق بمصدره وتصنيفه في [تقارير التوافق](/aruma/docs/compat/auth-v01/) و[القرارات المعمارية](/aruma/docs/adr/).
+
+## اللوحة
+
+كل خادم Aruma يأتي بلوحة تحكم مدمجة في الملف التنفيذي نفسه. أنشئ المشاريع والتطبيقات، وأدر المستخدمين، وعدّل القواعد، وتصفّح البيانات والملفات، ونزّل ملفات الإعداد التي تحتاجها تطبيقاتك. اللوحة بالعربية (من اليمين إلى اليسار) وبالإنجليزية.
+
+import { Image } from 'astro:assets';
+import auth from '../../assets/console-auth.png';
+import rtdb from '../../assets/console-rtdb.png';
+import storage from '../../assets/console-storage.png';
+
+<div class="shot">
+  <Image src={auth} alt="لوحة Aruma: المصادقة وقائمة مستخدمي المشروع" />
+</div>
+<br />
+<div class="shot">
+  <Image src={rtdb} alt="لوحة Aruma: قواعد قاعدة البيانات اللحظية وعنوان databaseURL" />
+</div>
+<br />
+<div class="shot">
+  <Image src={storage} alt="لوحة Aruma: استخدام Cloud Storage" />
+</div>
+
+## ابدأ
+
+```bash
+make dashboard   # يبني اللوحة ويضمّنها في الثنائي (مرة واحدة)
+make dev         # ينشئ .env بمفتاح عشوائي، ثم القاعدة والـ migrations، ثم الخادم
+```
+
+ثم افتح `http://localhost:8080`. الخطوات الكاملة في [البدء السريع](/aruma/docs/getting-started/).
+
+:::note
+Aruma غير تابعة لـ Google ولا معتمدة منها. Firebase علامة تجارية لـ Google LLC.
+:::
