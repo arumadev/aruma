@@ -1,0 +1,98 @@
+---
+title: Keep the Firebase SDK. Own your backend.
+description: A self-hosted backend that speaks the official Firebase SDKs. One Go binary and PostgreSQL, and your application code does not change. Open source under Apache 2.0.
+template: splash
+hero:
+  title: Keep the Firebase SDK. Own your backend.
+  tagline: A self-hosted backend that speaks the official Firebase SDKs. One Go binary and PostgreSQL, and your application code does not change.
+  actions:
+    - text: Get started
+      link: /aruma/en/docs/getting-started/
+      icon: right-arrow
+    - text: GitHub
+      link: https://github.com/arumadev/aruma
+      variant: minimal
+      icon: external
+---
+
+import { Card, CardGrid, Steps } from '@astrojs/starlight/components';
+
+## Why Aruma
+
+Firebase gives you excellent client SDKs and a managed backend you can't leave. Aruma keeps the first part and replaces the second.
+
+<CardGrid>
+  <Card title="Keep the official SDKs" icon="puzzle">
+    Web, iOS, Android, Flutter and the Admin SDKs run in their normal production mode, with no emulator mode. You swap the configuration file, and on some platforms add one line of build configuration. Your application code stays the same.
+  </Card>
+  <Card title="Own your data" icon="seti:db">
+    Run it on a cheap VPS, on your own servers, or wherever PostgreSQL runs. One binary, one database, no per-operation billing.
+  </Card>
+  <Card title="Open source" icon="github">
+    Apache 2.0. Read the code, run the tests, send a patch.
+  </Card>
+  <Card title="Built to be verified" icon="approve-check">
+    Behavior is checked against real Firebase and the official emulators, and the official Firebase test suites are run against Aruma. The numbers are in the status table below.
+  </Card>
+</CardGrid>
+
+## How it works
+
+<Steps>
+
+1. Create a project and an app from the console or with `arumactl`.
+2. Download the app's configuration file: `google-services.json`, `GoogleService-Info.plist`, or the Web and Flutter equivalents.
+3. Put it in your app in place of the Firebase one. Your application code does not change. Where a platform needs it, add the one build line described in [`sdk/`](https://github.com/arumadev/aruma/tree/main/sdk).
+
+</Steps>
+
+Projects are isolated from each other, enforced by PostgreSQL row-level security and tested in CI. The design is in [ADR-008](/aruma/docs/adr/adr-008-single-entry/), [ADR-015](/aruma/docs/adr/adr-015-services-layout/) and [ADR-017](/aruma/docs/adr/adr-017-postgres-rls/) (written in Arabic).
+
+## Status
+
+Aruma is pre-1.0 and under active development. Services land one at a time, each closed with a compatibility report before the next one starts.
+
+| Service | State | Evidence |
+|---|---|---|
+| **Platform**: projects, apps, API keys, service accounts, console, Management API | Available | Acceptance tests, project-isolation tests in CI, the `firebase` CLI works against it |
+| **Authentication** | Released in [v0.1.0](/aruma/docs/compat/auth-v01/) | 27/27 P0 scenarios, 180 passing official Firebase JS Auth tests, Web, iOS, Android and Node verified |
+| **Realtime Database** | Released in [v0.2.0](/aruma/docs/compat/rtdb-v02/), opt-in with `ARUMA_RTDB_ENABLED` | 332/332 official Firebase RTDB tests against a production-style `databaseURL` |
+| **Security Rules** and **Cloud Storage** | In development for v0.3 ([storage](/aruma/docs/compat/storage-v03/), [rules](/aruma/docs/compat/rules-v03/)) | Official Storage suites and iOS, Android and Web production paths in progress |
+| **Firestore** | Planned | |
+| **Cloud Messaging, App Check, Remote Config, Functions** | Planned, after the core services | |
+
+Every difference from Firebase is documented, with its source and classification, in the [compatibility reports](/aruma/docs/compat/auth-v01/) and the [architecture decisions](/aruma/docs/adr/). Most of these documents are written in Arabic.
+
+## The console
+
+Every Aruma server ships with a console, embedded in the same binary. Create projects and apps, manage users, edit rules, browse data and files, and download the configuration files your apps need. The console is in English and Arabic (right to left).
+
+import { Image } from 'astro:assets';
+import auth from '../../../assets/console-auth.png';
+import rtdb from '../../../assets/console-rtdb.png';
+import storage from '../../../assets/console-storage.png';
+
+<div class="shot">
+  <Image src={auth} alt="Aruma console: Authentication, listing a project's users" />
+</div>
+<br />
+<div class="shot">
+  <Image src={rtdb} alt="Aruma console: Realtime Database rules and databaseURL" />
+</div>
+<br />
+<div class="shot">
+  <Image src={storage} alt="Aruma console: Cloud Storage usage" />
+</div>
+
+## Get started
+
+```bash
+make dashboard   # build the console and embed it in the binary (once)
+make dev         # create .env with a random key, then the database, migrations and the server
+```
+
+Then open `http://localhost:8080`. The full steps are in the [quick start](/aruma/en/docs/getting-started/).
+
+:::note
+Aruma is not affiliated with or endorsed by Google. Firebase is a trademark of Google LLC.
+:::
