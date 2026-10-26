@@ -174,20 +174,51 @@ func TestCorpusHeaders(t *testing.T) {
 }
 
 type parityException struct {
-	ID         string   `json:"id"`
-	Kind       string   `json:"kind"`
-	Summary    string   `json:"summary"`
-	Production string   `json:"production"`
-	Emulator   string   `json:"emulator"`
-	Aruma      string   `json:"aruma"`
-	Follows    string   `json:"follows"`
-	Evidence   []string `json:"evidence"`
-	Test       string   `json:"test"`
+	ID         string       `json:"id"`
+	Kind       string       `json:"kind"`
+	Summary    string       `json:"summary"`
+	Production string       `json:"production"`
+	Emulator   string       `json:"emulator"`
+	Aruma      string       `json:"aruma"`
+	Follows    string       `json:"follows"`
+	Evidence   []string     `json:"evidence"`
+	Test       string       `json:"test"`
+	Planned    *plannedTest `json:"planned"`
+}
+
+// plannedTest is a test that a later phase writes: an exception names it instead of pointing
+// at an unrelated test that exists today.
+type plannedTest struct {
+	Test  string `json:"test"`
+	Phase string `json:"phase"`
+}
+
+// phaseList is phases.json: the phases of v0.4 and those already closed.
+type phaseList struct {
+	Schema string   `json:"schema"`
+	Phases []string `json:"phases"`
+	Closed []string `json:"closed"`
+}
+
+func readPhases(t *testing.T) phaseList {
+	t.Helper()
+	var ph phaseList
+	readJSON(t, "phases.json", &ph)
+	if ph.Schema != "aruma.documents-phases/v1" || len(ph.Phases) == 0 {
+		t.Fatalf("phases.json: schema %q, %d phases", ph.Schema, len(ph.Phases))
+	}
+	for _, c := range ph.Closed {
+		if !slices.Contains(ph.Phases, c) {
+			t.Errorf("phases.json: closed phase %q is not one of %q", c, ph.Phases)
+		}
+	}
+	return ph
 }
 
 // TestParityExceptionsNameTests: every exception says what production, the emulator and Aruma
-// do, cites corpus files the manifest pins, and names a test function that exists. CI fails on
-// an exception whose test was renamed or never written.
+// do, cites corpus files the manifest pins, and names a test function that exists, or a planned
+// test with the phase that writes it. CI fails on an exception whose test was renamed or never
+// written, and on a planned test whose phase phases.json marks closed.
 func TestParityExceptionsNameTests(t *testing.T) {
 	root := repoRoot(t)
 	var p struct {
@@ -197,6 +228,7 @@ func TestParityExceptionsNameTests(t *testing.T) {
 	readJSON(t, "parity-exceptions.json", &p)
 	var m manifest
 	readJSON(t, "manifest.json", &m)
+	ph := readPhases(t)
 	if p.Schema != "aruma.documents-parity/v1" {
 		t.Errorf("parity-exceptions schema %q", p.Schema)
 	}
@@ -225,19 +257,60 @@ func TestParityExceptionsNameTests(t *testing.T) {
 				t.Errorf("%s: evidence %s is not a pinned corpus file", e.ID, ev)
 			}
 		}
-		if err := testExists(root, e.Test); err != nil {
+		for _, err := range checkTests(root, ph, e) {
 			t.Errorf("%s: %v", e.ID, err)
 		}
 	}
+}
+
+// checkTests checks the tests an exception names: test, which must exist now, and planned, which
+// a phase will write. A planned test must name a phase that is still open and a test that does
+// not exist yet: once written it moves to test, and once its phase is closed CI fails until it
+// does.
+func checkTests(root string, ph phaseList, e parityException) []error {
+	if e.Test == "" && e.Planned == nil {
+		return []error{errors.New("names neither a test nor a planned test")}
+	}
+	var errs []error
+	if e.Test != "" {
+		if err := testExists(root, e.Test); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	p := e.Planned
+	if p == nil {
+		return errs
+	}
+	switch {
+	case !slices.Contains(ph.Phases, p.Phase):
+		errs = append(errs, fmt.Errorf("planned test %s: phase %q is not one of %q (phases.json)", p.Test, p.Phase, ph.Phases))
+	case slices.Contains(ph.Closed, p.Phase):
+		errs = append(errs, fmt.Errorf("planned test %s was due in %s, which phases.json marks closed: write it and name it in test", p.Test, p.Phase))
+	}
+	if _, _, err := splitTestRef(p.Test); err != nil {
+		errs = append(errs, fmt.Errorf("planned %w", err))
+	} else if testExists(root, p.Test) == nil {
+		errs = append(errs, fmt.Errorf("planned test %s exists: move it from planned to test", p.Test))
+	}
+	return errs
+}
+
+// splitTestRef splits "path/x_test.go:TestName".
+func splitTestRef(ref string) (file, fn string, err error) {
+	file, fn, ok := strings.Cut(ref, ":")
+	if !ok || !strings.HasSuffix(file, "_test.go") || !strings.HasPrefix(fn, "Test") {
+		return "", "", fmt.Errorf("test %q is not path/to/x_test.go:TestName", ref)
+	}
+	return file, fn, nil
 }
 
 // testExists checks that "path/x_test.go:TestName" names a test in that file: a top-level
 // func TestName(t *testing.T) with a body, found by parsing the file (so a test inside a comment
 // does not count), that never calls Skip, Skipf or SkipNow.
 func testExists(root, ref string) error {
-	file, fn, ok := strings.Cut(ref, ":")
-	if !ok || !strings.HasSuffix(file, "_test.go") || !strings.HasPrefix(fn, "Test") {
-		return fmt.Errorf("test %q is not path/to/x_test.go:TestName", ref)
+	file, fn, err := splitTestRef(ref)
+	if err != nil {
+		return err
 	}
 	f, err := parser.ParseFile(token.NewFileSet(), filepath.Join(root, filepath.FromSlash(file)), nil, parser.SkipObjectResolution)
 	if err != nil {
@@ -563,5 +636,42 @@ func TestTestExistsRefusesFakes(t *testing.T) {
 	}
 	if err := testExists(root, "x_test.go:TestReal"); err != nil {
 		t.Errorf("TestReal: %v", err)
+	}
+}
+
+// TestPlannedTestsChecked: a planned test is refused once its phase is closed, when its phase is
+// unknown, when it already exists (it belongs in test then), and when it is not a test
+// reference; an entry with no test at all is refused; an open phase is accepted.
+func TestPlannedTestsChecked(t *testing.T) {
+	root := t.TempDir()
+	src := "package x\n\nimport \"testing\"\n\nfunc TestReal(t *testing.T) {\n\tif 1+1 != 2 {\n\t\tt.Fatal(\"arithmetic\")\n\t}\n}\n"
+	if err := os.WriteFile(filepath.Join(root, "x_test.go"), []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ph := phaseList{Phases: []string{"F0", "F1", "F2"}, Closed: []string{"F0"}}
+	planned := func(test, phase string) parityException {
+		return parityException{Planned: &plannedTest{Test: test, Phase: phase}}
+	}
+	refused := map[string]parityException{
+		"closed phase":    planned("x_test.go:TestLater", "F0"),
+		"unknown phase":   planned("x_test.go:TestLater", "F7"),
+		"already written": planned("x_test.go:TestReal", "F1"),
+		"not a test":      planned("x.go:Later", "F1"),
+		"no test at all":  {},
+		"missing test":    {Test: "x_test.go:TestMissing"},
+	}
+	for name, e := range refused {
+		if errs := checkTests(root, ph, e); len(errs) == 0 {
+			t.Errorf("%s accepted", name)
+		}
+	}
+	accepted := map[string]parityException{
+		"open phase":            planned("x_test.go:TestLater", "F1"),
+		"test and planned test": {Test: "x_test.go:TestReal", Planned: &plannedTest{Test: "y_test.go:TestLater", Phase: "F2"}},
+	}
+	for name, e := range accepted {
+		if errs := checkTests(root, ph, e); len(errs) != 0 {
+			t.Errorf("%s refused: %v", name, errs)
+		}
 	}
 }

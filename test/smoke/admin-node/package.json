@@ -2,11 +2,12 @@
   "name": "aruma-smoke-admin-node",
   "private": true,
   "type": "module",
-  "description": "Initialises firebase-admin with an Aruma service account key file, and uses its Realtime Database and @aruma/admin-storage against a live Aruma.",
+  "description": "Initialises firebase-admin with an Aruma service account key file, and uses its Realtime Database, Firestore (the Document Database) and @aruma/admin-storage against a live Aruma.",
   "scripts": {
     "test": "node --test smoke.test.mjs",
     "test:rtdb": "node rtdb-run.mjs",
-    "test:storage": "node storage-run.mjs"
+    "test:storage": "node storage-run.mjs",
+    "test:documents": "node documents-run.mjs"
   },
   "dependencies": {
     "@aruma/admin-storage": "file:../../../sdk/node/admin-storage",

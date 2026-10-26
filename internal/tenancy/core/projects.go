@@ -350,6 +350,7 @@ func (s *Service) DeleteProject(ctx context.Context, p *authn.Principal, ref str
 	if err != nil {
 		return Project{}, internal(err)
 	}
+	s.revoked(func(r authn.CredentialRevocations) { r.ForgetProject(out.ProjectNumber) })
 	return s.toProject(out), nil
 }
 

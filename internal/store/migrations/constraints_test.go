@@ -171,3 +171,61 @@ func TestStorageSchemaConstraints(t *testing.T) {
 	mustExec(t, pool, `INSERT INTO storage.instance (id) VALUES ('00000000-0000-4000-8000-000000000001')`)
 	mustFail(t, pool, "one instance row", `INSERT INTO storage.instance (id) VALUES ('00000000-0000-4000-8000-000000000002')`)
 }
+
+// ADR-024 §1: the documents schema's own guarantees.
+func TestDocumentsSchemaConstraints(t *testing.T) {
+	pool := storetest.NewPool(t)
+	database := `INSERT INTO documents.databases (project_number, database_id, uid, create_time, update_time, etag, location_id)
+		VALUES (482915736204, $1, gen_random_uuid(), now(), now(), 'e', 'nam5')`
+	for _, id := range []string{"Upper", "abc", "1abc", "ends-", "has_underscore", "(other)", strings.Repeat("a", 64)} {
+		mustFail(t, pool, "invalid database id "+id, database, id)
+	}
+	mustExec(t, pool, database, "(default)")
+	mustExec(t, pool, database, "named-db")
+	mustFail(t, pool, "a sequencer row belongs to a database",
+		`INSERT INTO documents.sequencer (project_number, database_id, last_ts) VALUES (482915736204, 'missing', now())`)
+	mustExec(t, pool, `INSERT INTO documents.sequencer (project_number, database_id, last_ts) VALUES (482915736204, '(default)', now())`)
+	mustFail(t, pool, "a database has one sequencer row",
+		`INSERT INTO documents.sequencer (project_number, database_id, last_ts) VALUES (482915736204, '(default)', now())`)
+
+	h := bytes.Repeat([]byte{1}, 32)
+	document := `INSERT INTO documents.documents (project_number, database_id, name_key, name, parent_hash, cg_hash, parent,
+		collection_id, doc, create_time, update_time, update_seq, size) VALUES (482915736204, '(default)', $1, $1, $2, $2, '', 'c', '', now(), now(), 1, 1)`
+	mustFail(t, pool, "a stored key is cut at 2,080 bytes", document, bytes.Repeat([]byte{1}, 2081), h)
+	mustFail(t, pool, "a hash is 32 bytes", document, []byte{1, 2}, []byte{1})
+	mustExec(t, pool, document, bytes.Repeat([]byte{1}, 2080), h)
+	mustFail(t, pool, "a document's update_time is not before its create_time",
+		`INSERT INTO documents.documents (project_number, database_id, name_key, name, parent_hash, cg_hash, parent,
+		collection_id, doc, create_time, update_time, update_seq, size) VALUES (482915736204, '(default)', '\x0102', '\x0102', $1, $1, '', 'c', '', now(), now() - interval '1 second', 1, 1)`, h)
+	mustFail(t, pool, "a version ends after it begins",
+		`INSERT INTO documents.versions (project_number, database_id, name_key, end_seq, name, parent_hash, cg_hash, parent, collection_id,
+		begin_time, end_time, create_time, doc) VALUES (482915736204, '(default)', '\x0102', 1, '\x0102', $1, $1, '', 'c', now(), now(), now(), '')`, h)
+	mustFail(t, pool, "a changelog row changes something",
+		`INSERT INTO documents.changelog (project_number, database_id, seq, name_key, name, commit_time) VALUES (482915736204, '(default)', 1, '\x0102', '\x0102', now())`)
+	mustFail(t, pool, "an index entry holds its whole key only when cut",
+		`INSERT INTO documents.index_entries (project_number, database_id, index_id, key, full_key) VALUES (482915736204, '(default)', 1, '\x0102', $1)`,
+		bytes.Repeat([]byte{1}, 3000))
+	mustFail(t, pool, "a cut index entry holds its whole key",
+		`INSERT INTO documents.index_entries (project_number, database_id, index_id, key) VALUES (482915736204, '(default)', 1, $1)`,
+		bytes.Repeat([]byte{1}, 2080))
+
+	index := `INSERT INTO documents.indexes (project_number, database_id, kind, collection_group, query_scope, spec, spec_hash, state, create_time, ready_time)
+		VALUES (482915736204, '(default)', 'composite', 'c', 1, '\x01', $1, $2, now(), $3)`
+	mustFail(t, pool, "an index state is one of production's", index, h, "BUILDING", nil)
+	mustFail(t, pool, "a ready index has a ready_time", index, h, "READY", nil)
+	mustExec(t, pool, index, h, "CREATING", nil)
+	mustFail(t, pool, "one index per spec", index, h, "CREATING", nil)
+	mustFail(t, pool, "a TTL state is CREATING or ACTIVE",
+		`INSERT INTO documents.field_overrides (project_number, database_id, key_hash, collection_group, field_path, ttl_state, update_time, etag)
+		VALUES (482915736204, '(default)', $1, 'c', 'f', 'ON', now(), 'e')`, h)
+
+	// child_skip, the skipping scans' step: past a text segment and a numeric one.
+	var text, numeric []byte
+	if err := pool.QueryRow(context.Background(), `SELECT documents.child_skip('\x0102610001020062000100', 1),
+		documents.child_skip('\x01010000000000000005020062000100', 1)`).Scan(&text, &numeric); err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(text, []byte{1, 2, 'a', 0, 1, 3}) || !bytes.Equal(numeric, []byte{1, 1, 0, 0, 0, 0, 0, 0, 0, 5, 3}) {
+		t.Errorf("child_skip: %x %x", text, numeric)
+	}
+}

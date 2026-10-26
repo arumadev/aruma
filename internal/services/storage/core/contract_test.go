@@ -349,11 +349,12 @@ func TestFinalErrors(t *testing.T) {
 func TestSessionTokens(t *testing.T) {
 	s := &Service{keys: testKeys(t)}
 	id := bytes.Repeat([]byte{9}, 32)
-	sealed, err := s.sealSessionTokens(482915736204, "a.png", id, []string{"t1", "t2"})
-	if err != nil || bytes.Contains(sealed, []byte("t1")) {
+	tokens := []string{"plaintext-token-one", "plaintext-token-two"}
+	sealed, err := s.sealSessionTokens(482915736204, "a.png", id, tokens)
+	if err != nil || bytes.Contains(sealed, []byte(tokens[0])) {
 		t.Fatalf("sealSessionTokens = %x, %v", sealed, err)
 	}
-	if got, err := s.openSessionTokens(482915736204, "a.png", id, sealed); err != nil || !slices.Equal(got, []string{"t1", "t2"}) {
+	if got, err := s.openSessionTokens(482915736204, "a.png", id, sealed); err != nil || !slices.Equal(got, tokens) {
 		t.Fatalf("openSessionTokens = %v, %v", got, err)
 	}
 	if _, err := s.openSessionTokens(482915736204, "a.png", bytes.Repeat([]byte{8}, 32), sealed); err == nil {

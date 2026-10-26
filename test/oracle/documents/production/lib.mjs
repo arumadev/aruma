@@ -317,7 +317,10 @@ export function writeCorpus(name, header, body) {
   }
   header = { ...header, versions: { ...header.versions, [GENERATOR_HASH]: generatorHash(header.generator) } };
   const file = join(CORPUS_DIR, name);
-  writeFileSync(file, canonical({ schema: SCHEMA, header, ...body }));
+  const text = canonical({ schema: SCHEMA, header, ...body });
+  // ADR-028 §7.5: every output is checked for an access token before it is saved.
+  if (/ya29\.|Bearer [A-Za-z0-9._-]{20,}/.test(text)) throw new Error(`${name}: refusing to write what looks like an access token`);
+  writeFileSync(file, text);
   process.stderr.write(`wrote ${relative(REPO_ROOT, file)}\n`);
   rebuildManifest();
 }

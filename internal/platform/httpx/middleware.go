@@ -43,12 +43,8 @@ func Common(next http.Handler, logger *slog.Logger, trusted []netip.Prefix) http
 func CommonWithLimit(next http.Handler, logger *slog.Logger, trusted []netip.Prefix, maxBody int64) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		id := crypto.RandomHex(8)
-		ip := ClientIP(r, trusted)
-		ctx := context.WithValue(context.WithValue(r.Context(), requestIDKey, id), clientIPKey, ip)
-		r = r.WithContext(ctx)
+		r, id, ip := Begin(w, r, trusted)
 		r.Body = http.MaxBytesReader(w, r.Body, maxBody)
-		w.Header().Set("X-Request-Id", id)
 
 		rec := &StatusRecorder{ResponseWriter: w, Status: http.StatusOK}
 		defer func() {
@@ -72,6 +68,18 @@ func CommonWithLimit(next http.Handler, logger *slog.Logger, trusted []netip.Pre
 		}()
 		next.ServeHTTP(rec, r)
 	})
+}
+
+// Begin is the start Common gives every request, for a route that cannot take the rest of it
+// (the Document Database's gRPC route, whose streams need the writer's Flush and a body cap per
+// message, ADR-027 §3.1): it assigns the request id, resolves the client address through trusted,
+// and sets X-Request-Id. RequestID and ClientAddr read them from the returned request.
+func Begin(w http.ResponseWriter, r *http.Request, trusted []netip.Prefix) (*http.Request, string, netip.Addr) {
+	id := crypto.RandomHex(8)
+	ip := ClientIP(r, trusted)
+	ctx := context.WithValue(context.WithValue(r.Context(), requestIDKey, id), clientIPKey, ip)
+	w.Header().Set("X-Request-Id", id)
+	return r.WithContext(ctx), id, ip
 }
 
 // StatusRecorder captures the status code written by a handler.

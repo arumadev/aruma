@@ -1,0 +1,19 @@
+# Expected failures of test/smoke/web/documents.test.mjs, Firestore lite over REST (ADR-028 §7.3).
+#
+# Each line names a test as node:test prints it ("firebase@<major>/<name>"), optionally followed
+# by " :: " and a text its failure must contain. A listed test that passes, fails for another
+# reason, or no longer exists fails the suite: remove the line when the gap closes.
+#
+# Every lite write is a Commit, which comes in F2; getDocs is a RunQuery, which comes in F3.
+firebase@11/writes: setDoc, updateDoc and deleteDoc :: unimplemented Request failed with error: Commit is not supported
+firebase@11/writes: addDoc and writeBatch :: unimplemented Request failed with error: Commit is not supported
+firebase@11/writes: every type round-trips :: unimplemented Request failed with error: Commit is not supported
+firebase@11/getDocs of a collection :: unimplemented Request failed with error: RunQuery is not supported
+firebase@12/writes: setDoc, updateDoc and deleteDoc :: unimplemented Request failed with error: Commit is not supported
+firebase@12/writes: addDoc and writeBatch :: unimplemented Request failed with error: Commit is not supported
+firebase@12/writes: every type round-trips :: unimplemented Request failed with error: Commit is not supported
+firebase@12/getDocs of a collection :: unimplemented Request failed with error: RunQuery is not supported
+firebase@13/writes: setDoc, updateDoc and deleteDoc :: unimplemented Request failed with error: Commit is not supported
+firebase@13/writes: addDoc and writeBatch :: unimplemented Request failed with error: Commit is not supported
+firebase@13/writes: every type round-trips :: unimplemented Request failed with error: Commit is not supported
+firebase@13/getDocs of a collection :: unimplemented Request failed with error: RunQuery is not supported

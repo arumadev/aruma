@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -477,5 +478,70 @@ func TestStorageDisabledIsNotChecked(t *testing.T) {
 	m["ARUMA_STORAGE_OBJECT_BYTES"] = "lots"
 	if _, err := Load("", env(m)); err == nil {
 		t.Error("a malformed variable is accepted")
+	}
+}
+
+func TestDocumentsDefaultsOff(t *testing.T) {
+	c, err := Load("", env(required()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Documents.DevOwnerToken || c.LoopbackDeployment() || len(c.TrustedProxyPrefixes()) != 0 {
+		t.Errorf("the owner token and trusted proxies must be off by default: %+v", c.Documents)
+	}
+}
+
+func TestDocumentsDevOwnerToken(t *testing.T) {
+	m := required()
+	m["ARUMA_PUBLIC_URL"] = "http://localhost:8080"
+	m["ARUMA_LISTEN"] = "[::1]:8080"
+	m["ARUMA_DOCUMENTS_DEV_OWNER_TOKEN"] = "true"
+	c, err := Load("", env(m))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !c.Documents.DevOwnerToken || !c.LoopbackDeployment() {
+		t.Errorf("settings not applied: %+v", c.Documents)
+	}
+
+	// ADR-029 §6: the owner token only where nothing reaches the server from another machine.
+	for _, bad := range []map[string]string{
+		{"ARUMA_DOCUMENTS_DEV_OWNER_TOKEN": "true"},
+		{"ARUMA_DOCUMENTS_DEV_OWNER_TOKEN": "true", "ARUMA_PUBLIC_URL": "http://127.0.0.1:8080"},
+		{"ARUMA_DOCUMENTS_DEV_OWNER_TOKEN": "true", "ARUMA_PUBLIC_URL": "http://127.0.0.1:8080", "ARUMA_LISTEN": "0.0.0.0:8080"},
+		{"ARUMA_DOCUMENTS_DEV_OWNER_TOKEN": "true", "ARUMA_LISTEN": "127.0.0.1:8080"},
+		{"ARUMA_DOCUMENTS_DEV_OWNER_TOKEN": "yes please"},
+	} {
+		m := required()
+		maps.Copy(m, bad)
+		_, err := Load("", env(m))
+		if err == nil {
+			t.Errorf("%v should be rejected", bad)
+		} else if bad["ARUMA_DOCUMENTS_DEV_OWNER_TOKEN"] == "true" && !strings.Contains(err.Error(), "documents.dev_owner_token") {
+			t.Errorf("%v: the error does not name the key: %v", bad, err)
+		}
+	}
+}
+
+func TestDocumentsFromFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "aruma.yaml")
+	yaml := `
+database_url: postgres://file/aruma
+public_url: http://127.0.0.1:8080
+master_key: ` + testKey + `
+listen: 127.0.0.1:8080
+trusted_proxies: ["127.0.0.1", "10.0.0.0/8"]
+documents:
+  dev_owner_token: true
+`
+	if err := os.WriteFile(path, []byte(yaml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	c, err := Load(path, env(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !c.Documents.DevOwnerToken || !c.LoopbackDeployment() || len(c.TrustedProxyPrefixes()) != 2 {
+		t.Errorf("file settings not applied: %+v %v", c.Documents, c.TrustedProxyPrefixes())
 	}
 }

@@ -1,0 +1,2830 @@
+{
+  "cases": [
+    {
+      "description": "batchGet with an unknown top-level field",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unknown name \"bogus\": Cannot find field.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "json.unknown_field",
+      "request": {
+        "body": {
+          "bogus": 1,
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid JSON payload received. Unknown name \"bogus\": Cannot find field."
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid JSON payload received. Unknown name \"bogus\": Cannot find field.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery with an unknown field inside structuredQuery",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unknown name \"bogus\" at 'structured_query': Cannot find field.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "json.unknown_nested_field",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "bogus": 1,
+            "from": [
+              {
+                "collectionId": "aruma-ref-f1-get"
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid JSON payload received. Unknown name \"bogus\" at 'structured_query': Cannot find field.",
+                      "field": "structured_query"
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid JSON payload received. Unknown name \"bogus\" at 'structured_query': Cannot find field.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH with an unknown key in a Value",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unknown name \"bogusValue\" at 'document.fields[0].value': Cannot find field.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "json.unknown_field_in_value",
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "bogusValue": 2,
+              "integerValue": "1"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/wire-v"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid JSON payload received. Unknown name \"bogusValue\" at 'document.fields[0].value': Cannot find field.",
+                    "field": "document.fields[0].value"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid JSON payload received. Unknown name \"bogusValue\" at 'document.fields[0].value': Cannot find field.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet with documents: \"x\"",
+      "error": {
+        "http": 400,
+        "message": "Document name \"x\" lacks \"projects\" at index 0.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "json.wrong_kind_string_for_array",
+      "request": {
+        "body": {
+          "documents": "x"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Document name \"x\" lacks \"projects\" at index 0.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet with documents: [1]",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'documents[0]' (TYPE_STRING), 1",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "json.wrong_kind_number_in_array",
+      "request": {
+        "body": {
+          "documents": [
+            1
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid value at 'documents[0]' (TYPE_STRING), 1",
+                      "field": "documents[0]"
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid value at 'documents[0]' (TYPE_STRING), 1",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH with fields: \"x\"",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'document.fields' (type.googleapis.com/google.firestore.v1.Document.FieldsEntry), \"x\"",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "json.wrong_kind_fields_string",
+      "request": {
+        "body": {
+          "fields": "x"
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/wire-v"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'document.fields' (type.googleapis.com/google.firestore.v1.Document.FieldsEntry), \"x\"",
+                    "field": "document.fields"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'document.fields' (type.googleapis.com/google.firestore.v1.Document.FieldsEntry), \"x\"",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH with integerValue: \"one\"",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'document.fields[0].value.integer_value' (TYPE_INT64), \"one\"",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "json.wrong_kind_integer_value_word",
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "one"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/wire-v"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'document.fields[0].value.integer_value' (TYPE_INT64), \"one\"",
+                    "field": "document.fields[0].value.integer_value"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'document.fields[0].value.integer_value' (TYPE_INT64), \"one\"",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH with booleanValue: \"true\"",
+      "id": "json.wrong_kind_boolean_string",
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "booleanValue": "true"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/wire-v"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "booleanValue": true
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/wire-v",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet with a truncated JSON body",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unexpected end of string. Expected a value or ] within an array.\n\n^",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "json.syntax_error",
+      "request": {
+        "body": "{\"documents\": [",
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Invalid JSON payload received. Unexpected end of string. Expected a value or ] within an array.\n\n^",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet with JSON followed by garbage",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Parsing terminated before end of input.\n{\"documents\": []} x\n                  ^",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "json.trailing_garbage",
+      "request": {
+        "body": "{\"documents\": []} x",
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Invalid JSON payload received. Parsing terminated before end of input.\n{\"documents\": []} x\n                  ^",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet with the JSON body []",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unknown name \"\": Root element must be a message.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "json.root_array",
+      "request": {
+        "body": "[]",
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid JSON payload received. Unknown name \"\": Root element must be a message."
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid JSON payload received. Unknown name \"\": Root element must be a message.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet with the JSON body \"x\"",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unknown name \"\": Root element must be a message.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "json.root_string",
+      "request": {
+        "body": "\"x\"",
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid JSON payload received. Unknown name \"\": Root element must be a message."
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid JSON payload received. Unknown name \"\": Root element must be a message.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet with the JSON body 1",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unknown name \"\": Root element must be a message.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "json.root_number",
+      "request": {
+        "body": "1",
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid JSON payload received. Unknown name \"\": Root element must be a message."
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid JSON payload received. Unknown name \"\": Root element must be a message.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet with the JSON body null",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unknown name \"\": Root element must be a message.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "json.root_null",
+      "request": {
+        "body": "null",
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid JSON payload received. Unknown name \"\": Root element must be a message."
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid JSON payload received. Unknown name \"\": Root element must be a message.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet with an empty body",
+      "id": "json.empty_body",
+      "request": {
+        "body": "",
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery orderBy direction \"SIDEWAYS\"",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'structured_query.order_by[0].direction' (type.googleapis.com/google.firestore.v1.StructuredQuery.Direction), \"SIDEWAYS\"",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "json.bad_enum",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f1-get"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "SIDEWAYS",
+                "field": {
+                  "fieldPath": "a"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid value at 'structured_query.order_by[0].direction' (type.googleapis.com/google.firestore.v1.StructuredQuery.Direction), \"SIDEWAYS\"",
+                      "field": "structured_query.order_by[0].direction"
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid value at 'structured_query.order_by[0].direction' (type.googleapis.com/google.firestore.v1.StructuredQuery.Direction), \"SIDEWAYS\"",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery orderBy direction 99",
+      "error": {
+        "http": 400,
+        "message": "Unrecognized ordering.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "json.bad_enum_number",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f1-get"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": 99,
+                "field": {
+                  "fieldPath": "a"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Unrecognized ordering.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery where a NEAR 1",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'structured_query.where.field_filter.op' (type.googleapis.com/google.firestore.v1.StructuredQuery.FieldFilter.Operator), \"NEAR\"",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "json.bad_enum_operator",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f1-get"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "NEAR",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid value at 'structured_query.where.field_filter.op' (type.googleapis.com/google.firestore.v1.StructuredQuery.FieldFilter.Operator), \"NEAR\"",
+                      "field": "structured_query.where.field_filter.op"
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid value at 'structured_query.where.field_filter.op' (type.googleapis.com/google.firestore.v1.StructuredQuery.FieldFilter.Operator), \"NEAR\"",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET with ?bogus=1",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unknown name \"bogus\": Cannot bind query parameter. Field 'bogus' could not be found in request message.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "query.unknown_parameter",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1?bogus=1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid JSON payload received. Unknown name \"bogus\": Cannot bind query parameter. Field 'bogus' could not be found in request message."
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid JSON payload received. Unknown name \"bogus\": Cannot bind query parameter. Field 'bogus' could not be found in request message.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "ListDocuments with ?bogus=1",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unknown name \"bogus\": Cannot bind query parameter. Field 'bogus' could not be found in request message.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "query.unknown_parameter_list",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get?bogus=1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid JSON payload received. Unknown name \"bogus\": Cannot bind query parameter. Field 'bogus' could not be found in request message."
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid JSON payload received. Unknown name \"bogus\": Cannot bind query parameter. Field 'bogus' could not be found in request message.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "ListDocuments with pageSize=1&pageSize=2",
+      "id": "query.repeated_scalar",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get?pageSize=1&pageSize=2"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g2",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ],
+          "nextPageToken": "<nextPageToken>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET ?readTime=notatime",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'read_time' (type.googleapis.com/google.protobuf.Timestamp), Field 'read_time', Illegal timestamp format; timestamps must end with 'Z' or have a valid timezone offset.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "timestamp.not_a_time",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1?readTime=notatime"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'read_time' (type.googleapis.com/google.protobuf.Timestamp), Field 'read_time', Illegal timestamp format; timestamps must end with 'Z' or have a valid timezone offset.",
+                    "field": "read_time"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'read_time' (type.googleapis.com/google.protobuf.Timestamp), Field 'read_time', Illegal timestamp format; timestamps must end with 'Z' or have a valid timezone offset.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET ?readTime=2026-10-26T18:00:00 (no Z)",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'read_time' (type.googleapis.com/google.protobuf.Timestamp), Field 'read_time', Illegal timestamp format; timestamps must end with 'Z' or have a valid timezone offset.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "timestamp.no_zone",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1?readTime=2026-10-26T18%3A00%3A00"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'read_time' (type.googleapis.com/google.protobuf.Timestamp), Field 'read_time', Illegal timestamp format; timestamps must end with 'Z' or have a valid timezone offset.",
+                    "field": "read_time"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'read_time' (type.googleapis.com/google.protobuf.Timestamp), Field 'read_time', Illegal timestamp format; timestamps must end with 'Z' or have a valid timezone offset.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET ?readTime=<a minute ago, written with a +01:00 offset>",
+      "id": "timestamp.offset",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1?readTime=<readTime: a minute ago with +01:00>"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            },
+            "b": {
+              "mapValue": {
+                "fields": {
+                  "c": {
+                    "integerValue": "2"
+                  },
+                  "d": {
+                    "stringValue": "x"
+                  }
+                }
+              }
+            },
+            "s": {
+              "stringValue": "one"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet readTime \"2026-13-01T00:00:00Z\"",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'read_time' (type.googleapis.com/google.protobuf.Timestamp), Field 'readTime', Invalid time format: Failed to parse input",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "timestamp.month_13",
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"
+          ],
+          "readTime": "<readTime: RFC 3339>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid value at 'read_time' (type.googleapis.com/google.protobuf.Timestamp), Field 'readTime', Invalid time format: Failed to parse input",
+                      "field": "read_time"
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid value at 'read_time' (type.googleapis.com/google.protobuf.Timestamp), Field 'readTime', Invalid time format: Failed to parse input",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH with timestampValue \"yesterday\"",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'document.fields[0].value.timestamp_value' (type.googleapis.com/google.protobuf.Timestamp), Field 'timestampValue', Illegal timestamp format; timestamps must end with 'Z' or have a valid timezone offset.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "timestamp.value_malformed",
+      "request": {
+        "body": {
+          "fields": {
+            "t": {
+              "timestampValue": "yesterday"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/wire-v"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'document.fields[0].value.timestamp_value' (type.googleapis.com/google.protobuf.Timestamp), Field 'timestampValue', Illegal timestamp format; timestamps must end with 'Z' or have a valid timezone offset.",
+                    "field": "document.fields[0].value.timestamp_value"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'document.fields[0].value.timestamp_value' (type.googleapis.com/google.protobuf.Timestamp), Field 'timestampValue', Illegal timestamp format; timestamps must end with 'Z' or have a valid timezone offset.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH with a field whose Value is {}",
+      "error": {
+        "http": 400,
+        "message": "Cannot convert firestore.v1.Value with type unset.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "value.no_type",
+      "request": {
+        "body": {
+          "fields": {
+            "a": {}
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/wire-notype"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Cannot convert firestore.v1.Value with type unset.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH with a map field holding a Value {}",
+      "error": {
+        "http": 400,
+        "message": "Cannot convert firestore.v1.Value with type unset.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "value.no_type_nested",
+      "request": {
+        "body": {
+          "fields": {
+            "m": {
+              "mapValue": {
+                "fields": {
+                  "a": {}
+                }
+              }
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/wire-notype2"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Cannot convert firestore.v1.Value with type unset.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery where a == {} (a Value with no type)",
+      "error": {
+        "http": 400,
+        "message": "Cannot convert firestore.v1.Value with type unset.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "value.no_type_in_filter",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f1-get"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {}
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Cannot convert firestore.v1.Value with type unset.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH with a Value holding integerValue and stringValue",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'document.fields[0].value' (oneof), oneof field 'value_type' is already set. Cannot set 'stringValue'",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "value.two_types",
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "1",
+              "stringValue": "x"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/wire-v"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'document.fields[0].value' (oneof), oneof field 'value_type' is already set. Cannot set 'stringValue'",
+                    "field": "document.fields[0].value"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'document.fields[0].value' (oneof), oneof field 'value_type' is already set. Cannot set 'stringValue'",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH timestampValue \"0000-12-31T23:59:59Z\"",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'document.fields[0].value.timestamp_value' (type.googleapis.com/google.protobuf.Timestamp), Field 'timestampValue', Timestamp value exceeds limits",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "value.timestamp_year_0",
+      "request": {
+        "body": {
+          "fields": {
+            "t": {
+              "timestampValue": "0000-12-31T23:59:59Z"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/wire-v"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'document.fields[0].value.timestamp_value' (type.googleapis.com/google.protobuf.Timestamp), Field 'timestampValue', Timestamp value exceeds limits",
+                    "field": "document.fields[0].value.timestamp_value"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'document.fields[0].value.timestamp_value' (type.googleapis.com/google.protobuf.Timestamp), Field 'timestampValue', Timestamp value exceeds limits",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH timestampValue \"10000-01-01T00:00:00Z\"",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'document.fields[0].value.timestamp_value' (type.googleapis.com/google.protobuf.Timestamp), Field 'timestampValue', Timestamp value exceeds limits",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "value.timestamp_year_10000",
+      "request": {
+        "body": {
+          "fields": {
+            "t": {
+              "timestampValue": "10000-01-01T00:00:00Z"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/wire-v"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'document.fields[0].value.timestamp_value' (type.googleapis.com/google.protobuf.Timestamp), Field 'timestampValue', Timestamp value exceeds limits",
+                    "field": "document.fields[0].value.timestamp_value"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'document.fields[0].value.timestamp_value' (type.googleapis.com/google.protobuf.Timestamp), Field 'timestampValue', Timestamp value exceeds limits",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH timestampValue \"0001-01-01T00:00:00Z\" (the minimum)",
+      "id": "value.timestamp_min",
+      "request": {
+        "body": {
+          "fields": {
+            "t": {
+              "timestampValue": "0001-01-01T00:00:00Z"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/wire-tsmin"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "t": {
+              "timestampValue": "0001-01-01T00:00:00Z"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/wire-tsmin",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH timestampValue \"9999-12-31T23:59:59.999999Z\" (the maximum)",
+      "id": "value.timestamp_max",
+      "request": {
+        "body": {
+          "fields": {
+            "t": {
+              "timestampValue": "9999-12-31T23:59:59.999999Z"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/wire-tsmax"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "t": {
+              "timestampValue": "9999-12-31T23:59:59.999999Z"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/wire-tsmax",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet readTime \"10000-01-01T00:00:00Z\"",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'read_time' (type.googleapis.com/google.protobuf.Timestamp), Field 'readTime', Timestamp value exceeds limits",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "readtime.year_10000",
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"
+          ],
+          "readTime": "<readTime>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid value at 'read_time' (type.googleapis.com/google.protobuf.Timestamp), Field 'readTime', Timestamp value exceeds limits",
+                      "field": "read_time"
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid value at 'read_time' (type.googleapis.com/google.protobuf.Timestamp), Field 'readTime', Timestamp value exceeds limits",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in database \"abc\"",
+      "error": {
+        "http": 404,
+        "message": "The database abc does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "path.database_id.abc",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/abc/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database abc does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in database \"abcd\"",
+      "error": {
+        "http": 404,
+        "message": "The database abcd does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "path.database_id.abcd",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/abcd/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database abcd does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in database \"aaaaaa…(63)\"",
+      "error": {
+        "http": 404,
+        "message": "The database aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "path.database_id.aaaaaa…(63)",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in database \"aaaaaa…(64)\"",
+      "error": {
+        "http": 404,
+        "message": "The database aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "path.database_id.aaaaaa…(64)",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in database \"Upper-case\"",
+      "error": {
+        "http": 404,
+        "message": "The database Upper-case does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "path.database_id.Upper-case",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/Upper-case/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database Upper-case does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in database \"1abc\"",
+      "error": {
+        "http": 404,
+        "message": "The database 1abc does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "path.database_id.1abc",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/1abc/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database 1abc does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in database \"abc-\"",
+      "error": {
+        "http": 404,
+        "message": "The database abc- does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "path.database_id.abc-",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/abc-/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database abc- does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in database \"ab_c\"",
+      "error": {
+        "http": 404,
+        "message": "The database ab_c does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "path.database_id.ab_c",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/ab_c/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database ab_c does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in database \"-abc\"",
+      "error": {
+        "http": 404,
+        "message": "The database -abc does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "path.database_id.-abc",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/-abc/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database -abc does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in database \"aruma-…(27)\"",
+      "error": {
+        "http": 404,
+        "message": "The database aruma-ref-valid-but-missing does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "path.database_id.aruma-…(27)",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/aruma-ref-valid-but-missing/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database aruma-ref-valid-but-missing does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in database \"000000…(36)\"",
+      "error": {
+        "http": 404,
+        "message": "The database 00000000-0000-0000-0000-000000000000 does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "path.database_id.000000…(36)",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/00000000-0000-0000-0000-000000000000/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database 00000000-0000-0000-0000-000000000000 does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in database \"(other)\"",
+      "error": {
+        "http": 400,
+        "message": "Invalid database id (other)",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "path.database_id.(other)",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(other)/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid database id (other)",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in database \"(default\"",
+      "error": {
+        "http": 400,
+        "message": "Invalid database id (default",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "path.database_id.(default",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid database id (default",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET with an empty database id",
+      "error": {
+        "http": 400,
+        "message": "Missing required project ID.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "path.database_empty",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases//documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Missing required project ID.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet at projects/<p>/documents:batchGet (no databases segment)",
+      "id": "path.no_database_segment",
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/documents:batchGet"
+      },
+      "response": {
+        "body": {
+          "raw": "<!DOCTYPE html>\n<html lang=en>\n  <meta charset=utf-8>\n  <meta name=viewport content=\"initial-scale=1, minimum-scale=1, width=device-width\">\n  <title>Error 404 (Not Found)!!1</title>\n  <style>\n    *{margin:0;padding:0}html,code{font:15px/22px arial,sans-serif}html{background:#fff;color:#222;padding:15px}body{margin:7% auto 0;max-width:390px;min-height:180px;padding:30px 0 15px}* > body{background:url(//www.google.com/images/errors/robot.png) 100% 5px no-repeat;padding-right:205px}p{margin:11px 0 22px;overflow:hidden}ins{color:#777;text-decoration:none}a img{border:0}@media screen and (max-width:772px){body{background:none;margin-top:0;max-width:none;padding-right:0}}#logo{background:url(//www.google.com/images/branding/googlelogo/1x/googlelogo_color_150x54dp.png) no-repeat;margin-left:-5px}@media only screen and (min-resolution:192dpi){#logo{background:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) no-repeat 0% 0%/100% 100%;-moz-border-image:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) 0}}@media only screen and (-webkit-min-device-pixel-ratio:2){#logo{background:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) no-repeat;-webkit-background-size:100% 100%}}#logo{display:inline-block;height:54px;width:150px}\n  </style>\n  <a href=//www.google.com/><span id=logo aria-label=Google></span></a>\n  <p><b>404.</b> <ins>That’s an error.</ins>\n  <p>The requested URL <code>/v1/projects/chatapp-8ae21/documents:batchGet</code> was not found on this server.  <ins>That’s all we know.</ins>\n"
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "responseNotJson": true,
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in project \"Bad_Project!\"",
+      "error": {
+        "http": 403,
+        "message": "Permission denied on resource project Bad_Project!.",
+        "status": "PERMISSION_DENIED"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.ErrorInfo",
+        "type.googleapis.com/google.rpc.LocalizedMessage",
+        "type.googleapis.com/google.rpc.Help"
+      ],
+      "id": "path.project_id.Bad_Project!",
+      "request": {
+        "method": "GET",
+        "path": "projects/Bad_Project!/databases/(default)/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 403,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "googleapis.com",
+                "metadata": {
+                  "consumer": "projects/Bad_Project!",
+                  "containerInfo": "Bad_Project!",
+                  "service": "firestore.googleapis.com"
+                },
+                "reason": "CONSUMER_INVALID"
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.LocalizedMessage",
+                "locale": "en-US",
+                "message": "Permission denied on resource project Bad_Project!."
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.Help",
+                "links": [
+                  {
+                    "description": "Google developers console",
+                    "url": "https://console.developers.google.com"
+                  }
+                ]
+              }
+            ],
+            "message": "Permission denied on resource project Bad_Project!.",
+            "status": "PERMISSION_DENIED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 403
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in project \"ab\"",
+      "error": {
+        "http": 403,
+        "message": "Cloud Firestore API has not been used in project ab before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=ab then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.",
+        "status": "PERMISSION_DENIED"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.ErrorInfo",
+        "type.googleapis.com/google.rpc.LocalizedMessage",
+        "type.googleapis.com/google.rpc.Help"
+      ],
+      "id": "path.project_id.ab",
+      "request": {
+        "method": "GET",
+        "path": "projects/ab/databases/(default)/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 403,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "googleapis.com",
+                "metadata": {
+                  "activationUrl": "https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=ab",
+                  "consumer": "projects/ab",
+                  "containerInfo": "ab",
+                  "service": "firestore.googleapis.com",
+                  "serviceTitle": "Cloud Firestore API"
+                },
+                "reason": "SERVICE_DISABLED"
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.LocalizedMessage",
+                "locale": "en-US",
+                "message": "Cloud Firestore API has not been used in project ab before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=ab then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.Help",
+                "links": [
+                  {
+                    "description": "Google developers console API activation",
+                    "url": "https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=ab"
+                  }
+                ]
+              }
+            ],
+            "message": "Cloud Firestore API has not been used in project ab before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=ab then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.",
+            "status": "PERMISSION_DENIED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 403
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in project \"UPPER-CASE\"",
+      "error": {
+        "http": 403,
+        "message": "Permission denied on resource project UPPER-CASE.",
+        "status": "PERMISSION_DENIED"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.ErrorInfo",
+        "type.googleapis.com/google.rpc.LocalizedMessage",
+        "type.googleapis.com/google.rpc.Help"
+      ],
+      "id": "path.project_id.UPPER-CASE",
+      "request": {
+        "method": "GET",
+        "path": "projects/UPPER-CASE/databases/(default)/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 403,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "googleapis.com",
+                "metadata": {
+                  "consumer": "projects/UPPER-CASE",
+                  "containerInfo": "UPPER-CASE",
+                  "service": "firestore.googleapis.com"
+                },
+                "reason": "CONSUMER_INVALID"
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.LocalizedMessage",
+                "locale": "en-US",
+                "message": "Permission denied on resource project UPPER-CASE."
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.Help",
+                "links": [
+                  {
+                    "description": "Google developers console",
+                    "url": "https://console.developers.google.com"
+                  }
+                ]
+              }
+            ],
+            "message": "Permission denied on resource project UPPER-CASE.",
+            "status": "PERMISSION_DENIED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 403
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in project \"aruma-ref-no-such-project\"",
+      "error": {
+        "http": 403,
+        "message": "Permission denied on resource project aruma-ref-no-such-project.",
+        "status": "PERMISSION_DENIED"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.ErrorInfo",
+        "type.googleapis.com/google.rpc.LocalizedMessage",
+        "type.googleapis.com/google.rpc.Help"
+      ],
+      "id": "path.project_id.aruma-ref-no-such-project",
+      "request": {
+        "method": "GET",
+        "path": "projects/aruma-ref-no-such-project/databases/(default)/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 403,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "googleapis.com",
+                "metadata": {
+                  "consumer": "projects/aruma-ref-no-such-project",
+                  "containerInfo": "aruma-ref-no-such-project",
+                  "service": "firestore.googleapis.com"
+                },
+                "reason": "CONSUMER_INVALID"
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.LocalizedMessage",
+                "locale": "en-US",
+                "message": "Permission denied on resource project aruma-ref-no-such-project."
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.Help",
+                "links": [
+                  {
+                    "description": "Google developers console",
+                    "url": "https://console.developers.google.com"
+                  }
+                ]
+              }
+            ],
+            "message": "Permission denied on resource project aruma-ref-no-such-project.",
+            "status": "PERMISSION_DENIED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 403
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in project \"-starts-with-dash\"",
+      "error": {
+        "http": 403,
+        "message": "Permission denied on resource project -starts-with-dash.",
+        "status": "PERMISSION_DENIED"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.ErrorInfo",
+        "type.googleapis.com/google.rpc.LocalizedMessage",
+        "type.googleapis.com/google.rpc.Help"
+      ],
+      "id": "path.project_id.-starts-with-dash",
+      "request": {
+        "method": "GET",
+        "path": "projects/-starts-with-dash/databases/(default)/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 403,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "googleapis.com",
+                "metadata": {
+                  "consumer": "projects/-starts-with-dash",
+                  "containerInfo": "-starts-with-dash",
+                  "service": "firestore.googleapis.com"
+                },
+                "reason": "CONSUMER_INVALID"
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.LocalizedMessage",
+                "locale": "en-US",
+                "message": "Permission denied on resource project -starts-with-dash."
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.Help",
+                "links": [
+                  {
+                    "description": "Google developers console",
+                    "url": "https://console.developers.google.com"
+                  }
+                ]
+              }
+            ],
+            "message": "Permission denied on resource project -starts-with-dash.",
+            "status": "PERMISSION_DENIED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 403
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a document in project \"123456789012\"",
+      "error": {
+        "http": 403,
+        "message": "Permission denied on resource project 123456789012.",
+        "status": "PERMISSION_DENIED"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.ErrorInfo",
+        "type.googleapis.com/google.rpc.LocalizedMessage",
+        "type.googleapis.com/google.rpc.Help"
+      ],
+      "id": "path.project_id.123456789012",
+      "request": {
+        "method": "GET",
+        "path": "projects/123456789012/databases/(default)/documents/aruma-ref-f1-get/g1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 403,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "googleapis.com",
+                "metadata": {
+                  "consumer": "projects/123456789012",
+                  "containerInfo": "123456789012",
+                  "service": "firestore.googleapis.com"
+                },
+                "reason": "CONSUMER_INVALID"
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.LocalizedMessage",
+                "locale": "en-US",
+                "message": "Permission denied on resource project 123456789012."
+              },
+              {
+                "@type": "type.googleapis.com/google.rpc.Help",
+                "links": [
+                  {
+                    "description": "Google developers console",
+                    "url": "https://console.developers.google.com"
+                  }
+                ]
+              }
+            ],
+            "message": "Permission denied on resource project 123456789012.",
+            "status": "PERMISSION_DENIED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 403
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "Admin API GET v1/databases/(default) (no projects/ prefix)",
+      "id": "admin.name_without_projects",
+      "request": {
+        "method": "GET",
+        "path": "databases/(default)"
+      },
+      "response": {
+        "body": {
+          "raw": "<!DOCTYPE html>\n<html lang=en>\n  <meta charset=utf-8>\n  <meta name=viewport content=\"initial-scale=1, minimum-scale=1, width=device-width\">\n  <title>Error 404 (Not Found)!!1</title>\n  <style>\n    *{margin:0;padding:0}html,code{font:15px/22px arial,sans-serif}html{background:#fff;color:#222;padding:15px}body{margin:7% auto 0;max-width:390px;min-height:180px;padding:30px 0 15px}* > body{background:url(//www.google.com/images/errors/robot.png) 100% 5px no-repeat;padding-right:205px}p{margin:11px 0 22px;overflow:hidden}ins{color:#777;text-decoration:none}a img{border:0}@media screen and (max-width:772px){body{background:none;margin-top:0;max-width:none;padding-right:0}}#logo{background:url(//www.google.com/images/branding/googlelogo/1x/googlelogo_color_150x54dp.png) no-repeat;margin-left:-5px}@media only screen and (min-resolution:192dpi){#logo{background:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) no-repeat 0% 0%/100% 100%;-moz-border-image:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) 0}}@media only screen and (-webkit-min-device-pixel-ratio:2){#logo{background:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) no-repeat;-webkit-background-size:100% 100%}}#logo{display:inline-block;height:54px;width:150px}\n  </style>\n  <a href=//www.google.com/><span id=logo aria-label=Google></span></a>\n  <p><b>404.</b> <ins>That’s an error.</ins>\n  <p>The requested URL <code>/v1/databases/(default)</code> was not found on this server.  <ins>That’s all we know.</ins>\n"
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "responseNotJson": true,
+      "transport": "rest"
+    },
+    {
+      "description": "Admin API GET v1/organizations/x/databases/(default)",
+      "id": "admin.name_other_prefix",
+      "request": {
+        "method": "GET",
+        "path": "organizations/x/databases/(default)"
+      },
+      "response": {
+        "body": {
+          "raw": "<!DOCTYPE html>\n<html lang=en>\n  <meta charset=utf-8>\n  <meta name=viewport content=\"initial-scale=1, minimum-scale=1, width=device-width\">\n  <title>Error 404 (Not Found)!!1</title>\n  <style>\n    *{margin:0;padding:0}html,code{font:15px/22px arial,sans-serif}html{background:#fff;color:#222;padding:15px}body{margin:7% auto 0;max-width:390px;min-height:180px;padding:30px 0 15px}* > body{background:url(//www.google.com/images/errors/robot.png) 100% 5px no-repeat;padding-right:205px}p{margin:11px 0 22px;overflow:hidden}ins{color:#777;text-decoration:none}a img{border:0}@media screen and (max-width:772px){body{background:none;margin-top:0;max-width:none;padding-right:0}}#logo{background:url(//www.google.com/images/branding/googlelogo/1x/googlelogo_color_150x54dp.png) no-repeat;margin-left:-5px}@media only screen and (min-resolution:192dpi){#logo{background:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) no-repeat 0% 0%/100% 100%;-moz-border-image:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) 0}}@media only screen and (-webkit-min-device-pixel-ratio:2){#logo{background:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) no-repeat;-webkit-background-size:100% 100%}}#logo{display:inline-block;height:54px;width:150px}\n  </style>\n  <a href=//www.google.com/><span id=logo aria-label=Google></span></a>\n  <p><b>404.</b> <ins>That’s an error.</ins>\n  <p>The requested URL <code>/v1/organizations/x/databases/(default)</code> was not found on this server.  <ins>That’s all we know.</ins>\n"
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "responseNotJson": true,
+      "transport": "rest"
+    },
+    {
+      "description": "Admin API GET projects/<p>/databases/Upper-case",
+      "error": {
+        "http": 404,
+        "message": "Project 'chatapp-8ae21' or database 'Upper-case' does not exist.",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "admin.database_get_bad_id",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/Upper-case"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "Project 'chatapp-8ae21' or database 'Upper-case' does not exist.",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "Admin API GET projects/<p>/databases/aruma-ref-valid-but-missing",
+      "error": {
+        "http": 404,
+        "message": "Project 'chatapp-8ae21' or database 'aruma-ref-valid-but-missing' does not exist.",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "admin.database_get_missing",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/aruma-ref-valid-but-missing"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "Project 'chatapp-8ae21' or database 'aruma-ref-valid-but-missing' does not exist.",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet with newTransaction and readTime",
+      "error": {
+        "http": 400,
+        "message": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'\nInvalid JSON payload received. Unknown name \"database\": Root element must be a message.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "oneof.batch_get_new_transaction_and_read_time",
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"
+          ],
+          "newTransaction": {
+            "readOnly": {}
+          },
+          "readTime": "<readTime: RFC 3339>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'"
+                    },
+                    {
+                      "description": "Invalid JSON payload received. Unknown name \"database\": Root element must be a message."
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'\nInvalid JSON payload received. Unknown name \"database\": Root element must be a message.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet with transaction and readTime (the recorded case, again)",
+      "error": {
+        "http": 400,
+        "message": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'\nInvalid JSON payload received. Unknown name \"database\": Root element must be a message.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "oneof.batch_get_transaction_and_read_time",
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"
+          ],
+          "readTime": "<readTime: RFC 3339>",
+          "transaction": "<a read-only transaction>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'"
+                    },
+                    {
+                      "description": "Invalid JSON payload received. Unknown name \"database\": Root element must be a message."
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'\nInvalid JSON payload received. Unknown name \"database\": Root element must be a message.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery with transaction and readTime",
+      "error": {
+        "http": 400,
+        "message": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'\nInvalid JSON payload received. Unknown name \"parent\": Root element must be a message.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "oneof.run_query_transaction_and_read_time",
+      "request": {
+        "body": {
+          "readTime": "<readTime: RFC 3339>",
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f1-get"
+              }
+            ]
+          },
+          "transaction": "<a read-only transaction>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'"
+                    },
+                    {
+                      "description": "Invalid JSON payload received. Unknown name \"parent\": Root element must be a message."
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'\nInvalid JSON payload received. Unknown name \"parent\": Root element must be a message.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery with newTransaction and readTime",
+      "error": {
+        "http": 400,
+        "message": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'\nInvalid JSON payload received. Unknown name \"parent\": Root element must be a message.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "oneof.run_query_new_transaction_and_read_time",
+      "request": {
+        "body": {
+          "newTransaction": {
+            "readOnly": {}
+          },
+          "readTime": "<readTime: RFC 3339>",
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f1-get"
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'"
+                    },
+                    {
+                      "description": "Invalid JSON payload received. Unknown name \"parent\": Root element must be a message."
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'\nInvalid JSON payload received. Unknown name \"parent\": Root element must be a message.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction with readOnly and readWrite",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'options' (oneof), oneof field 'mode' is already set. Cannot set 'readWrite'",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "oneof.begin_read_only_and_read_write",
+      "request": {
+        "body": {
+          "options": {
+            "readOnly": {},
+            "readWrite": {}
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'options' (oneof), oneof field 'mode' is already set. Cannot set 'readWrite'",
+                    "field": "options"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'options' (oneof), oneof field 'mode' is already set. Cannot set 'readWrite'",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "listCollectionIds with an unknown field",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unknown name \"bogus\": Cannot find field.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "oneof.list_collection_ids_bad_field",
+      "request": {
+        "body": {
+          "bogus": 1
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-lcids/p:listCollectionIds"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid JSON payload received. Unknown name \"bogus\": Cannot find field."
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid JSON payload received. Unknown name \"bogus\": Cannot find field.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery where a == {integerValue, stringValue}",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'structured_query.where.field_filter.value' (oneof), oneof field 'value_type' is already set. Cannot set 'stringValue'",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "oneof.value_two_types_in_filter",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f1-get"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1",
+                  "stringValue": "x"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid value at 'structured_query.where.field_filter.value' (oneof), oneof field 'value_type' is already set. Cannot set 'stringValue'",
+                      "field": "structured_query.where.field_filter.value"
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid value at 'structured_query.where.field_filter.value' (oneof), oneof field 'value_type' is already set. Cannot set 'stringValue'",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "BeginTransaction database \"bad\"",
+      "error": {
+        "code": 7,
+        "message": "Cloud Firestore API has not been used in project bad before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=bad then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.",
+        "status": "PERMISSION_DENIED"
+      },
+      "id": "grpc.database_field.bad",
+      "request": {
+        "message": {
+          "database": "bad",
+          "options": {
+            "readOnly": {}
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "BeginTransaction database \"projects/<p>\"",
+      "error": {
+        "code": 3,
+        "message": "Missing required project ID.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.database_field.project_only",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21",
+          "options": {
+            "readOnly": {}
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "BeginTransaction database \"projects/<p>/databases/\"",
+      "error": {
+        "code": 3,
+        "message": "Missing required project ID.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.database_field.empty_id",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/",
+          "options": {
+            "readOnly": {}
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "BeginTransaction database \"projects/<p>/databases/(default)/documents\"",
+      "error": {
+        "code": 3,
+        "message": "Database name \"projects/chatapp-8ae21/databases/(default)/documents\" has extra characters at index 42.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.database_field.with_documents",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)/documents",
+          "options": {
+            "readOnly": {}
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "BeginTransaction database \"\"",
+      "error": {
+        "code": 3,
+        "message": "Invalid resource field value in the request.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.database_field.empty",
+      "request": {
+        "message": {
+          "database": "",
+          "options": {
+            "readOnly": {}
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "BeginTransaction database \"projects/<p>/databases/Upper-case\"",
+      "error": {
+        "code": 5,
+        "message": "",
+        "status": "NOT_FOUND"
+      },
+      "id": "grpc.database_field.bad_id",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/Upper-case",
+          "options": {
+            "readOnly": {}
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f1.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations, page tokens and transaction ids are replaced by placeholders (normalise in lib.mjs, and the replace maps of record-f1.mjs); everything else is as returned.",
+      "errorDetailTypes lists the @type of each entry of error.details (google.rpc.BadRequest and the like); an empty list means the error carried no details.",
+      "responseNotJson marks an answer whose body was not JSON (kept as {raw}).",
+      "The gRPC BeginTransaction cases send google-cloud-resource-prefix and x-goog-request-params naming (default), as lib.mjs always does; only the database field is malformed."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T19:21:38.964Z .. 2026-10-26T19:30:20.851Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "8594f28e4c778d6fe23e86261a79d91ea7dd55157ca5ae9c0a7bd715da38e07c",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1",
+  "setup": {
+    "commits": [
+      {
+        "writes": [
+          {
+            "update": {
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "a": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g2"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "a": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g3"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "v": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/gm/sub/k"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

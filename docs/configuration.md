@@ -19,7 +19,7 @@ aruma config check
 | `ARUMA_METRICS_LISTEN` | | `127.0.0.1:9464` | Private address for `/metrics`. The value `-` disables it |
 | `ARUMA_SIGNUP_OPEN` | | `false` | Let anyone create an account from the console |
 | `ARUMA_PROJECT_DOMAIN` | | host of `public_url` | Base for `authDomain`, container names and service-account emails |
-| `ARUMA_TRUSTED_PROXIES` | | | CIDR ranges whose `X-Forwarded-For` is believed |
+| `ARUMA_TRUSTED_PROXIES` | | | CIDR ranges or addresses whose `X-Forwarded-For` is believed. On the Document Database they are also the only peers whose `X-Forwarded-Proto: https` lets an admin credential arrive without TLS, see [Document Database](#document-database) |
 | `ARUMA_SESSION_IDLE_TIMEOUT` | | `30m` | Console session idle lifetime |
 | `ARUMA_SESSION_ABSOLUTE_TIMEOUT` | | `8h` | Console session absolute lifetime |
 | `ARUMA_MAIL_DEV_MAILBOX` | | `true` if `public_url` is on loopback, otherwise `false` | Development mailbox: Auth emails of projects without SMTP are kept in the console instead of being sent. An SMTP server is configured per project from the console |
@@ -29,6 +29,9 @@ aruma config check
 | `ARUMA_STORAGE_ENABLED` | | `false` | Turn on Cloud Storage for Firebase, see [Storage](#storage) |
 | `ARUMA_STORAGE_DATA_DIR` | with Storage | | Absolute path of the directory that holds the objects' bytes, on a local disk. See the warning under [Storage](#storage) |
 | `ARUMA_STORAGE_GC_GRACE` | | `1m` | How long a file no object points to any more waits before it is deleted, so a read that started before the change still finds it |
+| `ARUMA_DOCUMENTS_ENABLED` | | `false` | Turn on the Document Database (Firestore-compatible), see [Document Database](#document-database) |
+| `ARUMA_DOCUMENTS_DEV_OPEN_RULES` | | `false` | Let clients on this machine read and write every Document Database without admin credentials, until security rules arrive. For local development only: accepted only when `public_url` and `listen` are loopback addresses |
+| `ARUMA_DOCUMENTS_DEV_OWNER_TOKEN` | | `false` | Accept the emulators' `Bearer owner` on the Document Database from this machine, as an admin of every project. For local development only: accepted only when `public_url` and `listen` are loopback addresses, see [Document Database](#document-database) |
 | `ARUMA_PG_BIN` | | | Directory of the PostgreSQL tools when they are not on `PATH`. Used by `make dev` |
 
 ## Storage
@@ -67,6 +70,39 @@ The limits, under `storage.limits` in the file. Each must be positive unless its
 | `list_max_results` | `ARUMA_STORAGE_LIST_MAX_RESULTS` | count | `1000` | The largest page of a listing. At most 1000 |
 
 Durations use Go's syntax (`90s`, `10m`, `168h`).
+
+## Document Database
+
+The Document Database is off by default. Turn it on with `documents.enabled: true`. It speaks the Firestore protocols on the one public port: gRPC (by `content-type: application/grpc`, over HTTP/2, with or without TLS) and REST under `/v1/projects/{project}/databases/{database}/documents`. Each project has its `(default)` database.
+
+- **One instance.** The Document Database runs on one Aruma process per Postgres database: the process takes a session advisory lock on a dedicated connection at startup, waiting up to 30 seconds. Another process on the same database serves everything else and answers the Document Database with `UNAVAILABLE` until the lock is free. The connection must reach Postgres itself: a pooler in transaction mode (pgbouncer `pool_mode=transaction`) does not keep the lock.
+- **HTTP/2 behind a proxy.** gRPC clients need HTTP/2 end to end. A TLS proxy in front of Aruma must speak HTTP/2 without TLS (h2c) to it; in Caddy, `transport http { versions h2c 2 }`. A proxy that falls back to HTTP/1.1 breaks the listeners. iOS trusts only certificates from a public authority.
+- **Until security rules arrive**, only admins reach the data: a service account of the project, the project's owner (`aruma_pat_`), and the dev owner below. Anyone else is refused with `PERMISSION_DENIED`, unless `dev_open_rules` opens the database to this machine.
+
+The Admin SDKs send the Document Database a JWT signed with the service account's key on every call, and Go sends it over plain HTTP/2 (h2c) as readily as over TLS. Anyone who sees it can replay it for up to an hour, so an admin credential (that JWT, `aruma_sat_` or `aruma_pat_`) is accepted only:
+
+- over TLS to Aruma itself;
+- from a proxy listed in `trusted_proxies` that sends `X-Forwarded-Proto: https`. The proxy must set the header itself rather than pass on the client's (Caddy does by default). Without the header the request counts as plain text and is refused, so a proxy on the same machine, which makes every client look local, is listed in `trusted_proxies` like any other;
+- or, on a development server whose `public_url` and `listen` are both loopback addresses, from this machine.
+
+Anything else is refused with `UNAUTHENTICATED`, and the client's address is logged. Download the key file from Aruma's console: a Google key file has no key here. Node's `firebase-admin` in front of a real server needs TLS, since over gRPC with `ssl: false` it sends only `Bearer owner`; with a private CA, point `GRPC_DEFAULT_SSL_ROOTS_FILE_PATH` at it.
+
+| Key | Variable | Default | Meaning |
+|---|---|---|---|
+| `enabled` | `ARUMA_DOCUMENTS_ENABLED` | `false` | Serve the Document Database |
+| `dev_open_rules` | `ARUMA_DOCUMENTS_DEV_OPEN_RULES` | `false` | Let clients on this machine read and write every database without admin credentials, until security rules arrive. The server refuses to start with it unless `public_url` and `listen` are loopback addresses, and it applies only to loopback peers |
+| `dev_owner_token` | `ARUMA_DOCUMENTS_DEV_OWNER_TOKEN` | `false` | Accept `Bearer owner`, which the Admin SDKs send in emulator mode, as an admin of every project, from a loopback peer only. The server refuses to start with it unless `public_url` and `listen` are loopback addresses, and logs a warning when it is on. Off, `owner` is refused and logged, as on every other surface |
+
+The limits, under `documents.limits` in the file. Each must be positive.
+
+| Key | Variable | Type | Default | Meaning |
+|---|---|---|---|---|
+| `message_bytes` | `ARUMA_DOCUMENTS_MESSAGE_BYTES` | bytes | `17825792` (17 MiB) | One gRPC message, and one REST body: a 16 MiB document from a mobile client and its overhead. At least 1 MiB |
+| `stream_first_message` | `ARUMA_DOCUMENTS_STREAM_FIRST_MESSAGE` | duration | `10s` | How long a stream may take to deliver its first message and credential; only then are the server's 60-second timeouts lifted for it |
+| `stream_write_stall` | `ARUMA_DOCUMENTS_STREAM_WRITE_STALL` | duration | `30s` | How long a streamed answer (a batch get, a query) may wait on a client that stopped reading before it is cut |
+| `server_stream_max` | `ARUMA_DOCUMENTS_SERVER_STREAM_MAX` | duration | `5m` | The longest a streamed answer may last when the client set no deadline; it then ends with `DEADLINE_EXCEEDED` |
+| `streams_per_ip` | `ARUMA_DOCUMENTS_STREAMS_PER_IP` | count | `500` | Streams open at once from one client address (through `trusted_proxies`) |
+| `commit_concurrency` | `ARUMA_DOCUMENTS_COMMIT_CONCURRENCY` | count | `4` | Commits of one database that run in Postgres at once; the others wait in the process |
 
 ## Security rules limits
 

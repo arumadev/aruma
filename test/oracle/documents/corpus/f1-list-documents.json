@@ -1,0 +1,3808 @@
+{
+  "cases": [
+    {
+      "description": "ListDocuments with no parameters",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.default",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "pageSize=0",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.page_size_0",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?pageSize=0"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "pageSize=-1",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "Page size must be nonnegative.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.page_size_negative",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?pageSize=-1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Page size must be nonnegative.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "pageSize=100000",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.page_size_huge",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?pageSize=100000"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "pageSize=two",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'page_size' (TYPE_INT32), \"two\"",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.page_size_not_number",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?pageSize=two"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'page_size' (TYPE_INT32), \"two\"",
+                    "field": "page_size"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'page_size' (TYPE_INT32), \"two\"",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "pageSize=2, page 1",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2"
+      ],
+      "id": "rest.paging.page1",
+      "nextPageTokenShape": {
+        "alphabet": "base64url, no padding",
+        "decodedBytes": 90,
+        "length": 120,
+        "namedRuns": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?pageSize=2"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ],
+          "nextPageToken": "<nextPageToken>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "pageSize=2, page 2 (pageToken from the page before)",
+      "documents": [
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4"
+      ],
+      "id": "rest.paging.page2",
+      "nextPageTokenShape": {
+        "alphabet": "base64url, no padding",
+        "decodedBytes": 90,
+        "length": 120,
+        "namedRuns": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?pageSize=2&pageToken=<nextPageToken of page 1>"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ],
+          "nextPageToken": "<nextPageToken>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "pageSize=2, page 3 (pageToken from the page before)",
+      "documents": [
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.paging.page3",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?pageSize=2&pageToken=<nextPageToken of page 2>"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=n desc, pageSize=2, page 1",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d3"
+      ],
+      "id": "rest.paging_order_by_n_desc.page1",
+      "nextPageTokenShape": {
+        "alphabet": "base64url, no padding",
+        "decodedBytes": 99,
+        "length": 132,
+        "namedRuns": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n%20desc&pageSize=2"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ],
+          "nextPageToken": "<nextPageToken>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=n desc, pageSize=2, page 2 (pageToken from the page before)",
+      "documents": [
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d2"
+      ],
+      "id": "rest.paging_order_by_n_desc.page2",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n%20desc&pageSize=2&pageToken=<nextPageToken of page 1>"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "showMissing=true, pageSize=2, page 1",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2"
+      ],
+      "id": "rest.paging_show_missing.page1",
+      "nextPageTokenShape": {
+        "alphabet": "base64url, no padding",
+        "decodedBytes": 128,
+        "length": 171,
+        "namedRuns": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?showMissing=true&pageSize=2"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ],
+          "nextPageToken": "<nextPageToken>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "showMissing=true, pageSize=2, page 2 (pageToken from the page before)",
+      "documents": [
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4"
+      ],
+      "id": "rest.paging_show_missing.page2",
+      "nextPageTokenShape": {
+        "alphabet": "base64url, no padding",
+        "decodedBytes": 128,
+        "length": 171,
+        "namedRuns": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?showMissing=true&pageSize=2&pageToken=<nextPageToken of page 1>"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ],
+          "nextPageToken": "<nextPageToken>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "showMissing=true, pageSize=2, page 3 (pageToken from the page before)",
+      "documents": [
+        "aruma-ref-f1-list/d5",
+        "aruma-ref-f1-list/m"
+      ],
+      "id": "rest.paging_show_missing.page3",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?showMissing=true&pageSize=2&pageToken=<nextPageToken of page 2>"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/m"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "the page-1 token of rest.paging with pageSize=3",
+      "documents": [
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.token.other_page_size",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?pageSize=3&pageToken=<nextPageToken of page 1 of rest.paging>"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "the page-1 token of rest.paging with no pageSize",
+      "documents": [
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.token.no_page_size",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?pageToken=<nextPageToken of page 1 of rest.paging>"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "the page-1 token of rest.paging with orderBy=n",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "Invalid page token.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.token.other_order_by",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?pageSize=2&orderBy=n&pageToken=<nextPageToken of page 1 of rest.paging>"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid page token.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "the page-1 token of rest.paging with showMissing=true",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "Invalid page token.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.token.with_show_missing",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?pageSize=2&showMissing=true&pageToken=<nextPageToken of page 1 of rest.paging>"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid page token.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "the page-1 token of rest.paging on aruma-ref-f1-never",
+      "error": {
+        "http": 400,
+        "message": "Invalid page token.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.token.other_collection",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-never?pageSize=2&pageToken=<nextPageToken of page 1 of rest.paging>"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid page token.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "pageToken=abc",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "invalid page token",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.token.garbage",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?pageSize=2&pageToken=abc"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "invalid page token",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "pageToken= (empty)",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2"
+      ],
+      "id": "rest.token.empty",
+      "nextPageTokenShape": {
+        "alphabet": "base64url, no padding",
+        "decodedBytes": 90,
+        "length": 120,
+        "namedRuns": []
+      },
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?pageSize=2&pageToken="
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ],
+          "nextPageToken": "<nextPageToken>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"__name__\"",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.order_by.01",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=__name__"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"__name__ asc\"",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.order_by.02",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=__name__%20asc"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"__name__ desc\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Cldwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjEtbGlzdC9pbmRleGVzL18QARoMCghfX25hbWVfXxAC",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.order_by.03",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=__name__%20desc"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Cldwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjEtbGlzdC9pbmRleGVzL18QARoMCghfX25hbWVfXxAC",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"__name__ DESC\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Cldwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjEtbGlzdC9pbmRleGVzL18QARoMCghfX25hbWVfXxAC",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.order_by.04",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=__name__%20DESC"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Cldwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjEtbGlzdC9pbmRleGVzL18QARoMCghfX25hbWVfXxAC",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"__name__ ASC\"",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.order_by.05",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=__name__%20ASC"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"n\"",
+      "documents": [
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d1"
+      ],
+      "id": "rest.order_by.06",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"n asc\"",
+      "documents": [
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d1"
+      ],
+      "id": "rest.order_by.07",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n%20asc"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"n desc\"",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d2"
+      ],
+      "id": "rest.order_by.08",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n%20desc"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"n desc, __name__ desc\"",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d2"
+      ],
+      "id": "rest.order_by.09",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n%20desc%2C%20__name__%20desc"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"n,__name__\"",
+      "documents": [
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d1"
+      ],
+      "id": "rest.order_by.10",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n%2C__name__"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"n desc,__name__\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Cldwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjEtbGlzdC9pbmRleGVzL18QARoFCgFuEAIaDAoIX19uYW1lX18QAQ",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.order_by.11",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n%20desc%2C__name__"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Cldwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjEtbGlzdC9pbmRleGVzL18QARoFCgFuEAIaDAoIX19uYW1lX18QAQ",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"n, __name__ desc\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Cldwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjEtbGlzdC9pbmRleGVzL18QARoFCgFuEAEaDAoIX19uYW1lX18QAg",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.order_by.12",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n%2C%20__name__%20desc"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Cldwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjEtbGlzdC9pbmRleGVzL18QARoFCgFuEAEaDAoIX19uYW1lX18QAg",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"s\"",
+      "documents": [
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.order_by.13",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=s"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"s desc\"",
+      "documents": [
+        "aruma-ref-f1-list/d5",
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d2"
+      ],
+      "id": "rest.order_by.14",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=s%20desc"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"n,s\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Cldwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjEtbGlzdC9pbmRleGVzL18QARoFCgFuEAEaBQoBcxABGgwKCF9fbmFtZV9fEAE",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.order_by.15",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n%2Cs"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Cldwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjEtbGlzdC9pbmRleGVzL18QARoFCgFuEAEaBQoBcxABGgwKCF9fbmFtZV9fEAE",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"b.c\"",
+      "documents": [],
+      "id": "rest.order_by.16",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=b.c"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"`n`\"",
+      "documents": [
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d1"
+      ],
+      "id": "rest.order_by.17",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=%60n%60"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"__name__,n\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "order by clause cannot contain more fields after the key",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.order_by.18",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=__name__%2Cn"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "order by clause cannot contain more fields after the key",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"__name__ desc,n\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "order by clause cannot contain more fields after the key",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.order_by.19",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=__name__%20desc%2Cn"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "order by clause cannot contain more fields after the key",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"\"",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.order_by.20",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy="
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\" \"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "Invalid order by clause \" \".",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.order_by.21",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=%20"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid order by clause \" \".",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"n asc asc\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "Invalid order by clause \"n asc asc\".",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.order_by.22",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n%20asc%20asc"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid order by clause \"n asc asc\".",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"n descending\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "Invalid order by clause \"n descending\".",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.order_by.23",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n%20descending"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid order by clause \"n descending\".",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"n,\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "Invalid order by clause \"n,\".",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.order_by.24",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n%2C"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid order by clause \"n,\".",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\",n\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "Invalid order by clause \",n\".",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.order_by.25",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=%2Cn"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid order by clause \",n\".",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"foo bar\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "Invalid order by clause \"foo bar\".",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.order_by.26",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=foo%20bar"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid order by clause \"foo bar\".",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"n desc desc\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "Invalid order by clause \"n desc desc\".",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.order_by.27",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n%20desc%20desc"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid order by clause \"n desc desc\".",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"a-b\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "Invalid order by clause \"a-b\".",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.order_by.28",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=a-b"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid order by clause \"a-b\".",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"`a-b`\"",
+      "documents": [],
+      "id": "rest.order_by.29",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=%60a-b%60"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy=\"n,n\"",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "order by clause cannot contain duplicate fields n",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.order_by.30",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?orderBy=n%2Cn"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "order by clause cannot contain duplicate fields n",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "showMissing=true",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5",
+        "aruma-ref-f1-list/m"
+      ],
+      "id": "rest.show_missing",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?showMissing=true"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/m"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "showMissing=true&orderBy=__name__ desc",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "cannot specify an order when show_missing is true",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.show_missing_order_by_name_desc",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?showMissing=true&orderBy=__name__%20desc"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "cannot specify an order when show_missing is true",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "mask.fieldPaths=n",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.mask",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?mask.fieldPaths=n"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "mask.fieldPaths=zz",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.mask_absent",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?mask.fieldPaths=zz"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "mask.fieldPaths=n&showMissing=true",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5",
+        "aruma-ref-f1-list/m"
+      ],
+      "id": "rest.mask_show_missing",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?mask.fieldPaths=n&showMissing=true"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/m"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "readTime = the setup commitTime",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.read_time",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?readTime=<readTime: the setup commitTime>"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "readTime two hours ago, a whole minute",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "The requested 'read_time' is too old.",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.read_time_2h",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?readTime=<readTime: 2h_whole_minute>"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The requested 'read_time' is too old.",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {\"readOnly\":{}}",
+      "id": "rest.txn.begin_read_only",
+      "request": {
+        "body": {
+          "options": {
+            "readOnly": {}
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "transaction": "<transaction>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "in a read-only transaction",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.txn.read_only",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list?transaction=<the read-only transaction>"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "ListDocuments of aruma-ref-f1-never",
+      "documents": [],
+      "id": "rest.never_written",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-never"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "ListDocuments of aruma-ref-f1-list/d1/s1",
+      "documents": [
+        "aruma-ref-f1-list/d1/s1/x"
+      ],
+      "id": "rest.subcollection",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list/d1/s1"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "k": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1/s1/x",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "ListDocuments of aruma-ref-f1-list/m/sub",
+      "documents": [
+        "aruma-ref-f1-list/m/sub/z"
+      ],
+      "id": "rest.subcollection_of_missing",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list/m/sub"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "k": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/m/sub/z",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET aruma-ref-f1-list/d1/ (a document path with a trailing slash: an empty collection id?)",
+      "documents": [],
+      "id": "rest.trailing_slash_document",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list/d1/"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "n": {
+              "integerValue": "3"
+            },
+            "s": {
+              "stringValue": "c"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET aruma-ref-f1-list/ (a collection path with a trailing slash)",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "rest.trailing_slash_collection",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list/"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "ListDocuments",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "grpc.default",
+      "request": {
+        "message": {
+          "collectionId": "aruma-ref-f1-list",
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents"
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "message": {
+          "documents": [
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "pageSize 2, page 1",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2"
+      ],
+      "id": "grpc.paging.page1",
+      "nextPageTokenShape": {
+        "alphabet": "base64url, no padding",
+        "decodedBytes": 90,
+        "length": 120,
+        "namedRuns": []
+      },
+      "request": {
+        "message": {
+          "collectionId": "aruma-ref-f1-list",
+          "pageSize": 2,
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents"
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "message": {
+          "documents": [
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ],
+          "nextPageToken": "<nextPageToken>"
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "pageSize 2, page 2",
+      "documents": [
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4"
+      ],
+      "id": "grpc.paging.page2",
+      "nextPageTokenShape": {
+        "alphabet": "base64url, no padding",
+        "decodedBytes": 90,
+        "length": 120,
+        "namedRuns": []
+      },
+      "request": {
+        "message": {
+          "collectionId": "aruma-ref-f1-list",
+          "pageSize": 2,
+          "pageToken": "<nextPageToken of page 1>",
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents"
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "message": {
+          "documents": [
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ],
+          "nextPageToken": "<nextPageToken>"
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "pageSize 2, page 3",
+      "documents": [
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "grpc.paging.page3",
+      "request": {
+        "message": {
+          "collectionId": "aruma-ref-f1-list",
+          "pageSize": 2,
+          "pageToken": "<nextPageToken of page 2>",
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents"
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "message": {
+          "documents": [
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "orderBy \"n desc\"",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d2"
+      ],
+      "id": "grpc.order_by_n_desc",
+      "request": {
+        "message": {
+          "collectionId": "aruma-ref-f1-list",
+          "orderBy": "n desc",
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents"
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "message": {
+          "documents": [
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "orderBy \"foo bar\"",
+      "documents": [],
+      "error": {
+        "code": 3,
+        "message": "Invalid order by clause \"foo bar\".",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.order_by_bad",
+      "request": {
+        "message": {
+          "collectionId": "aruma-ref-f1-list",
+          "orderBy": "foo bar",
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents"
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "mask [n]",
+      "documents": [
+        "aruma-ref-f1-list/d1",
+        "aruma-ref-f1-list/d2",
+        "aruma-ref-f1-list/d3",
+        "aruma-ref-f1-list/d4",
+        "aruma-ref-f1-list/d5"
+      ],
+      "id": "grpc.mask",
+      "request": {
+        "message": {
+          "collectionId": "aruma-ref-f1-list",
+          "mask": {
+            "fieldPaths": [
+              "n"
+            ]
+          },
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents"
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "message": {
+          "documents": [
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d2",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d3",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d4",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "createTime": "<createTime: Timestamp>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d5",
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "pageToken \"abc\"",
+      "documents": [],
+      "error": {
+        "code": 3,
+        "message": "invalid page token",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.token_garbage",
+      "request": {
+        "message": {
+          "collectionId": "aruma-ref-f1-list",
+          "pageSize": 2,
+          "pageToken": "abc",
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents"
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "pageSize -1",
+      "documents": [],
+      "error": {
+        "code": 3,
+        "message": "Page size must be nonnegative.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.page_size_negative",
+      "request": {
+        "message": {
+          "collectionId": "aruma-ref-f1-list",
+          "pageSize": -1,
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents"
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "parent aruma-ref-f1-list/d1, collectionId \"\" (every subcollection of d1)",
+      "documents": [
+        "aruma-ref-f1-list/d1/s1/x",
+        "aruma-ref-f1-list/d1/s2/y"
+      ],
+      "id": "grpc.empty_collection_id",
+      "request": {
+        "message": {
+          "collectionId": "",
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1"
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "message": {
+          "documents": [
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "k": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1/s1/x",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "k": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1/s2/y",
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "parent aruma-ref-f1-list/d1, collectionId \"\", showMissing true",
+      "documents": [],
+      "error": {
+        "code": 3,
+        "message": "collection id must be set when show_missing is true",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.empty_collection_id_show_missing",
+      "request": {
+        "message": {
+          "collectionId": "",
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1",
+          "showMissing": true
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "parent aruma-ref-f1-list/d1, collectionId \"\", orderBy \"__name__ desc\"",
+      "documents": [],
+      "error": {
+        "code": 3,
+        "message": "kind is required for all orders except __key__ ascending",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.empty_collection_id_order_by_name_desc",
+      "request": {
+        "message": {
+          "collectionId": "",
+          "orderBy": "__name__ desc",
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1"
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "parent aruma-ref-f1-list/d1, collectionId \"\", pageSize 1",
+      "documents": [
+        "aruma-ref-f1-list/d1/s1/x"
+      ],
+      "id": "grpc.empty_collection_id_paging",
+      "nextPageTokenShape": {
+        "alphabet": "base64url, no padding",
+        "decodedBytes": 105,
+        "length": 140,
+        "namedRuns": []
+      },
+      "request": {
+        "message": {
+          "collectionId": "",
+          "pageSize": 1,
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1"
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "message": {
+          "documents": [
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "k": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/d1/s1/x",
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ],
+          "nextPageToken": "<nextPageToken>"
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "parent aruma-ref-f1-list/m, collectionId \"\"",
+      "documents": [
+        "aruma-ref-f1-list/m/sub/z"
+      ],
+      "id": "grpc.empty_collection_id_missing_parent",
+      "request": {
+        "message": {
+          "collectionId": "",
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/m"
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "message": {
+          "documents": [
+            {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "k": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-list/m/sub/z",
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "readTime two hours ago, a whole minute",
+      "documents": [],
+      "error": {
+        "code": 9,
+        "message": "The requested 'read_time' is too old.",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "grpc.read_time_2h",
+      "request": {
+        "message": {
+          "collectionId": "aruma-ref-f1-list",
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents",
+          "readTime": "<readTime: Timestamp>"
+        },
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f1.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations, page tokens and transaction ids are replaced by placeholders (normalise in lib.mjs, and the replace maps of record-f1.mjs); everything else is as returned.",
+      "documents lists the names returned, relative to the database root, in the order returned.",
+      "nextPageTokenShape describes a page token without keeping it: its length, alphabet, decoded length, and the printable runs of its decoded bytes that name a resource. The token itself is replaced by a placeholder naming the page it came from.",
+      "aruma-ref-f1-list/m is never written: it exists only as the parent of m/sub/z. aruma-ref-f1-list/d5 has no field n."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T19:21:38.964Z .. 2026-10-26T19:30:20.851Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "8594f28e4c778d6fe23e86261a79d91ea7dd55157ca5ae9c0a7bd715da38e07c",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1",
+  "setup": {
+    "commits": [
+      {
+        "writes": [
+          {
+            "update": {
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "stringValue": "c"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list/d1"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "a"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list/d2"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list/d3"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                },
+                "s": {
+                  "stringValue": "b"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list/d4"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "s": {
+                  "stringValue": "d"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list/d5"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "k": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list/d1/s1/x"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "k": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list/d1/s2/y"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "k": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-list/m/sub/z"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

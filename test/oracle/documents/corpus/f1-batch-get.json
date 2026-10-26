@@ -1,0 +1,1631 @@
+{
+  "cases": [
+    {
+      "description": "g3, nope1, g1, nope2, g2 (run 1 of 3, to see whether the order is stable)",
+      "id": "rest.order_run1",
+      "order": [
+        "found aruma-ref-f1-get/g1",
+        "found aruma-ref-f1-get/g2",
+        "found aruma-ref-f1-get/g3",
+        "missing aruma-ref-f1-get/nope2",
+        "missing aruma-ref-f1-get/nope1"
+      ],
+      "replay": true,
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g3",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/nope1",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/nope2",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g2"
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope2",
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope1",
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "g3, nope1, g1, nope2, g2 (run 2 of 3, to see whether the order is stable)",
+      "id": "rest.order_run2",
+      "order": [
+        "found aruma-ref-f1-get/g1",
+        "found aruma-ref-f1-get/g2",
+        "found aruma-ref-f1-get/g3",
+        "missing aruma-ref-f1-get/nope2",
+        "missing aruma-ref-f1-get/nope1"
+      ],
+      "replay": true,
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g3",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/nope1",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/nope2",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g2"
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope2",
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope1",
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "g3, nope1, g1, nope2, g2 (run 3 of 3, to see whether the order is stable)",
+      "id": "rest.order_run3",
+      "order": [
+        "found aruma-ref-f1-get/g1",
+        "found aruma-ref-f1-get/g2",
+        "found aruma-ref-f1-get/g3",
+        "missing aruma-ref-f1-get/nope2",
+        "missing aruma-ref-f1-get/nope1"
+      ],
+      "replay": true,
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g3",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/nope1",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/nope2",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g2"
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope2",
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope1",
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "g1, g2",
+      "id": "rest.found_only",
+      "order": [
+        "found aruma-ref-f1-get/g1",
+        "found aruma-ref-f1-get/g2"
+      ],
+      "replay": true,
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g2"
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "nope",
+      "id": "rest.missing_only",
+      "order": [
+        "missing aruma-ref-f1-get/nope"
+      ],
+      "replay": true,
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/nope"
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "g1, g2 and nope with mask [a]",
+      "id": "rest.mask",
+      "order": [
+        "found aruma-ref-f1-get/g1",
+        "found aruma-ref-f1-get/g2",
+        "missing aruma-ref-f1-get/nope"
+      ],
+      "replay": true,
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g2",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/nope"
+          ],
+          "mask": {
+            "fieldPaths": [
+              "a"
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "g1 with mask {fieldPaths: []}",
+      "id": "rest.mask_empty_list",
+      "order": [
+        "found aruma-ref-f1-get/g1"
+      ],
+      "replay": true,
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"
+          ],
+          "mask": {
+            "fieldPaths": []
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "g1, g1, nope, nope",
+      "id": "rest.duplicates",
+      "order": [
+        "found aruma-ref-f1-get/g1",
+        "missing aruma-ref-f1-get/nope"
+      ],
+      "replay": true,
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/nope"
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "documents: []",
+      "id": "rest.empty_list",
+      "order": [],
+      "replay": true,
+      "request": {
+        "body": {
+          "documents": []
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "{} (no documents field)",
+      "id": "rest.no_documents_field",
+      "order": [],
+      "replay": true,
+      "request": {
+        "body": {},
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "gm, a missing document with a subcollection",
+      "id": "rest.missing_with_subcollection",
+      "order": [
+        "missing aruma-ref-f1-get/gm"
+      ],
+      "replay": true,
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/gm"
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/gm",
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a collection path instead of a document",
+      "error": {
+        "http": 400,
+        "message": "Document name \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get\" lacks \"/\" at index 69.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.collection_name",
+      "order": [
+        "error"
+      ],
+      "replay": true,
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get"
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Document name \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get\" lacks \"/\" at index 69.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a name without projects/…/documents/",
+      "error": {
+        "http": 400,
+        "message": "Document name \"aruma-ref-f1-get/g1\" lacks \"projects\" at index 0.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.relative_name",
+      "order": [
+        "error"
+      ],
+      "replay": true,
+      "request": {
+        "body": {
+          "documents": [
+            "aruma-ref-f1-get/g1"
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Document name \"aruma-ref-f1-get/g1\" lacks \"projects\" at index 0.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "g1, nope at readTime = the setup commitTime",
+      "id": "rest.read_time",
+      "order": [
+        "found aruma-ref-f1-get/g1",
+        "missing aruma-ref-f1-get/nope"
+      ],
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/nope"
+          ],
+          "readTime": "<readTime: RFC 3339>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "g1 at readTime two hours ago, a whole minute",
+      "error": {
+        "http": 400,
+        "message": "The requested 'read_time' is too old.",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.read_time_2h",
+      "order": [
+        "error"
+      ],
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"
+          ],
+          "readTime": "<readTime: RFC 3339>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "The requested 'read_time' is too old.",
+              "status": "FAILED_PRECONDITION"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {\"readOnly\":{}}",
+      "id": "rest.txn.begin_read_only",
+      "request": {
+        "body": {
+          "options": {
+            "readOnly": {}
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "transaction": "<transaction>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "g1, nope in a read-only transaction",
+      "id": "rest.txn.read_only",
+      "order": [
+        "found aruma-ref-f1-get/g1",
+        "missing aruma-ref-f1-get/nope"
+      ],
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/nope"
+          ],
+          "transaction": "<the read-only transaction>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "g1, nope, g2 with newTransaction {readOnly: {}}",
+      "id": "rest.new_transaction.read_only",
+      "order": [
+        "transaction only",
+        "found aruma-ref-f1-get/g1",
+        "found aruma-ref-f1-get/g2",
+        "missing aruma-ref-f1-get/nope"
+      ],
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g2"
+          ],
+          "newTransaction": {
+            "readOnly": {}
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "transaction": "<transaction>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transactionIn": [
+        {
+          "hasResult": false,
+          "hasTransaction": true,
+          "index": 0
+        },
+        {
+          "hasResult": true,
+          "hasTransaction": false,
+          "index": 1
+        },
+        {
+          "hasResult": true,
+          "hasTransaction": false,
+          "index": 2
+        },
+        {
+          "hasResult": true,
+          "hasTransaction": false,
+          "index": 3
+        }
+      ],
+      "transport": "rest"
+    },
+    {
+      "description": "g1, nope, g2 with newTransaction {readWrite: {}}",
+      "id": "rest.new_transaction.read_write",
+      "order": [
+        "transaction only",
+        "found aruma-ref-f1-get/g1",
+        "found aruma-ref-f1-get/g2",
+        "missing aruma-ref-f1-get/nope"
+      ],
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g2"
+          ],
+          "newTransaction": {
+            "readWrite": {}
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "transaction": "<transaction>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transactionIn": [
+        {
+          "hasResult": false,
+          "hasTransaction": true,
+          "index": 0
+        },
+        {
+          "hasResult": true,
+          "hasTransaction": false,
+          "index": 1
+        },
+        {
+          "hasResult": true,
+          "hasTransaction": false,
+          "index": 2
+        },
+        {
+          "hasResult": true,
+          "hasTransaction": false,
+          "index": 3
+        }
+      ],
+      "transport": "rest"
+    },
+    {
+      "description": "documents [] with newTransaction {readOnly: {}}",
+      "id": "rest.new_transaction.empty_list",
+      "order": [
+        "transaction only"
+      ],
+      "request": {
+        "body": {
+          "documents": [],
+          "newTransaction": {
+            "readOnly": {}
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "transaction": "<transaction>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "both transaction and newTransaction",
+      "error": {
+        "http": 400,
+        "message": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'newTransaction'",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.txn.and_new_transaction",
+      "order": [
+        "error"
+      ],
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"
+          ],
+          "newTransaction": {
+            "readOnly": {}
+          },
+          "transaction": "<the read-only transaction>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'newTransaction'"
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'newTransaction'",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "both transaction and readTime",
+      "error": {
+        "http": 400,
+        "message": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'\nInvalid JSON payload received. Unknown name \"database\": Root element must be a message.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.txn.and_read_time",
+      "order": [
+        "error"
+      ],
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"
+          ],
+          "readTime": "<readTime: RFC 3339>",
+          "transaction": "<the read-only transaction>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'"
+                    },
+                    {
+                      "description": "Invalid JSON payload received. Unknown name \"database\": Root element must be a message."
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid value (oneof), oneof field 'consistency_selector' is already set. Cannot set 'readTime'\nInvalid JSON payload received. Unknown name \"database\": Root element must be a message.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "g3, nope1, g1, nope2, g2",
+      "id": "grpc.order",
+      "order": [
+        "found aruma-ref-f1-get/g1",
+        "found aruma-ref-f1-get/g2",
+        "found aruma-ref-f1-get/g3",
+        "missing aruma-ref-f1-get/nope2",
+        "missing aruma-ref-f1-get/nope1"
+      ],
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "documents": [
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g3",
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope1",
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope2",
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g2"
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/BatchGetDocuments"
+      },
+      "response": {
+        "ok": true,
+        "responses": [
+          {
+            "found": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "a": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g2",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "a": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g3",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope2",
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope1",
+            "readTime": "<readTime: Timestamp>"
+          }
+        ]
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "g1, g1, nope, nope",
+      "id": "grpc.duplicates",
+      "order": [
+        "found aruma-ref-f1-get/g1",
+        "missing aruma-ref-f1-get/nope"
+      ],
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "documents": [
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope"
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/BatchGetDocuments"
+      },
+      "response": {
+        "ok": true,
+        "responses": [
+          {
+            "found": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "readTime": "<readTime: Timestamp>"
+          }
+        ]
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "g1, nope with mask [a]",
+      "id": "grpc.mask",
+      "order": [
+        "found aruma-ref-f1-get/g1",
+        "missing aruma-ref-f1-get/nope"
+      ],
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "documents": [
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope"
+          ],
+          "mask": {
+            "fieldPaths": [
+              "a"
+            ]
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BatchGetDocuments"
+      },
+      "response": {
+        "ok": true,
+        "responses": [
+          {
+            "found": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "readTime": "<readTime: Timestamp>"
+          }
+        ]
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "documents: []",
+      "id": "grpc.empty_list",
+      "order": [],
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "documents": []
+        },
+        "rpc": "google.firestore.v1.Firestore/BatchGetDocuments"
+      },
+      "response": {
+        "ok": true,
+        "responses": []
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "g1, nope, g2 with newTransaction readOnly",
+      "id": "grpc.new_transaction.read_only",
+      "order": [
+        "transaction only",
+        "found aruma-ref-f1-get/g1",
+        "found aruma-ref-f1-get/g2",
+        "missing aruma-ref-f1-get/nope"
+      ],
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "documents": [
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g2"
+          ],
+          "newTransaction": {
+            "readOnly": {}
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BatchGetDocuments"
+      },
+      "response": {
+        "ok": true,
+        "responses": [
+          {
+            "transaction": "<bytes 100>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "a": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g2",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "readTime": "<readTime: Timestamp>"
+          }
+        ]
+      },
+      "transactionIn": [
+        {
+          "hasResult": false,
+          "hasTransaction": true,
+          "index": 0
+        },
+        {
+          "hasResult": true,
+          "hasTransaction": false,
+          "index": 1
+        },
+        {
+          "hasResult": true,
+          "hasTransaction": false,
+          "index": 2
+        },
+        {
+          "hasResult": true,
+          "hasTransaction": false,
+          "index": 3
+        }
+      ],
+      "transport": "grpc"
+    },
+    {
+      "description": "g1, nope in that read-only transaction",
+      "id": "grpc.txn.read_only",
+      "order": [
+        "found aruma-ref-f1-get/g1",
+        "missing aruma-ref-f1-get/nope"
+      ],
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "documents": [
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope"
+          ],
+          "transaction": "<the read-only transaction>"
+        },
+        "rpc": "google.firestore.v1.Firestore/BatchGetDocuments"
+      },
+      "response": {
+        "ok": true,
+        "responses": [
+          {
+            "found": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/nope",
+            "readTime": "<readTime: Timestamp>"
+          }
+        ]
+      },
+      "transport": "grpc"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f1.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations, page tokens and transaction ids are replaced by placeholders (normalise in lib.mjs, and the replace maps of record-f1.mjs); everything else is as returned.",
+      "order lists each response element in the order production sent it: \"found <name>\", \"missing <name>\", or \"transaction only\" for an element that carries only the new transaction.",
+      "transactionIn lists, for a newTransaction request, which response elements carry the transaction id and which a result."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T19:21:38.964Z .. 2026-10-26T19:30:20.851Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "8594f28e4c778d6fe23e86261a79d91ea7dd55157ca5ae9c0a7bd715da38e07c",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1",
+  "setup": {
+    "commits": [
+      {
+        "writes": [
+          {
+            "update": {
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "a": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g2"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "a": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g3"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "v": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/gm/sub/k"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

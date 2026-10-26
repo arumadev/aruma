@@ -30,6 +30,15 @@
 // https://<name>/oauth2/v1/token, and upload sessions come back on that origin, as behind Caddy
 // in production. Clients resolve the name to the front themselves.
 //
+// -documents serves the Document Database (ARUMA_DOCUMENTS_ENABLED) over gRPC and REST on the one
+// port, which then also speaks HTTP/2 without TLS (h2c, ADR-027 §3.3), and sets listen to the
+// address it listens on, so the server is a loopback development server: the Admin SDKs' service
+// account JWTs are accepted over plaintext from this machine (ADR-029 §3.7).
+// -documents-dev-owner implies it and accepts the emulators' Bearer owner from loopback
+// (documents.dev_owner_token, ADR-029 §6), which firebase-admin sends on gRPC with ssl:false.
+// -documents-open-rules implies it and opens every database to clients on this machine
+// (documents.dev_open_rules), for the web SDKs without Auth.
+//
 // -log <level> writes the server's own log to stderr from that level up; without it the log is
 // dropped.
 package main
@@ -62,6 +71,7 @@ import (
 	"github.com/arumadev/aruma/internal/config"
 	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/platform/crypto"
+	documents "github.com/arumadev/aruma/internal/services/documents/core"
 	"github.com/arumadev/aruma/internal/store"
 	"github.com/arumadev/aruma/internal/store/storetest"
 	"github.com/arumadev/aruma/internal/tenancy/core"
@@ -111,10 +121,17 @@ func main() {
 	flag.BoolVar(&p.storage, "storage", false, "serve Cloud Storage")
 	flag.StringVar(&p.host, "public-host", "", "public URL https://<name>, e.g. storage.aruma.test, behind a proxy on 127.0.0.1")
 	flag.StringVar(&p.tlsAddr, "public-tls", "", "with -serve and -public-host: address of a TLS front for that name")
+	var d documentsOptions
+	flag.BoolVar(&d.enabled, "documents", false, "serve the Document Database (gRPC and REST, h2c on the port)")
+	flag.BoolVar(&d.devOwner, "documents-dev-owner", false, "accept Bearer owner from loopback (implies -documents)")
+	flag.BoolVar(&d.openRules, "documents-open-rules", false, "open every database to loopback clients (implies -documents)")
 	logLevel := flag.String("log", "", "the server's log on stderr from this level up: debug, info, warn or error (default: none)")
 	flag.Parse()
 	if r.domain != "" {
 		r.enabled = true
+	}
+	if d.devOwner || d.openRules {
+		d.enabled = true
 	}
 	if r.tlsAddr != "" && (r.domain == "" || !*serve) {
 		log.Fatal("-rtdb-tls needs -rtdb-domain and -serve")
@@ -133,7 +150,7 @@ func main() {
 		}
 		logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level}))
 	}
-	if err := run(*out, *addr, *dbPrefix, *switchAddr, *serve, *anonymous, r, p, logger); err != nil {
+	if err := run(*out, *addr, *dbPrefix, *switchAddr, *serve, *anonymous, r, p, d, logger); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -144,13 +161,18 @@ type rtdbOptions struct {
 	domain, tlsAddr string
 }
 
+// documentsOptions are the Document Database flags.
+type documentsOptions struct {
+	enabled, devOwner, openRules bool
+}
+
 // publicOptions are the Storage and public URL flags.
 type publicOptions struct {
 	storage       bool
 	host, tlsAddr string
 }
 
-func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtdbOptions, pub publicOptions, logger *slog.Logger) error {
+func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtdbOptions, pub publicOptions, docs documentsOptions, logger *slog.Logger) error {
 	ctx := context.Background()
 	// The name goes into CREATE DATABASE unquoted.
 	if !regexp.MustCompile(`^[a-z_][a-z0-9_]*$`).MatchString(dbPrefix) {
@@ -220,6 +242,18 @@ func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtd
 		vars["ARUMA_RTDB_DOMAIN"] = rtdb.domain
 		vars["ARUMA_TRUSTED_PROXIES"] = "127.0.0.1/32"
 	}
+	if docs.enabled {
+		vars["ARUMA_DOCUMENTS_ENABLED"] = "true"
+		// listen is what the server really listens on: a loopback address, so with the loopback
+		// public_url this is a development server (config.LoopbackDeployment).
+		vars["ARUMA_LISTEN"] = ln.Addr().String()
+	}
+	if docs.devOwner {
+		vars["ARUMA_DOCUMENTS_DEV_OWNER_TOKEN"] = "true"
+	}
+	if docs.openRules {
+		vars["ARUMA_DOCUMENTS_DEV_OPEN_RULES"] = "true"
+	}
 	cfg, err := config.Load("", func(k string) string { return vars[k] })
 	if err != nil {
 		return err
@@ -228,7 +262,20 @@ func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtd
 	if err != nil {
 		return err
 	}
+	if a.Documents != nil {
+		// What App.Run does before the listener opens: the single-instance lock (ADR-024 §7).
+		if err := a.Documents.Boot(ctx, documents.InstanceOptions{}); err != nil {
+			return fmt.Errorf("documents: %w", err)
+		}
+		defer a.Documents.Close()
+	}
 	srv := &http.Server{Handler: a.Server.Handler()}
+	if docs.enabled {
+		// gRPC clients speak HTTP/2 with prior knowledge on a plaintext port (ADR-027 §3.3).
+		srv.Protocols = new(http.Protocols)
+		srv.Protocols.SetHTTP1(true)
+		srv.Protocols.SetUnencryptedHTTP2(true)
+	}
 	go func() { _ = srv.Serve(ln) }()
 	defer srv.Close()
 

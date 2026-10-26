@@ -43,6 +43,19 @@ type Handlers struct {
 	// Storage is disabled: the paths then fall through to the rest of the entry point.
 	Storage http.Handler
 	GCS     http.Handler
+	// Documents is the Document Database's gRPC surface: every request whose content-type is
+	// application/grpc, routed before anything else and outside httpx.Common (ADR-027 §2.1,
+	// §3.1). Nil while it is disabled: gRPC requests are then answered UNIMPLEMENTED in gRPC
+	// form. If it has a Shutdown(context.Context) error method, Run calls it first on shutdown
+	// to drain its streams (ADR-027 §3.4).
+	Documents http.Handler
+	// DocumentsREST is its REST and WebChannel surface, on the paths DocumentsOwns reports:
+	// /v1/projects/{p}/databases and below, claimed before the Management API's /v1/projects/
+	// (ADR-027 §5.1). Its bodies are capped at documents.limits.message_bytes. Nil while it is
+	// disabled: the paths fall through to the rest of the entry point.
+	DocumentsREST http.Handler
+	// DocumentsOwns reports whether a path is DocumentsREST's.
+	DocumentsOwns func(path string) bool
 }
 
 // StoragePrefixes are the paths routed to Handlers.Storage: the unified download URL's /v0, and
@@ -51,6 +64,10 @@ var StoragePrefixes = []string{"/v0/", "/firebasestorage.googleapis.com/v0/"}
 
 // GCSPrefixes are the paths routed to Handlers.GCS: the Admin SDKs' apiEndpoint (ADR-022 §1).
 var GCSPrefixes = []string{"/storage/v1/", "/upload/storage/v1/", "/download/storage/v1/"}
+
+// maxConcurrentStreams bounds the HTTP/2 streams of one connection: Go's default, set so a later
+// default cannot change it (ADR-027 §3.2; reviewed in F2 with the flow-control windows).
+const maxConcurrentStreams = 250
 
 // shutdowner is a handler that holds connections of its own.
 type shutdowner interface {
@@ -107,9 +124,6 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("/", s.metrics.Instrument("static", static))
 	main := httpx.Common(s.securityHeaders(mux), s.log, s.cfg.TrustedProxyPrefixes())
 	storage := s.storageMux()
-	if s.handlers.RTDB == nil && storage == nil {
-		return main
-	}
 	// The Realtime Database is routed by host before path (ADR-018), and its bodies may be
 	// larger than other APIs' (ADR-019).
 	var rtdb http.Handler
@@ -117,16 +131,49 @@ func (s *Server) Handler() http.Handler {
 		rtdb = httpx.CommonWithLimit(s.securityHeaders(s.metrics.Instrument("rtdb", s.handlers.RTDB)),
 			s.log, s.cfg.TrustedProxyPrefixes(), s.cfg.RTDB.Limits.RESTWriteBytes)
 	}
+	// The Document Database: gRPC by content-type before any path, with its own middleware;
+	// REST on its paths, with its own body cap (ADR-027 §2.1, §3.1, §5.1).
+	grpc := s.handlers.Documents
+	if grpc == nil {
+		grpc = http.HandlerFunc(documentsDisabled)
+	}
+	var documents http.Handler
+	if s.handlers.DocumentsREST != nil && s.handlers.DocumentsOwns != nil {
+		documents = httpx.CommonWithLimit(s.securityHeaders(s.metrics.Instrument("documents", s.handlers.DocumentsREST)),
+			s.log, s.cfg.TrustedProxyPrefixes(), s.cfg.Documents.Limits.MessageBytes)
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
+		case isGRPC(r):
+			grpc.ServeHTTP(w, r)
 		case rtdb != nil && s.isRTDB(r):
 			rtdb.ServeHTTP(w, r)
 		case storage != nil && storage.owns(r.URL.Path):
 			storage.ServeHTTP(w, r)
+		case documents != nil && s.handlers.DocumentsOwns(r.URL.Path):
+			documents.ServeHTTP(w, r)
 		default:
 			main.ServeHTTP(w, r)
 		}
 	})
+}
+
+// isGRPC reports whether a request speaks gRPC: a content-type of application/grpc, or
+// application/grpc+proto and the like (ADR-027 §2.1). No service but the Document Database
+// speaks it.
+func isGRPC(r *http.Request) bool {
+	rest, ok := strings.CutPrefix(r.Header.Get("Content-Type"), "application/grpc")
+	return ok && (rest == "" || rest[0] == '+' || rest[0] == ';')
+}
+
+// documentsDisabled answers gRPC while the Document Database is off: UNIMPLEMENTED in gRPC form,
+// the status in the headers since there is nothing else to send (ADR-027 §2.1).
+func documentsDisabled(w http.ResponseWriter, r *http.Request) {
+	h := w.Header()
+	h.Set("Content-Type", "application/grpc")
+	h.Set("Grpc-Status", "12") // UNIMPLEMENTED
+	h.Set("Grpc-Message", "The Document Database is not enabled on this server.")
+	w.WriteHeader(http.StatusOK)
 }
 
 // storageRoutes are Storage's paths, which skip the other APIs' 1 MiB body cap: their cap is
@@ -266,9 +313,19 @@ func (s *Server) PrivateHandler() http.Handler {
 
 // Run serves until ctx is cancelled, then shuts down gracefully.
 func (s *Server) Run(ctx context.Context) error {
+	// HTTP/1.1 for every service, and HTTP/2 without TLS (h2c with prior knowledge), which every
+	// gRPC client speaks to the Document Database behind a TLS proxy (ADR-027 §3.3).
+	var protocols http.Protocols
+	protocols.SetHTTP1(true)
+	protocols.SetHTTP2(true)
+	protocols.SetUnencryptedHTTP2(true)
 	public := &http.Server{
-		Addr:              s.cfg.Listen,
-		Handler:           s.Handler(),
+		Addr:      s.cfg.Listen,
+		Handler:   s.Handler(),
+		Protocols: &protocols,
+		// One connection may not open streams without bound before the per-address limits
+		// count them (ADR-027 §3.2).
+		HTTP2:             &http.HTTP2Config{MaxConcurrentStreams: maxConcurrentStreams},
 		ReadHeaderTimeout: 10 * time.Second,
 		MaxHeaderBytes:    64 << 10,
 		ReadTimeout:       60 * time.Second,
@@ -314,6 +371,12 @@ func (s *Server) Run(ctx context.Context) error {
 	shutdown, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	var wg sync.WaitGroup
+	if sh, ok := s.handlers.Documents.(shutdowner); ok {
+		// The drain first, so the server's own shutdown does not wait on open streams.
+		if err := sh.Shutdown(shutdown); err != nil {
+			s.log.Warn("shutdown", "handler", "documents", "error", err)
+		}
+	}
 	if sh, ok := s.handlers.RTDB.(shutdowner); ok {
 		wg.Go(func() {
 			if err := sh.Shutdown(shutdown); err != nil {

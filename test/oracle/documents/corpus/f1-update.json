@@ -1,0 +1,911 @@
+{
+  "cases": [
+    {
+      "description": "PATCH u1 (missing) with no precondition: creates it",
+      "id": "rest.upsert_create",
+      "relations": {
+        "createTimeEqualsUpdateTime": true
+      },
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            },
+            "b": {
+              "integerValue": "2"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            },
+            "b": {
+              "integerValue": "2"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u1 {c: 3} with no updateMask: replaces every field",
+      "id": "rest.no_mask",
+      "relations": {
+        "createTimeEqualsUpdateTime": false,
+        "createTimeUnchanged": true,
+        "updateTimeChanged": true
+      },
+      "request": {
+        "body": {
+          "fields": {
+            "c": {
+              "integerValue": "3"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "c": {
+              "integerValue": "3"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u1 ?updateMask.fieldPaths=a with {a: 10, z: 9}: z is outside the mask",
+      "id": "rest.mask_one",
+      "relations": {
+        "createTimeEqualsUpdateTime": false
+      },
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "10"
+            },
+            "z": {
+              "integerValue": "9"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1?updateMask.fieldPaths=a"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "10"
+            },
+            "c": {
+              "integerValue": "3"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u1 ?updateMask.fieldPaths=c with {a: 11}: c is in the mask but not the body",
+      "id": "rest.mask_absent_in_body",
+      "relations": {
+        "createTimeEqualsUpdateTime": false
+      },
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "11"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1?updateMask.fieldPaths=c"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "10"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u1 ?updateMask.fieldPaths=x.y with {x: {y: 1, q: 2}}",
+      "id": "rest.mask_nested",
+      "relations": {
+        "createTimeEqualsUpdateTime": false
+      },
+      "request": {
+        "body": {
+          "fields": {
+            "x": {
+              "mapValue": {
+                "fields": {
+                  "q": {
+                    "integerValue": "2"
+                  },
+                  "y": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1?updateMask.fieldPaths=x.y"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "10"
+            },
+            "x": {
+              "mapValue": {
+                "fields": {
+                  "y": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u1 ?updateMask.fieldPaths=x&updateMask.fieldPaths=x.y",
+      "id": "rest.mask_parent_and_child",
+      "relations": {
+        "createTimeEqualsUpdateTime": false
+      },
+      "request": {
+        "body": {
+          "fields": {
+            "x": {
+              "mapValue": {
+                "fields": {
+                  "y": {
+                    "integerValue": "5"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1?updateMask.fieldPaths=x&updateMask.fieldPaths=x.y"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "10"
+            },
+            "x": {
+              "mapValue": {
+                "fields": {
+                  "y": {
+                    "integerValue": "5"
+                  }
+                }
+              }
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u1 ?updateMask.fieldPaths=a&mask.fieldPaths=a with {a: 12}",
+      "id": "rest.response_mask",
+      "relations": {
+        "createTimeEqualsUpdateTime": false
+      },
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "12"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1?updateMask.fieldPaths=a&mask.fieldPaths=a"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "12"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u1 ?currentDocument.exists=true (it exists)",
+      "id": "rest.exists_true",
+      "relations": {
+        "createTimeEqualsUpdateTime": false
+      },
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "13"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1?currentDocument.exists=true"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "13"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u1 ?currentDocument.exists=false (it exists)",
+      "error": {
+        "http": 409,
+        "message": "Document already exists: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+        "status": "ALREADY_EXISTS"
+      },
+      "id": "rest.exists_false_on_existing",
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "14"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1?currentDocument.exists=false"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 409,
+            "message": "Document already exists: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+            "status": "ALREADY_EXISTS"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 409
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u-missing ?currentDocument.exists=true",
+      "error": {
+        "http": 404,
+        "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u-missing",
+        "status": "NOT_FOUND"
+      },
+      "id": "rest.exists_true_on_missing",
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u-missing?currentDocument.exists=true"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u-missing",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u-new ?currentDocument.exists=false: creates it",
+      "id": "rest.exists_false_on_missing",
+      "relations": {
+        "createTimeEqualsUpdateTime": true
+      },
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u-new?currentDocument.exists=false"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u-new",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u1 ?currentDocument.updateTime=<updateTime of the first write>",
+      "error": {
+        "http": 400,
+        "message": "the stored version (<the document's updateTime in microseconds>) does not match the required base version (<the precondition updateTime in microseconds>)",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.update_time_stale",
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "15"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1?currentDocument.updateTime=<updateTime of rest.upsert_create>"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "the stored version (<the document's updateTime in microseconds>) does not match the required base version (<the precondition updateTime in microseconds>)",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest",
+      "versions": {
+        "requiredIsPreconditionMicros": true,
+        "storedIsDocumentUpdateTimeMicros": true
+      }
+    },
+    {
+      "description": "PATCH u1 ?currentDocument.updateTime=<its current updateTime>",
+      "id": "rest.update_time_current",
+      "relations": {
+        "createTimeEqualsUpdateTime": false
+      },
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "16"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1?currentDocument.updateTime=<the current updateTime of u1>"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "16"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u1 ?currentDocument.updateTime=<an earlier updateTime plus 1 ns>",
+      "error": {
+        "http": 400,
+        "message": "timestamp cannot have more than microseconds precision",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.update_time_plus_1ns",
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "17"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1?currentDocument.updateTime=<the updateTime of u1 before rest.update_time_current, plus 1 ns>"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "timestamp cannot have more than microseconds precision",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u-missing2 ?currentDocument.updateTime=<updateTime of the first write>",
+      "error": {
+        "http": 400,
+        "message": "the stored version (0) does not match the required base version (<the precondition updateTime in microseconds>)",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.update_time_on_missing",
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u-missing2?currentDocument.updateTime=<updateTime of rest.upsert_create>"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "the stored version (0) does not match the required base version (<the precondition updateTime in microseconds>)",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest",
+      "versions": {
+        "requiredIsPreconditionMicros": true,
+        "storedIsDocumentUpdateTimeMicros": true
+      }
+    },
+    {
+      "description": "PATCH u-missing2 ?currentDocument.updateTime=2001-01-01T00:00:00.000001Z",
+      "error": {
+        "http": 400,
+        "message": "the stored version (0) does not match the required base version (978307200000001)",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.update_time_fixed_on_missing",
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u-missing2?currentDocument.updateTime=2001-01-01T00%3A00%3A00.000001Z"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "the stored version (0) does not match the required base version (978307200000001)",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest",
+      "versions": {
+        "requiredIsPreconditionMicros": true,
+        "storedIsDocumentUpdateTimeMicros": true
+      }
+    },
+    {
+      "description": "PATCH u1 with both currentDocument.exists and updateTime",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'current_document' (oneof), oneof field 'condition_type' is already set. Cannot set 'update_time'",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.exists_and_update_time",
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "18"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1?currentDocument.exists=true&currentDocument.updateTime=<updateTime of rest.upsert_create>"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'current_document' (oneof), oneof field 'condition_type' is already set. Cannot set 'update_time'",
+                    "field": "current_document"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'current_document' (oneof), oneof field 'condition_type' is already set. Cannot set 'update_time'",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u1 with a body naming u2",
+      "id": "rest.name_in_body_differs",
+      "relations": {
+        "createTimeEqualsUpdateTime": false
+      },
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "19"
+            }
+          },
+          "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u2"
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "19"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH u1 ?updateMask.fieldPaths=__name__",
+      "id": "rest.mask_reserved",
+      "relations": {
+        "createTimeEqualsUpdateTime": false
+      },
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "20"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/u1?updateMask.fieldPaths=__name__"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "19"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "UpdateDocument u1 with no updateMask",
+      "id": "grpc.no_mask",
+      "request": {
+        "message": {
+          "document": {
+            "fields": {
+              "g": {
+                "integerValue": "1"
+              }
+            },
+            "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1"
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/UpdateDocument"
+      },
+      "response": {
+        "message": {
+          "createTime": "<createTime: Timestamp>",
+          "fields": {
+            "g": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+          "updateTime": "<updateTime: Timestamp>"
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "UpdateDocument u1 with updateMask {fieldPaths: []}",
+      "id": "grpc.mask_empty_list",
+      "request": {
+        "message": {
+          "document": {
+            "fields": {
+              "h": {
+                "integerValue": "1"
+              }
+            },
+            "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1"
+          },
+          "updateMask": {
+            "fieldPaths": []
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/UpdateDocument"
+      },
+      "response": {
+        "message": {
+          "createTime": "<createTime: Timestamp>",
+          "fields": {
+            "g": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+          "updateTime": "<updateTime: Timestamp>"
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "UpdateDocument u1 with updateMask [a]",
+      "id": "grpc.mask_one",
+      "request": {
+        "message": {
+          "document": {
+            "fields": {
+              "a": {
+                "integerValue": "30"
+              }
+            },
+            "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1"
+          },
+          "updateMask": {
+            "fieldPaths": [
+              "a"
+            ]
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/UpdateDocument"
+      },
+      "response": {
+        "message": {
+          "createTime": "<createTime: Timestamp>",
+          "fields": {
+            "a": {
+              "integerValue": "30"
+            },
+            "g": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+          "updateTime": "<updateTime: Timestamp>"
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "UpdateDocument u1 currentDocument.exists=false",
+      "error": {
+        "code": 6,
+        "message": "Document already exists: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1",
+        "status": "ALREADY_EXISTS"
+      },
+      "id": "grpc.exists_false_on_existing",
+      "request": {
+        "message": {
+          "currentDocument": {
+            "exists": false
+          },
+          "document": {
+            "fields": {
+              "a": {
+                "integerValue": "31"
+              }
+            },
+            "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1"
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/UpdateDocument"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "UpdateDocument u-missing currentDocument.exists=true",
+      "error": {
+        "code": 5,
+        "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u-missing",
+        "status": "NOT_FOUND"
+      },
+      "id": "grpc.exists_true_on_missing",
+      "request": {
+        "message": {
+          "currentDocument": {
+            "exists": true
+          },
+          "document": {
+            "fields": {
+              "a": {
+                "integerValue": "1"
+              }
+            },
+            "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u-missing"
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/UpdateDocument"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "UpdateDocument u1 currentDocument.updateTime=<first write>",
+      "error": {
+        "code": 9,
+        "message": "the stored version (<the document's updateTime in microseconds>) does not match the required base version (<the precondition updateTime in microseconds>)",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "grpc.update_time_stale",
+      "request": {
+        "message": {
+          "currentDocument": {
+            "updateTime": "<updateTime: Timestamp>"
+          },
+          "document": {
+            "fields": {
+              "a": {
+                "integerValue": "32"
+              }
+            },
+            "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/u1"
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/UpdateDocument"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc",
+      "versions": {
+        "requiredIsPreconditionMicros": true,
+        "storedIsDocumentUpdateTimeMicros": true
+      }
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f1.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations, page tokens and transaction ids are replaced by placeholders (normalise in lib.mjs, and the replace maps of record-f1.mjs); everything else is as returned.",
+      "updateTime values in requests and messages are replaced by placeholders naming the write they came from."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T19:21:38.964Z .. 2026-10-26T19:30:20.851Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "8594f28e4c778d6fe23e86261a79d91ea7dd55157ca5ae9c0a7bd715da38e07c",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

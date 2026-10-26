@@ -1,0 +1,682 @@
+{
+  "cases": [
+    {
+      "description": "commit one update",
+      "id": "rest.update",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/t1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "commit an update with updateTransforms [ts = REQUEST_TIME, n += 1]",
+      "id": "rest.update_with_transform",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/t2"
+              },
+              "updateTransforms": [
+                {
+                  "fieldPath": "ts",
+                  "setToServerValue": "REQUEST_TIME"
+                },
+                {
+                  "fieldPath": "n",
+                  "increment": {
+                    "integerValue": "1"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "transformResults": [
+                {
+                  "timestampValue": "2026-10-26T19:27:54.976Z"
+                },
+                {
+                  "integerValue": "1"
+                }
+              ],
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "transformResults",
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "commit an update with updateTransforms []",
+      "id": "rest.update_with_empty_transforms",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/t3"
+              },
+              "updateTransforms": []
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "commit two updates",
+      "id": "rest.two_updates",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/t4"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/t5"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ],
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "commit t1 again with the same fields",
+      "id": "rest.update_unchanged",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/t1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "commit a delete of t5",
+      "id": "rest.delete_existing",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "delete": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/t5"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {}
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        []
+      ]
+    },
+    {
+      "description": "commit a delete of a missing document",
+      "id": "rest.delete_missing",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "delete": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/t-missing"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {}
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        []
+      ]
+    },
+    {
+      "description": "commit a verify of t1 with currentDocument.exists=true",
+      "id": "rest.verify_existing",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "verify": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/t1"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "commit a verify of a missing document with currentDocument.exists=true",
+      "error": {
+        "http": 404,
+        "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/t-missing",
+        "status": "NOT_FOUND"
+      },
+      "id": "rest.verify_missing",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "verify": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/t-missing"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/t-missing",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest",
+      "writeResultKeys": []
+    },
+    {
+      "description": "commit a verify of t1 with no currentDocument",
+      "error": {
+        "http": 400,
+        "message": "a verify must contain a precondition",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.verify_no_precondition",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "verify": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/t1"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "a verify must contain a precondition",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest",
+      "writeResultKeys": []
+    },
+    {
+      "description": "commit with writes []",
+      "id": "rest.empty",
+      "request": {
+        "body": {
+          "writes": []
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": []
+    },
+    {
+      "description": "Commit one update",
+      "id": "grpc.update",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/t6"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "message": {
+          "commitTime": "<commitTime: Timestamp>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "Commit an update with a REQUEST_TIME transform",
+      "id": "grpc.update_with_transform",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/t7"
+              },
+              "updateTransforms": [
+                {
+                  "fieldPath": "ts",
+                  "setToServerValue": "REQUEST_TIME"
+                }
+              ]
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "message": {
+          "commitTime": "<commitTime: Timestamp>",
+          "writeResults": [
+            {
+              "transformResults": [
+                {
+                  "timestampValue": {
+                    "nanos": 857000000,
+                    "seconds": "1793042888"
+                  }
+                }
+              ],
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc",
+      "writeResultKeys": [
+        [
+          "transformResults",
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "Commit a delete of a missing document",
+      "id": "grpc.delete_missing",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "writes": [
+            {
+              "delete": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/t-missing"
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "message": {
+          "commitTime": "<commitTime: Timestamp>",
+          "writeResults": [
+            {}
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc",
+      "writeResultKeys": [
+        []
+      ]
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f1.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations, page tokens and transaction ids are replaced by placeholders (normalise in lib.mjs, and the replace maps of record-f1.mjs); everything else is as returned.",
+      "writeResultKeys lists the keys of each write result as sent: over REST an empty repeated field (transformResults) is omitted from the JSON; over gRPC an empty repeated field is not on the wire at all, so the gRPC keys show only what proto-loader decodes.",
+      "precision counts every time value in every response of the run (every topic), by key: over REST the number of fraction digits of the RFC 3339 string, over gRPC how many Timestamp nanos were a multiple of 1000."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T19:21:38.964Z .. 2026-10-26T19:30:20.851Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "8594f28e4c778d6fe23e86261a79d91ea7dd55157ca5ae9c0a7bd715da38e07c",
+      "node": "v24.21.0"
+    }
+  },
+  "precision": {
+    "grpc": {
+      "commitTime": {
+        "nanosMultipleOf1000": 4,
+        "nanosZero": 0,
+        "samples": 4
+      },
+      "createTime": {
+        "nanosMultipleOf1000": 42,
+        "nanosZero": 0,
+        "samples": 42
+      },
+      "readTime": {
+        "nanosMultipleOf1000": 14,
+        "nanosZero": 0,
+        "samples": 14
+      },
+      "updateTime": {
+        "nanosMultipleOf1000": 45,
+        "nanosZero": 0,
+        "samples": 45
+      }
+    },
+    "rest": {
+      "commitTime": {
+        "fractionDigits": {
+          "6": 8
+        },
+        "samples": 8
+      },
+      "createTime": {
+        "fractionDigits": {
+          "6": 209
+        },
+        "samples": 209
+      },
+      "readTime": {
+        "fractionDigits": {
+          "6": 35
+        },
+        "samples": 35
+      },
+      "updateTime": {
+        "fractionDigits": {
+          "6": 216
+        },
+        "samples": 216
+      }
+    }
+  },
+  "relations": [
+    {
+      "case": "rest.update",
+      "commitTimeEqualsEveryUpdateTime": true,
+      "writeResultsHaveUpdateTime": [
+        true
+      ]
+    },
+    {
+      "case": "rest.update_with_transform",
+      "commitTimeEqualsEveryUpdateTime": true,
+      "writeResultsHaveUpdateTime": [
+        true
+      ]
+    },
+    {
+      "case": "rest.update_with_empty_transforms",
+      "commitTimeEqualsEveryUpdateTime": true,
+      "writeResultsHaveUpdateTime": [
+        true
+      ]
+    },
+    {
+      "case": "rest.two_updates",
+      "commitTimeEqualsEveryUpdateTime": true,
+      "writeResultsHaveUpdateTime": [
+        true,
+        true
+      ]
+    },
+    {
+      "case": "rest.update_unchanged",
+      "commitTimeEqualsEveryUpdateTime": false,
+      "updateTimeIsTheEarlierWrite": true,
+      "writeResultsHaveUpdateTime": [
+        true
+      ]
+    },
+    {
+      "case": "rest.delete_existing",
+      "commitTimeEqualsEveryUpdateTime": true,
+      "writeResultsHaveUpdateTime": [
+        false
+      ]
+    },
+    {
+      "case": "rest.delete_missing",
+      "commitTimeEqualsEveryUpdateTime": true,
+      "writeResultsHaveUpdateTime": [
+        false
+      ]
+    },
+    {
+      "case": "rest.verify_existing",
+      "commitTimeEqualsEveryUpdateTime": false,
+      "updateTimeIsTheDocumentUpdateTime": true,
+      "writeResultsHaveUpdateTime": [
+        true
+      ]
+    },
+    {
+      "case": "rest.empty",
+      "commitTimeEqualsEveryUpdateTime": true,
+      "writeResultsHaveUpdateTime": []
+    }
+  ],
+  "schema": "aruma.documents-oracle/v1"
+}
