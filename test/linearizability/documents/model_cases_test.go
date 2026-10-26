@@ -102,6 +102,16 @@ func TestModel(t *testing.T) {
 			op(0, 1, setK0, committed(10, 1, 10)),
 			op(2, 3, input{Kind: opCommit, Writes: []write{{Key: 0, Kind: wSet, N: 6, Pre: precondition{UpdateTime: 9}}}}, output{Outcome: outRefused, Code: codeFailedPrecondition}),
 		}},
+		"two failures name the missing document": {true, []fixtureOp{
+			op(0, 1, setK0, committed(10, 1, 10)),
+			op(2, 3, input{Kind: opCommit, Writes: []write{{Key: 0, Kind: wSet, N: 6, Pre: precondition{Exists: "missing"}},
+				{Key: 1, Kind: wDelete, Pre: precondition{Exists: "exists"}}}}, output{Outcome: outRefused, Code: codeNotFound}),
+		}},
+		"two failures name the first": {false, []fixtureOp{
+			op(0, 1, setK0, committed(10, 1, 10)),
+			op(2, 3, input{Kind: opCommit, Writes: []write{{Key: 0, Kind: wSet, N: 6, Pre: precondition{Exists: "missing"}},
+				{Key: 1, Kind: wDelete, Pre: precondition{Exists: "exists"}}}}, output{Outcome: outRefused, Code: codeAlreadyExists}),
+		}},
 		"increment result": {true, []fixtureOp{
 			op(0, 1, setK0, committed(10, 1, 10)),
 			op(2, 3, input{Kind: opCommit, Writes: []write{{Key: 0, Kind: wIncr, N: 2}}}, output{Outcome: outOK, CommitTime: 20, Seq: 2, UpdateTimes: []int64{20}, Incr: []int64{7}}),

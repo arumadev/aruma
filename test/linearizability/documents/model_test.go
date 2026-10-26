@@ -279,10 +279,16 @@ func holds(d docState, p precondition) (ok, known bool, code int) {
 	return true, true, 0
 }
 
-// refusedBy reports whether the writes may be refused in s with code: the first precondition
-// that fails, in order, fails the commit. A commit writes each document once, so every
+// refusedBy reports whether the writes may be refused in s with code: a missing document's
+// precondition (NOT_FOUND) if any fails, else the first that fails, in order (f2-commit.json
+// pre.two_failures, pre.two_failures_reversed). A commit writes each document once, so every
 // precondition is evaluated against s.
 func refusedBy(s state, writes []write, code int) bool {
+	for _, w := range writes {
+		if _, _, c := holds(s.Docs[w.Key], w.Pre); c == codeNotFound {
+			return code == codeNotFound
+		}
+	}
 	for _, w := range writes {
 		ok, known, c := holds(s.Docs[w.Key], w.Pre)
 		switch {
