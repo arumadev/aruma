@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -312,11 +313,23 @@ type decoder struct {
 
 func (d *decoder) fail(msg string) { d.errs = append(d.errs, msg) }
 
+// err is the front end's answer to the problems found: one INVALID_ARGUMENT, a line per
+// problem, with a google.rpc.BadRequest that holds a field violation per line, its field the
+// path the line names, if any (f1-update.json exists_and_update_time, f1-get.json
+// txn.not_base64, f1-list-documents.json page_size_not_number, f1-batch-get.json txn.*).
 func (d *decoder) err() error {
 	if len(d.errs) == 0 {
 		return nil
 	}
-	return InvalidArgument(strings.Join(d.errs, "\n"))
+	br := &errdetails.BadRequest{}
+	for _, msg := range d.errs {
+		v := &errdetails.BadRequest_FieldViolation{Description: msg}
+		if _, rest, ok := strings.Cut(msg, " at '"); ok {
+			v.Field, _, _ = strings.Cut(rest, "'")
+		}
+		br.FieldViolations = append(br.FieldViolations, v)
+	}
+	return InvalidArgument(strings.Join(d.errs, "\n")).withDetails(br)
 }
 
 // at is " at '{path}'", or nothing at the top.

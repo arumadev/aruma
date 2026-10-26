@@ -27,6 +27,7 @@ import (
 	authapi "github.com/arumadev/aruma/internal/services/auth/api"
 	authconsole "github.com/arumadev/aruma/internal/services/auth/console"
 	identity "github.com/arumadev/aruma/internal/services/auth/core"
+	documents "github.com/arumadev/aruma/internal/services/documents/core"
 	rtdbapi "github.com/arumadev/aruma/internal/services/rtdb/api"
 	rtdbconsole "github.com/arumadev/aruma/internal/services/rtdb/console"
 	rtdb "github.com/arumadev/aruma/internal/services/rtdb/core"
@@ -46,6 +47,8 @@ type App struct {
 	Auth    *identity.Service
 	RTDB    *rtdb.Service    // nil while Realtime Database is disabled
 	Storage *storage.Service // nil while Cloud Storage is disabled
+	// Documents is the Document Database; nil while it is disabled.
+	Documents *Documents
 
 	// Auth's side of the ID token contract (platform/idtoken), for the services that accept
 	// its tokens: the Realtime Database, and Storage, which also asks for a user's live state
@@ -236,8 +239,14 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		svc.OnProjectPurged(storageSvc.PurgeProject)
 	}
 
+	var docs *Documents
+	if cfg.Documents.Enabled {
+		docs = newDocuments(cfg, svc, pool, m, logger)
+		docs.mount(&handlers)
+	}
+
 	srv := server.New(cfg, logger, pool, m, handlers)
-	return &App{Config: cfg, Service: svc, Auth: authSvc, RTDB: rtdbSvc, Storage: storageSvc,
+	return &App{Config: cfg, Service: svc, Auth: authSvc, RTDB: rtdbSvc, Storage: storageSvc, Documents: docs,
 		IDTokens: idTokens, Revocations: revocations, Users: users,
 		RulesLimits: rulesLimits, RulesInflight: rulesInflight,
 		Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
@@ -308,6 +317,17 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 				logger.Error("storage", "error", err)
 			}
 		}()
+	}
+	if a.Documents != nil {
+		// Before the listener opens (ADR-024 §7): the single-instance lock, for up to 30
+		// seconds, which a new instance waits for while the old one drains.
+		if err := a.Documents.Boot(ctx, documents.InstanceOptions{}); err != nil {
+			return fmt.Errorf("documents: %w", err)
+		}
+		defer a.Documents.Close()
+	}
+	if cfg.Documents.DevOpenRules {
+		logger.Warn("documents.dev_open_rules is on: every client on this machine may read and write every Document Database")
 	}
 	go a.housekeeping(ctx)
 	go a.Auth.RunMailer(ctx)

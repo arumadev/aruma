@@ -105,7 +105,18 @@ storage:                           # Cloud Storage for Firebase (ADR-022); see d
     upload_requests_per_ip: 64     # concurrent upload and write requests
     min_bytes_per_second: 4096     # slower over 30 seconds, an upload is cut
     list_max_results: 1000         # the largest page of a listing (at most 1000)
-documents:                         # Document Database (ADR-029); see docs/configuration.md
+documents:                         # Document Database (ADR-024 to ADR-029); see docs/configuration.md
+  enabled: false                   # Firestore-compatible: gRPC (h2c or TLS) and REST on this port
+  # dev_open_rules: true           # let clients on this machine read and write every database
+                                   # without admin credentials until security rules arrive;
+                                   # accepted only when public_url and listen are loopback
   # dev_owner_token: true          # accept the emulators' "Bearer owner" from this machine as an
                                    # admin of every project; accepted only when public_url and
                                    # listen are loopback. Off, owner is always refused
+  limits:
+    message_bytes: 17825792        # one gRPC message or REST body (17 MiB)
+    stream_first_message: 10s      # until a stream's first message and credential
+    stream_write_stall: 30s        # a streamed answer waiting on a client that stopped reading
+    server_stream_max: 5m          # a streamed answer without a client deadline
+    streams_per_ip: 500            # streams open at once from one client address
+    commit_concurrency: 4          # commits of one database in Postgres at once

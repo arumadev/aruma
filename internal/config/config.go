@@ -161,6 +161,14 @@ func Defaults() Config {
 			ReadRows:                    1_000_000,
 		}},
 		Rules: Rules{Limits: RulesLimits(rules.DefaultLimits())},
+		Documents: Documents{Limits: DocumentsLimits{
+			MessageBytes:       17 << 20,
+			StreamFirstMessage: 10 * time.Second,
+			StreamWriteStall:   30 * time.Second,
+			ServerStreamMax:    5 * time.Minute,
+			StreamsPerIP:       500,
+			CommitConcurrency:  4,
+		}},
 		Storage: Storage{
 			GCGrace: time.Minute,
 			// storage/core.DefaultLimits, which config may not import; a test in internal/app
@@ -190,14 +198,48 @@ func Defaults() Config {
 	}
 }
 
-// Documents holds the Document Database settings (ADR-029).
+// Documents holds the Document Database settings (ADR-024 to ADR-029).
 type Documents struct {
+	// Enabled serves the Document Database: gRPC on the public port (h2c or TLS) and REST under
+	// /v1/projects/{p}/databases (ADR-027). Off by default until v0.4 ships.
+	Enabled bool `yaml:"enabled"`
+	// DevOpenRules lets clients on this machine read and write every database without admin
+	// credentials, until security rules arrive (ADR-025 §8). Off, only service accounts, the
+	// project's owner and the dev owner reach the data. It is meant for development only, so the
+	// setting is accepted only when public_url and listen are loopback addresses, and it
+	// applies only to requests whose peer is a loopback address.
+	DevOpenRules bool `yaml:"dev_open_rules"`
 	// DevOwnerToken accepts the emulators' Bearer owner from this machine as an admin of every
 	// project, as the Admin SDKs send it in emulator mode and Node's with ssl:false over gRPC.
 	// It is meant for development only, so the setting is accepted only when public_url and
 	// listen are loopback addresses, and it applies only to connections whose peer is a
 	// loopback address (ADR-029 §6). Off, owner is refused as on every other surface.
 	DevOwnerToken bool `yaml:"dev_owner_token"`
+	// Limits bound what the Document Database's transports accept and hold.
+	Limits DocumentsLimits `yaml:"limits"`
+}
+
+// DocumentsLimits are the Document Database's limits (ADR-024 §6.3, ADR-026 §3, ADR-027 §3).
+type DocumentsLimits struct {
+	// MessageBytes caps one gRPC message and one REST body: a 16 MiB document from a mobile
+	// client and its overhead (ADR-027 §3.1). Production's own cap on a request, 10 MiB, is
+	// core's, whatever the surface.
+	MessageBytes int64 `yaml:"message_bytes"`
+	// StreamFirstMessage bounds the wait for a stream's first message, read and its credential
+	// checked; only then are the server's read and write timeouts lifted (ADR-027 §3.2).
+	StreamFirstMessage time.Duration `yaml:"stream_first_message"`
+	// StreamWriteStall bounds each message a server stream writes, so a client that stopped
+	// reading does not hold its stream (BatchGetDocuments, RunQuery, RunAggregationQuery).
+	StreamWriteStall time.Duration `yaml:"stream_write_stall"`
+	// ServerStreamMax bounds a server stream that sent no grpc-timeout; it ends with
+	// DEADLINE_EXCEEDED.
+	ServerStreamMax time.Duration `yaml:"server_stream_max"`
+	// StreamsPerIP caps the streams open from one client address (resolved through
+	// trusted_proxies).
+	StreamsPerIP int `yaml:"streams_per_ip"`
+	// CommitConcurrency is how many commits of one database run in Postgres at once (ADR-024
+	// §6.3); the others wait in the process, not in the pool.
+	CommitConcurrency int `yaml:"commit_concurrency"`
 }
 
 // Storage holds the Cloud Storage for Firebase settings (ADR-022).
@@ -455,7 +497,16 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 			*dst = f
 		}
 	}
+	boolean("ARUMA_DOCUMENTS_ENABLED", &c.Documents.Enabled)
+	boolean("ARUMA_DOCUMENTS_DEV_OPEN_RULES", &c.Documents.DevOpenRules)
 	boolean("ARUMA_DOCUMENTS_DEV_OWNER_TOKEN", &c.Documents.DevOwnerToken)
+	dl := &c.Documents.Limits
+	integer("ARUMA_DOCUMENTS_MESSAGE_BYTES", &dl.MessageBytes)
+	duration("ARUMA_DOCUMENTS_STREAM_FIRST_MESSAGE", &dl.StreamFirstMessage)
+	duration("ARUMA_DOCUMENTS_STREAM_WRITE_STALL", &dl.StreamWriteStall)
+	duration("ARUMA_DOCUMENTS_SERVER_STREAM_MAX", &dl.ServerStreamMax)
+	count("ARUMA_DOCUMENTS_STREAMS_PER_IP", &dl.StreamsPerIP)
+	count("ARUMA_DOCUMENTS_COMMIT_CONCURRENCY", &dl.CommitConcurrency)
 	boolean("ARUMA_STORAGE_ENABLED", &c.Storage.Enabled)
 	str("ARUMA_STORAGE_DATA_DIR", &c.Storage.DataDir)
 	duration("ARUMA_STORAGE_GC_GRACE", &c.Storage.GCGrace)
@@ -564,9 +615,7 @@ func (c *Config) validate() error {
 	errs = append(errs, c.validateRTDB()...)
 	errs = append(errs, c.validateRules()...)
 	errs = append(errs, c.validateStorage()...)
-	if c.Documents.DevOwnerToken && !c.LoopbackDeployment() {
-		errs = append(errs, errors.New("documents.dev_owner_token makes any process on this machine an admin of every project; it is accepted only when public_url and listen are loopback addresses"))
-	}
+	errs = append(errs, c.validateDocuments()...)
 
 	if c.Session.IdleTimeout <= 0 || c.Session.AbsoluteTimeout <= 0 {
 		errs = append(errs, errors.New("session timeouts must be positive"))
@@ -616,6 +665,39 @@ func (c *Config) validateRTDB() []error {
 	}
 	if l.UnauthenticatedMessageBytes > l.MessageBytes {
 		errs = append(errs, errors.New("rtdb.limits.unauthenticated_message_bytes must not exceed message_bytes"))
+	}
+	return errs
+}
+
+// validateDocuments checks the documents section: the two development settings need a loopback
+// deployment, and the limits must be positive. The limits are checked whether or not the
+// Document Database is on, since they cost nothing to get right.
+func (c *Config) validateDocuments() []error {
+	var errs []error
+	d := c.Documents
+	if d.DevOwnerToken && !c.LoopbackDeployment() {
+		errs = append(errs, errors.New("documents.dev_owner_token makes any process on this machine an admin of every project; it is accepted only when public_url and listen are loopback addresses"))
+	}
+	if d.DevOpenRules && !c.LoopbackDeployment() {
+		errs = append(errs, errors.New("documents.dev_open_rules lets anyone read and write every database; it is accepted only when public_url and listen are loopback addresses"))
+	}
+	l := d.Limits
+	if l.MessageBytes < 1<<20 {
+		errs = append(errs, errors.New("documents.limits.message_bytes must be at least 1 MiB"))
+	}
+	for _, f := range []struct {
+		name string
+		v    int64
+	}{
+		{"stream_first_message", int64(l.StreamFirstMessage)},
+		{"stream_write_stall", int64(l.StreamWriteStall)},
+		{"server_stream_max", int64(l.ServerStreamMax)},
+		{"streams_per_ip", int64(l.StreamsPerIP)},
+		{"commit_concurrency", int64(l.CommitConcurrency)},
+	} {
+		if f.v < 1 {
+			errs = append(errs, fmt.Errorf("documents.limits.%s must be positive", f.name))
+		}
 	}
 	return errs
 }
