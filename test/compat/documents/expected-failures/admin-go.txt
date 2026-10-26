@@ -1,0 +1,18 @@
+# Expected failures of test/smoke/admin-go/documents (ADR-028 §7.3).
+#
+# Each line names a test as t.Name() prints it, optionally followed by " :: " and a text its
+# failure must contain. A listed test that passes, fails for another reason, or no longer exists
+# fails the suite: remove the line when the gap closes.
+#
+# F1 serves Get, BatchGet, List, Create, Update, Delete and ListCollectionIds. Every write of
+# cloud.google.com/go/firestore is a Commit, which comes in F2.
+TestSDKWrites/create :: Unimplemented
+TestSDKWrites/set_and_merge :: Unimplemented
+TestSDKWrites/update_with_preconditions :: Unimplemented
+TestSDKWrites/delete_with_preconditions :: Unimplemented
+TestSDKWrites/batch :: Unimplemented
+TestSDKWrites/every_type :: Unimplemented
+
+# ListDocuments ordered by a field: production serves it (f1-list-documents.json, orderBy="n"),
+# the F1 server refuses it with UNIMPLEMENTED.
+TestRawListDocuments/ordered_by_a_field :: ListDocuments with an order_by other than __name__ ascending is not supported

@@ -3,7 +3,8 @@
 # Aruma server generates, with all network access blocked.
 #
 #   test/smoke/run.sh [web|admin-node|admin-go|admin-auth-node|admin-auth-go|tamper-libs|android|ios|flutter|flutter-ios
-#                      |admin-node-rtdb|admin-go-rtdb|admin-node-storage|admin-go-storage ...]
+#                      |admin-node-rtdb|admin-go-rtdb|admin-node-storage|admin-go-storage
+#                      |admin-go-documents|admin-node-documents|web-documents ...]
 #
 # admin-auth-node and admin-auth-go run the Aruma verification libraries' suites (sdk/), which
 # start their own live server and use the official firebase-admin beside them (AC-A5, AC-A10..14,
@@ -23,6 +24,14 @@
 # loopback and once behind genconfig's TLS front at https://storage.aruma.test, with every
 # connection beyond loopback refused. ARUMA_SMOKE_ADDR, ARUMA_SMOKE_TLS_ADDR and
 # ARUMA_SMOKE_DB_PREFIX apply to them as well.
+#
+# The -documents targets use the official clients of the Document Database (F1 of v0.4) against a
+# live Aruma that each starts with genconfig -serve -documents (gRPC and REST on the one port, h2c):
+# cloud.google.com/go/firestore with option.WithEndpoint and the key file Aruma issued, firebase-admin
+# with host and ssl:false over gRPC and with preferRest, and Firestore lite of firebase 11, 12 and 13
+# with initializeFirestore({host, ssl: false}). Every connection beyond loopback is refused. Tests
+# of what the server does not serve yet are listed in test/compat/documents/expected-failures/,
+# and a listed test that passes fails the target.
 #
 # Without arguments it runs every target this machine can run. It needs the local Postgres
 # (ARUMA_TEST_DATABASE_URL), Node, Go and, per target, a JDK 17+ and the Android SDK, Xcode with an
@@ -77,6 +86,21 @@ run_admin_go_storage() {
   log "admin-go-storage: adminstorage with cloud.google.com/go/storage, loopback and TLS"
   (cd "$root/sdk/go/adminstorage" && go test -count=1 ./...)
   (cd "$smoke/admin-go" && go test -count=1 ./storage/)
+}
+
+run_admin_go_documents() {
+  log "admin-go-documents: cloud.google.com/go/firestore (gRPC, h2c)"
+  (cd "$smoke/admin-go" && go test -count=1 ./documents/)
+}
+
+run_admin_node_documents() {
+  log "admin-node-documents: firebase-admin Firestore, gRPC and preferRest"
+  (cd "$smoke/admin-node" && npm ci --no-audit --no-fund --silent && npm run --silent test:documents)
+}
+
+run_web_documents() {
+  log "web-documents: Firestore lite of firebase 11, 12, 13 (REST)"
+  (cd "$smoke/web" && npm ci --no-audit --no-fund --silent && npm run --silent test:documents)
 }
 
 run_admin_auth_node() {
@@ -165,16 +189,16 @@ run_flutter_ios() {
 targets=("$@")
 if [[ ${#targets[@]} -eq 0 ]]; then
   targets=(web admin-node admin-go admin-auth-node admin-auth-go tamper-libs admin-node-rtdb admin-go-rtdb
-    admin-node-storage admin-go-storage)
+    admin-node-storage admin-go-storage admin-go-documents admin-node-documents web-documents)
   command -v java >/dev/null && [[ -d "${ANDROID_HOME:-$HOME/Library/Android/sdk}" ]] && targets+=(android)
   command -v xcodebuild >/dev/null && targets+=(ios)
   command -v flutter >/dev/null && targets+=(flutter)
   command -v flutter >/dev/null && command -v xcodebuild >/dev/null && targets+=(flutter-ios)
 fi
 
-# The -rtdb and -storage targets start servers of their own.
+# The -rtdb, -storage and -documents targets start servers of their own.
 for t in "${targets[@]}"; do
-  if [[ $t != *-rtdb && $t != *-storage ]]; then
+  if [[ $t != *-rtdb && $t != *-storage && $t != *-documents ]]; then
     generate
     break
   fi

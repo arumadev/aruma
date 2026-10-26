@@ -2,9 +2,10 @@
   "name": "aruma-smoke-web",
   "private": true,
   "type": "module",
-  "description": "Initialises the last three major versions of the Firebase JS SDK with an Aruma web config.",
+  "description": "Initialises the last three major versions of the Firebase JS SDK with an Aruma web config, and uses their Firestore lite against a live Aruma.",
   "scripts": {
-    "test": "node --test smoke.test.mjs"
+    "test": "node --test smoke.test.mjs",
+    "test:documents": "node documents-run.mjs"
   },
   "dependencies": {
     "firebase-11": "npm:firebase@^11",

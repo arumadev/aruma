@@ -91,6 +91,55 @@ jobs:
       - name: Smoke tests
         run: test/smoke/run.sh web admin-node admin-go admin-auth-node admin-auth-go tamper-libs android admin-node-rtdb admin-go-rtdb admin-node-storage admin-go-storage
 
+  # The Document Database's official clients (F1 of v0.4): Admin Go, Admin Node over gRPC and
+  # preferRest, and Firestore lite of firebase 11, 12 and 13, each against a server of its own.
+  # Installs first, then the suites under test/ci/egress-guard.sh, as the Storage jobs do; the
+  # suites keep their own guards too (netguard.cjs, the Go dialers). What the server does not
+  # serve yet is in test/compat/documents/expected-failures/, and a listed test that passes fails
+  # the job.
+  documents-smoke:
+    name: Document Database SDK smoke (Admin Go, Admin Node gRPC and REST, JS lite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            test/smoke/admin-go/go.sum
+            sdk/go/adminstorage/go.sum
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            test/smoke/*/package-lock.json
+            sdk/node/*/package-lock.json
+      - name: Install (Go modules, the SDKs; genconfig and the Go test binary)
+        run: |
+          go mod download
+          go build -o /dev/null ./test/smoke/genconfig
+          (cd test/smoke/admin-go && go test -count=1 -run '^$' ./documents/)
+          (cd test/smoke/admin-node && npm ci --no-audit --no-fund)
+          (cd test/smoke/web && npm ci --no-audit --no-fund)
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: Documents smoke tests
+        run: test/ci/egress-guard.sh run test/smoke/run.sh admin-go-documents admin-node-documents web-documents
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+
   web-auth:
     name: Web Auth e2e (firebase 11, 12, 13; emulator and production modes)
     runs-on: ubuntu-latest
