@@ -153,6 +153,15 @@ func TestWritesOfOneDocumentF2(t *testing.T) {
 	_, err = x.client.BatchWrite(ctx, req(&pb.BatchWriteRequest{Database: db, Writes: []*pb.Write{update("s/d1", intField(1)), update("s/d1", intField(2))}}, tok))
 	wantErr(t, "BatchWrite of one document twice", err, connect.CodeInvalidArgument, "the same document cannot be written more than once in a single request")
 
+	// A missing database: NOT_FOUND with no message, for an empty Commit too
+	// (f2-commit.json grpc.missing_database.empty, f2-batch-write.json grpc.missing_database).
+	nodb := "projects/" + apitest.Project + "/databases/aruma-ref-nonexistent"
+	_, err = x.client.Commit(ctx, req(&pb.CommitRequest{Database: nodb}, tok))
+	wantErr(t, "empty Commit on a missing database", err, connect.CodeNotFound, "")
+	_, err = x.client.BatchWrite(ctx, req(&pb.BatchWriteRequest{Database: nodb, Writes: []*pb.Write{{Operation: &pb.Write_Update{Update: &pb.Document{
+		Name: nodb + "/documents/s/x", Fields: intField(1)}}}}}, tok))
+	wantErr(t, "BatchWrite on a missing database", err, connect.CodeNotFound, "")
+
 	// 501 writes in one Commit or one BatchWrite are accepted (limit.501_writes).
 	many := make([]*pb.Write, 501)
 	for i := range many {
