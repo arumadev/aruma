@@ -3,6 +3,9 @@ package core
 import (
 	"errors"
 	"math"
+	"math/rand/v2"
+	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -239,5 +242,135 @@ func TestPlanTransforms(t *testing.T) {
 		Transforms: []Transform{tr(TransformAppendMissing, "a", value.Array(big))}}})
 	if err := tooBig.apply(testDB, nil, commit); err == nil {
 		t.Error("a transform made a document too large, and it passed")
+	}
+}
+
+// applyTransforms is apply of each transform in order, whatever the paths (equal, apart, under a
+// scalar or a missing map) and kinds: checked against the sequential apply on random writes.
+func TestApplyTransformsSequential(t *testing.T) {
+	rng := rand.New(rand.NewPCG(1, 2))
+	paths := []string{"a", "b", "m.x", "m.y", "m.n.z", "s.q", "v.k"}
+	vals := []value.Value{value.Int(1), value.Double(2.5), value.Int(-3), negZero, value.Double(math.NaN()), value.String("x"), value.Null()}
+	arr := func() value.Value {
+		els := make([]value.Value, rng.IntN(4))
+		for i := range els {
+			els[i] = vals[rng.IntN(len(vals))]
+		}
+		return value.Array(els...)
+	}
+	now := RequestTime(time.UnixMicro(1793042888857123))
+	for range 2000 {
+		fields := value.Map(
+			value.Field{Name: "a", Value: value.Int(5)},
+			value.Field{Name: "m", Value: value.Map(value.Field{Name: "x", Value: arr()})},
+			value.Field{Name: "s", Value: value.String("scalar")},
+			value.Field{Name: "z", Value: value.Bool(true)},
+		)
+		var ts []Transform
+		for range 1 + rng.IntN(6) {
+			p := paths[rng.IntN(len(paths))]
+			// Keep the paths equal or apart, as the transport does.
+			if slices.ContainsFunc(ts, func(u Transform) bool {
+				q := u.Path.String()
+				return q != p && (strings.HasPrefix(p, q+".") || strings.HasPrefix(q, p+"."))
+			}) {
+				continue
+			}
+			kind := TransformKind(1 + rng.IntN(6))
+			var op value.Value
+			switch kind {
+			case TransformIncrement, TransformMaximum, TransformMinimum:
+				op = vals[rng.IntN(4)]
+			case TransformAppendMissing, TransformRemoveAll:
+				op = arr()
+			}
+			ts = append(ts, tr(kind, p, op))
+		}
+		want, wantRes := fields, make([]value.Value, len(ts))
+		for i, tf := range ts {
+			var err error
+			if want, wantRes[i], err = tf.apply(want, now); err != nil {
+				t.Fatal(err)
+			}
+		}
+		got, gotRes, err := applyTransforms(fields, ts, now)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !value.Identical(got, want) || !slices.EqualFunc(gotRes, wantRes, value.Identical) {
+			t.Fatalf("%v on %v: got %v %v, want %v %v", ts, fields, got, gotRes, want, wantRes)
+		}
+	}
+}
+
+// The keyed element set answers as the scan does: equivalent numbers of any type are one, NaN
+// is NaN, and long strings that share the index's cut are told apart.
+func TestElementSetKeyed(t *testing.T) {
+	long := strings.Repeat("x", 2000)
+	els := []value.Value{value.Int(3), negZero, value.Double(math.NaN()), value.String(long + "a"), value.Null(),
+		value.Array(value.Int(1)), value.Map(value.Field{Name: "k", Value: value.Double(1)})}
+	probes := []value.Value{value.Double(3), value.Int(0), value.Double(math.NaN()), value.String(long + "a"),
+		value.String(long + "b"), value.Null(), value.Array(value.Double(1)), value.Map(value.Field{Name: "k", Value: value.Int(1)}),
+		value.Int(4), value.Bool(false)}
+	keyed := newElementSet(els, 1000)
+	if keyed.byKey == nil {
+		t.Fatal("not keyed")
+	}
+	for _, p := range probes {
+		want := slices.ContainsFunc(els, func(e value.Value) bool { return value.Equivalent(e, p) })
+		if got := keyed.holds(p); got != want {
+			t.Errorf("%v: got %v, want %v", p, got, want)
+		}
+	}
+}
+
+// The worst writes a 16 MiB request can carry cost about their size, not its square: tens of
+// thousands of transforms of one write, and array transforms of a million elements (F2 review M1).
+func TestTransformsWorstCase(t *testing.T) {
+	if testing.Short() {
+		t.Skip("short")
+	}
+	now := RequestTime(time.UnixMicro(1793042888857123))
+	ts := make([]Transform, maxTransformsBench)
+	for i := range ts {
+		ts[i] = tr(TransformIncrement, "f"+strconv.Itoa(i), value.Int(1))
+	}
+	start := time.Now()
+	if _, _, err := applyTransforms(value.Map(), ts, now); err != nil {
+		t.Fatal(err)
+	}
+	if d := time.Since(start); d > 5*time.Second {
+		t.Errorf("%d transforms took %v", len(ts), d)
+	}
+	els := make([]value.Value, 1<<20)
+	for i := range els {
+		els[i] = value.Int(int64(i))
+	}
+	big := value.Array(els...)
+	start = time.Now()
+	base := doc("a", big)
+	for _, kind := range []TransformKind{TransformAppendMissing, TransformRemoveAll} {
+		if _, _, err := tr(kind, "a", big).apply(base, now); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if d := time.Since(start); d > 10*time.Second {
+		t.Errorf("array transforms of %d elements took %v", len(els), d)
+	}
+}
+
+// maxTransformsBench is about as many transforms as a 16 MiB request holds.
+const maxTransformsBench = 200_000
+
+func BenchmarkApplyTransforms(b *testing.B) {
+	now := RequestTime(time.UnixMicro(1793042888857123))
+	ts := make([]Transform, 20_000)
+	for i := range ts {
+		ts[i] = tr(TransformIncrement, "f"+strconv.Itoa(i), value.Int(1))
+	}
+	for b.Loop() {
+		if _, _, err := applyTransforms(value.Map(), ts, now); err != nil {
+			b.Fatal(err)
+		}
 	}
 }

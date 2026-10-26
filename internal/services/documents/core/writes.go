@@ -104,6 +104,16 @@ func (p *plan) storedKeys() [][]byte {
 	return ks
 }
 
+// MaxCommitWork bounds the bytes of the documents a commit's writes build, each write's
+// document counted once (value.DocumentSize): each write of a document checks the whole document
+// it leaves, so many writes of one large document cost writes × its size. 1 GiB is twice 501
+// writes of documents at the 1 MiB limit, past every recorded commit (parity
+// request-work-bounds); its check costs a few seconds of one core.
+const MaxCommitWork = 1 << 30
+
+// errCommitWork is a commit over MaxCommitWork. Our text.
+var errCommitWork = &Error{InvalidArgument, "The commit's writes build more than 1 GiB of documents. Please split it into smaller commits."}
+
 // apply folds the writes over the documents as locked (by stored key; absent if not there): each
 // write's precondition is checked against the document as the writes before it left it, and the
 // first that fails fails the commit with production's error. A write's transforms apply after
@@ -125,6 +135,7 @@ func (p *plan) apply(db DB, locked map[string]*lockedDoc, commitTime time.Time) 
 	// document's first (f2-commit.json pre.two_failures, pre.two_failures_reversed), so the
 	// writes after a failed one are still checked, but not applied.
 	var failed *Error
+	work := 0
 	for i, w := range p.writes {
 		// The transports refuse such names; this keeps one from ever being stored, since a name
 		// key's segments are only read back right when they are UTF-8 (0xFF 0x01 would end one).
@@ -149,22 +160,23 @@ func (p *plan) apply(db DB, locked map[string]*lockedDoc, commitTime time.Time) 
 			}
 			p.transformed[i] = nil
 			if len(w.Transforms) > 0 {
-				p.transformed[i] = make([]value.Value, len(w.Transforms))
-			}
-			for j, t := range w.Transforms {
 				var err error
-				if after, p.transformed[i][j], err = t.apply(after, now); err != nil {
+				if after, p.transformed[i], err = applyTransforms(after, w.Transforms, now); err != nil {
 					return err
 				}
-				d.serverTime = d.serverTime || t.Kind == TransformServerTime
+				d.serverTime = d.serverTime || slices.ContainsFunc(w.Transforms, func(t Transform) bool { return t.Kind == TransformServerTime })
 			}
 			if w.Masked || len(w.Transforms) > 0 {
 				if err := value.Validate(after); err != nil {
 					return invalidDocument(err)
 				}
 			}
-			if size := value.DocumentSize(w.Path.String(), after); size > value.MaxDocumentSize {
+			size := value.DocumentSize(w.Path.String(), after)
+			if size > value.MaxDocumentSize {
 				return documentTooLarge(db.DocumentName(w.Path), size)
+			}
+			if work += size; work > MaxCommitWork {
+				return errCommitWork
 			}
 			d.exists, d.fields = true, after
 		case WriteDelete:

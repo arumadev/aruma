@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
+	"hash/maphash"
 	"sync"
 
 	"google.golang.org/genproto/googleapis/rpc/status"
@@ -34,6 +36,23 @@ var (
 	// errVerifyPrecondition is a verify without a current_document (f1-write-results.json
 	// rest.verify_no_precondition).
 	errVerifyPrecondition = wire.InvalidArgument("a verify must contain a precondition")
+)
+
+// The bounds of a request's writes, checked before any of them is read, so that the work a
+// request makes before its rules and its size checks is bounded by its count as well as by its
+// bytes (message_bytes). Production's are not recorded beyond its acceptance of 501 writes
+// (f2-commit.json, f2-batch-write.json limit.501_writes); these are far above every recorded
+// case (parity request-work-bounds).
+const (
+	// MaxRequestWrites bounds a Commit's or a BatchWrite's writes.
+	MaxRequestWrites = 10_000
+	// MaxRequestTransforms bounds the field transforms of all of a request's writes.
+	MaxRequestTransforms = 50_000
+)
+
+var (
+	errTooManyWrites     = wire.InvalidArgument("A request may hold at most 10000 writes.")
+	errTooManyTransforms = wire.InvalidArgument("A request may hold at most 50000 field transforms.")
 )
 
 // errBSONNumber is an Enterprise BSON int32 or Decimal128 that a numeric or array transform
@@ -180,8 +199,19 @@ func writeResultProto(r core.WriteResult) *pb.WriteResult {
 	return out
 }
 
-// writesOf reads a request's writes, each checked as production checks it before the commit.
+// writesOf reads a request's writes, each checked as production checks it before the commit,
+// once their count is within the request's bounds.
 func writesOf(ws []*pb.Write) ([]core.Write, error) {
+	if len(ws) > MaxRequestWrites {
+		return nil, errTooManyWrites
+	}
+	transforms := 0
+	for _, w := range ws {
+		transforms += len(w.GetUpdateTransforms()) + len(w.GetTransform().GetFieldTransforms())
+	}
+	if transforms > MaxRequestTransforms {
+		return nil, errTooManyTransforms
+	}
 	out := make([]core.Write, len(ws))
 	for i, w := range ws {
 		var err error
@@ -314,18 +344,66 @@ func transformsOf(fts []*pb.DocumentTransform_FieldTransform) ([]core.Transform,
 	}
 	// Several transforms of one field apply in order; a field and one inside it may not both be
 	// transformed (f2-transforms.json multi.*).
-	for i, t := range out {
-		for _, u := range out[:i] {
-			parent := t.Path
-			if u.Path.IsPrefixOf(parent) {
-				parent = u.Path
-			}
-			if len(t.Path) != len(u.Path) && parent.IsPrefixOf(t.Path) && parent.IsPrefixOf(u.Path) {
-				return nil, wire.InvalidArgument("Cannot transform property " + parent.String() + " and its nested property at the same time.")
-			}
-		}
+	if parent, ok := nestedTransform(out); ok {
+		return nil, wire.InvalidArgument("Cannot transform property " + parent.String() + " and its nested property at the same time.")
 	}
 	return out, nil
+}
+
+// nestedTransform finds the first transform, in order, whose field holds or is inside the field
+// of one before it, and returns the outer field of it and of the first such one before it: the
+// pair production names. Each field is looked up by the hash of each of its prefixes, so the
+// check costs the paths' segments, not the square of their number (F2 review M1); a hash is
+// only a candidate, which IsPrefixOf confirms.
+func nestedTransform(ts []core.Transform) (value.FieldPath, bool) {
+	seed := maphash.MakeSeed()
+	whole := map[uint64][]int{}  // by the hash of a transform's path: the transforms with it
+	inside := map[uint64][]int{} // by the hash of a proper prefix: the transforms below it
+	var h maphash.Hash
+	for i, t := range ts {
+		if len(t.Path) == 0 {
+			continue
+		}
+		h.SetSeed(seed)
+		prefixes := make([]uint64, len(t.Path)) // prefixes[k]: the hash of t.Path[:k+1]
+		for k, seg := range t.Path {
+			var n [binary.MaxVarintLen64]byte
+			h.Write(n[:binary.PutUvarint(n[:], uint64(len(seg)))])
+			h.WriteString(seg)
+			prefixes[k] = h.Sum64()
+		}
+		first, parent := -1, value.FieldPath(nil)
+		// One before it that holds it.
+		for k := range len(t.Path) - 1 {
+			for _, j := range whole[prefixes[k]] {
+				if first >= 0 && j > first {
+					break
+				}
+				if len(ts[j].Path) == k+1 && ts[j].Path.IsPrefixOf(t.Path) {
+					first, parent = j, ts[j].Path
+					break
+				}
+			}
+		}
+		// One before it inside it.
+		for _, j := range inside[prefixes[len(t.Path)-1]] {
+			if first >= 0 && j > first {
+				break
+			}
+			if t.Path.IsPrefixOf(ts[j].Path) {
+				first, parent = j, t.Path
+				break
+			}
+		}
+		if first >= 0 {
+			return parent, true
+		}
+		whole[prefixes[len(prefixes)-1]] = append(whole[prefixes[len(prefixes)-1]], i)
+		for _, p := range prefixes[:len(prefixes)-1] {
+			inside[p] = append(inside[p], i)
+		}
+	}
+	return nil, false
 }
 
 // number reads the operand of increment, maximum and minimum: an integer or a double.

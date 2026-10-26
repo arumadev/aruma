@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"math"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -212,5 +213,32 @@ func TestDatabaseNotFoundTexts(t *testing.T) {
 	}
 	if e.GRPCMessage() != "" || e.Code() != NotFound {
 		t.Error("gRPC")
+	}
+}
+
+// A commit of many writes of one large document stops at MaxCommitWork (F2 review M1): its
+// checks cost writes × the document's size, which the budget bounds.
+func TestCommitWorkBound(t *testing.T) {
+	p := ParsePath("c/d")
+	fs := make([]value.Field, 1000)
+	for i := range fs {
+		fs[i] = value.Field{Name: "f" + strconv.Itoa(i), Value: value.String(strings.Repeat("x", 1000))}
+	}
+	locked := map[string]*lockedDoc{string(storedKey(nameKey(p))): {fields: value.Map(fs...)}}
+	size := value.DocumentSize(p.String(), value.Map(fs...))
+	writes := func(n int) []Write {
+		ws := make([]Write, n)
+		for i := range ws {
+			ws[i] = Write{Kind: WriteUpdate, Path: p, Masked: true, Mask: []value.FieldPath{{"g"}}, Fields: doc("g", value.Int(int64(i)))}
+		}
+		return ws
+	}
+	start := time.Now()
+	if err := newPlan(writes(MaxCommitWork/size+10)).apply(testDB, locked, time.Now()); !errors.Is(err, errCommitWork) {
+		t.Fatalf("over the budget: %v", err)
+	}
+	t.Logf("%d writes of %d bytes: %v", MaxCommitWork/size+10, size, time.Since(start))
+	if err := newPlan(writes(MaxCommitWork/(size+20))).apply(testDB, locked, time.Now()); err != nil {
+		t.Fatalf("within the budget: %v", err)
 	}
 }

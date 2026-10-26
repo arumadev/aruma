@@ -51,6 +51,78 @@ func RequestTime(commitTime time.Time) value.Value {
 // field's new value, or null for the array kinds (write.proto). now is RequestTime's value.
 func (t Transform) apply(fields, now value.Value) (out, result value.Value, err error) {
 	base, found := lookup(fields, t.Path)
+	v, result, err := t.value(base, found, now)
+	if err != nil {
+		return value.Value{}, value.Value{}, err
+	}
+	return value.ApplyMask(fields, nested(t.Path, v), []value.FieldPath{t.Path}), result, nil
+}
+
+// applyTransforms is apply of each of a write's transforms in order: the fields after them all,
+// and each one's result. The transport refuses a field transformed with one inside it, so two
+// transforms' paths are equal or apart: a transform finds its field as the transforms of its
+// path before it left it, or else as fields hold it, and the fields are rebuilt once, not once
+// per transform, which would cost transforms × fields (F2 review M1).
+func applyTransforms(fields value.Value, ts []Transform, now value.Value) (value.Value, []value.Value, error) {
+	results := make([]value.Value, len(ts))
+	after := make(map[string]value.Value, len(ts)) // by path: the field as the transforms so far left it
+	var paths []value.FieldPath
+	update := &updateTree{}
+	for i, t := range ts {
+		k := t.Path.String()
+		base, found := after[k]
+		if !found {
+			base, found = lookup(fields, t.Path)
+			paths = append(paths, t.Path)
+		}
+		v, result, err := t.value(base, found, now)
+		if err != nil {
+			return value.Value{}, nil, err
+		}
+		after[k], results[i] = v, result
+	}
+	for _, p := range paths {
+		update.set(p, after[p.String()])
+	}
+	return value.ApplyMask(fields, update.value(), paths), results, nil
+}
+
+// updateTree is the update the transforms of a write make, by path segment: a node holds a value
+// or the nodes below it.
+type updateTree struct {
+	v    *value.Value
+	kids map[string]*updateTree
+}
+
+func (u *updateTree) set(p value.FieldPath, v value.Value) {
+	for _, seg := range p {
+		if u.kids == nil {
+			u.kids = map[string]*updateTree{}
+		}
+		k := u.kids[seg]
+		if k == nil {
+			k = &updateTree{}
+			u.kids[seg] = k
+		}
+		u = k
+	}
+	u.v = &v
+}
+
+func (u *updateTree) value() value.Value {
+	if u.v != nil {
+		return *u.v
+	}
+	fields := make([]value.Field, 0, len(u.kids))
+	for name, k := range u.kids {
+		fields = append(fields, value.Field{Name: name, Value: k.value()})
+	}
+	return value.Map(fields...)
+}
+
+// value returns the field's value after the transform, from base (found: the field exists), and
+// the transform's result.
+func (t Transform) value(base value.Value, found bool, now value.Value) (v, result value.Value, err error) {
 	if t.Kind == TransformIncrement || t.Kind == TransformMaximum || t.Kind == TransformMinimum {
 		// Standard refuses a numeric transform of an Enterprise BSON number (f2-transforms.json
 		// bson.on_int32_field, bson.on_decimal_field).
@@ -61,7 +133,6 @@ func (t Transform) apply(fields, now value.Value) (out, result value.Value, err 
 			return value.Value{}, value.Value{}, &Error{InvalidArgument, "Value type DECIMAL128 is not allowed"}
 		}
 	}
-	var v value.Value
 	switch t.Kind {
 	case TransformServerTime:
 		v = now
@@ -76,11 +147,10 @@ func (t Transform) apply(fields, now value.Value) (out, result value.Value, err 
 	case TransformRemoveAll:
 		v = removeAll(base, found, t.Operand)
 	}
-	out = value.ApplyMask(fields, nested(t.Path, v), []value.FieldPath{t.Path})
 	if t.Kind == TransformAppendMissing || t.Kind == TransformRemoveAll {
-		return out, value.Null(), nil
+		return v, value.Null(), nil
 	}
-	return out, v, nil
+	return v, v, nil
 }
 
 // lookup returns the value at p in fields as a transform finds its field: through maps alone. A
@@ -157,9 +227,11 @@ func appendMissing(base value.Value, found bool, add value.Value) value.Value {
 		els = base.Elements()
 	}
 	out := slices.Clip(els)
+	set := newElementSet(out, len(add.Elements()))
 	for _, e := range add.Elements() {
-		if !holds(out, e) {
+		if !set.holds(e) {
 			out = append(out, e)
+			set.add(e)
 		}
 	}
 	return value.Array(out...)
@@ -172,14 +244,54 @@ func removeAll(base value.Value, found bool, remove value.Value) value.Value {
 		return value.Array()
 	}
 	var out []value.Value
+	set := newElementSet(remove.Elements(), len(base.Elements()))
 	for _, e := range base.Elements() {
-		if !holds(remove.Elements(), e) {
+		if !set.holds(e) {
 			out = append(out, e)
 		}
 	}
 	return value.Array(out...)
 }
 
-func holds(els []value.Value, v value.Value) bool {
+// elementSet answers whether an array holds an element equivalent to a value. Past a few
+// elements it looks them up by sort key (value.Key), which equivalent values share since
+// Equivalent is Compare's order; values the key cuts at the index budget may share it without
+// being equivalent, so Equivalent decides among them. An array transform then costs the
+// elements of both arrays, not their product (F2 review M1).
+type elementSet struct {
+	els   []value.Value
+	byKey map[string][]value.Value
+}
+
+// linearElements is the product of the arrays' lengths below which a scan is cheaper than
+// keys.
+const linearElements = 64
+
+// newElementSet returns the set of els, which will be asked about probes values.
+func newElementSet(els []value.Value, probes int) *elementSet {
+	s := &elementSet{els: els}
+	if len(els)*probes > linearElements {
+		s.byKey = make(map[string][]value.Value, len(els))
+		for _, e := range els {
+			s.add(e)
+		}
+	}
+	return s
+}
+
+func (s *elementSet) add(v value.Value) {
+	if s.byKey == nil {
+		s.els = append(s.els, v)
+		return
+	}
+	k := string(value.Key(v))
+	s.byKey[k] = append(s.byKey[k], v)
+}
+
+func (s *elementSet) holds(v value.Value) bool {
+	els := s.els
+	if s.byKey != nil {
+		els = s.byKey[string(value.Key(v))]
+	}
 	return slices.ContainsFunc(els, func(e value.Value) bool { return value.Equivalent(e, v) })
 }
