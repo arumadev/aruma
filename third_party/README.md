@@ -46,15 +46,16 @@ firebase-js-sdk copy with the googleapis copy. `make proto` runs it first, and i
 
 `buf.yaml` and `buf.gen.yaml` at the repository root; `make proto` runs buf and its plugins at
 pinned versions through `go run` (nothing to install) and names the output `*.gen.go`, as sqlc's
-is. The Go packages live inside the service (`internal/services/documents/wire/pb`):
+is. The RPC code is connect's handlers alone, with no grpc-go stubs (ADR-027). The Go packages live
+inside the service (`internal/services/documents/wire/pb`):
 
 | Proto package | Go package |
 |---|---|
-| `google.firestore.v1` | `wire/pb/firestorepb` (messages, grpc-go stubs) and `wire/pb/firestorepb/firestorepbconnect` (connect stubs) |
+| `google.firestore.v1` | `wire/pb/firestorepb` (messages) and `wire/pb/firestorepb/firestorepbconnect` (connect handlers) |
 | `google.firestore.admin.v1` | `wire/pb/adminpb` (and `adminpbconnect`) |
 | `google.type` | `wire/pb/typepb` |
 | `google.longrunning` | `wire/pb/longrunningpb` (and `longrunningpbconnect`) |
-| `google.api`, `google.rpc` | not generated: `google.golang.org/genproto/googleapis/{api,rpc}`, since grpc-go registers `google/rpc/status.proto` itself |
+| `google.api`, `google.rpc` | not generated: `google.golang.org/genproto/googleapis/{api,rpc}`, which the error details (`google.rpc.Help`) and Google's own clients link too |
 
 A Go binary may register a `.proto` file once. Aruma's binary registers `google/firestore/v1/*.proto`
 and `google/type`, `google/longrunning` under the paths above, so it must never also link Google's

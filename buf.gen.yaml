@@ -1,11 +1,11 @@
 # Go for the Document Database's wire, run by `make proto` (never by hand: it also renames the
 # files to *.gen.go). The Firestore, Firestore Admin, google.type and google.longrunning protos are
 # generated into the service (internal/services/documents/wire/pb); google.api and google.rpc keep
-# their go_package and come from genproto, since grpc-go registers google/rpc/status.proto itself
-# and one binary may register a proto file only once.
+# their go_package and come from genproto, which the error details (google.rpc.Help) and Google's
+# clients link too, and one binary may register a proto file only once.
 #
-# Both RPC stacks are generated while ADR-027 is open (the transport spike,
-# test/spike/documents/transport); the one that loses is dropped with the spike.
+# The RPC stack is connect (ADR-027): messages from protoc-gen-go, handlers from
+# protoc-gen-connect-go. No grpc-go stubs are generated.
 version: v2
 managed:
   enabled: true
@@ -32,9 +32,6 @@ inputs:
 # The plugins at pinned versions, built by the Go toolchain: nothing to install.
 plugins:
   - local: [go, run, google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12]
-    out: .
-    opt: module=github.com/arumadev/aruma
-  - local: [go, run, google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2]
     out: .
     opt: module=github.com/arumadev/aruma
   - local: [go, run, connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.21.1]

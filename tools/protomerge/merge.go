@@ -67,6 +67,14 @@ func compare(rel string, base, js protoFile) []string {
 				if b.typ != m.typ {
 					problems = append(problems, fmt.Sprintf("%s is %q in firebase-js-sdk and %q in googleapis", where, m.typ, b.typ))
 				}
+				// repeated, optional and a oneof change the wire form or the presence of a field
+				// whose type and number agree.
+				if b.label != m.label {
+					problems = append(problems, fmt.Sprintf("%s is %s in firebase-js-sdk and %s in googleapis", where, labelName(m.label), labelName(b.label)))
+				}
+				if b.oneof != m.oneof {
+					problems = append(problems, fmt.Sprintf("%s is %s in firebase-js-sdk and %s in googleapis", where, oneofName(m.oneof), oneofName(b.oneof)))
+				}
 				continue
 			}
 			if b, ok := bs.byNum[m.num]; ok {
@@ -98,9 +106,21 @@ type scope struct {
 }
 
 // member is a field (typ is its type, "map<k,v>" for a map) or an enum value (typ is empty).
+// label is a field's "repeated", "optional" or "required", empty for a singular field; oneof
+// names the oneof that holds it.
 type member struct {
-	name, typ string
-	num       int
+	name, typ    string
+	label, oneof string
+	num          int
+}
+
+func labelName(l string) string { return cmp.Or(l, "singular") }
+
+func oneofName(o string) string {
+	if o == "" {
+		return "outside any oneof"
+	}
+	return "in oneof " + o
 }
 
 func (s *scope) reserves(n int) bool {
@@ -126,8 +146,8 @@ func parse(src string) (protoFile, error) {
 	p := &parser{toks: tokenize(src)}
 	f := protoFile{scopes: map[string]*scope{}}
 	type frame struct {
-		name  string // qualified; empty for a oneof, whose fields belong to the message around it
-		scope *scope
+		name  string // qualified; a oneof's own name, whose fields belong to the message around it
+		scope *scope // nil for a oneof
 	}
 	var stack []frame
 	current := func() (string, *scope) {
@@ -142,6 +162,9 @@ func parse(src string) (protoFile, error) {
 		name, s := current()
 		if s == nil {
 			return
+		}
+		if top := stack[len(stack)-1]; top.scope == nil {
+			m.oneof = top.name
 		}
 		if prev, dup := s.byNum[m.num]; dup && s.kind == "message" {
 			f.problems = append(f.problems, fmt.Sprintf("%s: %s and %s share number %d", name, prev.name, m.name, m.num))
@@ -165,11 +188,11 @@ func parse(src string) (protoFile, error) {
 			f.scopes[name] = s
 			stack = append(stack, frame{name, s})
 		case "oneof":
-			p.next()
+			name := p.next()
 			if p.next() != "{" {
-				return f, fmt.Errorf("oneof: expected {")
+				return f, fmt.Errorf("oneof %s: expected {", name)
 			}
-			stack = append(stack, frame{})
+			stack = append(stack, frame{name: name})
 		case "service", "extend":
 			p.skipBlock()
 		case "reserved":
@@ -285,7 +308,7 @@ func (p *parser) member(first string, enum bool) (member, error) {
 	} else {
 		typ := first
 		if typ == "repeated" || typ == "optional" || typ == "required" {
-			typ = p.next()
+			m.label, typ = typ, p.next()
 		}
 		if typ == "map" {
 			var b strings.Builder
