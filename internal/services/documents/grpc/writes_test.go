@@ -1,6 +1,7 @@
 package grpc_test
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -97,13 +98,9 @@ func TestCommitTransforms(t *testing.T) {
 	_, err = commit(&pb.Write{Operation: &pb.Write_Verify{Verify: root + "/w/t"}})
 	wantErr(t, "verify without a precondition", err, connect.CodeInvalidArgument, "a verify must contain a precondition")
 	_, err = commit(update("w/t", nil, increment("n", &pb.Value{ValueType: &pb.Value_StringValue{StringValue: "1"}})))
-	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Errorf("increment by a string: %v", err)
-	}
+	wantErr(t, "increment by a string (f2-transforms.json grpc.inc.operand_string)", err, connect.CodeInvalidArgument, "Input must be a number.")
 	_, err = commit(&pb.Write{Operation: &pb.Write_Delete{Delete: root + "/w/t"}, UpdateTransforms: []*pb.DocumentTransform_FieldTransform{serverTime("x")}})
-	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Errorf("transforms on a delete: %v", err)
-	}
+	wantErr(t, "transforms on a delete", err, connect.CodeInvalidArgument, "a delete must not specify a update transform.")
 	_, err = commit(update("w/t", nil, serverTime("a..b")))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("bad field path: %v", err)
@@ -113,6 +110,60 @@ func TestCommitTransforms(t *testing.T) {
 	res, err = commit()
 	if err != nil || res.GetCommitTime() != nil || len(res.GetWriteResults()) != 0 {
 		t.Fatalf("empty commit: %v %v", res, err)
+	}
+}
+
+// Commit applies several writes of one document in order, but for two inserts of it and a verify
+// after a write of it (f2-commit.json same.*, grpc.same.update_update); BatchWrite refuses any two
+// (f2-batch-write.json grpc.same_document_twice).
+func TestWritesOfOneDocumentF2(t *testing.T) {
+	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
+	ctx, tok := t.Context(), x.env.JWT(t)
+	commit := func(ws ...*pb.Write) (*pb.CommitResponse, error) {
+		res, err := x.client.Commit(ctx, req(&pb.CommitRequest{Database: db, Writes: ws}, tok))
+		if err != nil {
+			return nil, err
+		}
+		return res.Msg, nil
+	}
+	create := func(name string) *pb.Write {
+		w := update(name, intField(1))
+		w.CurrentDocument = &pb.Precondition{ConditionType: &pb.Precondition_Exists{Exists: false}}
+		return w
+	}
+	_, err := commit(create("s/s5"), create("s/s5"))
+	wantErr(t, "two inserts", err, connect.CodeInvalidArgument, "Cannot insert then insert an entity in the same request.")
+	verify := &pb.Write{Operation: &pb.Write_Verify{Verify: root + "/s/s6"}, CurrentDocument: &pb.Precondition{ConditionType: &pb.Precondition_Exists{Exists: true}}}
+	_, err = commit(update("s/s6", intField(1)), verify)
+	wantErr(t, "write then verify", err, connect.CodeInvalidArgument, "the same document cannot be written and then verified in a single request")
+
+	res, err := commit(update("s/s1", intField(1)), update("s/s1", map[string]*pb.Value{"b": intValue(2)}))
+	if err != nil || len(res.GetWriteResults()) != 2 || !proto.Equal(res.GetWriteResults()[0].GetUpdateTime(), res.GetCommitTime()) {
+		t.Fatalf("update then update: %v %v", res, err)
+	}
+	res, err = commit(&pb.Write{Operation: &pb.Write_Delete{Delete: root + "/s/s4"}}, update("s/s4", intField(1)))
+	if err != nil || !proto.Equal(res.GetWriteResults()[0].GetUpdateTime(), res.GetCommitTime()) {
+		t.Fatalf("delete then update: %v %v", res, err)
+	}
+	res, err = commit(update("s/s3", intField(1)), &pb.Write{Operation: &pb.Write_Delete{Delete: root + "/s/s3"}})
+	if err != nil || res.GetWriteResults()[0].GetUpdateTime() != nil || res.GetWriteResults()[1].GetUpdateTime() != nil {
+		t.Fatalf("update then delete: %v %v", res, err)
+	}
+
+	_, err = x.client.BatchWrite(ctx, req(&pb.BatchWriteRequest{Database: db, Writes: []*pb.Write{update("s/d1", intField(1)), update("s/d1", intField(2))}}, tok))
+	wantErr(t, "BatchWrite of one document twice", err, connect.CodeInvalidArgument, "the same document cannot be written more than once in a single request")
+
+	// 501 writes in one Commit or one BatchWrite are accepted (limit.501_writes).
+	many := make([]*pb.Write, 501)
+	for i := range many {
+		many[i] = update("many/d"+strconv.Itoa(i), intField(int64(i)))
+	}
+	if res, err := commit(many...); err != nil || len(res.GetWriteResults()) != 501 {
+		t.Fatalf("Commit of 501 writes: %v", err)
+	}
+	bw, err := x.client.BatchWrite(ctx, req(&pb.BatchWriteRequest{Database: db, Writes: many}, tok))
+	if err != nil || len(bw.Msg.GetStatus()) != 501 {
+		t.Fatalf("BatchWrite of 501 writes: %v", err)
 	}
 }
 

@@ -49,8 +49,18 @@ func RequestTime(commitTime time.Time) value.Value {
 
 // apply returns a document's fields after the transform, and the transform's result: the
 // field's new value, or null for the array kinds (write.proto). now is RequestTime's value.
-func (t Transform) apply(fields, now value.Value) (out, result value.Value) {
+func (t Transform) apply(fields, now value.Value) (out, result value.Value, err error) {
 	base, found := lookup(fields, t.Path)
+	if t.Kind == TransformIncrement || t.Kind == TransformMaximum || t.Kind == TransformMinimum {
+		// Standard refuses a numeric transform of an Enterprise BSON number (f2-transforms.json
+		// bson.on_int32_field, bson.on_decimal_field).
+		switch base.BSONKind() {
+		case value.BSONInt32:
+			return value.Value{}, value.Value{}, &Error{InvalidArgument, "Value type INT is not allowed"}
+		case value.BSONDecimal128:
+			return value.Value{}, value.Value{}, &Error{InvalidArgument, "Value type DECIMAL128 is not allowed"}
+		}
+	}
 	var v value.Value
 	switch t.Kind {
 	case TransformServerTime:
@@ -68,9 +78,9 @@ func (t Transform) apply(fields, now value.Value) (out, result value.Value) {
 	}
 	out = value.ApplyMask(fields, nested(t.Path, v), []value.FieldPath{t.Path})
 	if t.Kind == TransformAppendMissing || t.Kind == TransformRemoveAll {
-		return out, value.Null()
+		return out, value.Null(), nil
 	}
-	return out, v
+	return out, v, nil
 }
 
 // lookup returns the value at p in fields as a transform finds its field: through maps alone. A

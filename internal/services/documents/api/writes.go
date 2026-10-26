@@ -15,23 +15,45 @@ import (
 
 // The F2 write methods outside transactions: Commit and BatchWrite (f1-write-results.json).
 
-// Provisional texts: production's answers to these requests are not recorded. The SDKs never
-// send them.
+// Production's answers to writes it refuses before reading anything (f2-transforms.json,
+// f2-commit.json, f2-batch-write.json).
 var (
-	errNoOperation        = wire.InvalidArgument("A write must have an operation.")
-	errTransformsNoUpdate = wire.InvalidArgument("update_transforms can only be set on an update.")
-	errMaskNoUpdate       = wire.InvalidArgument("update_mask can only be set on an update.")
-	errNoFieldTransforms  = wire.InvalidArgument("A transform must contain at least one field transform.")
-	errNoTransformType    = wire.InvalidArgument("A field transform must have a transform type.")
-	errServerValue        = wire.InvalidArgument("Unknown server value.")
-	errNotNumber          = wire.InvalidArgument("Increment, maximum and minimum must be given an integer or a double.")
-	errTransformName      = wire.InvalidArgument("Cannot transform the document's name.")
-	errSameDocument       = wire.InvalidArgument("A batch write cannot contain more than one write to the same document.")
+	errNoOperation       = wire.InvalidArgument("empty write operation")
+	errNoFieldTransforms = wire.InvalidArgument("The list of FieldTransform must not be empty.")
+	errNoTransformType   = wire.InvalidArgument("Operation type must be specified for field transformation.")
+	errServerValue       = wire.InvalidArgument("ServerValue type must be specified for set_to_server_value transformation.")
+	errNotNumber         = wire.InvalidArgument("Input must be a number.")
+	errNestedArray       = wire.InvalidArgument("Nested arrays are not allowed")
+	// errTransformName is a transform of __name__, which production names by its Datastore name.
+	errTransformName = wire.InvalidArgument("the name __key__ is reserved")
+	errSameDocument  = wire.InvalidArgument("the same document cannot be written more than once in a single request")
+	// errInsertTwice and errWriteThenVerify are a Commit's two writes of one document that
+	// production refuses (f2-commit.json same.create_create, same.update_then_verify_exists).
+	errInsertTwice     = wire.InvalidArgument("Cannot insert then insert an entity in the same request.")
+	errWriteThenVerify = wire.InvalidArgument("the same document cannot be written and then verified in a single request")
+	// errVerifyPrecondition is a verify without a current_document (f1-write-results.json
+	// rest.verify_no_precondition).
+	errVerifyPrecondition = wire.InvalidArgument("a verify must contain a precondition")
 )
 
-// errVerifyPrecondition is production's answer to a verify without a current_document
-// (f1-write-results.json rest.verify_no_precondition).
-var errVerifyPrecondition = wire.InvalidArgument("a verify must contain a precondition")
+// errBSONNumber is an Enterprise BSON int32 or Decimal128 that a numeric or array transform
+// meets in its operand, which Standard refuses (f2-transforms.json bson.*).
+func errBSONNumber(k value.BSONKind) error {
+	return wire.InvalidArgument("Value type " + bsonTypeName[k] + " is not allowed")
+}
+
+var bsonTypeName = map[value.BSONKind]string{value.BSONInt32: "INT", value.BSONDecimal128: "DECIMAL128"}
+
+// operationName is how production names a write's operation in its refusals.
+func operationName(w *pb.Write) string {
+	switch w.GetOperation().(type) {
+	case *pb.Write_Delete:
+		return "delete"
+	case *pb.Write_Verify:
+		return "verify"
+	}
+	return "transform"
+}
 
 // Commit applies writes atomically, in order (f1-write-results.json), in the request's
 // transaction when it names one, which the commit ends whatever its outcome (f0-errors.json
@@ -43,6 +65,9 @@ func (s *Service) Commit(ctx context.Context, c Call, req *pb.CommitRequest) (*p
 	}
 	writes, err := writesOf(req.GetWrites())
 	if err != nil {
+		return nil, err
+	}
+	if err := sameDocumentWrites(writes); err != nil {
 		return nil, err
 	}
 	var res core.CommitResult
@@ -64,6 +89,30 @@ func (s *Service) Commit(ctx context.Context, c Call, req *pb.CommitRequest) (*p
 		out.WriteResults[i] = writeResultProto(r)
 	}
 	return out, nil
+}
+
+// sameDocumentWrites checks a Commit's writes of one document: production applies them in order
+// (f2-commit.json same.*) but for two that insert it (exists=false) and for a verify after a
+// write of it.
+func sameDocumentWrites(writes []core.Write) error {
+	inserted, written := map[string]bool{}, map[string]bool{}
+	for _, w := range writes {
+		k := w.Path.String()
+		switch {
+		case w.Kind == core.WriteVerify:
+			if written[k] {
+				return errWriteThenVerify
+			}
+		case w.Precondition.Exists != nil && !*w.Precondition.Exists:
+			if inserted[k] {
+				return errInsertTwice
+			}
+			inserted[k], written[k] = true, true
+		default:
+			written[k] = true
+		}
+	}
+	return nil
 }
 
 // batchWriteParallel is how many of a BatchWrite's writes are committed at once; the commit
@@ -167,9 +216,9 @@ func writeOf(w *pb.Write) (core.Write, error) {
 	if w.GetUpdate() == nil {
 		switch {
 		case len(w.GetUpdateTransforms()) > 0:
-			return core.Write{}, errTransformsNoUpdate
+			return core.Write{}, wire.InvalidArgument("a " + operationName(w) + " must not specify a update transform.")
 		case w.GetUpdateMask() != nil:
-			return core.Write{}, errMaskNoUpdate
+			return core.Write{}, wire.InvalidArgument("a " + operationName(w) + " must not specify a document mask.")
 		}
 	}
 	switch op := w.GetOperation().(type) {
@@ -262,6 +311,19 @@ func transformsOf(fts []*pb.DocumentTransform_FieldTransform) ([]core.Transform,
 		}
 		out[i] = t
 	}
+	// Several transforms of one field apply in order; a field and one inside it may not both be
+	// transformed (f2-transforms.json multi.*).
+	for i, t := range out {
+		for _, u := range out[:i] {
+			parent := t.Path
+			if u.Path.IsPrefixOf(parent) {
+				parent = u.Path
+			}
+			if len(t.Path) != len(u.Path) && parent.IsPrefixOf(t.Path) && parent.IsPrefixOf(u.Path) {
+				return nil, wire.InvalidArgument("Cannot transform property " + parent.String() + " and its nested property at the same time.")
+			}
+		}
+	}
 	return out, nil
 }
 
@@ -270,6 +332,9 @@ func number(dst *value.Value, v *pb.Value) error {
 	x, err := wire.ValueFromProto(v)
 	if err != nil {
 		return err
+	}
+	if k := x.BSONKind(); bsonTypeName[k] != "" {
+		return errBSONNumber(k)
 	}
 	if !x.IsNumber() {
 		return errNotNumber
@@ -284,9 +349,42 @@ func array(dst *value.Value, a *pb.ArrayValue) error {
 	if err != nil {
 		return err
 	}
+	for _, e := range x.Elements() {
+		if e.Kind() == value.KindArray {
+			return errNestedArray
+		}
+	}
+	if k := bsonNumberIn(x); k != value.NotBSON {
+		return errBSONNumber(k)
+	}
 	if err := value.CheckBSON(x); err != nil {
 		return wire.InvalidArgument(err.Error())
 	}
 	*dst = stored(x)
 	return nil
+}
+
+// bsonNumberIn returns the first BSON int32 or Decimal128 in v, NotBSON when it holds none.
+func bsonNumberIn(v value.Value) value.BSONKind {
+	if k := v.BSONKind(); k != value.NotBSON {
+		if bsonTypeName[k] != "" {
+			return k
+		}
+		return value.NotBSON
+	}
+	var els []value.Value
+	switch v.Kind() {
+	case value.KindArray:
+		els = v.Elements()
+	case value.KindMap:
+		for _, f := range v.Fields() {
+			els = append(els, f.Value)
+		}
+	}
+	for _, e := range els {
+		if k := bsonNumberIn(e); k != value.NotBSON {
+			return k
+		}
+	}
+	return value.NotBSON
 }

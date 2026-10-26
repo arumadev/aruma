@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"math"
 	"strings"
 	"testing"
@@ -24,7 +25,10 @@ func runTransforms(t *testing.T, cases []transformCase) {
 	t.Helper()
 	now := RequestTime(time.UnixMicro(1793042888857123))
 	for _, c := range cases {
-		out, res := c.t.apply(c.fields, now)
+		out, res, err := c.t.apply(c.fields, now)
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
 		got, ok := lookup(out, c.t.Path)
 		if !ok || !value.Identical(got, c.field) || !value.Identical(res, c.result) {
 			t.Errorf("%s: field %v (found %v), result %v; want %v, %v", c.name, got, ok, res, c.field, c.result)
@@ -59,14 +63,45 @@ func TestIncrement(t *testing.T) {
 		{"NaN operand", doc("n", i(1)), inc("n", d(math.NaN())), d(math.NaN()), d(math.NaN())},
 		{"-0.0 plus -0.0", doc("n", negZero), inc("n", negZero), negZero, negZero},
 		{"-0.0 plus 0", doc("n", negZero), inc("n", i(0)), d(0), d(0)},
+		{"0.0 plus -0.0", doc("n", d(0)), inc("n", negZero), d(0), d(0)},
+		{"int 0 plus -0.0", doc("n", i(0)), inc("n", negZero), d(0), d(0)},
+		{"missing plus -0.0", doc(), inc("n", negZero), negZero, negZero},
 		{"missing field", doc(), inc("n", i(7)), i(7), i(7)},
 		{"string field", doc("n", value.String("1")), inc("n", i(7)), i(7), i(7)},
 		{"null field", doc("n", value.Null()), inc("n", d(1.5)), d(1.5), d(1.5)},
-		{"int32 field is not a number here", doc("n", value.Int32(1)), inc("n", i(7)), i(7), i(7)},
 		{"nested, maps made", doc(), inc("a.b.c", i(1)), i(1), i(1)},
 		{"through a scalar", doc("a", i(5)), inc("a.b", i(1)), i(1), i(1)},
 		{"into a vector", doc("v", value.Vector(1, 2)), inc("v.value", i(1)), i(1), i(1)},
 	})
+}
+
+// Standard refuses a numeric transform of a field that holds an Enterprise BSON int32 or
+// Decimal128 (f2-transforms.json bson.on_int32_field, bson.on_decimal_field); an array transform
+// replaces it as any other non-array.
+func TestTransformOfBSONNumber(t *testing.T) {
+	now := RequestTime(time.UnixMicro(1793042888857123))
+	dec, ok := value.Decimal128("1.5")
+	if !ok {
+		t.Fatal("Decimal128")
+	}
+	for _, c := range []struct {
+		field value.Value
+		kind  TransformKind
+		want  string
+	}{
+		{value.Int32(7), TransformIncrement, "Value type INT is not allowed"},
+		{value.Int32(7), TransformMinimum, "Value type INT is not allowed"},
+		{dec, TransformMaximum, "Value type DECIMAL128 is not allowed"},
+	} {
+		_, _, err := tr(c.kind, "n", value.Int(1)).apply(doc("n", c.field), now)
+		if e, ok := errors.AsType[*Error](err); !ok || e.Code != InvalidArgument || e.Message != c.want {
+			t.Errorf("%v on %v: %v, want %q", c.kind, c.field, err, c.want)
+		}
+	}
+	out, _, err := tr(TransformAppendMissing, "n", value.Array(value.Int(1))).apply(doc("n", value.Int32(7)), now)
+	if got, _ := lookup(out, value.FieldPath{"n"}); err != nil || !value.Identical(got, value.Array(value.Int(1))) {
+		t.Errorf("append on an int32: %v, %v", got, err)
+	}
 }
 
 func TestMaximumMinimum(t *testing.T) {

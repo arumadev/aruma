@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"math"
 	"strings"
 	"testing"
@@ -147,6 +148,45 @@ func TestPlanMasksAndResults(t *testing.T) {
 	fold := newPlan([]Write{{Kind: WriteDelete, Path: p}, {Kind: WriteUpdate, Path: p, Fields: value.Map(), Precondition: Precondition{Exists: new(false)}}})
 	if err := fold.apply(testDB, locked, time.Time{}); err != nil || len(fold.docs) != 1 || !fold.docs[0].exists {
 		t.Errorf("folded writes: %v", err)
+	}
+}
+
+// Every write of a document has its update_time as the commit leaves it: a delete then an update
+// both have it, an update then a delete neither (f2-commit.json same.delete_update,
+// same.update_delete).
+func TestPlanResultsOfOneDocument(t *testing.T) {
+	p := ParsePath("aruma-ref-f2-commit/s4")
+	commit := time.UnixMicro(2_000_000)
+	delUpdate := newPlan([]Write{{Kind: WriteDelete, Path: p}, {Kind: WriteUpdate, Path: p, Fields: fieldsOf("a", value.Int(1))}})
+	if err := delUpdate.apply(testDB, nil, commit); err != nil {
+		t.Fatal(err)
+	}
+	if r := delUpdate.results(commit); !r[0].UpdateTime.Equal(commit) || !r[1].UpdateTime.Equal(commit) {
+		t.Errorf("delete then update: %v", r)
+	}
+	updateDel := newPlan([]Write{{Kind: WriteUpdate, Path: p, Fields: fieldsOf("a", value.Int(1))}, {Kind: WriteDelete, Path: p}})
+	if err := updateDel.apply(testDB, nil, commit); err != nil {
+		t.Fatal(err)
+	}
+	if r := updateDel.results(commit); !r[0].UpdateTime.IsZero() || !r[1].UpdateTime.IsZero() {
+		t.Errorf("update then delete: %v", r)
+	}
+}
+
+// Of two failed preconditions, production names the missing document's, in either order
+// (f2-commit.json pre.two_failures, pre.two_failures_reversed).
+func TestPlanTwoFailedPreconditions(t *testing.T) {
+	missing, n1 := ParsePath("aruma-ref-f2-commit/missing6"), ParsePath("aruma-ref-f2-commit/n1")
+	stored := time.UnixMicro(1793038697978566)
+	locked := map[string]*lockedDoc{string(storedKey(nameKey(n1))): {seq: 1, fields: fieldsOf("a", value.Int(1)), createTime: stored, updateTime: stored}}
+	notFound := Write{Kind: WriteUpdate, Path: missing, Fields: value.Map(), Precondition: Precondition{Exists: new(true)}}
+	exists := Write{Kind: WriteUpdate, Path: n1, Fields: value.Map(), Precondition: Precondition{Exists: new(false)}}
+	want := "No document to update: " + testDB.DocumentName(missing)
+	for _, ws := range [][]Write{{notFound, exists}, {exists, notFound}} {
+		err := newPlan(ws).apply(testDB, locked, time.Time{})
+		if e, ok := errors.AsType[*Error](err); !ok || e.Code != NotFound || e.Message != want {
+			t.Errorf("got %v, want %q", err, want)
+		}
 	}
 }
 

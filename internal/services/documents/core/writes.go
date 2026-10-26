@@ -3,7 +3,6 @@ package core
 import (
 	"bytes"
 	"slices"
-	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -122,15 +121,25 @@ func (p *plan) apply(db DB, locked map[string]*lockedDoc, commitTime time.Time) 
 		}
 	}
 	now := RequestTime(commitTime)
+	// A failed precondition fails the commit; when several fail, production names a missing
+	// document's first (f2-commit.json pre.two_failures, pre.two_failures_reversed), so the
+	// writes after a failed one are still checked, but not applied.
+	var failed *Error
 	for i, w := range p.writes {
 		// The transports refuse such names; this keeps one from ever being stored, since a name
 		// key's segments are only read back right when they are UTF-8 (0xFF 0x01 would end one).
-		if j := slices.IndexFunc(w.Path, func(id string) bool { return !utf8.ValidString(id) }); j >= 0 {
-			return &Error{InvalidArgument, `Resource id "` + strings.ToValidUTF8(w.Path[j], "\uFFFD") + `" is invalid because it is not UTF-8.`}
+		if slices.ContainsFunc(w.Path, func(id string) bool { return !utf8.ValidString(id) }) {
+			return &Error{InvalidArgument, "Request contains an invalid argument."}
 		}
 		d := p.of[i]
 		if err := d.check(db, w.Precondition); err != nil {
-			return err
+			if failed == nil || failed.Code != NotFound && err.Code == NotFound {
+				failed = err
+			}
+			continue
+		}
+		if failed != nil {
+			continue
 		}
 		switch w.Kind {
 		case WriteUpdate:
@@ -143,7 +152,10 @@ func (p *plan) apply(db DB, locked map[string]*lockedDoc, commitTime time.Time) 
 				p.transformed[i] = make([]value.Value, len(w.Transforms))
 			}
 			for j, t := range w.Transforms {
-				after, p.transformed[i][j] = t.apply(after, now)
+				var err error
+				if after, p.transformed[i][j], err = t.apply(after, now); err != nil {
+					return err
+				}
 				d.serverTime = d.serverTime || t.Kind == TransformServerTime
 			}
 			if w.Masked || len(w.Transforms) > 0 {
@@ -159,12 +171,15 @@ func (p *plan) apply(db DB, locked map[string]*lockedDoc, commitTime time.Time) 
 			d.exists, d.fields, d.serverTime = false, value.Map(), false
 		}
 	}
+	if failed != nil {
+		return failed
+	}
 	return nil
 }
 
 // check evaluates a precondition. update_time is matched against the stored document's: a
 // document an earlier write of the same commit created has none yet.
-func (d *docChange) check(db DB, c Precondition) error {
+func (d *docChange) check(db DB, c Precondition) *Error {
 	if c.Exists != nil {
 		switch {
 		case *c.Exists && !d.exists:
@@ -185,13 +200,16 @@ func (d *docChange) check(db DB, c Precondition) error {
 	return nil
 }
 
-// results returns each write's result once the commit took commitTime.
+// results returns each write's result once the commit took commitTime. Every write of a
+// document has the document's update_time as the commit leaves it, none when it leaves it absent:
+// an update followed by a delete of it has none, a delete followed by an update has it
+// (f2-commit.json same.update_delete, same.delete_update).
 func (p *plan) results(commitTime time.Time) []WriteResult {
 	out := make([]WriteResult, len(p.writes))
-	for i, w := range p.writes {
+	for i := range p.writes {
 		out[i].TransformResults = p.transformed[i]
 		d := p.of[i]
-		if w.Kind == WriteDelete || !d.exists {
+		if !d.exists {
 			continue
 		}
 		switch {
