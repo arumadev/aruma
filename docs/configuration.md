@@ -109,7 +109,9 @@ The limits, under `documents.limits` in the file. Each must be positive.
 | `max_open_unlocked_txns` | `ARUMA_DOCUMENTS_MAX_OPEN_UNLOCKED_TXNS` | count | `10000` | Open read-only and optimistic transactions (those end users open) per database; past it, beginning one is `ABORTED` |
 | `max_open_txns_per_user` | `ARUMA_DOCUMENTS_MAX_OPEN_TXNS_PER_USER` | count | `100` | Open read-only and optimistic transactions of one signed-in end user per database, so that one user cannot take the others' share of `max_open_unlocked_txns`; past it, beginning one is `ABORTED`. Admins have no such bound, and callers without a credential share `max_open_unlocked_txns` alone |
 | `max_ended_txns` | `ARUMA_DOCUMENTS_MAX_ENDED_TXNS` | count | `100000` | Records of ended transactions kept so that their ids answer as production's do until 300 s after they began (the wound text, a retry's age). Past it the oldest go early: such an id answers the expired text, and a retry of it takes a new age |
-| `max_locks_per_txn` | `ARUMA_DOCUMENTS_MAX_LOCKS_PER_TXN` | count | `10000` | Documents and listings one transaction may lock, or read when optimistic; past it, the transaction is `ABORTED` |
+| `max_locks_per_txn` | `ARUMA_DOCUMENTS_MAX_LOCKS_PER_TXN` | count | `10000` | Documents and listings one transaction may lock, or read when optimistic (with the documents its listings returned); past it, the transaction is `ABORTED` |
+
+Some bounds are fixed, not configured, and far above anything production was seen to accept (`parity-exceptions.json`, `request-work-bounds`): a Commit or BatchWrite holds at most 10,000 writes and 50,000 field transforms, and one commit builds at most 1 GiB of documents (each write's document counted once). Past them the request is `INVALID_ARGUMENT`. An optimistic transaction's commit checks again what it read for at most `txn_wait_timeout`, then is `ABORTED` with the contention text.
 
 ## Security rules limits
 
