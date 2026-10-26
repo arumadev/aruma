@@ -1,0 +1,374 @@
+{
+  "cases": [
+    {
+      "description": "findNearest EUCLIDEAN limit 2 on a collection with two vector documents",
+      "error": {
+        "http": 400,
+        "message": "Missing vector index configuration. Please create the required index with the following gcloud command: gcloud firestore indexes composite create --project=chatapp-8ae21 --collection-group=aruma-ref-f0-vec --query-scope=COLLECTION --field-config=vector-config='{\"dimension\":\"3\",\"flat\": \"{}\"}',field-path=emb",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.populated",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "findNearest": {
+              "distanceMeasure": "EUCLIDEAN",
+              "limit": 2,
+              "queryVector": {
+                "mapValue": {
+                  "fields": {
+                    "__type__": {
+                      "stringValue": "__vector__"
+                    },
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "doubleValue": 1
+                          },
+                          {
+                            "doubleValue": 2
+                          },
+                          {
+                            "doubleValue": 3
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "vectorField": {
+                "fieldPath": "emb"
+              }
+            },
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0-vec"
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Missing vector index configuration. Please create the required index with the following gcloud command: gcloud firestore indexes composite create --project=chatapp-8ae21 --collection-group=aruma-ref-f0-vec --query-scope=COLLECTION --field-config=vector-config='{\"dimension\":\"3\",\"flat\": \"{}\"}',field-path=emb",
+              "status": "FAILED_PRECONDITION"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "the same on a never-written collection",
+      "error": {
+        "http": 400,
+        "message": "Missing vector index configuration. Please create the required index with the following gcloud command: gcloud firestore indexes composite create --project=chatapp-8ae21 --collection-group=aruma-ref-f0-vecempty --query-scope=COLLECTION --field-config=vector-config='{\"dimension\":\"3\",\"flat\": \"{}\"}',field-path=emb",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.empty",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "findNearest": {
+              "distanceMeasure": "EUCLIDEAN",
+              "limit": 2,
+              "queryVector": {
+                "mapValue": {
+                  "fields": {
+                    "__type__": {
+                      "stringValue": "__vector__"
+                    },
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "doubleValue": 1
+                          },
+                          {
+                            "doubleValue": 2
+                          },
+                          {
+                            "doubleValue": 3
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "vectorField": {
+                "fieldPath": "emb"
+              }
+            },
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0-vecempty"
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Missing vector index configuration. Please create the required index with the following gcloud command: gcloud firestore indexes composite create --project=chatapp-8ae21 --collection-group=aruma-ref-f0-vecempty --query-scope=COLLECTION --field-config=vector-config='{\"dimension\":\"3\",\"flat\": \"{}\"}',field-path=emb",
+              "status": "FAILED_PRECONDITION"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "COSINE with distanceResultField and distanceThreshold",
+      "error": {
+        "http": 400,
+        "message": "Missing vector index configuration. Please create the required index with the following gcloud command: gcloud firestore indexes composite create --project=chatapp-8ae21 --collection-group=aruma-ref-f0-vec --query-scope=COLLECTION --field-config=vector-config='{\"dimension\":\"3\",\"flat\": \"{}\"}',field-path=emb",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.cosine_threshold_field",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "findNearest": {
+              "distanceMeasure": "COSINE",
+              "distanceResultField": "dist",
+              "distanceThreshold": 0.5,
+              "limit": 2,
+              "queryVector": {
+                "mapValue": {
+                  "fields": {
+                    "__type__": {
+                      "stringValue": "__vector__"
+                    },
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "doubleValue": 1
+                          },
+                          {
+                            "doubleValue": 2
+                          },
+                          {
+                            "doubleValue": 3
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "vectorField": {
+                "fieldPath": "emb"
+              }
+            },
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0-vec"
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Missing vector index configuration. Please create the required index with the following gcloud command: gcloud firestore indexes composite create --project=chatapp-8ae21 --collection-group=aruma-ref-f0-vec --query-scope=COLLECTION --field-config=vector-config='{\"dimension\":\"3\",\"flat\": \"{}\"}',field-path=emb",
+              "status": "FAILED_PRECONDITION"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "k == 'a' then findNearest (would need a composite vector index)",
+      "error": {
+        "http": 400,
+        "message": "Missing vector index configuration. Please create the required index with the following gcloud command: gcloud firestore indexes composite create --project=chatapp-8ae21 --collection-group=aruma-ref-f0-vec --query-scope=COLLECTION --field-config=order=ASCENDING,field-path=k --field-config=vector-config='{\"dimension\":\"3\",\"flat\": \"{}\"}',field-path=emb",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.prefilter",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "findNearest": {
+              "distanceMeasure": "EUCLIDEAN",
+              "limit": 2,
+              "queryVector": {
+                "mapValue": {
+                  "fields": {
+                    "__type__": {
+                      "stringValue": "__vector__"
+                    },
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "doubleValue": 1
+                          },
+                          {
+                            "doubleValue": 2
+                          },
+                          {
+                            "doubleValue": 3
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "vectorField": {
+                "fieldPath": "emb"
+              }
+            },
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0-vec"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "k"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "stringValue": "a"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Missing vector index configuration. Please create the required index with the following gcloud command: gcloud firestore indexes composite create --project=chatapp-8ae21 --collection-group=aruma-ref-f0-vec --query-scope=COLLECTION --field-config=order=ASCENDING,field-path=k --field-config=vector-config='{\"dimension\":\"3\",\"flat\": \"{}\"}',field-path=emb",
+              "status": "FAILED_PRECONDITION"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "findNearest EUCLIDEAN limit 2",
+      "error": {
+        "code": 9,
+        "message": "Missing vector index configuration. Please create the required index with the following gcloud command: gcloud firestore indexes composite create --project=chatapp-8ae21 --collection-group=aruma-ref-f0-vec --query-scope=COLLECTION --field-config=vector-config='{\"dimension\":\"3\",\"flat\": \"{}\"}',field-path=emb",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "grpc.populated",
+      "request": {
+        "message": {
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents",
+          "structuredQuery": {
+            "findNearest": {
+              "distanceMeasure": "EUCLIDEAN",
+              "limit": {
+                "value": 2
+              },
+              "queryVector": {
+                "mapValue": {
+                  "fields": {
+                    "__type__": {
+                      "stringValue": "__vector__"
+                    },
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "doubleValue": 1
+                          },
+                          {
+                            "doubleValue": 2
+                          },
+                          {
+                            "doubleValue": 3
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "vectorField": {
+                "fieldPath": "emb"
+              }
+            },
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0-vec"
+              }
+            ]
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunQuery"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    }
+  ],
+  "data": {
+    "aruma-ref-f0-vec/v1": {
+      "emb": "vector [1,2,3]",
+      "k": "a"
+    },
+    "aruma-ref-f0-vec/v2": {
+      "emb": "vector [2,3,4]",
+      "k": "b"
+    }
+  },
+  "header": {
+    "generator": "test/oracle/documents/production/record-f0.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations and transaction ids are replaced by placeholders (normalise in lib.mjs); everything else is as returned."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T14:31:15.919Z .. 2026-10-26T14:32:27.875Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "21181fa838abf8cdf6cc14aa590401479e8c830a2cf61981c12b828897faa16c",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

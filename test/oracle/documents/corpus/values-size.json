@@ -1,0 +1,792 @@
+{
+  "cap": [
+    {
+      "description": "bytes of 1048487 bytes",
+      "document": "aruma-ref-values-size/k0",
+      "formulaDocumentSize": 1048562,
+      "formulaValueSize": 1048487,
+      "id": "cap.bytes-1048487",
+      "value": {
+        "bytesValue": "<string 1397984 bytes, sha256 ad509c269dac9070eafc7b0673283b38b4bb6d9310f6e8376e758c44994153d9, starts \"eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4\">"
+      },
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "description": "bytes of 1048488 bytes",
+      "document": "aruma-ref-values-size/k1",
+      "formulaDocumentSize": 1048563,
+      "formulaValueSize": 1048488,
+      "id": "cap.bytes-1048488",
+      "value": {
+        "bytesValue": "<string 1397984 bytes, sha256 71ce4e4072b6099ed90194b7b3034fd11e9d0c7345aac12419a38631e9e98145, starts \"eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4\">"
+      },
+      "write": {
+        "error": {
+          "message": "The value of property \"p\" is longer than 1048487 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "description": "{a: string of 1048484 bytes}",
+      "document": "aruma-ref-values-size/k2",
+      "formulaDocumentSize": 1048562,
+      "formulaValueSize": 1048487,
+      "id": "cap.map-string-1048484",
+      "value": {
+        "mapValue": {
+          "fields": {
+            "a": {
+              "stringValue": "<string 1048484 bytes, sha256 a11ab17e52141e3fb60c6f14bbfc36d8578f3e4a713028102ceeb84caa907068, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+            }
+          }
+        }
+      },
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "description": "{a: string of 1048485 bytes}",
+      "document": "aruma-ref-values-size/k3",
+      "formulaDocumentSize": 1048563,
+      "formulaValueSize": 1048488,
+      "id": "cap.map-string-1048485",
+      "value": {
+        "mapValue": {
+          "fields": {
+            "a": {
+              "stringValue": "<string 1048485 bytes, sha256 71dd2de07f8cb9b61f6238af766270c30e36ede11d66df9ba199cde2f03d28cb, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+            }
+          }
+        }
+      },
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "description": "{a: string of 1048486 bytes}",
+      "document": "aruma-ref-values-size/k4",
+      "formulaDocumentSize": 1048564,
+      "formulaValueSize": 1048489,
+      "id": "cap.map-string-1048486",
+      "value": {
+        "mapValue": {
+          "fields": {
+            "a": {
+              "stringValue": "<string 1048486 bytes, sha256 d44573b2a46a7531ca8559843b3765b4a2230da86671d50ebc8e1de88df11029, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+            }
+          }
+        }
+      },
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "description": "[string of 1048485 bytes]",
+      "document": "aruma-ref-values-size/k5",
+      "formulaDocumentSize": 1048561,
+      "formulaValueSize": 1048486,
+      "id": "cap.array-string-1048485",
+      "value": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "<string 1048485 bytes, sha256 71dd2de07f8cb9b61f6238af766270c30e36ede11d66df9ba199cde2f03d28cb, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+            }
+          ]
+        }
+      },
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "description": "[string of 1048486 bytes]",
+      "document": "aruma-ref-values-size/k6",
+      "formulaDocumentSize": 1048562,
+      "formulaValueSize": 1048487,
+      "id": "cap.array-string-1048486",
+      "value": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "<string 1048486 bytes, sha256 d44573b2a46a7531ca8559843b3765b4a2230da86671d50ebc8e1de88df11029, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+            }
+          ]
+        }
+      },
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "description": "[string of 1048487 bytes]",
+      "document": "aruma-ref-values-size/k7",
+      "formulaDocumentSize": 1048563,
+      "formulaValueSize": 1048488,
+      "id": "cap.array-string-1048487",
+      "value": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "<string 1048487 bytes, sha256 44cc04a89c044edb2da3e7e3a47a38e40b8c767eee53e9c5434e06ee7a6648f6, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+            }
+          ]
+        }
+      },
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "description": "{a: string of 1048488 bytes}",
+      "document": "aruma-ref-values-size/k8",
+      "formulaDocumentSize": 1048566,
+      "formulaValueSize": 1048491,
+      "id": "cap.map-string-1048488",
+      "value": {
+        "mapValue": {
+          "fields": {
+            "a": {
+              "stringValue": "<string 1048488 bytes, sha256 8202468a5557f26c51d09915a40c29c15703023168612ffa9c291b917b55fdb8, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+            }
+          }
+        }
+      },
+      "write": {
+        "error": {
+          "message": "Property p contains an invalid nested entity.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "description": "[string of 1048488 bytes]",
+      "document": "aruma-ref-values-size/k9",
+      "formulaDocumentSize": 1048564,
+      "formulaValueSize": 1048489,
+      "id": "cap.array-string-1048488",
+      "value": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "<string 1048488 bytes, sha256 8202468a5557f26c51d09915a40c29c15703023168612ffa9c291b917b55fdb8, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+            }
+          ]
+        }
+      },
+      "write": {
+        "error": {
+          "message": "The value of property \"array\" is longer than 1048487 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "description": "{a: bytes of 1048488 bytes}",
+      "document": "aruma-ref-values-size/k10",
+      "formulaDocumentSize": 1048566,
+      "formulaValueSize": 1048490,
+      "id": "cap.map-bytes-1048488",
+      "value": {
+        "mapValue": {
+          "fields": {
+            "a": {
+              "bytesValue": "<string 1397984 bytes, sha256 71ce4e4072b6099ed90194b7b3034fd11e9d0c7345aac12419a38631e9e98145, starts \"eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4\">"
+            }
+          }
+        }
+      },
+      "write": {
+        "error": {
+          "message": "Property p contains an invalid nested entity.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "description": "[string of 524240 bytes, string of 524240 bytes]",
+      "document": "aruma-ref-values-size/k11",
+      "formulaDocumentSize": 1048558,
+      "formulaValueSize": 1048482,
+      "id": "cap.array-two-strings",
+      "value": {
+        "arrayValue": {
+          "values": [
+            {
+              "stringValue": "<string 524240 bytes, sha256 2dfe9cb03f5d3fa0c8d93b0dfe80936ab2109a2545989cdabdddd114267f013a, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+            },
+            {
+              "stringValue": "<string 524240 bytes, sha256 8730aac5721e27bb45f9af6868d966cb9d3bdc8057e4ff5700a798e2f21c4d92, starts \"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\">"
+            }
+          ]
+        }
+      },
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "description": "{a: {b: string of 1048480 bytes}}",
+      "document": "aruma-ref-values-size/k12",
+      "formulaDocumentSize": 1048561,
+      "formulaValueSize": 1048485,
+      "id": "cap.map-nested",
+      "value": {
+        "mapValue": {
+          "fields": {
+            "a": {
+              "mapValue": {
+                "fields": {
+                  "b": {
+                    "stringValue": "<string 1048480 bytes, sha256 64cab15624a77e167dd49e2b863e563a9331a664ea179a4a2a050f4971a16bd5, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "write": {
+        "http": 200
+      }
+    }
+  ],
+  "cases": [
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448590
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 1,
+      "id": "size.null",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 1,
+      "value": {
+        "nullValue": null
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/null' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448590
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 1,
+      "id": "size.true",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 1,
+      "value": {
+        "booleanValue": true
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/true' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448584
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 8,
+      "id": "size.int",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 8,
+      "value": {
+        "integerValue": "-9223372036854775808"
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/int' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448581
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 8,
+      "id": "size.double",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 8,
+      "value": {
+        "doubleValue": 1.5
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/double' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448584
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 8,
+      "id": "size.nan",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 8,
+      "value": {
+        "doubleValue": "NaN"
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/nan' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448578
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 8,
+      "id": "size.timestamp",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 8,
+      "value": {
+        "timestampValue": "2026-01-01T00:00:00.123456Z"
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/timestamp' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448577
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 12,
+      "id": "size.string",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 12,
+      "value": {
+        "stringValue": "héllo 😀"
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/string' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448582
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 1,
+      "id": "size.string-empty",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 1,
+      "value": {
+        "stringValue": ""
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/string-empty' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448587
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 3,
+      "id": "size.bytes",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 3,
+      "value": {
+        "bytesValue": "AQID"
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/bytes' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448584
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 0,
+      "id": "size.bytes-empty",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 0,
+      "value": {
+        "bytesValue": ""
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/bytes-empty' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448562
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 24,
+      "id": "size.reference",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 24,
+      "value": {
+        "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/c/a/s/x"
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/reference' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448557
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 20,
+      "id": "size.reference-other-db",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 20,
+      "value": {
+        "referenceValue": "projects/chatapp-8ae21/databases/aruma-ref-other/documents/c/a"
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/reference-other-db' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448571
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 16,
+      "id": "size.geopoint",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 16,
+      "value": {
+        "geoPointValue": {
+          "latitude": 1,
+          "longitude": 2
+        }
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/geopoint' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448578
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 12,
+      "id": "size.array",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 12,
+      "value": {
+        "arrayValue": {
+          "values": [
+            {
+              "integerValue": "1"
+            },
+            {
+              "stringValue": "ab"
+            },
+            {
+              "nullValue": null
+            }
+          ]
+        }
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/array' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448584
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 0,
+      "id": "size.array-empty",
+      "productionDocumentSize": 1048677,
+      "productionValueSize": 1,
+      "value": {
+        "arrayValue": {}
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/array-empty' cannot be written because its size (1,048,677 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448576
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 16,
+      "id": "size.map",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 16,
+      "value": {
+        "mapValue": {
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            },
+            "bc": {
+              "mapValue": {
+                "fields": {
+                  "d": {
+                    "booleanValue": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/map' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448586
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 0,
+      "id": "size.map-empty",
+      "productionDocumentSize": 1048677,
+      "productionValueSize": 1,
+      "value": {
+        "mapValue": {}
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/map-empty' cannot be written because its size (1,048,677 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448537
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 50,
+      "id": "size.vector-3",
+      "productionDocumentSize": 1048650,
+      "productionValueSize": 24,
+      "value": {
+        "mapValue": {
+          "fields": {
+            "__type__": {
+              "stringValue": "__vector__"
+            },
+            "value": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "doubleValue": 1
+                  },
+                  {
+                    "doubleValue": 2
+                  },
+                  {
+                    "doubleValue": 3
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/vector-3' cannot be written because its size (1,048,650 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "t",
+      "fillerBytes": [
+        600000,
+        448553
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 34,
+      "id": "size.vector-1",
+      "productionDocumentSize": 1048650,
+      "productionValueSize": 8,
+      "value": {
+        "mapValue": {
+          "fields": {
+            "__type__": {
+              "stringValue": "__vector__"
+            },
+            "value": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "doubleValue": 1
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/vector-1' cannot be written because its size (1,048,650 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "fieldName": "é😀",
+      "fillerBytes": [
+        600000,
+        448564
+      ],
+      "formulaDocumentSize": 1048676,
+      "formulaValueSize": 8,
+      "id": "size.field-name-unicode",
+      "productionDocumentSize": 1048676,
+      "productionValueSize": 8,
+      "value": {
+        "integerValue": "1"
+      },
+      "write": {
+        "error": {
+          "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-values-size/field-name-unicode' cannot be written because its size (1,048,676 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-values.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply.",
+      "Only values, document ids, HTTP statuses and error statuses and messages are recorded; they are exact.",
+      "size: each document holds s1 (600000 bytes), s2 (filler) and one field of the probed type, sized so that the storage-size formula puts it 100 bytes over the 1 MiB limit. productionDocumentSize is the size in production's refusal message; productionValueSize subtracts the rest of the document by the formula (name: each segment + 1, plus 16; field name + 1; string + 1; document + 32).",
+      "formulaValueSize counts a vector as the map it travels as ({__type__: \"__vector__\", value: [doubles]}).",
+      "cap: one field per document, around the per-value cap of 1,048,487 bytes. Long strings in requests are compacted (length and SHA-256)."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T16:35:04.909Z .. 2026-10-26T16:42:32.336Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "api": "firestore.googleapis.com REST v1",
+      "firebase-tools (auth only)": "13.23.0",
+      "generator sha256": "d04c839c74a2530b436f666c1acc03e6e3720bc6fbd1979f3d7b9b64e4157f42",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

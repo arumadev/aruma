@@ -1,0 +1,8298 @@
+{
+  "equal": {
+    "a-d-1": {
+      "http": 200,
+      "ids": [
+        "a-d-1",
+        "a-i-1"
+      ]
+    },
+    "a-elem-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "a-elem-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "a-empty": {
+      "http": 200,
+      "ids": [
+        "a-empty"
+      ]
+    },
+    "a-false": {
+      "http": 200,
+      "ids": [
+        "a-false"
+      ]
+    },
+    "a-i-1": {
+      "http": 200,
+      "ids": [
+        "a-d-1",
+        "a-i-1"
+      ]
+    },
+    "a-i-1-i-2": {
+      "http": 200,
+      "ids": [
+        "a-i-1-i-2"
+      ]
+    },
+    "a-i-1-s-a": {
+      "http": 200,
+      "ids": [
+        "a-i-1-s-a"
+      ]
+    },
+    "a-i-2": {
+      "http": 200,
+      "ids": [
+        "a-i-2"
+      ]
+    },
+    "a-long-a": {
+      "http": 200,
+      "ids": [
+        "a-long-a"
+      ]
+    },
+    "a-long-b": {
+      "http": 200,
+      "ids": [
+        "a-long-b"
+      ]
+    },
+    "a-map-a-1": {
+      "http": 200,
+      "ids": [
+        "a-map-a-1"
+      ]
+    },
+    "a-map-empty": {
+      "http": 200,
+      "ids": [
+        "a-map-empty"
+      ]
+    },
+    "a-nan": {
+      "http": 200,
+      "ids": [
+        "a-nan"
+      ]
+    },
+    "a-neg-zero": {
+      "http": 200,
+      "ids": [
+        "a-neg-zero",
+        "a-zero"
+      ]
+    },
+    "a-null": {
+      "http": 200,
+      "ids": [
+        "a-null"
+      ]
+    },
+    "a-s-a": {
+      "http": 200,
+      "ids": [
+        "a-s-a"
+      ]
+    },
+    "a-zero": {
+      "http": 200,
+      "ids": [
+        "a-neg-zero",
+        "a-zero"
+      ]
+    },
+    "b-00": {
+      "http": 200,
+      "ids": [
+        "b-00"
+      ]
+    },
+    "b-0000": {
+      "http": 200,
+      "ids": [
+        "b-0000"
+      ]
+    },
+    "b-01": {
+      "http": 200,
+      "ids": [
+        "b-01"
+      ]
+    },
+    "b-empty": {
+      "http": 200,
+      "ids": [
+        "b-empty"
+      ]
+    },
+    "b-ff": {
+      "http": 200,
+      "ids": [
+        "b-ff"
+      ]
+    },
+    "b-ff00": {
+      "http": 200,
+      "ids": [
+        "b-ff00"
+      ]
+    },
+    "b-long-v-1500": {
+      "http": 200,
+      "ids": [
+        "b-long-v-1500"
+      ]
+    },
+    "b-long-w-1500-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "b-long-x-1500-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "b-t-a-1499-a": {
+      "http": 200,
+      "ids": [
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a"
+      ]
+    },
+    "b-t-b-1499-ab": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "b-t-c-1499-ac": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "bool-false": {
+      "http": 200,
+      "ids": [
+        "bool-false"
+      ]
+    },
+    "bool-true": {
+      "http": 200,
+      "ids": [
+        "bool-true"
+      ]
+    },
+    "g-0-0": {
+      "http": 200,
+      "ids": [
+        "g-0-0"
+      ]
+    },
+    "g-0-1": {
+      "http": 200,
+      "ids": [
+        "g-0-1"
+      ]
+    },
+    "g-1-w180": {
+      "http": 200,
+      "ids": [
+        "g-1-w180"
+      ]
+    },
+    "g-n90-e180": {
+      "http": 200,
+      "ids": [
+        "g-n90-e180"
+      ]
+    },
+    "g-s0.5-0": {
+      "http": 200,
+      "ids": [
+        "g-s0.5-0"
+      ]
+    },
+    "g-s90-e180": {
+      "http": 200,
+      "ids": [
+        "g-s90-e180"
+      ]
+    },
+    "g-s90-w180": {
+      "http": 200,
+      "ids": [
+        "g-s90-w180"
+      ]
+    },
+    "m-a-1-b-1": {
+      "http": 200,
+      "ids": [
+        "m-a-1-b-1"
+      ]
+    },
+    "m-a-1-c-1": {
+      "http": 200,
+      "ids": [
+        "m-a-1-c-1"
+      ]
+    },
+    "m-a-2": {
+      "http": 200,
+      "ids": [
+        "m-a-2"
+      ]
+    },
+    "m-a-d-1": {
+      "http": 200,
+      "ids": [
+        "m-a-d-1",
+        "m-a-i-1"
+      ]
+    },
+    "m-a-i-1": {
+      "http": 200,
+      "ids": [
+        "m-a-d-1",
+        "m-a-i-1"
+      ]
+    },
+    "m-a-map": {
+      "http": 200,
+      "ids": [
+        "m-a-map"
+      ]
+    },
+    "m-a-null": {
+      "http": 200,
+      "ids": [
+        "m-a-null"
+      ]
+    },
+    "m-b-0": {
+      "http": 200,
+      "ids": [
+        "m-b-0"
+      ]
+    },
+    "m-bson-binary": {
+      "http": 200,
+      "ids": [
+        "m-bson-binary"
+      ]
+    },
+    "m-bson-decimal": {
+      "http": 200,
+      "ids": [
+        "m-bson-decimal",
+        "n-d-1.5"
+      ]
+    },
+    "m-bson-int": {
+      "http": 200,
+      "ids": [
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1"
+      ]
+    },
+    "m-bson-max": {
+      "http": 200,
+      "ids": [
+        "m-bson-max"
+      ]
+    },
+    "m-bson-min": {
+      "http": 200,
+      "ids": [
+        "m-bson-min"
+      ]
+    },
+    "m-bson-oid": {
+      "http": 200,
+      "ids": [
+        "m-bson-oid"
+      ]
+    },
+    "m-bson-regex": {
+      "http": 200,
+      "ids": [
+        "m-bson-regex"
+      ]
+    },
+    "m-bson-timestamp": {
+      "http": 200,
+      "ids": [
+        "m-bson-timestamp"
+      ]
+    },
+    "m-elem-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "m-elem-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "m-empty": {
+      "http": 200,
+      "ids": [
+        "m-empty"
+      ]
+    },
+    "m-key-A": {
+      "http": 200,
+      "ids": [
+        "m-key-A"
+      ]
+    },
+    "m-key-e-acute": {
+      "http": 200,
+      "ids": [
+        "m-key-e-acute"
+      ]
+    },
+    "m-key-emoji": {
+      "http": 200,
+      "ids": [
+        "m-key-emoji"
+      ]
+    },
+    "m-key-u-e000": {
+      "http": 200,
+      "ids": [
+        "m-key-u-e000"
+      ]
+    },
+    "m-key-u-ffff": {
+      "http": 200,
+      "ids": [
+        "m-key-u-ffff"
+      ]
+    },
+    "m-long-a": {
+      "http": 200,
+      "ids": [
+        "m-long-a"
+      ]
+    },
+    "m-long-b": {
+      "http": 200,
+      "ids": [
+        "m-long-b"
+      ]
+    },
+    "m-neg-zero": {
+      "http": 200,
+      "ids": [
+        "m-neg-zero",
+        "m-zero"
+      ]
+    },
+    "m-value-only": {
+      "http": 200,
+      "ids": [
+        "m-value-only"
+      ]
+    },
+    "m-zero": {
+      "http": 200,
+      "ids": [
+        "m-neg-zero",
+        "m-zero"
+      ]
+    },
+    "n-d-0.5": {
+      "http": 200,
+      "ids": [
+        "n-d-0.5"
+      ]
+    },
+    "n-d-1": {
+      "http": 200,
+      "ids": [
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1"
+      ]
+    },
+    "n-d-1.5": {
+      "http": 200,
+      "ids": [
+        "m-bson-decimal",
+        "n-d-1.5"
+      ]
+    },
+    "n-d-1e300": {
+      "http": 200,
+      "ids": [
+        "n-d-1e300"
+      ]
+    },
+    "n-d-2p53": {
+      "http": 200,
+      "ids": [
+        "n-d-2p53",
+        "n-i-2p53"
+      ]
+    },
+    "n-d-2p53-plus-2": {
+      "http": 200,
+      "ids": [
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2"
+      ]
+    },
+    "n-d-2p63": {
+      "http": 200,
+      "ids": [
+        "n-d-2p63"
+      ]
+    },
+    "n-d-below-2p63": {
+      "http": 200,
+      "ids": [
+        "n-d-below-2p63"
+      ]
+    },
+    "n-d-below-neg-2p63": {
+      "http": 200,
+      "ids": [
+        "n-d-below-neg-2p63"
+      ]
+    },
+    "n-d-max": {
+      "http": 200,
+      "ids": [
+        "n-d-max"
+      ]
+    },
+    "n-d-min": {
+      "http": 200,
+      "ids": [
+        "n-d-min"
+      ]
+    },
+    "n-d-neg-1": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-1",
+        "n-i-neg-1"
+      ]
+    },
+    "n-d-neg-1.5": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-1.5"
+      ]
+    },
+    "n-d-neg-2p53": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-2p53"
+      ]
+    },
+    "n-d-neg-2p63": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-2p63",
+        "n-i-min"
+      ]
+    },
+    "n-d-neg-max": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-max"
+      ]
+    },
+    "n-d-neg-min": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-min"
+      ]
+    },
+    "n-d-neg-zero": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero"
+      ]
+    },
+    "n-d-zero": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero"
+      ]
+    },
+    "n-i-1": {
+      "http": 200,
+      "ids": [
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1"
+      ]
+    },
+    "n-i-2": {
+      "http": 200,
+      "ids": [
+        "n-i-2"
+      ]
+    },
+    "n-i-2p53": {
+      "http": 200,
+      "ids": [
+        "n-d-2p53",
+        "n-i-2p53"
+      ]
+    },
+    "n-i-2p53-plus-1": {
+      "http": 200,
+      "ids": [
+        "n-i-2p53-plus-1"
+      ]
+    },
+    "n-i-2p53-plus-2": {
+      "http": 200,
+      "ids": [
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2"
+      ]
+    },
+    "n-i-max": {
+      "http": 200,
+      "ids": [
+        "n-i-max"
+      ]
+    },
+    "n-i-max-minus-1": {
+      "http": 200,
+      "ids": [
+        "n-i-max-minus-1"
+      ]
+    },
+    "n-i-min": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-2p63",
+        "n-i-min"
+      ]
+    },
+    "n-i-min-plus-1": {
+      "http": 200,
+      "ids": [
+        "n-i-min-plus-1"
+      ]
+    },
+    "n-i-neg-1": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-1",
+        "n-i-neg-1"
+      ]
+    },
+    "n-i-neg-2p53-minus-1": {
+      "http": 200,
+      "ids": [
+        "n-i-neg-2p53-minus-1"
+      ]
+    },
+    "n-i-zero": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero"
+      ]
+    },
+    "n-nan": {
+      "http": 200,
+      "ids": []
+    },
+    "n-neg-inf": {
+      "http": 200,
+      "ids": [
+        "n-neg-inf"
+      ]
+    },
+    "n-pos-inf": {
+      "http": 200,
+      "ids": [
+        "n-pos-inf"
+      ]
+    },
+    "null": {
+      "http": 200,
+      "ids": []
+    },
+    "r-c-A": {
+      "http": 200,
+      "ids": [
+        "r-c-A"
+      ]
+    },
+    "r-c-a": {
+      "http": 200,
+      "ids": [
+        "r-c-a"
+      ]
+    },
+    "r-c-a-s-x": {
+      "http": 200,
+      "ids": [
+        "r-c-a-s-x"
+      ]
+    },
+    "r-c-b": {
+      "http": 200,
+      "ids": [
+        "r-c-b"
+      ]
+    },
+    "r-c-dash-b": {
+      "http": 200,
+      "ids": [
+        "r-c-dash-b"
+      ]
+    },
+    "r-c-id-10": {
+      "http": 200,
+      "ids": [
+        "r-c-id-10"
+      ]
+    },
+    "r-c-id-5": {
+      "http": 200,
+      "ids": [
+        "r-c-id-5"
+      ]
+    },
+    "r-c-id-max": {
+      "http": 200,
+      "ids": [
+        "r-c-id-max"
+      ]
+    },
+    "r-c-id-min": {
+      "http": 200,
+      "ids": [
+        "r-c-id-min"
+      ]
+    },
+    "r-c-id-neg-1": {
+      "http": 200,
+      "ids": [
+        "r-c-id-neg-1"
+      ]
+    },
+    "r-long-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "r-long-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "r-mid-a": {
+      "http": 200,
+      "ids": [
+        "r-mid-a"
+      ]
+    },
+    "r-mid-b": {
+      "http": 200,
+      "ids": [
+        "r-mid-b"
+      ]
+    },
+    "r-other-db": {
+      "http": 200,
+      "ids": [
+        "r-other-db"
+      ]
+    },
+    "r-other-project": {
+      "http": 200,
+      "ids": [
+        "r-other-project"
+      ]
+    },
+    "s-A": {
+      "http": 200,
+      "ids": [
+        "s-A"
+      ]
+    },
+    "s-a": {
+      "http": 200,
+      "ids": [
+        "s-a"
+      ]
+    },
+    "s-a-nul": {
+      "http": 200,
+      "ids": [
+        "s-a-nul"
+      ]
+    },
+    "s-ab": {
+      "http": 200,
+      "ids": [
+        "s-ab"
+      ]
+    },
+    "s-b": {
+      "http": 200,
+      "ids": [
+        "s-b"
+      ]
+    },
+    "s-e-acute": {
+      "http": 200,
+      "ids": [
+        "s-e-acute"
+      ]
+    },
+    "s-emoji": {
+      "http": 200,
+      "ids": [
+        "s-emoji"
+      ]
+    },
+    "s-empty": {
+      "http": 200,
+      "ids": [
+        "s-empty"
+      ]
+    },
+    "s-long-u-1499-x": {
+      "http": 200,
+      "ids": [
+        "s-long-u-1499-x"
+      ]
+    },
+    "s-long-v-1500-x": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-long-w-1500-x-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-long-x-1500-x-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-long-y-1499-x-e-acute": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-long-z-1499-x-e-circ": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-nul": {
+      "http": 200,
+      "ids": [
+        "s-nul"
+      ]
+    },
+    "s-t-a-1498-x": {
+      "http": 200,
+      "ids": [
+        "s-t-a-1498-x"
+      ]
+    },
+    "s-t-b-1498-x-y": {
+      "http": 200,
+      "ids": [
+        "s-t-b-1498-x-y"
+      ]
+    },
+    "s-t-c-1498-x-ya": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-t-d-1498-x-yb": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-t-e-1498-x-ba": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-t-f-1498-x-e-acute": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-t-g-1498-x-e-acute-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-t-h-1497-x-emoji": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-t-i-1497-x-y": {
+      "http": 200,
+      "ids": [
+        "s-t-i-1497-x-y"
+      ]
+    },
+    "s-u-e000": {
+      "http": 200,
+      "ids": [
+        "s-u-e000"
+      ]
+    },
+    "s-u-ffff": {
+      "http": 200,
+      "ids": [
+        "s-u-ffff"
+      ]
+    },
+    "t-before-epoch": {
+      "http": 200,
+      "ids": [
+        "t-before-epoch"
+      ]
+    },
+    "t-epoch": {
+      "http": 200,
+      "ids": [
+        "t-epoch",
+        "t-epoch-999ns"
+      ]
+    },
+    "t-epoch-1us": {
+      "http": 200,
+      "ids": [
+        "t-epoch-1us"
+      ]
+    },
+    "t-epoch-999ns": {
+      "http": 200,
+      "ids": [
+        "t-epoch",
+        "t-epoch-999ns"
+      ]
+    },
+    "t-max": {
+      "http": 200,
+      "ids": [
+        "t-max"
+      ]
+    },
+    "t-micros": {
+      "http": 200,
+      "ids": [
+        "t-micros",
+        "t-nanos"
+      ]
+    },
+    "t-micros-plus-1": {
+      "http": 200,
+      "ids": [
+        "t-micros-plus-1"
+      ]
+    },
+    "t-min": {
+      "http": 200,
+      "ids": [
+        "t-min"
+      ]
+    },
+    "t-nanos": {
+      "http": 200,
+      "ids": [
+        "t-micros",
+        "t-nanos"
+      ]
+    },
+    "tr-array-second-497-a": {
+      "http": 200,
+      "ids": [
+        "tr-array-second-497-a"
+      ]
+    },
+    "tr-array-second-497-b": {
+      "http": 200,
+      "ids": [
+        "tr-array-second-497-b"
+      ]
+    },
+    "tr-array-second-498-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-array-second-498-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-array-third-496-a": {
+      "http": 200,
+      "ids": [
+        "tr-array-third-496-a"
+      ]
+    },
+    "tr-array-third-496-b": {
+      "http": 200,
+      "ids": [
+        "tr-array-third-496-b"
+      ]
+    },
+    "tr-array-third-497-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-array-third-497-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-bool-after-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b"
+      ]
+    },
+    "tr-bool-after-1498-b": {
+      "http": 200,
+      "ids": [
+        "tr-bool-after-1498-b"
+      ]
+    },
+    "tr-bool-after-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-bool-after-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-bytes-1499-a": {
+      "http": 200,
+      "ids": [
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a"
+      ]
+    },
+    "tr-bytes-1499-b": {
+      "http": 200,
+      "ids": [
+        "tr-bytes-1499-b"
+      ]
+    },
+    "tr-bytes-1500-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-bytes-1500-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-empty-array-or-end-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-empty-array-or-end-1499-b": {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-or-end-1499-b"
+      ]
+    },
+    "tr-empty-array-or-null-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a"
+      ]
+    },
+    "tr-empty-array-or-null-1498-b": {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a"
+      ]
+    },
+    "tr-empty-array-or-null-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-empty-array-or-null-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-empty-array-then-bool-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-then-bool-1498-a"
+      ]
+    },
+    "tr-empty-array-then-bool-1498-b": {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-then-bool-1498-b"
+      ]
+    },
+    "tr-empty-arrays-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a"
+      ]
+    },
+    "tr-empty-arrays-1498-b": {
+      "http": 200,
+      "ids": [
+        "tr-empty-arrays-1498-b"
+      ]
+    },
+    "tr-empty-map-then-bool-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-empty-map-then-bool-1498-a"
+      ]
+    },
+    "tr-empty-map-then-bool-1498-b": {
+      "http": 200,
+      "ids": [
+        "tr-empty-map-then-bool-1498-b"
+      ]
+    },
+    "tr-empty-string-after-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-empty-string-after-1498-a"
+      ]
+    },
+    "tr-empty-string-after-1498-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-empty-string-after-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-empty-string-after-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-int-after-1491-a": {
+      "http": 200,
+      "ids": [
+        "tr-int-after-1491-a"
+      ]
+    },
+    "tr-int-after-1491-b": {
+      "http": 200,
+      "ids": [
+        "tr-int-after-1491-b"
+      ]
+    },
+    "tr-int-after-1492-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-int-after-1492-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-int-after-1498-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-int-after-1498-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-int-after-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-int-after-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-map-key-494-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-map-key-494-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-map-key-495-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-map-key-495-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-map-value-493-a": {
+      "http": 200,
+      "ids": [
+        "tr-map-value-493-a"
+      ]
+    },
+    "tr-map-value-493-b": {
+      "http": 200,
+      "ids": [
+        "tr-map-value-493-b"
+      ]
+    },
+    "tr-map-value-494-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-map-value-494-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-null-or-false-after-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a"
+      ]
+    },
+    "tr-null-or-false-after-1498-b": {
+      "http": 200,
+      "ids": [
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b"
+      ]
+    },
+    "tr-null-or-false-after-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-null-or-false-after-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-ref-id-1480-a": {
+      "http": 200,
+      "ids": [
+        "tr-ref-id-1480-a"
+      ]
+    },
+    "tr-ref-id-1480-b": {
+      "http": 200,
+      "ids": [
+        "tr-ref-id-1480-b"
+      ]
+    },
+    "tr-ref-id-1481-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-ref-id-1481-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-ref-last-segment-1477-a": {
+      "http": 200,
+      "ids": [
+        "tr-ref-last-segment-1477-a"
+      ]
+    },
+    "tr-ref-last-segment-1477-b": {
+      "http": 200,
+      "ids": [
+        "tr-ref-last-segment-1477-b"
+      ]
+    },
+    "tr-ref-last-segment-1478-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-ref-last-segment-1478-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-string-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-string-1498-a"
+      ]
+    },
+    "tr-string-1498-b": {
+      "http": 200,
+      "ids": [
+        "tr-string-1498-b"
+      ]
+    },
+    "tr-string-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-string-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-utf8-char-1498-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-utf8-char-1498-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-utf8-char-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-utf8-char-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-in-array-1491-a": {
+      "http": 200,
+      "ids": [
+        "tr-vector-in-array-1491-a"
+      ]
+    },
+    "tr-vector-in-array-1491-b": {
+      "http": 200,
+      "ids": [
+        "tr-vector-in-array-1491-b"
+      ]
+    },
+    "tr-vector-in-array-1492-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-in-array-1492-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-last-186-a": {
+      "http": 200,
+      "ids": [
+        "tr-vector-last-186-a"
+      ]
+    },
+    "tr-vector-last-186-b": {
+      "http": 200,
+      "ids": [
+        "tr-vector-last-186-b"
+      ]
+    },
+    "tr-vector-last-187-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-last-187-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-length-in-array-1498-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-length-in-array-1498-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-length-in-array-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-length-in-array-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "v-0-0-0": {
+      "http": 200,
+      "ids": [
+        "v-0-0-0"
+      ]
+    },
+    "v-1": {
+      "http": 200,
+      "ids": [
+        "v-1"
+      ]
+    },
+    "v-1-2": {
+      "http": 200,
+      "ids": [
+        "v-1-2"
+      ]
+    },
+    "v-1-2-3": {
+      "http": 200,
+      "ids": [
+        "v-1-2-3"
+      ]
+    },
+    "v-2": {
+      "http": 200,
+      "ids": [
+        "v-2"
+      ]
+    },
+    "v-3-1": {
+      "http": 200,
+      "ids": [
+        "v-3-1"
+      ]
+    },
+    "v-neg-zero": {
+      "http": 200,
+      "ids": [
+        "v-neg-zero"
+      ]
+    },
+    "v-neg1-5": {
+      "http": 200,
+      "ids": [
+        "v-neg1-5"
+      ]
+    },
+    "v-zero": {
+      "http": 200,
+      "ids": [
+        "v-zero"
+      ]
+    }
+  },
+  "filters": [
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v GREATER_THAN null",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "nullValue": null
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v GREATER_THAN_OR_EQUAL null",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "nullValue": null
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v LESS_THAN null",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "nullValue": null
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v LESS_THAN_OR_EQUAL null",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "nullValue": null
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "bool-true"
+      ],
+      "label": "v GREATER_THAN false",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "booleanValue": false
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "bool-false",
+        "bool-true"
+      ],
+      "label": "v GREATER_THAN_OR_EQUAL false",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "booleanValue": false
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v LESS_THAN false",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "booleanValue": false
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "bool-false"
+      ],
+      "label": "v LESS_THAN_OR_EQUAL false",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "booleanValue": false
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v GREATER_THAN NaN",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "doubleValue": "NaN"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v GREATER_THAN_OR_EQUAL NaN",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "doubleValue": "NaN"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v LESS_THAN NaN",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "doubleValue": "NaN"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v LESS_THAN_OR_EQUAL NaN",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "doubleValue": "NaN"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf"
+      ],
+      "label": "v GREATER_THAN -Infinity",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "doubleValue": "-Infinity"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf"
+      ],
+      "label": "v GREATER_THAN_OR_EQUAL -Infinity",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "doubleValue": "-Infinity"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v LESS_THAN -Infinity",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "doubleValue": "-Infinity"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-neg-inf"
+      ],
+      "label": "v LESS_THAN_OR_EQUAL -Infinity",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "doubleValue": "-Infinity"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf"
+      ],
+      "label": "v GREATER_THAN int 0",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "integerValue": "0"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf"
+      ],
+      "label": "v GREATER_THAN_OR_EQUAL int 0",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "integerValue": "0"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min"
+      ],
+      "label": "v LESS_THAN int 0",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "integerValue": "0"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero"
+      ],
+      "label": "v LESS_THAN_OR_EQUAL int 0",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "integerValue": "0"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf"
+      ],
+      "label": "v GREATER_THAN double -0.0",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "doubleValue": "-0"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf"
+      ],
+      "label": "v GREATER_THAN_OR_EQUAL double -0.0",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "doubleValue": "-0"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min"
+      ],
+      "label": "v LESS_THAN double -0.0",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "doubleValue": "-0"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero"
+      ],
+      "label": "v LESS_THAN_OR_EQUAL double -0.0",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "doubleValue": "-0"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v GREATER_THAN Infinity",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "doubleValue": "Infinity"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-pos-inf"
+      ],
+      "label": "v GREATER_THAN_OR_EQUAL Infinity",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "doubleValue": "Infinity"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max"
+      ],
+      "label": "v LESS_THAN Infinity",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "doubleValue": "Infinity"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf"
+      ],
+      "label": "v LESS_THAN_OR_EQUAL Infinity",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "doubleValue": "Infinity"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "t-epoch-1us",
+        "t-micros",
+        "t-nanos",
+        "t-micros-plus-1",
+        "t-max"
+      ],
+      "label": "v GREATER_THAN epoch",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "timestampValue": "1970-01-01T00:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "t-epoch",
+        "t-epoch-999ns",
+        "t-epoch-1us",
+        "t-micros",
+        "t-nanos",
+        "t-micros-plus-1",
+        "t-max"
+      ],
+      "label": "v GREATER_THAN_OR_EQUAL epoch",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "timestampValue": "1970-01-01T00:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "t-min",
+        "t-before-epoch"
+      ],
+      "label": "v LESS_THAN epoch",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "timestampValue": "1970-01-01T00:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "t-min",
+        "t-before-epoch",
+        "t-epoch",
+        "t-epoch-999ns"
+      ],
+      "label": "v LESS_THAN_OR_EQUAL epoch",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "timestampValue": "1970-01-01T00:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "s-nul",
+        "s-A",
+        "s-a",
+        "s-a-nul",
+        "s-ab",
+        "s-b",
+        "s-t-a-1498-x",
+        "tr-string-1498-a",
+        "tr-string-1498-b",
+        "s-t-e-1498-x-ba",
+        "s-long-u-1499-x",
+        "s-long-v-1500-x",
+        "s-long-w-1500-x-a",
+        "s-long-x-1500-x-b",
+        "s-long-y-1499-x-e-acute",
+        "s-long-z-1499-x-e-circ",
+        "tr-string-1499-a",
+        "tr-string-1499-b",
+        "tr-utf8-char-1499-a",
+        "tr-utf8-char-1499-b",
+        "s-t-b-1498-x-y",
+        "s-t-c-1498-x-ya",
+        "s-t-d-1498-x-yb",
+        "s-t-f-1498-x-e-acute",
+        "tr-utf8-char-1498-a",
+        "s-t-g-1498-x-e-acute-a",
+        "tr-utf8-char-1498-b",
+        "s-t-i-1497-x-y",
+        "s-t-h-1497-x-emoji",
+        "s-e-acute",
+        "s-u-e000",
+        "s-u-ffff",
+        "s-emoji"
+      ],
+      "label": "v GREATER_THAN \"\"",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "stringValue": ""
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "s-empty",
+        "s-nul",
+        "s-A",
+        "s-a",
+        "s-a-nul",
+        "s-ab",
+        "s-b",
+        "s-t-a-1498-x",
+        "tr-string-1498-a",
+        "tr-string-1498-b",
+        "s-t-e-1498-x-ba",
+        "s-long-u-1499-x",
+        "s-long-v-1500-x",
+        "s-long-w-1500-x-a",
+        "s-long-x-1500-x-b",
+        "s-long-y-1499-x-e-acute",
+        "s-long-z-1499-x-e-circ",
+        "tr-string-1499-a",
+        "tr-string-1499-b",
+        "tr-utf8-char-1499-a",
+        "tr-utf8-char-1499-b",
+        "s-t-b-1498-x-y",
+        "s-t-c-1498-x-ya",
+        "s-t-d-1498-x-yb",
+        "s-t-f-1498-x-e-acute",
+        "tr-utf8-char-1498-a",
+        "s-t-g-1498-x-e-acute-a",
+        "tr-utf8-char-1498-b",
+        "s-t-i-1497-x-y",
+        "s-t-h-1497-x-emoji",
+        "s-e-acute",
+        "s-u-e000",
+        "s-u-ffff",
+        "s-emoji"
+      ],
+      "label": "v GREATER_THAN_OR_EQUAL \"\"",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "stringValue": ""
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v LESS_THAN \"\"",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "stringValue": ""
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "s-empty"
+      ],
+      "label": "v LESS_THAN_OR_EQUAL \"\"",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "stringValue": ""
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "b-00",
+        "b-0000",
+        "b-01",
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a",
+        "b-t-b-1499-ab",
+        "b-t-c-1499-ac",
+        "tr-bytes-1499-b",
+        "b-long-v-1500",
+        "b-long-w-1500-a",
+        "b-long-x-1500-b",
+        "tr-bytes-1500-a",
+        "tr-bytes-1500-b",
+        "b-ff",
+        "b-ff00",
+        "m-bson-binary"
+      ],
+      "label": "v GREATER_THAN bytes \"\"",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "bytesValue": ""
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "b-empty",
+        "b-00",
+        "b-0000",
+        "b-01",
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a",
+        "b-t-b-1499-ab",
+        "b-t-c-1499-ac",
+        "tr-bytes-1499-b",
+        "b-long-v-1500",
+        "b-long-w-1500-a",
+        "b-long-x-1500-b",
+        "tr-bytes-1500-a",
+        "tr-bytes-1500-b",
+        "b-ff",
+        "b-ff00",
+        "m-bson-binary"
+      ],
+      "label": "v GREATER_THAN_OR_EQUAL bytes \"\"",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "bytesValue": ""
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v LESS_THAN bytes \"\"",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "bytesValue": ""
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "b-empty"
+      ],
+      "label": "v LESS_THAN_OR_EQUAL bytes \"\"",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "bytesValue": ""
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "r-c-a-s-x",
+        "r-c-b",
+        "r-mid-a",
+        "r-mid-b",
+        "tr-ref-last-segment-1477-a",
+        "tr-ref-last-segment-1477-b",
+        "tr-ref-last-segment-1478-a",
+        "tr-ref-last-segment-1478-b",
+        "tr-ref-id-1480-a",
+        "tr-ref-id-1480-b",
+        "r-long-a",
+        "r-long-b",
+        "tr-ref-id-1481-a",
+        "tr-ref-id-1481-b",
+        "r-c-dash-b",
+        "r-other-db"
+      ],
+      "label": "v GREATER_THAN reference c/a",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/c/a"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "r-c-a",
+        "r-c-a-s-x",
+        "r-c-b",
+        "r-mid-a",
+        "r-mid-b",
+        "tr-ref-last-segment-1477-a",
+        "tr-ref-last-segment-1477-b",
+        "tr-ref-last-segment-1478-a",
+        "tr-ref-last-segment-1478-b",
+        "tr-ref-id-1480-a",
+        "tr-ref-id-1480-b",
+        "r-long-a",
+        "r-long-b",
+        "tr-ref-id-1481-a",
+        "tr-ref-id-1481-b",
+        "r-c-dash-b",
+        "r-other-db"
+      ],
+      "label": "v GREATER_THAN_OR_EQUAL reference c/a",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/c/a"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "r-other-project",
+        "r-c-id-min",
+        "r-c-id-neg-1",
+        "r-c-id-5",
+        "r-c-id-10",
+        "r-c-id-max",
+        "r-c-A"
+      ],
+      "label": "v LESS_THAN reference c/a",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/c/a"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "r-other-project",
+        "r-c-id-min",
+        "r-c-id-neg-1",
+        "r-c-id-5",
+        "r-c-id-10",
+        "r-c-id-max",
+        "r-c-A",
+        "r-c-a"
+      ],
+      "label": "v LESS_THAN_OR_EQUAL reference c/a",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/c/a"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "g-0-1",
+        "g-1-w180",
+        "g-n90-e180"
+      ],
+      "label": "v GREATER_THAN geopoint(0,0)",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "geoPointValue": {
+              "latitude": 0,
+              "longitude": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "g-0-0",
+        "g-0-1",
+        "g-1-w180",
+        "g-n90-e180"
+      ],
+      "label": "v GREATER_THAN_OR_EQUAL geopoint(0,0)",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "geoPointValue": {
+              "latitude": 0,
+              "longitude": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "g-s90-w180",
+        "g-s90-e180",
+        "g-s0.5-0"
+      ],
+      "label": "v LESS_THAN geopoint(0,0)",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "geoPointValue": {
+              "latitude": 0,
+              "longitude": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "g-s90-w180",
+        "g-s90-e180",
+        "g-s0.5-0",
+        "g-0-0"
+      ],
+      "label": "v LESS_THAN_OR_EQUAL geopoint(0,0)",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "geoPointValue": {
+              "latitude": 0,
+              "longitude": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "a-null",
+        "a-false",
+        "a-nan",
+        "a-neg-zero",
+        "a-zero",
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "a-i-2",
+        "a-s-a",
+        "a-long-a",
+        "a-long-b",
+        "tr-array-third-496-a",
+        "tr-array-third-496-b",
+        "tr-array-third-497-a",
+        "tr-array-third-497-b",
+        "tr-array-second-497-a",
+        "tr-array-second-497-b",
+        "tr-array-second-498-a",
+        "tr-array-second-498-b",
+        "tr-int-after-1491-a",
+        "tr-int-after-1491-b",
+        "tr-vector-in-array-1491-a",
+        "tr-vector-in-array-1491-b",
+        "tr-int-after-1492-a",
+        "tr-int-after-1492-b",
+        "tr-vector-in-array-1492-a",
+        "tr-vector-in-array-1492-b",
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a",
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b",
+        "tr-bool-after-1498-b",
+        "tr-int-after-1498-a",
+        "tr-int-after-1498-b",
+        "tr-empty-string-after-1498-a",
+        "tr-empty-string-after-1498-b",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-b",
+        "tr-vector-length-in-array-1498-a",
+        "tr-vector-length-in-array-1498-b",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-b",
+        "tr-empty-array-or-end-1499-b",
+        "tr-bool-after-1499-a",
+        "tr-bool-after-1499-b",
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-or-null-1499-b",
+        "tr-empty-string-after-1499-a",
+        "tr-empty-string-after-1499-b",
+        "tr-int-after-1499-a",
+        "tr-int-after-1499-b",
+        "tr-null-or-false-after-1499-a",
+        "tr-null-or-false-after-1499-b",
+        "tr-vector-length-in-array-1499-a",
+        "tr-vector-length-in-array-1499-b",
+        "a-elem-a",
+        "a-elem-b",
+        "a-map-empty",
+        "a-map-a-1"
+      ],
+      "label": "v GREATER_THAN []",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "arrayValue": {}
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "a-empty",
+        "a-null",
+        "a-false",
+        "a-nan",
+        "a-neg-zero",
+        "a-zero",
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "a-i-2",
+        "a-s-a",
+        "a-long-a",
+        "a-long-b",
+        "tr-array-third-496-a",
+        "tr-array-third-496-b",
+        "tr-array-third-497-a",
+        "tr-array-third-497-b",
+        "tr-array-second-497-a",
+        "tr-array-second-497-b",
+        "tr-array-second-498-a",
+        "tr-array-second-498-b",
+        "tr-int-after-1491-a",
+        "tr-int-after-1491-b",
+        "tr-vector-in-array-1491-a",
+        "tr-vector-in-array-1491-b",
+        "tr-int-after-1492-a",
+        "tr-int-after-1492-b",
+        "tr-vector-in-array-1492-a",
+        "tr-vector-in-array-1492-b",
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a",
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b",
+        "tr-bool-after-1498-b",
+        "tr-int-after-1498-a",
+        "tr-int-after-1498-b",
+        "tr-empty-string-after-1498-a",
+        "tr-empty-string-after-1498-b",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-b",
+        "tr-vector-length-in-array-1498-a",
+        "tr-vector-length-in-array-1498-b",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-b",
+        "tr-empty-array-or-end-1499-b",
+        "tr-bool-after-1499-a",
+        "tr-bool-after-1499-b",
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-or-null-1499-b",
+        "tr-empty-string-after-1499-a",
+        "tr-empty-string-after-1499-b",
+        "tr-int-after-1499-a",
+        "tr-int-after-1499-b",
+        "tr-null-or-false-after-1499-a",
+        "tr-null-or-false-after-1499-b",
+        "tr-vector-length-in-array-1499-a",
+        "tr-vector-length-in-array-1499-b",
+        "a-elem-a",
+        "a-elem-b",
+        "a-map-empty",
+        "a-map-a-1"
+      ],
+      "label": "v GREATER_THAN_OR_EQUAL []",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "arrayValue": {}
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v LESS_THAN []",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "arrayValue": {}
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "a-empty"
+      ],
+      "label": "v LESS_THAN_OR_EQUAL []",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "arrayValue": {}
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "v-2",
+        "v-neg1-5",
+        "v-1-2",
+        "v-3-1",
+        "v-0-0-0",
+        "v-1-2-3",
+        "tr-vector-last-186-a",
+        "tr-vector-last-186-b",
+        "tr-vector-last-187-a",
+        "tr-vector-last-187-b"
+      ],
+      "label": "v GREATER_THAN vector [1]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "mapValue": {
+              "fields": {
+                "__type__": {
+                  "stringValue": "__vector__"
+                },
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "doubleValue": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "v-1",
+        "v-2",
+        "v-neg1-5",
+        "v-1-2",
+        "v-3-1",
+        "v-0-0-0",
+        "v-1-2-3",
+        "tr-vector-last-186-a",
+        "tr-vector-last-186-b",
+        "tr-vector-last-187-a",
+        "tr-vector-last-187-b"
+      ],
+      "label": "v GREATER_THAN_OR_EQUAL vector [1]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "mapValue": {
+              "fields": {
+                "__type__": {
+                  "stringValue": "__vector__"
+                },
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "doubleValue": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "v-neg-zero",
+        "v-zero"
+      ],
+      "label": "v LESS_THAN vector [1]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "mapValue": {
+              "fields": {
+                "__type__": {
+                  "stringValue": "__vector__"
+                },
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "doubleValue": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "v-neg-zero",
+        "v-zero",
+        "v-1"
+      ],
+      "label": "v LESS_THAN_OR_EQUAL vector [1]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "mapValue": {
+              "fields": {
+                "__type__": {
+                  "stringValue": "__vector__"
+                },
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "doubleValue": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "error": {
+        "message": "Cannot have a zero length vector.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "label": "v GREATER_THAN vector []",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "mapValue": {
+              "fields": {
+                "__type__": {
+                  "stringValue": "__vector__"
+                },
+                "value": {
+                  "arrayValue": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "error": {
+        "message": "Cannot have a zero length vector.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "label": "v GREATER_THAN_OR_EQUAL vector []",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "mapValue": {
+              "fields": {
+                "__type__": {
+                  "stringValue": "__vector__"
+                },
+                "value": {
+                  "arrayValue": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "error": {
+        "message": "Cannot have a zero length vector.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "label": "v LESS_THAN vector []",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "mapValue": {
+              "fields": {
+                "__type__": {
+                  "stringValue": "__vector__"
+                },
+                "value": {
+                  "arrayValue": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "error": {
+        "message": "Cannot have a zero length vector.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "label": "v LESS_THAN_OR_EQUAL vector []",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "mapValue": {
+              "fields": {
+                "__type__": {
+                  "stringValue": "__vector__"
+                },
+                "value": {
+                  "arrayValue": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-key-A",
+        "m-a-null",
+        "m-neg-zero",
+        "m-zero",
+        "m-a-d-1",
+        "m-a-i-1",
+        "m-a-1-b-1",
+        "m-a-1-c-1",
+        "m-a-2",
+        "m-long-a",
+        "m-long-b",
+        "tr-map-value-493-a",
+        "tr-map-value-493-b",
+        "tr-map-value-494-a",
+        "tr-map-value-494-b",
+        "tr-map-key-494-a",
+        "tr-map-key-494-b",
+        "tr-map-key-495-a",
+        "tr-map-key-495-b",
+        "m-elem-a",
+        "m-elem-b",
+        "m-a-map",
+        "m-b-0",
+        "m-value-only",
+        "m-key-e-acute",
+        "m-key-u-e000",
+        "m-key-u-ffff",
+        "m-key-emoji"
+      ],
+      "label": "v GREATER_THAN {}",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN",
+          "value": {
+            "mapValue": {}
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-empty",
+        "m-key-A",
+        "m-a-null",
+        "m-neg-zero",
+        "m-zero",
+        "m-a-d-1",
+        "m-a-i-1",
+        "m-a-1-b-1",
+        "m-a-1-c-1",
+        "m-a-2",
+        "m-long-a",
+        "m-long-b",
+        "tr-map-value-493-a",
+        "tr-map-value-493-b",
+        "tr-map-value-494-a",
+        "tr-map-value-494-b",
+        "tr-map-key-494-a",
+        "tr-map-key-494-b",
+        "tr-map-key-495-a",
+        "tr-map-key-495-b",
+        "m-elem-a",
+        "m-elem-b",
+        "m-a-map",
+        "m-b-0",
+        "m-value-only",
+        "m-key-e-acute",
+        "m-key-u-e000",
+        "m-key-u-ffff",
+        "m-key-emoji"
+      ],
+      "label": "v GREATER_THAN_OR_EQUAL {}",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "GREATER_THAN_OR_EQUAL",
+          "value": {
+            "mapValue": {}
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v LESS_THAN {}",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN",
+          "value": {
+            "mapValue": {}
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-empty"
+      ],
+      "label": "v LESS_THAN_OR_EQUAL {}",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "LESS_THAN_OR_EQUAL",
+          "value": {
+            "mapValue": {}
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v NOT_EQUAL null",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "NOT_EQUAL",
+          "value": {
+            "nullValue": null
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-bson-min",
+        "bool-false",
+        "bool-true",
+        "n-nan",
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf",
+        "t-min",
+        "t-before-epoch",
+        "t-epoch",
+        "t-epoch-999ns",
+        "t-epoch-1us",
+        "t-micros",
+        "t-nanos",
+        "t-micros-plus-1",
+        "t-max",
+        "m-bson-timestamp",
+        "s-empty",
+        "s-nul",
+        "s-A",
+        "s-a",
+        "s-a-nul",
+        "s-ab",
+        "s-b",
+        "s-t-a-1498-x",
+        "tr-string-1498-a",
+        "tr-string-1498-b",
+        "s-t-e-1498-x-ba",
+        "s-long-u-1499-x",
+        "s-long-v-1500-x",
+        "s-long-w-1500-x-a",
+        "s-long-x-1500-x-b",
+        "s-long-y-1499-x-e-acute",
+        "s-long-z-1499-x-e-circ",
+        "tr-string-1499-a",
+        "tr-string-1499-b",
+        "tr-utf8-char-1499-a",
+        "tr-utf8-char-1499-b",
+        "s-t-b-1498-x-y",
+        "s-t-c-1498-x-ya",
+        "s-t-d-1498-x-yb",
+        "s-t-f-1498-x-e-acute",
+        "tr-utf8-char-1498-a",
+        "s-t-g-1498-x-e-acute-a",
+        "tr-utf8-char-1498-b",
+        "s-t-i-1497-x-y",
+        "s-t-h-1497-x-emoji",
+        "s-e-acute",
+        "s-u-e000",
+        "s-u-ffff",
+        "s-emoji",
+        "b-empty",
+        "b-00",
+        "b-0000",
+        "b-01",
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a",
+        "b-t-b-1499-ab",
+        "b-t-c-1499-ac",
+        "tr-bytes-1499-b",
+        "b-long-v-1500",
+        "b-long-w-1500-a",
+        "b-long-x-1500-b",
+        "tr-bytes-1500-a",
+        "tr-bytes-1500-b",
+        "b-ff",
+        "b-ff00",
+        "m-bson-binary",
+        "r-other-project",
+        "r-c-id-min",
+        "r-c-id-neg-1",
+        "r-c-id-5",
+        "r-c-id-10",
+        "r-c-id-max",
+        "r-c-A",
+        "r-c-a",
+        "r-c-a-s-x",
+        "r-c-b",
+        "r-mid-a",
+        "r-mid-b",
+        "tr-ref-last-segment-1477-a",
+        "tr-ref-last-segment-1477-b",
+        "tr-ref-last-segment-1478-a",
+        "tr-ref-last-segment-1478-b",
+        "tr-ref-id-1480-a",
+        "tr-ref-id-1480-b",
+        "r-long-a",
+        "r-long-b",
+        "tr-ref-id-1481-a",
+        "tr-ref-id-1481-b",
+        "r-c-dash-b",
+        "r-other-db",
+        "m-bson-oid",
+        "g-s90-w180",
+        "g-s90-e180",
+        "g-s0.5-0",
+        "g-0-0",
+        "g-0-1",
+        "g-1-w180",
+        "g-n90-e180",
+        "m-bson-regex",
+        "a-empty",
+        "a-null",
+        "a-false",
+        "a-nan",
+        "a-neg-zero",
+        "a-zero",
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "a-i-2",
+        "a-s-a",
+        "a-long-a",
+        "a-long-b",
+        "tr-array-third-496-a",
+        "tr-array-third-496-b",
+        "tr-array-third-497-a",
+        "tr-array-third-497-b",
+        "tr-array-second-497-a",
+        "tr-array-second-497-b",
+        "tr-array-second-498-a",
+        "tr-array-second-498-b",
+        "tr-int-after-1491-a",
+        "tr-int-after-1491-b",
+        "tr-vector-in-array-1491-a",
+        "tr-vector-in-array-1491-b",
+        "tr-int-after-1492-a",
+        "tr-int-after-1492-b",
+        "tr-vector-in-array-1492-a",
+        "tr-vector-in-array-1492-b",
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a",
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b",
+        "tr-bool-after-1498-b",
+        "tr-int-after-1498-a",
+        "tr-int-after-1498-b",
+        "tr-empty-string-after-1498-a",
+        "tr-empty-string-after-1498-b",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-b",
+        "tr-vector-length-in-array-1498-a",
+        "tr-vector-length-in-array-1498-b",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-b",
+        "tr-empty-array-or-end-1499-b",
+        "tr-bool-after-1499-a",
+        "tr-bool-after-1499-b",
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-or-null-1499-b",
+        "tr-empty-string-after-1499-a",
+        "tr-empty-string-after-1499-b",
+        "tr-int-after-1499-a",
+        "tr-int-after-1499-b",
+        "tr-null-or-false-after-1499-a",
+        "tr-null-or-false-after-1499-b",
+        "tr-vector-length-in-array-1499-a",
+        "tr-vector-length-in-array-1499-b",
+        "a-elem-a",
+        "a-elem-b",
+        "a-map-empty",
+        "a-map-a-1",
+        "v-neg-zero",
+        "v-zero",
+        "v-1",
+        "v-2",
+        "v-neg1-5",
+        "v-1-2",
+        "v-3-1",
+        "v-0-0-0",
+        "v-1-2-3",
+        "tr-vector-last-186-a",
+        "tr-vector-last-186-b",
+        "tr-vector-last-187-a",
+        "tr-vector-last-187-b",
+        "m-empty",
+        "m-key-A",
+        "m-a-null",
+        "m-neg-zero",
+        "m-zero",
+        "m-a-d-1",
+        "m-a-i-1",
+        "m-a-1-b-1",
+        "m-a-1-c-1",
+        "m-a-2",
+        "m-long-a",
+        "m-long-b",
+        "tr-map-value-493-a",
+        "tr-map-value-493-b",
+        "tr-map-value-494-a",
+        "tr-map-value-494-b",
+        "tr-map-key-494-a",
+        "tr-map-key-494-b",
+        "tr-map-key-495-a",
+        "tr-map-key-495-b",
+        "m-elem-a",
+        "m-elem-b",
+        "m-a-map",
+        "m-b-0",
+        "m-value-only",
+        "m-key-e-acute",
+        "m-key-u-e000",
+        "m-key-u-ffff",
+        "m-key-emoji",
+        "m-bson-max"
+      ],
+      "label": "v NOT_EQUAL NaN",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "NOT_EQUAL",
+          "value": {
+            "doubleValue": "NaN"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-bson-min",
+        "bool-false",
+        "bool-true",
+        "n-nan",
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf",
+        "t-min",
+        "t-before-epoch",
+        "t-epoch",
+        "t-epoch-999ns",
+        "t-epoch-1us",
+        "t-micros",
+        "t-nanos",
+        "t-micros-plus-1",
+        "t-max",
+        "m-bson-timestamp",
+        "s-empty",
+        "s-nul",
+        "s-A",
+        "s-a",
+        "s-a-nul",
+        "s-ab",
+        "s-b",
+        "s-t-a-1498-x",
+        "tr-string-1498-a",
+        "tr-string-1498-b",
+        "s-t-e-1498-x-ba",
+        "s-long-u-1499-x",
+        "s-long-v-1500-x",
+        "s-long-w-1500-x-a",
+        "s-long-x-1500-x-b",
+        "s-long-y-1499-x-e-acute",
+        "s-long-z-1499-x-e-circ",
+        "tr-string-1499-a",
+        "tr-string-1499-b",
+        "tr-utf8-char-1499-a",
+        "tr-utf8-char-1499-b",
+        "s-t-b-1498-x-y",
+        "s-t-c-1498-x-ya",
+        "s-t-d-1498-x-yb",
+        "s-t-f-1498-x-e-acute",
+        "tr-utf8-char-1498-a",
+        "s-t-g-1498-x-e-acute-a",
+        "tr-utf8-char-1498-b",
+        "s-t-i-1497-x-y",
+        "s-t-h-1497-x-emoji",
+        "s-e-acute",
+        "s-u-e000",
+        "s-u-ffff",
+        "s-emoji",
+        "b-empty",
+        "b-00",
+        "b-0000",
+        "b-01",
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a",
+        "b-t-b-1499-ab",
+        "b-t-c-1499-ac",
+        "tr-bytes-1499-b",
+        "b-long-v-1500",
+        "b-long-w-1500-a",
+        "b-long-x-1500-b",
+        "tr-bytes-1500-a",
+        "tr-bytes-1500-b",
+        "b-ff",
+        "b-ff00",
+        "m-bson-binary",
+        "r-other-project",
+        "r-c-id-min",
+        "r-c-id-neg-1",
+        "r-c-id-5",
+        "r-c-id-10",
+        "r-c-id-max",
+        "r-c-A",
+        "r-c-a",
+        "r-c-a-s-x",
+        "r-c-b",
+        "r-mid-a",
+        "r-mid-b",
+        "tr-ref-last-segment-1477-a",
+        "tr-ref-last-segment-1477-b",
+        "tr-ref-last-segment-1478-a",
+        "tr-ref-last-segment-1478-b",
+        "tr-ref-id-1480-a",
+        "tr-ref-id-1480-b",
+        "r-long-a",
+        "r-long-b",
+        "tr-ref-id-1481-a",
+        "tr-ref-id-1481-b",
+        "r-c-dash-b",
+        "r-other-db",
+        "m-bson-oid",
+        "g-s90-w180",
+        "g-s90-e180",
+        "g-s0.5-0",
+        "g-0-0",
+        "g-0-1",
+        "g-1-w180",
+        "g-n90-e180",
+        "m-bson-regex",
+        "a-empty",
+        "a-null",
+        "a-false",
+        "a-nan",
+        "a-neg-zero",
+        "a-zero",
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "a-i-2",
+        "a-s-a",
+        "a-long-a",
+        "a-long-b",
+        "tr-array-third-496-a",
+        "tr-array-third-496-b",
+        "tr-array-third-497-a",
+        "tr-array-third-497-b",
+        "tr-array-second-497-a",
+        "tr-array-second-497-b",
+        "tr-array-second-498-a",
+        "tr-array-second-498-b",
+        "tr-int-after-1491-a",
+        "tr-int-after-1491-b",
+        "tr-vector-in-array-1491-a",
+        "tr-vector-in-array-1491-b",
+        "tr-int-after-1492-a",
+        "tr-int-after-1492-b",
+        "tr-vector-in-array-1492-a",
+        "tr-vector-in-array-1492-b",
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a",
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b",
+        "tr-bool-after-1498-b",
+        "tr-int-after-1498-a",
+        "tr-int-after-1498-b",
+        "tr-empty-string-after-1498-a",
+        "tr-empty-string-after-1498-b",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-b",
+        "tr-vector-length-in-array-1498-a",
+        "tr-vector-length-in-array-1498-b",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-b",
+        "tr-empty-array-or-end-1499-b",
+        "tr-bool-after-1499-a",
+        "tr-bool-after-1499-b",
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-or-null-1499-b",
+        "tr-empty-string-after-1499-a",
+        "tr-empty-string-after-1499-b",
+        "tr-int-after-1499-a",
+        "tr-int-after-1499-b",
+        "tr-null-or-false-after-1499-a",
+        "tr-null-or-false-after-1499-b",
+        "tr-vector-length-in-array-1499-a",
+        "tr-vector-length-in-array-1499-b",
+        "a-elem-a",
+        "a-elem-b",
+        "a-map-empty",
+        "a-map-a-1",
+        "v-neg-zero",
+        "v-zero",
+        "v-1",
+        "v-2",
+        "v-neg1-5",
+        "v-1-2",
+        "v-3-1",
+        "v-0-0-0",
+        "v-1-2-3",
+        "tr-vector-last-186-a",
+        "tr-vector-last-186-b",
+        "tr-vector-last-187-a",
+        "tr-vector-last-187-b",
+        "m-empty",
+        "m-key-A",
+        "m-a-null",
+        "m-neg-zero",
+        "m-zero",
+        "m-a-d-1",
+        "m-a-i-1",
+        "m-a-1-b-1",
+        "m-a-1-c-1",
+        "m-a-2",
+        "m-long-a",
+        "m-long-b",
+        "tr-map-value-493-a",
+        "tr-map-value-493-b",
+        "tr-map-value-494-a",
+        "tr-map-value-494-b",
+        "tr-map-key-494-a",
+        "tr-map-key-494-b",
+        "tr-map-key-495-a",
+        "tr-map-key-495-b",
+        "m-elem-a",
+        "m-elem-b",
+        "m-a-map",
+        "m-b-0",
+        "m-value-only",
+        "m-key-e-acute",
+        "m-key-u-e000",
+        "m-key-u-ffff",
+        "m-key-emoji",
+        "m-bson-max"
+      ],
+      "label": "v NOT_EQUAL int 1",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "NOT_EQUAL",
+          "value": {
+            "integerValue": "1"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-bson-min",
+        "bool-false",
+        "bool-true",
+        "n-nan",
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf",
+        "t-min",
+        "t-before-epoch",
+        "t-epoch",
+        "t-epoch-999ns",
+        "t-epoch-1us",
+        "t-micros",
+        "t-nanos",
+        "t-micros-plus-1",
+        "t-max",
+        "m-bson-timestamp",
+        "s-empty",
+        "s-nul",
+        "s-A",
+        "s-a",
+        "s-a-nul",
+        "s-ab",
+        "s-b",
+        "s-t-a-1498-x",
+        "tr-string-1498-a",
+        "tr-string-1498-b",
+        "s-t-e-1498-x-ba",
+        "s-long-u-1499-x",
+        "s-long-v-1500-x",
+        "s-long-w-1500-x-a",
+        "s-long-x-1500-x-b",
+        "s-long-y-1499-x-e-acute",
+        "s-long-z-1499-x-e-circ",
+        "tr-string-1499-a",
+        "tr-string-1499-b",
+        "tr-utf8-char-1499-a",
+        "tr-utf8-char-1499-b",
+        "s-t-b-1498-x-y",
+        "s-t-c-1498-x-ya",
+        "s-t-d-1498-x-yb",
+        "s-t-f-1498-x-e-acute",
+        "tr-utf8-char-1498-a",
+        "s-t-g-1498-x-e-acute-a",
+        "tr-utf8-char-1498-b",
+        "s-t-i-1497-x-y",
+        "s-t-h-1497-x-emoji",
+        "s-e-acute",
+        "s-u-e000",
+        "s-u-ffff",
+        "s-emoji",
+        "b-empty",
+        "b-00",
+        "b-0000",
+        "b-01",
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a",
+        "b-t-b-1499-ab",
+        "b-t-c-1499-ac",
+        "tr-bytes-1499-b",
+        "b-long-v-1500",
+        "b-long-w-1500-a",
+        "b-long-x-1500-b",
+        "tr-bytes-1500-a",
+        "tr-bytes-1500-b",
+        "b-ff",
+        "b-ff00",
+        "m-bson-binary",
+        "r-other-project",
+        "r-c-id-min",
+        "r-c-id-neg-1",
+        "r-c-id-5",
+        "r-c-id-10",
+        "r-c-id-max",
+        "r-c-A",
+        "r-c-a",
+        "r-c-a-s-x",
+        "r-c-b",
+        "r-mid-a",
+        "r-mid-b",
+        "tr-ref-last-segment-1477-a",
+        "tr-ref-last-segment-1477-b",
+        "tr-ref-last-segment-1478-a",
+        "tr-ref-last-segment-1478-b",
+        "tr-ref-id-1480-a",
+        "tr-ref-id-1480-b",
+        "r-long-a",
+        "r-long-b",
+        "tr-ref-id-1481-a",
+        "tr-ref-id-1481-b",
+        "r-c-dash-b",
+        "r-other-db",
+        "m-bson-oid",
+        "g-s90-w180",
+        "g-s90-e180",
+        "g-s0.5-0",
+        "g-0-0",
+        "g-0-1",
+        "g-1-w180",
+        "g-n90-e180",
+        "m-bson-regex",
+        "a-empty",
+        "a-null",
+        "a-false",
+        "a-nan",
+        "a-neg-zero",
+        "a-zero",
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "a-i-2",
+        "a-s-a",
+        "a-long-a",
+        "a-long-b",
+        "tr-array-third-496-a",
+        "tr-array-third-496-b",
+        "tr-array-third-497-a",
+        "tr-array-third-497-b",
+        "tr-array-second-497-a",
+        "tr-array-second-497-b",
+        "tr-array-second-498-a",
+        "tr-array-second-498-b",
+        "tr-int-after-1491-a",
+        "tr-int-after-1491-b",
+        "tr-vector-in-array-1491-a",
+        "tr-vector-in-array-1491-b",
+        "tr-int-after-1492-a",
+        "tr-int-after-1492-b",
+        "tr-vector-in-array-1492-a",
+        "tr-vector-in-array-1492-b",
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a",
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b",
+        "tr-bool-after-1498-b",
+        "tr-int-after-1498-a",
+        "tr-int-after-1498-b",
+        "tr-empty-string-after-1498-a",
+        "tr-empty-string-after-1498-b",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-b",
+        "tr-vector-length-in-array-1498-a",
+        "tr-vector-length-in-array-1498-b",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-b",
+        "tr-empty-array-or-end-1499-b",
+        "tr-bool-after-1499-a",
+        "tr-bool-after-1499-b",
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-or-null-1499-b",
+        "tr-empty-string-after-1499-a",
+        "tr-empty-string-after-1499-b",
+        "tr-int-after-1499-a",
+        "tr-int-after-1499-b",
+        "tr-null-or-false-after-1499-a",
+        "tr-null-or-false-after-1499-b",
+        "tr-vector-length-in-array-1499-a",
+        "tr-vector-length-in-array-1499-b",
+        "a-elem-a",
+        "a-elem-b",
+        "a-map-empty",
+        "a-map-a-1",
+        "v-neg-zero",
+        "v-zero",
+        "v-1",
+        "v-2",
+        "v-neg1-5",
+        "v-1-2",
+        "v-3-1",
+        "v-0-0-0",
+        "v-1-2-3",
+        "tr-vector-last-186-a",
+        "tr-vector-last-186-b",
+        "tr-vector-last-187-a",
+        "tr-vector-last-187-b",
+        "m-empty",
+        "m-key-A",
+        "m-a-null",
+        "m-neg-zero",
+        "m-zero",
+        "m-a-d-1",
+        "m-a-i-1",
+        "m-a-1-b-1",
+        "m-a-1-c-1",
+        "m-a-2",
+        "m-long-a",
+        "m-long-b",
+        "tr-map-value-493-a",
+        "tr-map-value-493-b",
+        "tr-map-value-494-a",
+        "tr-map-value-494-b",
+        "tr-map-key-494-a",
+        "tr-map-key-494-b",
+        "tr-map-key-495-a",
+        "tr-map-key-495-b",
+        "m-elem-a",
+        "m-elem-b",
+        "m-a-map",
+        "m-b-0",
+        "m-value-only",
+        "m-key-e-acute",
+        "m-key-u-e000",
+        "m-key-u-ffff",
+        "m-key-emoji",
+        "m-bson-max"
+      ],
+      "label": "v NOT_EQUAL double -0.0",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "NOT_EQUAL",
+          "value": {
+            "doubleValue": "-0"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-bson-min",
+        "bool-false",
+        "bool-true",
+        "n-nan",
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf",
+        "t-min",
+        "t-before-epoch",
+        "t-epoch",
+        "t-epoch-999ns",
+        "t-epoch-1us",
+        "t-micros",
+        "t-nanos",
+        "t-micros-plus-1",
+        "t-max",
+        "m-bson-timestamp",
+        "s-empty",
+        "s-nul",
+        "s-A",
+        "s-a-nul",
+        "s-ab",
+        "s-b",
+        "s-t-a-1498-x",
+        "tr-string-1498-a",
+        "tr-string-1498-b",
+        "s-t-e-1498-x-ba",
+        "s-long-u-1499-x",
+        "s-long-v-1500-x",
+        "s-long-w-1500-x-a",
+        "s-long-x-1500-x-b",
+        "s-long-y-1499-x-e-acute",
+        "s-long-z-1499-x-e-circ",
+        "tr-string-1499-a",
+        "tr-string-1499-b",
+        "tr-utf8-char-1499-a",
+        "tr-utf8-char-1499-b",
+        "s-t-b-1498-x-y",
+        "s-t-c-1498-x-ya",
+        "s-t-d-1498-x-yb",
+        "s-t-f-1498-x-e-acute",
+        "tr-utf8-char-1498-a",
+        "s-t-g-1498-x-e-acute-a",
+        "tr-utf8-char-1498-b",
+        "s-t-i-1497-x-y",
+        "s-t-h-1497-x-emoji",
+        "s-e-acute",
+        "s-u-e000",
+        "s-u-ffff",
+        "s-emoji",
+        "b-empty",
+        "b-00",
+        "b-0000",
+        "b-01",
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a",
+        "b-t-b-1499-ab",
+        "b-t-c-1499-ac",
+        "tr-bytes-1499-b",
+        "b-long-v-1500",
+        "b-long-w-1500-a",
+        "b-long-x-1500-b",
+        "tr-bytes-1500-a",
+        "tr-bytes-1500-b",
+        "b-ff",
+        "b-ff00",
+        "m-bson-binary",
+        "r-other-project",
+        "r-c-id-min",
+        "r-c-id-neg-1",
+        "r-c-id-5",
+        "r-c-id-10",
+        "r-c-id-max",
+        "r-c-A",
+        "r-c-a",
+        "r-c-a-s-x",
+        "r-c-b",
+        "r-mid-a",
+        "r-mid-b",
+        "tr-ref-last-segment-1477-a",
+        "tr-ref-last-segment-1477-b",
+        "tr-ref-last-segment-1478-a",
+        "tr-ref-last-segment-1478-b",
+        "tr-ref-id-1480-a",
+        "tr-ref-id-1480-b",
+        "r-long-a",
+        "r-long-b",
+        "tr-ref-id-1481-a",
+        "tr-ref-id-1481-b",
+        "r-c-dash-b",
+        "r-other-db",
+        "m-bson-oid",
+        "g-s90-w180",
+        "g-s90-e180",
+        "g-s0.5-0",
+        "g-0-0",
+        "g-0-1",
+        "g-1-w180",
+        "g-n90-e180",
+        "m-bson-regex",
+        "a-empty",
+        "a-null",
+        "a-false",
+        "a-nan",
+        "a-neg-zero",
+        "a-zero",
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "a-i-2",
+        "a-s-a",
+        "a-long-a",
+        "a-long-b",
+        "tr-array-third-496-a",
+        "tr-array-third-496-b",
+        "tr-array-third-497-a",
+        "tr-array-third-497-b",
+        "tr-array-second-497-a",
+        "tr-array-second-497-b",
+        "tr-array-second-498-a",
+        "tr-array-second-498-b",
+        "tr-int-after-1491-a",
+        "tr-int-after-1491-b",
+        "tr-vector-in-array-1491-a",
+        "tr-vector-in-array-1491-b",
+        "tr-int-after-1492-a",
+        "tr-int-after-1492-b",
+        "tr-vector-in-array-1492-a",
+        "tr-vector-in-array-1492-b",
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a",
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b",
+        "tr-bool-after-1498-b",
+        "tr-int-after-1498-a",
+        "tr-int-after-1498-b",
+        "tr-empty-string-after-1498-a",
+        "tr-empty-string-after-1498-b",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-b",
+        "tr-vector-length-in-array-1498-a",
+        "tr-vector-length-in-array-1498-b",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-b",
+        "tr-empty-array-or-end-1499-b",
+        "tr-bool-after-1499-a",
+        "tr-bool-after-1499-b",
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-or-null-1499-b",
+        "tr-empty-string-after-1499-a",
+        "tr-empty-string-after-1499-b",
+        "tr-int-after-1499-a",
+        "tr-int-after-1499-b",
+        "tr-null-or-false-after-1499-a",
+        "tr-null-or-false-after-1499-b",
+        "tr-vector-length-in-array-1499-a",
+        "tr-vector-length-in-array-1499-b",
+        "a-elem-a",
+        "a-elem-b",
+        "a-map-empty",
+        "a-map-a-1",
+        "v-neg-zero",
+        "v-zero",
+        "v-1",
+        "v-2",
+        "v-neg1-5",
+        "v-1-2",
+        "v-3-1",
+        "v-0-0-0",
+        "v-1-2-3",
+        "tr-vector-last-186-a",
+        "tr-vector-last-186-b",
+        "tr-vector-last-187-a",
+        "tr-vector-last-187-b",
+        "m-empty",
+        "m-key-A",
+        "m-a-null",
+        "m-neg-zero",
+        "m-zero",
+        "m-a-d-1",
+        "m-a-i-1",
+        "m-a-1-b-1",
+        "m-a-1-c-1",
+        "m-a-2",
+        "m-long-a",
+        "m-long-b",
+        "tr-map-value-493-a",
+        "tr-map-value-493-b",
+        "tr-map-value-494-a",
+        "tr-map-value-494-b",
+        "tr-map-key-494-a",
+        "tr-map-key-494-b",
+        "tr-map-key-495-a",
+        "tr-map-key-495-b",
+        "m-elem-a",
+        "m-elem-b",
+        "m-a-map",
+        "m-b-0",
+        "m-value-only",
+        "m-key-e-acute",
+        "m-key-u-e000",
+        "m-key-u-ffff",
+        "m-key-emoji",
+        "m-bson-max"
+      ],
+      "label": "v NOT_EQUAL \"a\"",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "NOT_EQUAL",
+          "value": {
+            "stringValue": "a"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-bson-min",
+        "bool-false",
+        "bool-true",
+        "n-nan",
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf",
+        "t-min",
+        "t-before-epoch",
+        "t-epoch",
+        "t-epoch-999ns",
+        "t-epoch-1us",
+        "t-micros",
+        "t-nanos",
+        "t-micros-plus-1",
+        "t-max",
+        "m-bson-timestamp",
+        "s-empty",
+        "s-nul",
+        "s-A",
+        "s-a",
+        "s-a-nul",
+        "s-ab",
+        "s-b",
+        "s-t-a-1498-x",
+        "tr-string-1498-a",
+        "tr-string-1498-b",
+        "s-t-e-1498-x-ba",
+        "s-long-u-1499-x",
+        "s-long-v-1500-x",
+        "s-long-w-1500-x-a",
+        "s-long-x-1500-x-b",
+        "s-long-y-1499-x-e-acute",
+        "s-long-z-1499-x-e-circ",
+        "tr-string-1499-a",
+        "tr-string-1499-b",
+        "tr-utf8-char-1499-a",
+        "tr-utf8-char-1499-b",
+        "s-t-b-1498-x-y",
+        "s-t-c-1498-x-ya",
+        "s-t-d-1498-x-yb",
+        "s-t-f-1498-x-e-acute",
+        "tr-utf8-char-1498-a",
+        "s-t-g-1498-x-e-acute-a",
+        "tr-utf8-char-1498-b",
+        "s-t-i-1497-x-y",
+        "s-t-h-1497-x-emoji",
+        "s-e-acute",
+        "s-u-e000",
+        "s-u-ffff",
+        "s-emoji",
+        "b-empty",
+        "b-00",
+        "b-0000",
+        "b-01",
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a",
+        "b-t-b-1499-ab",
+        "b-t-c-1499-ac",
+        "tr-bytes-1499-b",
+        "b-long-v-1500",
+        "b-long-w-1500-a",
+        "b-long-x-1500-b",
+        "tr-bytes-1500-a",
+        "tr-bytes-1500-b",
+        "b-ff",
+        "b-ff00",
+        "m-bson-binary",
+        "r-other-project",
+        "r-c-id-min",
+        "r-c-id-neg-1",
+        "r-c-id-5",
+        "r-c-id-10",
+        "r-c-id-max",
+        "r-c-A",
+        "r-c-a",
+        "r-c-a-s-x",
+        "r-c-b",
+        "r-mid-a",
+        "r-mid-b",
+        "tr-ref-last-segment-1477-a",
+        "tr-ref-last-segment-1477-b",
+        "tr-ref-last-segment-1478-a",
+        "tr-ref-last-segment-1478-b",
+        "tr-ref-id-1480-a",
+        "tr-ref-id-1480-b",
+        "r-long-a",
+        "r-long-b",
+        "tr-ref-id-1481-a",
+        "tr-ref-id-1481-b",
+        "r-c-dash-b",
+        "r-other-db",
+        "m-bson-oid",
+        "g-s90-w180",
+        "g-s90-e180",
+        "g-s0.5-0",
+        "g-0-0",
+        "g-0-1",
+        "g-1-w180",
+        "g-n90-e180",
+        "m-bson-regex",
+        "a-empty",
+        "a-null",
+        "a-false",
+        "a-nan",
+        "a-neg-zero",
+        "a-zero",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "a-i-2",
+        "a-s-a",
+        "a-long-a",
+        "a-long-b",
+        "tr-array-third-496-a",
+        "tr-array-third-496-b",
+        "tr-array-third-497-a",
+        "tr-array-third-497-b",
+        "tr-array-second-497-a",
+        "tr-array-second-497-b",
+        "tr-array-second-498-a",
+        "tr-array-second-498-b",
+        "tr-int-after-1491-a",
+        "tr-int-after-1491-b",
+        "tr-vector-in-array-1491-a",
+        "tr-vector-in-array-1491-b",
+        "tr-int-after-1492-a",
+        "tr-int-after-1492-b",
+        "tr-vector-in-array-1492-a",
+        "tr-vector-in-array-1492-b",
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a",
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b",
+        "tr-bool-after-1498-b",
+        "tr-int-after-1498-a",
+        "tr-int-after-1498-b",
+        "tr-empty-string-after-1498-a",
+        "tr-empty-string-after-1498-b",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-b",
+        "tr-vector-length-in-array-1498-a",
+        "tr-vector-length-in-array-1498-b",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-b",
+        "tr-empty-array-or-end-1499-b",
+        "tr-bool-after-1499-a",
+        "tr-bool-after-1499-b",
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-or-null-1499-b",
+        "tr-empty-string-after-1499-a",
+        "tr-empty-string-after-1499-b",
+        "tr-int-after-1499-a",
+        "tr-int-after-1499-b",
+        "tr-null-or-false-after-1499-a",
+        "tr-null-or-false-after-1499-b",
+        "tr-vector-length-in-array-1499-a",
+        "tr-vector-length-in-array-1499-b",
+        "a-elem-a",
+        "a-elem-b",
+        "a-map-empty",
+        "a-map-a-1",
+        "v-neg-zero",
+        "v-zero",
+        "v-1",
+        "v-2",
+        "v-neg1-5",
+        "v-1-2",
+        "v-3-1",
+        "v-0-0-0",
+        "v-1-2-3",
+        "tr-vector-last-186-a",
+        "tr-vector-last-186-b",
+        "tr-vector-last-187-a",
+        "tr-vector-last-187-b",
+        "m-empty",
+        "m-key-A",
+        "m-a-null",
+        "m-neg-zero",
+        "m-zero",
+        "m-a-d-1",
+        "m-a-i-1",
+        "m-a-1-b-1",
+        "m-a-1-c-1",
+        "m-a-2",
+        "m-long-a",
+        "m-long-b",
+        "tr-map-value-493-a",
+        "tr-map-value-493-b",
+        "tr-map-value-494-a",
+        "tr-map-value-494-b",
+        "tr-map-key-494-a",
+        "tr-map-key-494-b",
+        "tr-map-key-495-a",
+        "tr-map-key-495-b",
+        "m-elem-a",
+        "m-elem-b",
+        "m-a-map",
+        "m-b-0",
+        "m-value-only",
+        "m-key-e-acute",
+        "m-key-u-e000",
+        "m-key-u-ffff",
+        "m-key-emoji",
+        "m-bson-max"
+      ],
+      "label": "v NOT_EQUAL [int 1]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "NOT_EQUAL",
+          "value": {
+            "arrayValue": {
+              "values": [
+                {
+                  "integerValue": "1"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-bson-min",
+        "bool-false",
+        "bool-true",
+        "n-nan",
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf",
+        "t-min",
+        "t-before-epoch",
+        "t-epoch",
+        "t-epoch-999ns",
+        "t-epoch-1us",
+        "t-micros",
+        "t-nanos",
+        "t-micros-plus-1",
+        "t-max",
+        "m-bson-timestamp",
+        "s-empty",
+        "s-nul",
+        "s-A",
+        "s-a",
+        "s-a-nul",
+        "s-ab",
+        "s-b",
+        "s-t-a-1498-x",
+        "tr-string-1498-a",
+        "tr-string-1498-b",
+        "s-t-e-1498-x-ba",
+        "s-long-u-1499-x",
+        "s-long-v-1500-x",
+        "s-long-w-1500-x-a",
+        "s-long-x-1500-x-b",
+        "s-long-y-1499-x-e-acute",
+        "s-long-z-1499-x-e-circ",
+        "tr-string-1499-a",
+        "tr-string-1499-b",
+        "tr-utf8-char-1499-a",
+        "tr-utf8-char-1499-b",
+        "s-t-b-1498-x-y",
+        "s-t-c-1498-x-ya",
+        "s-t-d-1498-x-yb",
+        "s-t-f-1498-x-e-acute",
+        "tr-utf8-char-1498-a",
+        "s-t-g-1498-x-e-acute-a",
+        "tr-utf8-char-1498-b",
+        "s-t-i-1497-x-y",
+        "s-t-h-1497-x-emoji",
+        "s-e-acute",
+        "s-u-e000",
+        "s-u-ffff",
+        "s-emoji",
+        "b-empty",
+        "b-00",
+        "b-0000",
+        "b-01",
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a",
+        "b-t-b-1499-ab",
+        "b-t-c-1499-ac",
+        "tr-bytes-1499-b",
+        "b-long-v-1500",
+        "b-long-w-1500-a",
+        "b-long-x-1500-b",
+        "tr-bytes-1500-a",
+        "tr-bytes-1500-b",
+        "b-ff",
+        "b-ff00",
+        "m-bson-binary",
+        "r-other-project",
+        "r-c-id-min",
+        "r-c-id-neg-1",
+        "r-c-id-5",
+        "r-c-id-10",
+        "r-c-id-max",
+        "r-c-A",
+        "r-c-a",
+        "r-c-a-s-x",
+        "r-c-b",
+        "r-mid-a",
+        "r-mid-b",
+        "tr-ref-last-segment-1477-a",
+        "tr-ref-last-segment-1477-b",
+        "tr-ref-last-segment-1478-a",
+        "tr-ref-last-segment-1478-b",
+        "tr-ref-id-1480-a",
+        "tr-ref-id-1480-b",
+        "r-long-a",
+        "r-long-b",
+        "tr-ref-id-1481-a",
+        "tr-ref-id-1481-b",
+        "r-c-dash-b",
+        "r-other-db",
+        "m-bson-oid",
+        "g-s90-w180",
+        "g-s90-e180",
+        "g-s0.5-0",
+        "g-0-0",
+        "g-0-1",
+        "g-1-w180",
+        "g-n90-e180",
+        "m-bson-regex",
+        "a-empty",
+        "a-null",
+        "a-false",
+        "a-nan",
+        "a-neg-zero",
+        "a-zero",
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "a-i-2",
+        "a-s-a",
+        "a-long-a",
+        "a-long-b",
+        "tr-array-third-496-a",
+        "tr-array-third-496-b",
+        "tr-array-third-497-a",
+        "tr-array-third-497-b",
+        "tr-array-second-497-a",
+        "tr-array-second-497-b",
+        "tr-array-second-498-a",
+        "tr-array-second-498-b",
+        "tr-int-after-1491-a",
+        "tr-int-after-1491-b",
+        "tr-vector-in-array-1491-a",
+        "tr-vector-in-array-1491-b",
+        "tr-int-after-1492-a",
+        "tr-int-after-1492-b",
+        "tr-vector-in-array-1492-a",
+        "tr-vector-in-array-1492-b",
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a",
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b",
+        "tr-bool-after-1498-b",
+        "tr-int-after-1498-a",
+        "tr-int-after-1498-b",
+        "tr-empty-string-after-1498-a",
+        "tr-empty-string-after-1498-b",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-b",
+        "tr-vector-length-in-array-1498-a",
+        "tr-vector-length-in-array-1498-b",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-b",
+        "tr-empty-array-or-end-1499-b",
+        "tr-bool-after-1499-a",
+        "tr-bool-after-1499-b",
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-or-null-1499-b",
+        "tr-empty-string-after-1499-a",
+        "tr-empty-string-after-1499-b",
+        "tr-int-after-1499-a",
+        "tr-int-after-1499-b",
+        "tr-null-or-false-after-1499-a",
+        "tr-null-or-false-after-1499-b",
+        "tr-vector-length-in-array-1499-a",
+        "tr-vector-length-in-array-1499-b",
+        "a-elem-a",
+        "a-elem-b",
+        "a-map-empty",
+        "a-map-a-1",
+        "v-neg-zero",
+        "v-zero",
+        "v-1",
+        "v-2",
+        "v-neg1-5",
+        "v-1-2",
+        "v-3-1",
+        "v-0-0-0",
+        "v-1-2-3",
+        "tr-vector-last-186-a",
+        "tr-vector-last-186-b",
+        "tr-vector-last-187-a",
+        "tr-vector-last-187-b",
+        "m-key-A",
+        "m-a-null",
+        "m-neg-zero",
+        "m-zero",
+        "m-a-d-1",
+        "m-a-i-1",
+        "m-a-1-b-1",
+        "m-a-1-c-1",
+        "m-a-2",
+        "m-long-a",
+        "m-long-b",
+        "tr-map-value-493-a",
+        "tr-map-value-493-b",
+        "tr-map-value-494-a",
+        "tr-map-value-494-b",
+        "tr-map-key-494-a",
+        "tr-map-key-494-b",
+        "tr-map-key-495-a",
+        "tr-map-key-495-b",
+        "m-elem-a",
+        "m-elem-b",
+        "m-a-map",
+        "m-b-0",
+        "m-value-only",
+        "m-key-e-acute",
+        "m-key-u-e000",
+        "m-key-u-ffff",
+        "m-key-emoji",
+        "m-bson-max"
+      ],
+      "label": "v NOT_EQUAL {}",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "NOT_EQUAL",
+          "value": {
+            "mapValue": {}
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-bson-min",
+        "bool-false",
+        "bool-true",
+        "n-nan",
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf",
+        "t-min",
+        "t-before-epoch",
+        "t-epoch",
+        "t-epoch-999ns",
+        "t-epoch-1us",
+        "t-micros",
+        "t-nanos",
+        "t-micros-plus-1",
+        "t-max",
+        "m-bson-timestamp",
+        "s-empty",
+        "s-nul",
+        "s-A",
+        "s-a",
+        "s-a-nul",
+        "s-ab",
+        "s-b",
+        "s-t-a-1498-x",
+        "tr-string-1498-a",
+        "tr-string-1498-b",
+        "s-t-e-1498-x-ba",
+        "s-long-u-1499-x",
+        "s-long-v-1500-x",
+        "s-long-w-1500-x-a",
+        "s-long-x-1500-x-b",
+        "s-long-y-1499-x-e-acute",
+        "s-long-z-1499-x-e-circ",
+        "tr-string-1499-a",
+        "tr-string-1499-b",
+        "tr-utf8-char-1499-a",
+        "tr-utf8-char-1499-b",
+        "s-t-b-1498-x-y",
+        "s-t-c-1498-x-ya",
+        "s-t-d-1498-x-yb",
+        "s-t-f-1498-x-e-acute",
+        "tr-utf8-char-1498-a",
+        "s-t-g-1498-x-e-acute-a",
+        "tr-utf8-char-1498-b",
+        "s-t-i-1497-x-y",
+        "s-t-h-1497-x-emoji",
+        "s-e-acute",
+        "s-u-e000",
+        "s-u-ffff",
+        "s-emoji",
+        "b-empty",
+        "b-00",
+        "b-0000",
+        "b-01",
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a",
+        "b-t-b-1499-ab",
+        "b-t-c-1499-ac",
+        "tr-bytes-1499-b",
+        "b-long-v-1500",
+        "b-long-w-1500-a",
+        "b-long-x-1500-b",
+        "tr-bytes-1500-a",
+        "tr-bytes-1500-b",
+        "b-ff",
+        "b-ff00",
+        "m-bson-binary",
+        "r-other-project",
+        "r-c-id-min",
+        "r-c-id-neg-1",
+        "r-c-id-5",
+        "r-c-id-10",
+        "r-c-id-max",
+        "r-c-A",
+        "r-c-a",
+        "r-c-a-s-x",
+        "r-c-b",
+        "r-mid-a",
+        "r-mid-b",
+        "tr-ref-last-segment-1477-a",
+        "tr-ref-last-segment-1477-b",
+        "tr-ref-last-segment-1478-a",
+        "tr-ref-last-segment-1478-b",
+        "tr-ref-id-1480-a",
+        "tr-ref-id-1480-b",
+        "r-long-a",
+        "r-long-b",
+        "tr-ref-id-1481-a",
+        "tr-ref-id-1481-b",
+        "r-c-dash-b",
+        "r-other-db",
+        "m-bson-oid",
+        "g-s90-w180",
+        "g-s90-e180",
+        "g-s0.5-0",
+        "g-0-0",
+        "g-0-1",
+        "g-1-w180",
+        "g-n90-e180",
+        "m-bson-regex",
+        "a-empty",
+        "a-null",
+        "a-false",
+        "a-nan",
+        "a-neg-zero",
+        "a-zero",
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "a-i-2",
+        "a-s-a",
+        "a-long-a",
+        "a-long-b",
+        "tr-array-third-496-a",
+        "tr-array-third-496-b",
+        "tr-array-third-497-a",
+        "tr-array-third-497-b",
+        "tr-array-second-497-a",
+        "tr-array-second-497-b",
+        "tr-array-second-498-a",
+        "tr-array-second-498-b",
+        "tr-int-after-1491-a",
+        "tr-int-after-1491-b",
+        "tr-vector-in-array-1491-a",
+        "tr-vector-in-array-1491-b",
+        "tr-int-after-1492-a",
+        "tr-int-after-1492-b",
+        "tr-vector-in-array-1492-a",
+        "tr-vector-in-array-1492-b",
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a",
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b",
+        "tr-bool-after-1498-b",
+        "tr-int-after-1498-a",
+        "tr-int-after-1498-b",
+        "tr-empty-string-after-1498-a",
+        "tr-empty-string-after-1498-b",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-b",
+        "tr-vector-length-in-array-1498-a",
+        "tr-vector-length-in-array-1498-b",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-b",
+        "tr-empty-array-or-end-1499-b",
+        "tr-bool-after-1499-a",
+        "tr-bool-after-1499-b",
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-or-null-1499-b",
+        "tr-empty-string-after-1499-a",
+        "tr-empty-string-after-1499-b",
+        "tr-int-after-1499-a",
+        "tr-int-after-1499-b",
+        "tr-null-or-false-after-1499-a",
+        "tr-null-or-false-after-1499-b",
+        "tr-vector-length-in-array-1499-a",
+        "tr-vector-length-in-array-1499-b",
+        "a-elem-a",
+        "a-elem-b",
+        "a-map-empty",
+        "a-map-a-1",
+        "v-neg-zero",
+        "v-zero",
+        "v-1",
+        "v-2",
+        "v-neg1-5",
+        "v-1-2",
+        "v-3-1",
+        "v-0-0-0",
+        "v-1-2-3",
+        "tr-vector-last-186-a",
+        "tr-vector-last-186-b",
+        "tr-vector-last-187-a",
+        "tr-vector-last-187-b",
+        "m-empty",
+        "m-key-A",
+        "m-a-null",
+        "m-neg-zero",
+        "m-zero",
+        "m-a-d-1",
+        "m-a-i-1",
+        "m-a-1-b-1",
+        "m-a-1-c-1",
+        "m-a-2",
+        "m-long-a",
+        "m-long-b",
+        "tr-map-value-493-a",
+        "tr-map-value-493-b",
+        "tr-map-value-494-a",
+        "tr-map-value-494-b",
+        "tr-map-key-494-a",
+        "tr-map-key-494-b",
+        "tr-map-key-495-a",
+        "tr-map-key-495-b",
+        "m-elem-a",
+        "m-elem-b",
+        "m-a-map",
+        "m-b-0",
+        "m-value-only",
+        "m-key-e-acute",
+        "m-key-u-e000",
+        "m-key-u-ffff",
+        "m-key-emoji",
+        "m-bson-max"
+      ],
+      "label": "v NOT_IN [int 1]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "NOT_IN",
+          "value": {
+            "arrayValue": {
+              "values": [
+                {
+                  "integerValue": "1"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v NOT_IN [null]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "NOT_IN",
+          "value": {
+            "arrayValue": {
+              "values": [
+                {
+                  "nullValue": null
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-bson-min",
+        "bool-false",
+        "bool-true",
+        "n-nan",
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf",
+        "t-min",
+        "t-before-epoch",
+        "t-epoch",
+        "t-epoch-999ns",
+        "t-epoch-1us",
+        "t-micros",
+        "t-nanos",
+        "t-micros-plus-1",
+        "t-max",
+        "m-bson-timestamp",
+        "s-empty",
+        "s-nul",
+        "s-A",
+        "s-a",
+        "s-a-nul",
+        "s-ab",
+        "s-b",
+        "s-t-a-1498-x",
+        "tr-string-1498-a",
+        "tr-string-1498-b",
+        "s-t-e-1498-x-ba",
+        "s-long-u-1499-x",
+        "s-long-v-1500-x",
+        "s-long-w-1500-x-a",
+        "s-long-x-1500-x-b",
+        "s-long-y-1499-x-e-acute",
+        "s-long-z-1499-x-e-circ",
+        "tr-string-1499-a",
+        "tr-string-1499-b",
+        "tr-utf8-char-1499-a",
+        "tr-utf8-char-1499-b",
+        "s-t-b-1498-x-y",
+        "s-t-c-1498-x-ya",
+        "s-t-d-1498-x-yb",
+        "s-t-f-1498-x-e-acute",
+        "tr-utf8-char-1498-a",
+        "s-t-g-1498-x-e-acute-a",
+        "tr-utf8-char-1498-b",
+        "s-t-i-1497-x-y",
+        "s-t-h-1497-x-emoji",
+        "s-e-acute",
+        "s-u-e000",
+        "s-u-ffff",
+        "s-emoji",
+        "b-empty",
+        "b-00",
+        "b-0000",
+        "b-01",
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a",
+        "b-t-b-1499-ab",
+        "b-t-c-1499-ac",
+        "tr-bytes-1499-b",
+        "b-long-v-1500",
+        "b-long-w-1500-a",
+        "b-long-x-1500-b",
+        "tr-bytes-1500-a",
+        "tr-bytes-1500-b",
+        "b-ff",
+        "b-ff00",
+        "m-bson-binary",
+        "r-other-project",
+        "r-c-id-min",
+        "r-c-id-neg-1",
+        "r-c-id-5",
+        "r-c-id-10",
+        "r-c-id-max",
+        "r-c-A",
+        "r-c-a",
+        "r-c-a-s-x",
+        "r-c-b",
+        "r-mid-a",
+        "r-mid-b",
+        "tr-ref-last-segment-1477-a",
+        "tr-ref-last-segment-1477-b",
+        "tr-ref-last-segment-1478-a",
+        "tr-ref-last-segment-1478-b",
+        "tr-ref-id-1480-a",
+        "tr-ref-id-1480-b",
+        "r-long-a",
+        "r-long-b",
+        "tr-ref-id-1481-a",
+        "tr-ref-id-1481-b",
+        "r-c-dash-b",
+        "r-other-db",
+        "m-bson-oid",
+        "g-s90-w180",
+        "g-s90-e180",
+        "g-s0.5-0",
+        "g-0-0",
+        "g-0-1",
+        "g-1-w180",
+        "g-n90-e180",
+        "m-bson-regex",
+        "a-empty",
+        "a-null",
+        "a-false",
+        "a-nan",
+        "a-neg-zero",
+        "a-zero",
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "a-i-2",
+        "a-s-a",
+        "a-long-a",
+        "a-long-b",
+        "tr-array-third-496-a",
+        "tr-array-third-496-b",
+        "tr-array-third-497-a",
+        "tr-array-third-497-b",
+        "tr-array-second-497-a",
+        "tr-array-second-497-b",
+        "tr-array-second-498-a",
+        "tr-array-second-498-b",
+        "tr-int-after-1491-a",
+        "tr-int-after-1491-b",
+        "tr-vector-in-array-1491-a",
+        "tr-vector-in-array-1491-b",
+        "tr-int-after-1492-a",
+        "tr-int-after-1492-b",
+        "tr-vector-in-array-1492-a",
+        "tr-vector-in-array-1492-b",
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a",
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b",
+        "tr-bool-after-1498-b",
+        "tr-int-after-1498-a",
+        "tr-int-after-1498-b",
+        "tr-empty-string-after-1498-a",
+        "tr-empty-string-after-1498-b",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-b",
+        "tr-vector-length-in-array-1498-a",
+        "tr-vector-length-in-array-1498-b",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-b",
+        "tr-empty-array-or-end-1499-b",
+        "tr-bool-after-1499-a",
+        "tr-bool-after-1499-b",
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-or-null-1499-b",
+        "tr-empty-string-after-1499-a",
+        "tr-empty-string-after-1499-b",
+        "tr-int-after-1499-a",
+        "tr-int-after-1499-b",
+        "tr-null-or-false-after-1499-a",
+        "tr-null-or-false-after-1499-b",
+        "tr-vector-length-in-array-1499-a",
+        "tr-vector-length-in-array-1499-b",
+        "a-elem-a",
+        "a-elem-b",
+        "a-map-empty",
+        "a-map-a-1",
+        "v-neg-zero",
+        "v-zero",
+        "v-1",
+        "v-2",
+        "v-neg1-5",
+        "v-1-2",
+        "v-3-1",
+        "v-0-0-0",
+        "v-1-2-3",
+        "tr-vector-last-186-a",
+        "tr-vector-last-186-b",
+        "tr-vector-last-187-a",
+        "tr-vector-last-187-b",
+        "m-empty",
+        "m-key-A",
+        "m-a-null",
+        "m-neg-zero",
+        "m-zero",
+        "m-a-d-1",
+        "m-a-i-1",
+        "m-a-1-b-1",
+        "m-a-1-c-1",
+        "m-a-2",
+        "m-long-a",
+        "m-long-b",
+        "tr-map-value-493-a",
+        "tr-map-value-493-b",
+        "tr-map-value-494-a",
+        "tr-map-value-494-b",
+        "tr-map-key-494-a",
+        "tr-map-key-494-b",
+        "tr-map-key-495-a",
+        "tr-map-key-495-b",
+        "m-elem-a",
+        "m-elem-b",
+        "m-a-map",
+        "m-b-0",
+        "m-value-only",
+        "m-key-e-acute",
+        "m-key-u-e000",
+        "m-key-u-ffff",
+        "m-key-emoji",
+        "m-bson-max"
+      ],
+      "label": "v NOT_IN [NaN]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "NOT_IN",
+          "value": {
+            "arrayValue": {
+              "values": [
+                {
+                  "doubleValue": "NaN"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-bson-min",
+        "bool-false",
+        "bool-true",
+        "n-nan",
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf",
+        "t-min",
+        "t-before-epoch",
+        "t-epoch",
+        "t-epoch-999ns",
+        "t-epoch-1us",
+        "t-micros",
+        "t-nanos",
+        "t-micros-plus-1",
+        "t-max",
+        "m-bson-timestamp",
+        "s-empty",
+        "s-nul",
+        "s-A",
+        "s-a-nul",
+        "s-ab",
+        "s-b",
+        "s-t-a-1498-x",
+        "tr-string-1498-a",
+        "tr-string-1498-b",
+        "s-t-e-1498-x-ba",
+        "s-long-u-1499-x",
+        "s-long-v-1500-x",
+        "s-long-w-1500-x-a",
+        "s-long-x-1500-x-b",
+        "s-long-y-1499-x-e-acute",
+        "s-long-z-1499-x-e-circ",
+        "tr-string-1499-a",
+        "tr-string-1499-b",
+        "tr-utf8-char-1499-a",
+        "tr-utf8-char-1499-b",
+        "s-t-b-1498-x-y",
+        "s-t-c-1498-x-ya",
+        "s-t-d-1498-x-yb",
+        "s-t-f-1498-x-e-acute",
+        "tr-utf8-char-1498-a",
+        "s-t-g-1498-x-e-acute-a",
+        "tr-utf8-char-1498-b",
+        "s-t-i-1497-x-y",
+        "s-t-h-1497-x-emoji",
+        "s-e-acute",
+        "s-u-e000",
+        "s-u-ffff",
+        "s-emoji",
+        "b-empty",
+        "b-00",
+        "b-0000",
+        "b-01",
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a",
+        "b-t-b-1499-ab",
+        "b-t-c-1499-ac",
+        "tr-bytes-1499-b",
+        "b-long-v-1500",
+        "b-long-w-1500-a",
+        "b-long-x-1500-b",
+        "tr-bytes-1500-a",
+        "tr-bytes-1500-b",
+        "b-ff",
+        "b-ff00",
+        "m-bson-binary",
+        "r-other-project",
+        "r-c-id-min",
+        "r-c-id-neg-1",
+        "r-c-id-5",
+        "r-c-id-10",
+        "r-c-id-max",
+        "r-c-A",
+        "r-c-a",
+        "r-c-a-s-x",
+        "r-c-b",
+        "r-mid-a",
+        "r-mid-b",
+        "tr-ref-last-segment-1477-a",
+        "tr-ref-last-segment-1477-b",
+        "tr-ref-last-segment-1478-a",
+        "tr-ref-last-segment-1478-b",
+        "tr-ref-id-1480-a",
+        "tr-ref-id-1480-b",
+        "r-long-a",
+        "r-long-b",
+        "tr-ref-id-1481-a",
+        "tr-ref-id-1481-b",
+        "r-c-dash-b",
+        "r-other-db",
+        "m-bson-oid",
+        "g-s90-w180",
+        "g-s90-e180",
+        "g-s0.5-0",
+        "g-0-0",
+        "g-0-1",
+        "g-1-w180",
+        "g-n90-e180",
+        "m-bson-regex",
+        "a-empty",
+        "a-null",
+        "a-false",
+        "a-nan",
+        "a-neg-zero",
+        "a-zero",
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "a-i-2",
+        "a-s-a",
+        "a-long-a",
+        "a-long-b",
+        "tr-array-third-496-a",
+        "tr-array-third-496-b",
+        "tr-array-third-497-a",
+        "tr-array-third-497-b",
+        "tr-array-second-497-a",
+        "tr-array-second-497-b",
+        "tr-array-second-498-a",
+        "tr-array-second-498-b",
+        "tr-int-after-1491-a",
+        "tr-int-after-1491-b",
+        "tr-vector-in-array-1491-a",
+        "tr-vector-in-array-1491-b",
+        "tr-int-after-1492-a",
+        "tr-int-after-1492-b",
+        "tr-vector-in-array-1492-a",
+        "tr-vector-in-array-1492-b",
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a",
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b",
+        "tr-bool-after-1498-b",
+        "tr-int-after-1498-a",
+        "tr-int-after-1498-b",
+        "tr-empty-string-after-1498-a",
+        "tr-empty-string-after-1498-b",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-b",
+        "tr-vector-length-in-array-1498-a",
+        "tr-vector-length-in-array-1498-b",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-b",
+        "tr-empty-array-or-end-1499-b",
+        "tr-bool-after-1499-a",
+        "tr-bool-after-1499-b",
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-or-null-1499-b",
+        "tr-empty-string-after-1499-a",
+        "tr-empty-string-after-1499-b",
+        "tr-int-after-1499-a",
+        "tr-int-after-1499-b",
+        "tr-null-or-false-after-1499-a",
+        "tr-null-or-false-after-1499-b",
+        "tr-vector-length-in-array-1499-a",
+        "tr-vector-length-in-array-1499-b",
+        "a-elem-a",
+        "a-elem-b",
+        "a-map-empty",
+        "a-map-a-1",
+        "v-neg-zero",
+        "v-zero",
+        "v-1",
+        "v-2",
+        "v-neg1-5",
+        "v-1-2",
+        "v-3-1",
+        "v-0-0-0",
+        "v-1-2-3",
+        "tr-vector-last-186-a",
+        "tr-vector-last-186-b",
+        "tr-vector-last-187-a",
+        "tr-vector-last-187-b",
+        "m-empty",
+        "m-key-A",
+        "m-a-null",
+        "m-neg-zero",
+        "m-zero",
+        "m-a-d-1",
+        "m-a-i-1",
+        "m-a-1-b-1",
+        "m-a-1-c-1",
+        "m-a-2",
+        "m-long-a",
+        "m-long-b",
+        "tr-map-value-493-a",
+        "tr-map-value-493-b",
+        "tr-map-value-494-a",
+        "tr-map-value-494-b",
+        "tr-map-key-494-a",
+        "tr-map-key-494-b",
+        "tr-map-key-495-a",
+        "tr-map-key-495-b",
+        "m-elem-a",
+        "m-elem-b",
+        "m-a-map",
+        "m-b-0",
+        "m-value-only",
+        "m-key-e-acute",
+        "m-key-u-e000",
+        "m-key-u-ffff",
+        "m-key-emoji",
+        "m-bson-max"
+      ],
+      "label": "v NOT_IN [int 1, \"a\"]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "NOT_IN",
+          "value": {
+            "arrayValue": {
+              "values": [
+                {
+                  "integerValue": "1"
+                },
+                {
+                  "stringValue": "a"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1"
+      ],
+      "label": "v IN [null, int 1]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "IN",
+          "value": {
+            "arrayValue": {
+              "values": [
+                {
+                  "nullValue": null
+                },
+                {
+                  "integerValue": "1"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v IN [NaN]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "IN",
+          "value": {
+            "arrayValue": {
+              "values": [
+                {
+                  "doubleValue": "NaN"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [],
+      "label": "v IN [NaN, null]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "IN",
+          "value": {
+            "arrayValue": {
+              "values": [
+                {
+                  "doubleValue": "NaN"
+                },
+                {
+                  "nullValue": null
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "n-nan"
+      ],
+      "label": "v IS_NAN",
+      "request": {
+        "unaryFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "IS_NAN"
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-bson-min",
+        "bool-false",
+        "bool-true",
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf",
+        "t-min",
+        "t-before-epoch",
+        "t-epoch",
+        "t-epoch-999ns",
+        "t-epoch-1us",
+        "t-micros",
+        "t-nanos",
+        "t-micros-plus-1",
+        "t-max",
+        "m-bson-timestamp",
+        "s-empty",
+        "s-nul",
+        "s-A",
+        "s-a",
+        "s-a-nul",
+        "s-ab",
+        "s-b",
+        "s-t-a-1498-x",
+        "tr-string-1498-a",
+        "tr-string-1498-b",
+        "s-t-e-1498-x-ba",
+        "s-long-u-1499-x",
+        "s-long-v-1500-x",
+        "s-long-w-1500-x-a",
+        "s-long-x-1500-x-b",
+        "s-long-y-1499-x-e-acute",
+        "s-long-z-1499-x-e-circ",
+        "tr-string-1499-a",
+        "tr-string-1499-b",
+        "tr-utf8-char-1499-a",
+        "tr-utf8-char-1499-b",
+        "s-t-b-1498-x-y",
+        "s-t-c-1498-x-ya",
+        "s-t-d-1498-x-yb",
+        "s-t-f-1498-x-e-acute",
+        "tr-utf8-char-1498-a",
+        "s-t-g-1498-x-e-acute-a",
+        "tr-utf8-char-1498-b",
+        "s-t-i-1497-x-y",
+        "s-t-h-1497-x-emoji",
+        "s-e-acute",
+        "s-u-e000",
+        "s-u-ffff",
+        "s-emoji",
+        "b-empty",
+        "b-00",
+        "b-0000",
+        "b-01",
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a",
+        "b-t-b-1499-ab",
+        "b-t-c-1499-ac",
+        "tr-bytes-1499-b",
+        "b-long-v-1500",
+        "b-long-w-1500-a",
+        "b-long-x-1500-b",
+        "tr-bytes-1500-a",
+        "tr-bytes-1500-b",
+        "b-ff",
+        "b-ff00",
+        "m-bson-binary",
+        "r-other-project",
+        "r-c-id-min",
+        "r-c-id-neg-1",
+        "r-c-id-5",
+        "r-c-id-10",
+        "r-c-id-max",
+        "r-c-A",
+        "r-c-a",
+        "r-c-a-s-x",
+        "r-c-b",
+        "r-mid-a",
+        "r-mid-b",
+        "tr-ref-last-segment-1477-a",
+        "tr-ref-last-segment-1477-b",
+        "tr-ref-last-segment-1478-a",
+        "tr-ref-last-segment-1478-b",
+        "tr-ref-id-1480-a",
+        "tr-ref-id-1480-b",
+        "r-long-a",
+        "r-long-b",
+        "tr-ref-id-1481-a",
+        "tr-ref-id-1481-b",
+        "r-c-dash-b",
+        "r-other-db",
+        "m-bson-oid",
+        "g-s90-w180",
+        "g-s90-e180",
+        "g-s0.5-0",
+        "g-0-0",
+        "g-0-1",
+        "g-1-w180",
+        "g-n90-e180",
+        "m-bson-regex",
+        "a-empty",
+        "a-null",
+        "a-false",
+        "a-nan",
+        "a-neg-zero",
+        "a-zero",
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "a-i-2",
+        "a-s-a",
+        "a-long-a",
+        "a-long-b",
+        "tr-array-third-496-a",
+        "tr-array-third-496-b",
+        "tr-array-third-497-a",
+        "tr-array-third-497-b",
+        "tr-array-second-497-a",
+        "tr-array-second-497-b",
+        "tr-array-second-498-a",
+        "tr-array-second-498-b",
+        "tr-int-after-1491-a",
+        "tr-int-after-1491-b",
+        "tr-vector-in-array-1491-a",
+        "tr-vector-in-array-1491-b",
+        "tr-int-after-1492-a",
+        "tr-int-after-1492-b",
+        "tr-vector-in-array-1492-a",
+        "tr-vector-in-array-1492-b",
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a",
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b",
+        "tr-bool-after-1498-b",
+        "tr-int-after-1498-a",
+        "tr-int-after-1498-b",
+        "tr-empty-string-after-1498-a",
+        "tr-empty-string-after-1498-b",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-b",
+        "tr-vector-length-in-array-1498-a",
+        "tr-vector-length-in-array-1498-b",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-b",
+        "tr-empty-array-or-end-1499-b",
+        "tr-bool-after-1499-a",
+        "tr-bool-after-1499-b",
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-or-null-1499-b",
+        "tr-empty-string-after-1499-a",
+        "tr-empty-string-after-1499-b",
+        "tr-int-after-1499-a",
+        "tr-int-after-1499-b",
+        "tr-null-or-false-after-1499-a",
+        "tr-null-or-false-after-1499-b",
+        "tr-vector-length-in-array-1499-a",
+        "tr-vector-length-in-array-1499-b",
+        "a-elem-a",
+        "a-elem-b",
+        "a-map-empty",
+        "a-map-a-1",
+        "v-neg-zero",
+        "v-zero",
+        "v-1",
+        "v-2",
+        "v-neg1-5",
+        "v-1-2",
+        "v-3-1",
+        "v-0-0-0",
+        "v-1-2-3",
+        "tr-vector-last-186-a",
+        "tr-vector-last-186-b",
+        "tr-vector-last-187-a",
+        "tr-vector-last-187-b",
+        "m-empty",
+        "m-key-A",
+        "m-a-null",
+        "m-neg-zero",
+        "m-zero",
+        "m-a-d-1",
+        "m-a-i-1",
+        "m-a-1-b-1",
+        "m-a-1-c-1",
+        "m-a-2",
+        "m-long-a",
+        "m-long-b",
+        "tr-map-value-493-a",
+        "tr-map-value-493-b",
+        "tr-map-value-494-a",
+        "tr-map-value-494-b",
+        "tr-map-key-494-a",
+        "tr-map-key-494-b",
+        "tr-map-key-495-a",
+        "tr-map-key-495-b",
+        "m-elem-a",
+        "m-elem-b",
+        "m-a-map",
+        "m-b-0",
+        "m-value-only",
+        "m-key-e-acute",
+        "m-key-u-e000",
+        "m-key-u-ffff",
+        "m-key-emoji",
+        "m-bson-max"
+      ],
+      "label": "v IS_NOT_NAN",
+      "request": {
+        "unaryFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "IS_NOT_NAN"
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "null"
+      ],
+      "label": "v IS_NULL",
+      "request": {
+        "unaryFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "IS_NULL"
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "m-bson-min",
+        "bool-false",
+        "bool-true",
+        "n-nan",
+        "n-neg-inf",
+        "n-d-neg-max",
+        "n-d-below-neg-2p63",
+        "n-d-neg-2p63",
+        "n-i-min",
+        "n-i-min-plus-1",
+        "n-i-neg-2p53-minus-1",
+        "n-d-neg-2p53",
+        "n-d-neg-1.5",
+        "n-d-neg-1",
+        "n-i-neg-1",
+        "n-d-neg-min",
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero",
+        "n-d-min",
+        "n-d-0.5",
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1",
+        "m-bson-decimal",
+        "n-d-1.5",
+        "n-i-2",
+        "n-d-2p53",
+        "n-i-2p53",
+        "n-i-2p53-plus-1",
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2",
+        "n-d-below-2p63",
+        "n-i-max-minus-1",
+        "n-i-max",
+        "n-d-2p63",
+        "n-d-1e300",
+        "n-d-max",
+        "n-pos-inf",
+        "t-min",
+        "t-before-epoch",
+        "t-epoch",
+        "t-epoch-999ns",
+        "t-epoch-1us",
+        "t-micros",
+        "t-nanos",
+        "t-micros-plus-1",
+        "t-max",
+        "m-bson-timestamp",
+        "s-empty",
+        "s-nul",
+        "s-A",
+        "s-a",
+        "s-a-nul",
+        "s-ab",
+        "s-b",
+        "s-t-a-1498-x",
+        "tr-string-1498-a",
+        "tr-string-1498-b",
+        "s-t-e-1498-x-ba",
+        "s-long-u-1499-x",
+        "s-long-v-1500-x",
+        "s-long-w-1500-x-a",
+        "s-long-x-1500-x-b",
+        "s-long-y-1499-x-e-acute",
+        "s-long-z-1499-x-e-circ",
+        "tr-string-1499-a",
+        "tr-string-1499-b",
+        "tr-utf8-char-1499-a",
+        "tr-utf8-char-1499-b",
+        "s-t-b-1498-x-y",
+        "s-t-c-1498-x-ya",
+        "s-t-d-1498-x-yb",
+        "s-t-f-1498-x-e-acute",
+        "tr-utf8-char-1498-a",
+        "s-t-g-1498-x-e-acute-a",
+        "tr-utf8-char-1498-b",
+        "s-t-i-1497-x-y",
+        "s-t-h-1497-x-emoji",
+        "s-e-acute",
+        "s-u-e000",
+        "s-u-ffff",
+        "s-emoji",
+        "b-empty",
+        "b-00",
+        "b-0000",
+        "b-01",
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a",
+        "b-t-b-1499-ab",
+        "b-t-c-1499-ac",
+        "tr-bytes-1499-b",
+        "b-long-v-1500",
+        "b-long-w-1500-a",
+        "b-long-x-1500-b",
+        "tr-bytes-1500-a",
+        "tr-bytes-1500-b",
+        "b-ff",
+        "b-ff00",
+        "m-bson-binary",
+        "r-other-project",
+        "r-c-id-min",
+        "r-c-id-neg-1",
+        "r-c-id-5",
+        "r-c-id-10",
+        "r-c-id-max",
+        "r-c-A",
+        "r-c-a",
+        "r-c-a-s-x",
+        "r-c-b",
+        "r-mid-a",
+        "r-mid-b",
+        "tr-ref-last-segment-1477-a",
+        "tr-ref-last-segment-1477-b",
+        "tr-ref-last-segment-1478-a",
+        "tr-ref-last-segment-1478-b",
+        "tr-ref-id-1480-a",
+        "tr-ref-id-1480-b",
+        "r-long-a",
+        "r-long-b",
+        "tr-ref-id-1481-a",
+        "tr-ref-id-1481-b",
+        "r-c-dash-b",
+        "r-other-db",
+        "m-bson-oid",
+        "g-s90-w180",
+        "g-s90-e180",
+        "g-s0.5-0",
+        "g-0-0",
+        "g-0-1",
+        "g-1-w180",
+        "g-n90-e180",
+        "m-bson-regex",
+        "a-empty",
+        "a-null",
+        "a-false",
+        "a-nan",
+        "a-neg-zero",
+        "a-zero",
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "a-i-2",
+        "a-s-a",
+        "a-long-a",
+        "a-long-b",
+        "tr-array-third-496-a",
+        "tr-array-third-496-b",
+        "tr-array-third-497-a",
+        "tr-array-third-497-b",
+        "tr-array-second-497-a",
+        "tr-array-second-497-b",
+        "tr-array-second-498-a",
+        "tr-array-second-498-b",
+        "tr-int-after-1491-a",
+        "tr-int-after-1491-b",
+        "tr-vector-in-array-1491-a",
+        "tr-vector-in-array-1491-b",
+        "tr-int-after-1492-a",
+        "tr-int-after-1492-b",
+        "tr-vector-in-array-1492-a",
+        "tr-vector-in-array-1492-b",
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a",
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b",
+        "tr-bool-after-1498-b",
+        "tr-int-after-1498-a",
+        "tr-int-after-1498-b",
+        "tr-empty-string-after-1498-a",
+        "tr-empty-string-after-1498-b",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-b",
+        "tr-vector-length-in-array-1498-a",
+        "tr-vector-length-in-array-1498-b",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-b",
+        "tr-empty-array-or-end-1499-b",
+        "tr-bool-after-1499-a",
+        "tr-bool-after-1499-b",
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-or-null-1499-b",
+        "tr-empty-string-after-1499-a",
+        "tr-empty-string-after-1499-b",
+        "tr-int-after-1499-a",
+        "tr-int-after-1499-b",
+        "tr-null-or-false-after-1499-a",
+        "tr-null-or-false-after-1499-b",
+        "tr-vector-length-in-array-1499-a",
+        "tr-vector-length-in-array-1499-b",
+        "a-elem-a",
+        "a-elem-b",
+        "a-map-empty",
+        "a-map-a-1",
+        "v-neg-zero",
+        "v-zero",
+        "v-1",
+        "v-2",
+        "v-neg1-5",
+        "v-1-2",
+        "v-3-1",
+        "v-0-0-0",
+        "v-1-2-3",
+        "tr-vector-last-186-a",
+        "tr-vector-last-186-b",
+        "tr-vector-last-187-a",
+        "tr-vector-last-187-b",
+        "m-empty",
+        "m-key-A",
+        "m-a-null",
+        "m-neg-zero",
+        "m-zero",
+        "m-a-d-1",
+        "m-a-i-1",
+        "m-a-1-b-1",
+        "m-a-1-c-1",
+        "m-a-2",
+        "m-long-a",
+        "m-long-b",
+        "tr-map-value-493-a",
+        "tr-map-value-493-b",
+        "tr-map-value-494-a",
+        "tr-map-value-494-b",
+        "tr-map-key-494-a",
+        "tr-map-key-494-b",
+        "tr-map-key-495-a",
+        "tr-map-key-495-b",
+        "m-elem-a",
+        "m-elem-b",
+        "m-a-map",
+        "m-b-0",
+        "m-value-only",
+        "m-key-e-acute",
+        "m-key-u-e000",
+        "m-key-u-ffff",
+        "m-key-emoji",
+        "m-bson-max"
+      ],
+      "label": "v IS_NOT_NULL",
+      "request": {
+        "unaryFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "IS_NOT_NULL"
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "tr-int-after-1491-a",
+        "tr-int-after-1492-a",
+        "tr-int-after-1498-a",
+        "tr-int-after-1499-a"
+      ],
+      "label": "v ARRAY_CONTAINS int 1",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "ARRAY_CONTAINS",
+          "value": {
+            "integerValue": "1"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "tr-int-after-1491-a",
+        "tr-int-after-1492-a",
+        "tr-int-after-1498-a",
+        "tr-int-after-1499-a"
+      ],
+      "label": "v ARRAY_CONTAINS double 1.0",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "ARRAY_CONTAINS",
+          "value": {
+            "doubleValue": 1
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-arrays-1498-b"
+      ],
+      "label": "v ARRAY_CONTAINS null",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "ARRAY_CONTAINS",
+          "value": {
+            "nullValue": null
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-arrays-1498-b"
+      ],
+      "label": "v ARRAY_CONTAINS NaN",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "ARRAY_CONTAINS",
+          "value": {
+            "doubleValue": "NaN"
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "a-false",
+        "tr-bool-after-1498-a",
+        "tr-bool-after-1499-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-null-or-false-after-1498-b",
+        "tr-null-or-false-after-1499-b"
+      ],
+      "label": "v ARRAY_CONTAINS false",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "ARRAY_CONTAINS",
+          "value": {
+            "booleanValue": false
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "a-map-empty",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-b"
+      ],
+      "label": "v ARRAY_CONTAINS {}",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "ARRAY_CONTAINS",
+          "value": {
+            "mapValue": {}
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "a-map-a-1"
+      ],
+      "label": "v ARRAY_CONTAINS {a: 1}",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "ARRAY_CONTAINS",
+          "value": {
+            "mapValue": {
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "a-d-1",
+        "a-i-1",
+        "a-i-1-i-2",
+        "a-i-1-s-a",
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-arrays-1498-b",
+        "tr-int-after-1491-a",
+        "tr-int-after-1492-a",
+        "tr-int-after-1498-a",
+        "tr-int-after-1499-a"
+      ],
+      "label": "v ARRAY_CONTAINS_ANY [int 1, null]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "ARRAY_CONTAINS_ANY",
+          "value": {
+            "arrayValue": {
+              "values": [
+                {
+                  "integerValue": "1"
+                },
+                {
+                  "nullValue": null
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-or-end-1499-a",
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-array-or-null-1499-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-array-then-bool-1498-b",
+        "tr-empty-arrays-1498-a",
+        "tr-empty-arrays-1498-b"
+      ],
+      "label": "v ARRAY_CONTAINS_ANY [NaN]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "ARRAY_CONTAINS_ANY",
+          "value": {
+            "arrayValue": {
+              "values": [
+                {
+                  "doubleValue": "NaN"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "http": 200,
+      "ids": [
+        "a-false",
+        "a-i-1-s-a",
+        "a-long-a",
+        "a-s-a",
+        "tr-array-third-496-a",
+        "tr-array-third-497-a",
+        "tr-bool-after-1498-a",
+        "tr-bool-after-1499-a",
+        "tr-empty-array-then-bool-1498-a",
+        "tr-empty-map-then-bool-1498-a",
+        "tr-empty-string-after-1498-b",
+        "tr-empty-string-after-1499-b",
+        "tr-null-or-false-after-1498-b",
+        "tr-null-or-false-after-1499-b"
+      ],
+      "label": "v ARRAY_CONTAINS_ANY [\"a\", false]",
+      "request": {
+        "fieldFilter": {
+          "field": {
+            "fieldPath": "v"
+          },
+          "op": "ARRAY_CONTAINS_ANY",
+          "value": {
+            "arrayValue": {
+              "values": [
+                {
+                  "stringValue": "a"
+                },
+                {
+                  "booleanValue": false
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-values.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply.",
+      "Only values, document ids, HTTP statuses and error statuses and messages are recorded; they are exact.",
+      "Documents and value encoding as in values-order.json (collection aruma-ref-values, field v).",
+      "equal[id]: runQuery where v EQUAL (the stored value of id); in[id]: where v IN [that value]. Each lists the ids returned (in __name__ order), or the error. These are raw requests: the SDKs rewrite == NaN and == null to IS_NAN / IS_NULL, the server sees EQUAL here.",
+      "filters: other operators with the request and the ids returned."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T16:35:04.909Z .. 2026-10-26T16:42:32.336Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "api": "firestore.googleapis.com REST v1",
+      "firebase-tools (auth only)": "13.23.0",
+      "generator sha256": "d04c839c74a2530b436f666c1acc03e6e3720bc6fbd1979f3d7b9b64e4157f42",
+      "node": "v24.21.0"
+    }
+  },
+  "in": {
+    "a-d-1": {
+      "http": 200,
+      "ids": [
+        "a-d-1",
+        "a-i-1"
+      ]
+    },
+    "a-elem-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "a-elem-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "a-empty": {
+      "http": 200,
+      "ids": [
+        "a-empty"
+      ]
+    },
+    "a-false": {
+      "http": 200,
+      "ids": [
+        "a-false"
+      ]
+    },
+    "a-i-1": {
+      "http": 200,
+      "ids": [
+        "a-d-1",
+        "a-i-1"
+      ]
+    },
+    "a-i-1-i-2": {
+      "http": 200,
+      "ids": [
+        "a-i-1-i-2"
+      ]
+    },
+    "a-i-1-s-a": {
+      "http": 200,
+      "ids": [
+        "a-i-1-s-a"
+      ]
+    },
+    "a-i-2": {
+      "http": 200,
+      "ids": [
+        "a-i-2"
+      ]
+    },
+    "a-long-a": {
+      "http": 200,
+      "ids": [
+        "a-long-a"
+      ]
+    },
+    "a-long-b": {
+      "http": 200,
+      "ids": [
+        "a-long-b"
+      ]
+    },
+    "a-map-a-1": {
+      "http": 200,
+      "ids": [
+        "a-map-a-1"
+      ]
+    },
+    "a-map-empty": {
+      "http": 200,
+      "ids": [
+        "a-map-empty"
+      ]
+    },
+    "a-nan": {
+      "http": 200,
+      "ids": [
+        "a-nan"
+      ]
+    },
+    "a-neg-zero": {
+      "http": 200,
+      "ids": [
+        "a-neg-zero",
+        "a-zero"
+      ]
+    },
+    "a-null": {
+      "http": 200,
+      "ids": [
+        "a-null"
+      ]
+    },
+    "a-s-a": {
+      "http": 200,
+      "ids": [
+        "a-s-a"
+      ]
+    },
+    "a-zero": {
+      "http": 200,
+      "ids": [
+        "a-neg-zero",
+        "a-zero"
+      ]
+    },
+    "b-00": {
+      "http": 200,
+      "ids": [
+        "b-00"
+      ]
+    },
+    "b-0000": {
+      "http": 200,
+      "ids": [
+        "b-0000"
+      ]
+    },
+    "b-01": {
+      "http": 200,
+      "ids": [
+        "b-01"
+      ]
+    },
+    "b-empty": {
+      "http": 200,
+      "ids": [
+        "b-empty"
+      ]
+    },
+    "b-ff": {
+      "http": 200,
+      "ids": [
+        "b-ff"
+      ]
+    },
+    "b-ff00": {
+      "http": 200,
+      "ids": [
+        "b-ff00"
+      ]
+    },
+    "b-long-v-1500": {
+      "http": 200,
+      "ids": [
+        "b-long-v-1500"
+      ]
+    },
+    "b-long-w-1500-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "b-long-x-1500-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "b-t-a-1499-a": {
+      "http": 200,
+      "ids": [
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a"
+      ]
+    },
+    "b-t-b-1499-ab": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "b-t-c-1499-ac": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "bool-false": {
+      "http": 200,
+      "ids": [
+        "bool-false"
+      ]
+    },
+    "bool-true": {
+      "http": 200,
+      "ids": [
+        "bool-true"
+      ]
+    },
+    "g-0-0": {
+      "http": 200,
+      "ids": [
+        "g-0-0"
+      ]
+    },
+    "g-0-1": {
+      "http": 200,
+      "ids": [
+        "g-0-1"
+      ]
+    },
+    "g-1-w180": {
+      "http": 200,
+      "ids": [
+        "g-1-w180"
+      ]
+    },
+    "g-n90-e180": {
+      "http": 200,
+      "ids": [
+        "g-n90-e180"
+      ]
+    },
+    "g-s0.5-0": {
+      "http": 200,
+      "ids": [
+        "g-s0.5-0"
+      ]
+    },
+    "g-s90-e180": {
+      "http": 200,
+      "ids": [
+        "g-s90-e180"
+      ]
+    },
+    "g-s90-w180": {
+      "http": 200,
+      "ids": [
+        "g-s90-w180"
+      ]
+    },
+    "m-a-1-b-1": {
+      "http": 200,
+      "ids": [
+        "m-a-1-b-1"
+      ]
+    },
+    "m-a-1-c-1": {
+      "http": 200,
+      "ids": [
+        "m-a-1-c-1"
+      ]
+    },
+    "m-a-2": {
+      "http": 200,
+      "ids": [
+        "m-a-2"
+      ]
+    },
+    "m-a-d-1": {
+      "http": 200,
+      "ids": [
+        "m-a-d-1",
+        "m-a-i-1"
+      ]
+    },
+    "m-a-i-1": {
+      "http": 200,
+      "ids": [
+        "m-a-d-1",
+        "m-a-i-1"
+      ]
+    },
+    "m-a-map": {
+      "http": 200,
+      "ids": [
+        "m-a-map"
+      ]
+    },
+    "m-a-null": {
+      "http": 200,
+      "ids": [
+        "m-a-null"
+      ]
+    },
+    "m-b-0": {
+      "http": 200,
+      "ids": [
+        "m-b-0"
+      ]
+    },
+    "m-bson-binary": {
+      "http": 200,
+      "ids": [
+        "m-bson-binary"
+      ]
+    },
+    "m-bson-decimal": {
+      "http": 200,
+      "ids": [
+        "m-bson-decimal",
+        "n-d-1.5"
+      ]
+    },
+    "m-bson-int": {
+      "http": 200,
+      "ids": [
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1"
+      ]
+    },
+    "m-bson-max": {
+      "http": 200,
+      "ids": [
+        "m-bson-max"
+      ]
+    },
+    "m-bson-min": {
+      "http": 200,
+      "ids": [
+        "m-bson-min"
+      ]
+    },
+    "m-bson-oid": {
+      "http": 200,
+      "ids": [
+        "m-bson-oid"
+      ]
+    },
+    "m-bson-regex": {
+      "http": 200,
+      "ids": [
+        "m-bson-regex"
+      ]
+    },
+    "m-bson-timestamp": {
+      "http": 200,
+      "ids": [
+        "m-bson-timestamp"
+      ]
+    },
+    "m-elem-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "m-elem-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "m-empty": {
+      "http": 200,
+      "ids": [
+        "m-empty"
+      ]
+    },
+    "m-key-A": {
+      "http": 200,
+      "ids": [
+        "m-key-A"
+      ]
+    },
+    "m-key-e-acute": {
+      "http": 200,
+      "ids": [
+        "m-key-e-acute"
+      ]
+    },
+    "m-key-emoji": {
+      "http": 200,
+      "ids": [
+        "m-key-emoji"
+      ]
+    },
+    "m-key-u-e000": {
+      "http": 200,
+      "ids": [
+        "m-key-u-e000"
+      ]
+    },
+    "m-key-u-ffff": {
+      "http": 200,
+      "ids": [
+        "m-key-u-ffff"
+      ]
+    },
+    "m-long-a": {
+      "http": 200,
+      "ids": [
+        "m-long-a"
+      ]
+    },
+    "m-long-b": {
+      "http": 200,
+      "ids": [
+        "m-long-b"
+      ]
+    },
+    "m-neg-zero": {
+      "http": 200,
+      "ids": [
+        "m-neg-zero",
+        "m-zero"
+      ]
+    },
+    "m-value-only": {
+      "http": 200,
+      "ids": [
+        "m-value-only"
+      ]
+    },
+    "m-zero": {
+      "http": 200,
+      "ids": [
+        "m-neg-zero",
+        "m-zero"
+      ]
+    },
+    "n-d-0.5": {
+      "http": 200,
+      "ids": [
+        "n-d-0.5"
+      ]
+    },
+    "n-d-1": {
+      "http": 200,
+      "ids": [
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1"
+      ]
+    },
+    "n-d-1.5": {
+      "http": 200,
+      "ids": [
+        "m-bson-decimal",
+        "n-d-1.5"
+      ]
+    },
+    "n-d-1e300": {
+      "http": 200,
+      "ids": [
+        "n-d-1e300"
+      ]
+    },
+    "n-d-2p53": {
+      "http": 200,
+      "ids": [
+        "n-d-2p53",
+        "n-i-2p53"
+      ]
+    },
+    "n-d-2p53-plus-2": {
+      "http": 200,
+      "ids": [
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2"
+      ]
+    },
+    "n-d-2p63": {
+      "http": 200,
+      "ids": [
+        "n-d-2p63"
+      ]
+    },
+    "n-d-below-2p63": {
+      "http": 200,
+      "ids": [
+        "n-d-below-2p63"
+      ]
+    },
+    "n-d-below-neg-2p63": {
+      "http": 200,
+      "ids": [
+        "n-d-below-neg-2p63"
+      ]
+    },
+    "n-d-max": {
+      "http": 200,
+      "ids": [
+        "n-d-max"
+      ]
+    },
+    "n-d-min": {
+      "http": 200,
+      "ids": [
+        "n-d-min"
+      ]
+    },
+    "n-d-neg-1": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-1",
+        "n-i-neg-1"
+      ]
+    },
+    "n-d-neg-1.5": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-1.5"
+      ]
+    },
+    "n-d-neg-2p53": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-2p53"
+      ]
+    },
+    "n-d-neg-2p63": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-2p63",
+        "n-i-min"
+      ]
+    },
+    "n-d-neg-max": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-max"
+      ]
+    },
+    "n-d-neg-min": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-min"
+      ]
+    },
+    "n-d-neg-zero": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero"
+      ]
+    },
+    "n-d-zero": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero"
+      ]
+    },
+    "n-i-1": {
+      "http": 200,
+      "ids": [
+        "m-bson-int",
+        "n-d-1",
+        "n-i-1"
+      ]
+    },
+    "n-i-2": {
+      "http": 200,
+      "ids": [
+        "n-i-2"
+      ]
+    },
+    "n-i-2p53": {
+      "http": 200,
+      "ids": [
+        "n-d-2p53",
+        "n-i-2p53"
+      ]
+    },
+    "n-i-2p53-plus-1": {
+      "http": 200,
+      "ids": [
+        "n-i-2p53-plus-1"
+      ]
+    },
+    "n-i-2p53-plus-2": {
+      "http": 200,
+      "ids": [
+        "n-d-2p53-plus-2",
+        "n-i-2p53-plus-2"
+      ]
+    },
+    "n-i-max": {
+      "http": 200,
+      "ids": [
+        "n-i-max"
+      ]
+    },
+    "n-i-max-minus-1": {
+      "http": 200,
+      "ids": [
+        "n-i-max-minus-1"
+      ]
+    },
+    "n-i-min": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-2p63",
+        "n-i-min"
+      ]
+    },
+    "n-i-min-plus-1": {
+      "http": 200,
+      "ids": [
+        "n-i-min-plus-1"
+      ]
+    },
+    "n-i-neg-1": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-1",
+        "n-i-neg-1"
+      ]
+    },
+    "n-i-neg-2p53-minus-1": {
+      "http": 200,
+      "ids": [
+        "n-i-neg-2p53-minus-1"
+      ]
+    },
+    "n-i-zero": {
+      "http": 200,
+      "ids": [
+        "n-d-neg-zero",
+        "n-d-zero",
+        "n-i-zero"
+      ]
+    },
+    "n-nan": {
+      "http": 200,
+      "ids": []
+    },
+    "n-neg-inf": {
+      "http": 200,
+      "ids": [
+        "n-neg-inf"
+      ]
+    },
+    "n-pos-inf": {
+      "http": 200,
+      "ids": [
+        "n-pos-inf"
+      ]
+    },
+    "null": {
+      "http": 200,
+      "ids": []
+    },
+    "r-c-A": {
+      "http": 200,
+      "ids": [
+        "r-c-A"
+      ]
+    },
+    "r-c-a": {
+      "http": 200,
+      "ids": [
+        "r-c-a"
+      ]
+    },
+    "r-c-a-s-x": {
+      "http": 200,
+      "ids": [
+        "r-c-a-s-x"
+      ]
+    },
+    "r-c-b": {
+      "http": 200,
+      "ids": [
+        "r-c-b"
+      ]
+    },
+    "r-c-dash-b": {
+      "http": 200,
+      "ids": [
+        "r-c-dash-b"
+      ]
+    },
+    "r-c-id-10": {
+      "http": 200,
+      "ids": [
+        "r-c-id-10"
+      ]
+    },
+    "r-c-id-5": {
+      "http": 200,
+      "ids": [
+        "r-c-id-5"
+      ]
+    },
+    "r-c-id-max": {
+      "http": 200,
+      "ids": [
+        "r-c-id-max"
+      ]
+    },
+    "r-c-id-min": {
+      "http": 200,
+      "ids": [
+        "r-c-id-min"
+      ]
+    },
+    "r-c-id-neg-1": {
+      "http": 200,
+      "ids": [
+        "r-c-id-neg-1"
+      ]
+    },
+    "r-long-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "r-long-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "r-mid-a": {
+      "http": 200,
+      "ids": [
+        "r-mid-a"
+      ]
+    },
+    "r-mid-b": {
+      "http": 200,
+      "ids": [
+        "r-mid-b"
+      ]
+    },
+    "r-other-db": {
+      "http": 200,
+      "ids": [
+        "r-other-db"
+      ]
+    },
+    "r-other-project": {
+      "http": 200,
+      "ids": [
+        "r-other-project"
+      ]
+    },
+    "s-A": {
+      "http": 200,
+      "ids": [
+        "s-A"
+      ]
+    },
+    "s-a": {
+      "http": 200,
+      "ids": [
+        "s-a"
+      ]
+    },
+    "s-a-nul": {
+      "http": 200,
+      "ids": [
+        "s-a-nul"
+      ]
+    },
+    "s-ab": {
+      "http": 200,
+      "ids": [
+        "s-ab"
+      ]
+    },
+    "s-b": {
+      "http": 200,
+      "ids": [
+        "s-b"
+      ]
+    },
+    "s-e-acute": {
+      "http": 200,
+      "ids": [
+        "s-e-acute"
+      ]
+    },
+    "s-emoji": {
+      "http": 200,
+      "ids": [
+        "s-emoji"
+      ]
+    },
+    "s-empty": {
+      "http": 200,
+      "ids": [
+        "s-empty"
+      ]
+    },
+    "s-long-u-1499-x": {
+      "http": 200,
+      "ids": [
+        "s-long-u-1499-x"
+      ]
+    },
+    "s-long-v-1500-x": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-long-w-1500-x-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-long-x-1500-x-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-long-y-1499-x-e-acute": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-long-z-1499-x-e-circ": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-nul": {
+      "http": 200,
+      "ids": [
+        "s-nul"
+      ]
+    },
+    "s-t-a-1498-x": {
+      "http": 200,
+      "ids": [
+        "s-t-a-1498-x"
+      ]
+    },
+    "s-t-b-1498-x-y": {
+      "http": 200,
+      "ids": [
+        "s-t-b-1498-x-y"
+      ]
+    },
+    "s-t-c-1498-x-ya": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-t-d-1498-x-yb": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-t-e-1498-x-ba": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-t-f-1498-x-e-acute": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-t-g-1498-x-e-acute-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-t-h-1497-x-emoji": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "s-t-i-1497-x-y": {
+      "http": 200,
+      "ids": [
+        "s-t-i-1497-x-y"
+      ]
+    },
+    "s-u-e000": {
+      "http": 200,
+      "ids": [
+        "s-u-e000"
+      ]
+    },
+    "s-u-ffff": {
+      "http": 200,
+      "ids": [
+        "s-u-ffff"
+      ]
+    },
+    "t-before-epoch": {
+      "http": 200,
+      "ids": [
+        "t-before-epoch"
+      ]
+    },
+    "t-epoch": {
+      "http": 200,
+      "ids": [
+        "t-epoch",
+        "t-epoch-999ns"
+      ]
+    },
+    "t-epoch-1us": {
+      "http": 200,
+      "ids": [
+        "t-epoch-1us"
+      ]
+    },
+    "t-epoch-999ns": {
+      "http": 200,
+      "ids": [
+        "t-epoch",
+        "t-epoch-999ns"
+      ]
+    },
+    "t-max": {
+      "http": 200,
+      "ids": [
+        "t-max"
+      ]
+    },
+    "t-micros": {
+      "http": 200,
+      "ids": [
+        "t-micros",
+        "t-nanos"
+      ]
+    },
+    "t-micros-plus-1": {
+      "http": 200,
+      "ids": [
+        "t-micros-plus-1"
+      ]
+    },
+    "t-min": {
+      "http": 200,
+      "ids": [
+        "t-min"
+      ]
+    },
+    "t-nanos": {
+      "http": 200,
+      "ids": [
+        "t-micros",
+        "t-nanos"
+      ]
+    },
+    "tr-array-second-497-a": {
+      "http": 200,
+      "ids": [
+        "tr-array-second-497-a"
+      ]
+    },
+    "tr-array-second-497-b": {
+      "http": 200,
+      "ids": [
+        "tr-array-second-497-b"
+      ]
+    },
+    "tr-array-second-498-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-array-second-498-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-array-third-496-a": {
+      "http": 200,
+      "ids": [
+        "tr-array-third-496-a"
+      ]
+    },
+    "tr-array-third-496-b": {
+      "http": 200,
+      "ids": [
+        "tr-array-third-496-b"
+      ]
+    },
+    "tr-array-third-497-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-array-third-497-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-bool-after-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b"
+      ]
+    },
+    "tr-bool-after-1498-b": {
+      "http": 200,
+      "ids": [
+        "tr-bool-after-1498-b"
+      ]
+    },
+    "tr-bool-after-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-bool-after-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-bytes-1499-a": {
+      "http": 200,
+      "ids": [
+        "b-t-a-1499-a",
+        "tr-bytes-1499-a"
+      ]
+    },
+    "tr-bytes-1499-b": {
+      "http": 200,
+      "ids": [
+        "tr-bytes-1499-b"
+      ]
+    },
+    "tr-bytes-1500-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-bytes-1500-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-empty-array-or-end-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-empty-array-or-end-1499-b": {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-or-end-1499-b"
+      ]
+    },
+    "tr-empty-array-or-null-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a"
+      ]
+    },
+    "tr-empty-array-or-null-1498-b": {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a"
+      ]
+    },
+    "tr-empty-array-or-null-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-empty-array-or-null-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-empty-array-then-bool-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-then-bool-1498-a"
+      ]
+    },
+    "tr-empty-array-then-bool-1498-b": {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-then-bool-1498-b"
+      ]
+    },
+    "tr-empty-arrays-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-or-null-1498-a",
+        "tr-empty-arrays-1498-a"
+      ]
+    },
+    "tr-empty-arrays-1498-b": {
+      "http": 200,
+      "ids": [
+        "tr-empty-arrays-1498-b"
+      ]
+    },
+    "tr-empty-map-then-bool-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-empty-map-then-bool-1498-a"
+      ]
+    },
+    "tr-empty-map-then-bool-1498-b": {
+      "http": 200,
+      "ids": [
+        "tr-empty-map-then-bool-1498-b"
+      ]
+    },
+    "tr-empty-string-after-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-empty-string-after-1498-a"
+      ]
+    },
+    "tr-empty-string-after-1498-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-empty-string-after-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-empty-string-after-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-int-after-1491-a": {
+      "http": 200,
+      "ids": [
+        "tr-int-after-1491-a"
+      ]
+    },
+    "tr-int-after-1491-b": {
+      "http": 200,
+      "ids": [
+        "tr-int-after-1491-b"
+      ]
+    },
+    "tr-int-after-1492-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-int-after-1492-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-int-after-1498-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-int-after-1498-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-int-after-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-int-after-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-map-key-494-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-map-key-494-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-map-key-495-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-map-key-495-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-map-value-493-a": {
+      "http": 200,
+      "ids": [
+        "tr-map-value-493-a"
+      ]
+    },
+    "tr-map-value-493-b": {
+      "http": 200,
+      "ids": [
+        "tr-map-value-493-b"
+      ]
+    },
+    "tr-map-value-494-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-map-value-494-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-null-or-false-after-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-empty-array-or-null-1498-b",
+        "tr-null-or-false-after-1498-a"
+      ]
+    },
+    "tr-null-or-false-after-1498-b": {
+      "http": 200,
+      "ids": [
+        "tr-bool-after-1498-a",
+        "tr-null-or-false-after-1498-b"
+      ]
+    },
+    "tr-null-or-false-after-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-null-or-false-after-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-ref-id-1480-a": {
+      "http": 200,
+      "ids": [
+        "tr-ref-id-1480-a"
+      ]
+    },
+    "tr-ref-id-1480-b": {
+      "http": 200,
+      "ids": [
+        "tr-ref-id-1480-b"
+      ]
+    },
+    "tr-ref-id-1481-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-ref-id-1481-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-ref-last-segment-1477-a": {
+      "http": 200,
+      "ids": [
+        "tr-ref-last-segment-1477-a"
+      ]
+    },
+    "tr-ref-last-segment-1477-b": {
+      "http": 200,
+      "ids": [
+        "tr-ref-last-segment-1477-b"
+      ]
+    },
+    "tr-ref-last-segment-1478-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-ref-last-segment-1478-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-string-1498-a": {
+      "http": 200,
+      "ids": [
+        "tr-string-1498-a"
+      ]
+    },
+    "tr-string-1498-b": {
+      "http": 200,
+      "ids": [
+        "tr-string-1498-b"
+      ]
+    },
+    "tr-string-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-string-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-utf8-char-1498-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-utf8-char-1498-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-utf8-char-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-utf8-char-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-in-array-1491-a": {
+      "http": 200,
+      "ids": [
+        "tr-vector-in-array-1491-a"
+      ]
+    },
+    "tr-vector-in-array-1491-b": {
+      "http": 200,
+      "ids": [
+        "tr-vector-in-array-1491-b"
+      ]
+    },
+    "tr-vector-in-array-1492-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-in-array-1492-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-last-186-a": {
+      "http": 200,
+      "ids": [
+        "tr-vector-last-186-a"
+      ]
+    },
+    "tr-vector-last-186-b": {
+      "http": 200,
+      "ids": [
+        "tr-vector-last-186-b"
+      ]
+    },
+    "tr-vector-last-187-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-last-187-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-length-in-array-1498-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-length-in-array-1498-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-length-in-array-1499-a": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "tr-vector-length-in-array-1499-b": {
+      "error": {
+        "message": "value for v is too large to be used in a query",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400
+    },
+    "v-0-0-0": {
+      "http": 200,
+      "ids": [
+        "v-0-0-0"
+      ]
+    },
+    "v-1": {
+      "http": 200,
+      "ids": [
+        "v-1"
+      ]
+    },
+    "v-1-2": {
+      "http": 200,
+      "ids": [
+        "v-1-2"
+      ]
+    },
+    "v-1-2-3": {
+      "http": 200,
+      "ids": [
+        "v-1-2-3"
+      ]
+    },
+    "v-2": {
+      "http": 200,
+      "ids": [
+        "v-2"
+      ]
+    },
+    "v-3-1": {
+      "http": 200,
+      "ids": [
+        "v-3-1"
+      ]
+    },
+    "v-neg-zero": {
+      "http": 200,
+      "ids": [
+        "v-neg-zero"
+      ]
+    },
+    "v-neg1-5": {
+      "http": 200,
+      "ids": [
+        "v-neg1-5"
+      ]
+    },
+    "v-zero": {
+      "http": 200,
+      "ids": [
+        "v-zero"
+      ]
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

@@ -64,6 +64,32 @@ sqlc: ## Regenerate query code from SQL
 sqlc-check: ## Fail if generated query code is stale
 	$(SQLC) diff
 
+# The Document Database's protobuf code (buf.gen.yaml), written as *.gen.go like sqlc's. buf and its
+# plugins run at pinned versions through `go run`, so nothing is installed.
+BUF_VERSION := v1.73.0
+BUF         := $(GO) run github.com/bufbuild/buf/cmd/buf@$(BUF_VERSION)
+PROTO_OUT   := internal/services/documents/wire/pb
+
+# proto-gen DIR: the merge check, then the generated code under DIR/$(PROTO_OUT).
+define proto-gen
+	$(GO) run ./tools/protomerge
+	rm -rf $(1) && mkdir -p $(1)
+	$(BUF) generate --template buf.gen.yaml -o $(1)
+	find $(1) -name '*.go' ! -name '*.gen.go' -exec sh -c 'mv "$$1" "$${1%.go}.gen.go"' _ {} \;
+endef
+
+.PHONY: proto
+proto: ## Regenerate the Document Database's protobuf code from third_party
+	$(call proto-gen,.cache/proto)
+	rm -rf $(PROTO_OUT) && mkdir -p $(dir $(PROTO_OUT)) && mv .cache/proto/$(PROTO_OUT) $(PROTO_OUT)
+	rm -rf .cache/proto
+
+.PHONY: proto-check
+proto-check: ## Fail if the generated protobuf code is stale
+	$(call proto-gen,.cache/proto-check)
+	diff -r $(PROTO_OUT) .cache/proto-check/$(PROTO_OUT)
+	rm -rf .cache/proto-check
+
 .PHONY: db-create
 db-create: ## Create the local development database "aruma"
 	$(PSQL) "$(ARUMA_TEST_DATABASE_URL)" -tc "SELECT 1 FROM pg_database WHERE datname = 'aruma'" | grep -q 1 \

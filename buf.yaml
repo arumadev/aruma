@@ -1,0 +1,6 @@
+# The protos the Document Database speaks (ADR-027): googleapis vendored under third_party, with
+# the fields firebase-js-sdk adds merged in by the rule in third_party/README.md. Nothing is
+# fetched from the Buf Schema Registry; the well-known types come with buf.
+version: v2
+modules:
+  - path: third_party/googleapis

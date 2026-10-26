@@ -1,0 +1,39 @@
+# Go for the Document Database's wire, run by `make proto` (never by hand: it also renames the
+# files to *.gen.go). The Firestore, Firestore Admin, google.type and google.longrunning protos are
+# generated into the service (internal/services/documents/wire/pb); google.api and google.rpc keep
+# their go_package and come from genproto, which the error details (google.rpc.Help) and Google's
+# clients link too, and one binary may register a proto file only once.
+#
+# The RPC stack is connect (ADR-027): messages from protoc-gen-go, handlers from
+# protoc-gen-connect-go. No grpc-go stubs are generated.
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package
+      path: google/firestore/v1
+      value: github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb
+    - file_option: go_package
+      path: google/firestore/admin/v1
+      value: github.com/arumadev/aruma/internal/services/documents/wire/pb/adminpb
+    - file_option: go_package
+      path: google/type
+      value: github.com/arumadev/aruma/internal/services/documents/wire/pb/typepb
+    - file_option: go_package
+      path: google/longrunning
+      value: github.com/arumadev/aruma/internal/services/documents/wire/pb/longrunningpb
+inputs:
+  - directory: third_party/googleapis
+    paths:
+      - third_party/googleapis/google/firestore/v1
+      - third_party/googleapis/google/firestore/admin/v1
+      - third_party/googleapis/google/type
+      - third_party/googleapis/google/longrunning
+# The plugins at pinned versions, built by the Go toolchain: nothing to install.
+plugins:
+  - local: [go, run, google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12]
+    out: .
+    opt: module=github.com/arumadev/aruma
+  - local: [go, run, connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.21.1]
+    out: .
+    opt: module=github.com/arumadev/aruma

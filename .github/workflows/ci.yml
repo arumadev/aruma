@@ -47,6 +47,8 @@ jobs:
         run: make lint
       - name: Generated query code is current
         run: make sqlc-check
+      - name: Generated protobuf code is current (and the third_party merge rule holds)
+        run: make proto-check
       - name: Test
         run: make test
       - name: Build

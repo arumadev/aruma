@@ -1,0 +1,6641 @@
+{
+  "cases": [
+    {
+      "description": "T1 begin, T1 read D, T2 begin, T2 read D, T2 commit write D (sent; up to 5 s), then T1 commit write D",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 569,
+          "http": 200,
+          "latencyMs": 569,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 1549,
+          "http": 200,
+          "latencyMs": 980,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s1-r1-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s1-r1-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 569,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 2219,
+          "http": 200,
+          "latencyMs": 670,
+          "n": 3,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 1549,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 2925,
+          "http": 200,
+          "latencyMs": 706,
+          "n": 4,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s1-r1-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s1-r1-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 2219,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 9876,
+          "error": {
+            "code": 409,
+            "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 6951,
+          "n": 5,
+          "op": "commit write D",
+          "outcome": "error",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s1.r1"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s1-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 2925,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 9878,
+          "http": 200,
+          "latencyMs": 1950,
+          "n": 6,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s1.r1"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s1-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 7928,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s1.r1",
+          "writer": "T1"
+        }
+      },
+      "id": "s1.r1",
+      "marks": [
+        {
+          "atMs": 7928,
+          "text": "T2 commit still pending after 5000 ms; T1 commits now"
+        }
+      ],
+      "pattern": "T1 read D: ok; T2 read D: ok; T2 commit write D: ABORTED; T1 commit write D: ok",
+      "run": 1,
+      "scenario": "s1",
+      "timingPattern": "T1 read D: ok (fast); T2 read D: ok (fast); T2 commit write D: ABORTED (waited); T1 commit write D: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 9878,
+          "commitLatencyMs": 1950,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 9876,
+          "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+          "onOp": "commit write D",
+          "opLatencyMs": 6951,
+          "result": "aborted"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, T2 begin, T2 read D, T2 commit write D (sent; up to 5 s), then T1 commit write D",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 1280,
+          "http": 200,
+          "latencyMs": 1280,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 1965,
+          "http": 200,
+          "latencyMs": 685,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s1-r2-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s1-r2-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 1280,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 3224,
+          "http": 200,
+          "latencyMs": 1258,
+          "n": 3,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 1966,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 5635,
+          "http": 200,
+          "latencyMs": 2411,
+          "n": 4,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s1-r2-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s1-r2-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 3224,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 11719,
+          "error": {
+            "code": 409,
+            "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 6084,
+          "n": 5,
+          "op": "commit write D",
+          "outcome": "error",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s1.r2"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s1-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 5635,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 11720,
+          "http": 200,
+          "latencyMs": 1084,
+          "n": 6,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s1.r2"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s1-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 10636,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s1.r2",
+          "writer": "T1"
+        }
+      },
+      "id": "s1.r2",
+      "marks": [
+        {
+          "atMs": 10636,
+          "text": "T2 commit still pending after 5000 ms; T1 commits now"
+        }
+      ],
+      "pattern": "T1 read D: ok; T2 read D: ok; T2 commit write D: ABORTED; T1 commit write D: ok",
+      "run": 2,
+      "scenario": "s1",
+      "timingPattern": "T1 read D: ok (fast); T2 read D: ok (fast); T2 commit write D: ABORTED (waited); T1 commit write D: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 11720,
+          "commitLatencyMs": 1084,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 11719,
+          "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+          "onOp": "commit write D",
+          "opLatencyMs": 6084,
+          "result": "aborted"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, T2 begin, T2 read D, T2 commit write D (sent; up to 5 s), then T1 commit write D",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 325,
+          "http": 200,
+          "latencyMs": 325,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 645,
+          "http": 200,
+          "latencyMs": 320,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s1-r3-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s1-r3-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 325,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1339,
+          "http": 200,
+          "latencyMs": 694,
+          "n": 3,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 645,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 2096,
+          "http": 200,
+          "latencyMs": 757,
+          "n": 4,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s1-r3-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s1-r3-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 1339,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 8502,
+          "error": {
+            "code": 409,
+            "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 6406,
+          "n": 5,
+          "op": "commit write D",
+          "outcome": "error",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s1.r3"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s1-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 2096,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 8489,
+          "http": 200,
+          "latencyMs": 1393,
+          "n": 6,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s1.r3"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s1-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 7096,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s1.r3",
+          "writer": "T1"
+        }
+      },
+      "id": "s1.r3",
+      "marks": [
+        {
+          "atMs": 7095,
+          "text": "T2 commit still pending after 5000 ms; T1 commits now"
+        }
+      ],
+      "pattern": "T1 read D: ok; T2 read D: ok; T2 commit write D: ABORTED; T1 commit write D: ok",
+      "run": 3,
+      "scenario": "s1",
+      "timingPattern": "T1 read D: ok (fast); T2 read D: ok (fast); T2 commit write D: ABORTED (waited); T1 commit write D: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 8489,
+          "commitLatencyMs": 1393,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 8502,
+          "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+          "onOp": "commit write D",
+          "opLatencyMs": 6406,
+          "result": "aborted"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, T2 begin, T2 read D, T2 commit write D (sent; up to 5 s), T1 reads D again (its next action), up to 3 s more, T1 rollback (ends T1), then T2 commit awaited",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 278,
+          "http": 200,
+          "latencyMs": 278,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 549,
+          "http": 200,
+          "latencyMs": 271,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s2-r1-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s2-r1-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 278,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1187,
+          "http": 200,
+          "latencyMs": 638,
+          "n": 3,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 549,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1469,
+          "http": 200,
+          "latencyMs": 282,
+          "n": 4,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s2-r1-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s2-r1-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 1187,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 12348,
+          "http": 200,
+          "latencyMs": 10879,
+          "n": 5,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s2.r1"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s2-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 1469,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 8934,
+          "http": 200,
+          "latencyMs": 2418,
+          "n": 6,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s2-r1-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s2-r1-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 6516,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 12322,
+          "http": 200,
+          "latencyMs": 378,
+          "n": 7,
+          "op": "rollback",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>"
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:rollback"
+          },
+          "response": {},
+          "startMs": 11944,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s2.r1",
+          "writer": "T2"
+        }
+      },
+      "id": "s2.r1",
+      "marks": [
+        {
+          "atMs": 6516,
+          "text": "T2 commit still pending after 5000 ms; T1 reads D again"
+        },
+        {
+          "atMs": 11943,
+          "text": "T2 commit still pending; T1 rolls back"
+        }
+      ],
+      "pattern": "T1 read D: ok; T2 read D: ok; T2 commit write D: ok; T1 read D: ok; T1 rollback: ok",
+      "run": 1,
+      "scenario": "s2",
+      "timingPattern": "T1 read D: ok (fast); T2 read D: ok (fast); T2 commit write D: ok (waited); T1 read D: ok (fast); T1 rollback: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 12322,
+          "result": "rolled back"
+        },
+        "T2": {
+          "atMs": 12348,
+          "commitLatencyMs": 10879,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, T2 begin, T2 read D, T2 commit write D (sent; up to 5 s), T1 reads D again (its next action), up to 3 s more, T1 rollback (ends T1), then T2 commit awaited",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 261,
+          "http": 200,
+          "latencyMs": 261,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 523,
+          "http": 200,
+          "latencyMs": 262,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s2-r2-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s2-r2-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 261,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1182,
+          "http": 200,
+          "latencyMs": 659,
+          "n": 3,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 523,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1737,
+          "http": 200,
+          "latencyMs": 555,
+          "n": 4,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s2-r2-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s2-r2-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 1182,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 13909,
+          "http": 200,
+          "latencyMs": 12172,
+          "n": 5,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s2.r2"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s2-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 1737,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 10343,
+          "http": 200,
+          "latencyMs": 3560,
+          "n": 6,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s2-r2-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s2-r2-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 6783,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 13850,
+          "http": 200,
+          "latencyMs": 498,
+          "n": 7,
+          "op": "rollback",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>"
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:rollback"
+          },
+          "response": {},
+          "startMs": 13352,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s2.r2",
+          "writer": "T2"
+        }
+      },
+      "id": "s2.r2",
+      "marks": [
+        {
+          "atMs": 6783,
+          "text": "T2 commit still pending after 5000 ms; T1 reads D again"
+        },
+        {
+          "atMs": 13352,
+          "text": "T2 commit still pending; T1 rolls back"
+        }
+      ],
+      "pattern": "T1 read D: ok; T2 read D: ok; T2 commit write D: ok; T1 read D: ok; T1 rollback: ok",
+      "run": 2,
+      "scenario": "s2",
+      "timingPattern": "T1 read D: ok (fast); T2 read D: ok (fast); T2 commit write D: ok (waited); T1 read D: ok (waited); T1 rollback: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 13850,
+          "result": "rolled back"
+        },
+        "T2": {
+          "atMs": 13909,
+          "commitLatencyMs": 12172,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, T2 begin, T2 read D, T2 commit write D (sent; up to 5 s), T1 reads D again (its next action), up to 3 s more, T1 rollback (ends T1), then T2 commit awaited",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 321,
+          "http": 200,
+          "latencyMs": 321,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 853,
+          "http": 200,
+          "latencyMs": 532,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s2-r3-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s2-r3-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 321,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1420,
+          "http": 200,
+          "latencyMs": 567,
+          "n": 3,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 853,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1749,
+          "http": 200,
+          "latencyMs": 329,
+          "n": 4,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s2-r3-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s2-r3-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 1420,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 12176,
+          "http": 200,
+          "latencyMs": 10427,
+          "n": 5,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s2.r3"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s2-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 1749,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 7220,
+          "http": 200,
+          "latencyMs": 429,
+          "n": 6,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s2-r3-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s2-r3-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 6791,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 12138,
+          "http": 200,
+          "latencyMs": 1904,
+          "n": 7,
+          "op": "rollback",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>"
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:rollback"
+          },
+          "response": {},
+          "startMs": 10234,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s2.r3",
+          "writer": "T2"
+        }
+      },
+      "id": "s2.r3",
+      "marks": [
+        {
+          "atMs": 6791,
+          "text": "T2 commit still pending after 5000 ms; T1 reads D again"
+        },
+        {
+          "atMs": 10234,
+          "text": "T2 commit still pending; T1 rolls back"
+        }
+      ],
+      "pattern": "T1 read D: ok; T2 read D: ok; T2 commit write D: ok; T1 read D: ok; T1 rollback: ok",
+      "run": 3,
+      "scenario": "s2",
+      "timingPattern": "T1 read D: ok (fast); T2 read D: ok (fast); T2 commit write D: ok (waited); T1 read D: ok (fast); T1 rollback: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 12138,
+          "result": "rolled back"
+        },
+        "T2": {
+          "atMs": 12176,
+          "commitLatencyMs": 10427,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read E, T2 begin, T2 read D, T1 commit write D (sent; up to 5 s), T2 reads D again (its next action), up to 3 s more, T2 commit write D if T2 is still alive",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 1461,
+          "http": 200,
+          "latencyMs": 1461,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 2730,
+          "http": 200,
+          "latencyMs": 1269,
+          "n": 2,
+          "op": "read E",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3a-r1-E?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s3a-r1-E",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 1461,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 3365,
+          "http": 200,
+          "latencyMs": 635,
+          "n": 3,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 2730,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 3639,
+          "http": 200,
+          "latencyMs": 274,
+          "n": 4,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3a-r1-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s3a-r1-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 3365,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 4687,
+          "http": 200,
+          "latencyMs": 1048,
+          "n": 5,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s3a.r1"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s3a-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 3639,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 6092,
+          "error": {
+            "code": 409,
+            "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 1383,
+          "n": 6,
+          "op": "read D",
+          "outcome": "error",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3a-r1-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 4709,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s3a.r1",
+          "writer": "T1"
+        },
+        "E": {
+          "http": 200,
+          "step": null,
+          "writer": "setup"
+        }
+      },
+      "id": "s3a.r1",
+      "marks": [
+        {
+          "atMs": 4709,
+          "text": "T1 commit returned before T2 acted again"
+        },
+        {
+          "atMs": 6143,
+          "text": "T1 commit has returned"
+        }
+      ],
+      "pattern": "T1 read E: ok; T2 read D: ok; T1 commit write D: ok; T2 read D: ABORTED",
+      "run": 1,
+      "scenario": "s3a",
+      "timingPattern": "T1 read E: ok (fast); T2 read D: ok (fast); T1 commit write D: ok (fast); T2 read D: ABORTED (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 4687,
+          "commitLatencyMs": 1048,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 6092,
+          "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+          "onOp": "read D",
+          "opLatencyMs": 1383,
+          "result": "aborted"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read E, T2 begin, T2 read D, T1 commit write D (sent; up to 5 s), T2 reads D again (its next action), up to 3 s more, T2 commit write D if T2 is still alive",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 369,
+          "http": 200,
+          "latencyMs": 369,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 1007,
+          "http": 200,
+          "latencyMs": 638,
+          "n": 2,
+          "op": "read E",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3a-r2-E?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s3a-r2-E",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 369,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1393,
+          "http": 200,
+          "latencyMs": 386,
+          "n": 3,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 1007,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1714,
+          "http": 200,
+          "latencyMs": 321,
+          "n": 4,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3a-r2-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s3a-r2-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 1393,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 2681,
+          "http": 200,
+          "latencyMs": 967,
+          "n": 5,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s3a.r2"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s3a-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 1714,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 3050,
+          "error": {
+            "code": 409,
+            "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 321,
+          "n": 6,
+          "op": "read D",
+          "outcome": "error",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3a-r2-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 2729,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s3a.r2",
+          "writer": "T1"
+        },
+        "E": {
+          "http": 200,
+          "step": null,
+          "writer": "setup"
+        }
+      },
+      "id": "s3a.r2",
+      "marks": [
+        {
+          "atMs": 2729,
+          "text": "T1 commit returned before T2 acted again"
+        },
+        {
+          "atMs": 3101,
+          "text": "T1 commit has returned"
+        }
+      ],
+      "pattern": "T1 read E: ok; T2 read D: ok; T1 commit write D: ok; T2 read D: ABORTED",
+      "run": 2,
+      "scenario": "s3a",
+      "timingPattern": "T1 read E: ok (fast); T2 read D: ok (fast); T1 commit write D: ok (fast); T2 read D: ABORTED (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 2681,
+          "commitLatencyMs": 967,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 3050,
+          "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+          "onOp": "read D",
+          "opLatencyMs": 321,
+          "result": "aborted"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read E, T2 begin, T2 read D, T1 commit write D (sent; up to 5 s), T2 reads D again (its next action), up to 3 s more, T2 commit write D if T2 is still alive",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 293,
+          "http": 200,
+          "latencyMs": 293,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 576,
+          "http": 200,
+          "latencyMs": 283,
+          "n": 2,
+          "op": "read E",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3a-r3-E?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s3a-r3-E",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 293,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1060,
+          "http": 200,
+          "latencyMs": 484,
+          "n": 3,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 576,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1383,
+          "http": 200,
+          "latencyMs": 323,
+          "n": 4,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3a-r3-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s3a-r3-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 1060,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 1857,
+          "http": 200,
+          "latencyMs": 474,
+          "n": 5,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s3a.r3"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s3a-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 1383,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 2311,
+          "error": {
+            "code": 409,
+            "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 418,
+          "n": 6,
+          "op": "read D",
+          "outcome": "error",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3a-r3-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 1893,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s3a.r3",
+          "writer": "T1"
+        },
+        "E": {
+          "http": 200,
+          "step": null,
+          "writer": "setup"
+        }
+      },
+      "id": "s3a.r3",
+      "marks": [
+        {
+          "atMs": 1893,
+          "text": "T1 commit returned before T2 acted again"
+        },
+        {
+          "atMs": 2360,
+          "text": "T1 commit has returned"
+        }
+      ],
+      "pattern": "T1 read E: ok; T2 read D: ok; T1 commit write D: ok; T2 read D: ABORTED",
+      "run": 3,
+      "scenario": "s3a",
+      "timingPattern": "T1 read E: ok (fast); T2 read D: ok (fast); T1 commit write D: ok (fast); T2 read D: ABORTED (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 1857,
+          "commitLatencyMs": 474,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 2311,
+          "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+          "onOp": "read D",
+          "opLatencyMs": 418,
+          "result": "aborted"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T2 begin, T2 read D, T1 commit write D (sent; up to 5 s; T1 has read nothing), T2 reads D again, up to 3 s more, T2 commit write D if T2 is still alive",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 474,
+          "http": 200,
+          "latencyMs": 474,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 875,
+          "http": 200,
+          "latencyMs": 401,
+          "n": 2,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 474,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1153,
+          "http": 200,
+          "latencyMs": 278,
+          "n": 3,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3b-r1-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s3b-r1-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 875,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 12838,
+          "http": 200,
+          "latencyMs": 11685,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s3b.r1"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s3b-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 1153,
+          "timing": "waited"
+        },
+        {
+          "actor": "T2",
+          "endMs": 9232,
+          "http": 200,
+          "latencyMs": 3035,
+          "n": 5,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3b-r1-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s3b-r1-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 6197,
+          "timing": "waited"
+        },
+        {
+          "actor": "T2",
+          "endMs": 12832,
+          "http": 200,
+          "latencyMs": 599,
+          "n": 6,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s3b.r1"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s3b-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 12233,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s3b.r1",
+          "writer": "T1"
+        }
+      },
+      "id": "s3b.r1",
+      "marks": [
+        {
+          "atMs": 6197,
+          "text": "T1 commit still pending after 5000 ms; T2 reads D again"
+        },
+        {
+          "atMs": 12233,
+          "text": "T1 commit still pending"
+        }
+      ],
+      "pattern": "T2 read D: ok; T1 commit write D: ok; T2 read D: ok; T2 commit write D: ok",
+      "run": 1,
+      "scenario": "s3b",
+      "timingPattern": "T2 read D: ok (fast); T1 commit write D: ok (waited); T2 read D: ok (waited); T2 commit write D: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 12838,
+          "commitLatencyMs": 11685,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 12832,
+          "commitLatencyMs": 599,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T2 begin, T2 read D, T1 commit write D (sent; up to 5 s; T1 has read nothing), T2 reads D again, up to 3 s more, T2 commit write D if T2 is still alive",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 1587,
+          "http": 200,
+          "latencyMs": 1587,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 2932,
+          "http": 200,
+          "latencyMs": 1345,
+          "n": 2,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 1587,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 4350,
+          "http": 200,
+          "latencyMs": 1418,
+          "n": 3,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3b-r2-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s3b-r2-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 2932,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 15455,
+          "http": 200,
+          "latencyMs": 11105,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s3b.r2"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s3b-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 4350,
+          "timing": "waited"
+        },
+        {
+          "actor": "T2",
+          "endMs": 10718,
+          "http": 200,
+          "latencyMs": 1364,
+          "n": 5,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3b-r2-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s3b-r2-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 9354,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 15457,
+          "http": 200,
+          "latencyMs": 1732,
+          "n": 6,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s3b.r2"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s3b-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 13725,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s3b.r2",
+          "writer": "T1"
+        }
+      },
+      "id": "s3b.r2",
+      "marks": [
+        {
+          "atMs": 9353,
+          "text": "T1 commit still pending after 5000 ms; T2 reads D again"
+        },
+        {
+          "atMs": 13723,
+          "text": "T1 commit still pending"
+        }
+      ],
+      "pattern": "T2 read D: ok; T1 commit write D: ok; T2 read D: ok; T2 commit write D: ok",
+      "run": 2,
+      "scenario": "s3b",
+      "timingPattern": "T2 read D: ok (fast); T1 commit write D: ok (waited); T2 read D: ok (fast); T2 commit write D: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 15455,
+          "commitLatencyMs": 11105,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 15457,
+          "commitLatencyMs": 1732,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T2 begin, T2 read D, T1 commit write D (sent; up to 5 s; T1 has read nothing), T2 reads D again, up to 3 s more, T2 commit write D if T2 is still alive",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 771,
+          "http": 200,
+          "latencyMs": 771,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 2670,
+          "http": 200,
+          "latencyMs": 1899,
+          "n": 2,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 771,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 3361,
+          "http": 200,
+          "latencyMs": 691,
+          "n": 3,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3b-r3-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s3b-r3-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 2670,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 19031,
+          "http": 200,
+          "latencyMs": 15670,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s3b.r3"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s3b-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 3361,
+          "timing": "waited"
+        },
+        {
+          "actor": "T2",
+          "endMs": 14359,
+          "http": 200,
+          "latencyMs": 5951,
+          "n": 5,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s3b-r3-D?transaction=<T2 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s3b-r3-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 8408,
+          "timing": "waited"
+        },
+        {
+          "actor": "T2",
+          "endMs": 19032,
+          "http": 200,
+          "latencyMs": 1662,
+          "n": 6,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s3b.r3"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s3b-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 17370,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s3b.r3",
+          "writer": "T1"
+        }
+      },
+      "id": "s3b.r3",
+      "marks": [
+        {
+          "atMs": 8408,
+          "text": "T1 commit still pending after 5000 ms; T2 reads D again"
+        },
+        {
+          "atMs": 17370,
+          "text": "T1 commit still pending"
+        }
+      ],
+      "pattern": "T2 read D: ok; T1 commit write D: ok; T2 read D: ok; T2 commit write D: ok",
+      "run": 3,
+      "scenario": "s3b",
+      "timingPattern": "T2 read D: ok (fast); T1 commit write D: ok (waited); T2 read D: ok (waited); T2 commit write D: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 19031,
+          "commitLatencyMs": 15670,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 19032,
+          "commitLatencyMs": 1662,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T2 begin, T1 commit write D, then T2 commit write D",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 324,
+          "http": 200,
+          "latencyMs": 324,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 613,
+          "http": 200,
+          "latencyMs": 289,
+          "n": 2,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 324,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 1888,
+          "http": 200,
+          "latencyMs": 1275,
+          "n": 3,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4a.r1"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4a-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 613,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 2299,
+          "http": 200,
+          "latencyMs": 411,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4a.r1"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4a-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 1888,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s4a.r1",
+          "writer": "T2"
+        }
+      },
+      "id": "s4a.r1",
+      "marks": [],
+      "pattern": "T1 commit write D: ok; T2 commit write D: ok",
+      "run": 1,
+      "scenario": "s4a",
+      "timingPattern": "T1 commit write D: ok (fast); T2 commit write D: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 1888,
+          "commitLatencyMs": 1275,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 2299,
+          "commitLatencyMs": 411,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T2 begin, T1 commit write D, then T2 commit write D",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 1273,
+          "http": 200,
+          "latencyMs": 1273,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 7233,
+          "http": 200,
+          "latencyMs": 5960,
+          "n": 2,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 1273,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 31048,
+          "http": 200,
+          "latencyMs": 23815,
+          "n": 3,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4a.r2"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4a-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 7233,
+          "timing": "waited"
+        },
+        {
+          "actor": "T2",
+          "endMs": 37850,
+          "http": 200,
+          "latencyMs": 6802,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4a.r2"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4a-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 31048,
+          "timing": "waited"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s4a.r2",
+          "writer": "T2"
+        }
+      },
+      "id": "s4a.r2",
+      "marks": [],
+      "pattern": "T1 commit write D: ok; T2 commit write D: ok",
+      "run": 2,
+      "scenario": "s4a",
+      "timingPattern": "T1 commit write D: ok (waited); T2 commit write D: ok (waited)",
+      "transactions": {
+        "T1": {
+          "atMs": 31048,
+          "commitLatencyMs": 23815,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 37850,
+          "commitLatencyMs": 6802,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T2 begin, T1 commit write D, then T2 commit write D",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 1942,
+          "http": 200,
+          "latencyMs": 1942,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 3237,
+          "http": 200,
+          "latencyMs": 1295,
+          "n": 2,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 1942,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 4910,
+          "http": 200,
+          "latencyMs": 1672,
+          "n": 3,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4a.r3"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4a-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 3238,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 6823,
+          "http": 200,
+          "latencyMs": 1912,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4a.r3"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4a-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 4911,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s4a.r3",
+          "writer": "T2"
+        }
+      },
+      "id": "s4a.r3",
+      "marks": [],
+      "pattern": "T1 commit write D: ok; T2 commit write D: ok",
+      "run": 3,
+      "scenario": "s4a",
+      "timingPattern": "T1 commit write D: ok (fast); T2 commit write D: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 4910,
+          "commitLatencyMs": 1672,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 6823,
+          "commitLatencyMs": 1912,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T2 begin, T2 commit write D, then T1 commit write D",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 1468,
+          "http": 200,
+          "latencyMs": 1468,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 2529,
+          "http": 200,
+          "latencyMs": 1061,
+          "n": 2,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 1468,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 3570,
+          "http": 200,
+          "latencyMs": 1041,
+          "n": 3,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4b.r1"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4b-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 2529,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 4804,
+          "http": 200,
+          "latencyMs": 1233,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4b.r1"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4b-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 3571,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s4b.r1",
+          "writer": "T1"
+        }
+      },
+      "id": "s4b.r1",
+      "marks": [],
+      "pattern": "T2 commit write D: ok; T1 commit write D: ok",
+      "run": 1,
+      "scenario": "s4b",
+      "timingPattern": "T2 commit write D: ok (fast); T1 commit write D: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 4804,
+          "commitLatencyMs": 1233,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 3570,
+          "commitLatencyMs": 1041,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T2 begin, T2 commit write D, then T1 commit write D",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 752,
+          "http": 200,
+          "latencyMs": 752,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1837,
+          "http": 200,
+          "latencyMs": 1085,
+          "n": 2,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 752,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 2963,
+          "http": 200,
+          "latencyMs": 1125,
+          "n": 3,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4b.r2"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4b-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 1838,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 4221,
+          "http": 200,
+          "latencyMs": 1258,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4b.r2"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4b-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 2963,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s4b.r2",
+          "writer": "T1"
+        }
+      },
+      "id": "s4b.r2",
+      "marks": [],
+      "pattern": "T2 commit write D: ok; T1 commit write D: ok",
+      "run": 2,
+      "scenario": "s4b",
+      "timingPattern": "T2 commit write D: ok (fast); T1 commit write D: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 4221,
+          "commitLatencyMs": 1258,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 2963,
+          "commitLatencyMs": 1125,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T2 begin, T2 commit write D, then T1 commit write D",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 364,
+          "http": 200,
+          "latencyMs": 364,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 787,
+          "http": 200,
+          "latencyMs": 423,
+          "n": 2,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 364,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1227,
+          "http": 200,
+          "latencyMs": 440,
+          "n": 3,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4b.r3"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4b-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 787,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 1781,
+          "http": 200,
+          "latencyMs": 554,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4b.r3"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4b-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 1227,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s4b.r3",
+          "writer": "T1"
+        }
+      },
+      "id": "s4b.r3",
+      "marks": [],
+      "pattern": "T2 commit write D: ok; T1 commit write D: ok",
+      "run": 3,
+      "scenario": "s4b",
+      "timingPattern": "T2 commit write D: ok (fast); T1 commit write D: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 1781,
+          "commitLatencyMs": 554,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 1227,
+          "commitLatencyMs": 440,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T2 begin, T1 and T2 commit write D sent at the same time",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 920,
+          "http": 200,
+          "latencyMs": 920,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 2082,
+          "http": 200,
+          "latencyMs": 1162,
+          "n": 2,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 920,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 2684,
+          "http": 200,
+          "latencyMs": 601,
+          "n": 3,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4c.r1"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4c-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 2083,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 8058,
+          "http": 200,
+          "latencyMs": 5975,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4c.r1"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4c-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 2083,
+          "timing": "waited"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s4c.r1",
+          "writer": "T2"
+        }
+      },
+      "id": "s4c.r1",
+      "marks": [],
+      "pattern": "T1 commit write D: ok; T2 commit write D: ok",
+      "run": 1,
+      "scenario": "s4c",
+      "timingPattern": "T1 commit write D: ok (fast); T2 commit write D: ok (waited)",
+      "transactions": {
+        "T1": {
+          "atMs": 2684,
+          "commitLatencyMs": 601,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 8058,
+          "commitLatencyMs": 5975,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T2 begin, T1 and T2 commit write D sent at the same time",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 3132,
+          "http": 200,
+          "latencyMs": 3132,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "waited"
+        },
+        {
+          "actor": "T2",
+          "endMs": 4672,
+          "http": 200,
+          "latencyMs": 1540,
+          "n": 2,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 3132,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 5812,
+          "http": 200,
+          "latencyMs": 1140,
+          "n": 3,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4c.r2"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4c-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 4672,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 7641,
+          "http": 200,
+          "latencyMs": 2969,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4c.r2"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4c-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 4672,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s4c.r2",
+          "writer": "T2"
+        }
+      },
+      "id": "s4c.r2",
+      "marks": [],
+      "pattern": "T1 commit write D: ok; T2 commit write D: ok",
+      "run": 2,
+      "scenario": "s4c",
+      "timingPattern": "T1 commit write D: ok (fast); T2 commit write D: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 5812,
+          "commitLatencyMs": 1140,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 7641,
+          "commitLatencyMs": 2969,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T2 begin, T1 and T2 commit write D sent at the same time",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 3592,
+          "http": 200,
+          "latencyMs": 3592,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "waited"
+        },
+        {
+          "actor": "T2",
+          "endMs": 5215,
+          "http": 200,
+          "latencyMs": 1623,
+          "n": 2,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 3592,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 7677,
+          "http": 200,
+          "latencyMs": 2461,
+          "n": 3,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4c.r3"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4c-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 5216,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 8447,
+          "http": 200,
+          "latencyMs": 3231,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s4c.r3"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s4c-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 5216,
+          "timing": "waited"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s4c.r3",
+          "writer": "T2"
+        }
+      },
+      "id": "s4c.r3",
+      "marks": [],
+      "pattern": "T1 commit write D: ok; T2 commit write D: ok",
+      "run": 3,
+      "scenario": "s4c",
+      "timingPattern": "T1 commit write D: ok (fast); T2 commit write D: ok (waited)",
+      "transactions": {
+        "T1": {
+          "atMs": 7677,
+          "commitLatencyMs": 2461,
+          "result": "committed"
+        },
+        "T2": {
+          "atMs": 8447,
+          "commitLatencyMs": 3231,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, idle 70 s, T1 commit write D, then T1 read D again with the same transaction",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 729,
+          "http": 200,
+          "latencyMs": 729,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 1088,
+          "http": 200,
+          "latencyMs": 359,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s5-r1-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s5-r1-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 729,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 71869,
+          "http": 200,
+          "latencyMs": 780,
+          "n": 3,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s5.r1"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s5-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 71089,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 72808,
+          "error": {
+            "code": 409,
+            "message": "The referenced transaction has expired or is no longer valid.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 939,
+          "n": 4,
+          "op": "read D",
+          "outcome": "error",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s5-r1-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "The referenced transaction has expired or is no longer valid.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 71869,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s5.r1",
+          "writer": "T1"
+        }
+      },
+      "id": "s5.r1",
+      "marks": [
+        {
+          "atMs": 1088,
+          "text": "idle 70000 ms"
+        }
+      ],
+      "pattern": "T1 read D: ok; T1 commit write D: ok; T1 read D: ABORTED",
+      "run": 1,
+      "scenario": "s5",
+      "timingPattern": "T1 read D: ok (fast); T1 commit write D: ok (fast); T1 read D: ABORTED (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 71869,
+          "commitLatencyMs": 780,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, idle 70 s, T1 commit write D, then T1 read D again with the same transaction",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 569,
+          "http": 200,
+          "latencyMs": 569,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 1658,
+          "http": 200,
+          "latencyMs": 1089,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s5-r2-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s5-r2-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 569,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 74197,
+          "http": 200,
+          "latencyMs": 2539,
+          "n": 3,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s5.r2"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s5-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 71658,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 74917,
+          "error": {
+            "code": 409,
+            "message": "The referenced transaction has expired or is no longer valid.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 720,
+          "n": 4,
+          "op": "read D",
+          "outcome": "error",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s5-r2-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "The referenced transaction has expired or is no longer valid.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 74197,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s5.r2",
+          "writer": "T1"
+        }
+      },
+      "id": "s5.r2",
+      "marks": [
+        {
+          "atMs": 1658,
+          "text": "idle 70000 ms"
+        }
+      ],
+      "pattern": "T1 read D: ok; T1 commit write D: ok; T1 read D: ABORTED",
+      "run": 2,
+      "scenario": "s5",
+      "timingPattern": "T1 read D: ok (fast); T1 commit write D: ok (fast); T1 read D: ABORTED (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 74197,
+          "commitLatencyMs": 2539,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, idle 70 s, T1 commit write D, then T1 read D again with the same transaction",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 570,
+          "http": 200,
+          "latencyMs": 570,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 1549,
+          "http": 200,
+          "latencyMs": 979,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s5-r3-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s5-r3-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 570,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 74217,
+          "http": 200,
+          "latencyMs": 2666,
+          "n": 3,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s5.r3"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s5-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 71551,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 74917,
+          "error": {
+            "code": 409,
+            "message": "The referenced transaction has expired or is no longer valid.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 700,
+          "n": 4,
+          "op": "read D",
+          "outcome": "error",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s5-r3-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "The referenced transaction has expired or is no longer valid.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 74217,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s5.r3",
+          "writer": "T1"
+        }
+      },
+      "id": "s5.r3",
+      "marks": [
+        {
+          "atMs": 1550,
+          "text": "idle 70000 ms"
+        }
+      ],
+      "pattern": "T1 read D: ok; T1 commit write D: ok; T1 read D: ABORTED",
+      "run": 3,
+      "scenario": "s5",
+      "timingPattern": "T1 read D: ok (fast); T1 commit write D: ok (fast); T1 read D: ABORTED (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 74217,
+          "commitLatencyMs": 2666,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, idle 50 s, T1 commit write D, then T1 read D again with the same transaction",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 542,
+          "http": 200,
+          "latencyMs": 542,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 1504,
+          "http": 200,
+          "latencyMs": 962,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s5-probe50-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s5-probe50-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 542,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 54783,
+          "http": 200,
+          "latencyMs": 3277,
+          "n": 3,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s5probe50"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s5-probe50-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 51506,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 56267,
+          "error": {
+            "code": 409,
+            "message": "The referenced transaction has expired or is no longer valid.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 1484,
+          "n": 4,
+          "op": "read D",
+          "outcome": "error",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s5-probe50-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "The referenced transaction has expired or is no longer valid.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 54783,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s5probe50",
+          "writer": "T1"
+        }
+      },
+      "id": "s5probe50",
+      "marks": [
+        {
+          "atMs": 1504,
+          "text": "idle 50000 ms"
+        }
+      ],
+      "pattern": "T1 read D: ok; T1 commit write D: ok; T1 read D: ABORTED",
+      "run": 1,
+      "scenario": "s5probe",
+      "timingPattern": "T1 read D: ok (fast); T1 commit write D: ok (waited); T1 read D: ABORTED (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 54783,
+          "commitLatencyMs": 3277,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, idle 65 s, T1 commit write D, then T1 read D again with the same transaction",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 572,
+          "http": 200,
+          "latencyMs": 572,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 1551,
+          "http": 200,
+          "latencyMs": 979,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s5-probe65-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s5-probe65-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 572,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 67001,
+          "http": 200,
+          "latencyMs": 449,
+          "n": 3,
+          "op": "commit write D",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s5probe65"
+                      },
+                      "writer": {
+                        "stringValue": "T1"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s5-probe65-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "commitTime": "<commitTime: RFC 3339>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: RFC 3339>"
+              }
+            ]
+          },
+          "startMs": 66552,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 67323,
+          "error": {
+            "code": 409,
+            "message": "The referenced transaction has expired or is no longer valid.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 322,
+          "n": 4,
+          "op": "read D",
+          "outcome": "error",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s5-probe65-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "The referenced transaction has expired or is no longer valid.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 67001,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": "s5probe65",
+          "writer": "T1"
+        }
+      },
+      "id": "s5probe65",
+      "marks": [
+        {
+          "atMs": 1551,
+          "text": "idle 65000 ms"
+        }
+      ],
+      "pattern": "T1 read D: ok; T1 commit write D: ok; T1 read D: ABORTED",
+      "run": 1,
+      "scenario": "s5probe",
+      "timingPattern": "T1 read D: ok (fast); T1 commit write D: ok (fast); T1 read D: ABORTED (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 67001,
+          "commitLatencyMs": 449,
+          "result": "committed"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, T2 begin, T2 commit write D (blind; sent), wait up to 25 s, T1 rollback, then T2 commit awaited",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 309,
+          "http": 200,
+          "latencyMs": 309,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 621,
+          "http": 200,
+          "latencyMs": 312,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s6a-r1-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s6a-r1-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 309,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 910,
+          "http": 200,
+          "latencyMs": 289,
+          "n": 3,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 621,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 20769,
+          "error": {
+            "code": 409,
+            "message": "Too much contention on these documents. Please try again.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 19859,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "error",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s6a.r1"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s6a-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "Too much contention on these documents. Please try again.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 910,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 21182,
+          "http": 200,
+          "latencyMs": 411,
+          "n": 5,
+          "op": "rollback",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>"
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:rollback"
+          },
+          "response": {},
+          "startMs": 20771,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": null,
+          "writer": "setup"
+        }
+      },
+      "id": "s6a.r1",
+      "marks": [
+        {
+          "atMs": 20771,
+          "text": "the write commit returned within 25000 ms, before T1 ended"
+        }
+      ],
+      "pattern": "T1 read D: ok; T2 commit write D: ABORTED; T1 rollback: ok",
+      "run": 1,
+      "scenario": "s6a",
+      "timingPattern": "T1 read D: ok (fast); T2 commit write D: ABORTED (waited); T1 rollback: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 21182,
+          "result": "rolled back"
+        },
+        "T2": {
+          "atMs": 20769,
+          "message": "Too much contention on these documents. Please try again.",
+          "onOp": "commit write D",
+          "opLatencyMs": 19859,
+          "result": "aborted"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, T2 begin, T2 commit write D (blind; sent), wait up to 25 s, T1 rollback, then T2 commit awaited",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 623,
+          "http": 200,
+          "latencyMs": 623,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 890,
+          "http": 200,
+          "latencyMs": 267,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s6a-r2-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s6a-r2-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 623,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 1222,
+          "http": 200,
+          "latencyMs": 332,
+          "n": 3,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 890,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 21025,
+          "error": {
+            "code": 409,
+            "message": "Too much contention on these documents. Please try again.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 19803,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "error",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s6a.r2"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s6a-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "Too much contention on these documents. Please try again.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 1222,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 22792,
+          "http": 200,
+          "latencyMs": 1756,
+          "n": 5,
+          "op": "rollback",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>"
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:rollback"
+          },
+          "response": {},
+          "startMs": 21036,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": null,
+          "writer": "setup"
+        }
+      },
+      "id": "s6a.r2",
+      "marks": [
+        {
+          "atMs": 21036,
+          "text": "the write commit returned within 25000 ms, before T1 ended"
+        }
+      ],
+      "pattern": "T1 read D: ok; T2 commit write D: ABORTED; T1 rollback: ok",
+      "run": 2,
+      "scenario": "s6a",
+      "timingPattern": "T1 read D: ok (fast); T2 commit write D: ABORTED (waited); T1 rollback: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 22792,
+          "result": "rolled back"
+        },
+        "T2": {
+          "atMs": 21025,
+          "message": "Too much contention on these documents. Please try again.",
+          "onOp": "commit write D",
+          "opLatencyMs": 19803,
+          "result": "aborted"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, T2 begin, T2 commit write D (blind; sent), wait up to 25 s, T1 rollback, then T2 commit awaited",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 3139,
+          "http": 200,
+          "latencyMs": 3139,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 6618,
+          "http": 200,
+          "latencyMs": 3479,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s6a-r3-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s6a-r3-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 3139,
+          "timing": "waited"
+        },
+        {
+          "actor": "T2",
+          "endMs": 7379,
+          "http": 200,
+          "latencyMs": 761,
+          "n": 3,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T2 transaction id>"
+          },
+          "startMs": 6618,
+          "timing": "fast"
+        },
+        {
+          "actor": "T2",
+          "endMs": 27654,
+          "error": {
+            "code": 409,
+            "message": "Too much contention on these documents. Please try again.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 20275,
+          "n": 4,
+          "op": "commit write D",
+          "outcome": "error",
+          "request": {
+            "body": {
+              "transaction": "<T2 transaction id>",
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s6a.r3"
+                      },
+                      "writer": {
+                        "stringValue": "T2"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s6a-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "Too much contention on these documents. Please try again.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 7379,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 28178,
+          "http": 200,
+          "latencyMs": 499,
+          "n": 5,
+          "op": "rollback",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>"
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:rollback"
+          },
+          "response": {},
+          "startMs": 27679,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": null,
+          "writer": "setup"
+        }
+      },
+      "id": "s6a.r3",
+      "marks": [
+        {
+          "atMs": 27678,
+          "text": "the write commit returned within 25000 ms, before T1 ended"
+        }
+      ],
+      "pattern": "T1 read D: ok; T2 commit write D: ABORTED; T1 rollback: ok",
+      "run": 3,
+      "scenario": "s6a",
+      "timingPattern": "T1 read D: ok (waited); T2 commit write D: ABORTED (waited); T1 rollback: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 28178,
+          "result": "rolled back"
+        },
+        "T2": {
+          "atMs": 27654,
+          "message": "Too much contention on these documents. Please try again.",
+          "onOp": "commit write D",
+          "opLatencyMs": 20275,
+          "result": "aborted"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, commit write D with no transaction (sent), wait up to 25 s, T1 rollback, then the commit awaited",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 319,
+          "http": 200,
+          "latencyMs": 319,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 612,
+          "http": 200,
+          "latencyMs": 293,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s6b-r1-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s6b-r1-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 319,
+          "timing": "fast"
+        },
+        {
+          "actor": "W",
+          "endMs": 20444,
+          "error": {
+            "code": 409,
+            "message": "Too much contention on these documents. Please try again.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 19831,
+          "n": 3,
+          "op": "commit write D (no transaction)",
+          "outcome": "error",
+          "request": {
+            "body": {
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s6b.r1"
+                      },
+                      "writer": {
+                        "stringValue": "W"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s6b-r1-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "Too much contention on these documents. Please try again.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 613,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 21022,
+          "http": 200,
+          "latencyMs": 550,
+          "n": 4,
+          "op": "rollback",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>"
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:rollback"
+          },
+          "response": {},
+          "startMs": 20472,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": null,
+          "writer": "setup"
+        }
+      },
+      "id": "s6b.r1",
+      "marks": [
+        {
+          "atMs": 20472,
+          "text": "the write commit returned within 25000 ms, before T1 ended"
+        }
+      ],
+      "pattern": "T1 read D: ok; W commit write D (no transaction): ABORTED; T1 rollback: ok",
+      "run": 1,
+      "scenario": "s6b",
+      "timingPattern": "T1 read D: ok (fast); W commit write D (no transaction): ABORTED (waited); T1 rollback: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 21022,
+          "result": "rolled back"
+        },
+        "W": {
+          "atMs": 20444,
+          "message": "Too much contention on these documents. Please try again.",
+          "result": "error"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, commit write D with no transaction (sent), wait up to 25 s, T1 rollback, then the commit awaited",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 450,
+          "http": 200,
+          "latencyMs": 450,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 895,
+          "http": 200,
+          "latencyMs": 442,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s6b-r2-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s6b-r2-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 453,
+          "timing": "fast"
+        },
+        {
+          "actor": "W",
+          "endMs": 23325,
+          "error": {
+            "code": 409,
+            "message": "Too much contention on these documents. Please try again.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 22430,
+          "n": 3,
+          "op": "commit write D (no transaction)",
+          "outcome": "error",
+          "request": {
+            "body": {
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s6b.r2"
+                      },
+                      "writer": {
+                        "stringValue": "W"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s6b-r2-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "Too much contention on these documents. Please try again.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 895,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 25715,
+          "http": 200,
+          "latencyMs": 2348,
+          "n": 4,
+          "op": "rollback",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>"
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:rollback"
+          },
+          "response": {},
+          "startMs": 23367,
+          "timing": "fast"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": null,
+          "writer": "setup"
+        }
+      },
+      "id": "s6b.r2",
+      "marks": [
+        {
+          "atMs": 23367,
+          "text": "the write commit returned within 25000 ms, before T1 ended"
+        }
+      ],
+      "pattern": "T1 read D: ok; W commit write D (no transaction): ABORTED; T1 rollback: ok",
+      "run": 2,
+      "scenario": "s6b",
+      "timingPattern": "T1 read D: ok (fast); W commit write D (no transaction): ABORTED (waited); T1 rollback: ok (fast)",
+      "transactions": {
+        "T1": {
+          "atMs": 25715,
+          "result": "rolled back"
+        },
+        "W": {
+          "atMs": 23325,
+          "message": "Too much contention on these documents. Please try again.",
+          "result": "error"
+        }
+      }
+    },
+    {
+      "description": "T1 begin, T1 read D, commit write D with no transaction (sent), wait up to 25 s, T1 rollback, then the commit awaited",
+      "events": [
+        {
+          "actor": "T1",
+          "endMs": 1152,
+          "http": 200,
+          "latencyMs": 1152,
+          "n": 1,
+          "op": "beginTransaction",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "options": {
+                "readWrite": {}
+              }
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+          },
+          "response": {
+            "transaction": "<T1 transaction id>"
+          },
+          "startMs": 0,
+          "timing": "fast"
+        },
+        {
+          "actor": "T1",
+          "endMs": 2558,
+          "http": 200,
+          "latencyMs": 1406,
+          "n": 2,
+          "op": "read D",
+          "outcome": "ok",
+          "request": {
+            "method": "GET",
+            "path": "projects/{project}/databases/(default)/documents/aruma-ref-txn/s6b-r3-D?transaction=<T1 transaction id>"
+          },
+          "response": {
+            "createTime": "<createTime: RFC 3339>",
+            "fields": {
+              "writer": {
+                "stringValue": "setup"
+              }
+            },
+            "name": "aruma-ref-txn/s6b-r3-D",
+            "updateTime": "<updateTime: RFC 3339>"
+          },
+          "startMs": 1152,
+          "timing": "fast"
+        },
+        {
+          "actor": "W",
+          "endMs": 22486,
+          "error": {
+            "code": 409,
+            "message": "Too much contention on these documents. Please try again.",
+            "status": "ABORTED"
+          },
+          "http": 409,
+          "latencyMs": 19928,
+          "n": 3,
+          "op": "commit write D (no transaction)",
+          "outcome": "error",
+          "request": {
+            "body": {
+              "writes": [
+                {
+                  "update": {
+                    "fields": {
+                      "step": {
+                        "stringValue": "s6b.r3"
+                      },
+                      "writer": {
+                        "stringValue": "W"
+                      }
+                    },
+                    "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-txn/s6b-r3-D"
+                  }
+                }
+              ]
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:commit"
+          },
+          "response": {
+            "error": {
+              "code": 409,
+              "message": "Too much contention on these documents. Please try again.",
+              "status": "ABORTED"
+            }
+          },
+          "startMs": 2558,
+          "timing": "waited"
+        },
+        {
+          "actor": "T1",
+          "endMs": 26266,
+          "http": 200,
+          "latencyMs": 3772,
+          "n": 4,
+          "op": "rollback",
+          "outcome": "ok",
+          "request": {
+            "body": {
+              "transaction": "<T1 transaction id>"
+            },
+            "method": "POST",
+            "path": "projects/{project}/databases/(default)/documents:rollback"
+          },
+          "response": {},
+          "startMs": 22494,
+          "timing": "waited"
+        }
+      ],
+      "final": {
+        "D": {
+          "http": 200,
+          "step": null,
+          "writer": "setup"
+        }
+      },
+      "id": "s6b.r3",
+      "marks": [
+        {
+          "atMs": 22494,
+          "text": "the write commit returned within 25000 ms, before T1 ended"
+        }
+      ],
+      "pattern": "T1 read D: ok; W commit write D (no transaction): ABORTED; T1 rollback: ok",
+      "run": 3,
+      "scenario": "s6b",
+      "timingPattern": "T1 read D: ok (fast); W commit write D (no transaction): ABORTED (waited); T1 rollback: ok (waited)",
+      "transactions": {
+        "T1": {
+          "atMs": 26266,
+          "result": "rolled back"
+        },
+        "W": {
+          "atMs": 22486,
+          "message": "Too much contention on these documents. Please try again.",
+          "result": "error"
+        }
+      }
+    }
+  ],
+  "cleanup": {
+    "commitHttp": [
+      200
+    ],
+    "deleted": [
+      "aruma-ref-txn/s1-r1-D",
+      "aruma-ref-txn/s1-r2-D",
+      "aruma-ref-txn/s1-r3-D",
+      "aruma-ref-txn/s2-r1-D",
+      "aruma-ref-txn/s2-r2-D",
+      "aruma-ref-txn/s2-r3-D",
+      "aruma-ref-txn/s3a-r1-D",
+      "aruma-ref-txn/s3a-r1-E",
+      "aruma-ref-txn/s3a-r2-D",
+      "aruma-ref-txn/s3a-r2-E",
+      "aruma-ref-txn/s3a-r3-D",
+      "aruma-ref-txn/s3a-r3-E",
+      "aruma-ref-txn/s3b-r1-D",
+      "aruma-ref-txn/s3b-r2-D",
+      "aruma-ref-txn/s3b-r3-D",
+      "aruma-ref-txn/s4a-r1-D",
+      "aruma-ref-txn/s4a-r2-D",
+      "aruma-ref-txn/s4a-r3-D",
+      "aruma-ref-txn/s4b-r1-D",
+      "aruma-ref-txn/s4b-r2-D",
+      "aruma-ref-txn/s4b-r3-D",
+      "aruma-ref-txn/s4c-r1-D",
+      "aruma-ref-txn/s4c-r2-D",
+      "aruma-ref-txn/s4c-r3-D",
+      "aruma-ref-txn/s5-probe50-D",
+      "aruma-ref-txn/s5-probe65-D",
+      "aruma-ref-txn/s5-r1-D",
+      "aruma-ref-txn/s5-r2-D",
+      "aruma-ref-txn/s5-r3-D",
+      "aruma-ref-txn/s6a-r1-D",
+      "aruma-ref-txn/s6a-r2-D",
+      "aruma-ref-txn/s6a-r3-D",
+      "aruma-ref-txn/s6b-r1-D",
+      "aruma-ref-txn/s6b-r2-D",
+      "aruma-ref-txn/s6b-r3-D"
+    ],
+    "deletedCount": 35,
+    "listShowMissing": {
+      "documents": [],
+      "http": 200
+    },
+    "ok": true,
+    "sweep": {
+      "http": 200,
+      "query": "kindless allDescendants, __name__ in [aruma-ref-txn/__id-9223372036854775808__, aruma-ref-txo/__id-9223372036854775808__)",
+      "remaining": []
+    }
+  },
+  "header": {
+    "generator": "test/oracle/documents/production/record-contention.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so beginTransaction gives a PESSIMISTIC read-write transaction and security rules do not apply.",
+      "T1 is always begun before T2 (T1 is the older transaction). A read is GET with ?transaction=; a write is commit with one update of fields {writer, step}.",
+      "Each event has startMs and endMs from the start of its run, latencyMs, and timing \"waited\" when latencyMs >= 3000, otherwise \"fast\". Times differ on every recording; outcomes, statuses, messages and patterns are what must match.",
+      "A request still pending after 5000 ms (25000 ms in s6) is treated as blocked and the scenario goes on; client-side timeouts are 15000 ms, or 40000 ms for a request expected to block. A client timeout is recorded as outcome clientTimeout.",
+      "transactions: per actor, committed / aborted (with the operation and message) / rolled back. final: each document's writer after the run (GET without transaction).",
+      "pattern: a run's requests (without begins) and results; timingPattern adds fast/waited. summary[scenario].stable is true when the runs have the same pattern, timingStable when they have the same timingPattern (network jitter alone can push an ordinary read past the threshold).",
+      "Transaction ids are replaced by <T1 transaction id> and so on; times by placeholders (normalise in lib.mjs); messages are as returned.",
+      "s5 and s5probe ran in parallel with the other scenarios, on their own documents; the probes (50 s and 65 s idle) bound the idle limit."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T16:19:29.750Z .. 2026-10-26T16:26:35.247Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1; REST v1",
+    "versions": {
+      "api": "firestore.googleapis.com REST v1 (fetch, one attempt per request, no retry)",
+      "firebase-tools (auth only)": "13.23.0",
+      "generator sha256": "1ff3e1dc2a8f66c4405617dcd604509eb1bf5a3df4ffe4f7cb48db4beaf70294",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1",
+  "summary": {
+    "s1": {
+      "description": "T1 begin, T1 read D, T2 begin, T2 read D, T2 commit write D (sent; up to 5 s), then T1 commit write D",
+      "outcomes": [
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s1.r1",
+              "writer": "T1"
+            }
+          },
+          "id": "s1.r1",
+          "transactions": {
+            "T1": {
+              "atMs": 9878,
+              "commitLatencyMs": 1950,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 9876,
+              "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+              "onOp": "commit write D",
+              "opLatencyMs": 6951,
+              "result": "aborted"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s1.r2",
+              "writer": "T1"
+            }
+          },
+          "id": "s1.r2",
+          "transactions": {
+            "T1": {
+              "atMs": 11720,
+              "commitLatencyMs": 1084,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 11719,
+              "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+              "onOp": "commit write D",
+              "opLatencyMs": 6084,
+              "result": "aborted"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s1.r3",
+              "writer": "T1"
+            }
+          },
+          "id": "s1.r3",
+          "transactions": {
+            "T1": {
+              "atMs": 8489,
+              "commitLatencyMs": 1393,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 8502,
+              "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+              "onOp": "commit write D",
+              "opLatencyMs": 6406,
+              "result": "aborted"
+            }
+          }
+        }
+      ],
+      "patterns": [
+        "T1 read D: ok; T2 read D: ok; T2 commit write D: ABORTED; T1 commit write D: ok"
+      ],
+      "runs": 3,
+      "stable": true,
+      "timingPatterns": [
+        "T1 read D: ok (fast); T2 read D: ok (fast); T2 commit write D: ABORTED (waited); T1 commit write D: ok (fast)"
+      ],
+      "timingStable": true
+    },
+    "s2": {
+      "description": "T1 begin, T1 read D, T2 begin, T2 read D, T2 commit write D (sent; up to 5 s), T1 reads D again (its next action), up to 3 s more, T1 rollback (ends T1), then T2 commit awaited",
+      "outcomes": [
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s2.r1",
+              "writer": "T2"
+            }
+          },
+          "id": "s2.r1",
+          "transactions": {
+            "T1": {
+              "atMs": 12322,
+              "result": "rolled back"
+            },
+            "T2": {
+              "atMs": 12348,
+              "commitLatencyMs": 10879,
+              "result": "committed"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s2.r2",
+              "writer": "T2"
+            }
+          },
+          "id": "s2.r2",
+          "transactions": {
+            "T1": {
+              "atMs": 13850,
+              "result": "rolled back"
+            },
+            "T2": {
+              "atMs": 13909,
+              "commitLatencyMs": 12172,
+              "result": "committed"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s2.r3",
+              "writer": "T2"
+            }
+          },
+          "id": "s2.r3",
+          "transactions": {
+            "T1": {
+              "atMs": 12138,
+              "result": "rolled back"
+            },
+            "T2": {
+              "atMs": 12176,
+              "commitLatencyMs": 10427,
+              "result": "committed"
+            }
+          }
+        }
+      ],
+      "patterns": [
+        "T1 read D: ok; T2 read D: ok; T2 commit write D: ok; T1 read D: ok; T1 rollback: ok"
+      ],
+      "runs": 3,
+      "stable": true,
+      "timingPatterns": [
+        "T1 read D: ok (fast); T2 read D: ok (fast); T2 commit write D: ok (waited); T1 read D: ok (fast); T1 rollback: ok (fast)",
+        "T1 read D: ok (fast); T2 read D: ok (fast); T2 commit write D: ok (waited); T1 read D: ok (waited); T1 rollback: ok (fast)"
+      ],
+      "timingStable": false
+    },
+    "s3a": {
+      "description": "T1 begin, T1 read E, T2 begin, T2 read D, T1 commit write D (sent; up to 5 s), T2 reads D again (its next action), up to 3 s more, T2 commit write D if T2 is still alive",
+      "outcomes": [
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s3a.r1",
+              "writer": "T1"
+            },
+            "E": {
+              "http": 200,
+              "step": null,
+              "writer": "setup"
+            }
+          },
+          "id": "s3a.r1",
+          "transactions": {
+            "T1": {
+              "atMs": 4687,
+              "commitLatencyMs": 1048,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 6092,
+              "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+              "onOp": "read D",
+              "opLatencyMs": 1383,
+              "result": "aborted"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s3a.r2",
+              "writer": "T1"
+            },
+            "E": {
+              "http": 200,
+              "step": null,
+              "writer": "setup"
+            }
+          },
+          "id": "s3a.r2",
+          "transactions": {
+            "T1": {
+              "atMs": 2681,
+              "commitLatencyMs": 967,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 3050,
+              "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+              "onOp": "read D",
+              "opLatencyMs": 321,
+              "result": "aborted"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s3a.r3",
+              "writer": "T1"
+            },
+            "E": {
+              "http": 200,
+              "step": null,
+              "writer": "setup"
+            }
+          },
+          "id": "s3a.r3",
+          "transactions": {
+            "T1": {
+              "atMs": 1857,
+              "commitLatencyMs": 474,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 2311,
+              "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+              "onOp": "read D",
+              "opLatencyMs": 418,
+              "result": "aborted"
+            }
+          }
+        }
+      ],
+      "patterns": [
+        "T1 read E: ok; T2 read D: ok; T1 commit write D: ok; T2 read D: ABORTED"
+      ],
+      "runs": 3,
+      "stable": true,
+      "timingPatterns": [
+        "T1 read E: ok (fast); T2 read D: ok (fast); T1 commit write D: ok (fast); T2 read D: ABORTED (fast)"
+      ],
+      "timingStable": true
+    },
+    "s3b": {
+      "description": "T1 begin, T2 begin, T2 read D, T1 commit write D (sent; up to 5 s; T1 has read nothing), T2 reads D again, up to 3 s more, T2 commit write D if T2 is still alive",
+      "outcomes": [
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s3b.r1",
+              "writer": "T1"
+            }
+          },
+          "id": "s3b.r1",
+          "transactions": {
+            "T1": {
+              "atMs": 12838,
+              "commitLatencyMs": 11685,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 12832,
+              "commitLatencyMs": 599,
+              "result": "committed"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s3b.r2",
+              "writer": "T1"
+            }
+          },
+          "id": "s3b.r2",
+          "transactions": {
+            "T1": {
+              "atMs": 15455,
+              "commitLatencyMs": 11105,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 15457,
+              "commitLatencyMs": 1732,
+              "result": "committed"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s3b.r3",
+              "writer": "T1"
+            }
+          },
+          "id": "s3b.r3",
+          "transactions": {
+            "T1": {
+              "atMs": 19031,
+              "commitLatencyMs": 15670,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 19032,
+              "commitLatencyMs": 1662,
+              "result": "committed"
+            }
+          }
+        }
+      ],
+      "patterns": [
+        "T2 read D: ok; T1 commit write D: ok; T2 read D: ok; T2 commit write D: ok"
+      ],
+      "runs": 3,
+      "stable": true,
+      "timingPatterns": [
+        "T2 read D: ok (fast); T1 commit write D: ok (waited); T2 read D: ok (waited); T2 commit write D: ok (fast)",
+        "T2 read D: ok (fast); T1 commit write D: ok (waited); T2 read D: ok (fast); T2 commit write D: ok (fast)"
+      ],
+      "timingStable": false
+    },
+    "s4a": {
+      "description": "T1 begin, T2 begin, T1 commit write D, then T2 commit write D",
+      "outcomes": [
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s4a.r1",
+              "writer": "T2"
+            }
+          },
+          "id": "s4a.r1",
+          "transactions": {
+            "T1": {
+              "atMs": 1888,
+              "commitLatencyMs": 1275,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 2299,
+              "commitLatencyMs": 411,
+              "result": "committed"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s4a.r2",
+              "writer": "T2"
+            }
+          },
+          "id": "s4a.r2",
+          "transactions": {
+            "T1": {
+              "atMs": 31048,
+              "commitLatencyMs": 23815,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 37850,
+              "commitLatencyMs": 6802,
+              "result": "committed"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s4a.r3",
+              "writer": "T2"
+            }
+          },
+          "id": "s4a.r3",
+          "transactions": {
+            "T1": {
+              "atMs": 4910,
+              "commitLatencyMs": 1672,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 6823,
+              "commitLatencyMs": 1912,
+              "result": "committed"
+            }
+          }
+        }
+      ],
+      "patterns": [
+        "T1 commit write D: ok; T2 commit write D: ok"
+      ],
+      "runs": 3,
+      "stable": true,
+      "timingPatterns": [
+        "T1 commit write D: ok (fast); T2 commit write D: ok (fast)",
+        "T1 commit write D: ok (waited); T2 commit write D: ok (waited)"
+      ],
+      "timingStable": false
+    },
+    "s4b": {
+      "description": "T1 begin, T2 begin, T2 commit write D, then T1 commit write D",
+      "outcomes": [
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s4b.r1",
+              "writer": "T1"
+            }
+          },
+          "id": "s4b.r1",
+          "transactions": {
+            "T1": {
+              "atMs": 4804,
+              "commitLatencyMs": 1233,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 3570,
+              "commitLatencyMs": 1041,
+              "result": "committed"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s4b.r2",
+              "writer": "T1"
+            }
+          },
+          "id": "s4b.r2",
+          "transactions": {
+            "T1": {
+              "atMs": 4221,
+              "commitLatencyMs": 1258,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 2963,
+              "commitLatencyMs": 1125,
+              "result": "committed"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s4b.r3",
+              "writer": "T1"
+            }
+          },
+          "id": "s4b.r3",
+          "transactions": {
+            "T1": {
+              "atMs": 1781,
+              "commitLatencyMs": 554,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 1227,
+              "commitLatencyMs": 440,
+              "result": "committed"
+            }
+          }
+        }
+      ],
+      "patterns": [
+        "T2 commit write D: ok; T1 commit write D: ok"
+      ],
+      "runs": 3,
+      "stable": true,
+      "timingPatterns": [
+        "T2 commit write D: ok (fast); T1 commit write D: ok (fast)"
+      ],
+      "timingStable": true
+    },
+    "s4c": {
+      "description": "T1 begin, T2 begin, T1 and T2 commit write D sent at the same time",
+      "outcomes": [
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s4c.r1",
+              "writer": "T2"
+            }
+          },
+          "id": "s4c.r1",
+          "transactions": {
+            "T1": {
+              "atMs": 2684,
+              "commitLatencyMs": 601,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 8058,
+              "commitLatencyMs": 5975,
+              "result": "committed"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s4c.r2",
+              "writer": "T2"
+            }
+          },
+          "id": "s4c.r2",
+          "transactions": {
+            "T1": {
+              "atMs": 5812,
+              "commitLatencyMs": 1140,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 7641,
+              "commitLatencyMs": 2969,
+              "result": "committed"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s4c.r3",
+              "writer": "T2"
+            }
+          },
+          "id": "s4c.r3",
+          "transactions": {
+            "T1": {
+              "atMs": 7677,
+              "commitLatencyMs": 2461,
+              "result": "committed"
+            },
+            "T2": {
+              "atMs": 8447,
+              "commitLatencyMs": 3231,
+              "result": "committed"
+            }
+          }
+        }
+      ],
+      "patterns": [
+        "T1 commit write D: ok; T2 commit write D: ok"
+      ],
+      "runs": 3,
+      "stable": true,
+      "timingPatterns": [
+        "T1 commit write D: ok (fast); T2 commit write D: ok (waited)",
+        "T1 commit write D: ok (fast); T2 commit write D: ok (fast)"
+      ],
+      "timingStable": false
+    },
+    "s5": {
+      "description": "T1 begin, T1 read D, idle 70 s, T1 commit write D, then T1 read D again with the same transaction",
+      "outcomes": [
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s5.r1",
+              "writer": "T1"
+            }
+          },
+          "id": "s5.r1",
+          "transactions": {
+            "T1": {
+              "atMs": 71869,
+              "commitLatencyMs": 780,
+              "result": "committed"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s5.r2",
+              "writer": "T1"
+            }
+          },
+          "id": "s5.r2",
+          "transactions": {
+            "T1": {
+              "atMs": 74197,
+              "commitLatencyMs": 2539,
+              "result": "committed"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s5.r3",
+              "writer": "T1"
+            }
+          },
+          "id": "s5.r3",
+          "transactions": {
+            "T1": {
+              "atMs": 74217,
+              "commitLatencyMs": 2666,
+              "result": "committed"
+            }
+          }
+        }
+      ],
+      "patterns": [
+        "T1 read D: ok; T1 commit write D: ok; T1 read D: ABORTED"
+      ],
+      "runs": 3,
+      "stable": true,
+      "timingPatterns": [
+        "T1 read D: ok (fast); T1 commit write D: ok (fast); T1 read D: ABORTED (fast)"
+      ],
+      "timingStable": true
+    },
+    "s5probe": {
+      "description": "T1 begin, T1 read D, idle 50 s, T1 commit write D, then T1 read D again with the same transaction",
+      "outcomes": [
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s5probe50",
+              "writer": "T1"
+            }
+          },
+          "id": "s5probe50",
+          "transactions": {
+            "T1": {
+              "atMs": 54783,
+              "commitLatencyMs": 3277,
+              "result": "committed"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": "s5probe65",
+              "writer": "T1"
+            }
+          },
+          "id": "s5probe65",
+          "transactions": {
+            "T1": {
+              "atMs": 67001,
+              "commitLatencyMs": 449,
+              "result": "committed"
+            }
+          }
+        }
+      ],
+      "patterns": [
+        "T1 read D: ok; T1 commit write D: ok; T1 read D: ABORTED"
+      ],
+      "runs": 2,
+      "stable": true,
+      "timingPatterns": [
+        "T1 read D: ok (fast); T1 commit write D: ok (waited); T1 read D: ABORTED (fast)",
+        "T1 read D: ok (fast); T1 commit write D: ok (fast); T1 read D: ABORTED (fast)"
+      ],
+      "timingStable": false
+    },
+    "s6a": {
+      "description": "T1 begin, T1 read D, T2 begin, T2 commit write D (blind; sent), wait up to 25 s, T1 rollback, then T2 commit awaited",
+      "outcomes": [
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": null,
+              "writer": "setup"
+            }
+          },
+          "id": "s6a.r1",
+          "transactions": {
+            "T1": {
+              "atMs": 21182,
+              "result": "rolled back"
+            },
+            "T2": {
+              "atMs": 20769,
+              "message": "Too much contention on these documents. Please try again.",
+              "onOp": "commit write D",
+              "opLatencyMs": 19859,
+              "result": "aborted"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": null,
+              "writer": "setup"
+            }
+          },
+          "id": "s6a.r2",
+          "transactions": {
+            "T1": {
+              "atMs": 22792,
+              "result": "rolled back"
+            },
+            "T2": {
+              "atMs": 21025,
+              "message": "Too much contention on these documents. Please try again.",
+              "onOp": "commit write D",
+              "opLatencyMs": 19803,
+              "result": "aborted"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": null,
+              "writer": "setup"
+            }
+          },
+          "id": "s6a.r3",
+          "transactions": {
+            "T1": {
+              "atMs": 28178,
+              "result": "rolled back"
+            },
+            "T2": {
+              "atMs": 27654,
+              "message": "Too much contention on these documents. Please try again.",
+              "onOp": "commit write D",
+              "opLatencyMs": 20275,
+              "result": "aborted"
+            }
+          }
+        }
+      ],
+      "patterns": [
+        "T1 read D: ok; T2 commit write D: ABORTED; T1 rollback: ok"
+      ],
+      "runs": 3,
+      "stable": true,
+      "timingPatterns": [
+        "T1 read D: ok (fast); T2 commit write D: ABORTED (waited); T1 rollback: ok (fast)",
+        "T1 read D: ok (waited); T2 commit write D: ABORTED (waited); T1 rollback: ok (fast)"
+      ],
+      "timingStable": false
+    },
+    "s6b": {
+      "description": "T1 begin, T1 read D, commit write D with no transaction (sent), wait up to 25 s, T1 rollback, then the commit awaited",
+      "outcomes": [
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": null,
+              "writer": "setup"
+            }
+          },
+          "id": "s6b.r1",
+          "transactions": {
+            "T1": {
+              "atMs": 21022,
+              "result": "rolled back"
+            },
+            "W": {
+              "atMs": 20444,
+              "message": "Too much contention on these documents. Please try again.",
+              "result": "error"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": null,
+              "writer": "setup"
+            }
+          },
+          "id": "s6b.r2",
+          "transactions": {
+            "T1": {
+              "atMs": 25715,
+              "result": "rolled back"
+            },
+            "W": {
+              "atMs": 23325,
+              "message": "Too much contention on these documents. Please try again.",
+              "result": "error"
+            }
+          }
+        },
+        {
+          "final": {
+            "D": {
+              "http": 200,
+              "step": null,
+              "writer": "setup"
+            }
+          },
+          "id": "s6b.r3",
+          "transactions": {
+            "T1": {
+              "atMs": 26266,
+              "result": "rolled back"
+            },
+            "W": {
+              "atMs": 22486,
+              "message": "Too much contention on these documents. Please try again.",
+              "result": "error"
+            }
+          }
+        }
+      ],
+      "patterns": [
+        "T1 read D: ok; W commit write D (no transaction): ABORTED; T1 rollback: ok"
+      ],
+      "runs": 3,
+      "stable": true,
+      "timingPatterns": [
+        "T1 read D: ok (fast); W commit write D (no transaction): ABORTED (waited); T1 rollback: ok (fast)",
+        "T1 read D: ok (fast); W commit write D (no transaction): ABORTED (waited); T1 rollback: ok (waited)"
+      ],
+      "timingStable": false
+    }
+  }
+}
