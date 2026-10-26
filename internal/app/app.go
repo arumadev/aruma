@@ -243,7 +243,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 
 	var docs *Documents
 	if cfg.Documents.Enabled {
-		docs = newDocuments(cfg, svc, pool, m, logger)
+		docs = newDocuments(cfg, svc, pool, keys, m, logger)
 		docs.mount(&handlers)
 	}
 

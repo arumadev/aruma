@@ -168,6 +168,11 @@ func Defaults() Config {
 			ServerStreamMax:    5 * time.Minute,
 			StreamsPerIP:       500,
 			CommitConcurrency:  4,
+			TxnWaitTimeout:     20 * time.Second,
+			TxnIdleTimeout:     60 * time.Second,
+			TxnMaxLifetime:     270 * time.Second,
+			MaxOpenTxns:        1000,
+			MaxLocksPerTxn:     10_000,
 		}},
 		Storage: Storage{
 			GCGrace: time.Minute,
@@ -240,6 +245,19 @@ type DocumentsLimits struct {
 	// CommitConcurrency is how many commits of one database run in Postgres at once (ADR-024
 	// §6.3); the others wait in the process, not in the pool.
 	CommitConcurrency int `yaml:"commit_concurrency"`
+	// TxnWaitTimeout bounds a wait for a transaction's lock: the waiting transaction, or commit,
+	// is then ABORTED with production's "Too much contention" text (ADR-024 §6.3).
+	TxnWaitTimeout time.Duration `yaml:"txn_wait_timeout"`
+	// TxnIdleTimeout is how long a transaction may go without a request before any waiter may
+	// abort it; idleness alone ends nothing.
+	TxnIdleTimeout time.Duration `yaml:"txn_idle_timeout"`
+	// TxnMaxLifetime ends a transaction this long after it began.
+	TxnMaxLifetime time.Duration `yaml:"txn_max_lifetime"`
+	// MaxOpenTxns bounds a database's open locking (pessimistic) transactions; over it,
+	// BeginTransaction is ABORTED.
+	MaxOpenTxns int `yaml:"max_open_txns"`
+	// MaxLocksPerTxn bounds the documents and listings one transaction locks or, optimistic, reads.
+	MaxLocksPerTxn int `yaml:"max_locks_per_txn"`
 }
 
 // Storage holds the Cloud Storage for Firebase settings (ADR-022).
@@ -507,6 +525,11 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	duration("ARUMA_DOCUMENTS_SERVER_STREAM_MAX", &dl.ServerStreamMax)
 	count("ARUMA_DOCUMENTS_STREAMS_PER_IP", &dl.StreamsPerIP)
 	count("ARUMA_DOCUMENTS_COMMIT_CONCURRENCY", &dl.CommitConcurrency)
+	duration("ARUMA_DOCUMENTS_TXN_WAIT_TIMEOUT", &dl.TxnWaitTimeout)
+	duration("ARUMA_DOCUMENTS_TXN_IDLE_TIMEOUT", &dl.TxnIdleTimeout)
+	duration("ARUMA_DOCUMENTS_TXN_MAX_LIFETIME", &dl.TxnMaxLifetime)
+	count("ARUMA_DOCUMENTS_MAX_OPEN_TXNS", &dl.MaxOpenTxns)
+	count("ARUMA_DOCUMENTS_MAX_LOCKS_PER_TXN", &dl.MaxLocksPerTxn)
 	boolean("ARUMA_STORAGE_ENABLED", &c.Storage.Enabled)
 	str("ARUMA_STORAGE_DATA_DIR", &c.Storage.DataDir)
 	duration("ARUMA_STORAGE_GC_GRACE", &c.Storage.GCGrace)
@@ -694,6 +717,11 @@ func (c *Config) validateDocuments() []error {
 		{"server_stream_max", int64(l.ServerStreamMax)},
 		{"streams_per_ip", int64(l.StreamsPerIP)},
 		{"commit_concurrency", int64(l.CommitConcurrency)},
+		{"txn_wait_timeout", int64(l.TxnWaitTimeout)},
+		{"txn_idle_timeout", int64(l.TxnIdleTimeout)},
+		{"txn_max_lifetime", int64(l.TxnMaxLifetime)},
+		{"max_open_txns", int64(l.MaxOpenTxns)},
+		{"max_locks_per_txn", int64(l.MaxLocksPerTxn)},
 	} {
 		if f.v < 1 {
 			errs = append(errs, fmt.Errorf("documents.limits.%s must be positive", f.name))

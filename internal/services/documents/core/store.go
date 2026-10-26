@@ -35,11 +35,11 @@ type Store interface {
 	// Commit applies writes atomically, in order, as one commit: every precondition holds and
 	// every write applies, or none does.
 	Commit(ctx context.Context, db DB, writes []Write) (CommitResult, error)
+	Transactions
 }
 
 // Transactions is the transactions' part of the store (ADR-025 §7; txn.go). Reads in a
-// transaction are Store's, with ReadOptions.Transaction. PGStore implements it; the handlers'
-// wave folds it into Store.
+// transaction are Store's, with ReadOptions.Transaction.
 //
 // A new_transaction on a read (BatchGetDocuments, RunQuery) is BeginTransaction, then the read
 // with the id, and Rollback if the read fails; the id goes in the first response.

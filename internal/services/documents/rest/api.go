@@ -128,6 +128,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.commit(w, r, rt)
 	case rt.verb == "BatchWrite" && r.Method == http.MethodPost && len(rt.rel) == 0:
 		h.batchWrite(w, r, rt)
+	case rt.verb == "BeginTransaction" && r.Method == http.MethodPost && len(rt.rel) == 0:
+		h.beginTransaction(w, r, rt)
+	case rt.verb == "Rollback" && r.Method == http.MethodPost && len(rt.rel) == 0:
+		h.rollback(w, r, rt)
 	case rt.verb != "":
 		h.unserved(w, r, rt)
 	case len(rt.rel) == 0:
@@ -181,8 +185,6 @@ var unservedBodies = map[string]struct {
 	msg       func() proto.Message
 	pathField string
 }{
-	"BeginTransaction":    {func() proto.Message { return &pb.BeginTransactionRequest{} }, "database"},
-	"Rollback":            {func() proto.Message { return &pb.RollbackRequest{} }, "database"},
 	"RunQuery":            {func() proto.Message { return &pb.RunQueryRequest{} }, "parent"},
 	"RunAggregationQuery": {func() proto.Message { return &pb.RunAggregationQueryRequest{} }, "parent"},
 	"PartitionQuery":      {func() proto.Message { return &pb.PartitionQueryRequest{} }, "parent"},
@@ -372,6 +374,28 @@ func (h *Handler) batchWrite(w http.ResponseWriter, r *http.Request, rt route) {
 	}
 	req.Database = rt.database
 	res, err := h.svc.BatchWrite(r.Context(), call(r), req)
+	write(w, res, err)
+}
+
+func (h *Handler) beginTransaction(w http.ResponseWriter, r *http.Request, rt route) {
+	req := &pb.BeginTransactionRequest{}
+	if err := body(r, req, "database"); err != nil {
+		write(w, nil, err)
+		return
+	}
+	req.Database = rt.database
+	res, err := h.svc.BeginTransaction(r.Context(), call(r), req)
+	write(w, res, err)
+}
+
+func (h *Handler) rollback(w http.ResponseWriter, r *http.Request, rt route) {
+	req := &pb.RollbackRequest{}
+	if err := body(r, req, "database"); err != nil {
+		write(w, nil, err)
+		return
+	}
+	req.Database = rt.database
+	res, err := h.svc.Rollback(r.Context(), call(r), req)
 	write(w, res, err)
 }
 
