@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Plain HTTP to the device's loopback for this test app only, and the spike server's CA
+     (res/raw/spike_ca.pem, which ../run.sh copies from the server it started) as a trust anchor
+     next to the system's, for the TLS runs. grpc-okhttp's ssl=false (h2c) needs no permission:
+     the cleartext policy covers the platform's HTTP stacks only. -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+        <trust-anchors>
+            <certificates src="@raw/spike_ca" />
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

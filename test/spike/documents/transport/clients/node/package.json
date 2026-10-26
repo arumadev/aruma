@@ -1,0 +1,13 @@
+{
+  "name": "aruma-spike-documents-transport-node",
+  "private": true,
+  "description": "firebase-admin and @google-cloud/firestore against the Document Database transport spike server",
+  "type": "module",
+  "scripts": {
+    "spike": "node spike.mjs"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "9.4.0",
+    "firebase-admin": "14.5.0"
+  }
+}

@@ -1,0 +1,171 @@
+name: documents-spike
+
+# The Document Database's F0 transport and auth spike (test/spike/documents/transport): the official
+# clients against a throwaway server that serves a fake Firestore through connect and through
+# grpc-go's ServeHTTP, h2c and TLS, on one net/http server each. Every client makes a unary call,
+# holds a Listen stream past 60 s for a later message and does the Write handshake; the server
+# records what each sends (credentials by shape only). By hand only: it decides ADR-027 and is
+# deleted with the spike.
+#   clients   Go (cloud.google.com/go/firestore) and Node (firebase-admin, gRPC and preferRest),
+#             with a fake service account, under test/ci/egress-guard.sh.
+#   android   firebase-firestore on an emulator (devices.yml's setup), device network guard.
+#   ios       FirebaseFirestore on a simulator (ios-storage.yml's setup), socket guard.
+on:
+  workflow_dispatch:
+    inputs:
+      jobs:
+        description: "Which jobs: all, or a comma-separated list of clients, android, ios"
+        default: all
+
+permissions:
+  contents: read
+
+concurrency:
+  group: documents-spike-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  clients:
+    name: Go and Node clients (h2c, TLS, fake service account, egress guard)
+    if: inputs.jobs == 'all' || contains(inputs.jobs, 'clients')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            test/spike/documents/transport/clients/go/go.sum
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: test/spike/documents/transport/clients/node/package-lock.json
+      - name: Install (Go modules and builds, firebase-admin)
+        run: |
+          go mod download
+          go build -o /dev/null ./test/spike/documents/transport/server
+          (cd test/spike/documents/transport/clients/go && go build -o /dev/null .)
+          (cd test/spike/documents/transport/clients/node && npm ci --no-audit --no-fund)
+      - name: The spike's own measurements (deadlines, drain, backpressure, Flusher, HTTP/1.1, status details)
+        run: go test -count=1 -v ./test/spike/documents/transport/server/
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: Go and Node against both stacks
+        run: test/ci/egress-guard.sh run test/spike/documents/transport/run.sh
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: documents-spike-clients
+          include-hidden-files: true
+          path: |
+            test/spike/documents/transport/.generated/record.jsonl
+            test/spike/documents/transport/.generated/server.log
+            test/spike/documents/transport/.generated/netguard-node.log
+            test/spike/documents/transport/.generated/results/
+
+  android:
+    name: Android firebase-firestore (emulator, h2c and TLS, device guard)
+    if: inputs.jobs == 'all' || contains(inputs.jobs, 'android')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+          cache-dependency-path: test/spike/documents/transport/clients/android/**/*.gradle.kts
+      # The emulator's userdata image needs more room than a fresh runner has left.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/.ghcup /opt/ghc /usr/local/share/boost
+          df -h /
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Build the spike server first (go mod download outside the emulator's step)
+        run: go build -o /dev/null ./test/spike/documents/transport/server
+      # google_apis (not google_apis_playstore): adb root works there, which the device guard needs.
+      - name: firebase-firestore against both stacks, no packet leaving the device
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disk-size: 3072M
+          emulator-boot-timeout: 300
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics
+          script: test/spike/documents/transport/clients/android/run.sh
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: documents-spike-android
+          include-hidden-files: true
+          path: |
+            test/spike/documents/transport/.generated/record.jsonl
+            test/spike/documents/transport/.generated/server.log
+            test/spike/documents/transport/.generated/android-*.txt
+
+  ios:
+    name: iOS FirebaseFirestore (simulator, h2c and TLS, socket guard)
+    if: inputs.jobs == 'all' || contains(inputs.jobs, 'ios')
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - name: Xcode 16.4
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.4.app
+          xcodebuild -version
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Restore the Swift packages
+        id: spm
+        uses: actions/cache/restore@v6
+        with:
+          path: .cache/xcode/spm
+          key: spike-transport-spm-${{ hashFiles('test/spike/documents/transport/clients/ios/Package.swift') }}
+      - name: Boot an iPhone simulator (the newest iOS runtime)
+        run: |
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json, re, sys
+          rts = [(tuple(int(x) for x in re.findall(r"\d+", rt)), ds) for rt, ds in json.load(sys.stdin)["devices"].items() if ".iOS-" in rt]
+          rts = [(v, [d for d in ds if d["name"].startswith("iPhone")]) for v, ds in sorted(rts, reverse=True)]
+          print(next(ds[0]["udid"] for v, ds in rts if ds))')
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b >/dev/null
+          echo "ARUMA_IOS_SIMULATOR=$udid" >>"$GITHUB_ENV"
+      - name: FirebaseFirestore against both stacks
+        run: test/spike/documents/transport/clients/ios/run.sh
+      - name: Save the Swift packages
+        if: ${{ !cancelled() && steps.spm.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .cache/xcode/spm
+          key: ${{ steps.spm.outputs.cache-primary-key }}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: documents-spike-ios
+          include-hidden-files: true
+          path: |
+            test/spike/documents/transport/.generated/record.jsonl
+            test/spike/documents/transport/.generated/server.log
+            test/spike/documents/transport/.generated/ios-*.log
+            test/spike/documents/transport/.generated/ios-sockets.unique.txt

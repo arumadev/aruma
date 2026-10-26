@@ -1,0 +1,10 @@
+# Made by the run scripts: the record, the CA, the fake service account's key, binaries.
+.generated/
+clients/node/node_modules/
+clients/android/.gradle/
+clients/android/build/
+clients/android/app/build/
+clients/android/app/src/main/res/raw/spike_ca.pem
+clients/android/local.properties
+clients/ios/.build/
+clients/ios/.swiftpm/
