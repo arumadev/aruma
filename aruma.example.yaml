@@ -12,7 +12,9 @@ metrics_listen: "127.0.0.1:9464"   # "" disables the private metrics listener
 log_level: info                    # debug, info, warn, error
 signup_open: false                 # let anyone create an account from the console
 # project_domain: aruma.example.com  # defaults to the host of public_url
-# trusted_proxies: ["10.0.0.0/8"]    # whose X-Forwarded-For is believed
+# trusted_proxies: ["10.0.0.0/8"]    # whose X-Forwarded-For is believed, and whose
+                                     # X-Forwarded-Proto: https lets Document Database admin
+                                     # credentials arrive without TLS (ADR-029)
 session:
   idle_timeout: 30m
   absolute_timeout: 8h
@@ -103,3 +105,7 @@ storage:                           # Cloud Storage for Firebase (ADR-022); see d
     upload_requests_per_ip: 64     # concurrent upload and write requests
     min_bytes_per_second: 4096     # slower over 30 seconds, an upload is cut
     list_max_results: 1000         # the largest page of a listing (at most 1000)
+documents:                         # Document Database (ADR-029); see docs/configuration.md
+  # dev_owner_token: true          # accept the emulators' "Bearer owner" from this machine as an
+                                   # admin of every project; accepted only when public_url and
+                                   # listen are loopback. Off, owner is always refused

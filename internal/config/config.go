@@ -42,14 +42,17 @@ type Config struct {
 	// ProjectDomain is the base domain for authDomain, storage buckets and service account
 	// emails. Defaults to the host of PublicURL.
 	ProjectDomain string `yaml:"project_domain"`
-	// TrustedProxies lists the CIDRs whose X-Forwarded-For header is believed.
+	// TrustedProxies lists the CIDRs whose X-Forwarded-For header is believed, and, on the
+	// Document Database, whose X-Forwarded-Proto: https lets a credential arrive without TLS
+	// (ADR-029 §3.7). Empty by default.
 	TrustedProxies []string `yaml:"trusted_proxies"`
 
-	Session Session `yaml:"session"`
-	Mail    Mail    `yaml:"mail"`
-	RTDB    RTDB    `yaml:"rtdb"`
-	Rules   Rules   `yaml:"rules"`
-	Storage Storage `yaml:"storage"`
+	Session   Session   `yaml:"session"`
+	Mail      Mail      `yaml:"mail"`
+	RTDB      RTDB      `yaml:"rtdb"`
+	Rules     Rules     `yaml:"rules"`
+	Storage   Storage   `yaml:"storage"`
+	Documents Documents `yaml:"documents"`
 
 	masterKey      []byte
 	publicURL      *url.URL
@@ -185,6 +188,16 @@ func Defaults() Config {
 			},
 		},
 	}
+}
+
+// Documents holds the Document Database settings (ADR-029).
+type Documents struct {
+	// DevOwnerToken accepts the emulators' Bearer owner from this machine as an admin of every
+	// project, as the Admin SDKs send it in emulator mode and Node's with ssl:false over gRPC.
+	// It is meant for development only, so the setting is accepted only when public_url and
+	// listen are loopback addresses, and it applies only to connections whose peer is a
+	// loopback address (ADR-029 §6). Off, owner is refused as on every other surface.
+	DevOwnerToken bool `yaml:"dev_owner_token"`
 }
 
 // Storage holds the Cloud Storage for Firebase settings (ADR-022).
@@ -442,6 +455,7 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 			*dst = f
 		}
 	}
+	boolean("ARUMA_DOCUMENTS_DEV_OWNER_TOKEN", &c.Documents.DevOwnerToken)
 	boolean("ARUMA_STORAGE_ENABLED", &c.Storage.Enabled)
 	str("ARUMA_STORAGE_DATA_DIR", &c.Storage.DataDir)
 	duration("ARUMA_STORAGE_GC_GRACE", &c.Storage.GCGrace)
@@ -550,6 +564,9 @@ func (c *Config) validate() error {
 	errs = append(errs, c.validateRTDB()...)
 	errs = append(errs, c.validateRules()...)
 	errs = append(errs, c.validateStorage()...)
+	if c.Documents.DevOwnerToken && !c.LoopbackDeployment() {
+		errs = append(errs, errors.New("documents.dev_owner_token makes any process on this machine an admin of every project; it is accepted only when public_url and listen are loopback addresses"))
+	}
 
 	if c.Session.IdleTimeout <= 0 || c.Session.AbsoluteTimeout <= 0 {
 		errs = append(errs, errors.New("session timeouts must be positive"))
@@ -764,6 +781,13 @@ func (c *Config) SMTPAllowPrivate() bool {
 		return *c.Mail.SMTPAllowPrivate
 	}
 	return c.loopback()
+}
+
+// LoopbackDeployment reports whether public_url and listen are both loopback addresses, so
+// nothing reaches the server from another machine: the development server of ADR-029 §3.7 and
+// §6. False until public_url has been validated.
+func (c *Config) LoopbackDeployment() bool {
+	return c.publicURL != nil && c.loopback() && loopbackListen(c.Listen)
 }
 
 func (c *Config) loopback() bool {

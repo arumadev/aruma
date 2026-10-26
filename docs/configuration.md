@@ -19,7 +19,7 @@ aruma config check
 | `ARUMA_METRICS_LISTEN` | | `127.0.0.1:9464` | Private address for `/metrics`. The value `-` disables it |
 | `ARUMA_SIGNUP_OPEN` | | `false` | Let anyone create an account from the console |
 | `ARUMA_PROJECT_DOMAIN` | | host of `public_url` | Base for `authDomain`, container names and service-account emails |
-| `ARUMA_TRUSTED_PROXIES` | | | CIDR ranges whose `X-Forwarded-For` is believed |
+| `ARUMA_TRUSTED_PROXIES` | | | CIDR ranges or addresses whose `X-Forwarded-For` is believed. On the Document Database they are also the only peers whose `X-Forwarded-Proto: https` lets an admin credential arrive without TLS, see [Document Database](#document-database) |
 | `ARUMA_SESSION_IDLE_TIMEOUT` | | `30m` | Console session idle lifetime |
 | `ARUMA_SESSION_ABSOLUTE_TIMEOUT` | | `8h` | Console session absolute lifetime |
 | `ARUMA_MAIL_DEV_MAILBOX` | | `true` if `public_url` is on loopback, otherwise `false` | Development mailbox: Auth emails of projects without SMTP are kept in the console instead of being sent. An SMTP server is configured per project from the console |
@@ -29,6 +29,7 @@ aruma config check
 | `ARUMA_STORAGE_ENABLED` | | `false` | Turn on Cloud Storage for Firebase, see [Storage](#storage) |
 | `ARUMA_STORAGE_DATA_DIR` | with Storage | | Absolute path of the directory that holds the objects' bytes, on a local disk. See the warning under [Storage](#storage) |
 | `ARUMA_STORAGE_GC_GRACE` | | `1m` | How long a file no object points to any more waits before it is deleted, so a read that started before the change still finds it |
+| `ARUMA_DOCUMENTS_DEV_OWNER_TOKEN` | | `false` | Accept the emulators' `Bearer owner` on the Document Database from this machine, as an admin of every project. For local development only: accepted only when `public_url` and `listen` are loopback addresses, see [Document Database](#document-database) |
 | `ARUMA_PG_BIN` | | | Directory of the PostgreSQL tools when they are not on `PATH`. Used by `make dev` |
 
 ## Storage
@@ -67,6 +68,20 @@ The limits, under `storage.limits` in the file. Each must be positive unless its
 | `list_max_results` | `ARUMA_STORAGE_LIST_MAX_RESULTS` | count | `1000` | The largest page of a listing. At most 1000 |
 
 Durations use Go's syntax (`90s`, `10m`, `168h`).
+
+## Document Database
+
+The Admin SDKs send the Document Database a JWT signed with the service account's key on every call, and Go sends it over plain HTTP/2 (h2c) as readily as over TLS. Anyone who sees it can replay it for up to an hour, so an admin credential (that JWT, `aruma_sat_` or `aruma_pat_`) is accepted only:
+
+- over TLS to Aruma itself;
+- from a proxy listed in `trusted_proxies` that sends `X-Forwarded-Proto: https`. The proxy must set the header itself rather than pass on the client's (Caddy does by default). Without the header the request counts as plain text and is refused, so a proxy on the same machine, which makes every client look local, is listed in `trusted_proxies` like any other;
+- or, on a development server whose `public_url` and `listen` are both loopback addresses, from this machine.
+
+Anything else is refused with `UNAUTHENTICATED`, and the client's address is logged. Download the key file from Aruma's console: a Google key file has no key here. Node's `firebase-admin` in front of a real server needs TLS, since over gRPC with `ssl: false` it sends only `Bearer owner`; with a private CA, point `GRPC_DEFAULT_SSL_ROOTS_FILE_PATH` at it.
+
+| Key | Variable | Default | Meaning |
+|---|---|---|---|
+| `dev_owner_token` | `ARUMA_DOCUMENTS_DEV_OWNER_TOKEN` | `false` | Accept `Bearer owner`, which the Admin SDKs send in emulator mode, as an admin of every project, from a loopback peer only. The server refuses to start with it unless `public_url` and `listen` are loopback addresses, and logs a warning when it is on. Off, `owner` is refused and logged, as on every other surface |
 
 ## Security rules limits
 

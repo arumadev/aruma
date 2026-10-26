@@ -43,6 +43,9 @@ const (
 	MethodSession Method = iota + 1
 	MethodAccessToken
 	MethodServiceToken
+	// MethodServiceAccountJWT is a JWT the service account signed itself, as the Admin SDKs send
+	// it to the Document Database (ADR-029 §3). No other surface accepts it.
+	MethodServiceAccountJWT
 )
 
 // Principal is the authenticated caller.
@@ -57,6 +60,12 @@ type Principal struct {
 	ProjectNumber    int64     // KindServiceAccount: the only project it may touch
 
 	Email string
+
+	// KeyID is the key that verified a MethodServiceAccountJWT token.
+	KeyID string
+	// Scopes are the OAuth scopes the credential carries: the JWT's scope claim, or those
+	// registered with an aruma_sat_ token. Nil when the verifier does not record them.
+	Scopes []string
 
 	// ExpiresAt is when the credential stops being valid; zero when it does not expire.
 	// Long-lived connections that authenticated once use it to drop the principal in time.
@@ -101,10 +110,17 @@ type Verifier interface {
 }
 
 // Policy lists the credentials an API accepts.
+//
+// ServiceAccountJWT and DevOwner belong to the Document Database alone (ADR-029 §1): only
+// DocumentsPolicy sets them, a test fails if another policy does, and Authenticator never
+// honours them, since both need the transport checks of Documents.Resolve.
 type Policy struct {
 	Session      bool
 	AccessToken  bool
 	ServiceToken bool
+
+	ServiceAccountJWT bool // a self-signed service account JWT (ADR-029 §3)
+	DevOwner          bool // Bearer owner, with documents.dev_owner_token (ADR-029 §6)
 }
 
 // Authenticator turns requests into principals according to a policy.

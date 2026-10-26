@@ -45,6 +45,17 @@ var allowed = map[string][]string{
 	"internal/services/documents/index/protocheck": {"internal/services/documents/index", "internal/services/documents/wire/pb"},
 	// The Document Database's generated protobuf code (make proto, ADR-027) imports nothing internal.
 	"internal/services/documents/wire/pb": {},
+	// Its wire layer converts between the protos and the value model, parses resource names and
+	// maps errors to gRPC and REST: values, the generated code, and index for the needs-index
+	// error's link. Never core or a transport (ADR-027).
+	"internal/services/documents/wire": {"internal/services/documents/value", "internal/services/documents/index",
+		"internal/services/documents/wire/pb"},
+	// Its core stands under every transport (ADR-024, plan v0.4 §8): the value model, the index
+	// catalogue, its queries and the generated protos it stores documents in, never wire, gRPC,
+	// REST, WebChannel, the Admin API or the console.
+	"internal/services/documents/core": {"internal/services/documents/value", "internal/services/documents/index",
+		"internal/services/documents/queries", "internal/services/documents/wire/pb",
+		"internal/tenancy", "internal/store", "internal/events", "internal/platform", "internal/config"},
 	// The Firestore and Storage rules language imports nothing internal: the services feed it
 	// values and documents through its own types, and app wires it (ADR-021, rules-layout.md).
 	"internal/platform/rules": {},
@@ -302,6 +313,24 @@ func TestRulesThemselves(t *testing.T) {
 		{"internal/services/documents/index", "internal/platform/log", false},
 		{"internal/services/documents/index/protocheck", "internal/services/documents/wire/pb/adminpb", true},
 		{"internal/services/documents/core", "internal/services/documents/index", true},
+		{"internal/services/documents/core", "internal/services/documents/queries", true},
+		{"internal/services/documents/core", "internal/services/documents/wire/pb/firestorepb", true},
+		{"internal/services/documents/core", "internal/store", true},
+		{"internal/services/documents/core", "internal/services/documents/wire", false},
+		{"internal/services/documents/core", "internal/services/documents/grpc", false},
+		{"internal/services/documents/core", "internal/services/documents/rest", false},
+		{"internal/services/documents/core", "internal/services/documents/webchannel", false},
+		{"internal/services/documents/core", "internal/services/documents/adminapi", false},
+		{"internal/services/documents/core", "internal/services/documents/console", false},
+		{"internal/services/documents/core", "internal/services/storage/core", false},
+		{"internal/services/documents/core", "internal/platform/httpx", false},
+		{"internal/services/documents/wire", "internal/services/documents/value", true},
+		{"internal/services/documents/wire", "internal/services/documents/index", true},
+		{"internal/services/documents/wire", "internal/services/documents/wire/pb/firestorepb", true},
+		{"internal/services/documents/wire", "internal/services/documents/core", false},
+		{"internal/services/documents/wire", "internal/services/documents/api", false},
+		{"internal/services/documents/wire", "internal/platform/httpx", false},
+		{"internal/services/documents/wire/pb", "internal/services/documents/wire", false},
 		// Auth's console keeps building on its API.
 		{"internal/services/auth/console", "internal/services/auth/api", true},
 		// The published Go libraries stand alone.
