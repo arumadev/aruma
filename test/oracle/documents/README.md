@@ -1,0 +1,207 @@
+# Document Database oracle (Firestore wire protocol)
+
+Recorded answers that judge Aruma's Document Database from outside its code: what production
+Cloud Firestore, the emulator and the client SDKs actually do, pinned by hash and replayed in CI
+without network. It mirrors `test/oracle/rules/` (provenance per file, recorders kept beside the
+data, a parity-exceptions file); unlike the rules oracle it also has a Go checker,
+`oracle_test.go`, which runs in plain `go test ./...` (and so in `make test`).
+
+## Oracle order, and the rule that production wins
+
+When two sources disagree, the higher one decides (plan v0.4 §1 and ADR-028):
+
+1. **Production**: the owner's project `chatapp-8ae21`, `(default)` database (FIRESTORE_NATIVE,
+   STANDARD edition, PESSIMISTIC concurrency, europe-west1), recorded under top-level collections
+   whose id starts with `aruma-ref`, with everything deleted afterwards; plus the Rules Test API
+   and the Firebase console in a browser for management behaviour.
+2. **The client SDK code and Google's docs**: what is sent and what is expected.
+3. **The emulator and hidane**, second degree: cheap breadth where they are shown to agree with
+   production.
+
+**Production wins.** Where Aruma differs from production it is a bug, unless the difference is
+listed in `parity-exceptions.json` with the test that proves it. Where the emulator or hidane
+differs from production, Aruma follows production and the difference is listed there too. A
+recording from a lower oracle never overrides a production recording of the same behaviour.
+
+## Files
+
+```
+README.md                this file
+manifest.json            SHA-256, oracle, generator, date and versions of every corpus file
+parity-exceptions.json   every known difference between oracles, what Aruma does, and its test
+oracle_test.go           the checker (standard library only)
+corpus/                  the recorded answers, one JSON file per topic
+production/              the recorders (Node 24), which write corpus/ and rebuild the manifest
+```
+
+### `corpus/`
+
+Each file is canonical JSON (object keys sorted, two-space indent, final newline) of the form
+`{schema: "aruma.documents-oracle/v1", header, cases, ...}`. The header names:
+
+| field | meaning |
+|---|---|
+| `oracle` | `production`, `sdk`, `docs`, `emulator` or `hidane` |
+| `target` | what was called: project, database type, edition, concurrency, location, transport |
+| `generator` | the script (and arguments) that wrote the file |
+| `recordedAt` | start and end of the recording run (UTC) |
+| `versions` | Node, firebase-tools (used for its login only), gRPC and proto versions, or the emulator jar and Java |
+| `notes` | what a reader must know to use the cases |
+
+Normalisation, so that a re-recording differs only where behaviour differs:
+
+- `readTime`, `updateTime`, `createTime`, `commitTime`, `expireTime`, `executionDuration` and
+  `nextPageToken` values become `<key: type>` placeholders; transaction ids become a placeholder
+  wherever they occur (request, response or message).
+- Request strings longer than 300 characters (a 1 MiB field, a 6 KiB name) are written as
+  `<string N bytes, sha256 …, starts "…">`. **Messages are never shortened or edited** except for
+  the transaction-id placeholder.
+- The project id stays as recorded: it is inside the base64 index links, which must stay exact.
+
+| file | oracle | what it holds |
+|---|---|---|
+| `indexes-105.json` | production | 105 query shapes on a project with no composite index: verdict (`ok` or `FAILED_PRECONDITION`), HTTP status, exact message, its template and arguments, and the decoded `create_composite` / `create_index` / `create_exemption` link; each shape run on a populated and on a never-written collection |
+| `indexes-105.emulator.json` | emulator | the same shapes on `cloud-firestore-emulator` v1.22.0 |
+| `f0-missing-database.json` | production | REST, gRPC and Admin API calls against `databases/aruma-ref-nonexistent` |
+| `f0-find-nearest.json` | production | `findNearest` on Standard with no vector index |
+| `f0-explain.json` | production | `explainOptions` with `analyze` false and true, for queries and aggregations |
+| `f0-errors.json` | production | value, document, id and name size limits, subcollection depth, 30 disjunctions, `in`/`not-in` sizes, unknown and reused transactions |
+| `f0-descendants.json` | production | the kindless all-descendants queries of `firebase firestore:delete` and Node `recursiveDelete`, and `PartitionQuery` |
+| `f0-list-show-missing.json` | production | `ListDocuments` with `showMissing` on a parent that only has a subcollection |
+| `f0-cleanup.json` | production | the deletion of everything the F0 run wrote, and its verification |
+| `f0-contention.json` | production | lock contention between pessimistic read-write transactions: six scenarios, three runs each (`record-contention.mjs`) |
+| `values-order.json` | production | one document per edge value of every type: what was stored, `orderBy` both ways, and each value's `startAt`/`endAt` class (`record-values.mjs`) |
+| `values-equality.json` | production | `==` and `in` on every value of `values-order.json`; `!=`, `not-in`, the unary filters, `array-contains(-any)` and the four range operators |
+| `values-size.json` | production | each type's storage size, read from production's "exceeds the maximum allowed size" message, and the per-value cap |
+| `values-validate.json` | production | what a write may not hold: depth, reserved and long names, vectors, geopoints, timestamps, references |
+| `values-mask.json` | production | read masks and update masks on a plain document |
+| `values-cleanup.json` | production | the deletion of everything `record-values.mjs` wrote, verified |
+| `values-bson.json` | production | the maps the SDKs send for Enterprise BSON types (MinKey, MaxKey, int32, Decimal128, BSON timestamp, binary, ObjectId, regex) on Standard: malformed shapes and their messages, the stored (canonical) form, order and ties against every neighbouring type, `==`, range, `!=`, `in`, unary and `array-contains` filters, operands production refuses, each shape's storage size and index budget (`record-bson.mjs`) |
+| `values-mask-vector.json` | production | read masks and update masks that reach into a vector or a BSON shape |
+| `values-bson-cleanup.json` | production | the deletion of everything `record-bson.mjs` wrote, verified |
+
+The analysis of the F0 recordings is in `.cache/briefs/research/f0-production-recordings.md`; the
+composite-index rule derived from `indexes-105.json` is in
+`.cache/briefs/research/firestore-composite-index-evidence.md`.
+
+### `manifest.json`
+
+Generated, never edited by hand: every recorder calls `rebuildManifest` (`production/lib.mjs`)
+after it writes, which hashes every file in `corpus/` and copies its header's oracle, generator,
+date and versions. After a deliberate hand edit of a corpus file run
+`node production/rebuild-manifest.mjs` and give the reason in the commit.
+
+`writeCorpus` also puts the SHA-256 of the recorder script into `header.versions["generator
+sha256"]`, and the checker compares it with the script in the tree. A recorder edited after
+its recording therefore fails `TestCorpusHeaders` until it is run again, so a changed recorder
+and its changed corpus show up together in a diff. `lib.mjs` itself is not hashed. The hashes
+of the files recorded before this check were added by hand, from the scripts that wrote them.
+
+### `parity-exceptions.json`
+
+One entry per known difference: `id`, `summary`, what `production`, the `emulator` and `aruma`
+do, `follows` (always `production`), the `evidence` corpus files, and `test`, written
+`path/to/x_test.go:TestName`. It starts with the one difference recorded so far: the emulator
+enforces no composite index. The docs table in `docs/compat/documents-v0.4.md` will be generated
+from it.
+
+### How CI checks it
+
+`oracle_test.go`, in `go test ./...`:
+
+- `TestManifestPinsCorpus`: every manifest entry's file exists and has that SHA-256 and header;
+  **every corpus file has an entry** (a new file without one fails).
+- `TestCorpusHeaders`: every file names its oracle, generator, date and versions; a generator
+  under `test/` exists and **hashes to the header's `generator sha256`**; case ids are unique.
+- `TestParityExceptionsNameTests`: every exception is complete, has one of the three kinds,
+  follows production, cites pinned corpus files (or, with none, says its production behaviour is
+  `Not recorded`), and **names a test function that exists**: a top-level
+  `func TestX(t *testing.T)` found by parsing the file, so one inside a comment does not count,
+  that never calls `Skip`, `Skipf` or `SkipNow` (as the rules oracle binds each exclusion to its
+  cases). `TestTestExistsRefusesFakes` holds the checker to that.
+- `TestIndexCorpus`: each refusal's template reproduces its message byte for byte, each link's
+  payload decodes (protobuf, `google.firestore.admin.v1.Index`) to the recorded index, and the
+  empty collection got the populated collection's verdict.
+- `TestIndexEnforcementEmulatorDiffers`: proves the one parity exception.
+
+The value and index corpora are replayed against Aruma's code by the packages they judge:
+`internal/services/documents/value/corpus_test.go` replays every `values-*.json` (order, ties,
+equality and range filters, sizes, validation, masks, the BSON shapes), and
+`internal/services/documents/index/corpus_test.go` replays `indexes-105.json`.
+
+## Recording safety
+
+- Writes only under top-level collections starting with `aruma-ref` (`assertScoped` in
+  `production/lib.mjs` refuses anything else before a request leaves the machine); the F0 run
+  used `aruma-ref-f0`, `-f0-tree`, `-f0-tree2`, `-f0-vec` and `-f0-explain`, the index probe
+  `aruma-ref-idx` and its subcollections `aruma-ref-idxcg`, the value runs `aruma-ref-values*`
+  and `aruma-ref-bson*` (each swept by its own `__name__` range, since other recorders may run
+  at the same time), and the contention run `aruma-ref-txn`.
+- Everything written is deleted by commit at the end, and the deletion is verified: one kindless
+  all-descendants query over every collection id from `aruma-ref` up to `aruma-reg`, plus
+  `showMissing` lists of each collection used (`f0-cleanup.json`, `cleanup` in
+  `indexes-105.json`).
+- No index, field override, rule, TTL policy, database or project setting is created or changed,
+  no Firebase Auth user is created, and nothing touches billing.
+- The access token comes from the firebase CLI login through firebase-tools' own `lib/auth.js`
+  (as `test/oracle/rules/tools/rulesapi.mjs`). It is never printed, logged or written; it travels
+  only in the `Authorization` header or gRPC metadata. The recorded calls run as the project
+  owner, so security rules do not apply to them.
+
+## Re-recording
+
+Needs Node 24, a logged-in firebase CLI (`firebase login`) with access to the project, and, for
+the gRPC half, the protos of `@google-cloud/firestore` (for example `npm pack
+@google-cloud/firestore@9.3.1` unpacked in a scratch directory). gRPC uses the `@grpc/grpc-js`
+and `@grpc/proto-loader` that ship inside firebase-tools; nothing is installed. On the owner's
+machine Node's connections to Google need IPv4 first:
+
+```sh
+export NODE_OPTIONS="--no-network-family-autoselection --dns-result-order=ipv4first"
+export FIREBASE_TOOLS=/opt/homebrew/lib/node_modules/firebase-tools   # the default
+export FIRESTORE_PROTOS=<unpacked @google-cloud/firestore>/build/protos  # optional: gRPC cases
+cd test/oracle/documents/production
+
+node record-f0.mjs                       # all F0 topics (about a minute), then cleanup
+node record-f0.mjs --only errors,explain # some topics; the cleanup always runs
+node record-indexes.mjs                  # the 105 shapes on production (about 2 minutes)
+node record-indexes.mjs --emulator 127.0.0.1:8086   # the same on a running emulator
+node record-indexes.mjs --import <composite-index-probe.json>  # convert a recorded probe
+node record-values.mjs                   # the value model, then cleanup
+node record-bson.mjs                     # BSON shapes and vector masks (about 2 minutes), then cleanup
+node record-contention.mjs               # lock contention between transactions
+node rebuild-manifest.mjs                # only after a deliberate hand edit
+(cd .. && go test .)                   # the checker
+```
+
+A recorder rewrites its files and the manifest. Review the diff: a change in a message, a status
+or a verdict is a change in production behaviour (or in what was sent), and the commit must say
+which. The plan asks for a monthly re-recording, and one at each phase.
+
+## Not recorded yet
+
+These are modelled on the nearest recorded behaviour, and the code's comments say so where they apply:
+
+- **Field paths and query filters into vectors and BSON shapes**: `orderBy v.value` or `where
+  b.__int__ == 1`. Masks were recorded (`values-mask-vector.json`): production refuses a reserved
+  segment, and a vector or BSON shape is one value to a mask.
+- **How a regex or binary value longer than the 1500-byte index budget is cut**: modelled as a
+  string and as bytes; each shape's budget was recorded only below the cut
+  (`values-bson.json`, `truncation`).
+- **Which of two reserved keys in one map is named**: production names the first in request
+  order (`{__min__, __max__}` as `__min__`, recorded), which a value's sorted map cannot keep;
+  it is the one known gap of `value/corpus_test.go`.
+- **The number of paths an update mask may hold**: `ApplyMask` is linear in them, but the wire
+  package should cap them at production's limit, which has not been probed.
+
+## Pending owner action
+
+- **A pessimistic transaction requested by an end user.** ADR-025 needs the exact status and
+  message production returns when an end user (a Firebase Auth ID token, not an owner or service
+  account) sends `BeginTransaction` with `readWrite` (google.firestore.v1 `common.proto` as
+  shipped in `@google-cloud/firestore` 9.3.1, lines 61-62: "Firestore does not allow 3rd party
+  auth requests to create read-write. transactions."; the plan quotes a newer googleapis wording
+  about optimistic transactions, so both the plain and the optimistic request should be
+  recorded). Recording it needs a test user, which this oracle may not create. The owner creates
+  one (email/password, in `chatapp-8ae21`) and passes its ID token to a recorder; until then the
+  case is not recorded.

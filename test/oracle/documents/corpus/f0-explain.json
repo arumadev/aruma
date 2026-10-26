@@ -1,0 +1,639 @@
+{
+  "cases": [
+    {
+      "description": "runQuery n > 1, explainOptions {analyze: false}",
+      "id": "rest.query.analyze_false",
+      "request": {
+        "body": {
+          "explainOptions": {
+            "analyze": false
+          },
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0-explain"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "n"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "explainMetrics": {
+              "planSummary": {
+                "indexesUsed": [
+                  {
+                    "properties": "(n ASC, __name__ ASC)",
+                    "query_scope": "Collection"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery n > 1, explainOptions {analyze: true}",
+      "id": "rest.query.analyze_true",
+      "request": {
+        "body": {
+          "explainOptions": {
+            "analyze": true
+          },
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0-explain"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "n"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-explain/e2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-explain/e3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "explainMetrics": {
+              "executionStats": {
+                "debugStats": {
+                  "billing_details": {
+                    "documents_billable": "2",
+                    "index_entries_billable": "0",
+                    "min_query_cost": "0",
+                    "small_ops": "0"
+                  },
+                  "documents_scanned": "2",
+                  "index_entries_scanned": "2"
+                },
+                "executionDuration": "<executionDuration: Duration>",
+                "readOperations": "2",
+                "resultsReturned": "2"
+              },
+              "planSummary": {
+                "indexesUsed": [
+                  {
+                    "properties": "(n ASC, __name__ ASC)",
+                    "query_scope": "Collection"
+                  }
+                ]
+              }
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery n > 1, explainOptions {}",
+      "id": "rest.query.options_empty",
+      "request": {
+        "body": {
+          "explainOptions": {},
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0-explain"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "n"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "explainMetrics": {
+              "planSummary": {
+                "indexesUsed": [
+                  {
+                    "properties": "(n ASC, __name__ ASC)",
+                    "query_scope": "Collection"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery n > 1 without explainOptions, for comparison",
+      "id": "rest.query.no_options",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0-explain"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "n"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-explain/e2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-explain/e3",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count() where n > 1, explainOptions {analyze: false}",
+      "id": "rest.aggregation.analyze_false",
+      "request": {
+        "body": {
+          "explainOptions": {
+            "analyze": false
+          },
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "c",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f0-explain"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "n"
+                  },
+                  "op": "GREATER_THAN",
+                  "value": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "explainMetrics": {
+              "planSummary": {
+                "indexesUsed": [
+                  {
+                    "properties": "(n ASC, __name__ ASC)",
+                    "query_scope": "Collection"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count() where n > 1, explainOptions {analyze: true}",
+      "id": "rest.aggregation.analyze_true",
+      "request": {
+        "body": {
+          "explainOptions": {
+            "analyze": true
+          },
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "c",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f0-explain"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "n"
+                  },
+                  "op": "GREATER_THAN",
+                  "value": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "explainMetrics": {
+              "executionStats": {
+                "debugStats": {
+                  "billing_details": {
+                    "documents_billable": "0",
+                    "index_entries_billable": "2",
+                    "min_query_cost": "0",
+                    "small_ops": "0"
+                  },
+                  "documents_scanned": "0",
+                  "index_entries_scanned": "2"
+                },
+                "executionDuration": "<executionDuration: Duration>",
+                "readOperations": "1",
+                "resultsReturned": "1"
+              },
+              "planSummary": {
+                "indexesUsed": [
+                  {
+                    "properties": "(n ASC, __name__ ASC)",
+                    "query_scope": "Collection"
+                  }
+                ]
+              }
+            },
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "c": {
+                  "integerValue": "2"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "explain analyze of a query that needs a composite index (n > 1 orderBy m)",
+      "error": {
+        "http": 400,
+        "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Clpwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjAtZXhwbGFpbi9pbmRleGVzL18QARoFCgFtEAEaBQoBbhABGgwKCF9fbmFtZV9fEAE .\nThe query contains range and inequality filters on multiple fields, please refer to the documentation for index selection best practices: https://cloud.google.com/firestore/docs/query-data/multiple-range-fields.",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "rest.query.analyze_true_missing_index",
+      "request": {
+        "body": {
+          "explainOptions": {
+            "analyze": true
+          },
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0-explain"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "m"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "n"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Clpwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjAtZXhwbGFpbi9pbmRleGVzL18QARoFCgFtEAEaBQoBbhABGgwKCF9fbmFtZV9fEAE .\nThe query contains range and inequality filters on multiple fields, please refer to the documentation for index selection best practices: https://cloud.google.com/firestore/docs/query-data/multiple-range-fields.",
+              "status": "FAILED_PRECONDITION"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery n > 1, analyze false",
+      "id": "grpc.query.analyze_false",
+      "request": {
+        "message": {
+          "explainOptions": {
+            "analyze": false
+          },
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents",
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0-explain"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "n"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunQuery"
+      },
+      "response": {
+        "ok": true,
+        "responses": [
+          {
+            "explainMetrics": {
+              "planSummary": {
+                "indexesUsed": [
+                  {
+                    "fields": {
+                      "properties": {
+                        "stringValue": "(n ASC, __name__ ASC)"
+                      },
+                      "query_scope": {
+                        "stringValue": "Collection"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "runQuery n > 1, analyze true",
+      "id": "grpc.query.analyze_true",
+      "request": {
+        "message": {
+          "explainOptions": {
+            "analyze": true
+          },
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents",
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0-explain"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "n"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunQuery"
+      },
+      "response": {
+        "ok": true,
+        "responses": [
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-explain/e2",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-explain/e3",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "explainMetrics": {
+              "executionStats": {
+                "debugStats": {
+                  "fields": {
+                    "billing_details": {
+                      "structValue": {
+                        "fields": {
+                          "documents_billable": {
+                            "stringValue": "2"
+                          },
+                          "index_entries_billable": {
+                            "stringValue": "0"
+                          },
+                          "min_query_cost": {
+                            "stringValue": "0"
+                          },
+                          "small_ops": {
+                            "stringValue": "0"
+                          }
+                        }
+                      }
+                    },
+                    "documents_scanned": {
+                      "stringValue": "2"
+                    },
+                    "index_entries_scanned": {
+                      "stringValue": "2"
+                    }
+                  }
+                },
+                "executionDuration": "<executionDuration>",
+                "readOperations": "2",
+                "resultsReturned": "2"
+              },
+              "planSummary": {
+                "indexesUsed": [
+                  {
+                    "fields": {
+                      "properties": {
+                        "stringValue": "(n ASC, __name__ ASC)"
+                      },
+                      "query_scope": {
+                        "stringValue": "Collection"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "readTime": "<readTime: Timestamp>"
+          }
+        ]
+      },
+      "transport": "grpc"
+    }
+  ],
+  "data": {
+    "aruma-ref-f0-explain/e1..e3": "{n: 1..3}"
+  },
+  "header": {
+    "generator": "test/oracle/documents/production/record-f0.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations and transaction ids are replaced by placeholders (normalise in lib.mjs); everything else is as returned."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T14:31:15.919Z .. 2026-10-26T14:32:27.875Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "21181fa838abf8cdf6cc14aa590401479e8c830a2cf61981c12b828897faa16c",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

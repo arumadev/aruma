@@ -1,0 +1,1138 @@
+{
+  "cases": [
+    {
+      "description": "firebase-tools `firestore:delete -r aruma-ref-f0-tree` (delete.ts:170-235): parent = root, from [{allDescendants: true}], __name__ range, select __name__, orderBy __name__, limit",
+      "documents": [
+        "aruma-ref-f0-tree/a",
+        "aruma-ref-f0-tree/a/other/z",
+        "aruma-ref-f0-tree/a/sub/x",
+        "aruma-ref-f0-tree/a/sub/x/deep/y",
+        "aruma-ref-f0-tree/b",
+        "aruma-ref-f0-tree/m/kids/k1"
+      ],
+      "id": "rest.cli_delete_collection_recursive",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true
+              }
+            ],
+            "limit": 50,
+            "orderBy": [
+              {
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "select": {
+              "fields": [
+                {
+                  "fieldPath": "__name__"
+                }
+              ]
+            },
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "__name__"
+                      },
+                      "op": "GREATER_THAN_OR_EQUAL",
+                      "value": {
+                        "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/__id-9223372036854775808__"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "__name__"
+                      },
+                      "op": "LESS_THAN",
+                      "value": {
+                        "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree\u0000/__id-9223372036854775808__"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/other/z",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/sub/x",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/sub/x/deep/y",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/b",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/m/kids/k1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "the same with allDescendants: false (firestore:delete of a collection without -r)",
+      "documents": [
+        "aruma-ref-f0-tree/a",
+        "aruma-ref-f0-tree/b"
+      ],
+      "id": "rest.cli_delete_collection_shallow",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": false
+              }
+            ],
+            "limit": 50,
+            "orderBy": [
+              {
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "select": {
+              "fields": [
+                {
+                  "fieldPath": "__name__"
+                }
+              ]
+            },
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "__name__"
+                      },
+                      "op": "GREATER_THAN_OR_EQUAL",
+                      "value": {
+                        "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/__id-9223372036854775808__"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "__name__"
+                      },
+                      "op": "LESS_THAN",
+                      "value": {
+                        "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree\u0000/__id-9223372036854775808__"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/b",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "firebase-tools `firestore:delete -r aruma-ref-f0-tree/a` (delete.ts:249-275): parent = the document, from [{allDescendants: true}], select __name__, orderBy __name__, limit",
+      "documents": [
+        "aruma-ref-f0-tree/a/other/z",
+        "aruma-ref-f0-tree/a/sub/x",
+        "aruma-ref-f0-tree/a/sub/x/deep/y"
+      ],
+      "id": "rest.cli_delete_document_recursive",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true
+              }
+            ],
+            "limit": 50,
+            "orderBy": [
+              {
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "select": {
+              "fields": [
+                {
+                  "fieldPath": "__name__"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f0-tree/a:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/other/z",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/sub/x",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/sub/x/deep/y",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "nodejs-firestore recursiveDelete(collection) (recursive-delete.js:190-215): kindless all-descendants, __name__ >= coll/MIN and < coll\\0/MIN, select __name__, limit",
+      "documents": [
+        "aruma-ref-f0-tree/a",
+        "aruma-ref-f0-tree/a/other/z",
+        "aruma-ref-f0-tree/a/sub/x",
+        "aruma-ref-f0-tree/a/sub/x/deep/y",
+        "aruma-ref-f0-tree/b",
+        "aruma-ref-f0-tree/m/kids/k1"
+      ],
+      "id": "rest.node_recursive_delete_collection",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true
+              }
+            ],
+            "limit": 5000,
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "select": {
+              "fields": [
+                {
+                  "fieldPath": "__name__"
+                }
+              ]
+            },
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "__name__"
+                      },
+                      "op": "GREATER_THAN_OR_EQUAL",
+                      "value": {
+                        "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/__id-9223372036854775808__"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "__name__"
+                      },
+                      "op": "LESS_THAN",
+                      "value": {
+                        "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree\u0000/__id-9223372036854775808__"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/other/z",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/sub/x",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/sub/x/deep/y",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/b",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/m/kids/k1",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "nodejs-firestore recursiveDelete(document): kindless all-descendants under the document, select __name__, limit",
+      "documents": [
+        "aruma-ref-f0-tree/a/other/z",
+        "aruma-ref-f0-tree/a/sub/x",
+        "aruma-ref-f0-tree/a/sub/x/deep/y"
+      ],
+      "id": "rest.node_recursive_delete_document",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true
+              }
+            ],
+            "limit": 5000,
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "select": {
+              "fields": [
+                {
+                  "fieldPath": "__name__"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f0-tree/a:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/other/z",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/sub/x",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/sub/x/deep/y",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "kindless, allDescendants false, parent = document a: the documents of its direct subcollections",
+      "documents": [
+        "aruma-ref-f0-tree/a/other/z",
+        "aruma-ref-f0-tree/a/sub/x"
+      ],
+      "id": "rest.kindless_children_of_document",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": false
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f0-tree/a:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "4"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/other/z",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/sub/x",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "from [{collectionId: \"\", allDescendants: true}] under document a",
+      "documents": [
+        "aruma-ref-f0-tree/a/other/z",
+        "aruma-ref-f0-tree/a/sub/x",
+        "aruma-ref-f0-tree/a/sub/x/deep/y"
+      ],
+      "id": "rest.kindless_with_empty_collection_id",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": ""
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f0-tree/a:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "4"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/other/z",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/sub/x",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/sub/x/deep/y",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "kindless all-descendants under document a filtered on v > 2",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "collection group queries are only allowed at the root parent",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.kindless_with_field_filter",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "v"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "2"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f0-tree/a:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "collection group queries are only allowed at the root parent",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "kindless all-descendants under document a ordered by v",
+      "documents": [],
+      "error": {
+        "http": 400,
+        "message": "collection group queries are only allowed at the root parent",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.kindless_order_by_field",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "v"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f0-tree/a:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "collection group queries are only allowed at the root parent",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "firebase-tools `firestore:delete -r aruma-ref-f0-tree` (delete.ts:170-235): parent = root, from [{allDescendants: true}], __name__ range, select __name__, orderBy __name__, limit",
+      "documents": [
+        "aruma-ref-f0-tree/a",
+        "aruma-ref-f0-tree/a/other/z",
+        "aruma-ref-f0-tree/a/sub/x",
+        "aruma-ref-f0-tree/a/sub/x/deep/y",
+        "aruma-ref-f0-tree/b",
+        "aruma-ref-f0-tree/m/kids/k1"
+      ],
+      "id": "grpc.cli_delete_collection_recursive",
+      "request": {
+        "message": {
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true
+              }
+            ],
+            "limit": {
+              "value": 50
+            },
+            "orderBy": [
+              {
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "select": {
+              "fields": [
+                {
+                  "fieldPath": "__name__"
+                }
+              ]
+            },
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "__name__"
+                      },
+                      "op": "GREATER_THAN_OR_EQUAL",
+                      "value": {
+                        "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/__id-9223372036854775808__"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "__name__"
+                      },
+                      "op": "LESS_THAN",
+                      "value": {
+                        "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree\u0000/__id-9223372036854775808__"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunQuery"
+      },
+      "response": {
+        "ok": true,
+        "responses": [
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/other/z",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/sub/x",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/a/sub/x/deep/y",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/b",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0-tree/m/kids/k1",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          }
+        ]
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "partitionQuery: collection group aruma-ref-f0-tree ordered by __name__, partitionCount 3",
+      "id": "rest.partition.cg_count_3",
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f0-tree"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "the same with partitionCount 2 and pageSize 1",
+      "id": "rest.partition.cg_count_2_page_1",
+      "request": {
+        "body": {
+          "pageSize": 1,
+          "partitionCount": "2",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f0-tree"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "kindless all-descendants (no collectionId), partitionCount 3",
+      "error": {
+        "http": 400,
+        "message": "Ancestor queries are not supported.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.partition.kindless_count_3",
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f0-tree/a:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Ancestor queries are not supported.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "allDescendants false: not a collection-group query",
+      "error": {
+        "http": 400,
+        "message": "Query must select all descendant collections.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.partition.not_collection_group",
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0-tree"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Query must select all descendant collections.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "collection group with no orderBy",
+      "id": "rest.partition.no_order",
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f0-tree"
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "collection group with a filter v > 1",
+      "error": {
+        "http": 400,
+        "message": "order by clause cannot contain more fields after the key",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.partition.with_filter",
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f0-tree"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "v"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "order by clause cannot contain more fields after the key",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PartitionQuery, partitionCount 3",
+      "id": "grpc.partition.cg_count_3",
+      "request": {
+        "message": {
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents",
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f0-tree"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/PartitionQuery"
+      },
+      "response": {
+        "message": {},
+        "ok": true
+      },
+      "transport": "grpc"
+    }
+  ],
+  "data": {
+    "aruma-ref-f0-tree/a": {
+      "v": 1
+    },
+    "aruma-ref-f0-tree/a/other/z": {
+      "v": 4
+    },
+    "aruma-ref-f0-tree/a/sub/x": {
+      "v": 2
+    },
+    "aruma-ref-f0-tree/a/sub/x/deep/y": {
+      "v": 3
+    },
+    "aruma-ref-f0-tree/b": {
+      "v": 5
+    },
+    "aruma-ref-f0-tree/m/kids/k1": {
+      "v": 6
+    },
+    "aruma-ref-f0-tree2/q": {
+      "v": 7
+    }
+  },
+  "header": {
+    "generator": "test/oracle/documents/production/record-f0.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations and transaction ids are replaced by placeholders (normalise in lib.mjs); everything else is as returned.",
+      "MIN_ID is __id-9223372036854775808__ (firebase-tools src/firestore/delete.ts:14; nodejs-firestore REFERENCE_NAME_MIN_ID). \"\\u0000\" in a reference is the NUL character both tools append to the collection id for the upper bound.",
+      "aruma-ref-f0-tree/m is never written: it exists only as the parent of m/kids/k1.",
+      "documents lists the names returned, relative to the database root, in the order returned."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T14:31:15.919Z .. 2026-10-26T14:32:27.875Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "21181fa838abf8cdf6cc14aa590401479e8c830a2cf61981c12b828897faa16c",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

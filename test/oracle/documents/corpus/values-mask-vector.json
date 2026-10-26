@@ -1,0 +1,1052 @@
+{
+  "document": {
+    "b": {
+      "mapValue": {
+        "fields": {
+          "__int__": {
+            "integerValue": "1"
+          }
+        }
+      }
+    },
+    "d": {
+      "mapValue": {
+        "fields": {
+          "__decimal128__": {
+            "stringValue": "1.5"
+          }
+        }
+      }
+    },
+    "p": {
+      "mapValue": {
+        "fields": {
+          "a": {
+            "integerValue": "1"
+          }
+        }
+      }
+    },
+    "vec": {
+      "mapValue": {
+        "fields": {
+          "__type__": {
+            "stringValue": "__vector__"
+          },
+          "value": {
+            "arrayValue": {
+              "values": [
+                {
+                  "doubleValue": 1
+                },
+                {
+                  "doubleValue": 2
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "header": {
+    "generator": "test/oracle/documents/production/record-bson.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply.",
+      "Only values, document ids, HTTP statuses and error statuses and messages are recorded; they are exact.",
+      "The document aruma-ref-bson-mask/m holds the fields of document; reads are GETs with mask.fieldPaths; updates rewrite it, commit one update with updateMask.fieldPaths, and read it back (after)."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T17:18:01.269Z .. 2026-10-26T17:21:00.043Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "api": "firestore.googleapis.com REST v1",
+      "firebase-tools (auth only)": "13.23.0",
+      "generator sha256": "4e0e849bc47465c67bffcfab205a8ff2cda327a077227d3b6fdd6fc66279f5fc",
+      "node": "v24.21.0"
+    }
+  },
+  "reads": [
+    {
+      "fields": {},
+      "http": 200,
+      "maskFieldPaths": [
+        "vec.value"
+      ]
+    },
+    {
+      "error": {
+        "message": "the name __type__ is reserved",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "vec.__type__"
+      ]
+    },
+    {
+      "fields": {
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "__type__": {
+                "stringValue": "__vector__"
+              },
+              "value": {
+                "arrayValue": {
+                  "values": [
+                    {
+                      "doubleValue": 1
+                    },
+                    {
+                      "doubleValue": 2
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "vec"
+      ]
+    },
+    {
+      "error": {
+        "message": "the name __type__ is reserved",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "vec.value",
+        "vec.__type__"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid reserved name in field path __int__",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "b.__int__"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid reserved name in field path __decimal128__",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "d.__decimal128__"
+      ]
+    },
+    {
+      "fields": {
+        "p": {
+          "mapValue": {
+            "fields": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "p.a"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid reserved name in field path __x__",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "p.__x__"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid reserved name in field path __int__",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "__int__"
+      ]
+    },
+    {
+      "error": {
+        "message": "the name __type__ is reserved",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "__type__"
+      ]
+    },
+    {
+      "error": {
+        "message": "the name __key__ is reserved",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "p.__name__"
+      ]
+    },
+    {
+      "fields": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "b"
+      ]
+    },
+    {
+      "fields": {},
+      "http": 200,
+      "maskFieldPaths": [
+        "b.x"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid reserved name in field path __min__.a",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "__min__.a"
+      ]
+    }
+  ],
+  "schema": "aruma.documents-oracle/v1",
+  "updates": [
+    {
+      "after": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "d": {
+          "mapValue": {
+            "fields": {
+              "__decimal128__": {
+                "stringValue": "1.5"
+              }
+            }
+          }
+        },
+        "p": {
+          "mapValue": {
+            "fields": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "value": {
+                "arrayValue": {
+                  "values": [
+                    {
+                      "doubleValue": 3
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "vec.value replaced by [3.0]",
+      "fields": {
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "value": {
+                "arrayValue": {
+                  "values": [
+                    {
+                      "doubleValue": 3
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "vec.value"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "d": {
+          "mapValue": {
+            "fields": {
+              "__decimal128__": {
+                "stringValue": "1.5"
+              }
+            }
+          }
+        },
+        "p": {
+          "mapValue": {
+            "fields": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "value": {
+                "arrayValue": {
+                  "values": [
+                    {
+                      "integerValue": "1"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "vec.value replaced by [int 1]",
+      "fields": {
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "value": {
+                "arrayValue": {
+                  "values": [
+                    {
+                      "integerValue": "1"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "vec.value"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "d": {
+          "mapValue": {
+            "fields": {
+              "__decimal128__": {
+                "stringValue": "1.5"
+              }
+            }
+          }
+        },
+        "p": {
+          "mapValue": {
+            "fields": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "value": {
+                "arrayValue": {}
+              }
+            }
+          }
+        }
+      },
+      "description": "vec.value replaced by []",
+      "fields": {
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "value": {
+                "arrayValue": {}
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "vec.value"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "d": {
+          "mapValue": {
+            "fields": {
+              "__decimal128__": {
+                "stringValue": "1.5"
+              }
+            }
+          }
+        },
+        "p": {
+          "mapValue": {
+            "fields": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "__type__": {
+                "stringValue": "__vector__"
+              },
+              "value": {
+                "arrayValue": {
+                  "values": [
+                    {
+                      "doubleValue": 1
+                    },
+                    {
+                      "doubleValue": 2
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "vec.value deleted",
+      "fields": {},
+      "mask": [
+        "vec.value"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "d": {
+          "mapValue": {
+            "fields": {
+              "__decimal128__": {
+                "stringValue": "1.5"
+              }
+            }
+          }
+        },
+        "p": {
+          "mapValue": {
+            "fields": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "__type__": {
+                "stringValue": "__vector__"
+              },
+              "value": {
+                "arrayValue": {
+                  "values": [
+                    {
+                      "doubleValue": 1
+                    },
+                    {
+                      "doubleValue": 2
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "vec.__type__ deleted",
+      "fields": {},
+      "mask": [
+        "vec.__type__"
+      ],
+      "write": {
+        "error": {
+          "message": "the name __type__ is reserved",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "after": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "d": {
+          "mapValue": {
+            "fields": {
+              "__decimal128__": {
+                "stringValue": "1.5"
+              }
+            }
+          }
+        },
+        "p": {
+          "mapValue": {
+            "fields": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "__type__": {
+                "stringValue": "__vector__"
+              },
+              "value": {
+                "arrayValue": {
+                  "values": [
+                    {
+                      "doubleValue": 1
+                    },
+                    {
+                      "doubleValue": 2
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "vec.__type__ replaced by \"x\"",
+      "fields": {
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "__type__": {
+                "stringValue": "x"
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "vec.__type__"
+      ],
+      "write": {
+        "error": {
+          "message": "the name __type__ is reserved",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "after": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "d": {
+          "mapValue": {
+            "fields": {
+              "__decimal128__": {
+                "stringValue": "1.5"
+              }
+            }
+          }
+        },
+        "p": {
+          "mapValue": {
+            "fields": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "extra": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "description": "vec.extra added",
+      "fields": {
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "extra": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "vec.extra"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "d": {
+          "mapValue": {
+            "fields": {
+              "__decimal128__": {
+                "stringValue": "1.5"
+              }
+            }
+          }
+        },
+        "p": {
+          "mapValue": {
+            "fields": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "__type__": {
+                "stringValue": "__vector__"
+              },
+              "value": {
+                "arrayValue": {
+                  "values": [
+                    {
+                      "doubleValue": 1
+                    },
+                    {
+                      "doubleValue": 2
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "b.__int__ replaced by 2",
+      "fields": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "integerValue": "2"
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "b.__int__"
+      ],
+      "write": {
+        "error": {
+          "message": "Invalid reserved name in field path __int__",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "after": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "d": {
+          "mapValue": {
+            "fields": {
+              "__decimal128__": {
+                "stringValue": "1.5"
+              }
+            }
+          }
+        },
+        "p": {
+          "mapValue": {
+            "fields": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "__type__": {
+                "stringValue": "__vector__"
+              },
+              "value": {
+                "arrayValue": {
+                  "values": [
+                    {
+                      "doubleValue": 1
+                    },
+                    {
+                      "doubleValue": 2
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "b.__int__ replaced by \"x\"",
+      "fields": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "stringValue": "x"
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "b.__int__"
+      ],
+      "write": {
+        "error": {
+          "message": "Field __int__ must be a long; founds STRING.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "after": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "x": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "d": {
+          "mapValue": {
+            "fields": {
+              "__decimal128__": {
+                "stringValue": "1.5"
+              }
+            }
+          }
+        },
+        "p": {
+          "mapValue": {
+            "fields": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "__type__": {
+                "stringValue": "__vector__"
+              },
+              "value": {
+                "arrayValue": {
+                  "values": [
+                    {
+                      "doubleValue": 1
+                    },
+                    {
+                      "doubleValue": 2
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "b.x added beside __int__",
+      "fields": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "x": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "b.x"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "d": {
+          "mapValue": {
+            "fields": {
+              "__decimal128__": {
+                "stringValue": "1.5"
+              }
+            }
+          }
+        },
+        "p": {
+          "mapValue": {
+            "fields": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "__type__": {
+                "stringValue": "__vector__"
+              },
+              "value": {
+                "arrayValue": {
+                  "values": [
+                    {
+                      "doubleValue": 1
+                    },
+                    {
+                      "doubleValue": 2
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "d.__decimal128__ deleted",
+      "fields": {},
+      "mask": [
+        "d.__decimal128__"
+      ],
+      "write": {
+        "error": {
+          "message": "Invalid reserved name in field path __decimal128__",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "after": {
+        "b": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "d": {
+          "mapValue": {
+            "fields": {
+              "__decimal128__": {
+                "stringValue": "1.5"
+              }
+            }
+          }
+        },
+        "p": {
+          "mapValue": {
+            "fields": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "vec": {
+          "mapValue": {
+            "fields": {
+              "__type__": {
+                "stringValue": "__vector__"
+              },
+              "value": {
+                "arrayValue": {
+                  "values": [
+                    {
+                      "doubleValue": 1
+                    },
+                    {
+                      "doubleValue": 2
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "p.__int__ added to a plain map",
+      "fields": {
+        "p": {
+          "mapValue": {
+            "fields": {
+              "__int__": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "p.__int__"
+      ],
+      "write": {
+        "error": {
+          "message": "Invalid reserved name in field path __int__",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    }
+  ]
+}

@@ -1,0 +1,3956 @@
+{
+  "cases": [
+    {
+      "computedSize": 1048560,
+      "description": "commit one string field of 1048487 bytes (computed document size 1048560)",
+      "id": "rest.value_size.at_cap",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "s": {
+                    "stringValue": "<string 1048487 bytes, sha256 44cc04a89c044edb2da3e7e3a47a38e40b8c767eee53e9c5434e06ee7a6648f6, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/bigvalue"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "valueBytes": 1048487
+    },
+    {
+      "computedSize": 1048561,
+      "description": "commit one string field of 1048488 bytes (computed document size 1048561)",
+      "error": {
+        "http": 400,
+        "message": "The value of property \"s\" is longer than 1048487 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.value_size.over_cap",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "s": {
+                    "stringValue": "<string 1048488 bytes, sha256 8202468a5557f26c51d09915a40c29c15703023168612ffa9c291b917b55fdb8, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/bigvalue"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The value of property \"s\" is longer than 1048487 bytes.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest",
+      "valueBytes": 1048488
+    },
+    {
+      "description": "commit one string field of 1048488 bytes",
+      "error": {
+        "code": 3,
+        "message": "The value of property \"s\" is longer than 1048487 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.value_size.over_cap",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "s": {
+                    "stringValue": "<string 1048488 bytes, sha256 8202468a5557f26c51d09915a40c29c15703023168612ffa9c291b917b55fdb8, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/bigvalue"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc",
+      "valueBytes": 1048488
+    },
+    {
+      "computedSize": 1048576,
+      "description": "commit a document of two string fields whose computed size is 1048576 bytes (limit 1048576)",
+      "id": "rest.doc_size.at_limit",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "s1": {
+                    "stringValue": "<string 600000 bytes, sha256 34e95fe8877d07873716a3f575a4ea908b2e776b18e0b5122d33f7a93ff012b4, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+                  },
+                  "s2": {
+                    "stringValue": "<string 448503 bytes, sha256 0f10b3e6df8dc846a37e76f1d81f1ada761482edf59f8c5a47845095b541e3ad, starts \"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\">"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/big"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "computedSize": 1048577,
+      "description": "commit a document of two string fields whose computed size is 1048577 bytes (limit 1048576)",
+      "error": {
+        "http": 400,
+        "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/big' cannot be written because its size (1,048,577 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.doc_size.over_by_one",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "s1": {
+                    "stringValue": "<string 600000 bytes, sha256 34e95fe8877d07873716a3f575a4ea908b2e776b18e0b5122d33f7a93ff012b4, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+                  },
+                  "s2": {
+                    "stringValue": "<string 448504 bytes, sha256 6341c6814c119ef040b1a0e6177bcef2f526e07e957928b2a140dff41e6e19e6, starts \"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\">"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/big"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/big' cannot be written because its size (1,048,577 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "computedSize": 1048577,
+      "description": "commit, computed size 1048577",
+      "error": {
+        "code": 3,
+        "message": "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/big' cannot be written because its size (1,048,577 bytes) exceeds the maximum allowed size of 1,048,576 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.doc_size.over_by_one",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "s1": {
+                    "stringValue": "<string 600000 bytes, sha256 34e95fe8877d07873716a3f575a4ea908b2e776b18e0b5122d33f7a93ff012b4, starts \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\">"
+                  },
+                  "s2": {
+                    "stringValue": "<string 448504 bytes, sha256 6341c6814c119ef040b1a0e6177bcef2f526e07e957928b2a140dff41e6e19e6, starts \"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\">"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/big"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "commit a document whose id is 1500 bytes",
+      "id": "rest.id_1500_bytes",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "<string 1566 bytes, sha256 f4137d383e93740da55e11f9582d7172d60f320dbde3f5d846855a5d41d8a888, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit a document whose id is 1501 bytes",
+      "error": {
+        "http": 400,
+        "message": "The key path element name is longer than 1500 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.id_1501_bytes",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "<string 1567 bytes, sha256 99b8e41ebcb96b9bac3771cc7c1ab9828e67ed99793cc719491731db6abc44f9, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The key path element name is longer than 1500 bytes.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit, id 1501 bytes",
+      "error": {
+        "code": 3,
+        "message": "The key path element name is longer than 1500 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.id_1501_bytes",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "<string 1567 bytes, sha256 99b8e41ebcb96b9bac3771cc7c1ab9828e67ed99793cc719491731db6abc44f9, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "commit; 5 levels, ids of 1500 bytes: 7525 bytes below documents/, 7578 bytes as a full resource name",
+      "error": {
+        "http": 400,
+        "message": "The document name is longer than 6144 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.name_over_6kib.commit",
+      "nameBytes": {
+        "relative": 7525,
+        "resourceName": 7578
+      },
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "<string 7578 bytes, sha256 dbb2c5ea287eacb0cef9bdaa2d4943c2389a6d45422917a59e5d92d25db3c284, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The document name is longer than 6144 bytes.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET; 5 levels, ids of 1500 bytes: 7525 bytes below documents/, 7578 bytes as a full resource name",
+      "error": {
+        "http": 400,
+        "message": "The document name is longer than 6144 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.name_over_6kib.get",
+      "nameBytes": {
+        "relative": 7525,
+        "resourceName": 7578
+      },
+      "request": {
+        "method": "GET",
+        "path": "<string 7574 bytes, sha256 0dcd17e03097e80d6b1d00c549e7bebe306cf435a58500dc8aed3edad180d61a, starts \"projects/{project}/databases/(default)/d\">"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The document name is longer than 6144 bytes.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit; 5 levels, ids of 1500 bytes: 7525 bytes below documents/, 7578 bytes as a full resource name",
+      "error": {
+        "code": 3,
+        "message": "The document name is longer than 6144 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.name_over_6kib.commit",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "<string 7578 bytes, sha256 dbb2c5ea287eacb0cef9bdaa2d4943c2389a6d45422917a59e5d92d25db3c284, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "commit a document with one integer field whose name below documents/ is 6127 bytes (6180 as a full resource name)",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.name_bytes_6127",
+      "nameBytes": {
+        "relative": 6127,
+        "resourceName": 6180,
+        "storageSizeFormula": 6144
+      },
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "<string 6180 bytes, sha256 f119d357d5e5c8e81610c85b37e9030bb73ec5e41deca229383acd67b6b13c1f, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit a document with no fields whose name below documents/ is 6127 bytes (6180 as a full resource name)",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.name_bytes_6127_no_fields",
+      "nameBytes": {
+        "relative": 6127,
+        "resourceName": 6180,
+        "storageSizeFormula": 6144
+      },
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {},
+                "name": "<string 6180 bytes, sha256 ad70ce1d818d95d917e9f3de81aab878a32e961d2e72a87ade47798d9a55f5ad, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit a document with no fields whose name below documents/ is 6128 bytes (6181 as a full resource name)",
+      "error": {
+        "http": 400,
+        "message": "The document name is longer than 6144 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.name_bytes_6128_no_fields",
+      "nameBytes": {
+        "relative": 6128,
+        "resourceName": 6181,
+        "storageSizeFormula": 6145
+      },
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {},
+                "name": "<string 6181 bytes, sha256 1b16f53ce2b28020f5202de6083ec9469660489335c67cb92174199e67f20b89, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The document name is longer than 6144 bytes.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit a document with one integer field whose name below documents/ is 6128 bytes (6181 as a full resource name)",
+      "error": {
+        "http": 400,
+        "message": "The document name is longer than 6144 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.name_bytes_6128",
+      "nameBytes": {
+        "relative": 6128,
+        "resourceName": 6181,
+        "storageSizeFormula": 6145
+      },
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "<string 6181 bytes, sha256 bb66d8e9bb0da4b33261d1bc3acb79c257969275f31efd8627eae92021b858a6, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The document name is longer than 6144 bytes.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit a document with one integer field whose name below documents/ is 6144 bytes (6197 as a full resource name)",
+      "error": {
+        "http": 400,
+        "message": "The document name is longer than 6144 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.name_bytes_6144",
+      "nameBytes": {
+        "relative": 6144,
+        "resourceName": 6197,
+        "storageSizeFormula": 6161
+      },
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "<string 6197 bytes, sha256 9f0deba477a09e0a75f3ee2a0eed3e2cfb98de8b051749365edbc351022f5427, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The document name is longer than 6144 bytes.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit a document with one integer field whose name below documents/ is 6145 bytes (6198 as a full resource name)",
+      "error": {
+        "http": 400,
+        "message": "The document name is longer than 6144 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.name_bytes_6145",
+      "nameBytes": {
+        "relative": 6145,
+        "resourceName": 6198,
+        "storageSizeFormula": 6162
+      },
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "<string 6198 bytes, sha256 1b6177dc6801f325f4ace9829a7162aabf2a826cd97ad84fe2d5e964aac070e7, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The document name is longer than 6144 bytes.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit a document under 99 nested subcollections (200 path segments, 100 collections)",
+      "id": "rest.depth_99",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "<string 652 bytes, sha256 9264b8d5bda1f3d1d460d09ee746605101d856c95d3a379d1cacf15cf4c79bda, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "segments": 200,
+      "transport": "rest"
+    },
+    {
+      "description": "commit a document under 100 nested subcollections (202 path segments, 101 collections)",
+      "error": {
+        "http": 400,
+        "message": "Key path is too long. Cannot exceed 100 elements.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.depth_100",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "<string 659 bytes, sha256 1b00271eae617e89169dd261875bbd4f607939d892213280168e4d4265af5309, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Key path is too long. Cannot exceed 100 elements.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "segments": 202,
+      "transport": "rest"
+    },
+    {
+      "description": "commit a document under 101 nested subcollections (204 path segments, 102 collections)",
+      "error": {
+        "http": 400,
+        "message": "Key path is too long. Cannot exceed 100 elements.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.depth_101",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "<string 666 bytes, sha256 ba6ec29ad02c0fa3a49deca4b0f81ce51a80dd12a45b39f9f22aedf89d5331a3, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Key path is too long. Cannot exceed 100 elements.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "segments": 204,
+      "transport": "rest"
+    },
+    {
+      "description": "commit under 101 nested subcollections",
+      "error": {
+        "code": 3,
+        "message": "Key path is too long. Cannot exceed 100 elements.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.depth_101",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "<string 666 bytes, sha256 ba6ec29ad02c0fa3a49deca4b0f81ce51a80dd12a45b39f9f22aedf89d5331a3, starts \"projects/chatapp-8ae21/databases/(defaul\">"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "OR of 30 a == i",
+      "id": "rest.or_30_same_field",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "2"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "3"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "4"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "5"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "6"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "7"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "8"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "9"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "10"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "11"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "12"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "13"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "14"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "15"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "16"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "17"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "18"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "19"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "20"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "21"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "22"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "23"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "24"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "25"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "26"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "27"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "28"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "29"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "30"
+                      }
+                    }
+                  }
+                ],
+                "op": "OR"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "OR of 31 a == i",
+      "error": {
+        "http": 400,
+        "message": "Too many disjunctions after normalization. Result had 31 disjunctions which is more than the maximum of 30",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.or_31_same_field",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "2"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "3"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "4"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "5"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "6"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "7"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "8"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "9"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "10"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "11"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "12"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "13"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "14"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "15"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "16"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "17"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "18"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "19"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "20"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "21"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "22"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "23"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "24"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "25"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "26"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "27"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "28"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "29"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "30"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "31"
+                      }
+                    }
+                  }
+                ],
+                "op": "OR"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Too many disjunctions after normalization. Result had 31 disjunctions which is more than the maximum of 30",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "OR of 31 a == i",
+      "error": {
+        "code": 3,
+        "message": "Too many disjunctions after normalization. Result had 31 disjunctions which is more than the maximum of 30",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.or_31_same_field",
+      "request": {
+        "message": {
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents",
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "2"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "3"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "4"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "5"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "6"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "7"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "8"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "9"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "10"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "11"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "12"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "13"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "14"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "15"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "16"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "17"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "18"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "19"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "20"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "21"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "22"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "23"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "24"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "25"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "26"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "27"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "28"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "29"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "30"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "31"
+                      }
+                    }
+                  }
+                ],
+                "op": "OR"
+              }
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunQuery"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "OR of 31 f_i == 1",
+      "error": {
+        "http": 400,
+        "message": "Too many disjunctions after normalization. Result had 31 disjunctions which is more than the maximum of 30",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.or_31_distinct_fields",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f1"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f2"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f3"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f4"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f5"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f6"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f7"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f8"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f9"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f10"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f11"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f12"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f13"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f14"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f15"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f16"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f17"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f18"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f19"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f20"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f21"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f22"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f23"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f24"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f25"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f26"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f27"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f28"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f29"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f30"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f31"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  }
+                ],
+                "op": "OR"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Too many disjunctions after normalization. Result had 31 disjunctions which is more than the maximum of 30",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "OR of 31 f_i == 1",
+      "error": {
+        "code": 3,
+        "message": "Too many disjunctions after normalization. Result had 31 disjunctions which is more than the maximum of 30",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.or_31_distinct_fields",
+      "request": {
+        "message": {
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents",
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f1"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f2"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f3"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f4"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f5"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f6"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f7"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f8"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f9"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f10"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f11"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f12"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f13"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f14"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f15"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f16"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f17"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f18"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f19"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f20"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f21"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f22"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f23"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f24"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f25"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f26"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f27"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f28"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f29"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f30"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "f31"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  }
+                ],
+                "op": "OR"
+              }
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunQuery"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "a in [1..30]",
+      "id": "rest.in_30",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "IN",
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "integerValue": "1"
+                      },
+                      {
+                        "integerValue": "2"
+                      },
+                      {
+                        "integerValue": "3"
+                      },
+                      {
+                        "integerValue": "4"
+                      },
+                      {
+                        "integerValue": "5"
+                      },
+                      {
+                        "integerValue": "6"
+                      },
+                      {
+                        "integerValue": "7"
+                      },
+                      {
+                        "integerValue": "8"
+                      },
+                      {
+                        "integerValue": "9"
+                      },
+                      {
+                        "integerValue": "10"
+                      },
+                      {
+                        "integerValue": "11"
+                      },
+                      {
+                        "integerValue": "12"
+                      },
+                      {
+                        "integerValue": "13"
+                      },
+                      {
+                        "integerValue": "14"
+                      },
+                      {
+                        "integerValue": "15"
+                      },
+                      {
+                        "integerValue": "16"
+                      },
+                      {
+                        "integerValue": "17"
+                      },
+                      {
+                        "integerValue": "18"
+                      },
+                      {
+                        "integerValue": "19"
+                      },
+                      {
+                        "integerValue": "20"
+                      },
+                      {
+                        "integerValue": "21"
+                      },
+                      {
+                        "integerValue": "22"
+                      },
+                      {
+                        "integerValue": "23"
+                      },
+                      {
+                        "integerValue": "24"
+                      },
+                      {
+                        "integerValue": "25"
+                      },
+                      {
+                        "integerValue": "26"
+                      },
+                      {
+                        "integerValue": "27"
+                      },
+                      {
+                        "integerValue": "28"
+                      },
+                      {
+                        "integerValue": "29"
+                      },
+                      {
+                        "integerValue": "30"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a in [1..31]",
+      "error": {
+        "http": 400,
+        "message": "'IN' supports up to 30 comparison values.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.in_31",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "IN",
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "integerValue": "1"
+                      },
+                      {
+                        "integerValue": "2"
+                      },
+                      {
+                        "integerValue": "3"
+                      },
+                      {
+                        "integerValue": "4"
+                      },
+                      {
+                        "integerValue": "5"
+                      },
+                      {
+                        "integerValue": "6"
+                      },
+                      {
+                        "integerValue": "7"
+                      },
+                      {
+                        "integerValue": "8"
+                      },
+                      {
+                        "integerValue": "9"
+                      },
+                      {
+                        "integerValue": "10"
+                      },
+                      {
+                        "integerValue": "11"
+                      },
+                      {
+                        "integerValue": "12"
+                      },
+                      {
+                        "integerValue": "13"
+                      },
+                      {
+                        "integerValue": "14"
+                      },
+                      {
+                        "integerValue": "15"
+                      },
+                      {
+                        "integerValue": "16"
+                      },
+                      {
+                        "integerValue": "17"
+                      },
+                      {
+                        "integerValue": "18"
+                      },
+                      {
+                        "integerValue": "19"
+                      },
+                      {
+                        "integerValue": "20"
+                      },
+                      {
+                        "integerValue": "21"
+                      },
+                      {
+                        "integerValue": "22"
+                      },
+                      {
+                        "integerValue": "23"
+                      },
+                      {
+                        "integerValue": "24"
+                      },
+                      {
+                        "integerValue": "25"
+                      },
+                      {
+                        "integerValue": "26"
+                      },
+                      {
+                        "integerValue": "27"
+                      },
+                      {
+                        "integerValue": "28"
+                      },
+                      {
+                        "integerValue": "29"
+                      },
+                      {
+                        "integerValue": "30"
+                      },
+                      {
+                        "integerValue": "31"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "'IN' supports up to 30 comparison values.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a in [1..31]",
+      "error": {
+        "code": 3,
+        "message": "'IN' supports up to 30 comparison values.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.in_31",
+      "request": {
+        "message": {
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents",
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "IN",
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "integerValue": "1"
+                      },
+                      {
+                        "integerValue": "2"
+                      },
+                      {
+                        "integerValue": "3"
+                      },
+                      {
+                        "integerValue": "4"
+                      },
+                      {
+                        "integerValue": "5"
+                      },
+                      {
+                        "integerValue": "6"
+                      },
+                      {
+                        "integerValue": "7"
+                      },
+                      {
+                        "integerValue": "8"
+                      },
+                      {
+                        "integerValue": "9"
+                      },
+                      {
+                        "integerValue": "10"
+                      },
+                      {
+                        "integerValue": "11"
+                      },
+                      {
+                        "integerValue": "12"
+                      },
+                      {
+                        "integerValue": "13"
+                      },
+                      {
+                        "integerValue": "14"
+                      },
+                      {
+                        "integerValue": "15"
+                      },
+                      {
+                        "integerValue": "16"
+                      },
+                      {
+                        "integerValue": "17"
+                      },
+                      {
+                        "integerValue": "18"
+                      },
+                      {
+                        "integerValue": "19"
+                      },
+                      {
+                        "integerValue": "20"
+                      },
+                      {
+                        "integerValue": "21"
+                      },
+                      {
+                        "integerValue": "22"
+                      },
+                      {
+                        "integerValue": "23"
+                      },
+                      {
+                        "integerValue": "24"
+                      },
+                      {
+                        "integerValue": "25"
+                      },
+                      {
+                        "integerValue": "26"
+                      },
+                      {
+                        "integerValue": "27"
+                      },
+                      {
+                        "integerValue": "28"
+                      },
+                      {
+                        "integerValue": "29"
+                      },
+                      {
+                        "integerValue": "30"
+                      },
+                      {
+                        "integerValue": "31"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunQuery"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "a not-in [1..10]",
+      "id": "rest.not_in_10",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "NOT_IN",
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "integerValue": "1"
+                      },
+                      {
+                        "integerValue": "2"
+                      },
+                      {
+                        "integerValue": "3"
+                      },
+                      {
+                        "integerValue": "4"
+                      },
+                      {
+                        "integerValue": "5"
+                      },
+                      {
+                        "integerValue": "6"
+                      },
+                      {
+                        "integerValue": "7"
+                      },
+                      {
+                        "integerValue": "8"
+                      },
+                      {
+                        "integerValue": "9"
+                      },
+                      {
+                        "integerValue": "10"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a not-in [1..11]",
+      "error": {
+        "http": 400,
+        "message": "'NOT_IN' supports up to 10 comparison values.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.not_in_11",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "NOT_IN",
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "integerValue": "1"
+                      },
+                      {
+                        "integerValue": "2"
+                      },
+                      {
+                        "integerValue": "3"
+                      },
+                      {
+                        "integerValue": "4"
+                      },
+                      {
+                        "integerValue": "5"
+                      },
+                      {
+                        "integerValue": "6"
+                      },
+                      {
+                        "integerValue": "7"
+                      },
+                      {
+                        "integerValue": "8"
+                      },
+                      {
+                        "integerValue": "9"
+                      },
+                      {
+                        "integerValue": "10"
+                      },
+                      {
+                        "integerValue": "11"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "'NOT_IN' supports up to 10 comparison values.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a not-in [1..11]",
+      "error": {
+        "code": 3,
+        "message": "'NOT_IN' supports up to 10 comparison values.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.not_in_11",
+      "request": {
+        "message": {
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents",
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "NOT_IN",
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "integerValue": "1"
+                      },
+                      {
+                        "integerValue": "2"
+                      },
+                      {
+                        "integerValue": "3"
+                      },
+                      {
+                        "integerValue": "4"
+                      },
+                      {
+                        "integerValue": "5"
+                      },
+                      {
+                        "integerValue": "6"
+                      },
+                      {
+                        "integerValue": "7"
+                      },
+                      {
+                        "integerValue": "8"
+                      },
+                      {
+                        "integerValue": "9"
+                      },
+                      {
+                        "integerValue": "10"
+                      },
+                      {
+                        "integerValue": "11"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunQuery"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "a in [1..6] && b in [1..6] (36 DNF disjuncts)",
+      "error": {
+        "http": 400,
+        "message": "Too many disjunctions after normalization. Result had 36 disjunctions which is more than the maximum of 30",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.and_in_6x6",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "IN",
+                      "value": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "integerValue": "1"
+                            },
+                            {
+                              "integerValue": "2"
+                            },
+                            {
+                              "integerValue": "3"
+                            },
+                            {
+                              "integerValue": "4"
+                            },
+                            {
+                              "integerValue": "5"
+                            },
+                            {
+                              "integerValue": "6"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "b"
+                      },
+                      "op": "IN",
+                      "value": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "integerValue": "1"
+                            },
+                            {
+                              "integerValue": "2"
+                            },
+                            {
+                              "integerValue": "3"
+                            },
+                            {
+                              "integerValue": "4"
+                            },
+                            {
+                              "integerValue": "5"
+                            },
+                            {
+                              "integerValue": "6"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Too many disjunctions after normalization. Result had 36 disjunctions which is more than the maximum of 30",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a in [1..6] && b in [1..6] (36 DNF disjuncts)",
+      "error": {
+        "code": 3,
+        "message": "Too many disjunctions after normalization. Result had 36 disjunctions which is more than the maximum of 30",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.and_in_6x6",
+      "request": {
+        "message": {
+          "parent": "projects/chatapp-8ae21/databases/(default)/documents",
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "IN",
+                      "value": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "integerValue": "1"
+                            },
+                            {
+                              "integerValue": "2"
+                            },
+                            {
+                              "integerValue": "3"
+                            },
+                            {
+                              "integerValue": "4"
+                            },
+                            {
+                              "integerValue": "5"
+                            },
+                            {
+                              "integerValue": "6"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "b"
+                      },
+                      "op": "IN",
+                      "value": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "integerValue": "1"
+                            },
+                            {
+                              "integerValue": "2"
+                            },
+                            {
+                              "integerValue": "3"
+                            },
+                            {
+                              "integerValue": "4"
+                            },
+                            {
+                              "integerValue": "5"
+                            },
+                            {
+                              "integerValue": "6"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunQuery"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "commit with a transaction id that never existed",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.txn_unknown.commit",
+      "request": {
+        "body": {
+          "transaction": "YXJ1bWEtcmVmLW5vLXN1Y2gtdHJhbnNhY3Rpb24=",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/t1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET in a transaction that never existed",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.txn_unknown.get",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f0/t1?transaction=YXJ1bWEtcmVmLW5vLXN1Y2gtdHJhbnNhY3Rpb24%3D"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery in a transaction that never existed",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.txn_unknown.runQuery",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ]
+          },
+          "transaction": "YXJ1bWEtcmVmLW5vLXN1Y2gtdHJhbnNhY3Rpb24="
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Invalid transaction.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "rollback of a transaction that never existed",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.txn_unknown.rollback",
+      "request": {
+        "body": {
+          "transaction": "YXJ1bWEtcmVmLW5vLXN1Y2gtdHJhbnNhY3Rpb24="
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:rollback"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit with a transaction id that never existed",
+      "error": {
+        "code": 3,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.txn_unknown.commit",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "transaction": "<the unknown transaction id>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/t1"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "beginTransaction (read-write)",
+      "id": "rest.txn_reused.begin",
+      "request": {
+        "body": {},
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "transaction": "<transaction>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "the first commit with that transaction",
+      "id": "rest.txn_reused.commit_first",
+      "request": {
+        "body": {
+          "transaction": "EXx5vJpuhBSOIlkAdsw0yKoY1MymaECUCyQ9u34/B3VC1eSqjTwVqCEFwvafFFBv4zhmkwqLjdIU05ClX+L6cVG/rZl+PQShaIzCAd/R06z1TukcKaw9InjCUqeEg1NSZQRalQ==",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "stringValue": "first"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/t-rest"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "the second commit with that transaction",
+      "error": {
+        "http": 409,
+        "message": "The referenced transaction has expired or is no longer valid.",
+        "status": "ABORTED"
+      },
+      "id": "rest.txn_reused.commit_second",
+      "request": {
+        "body": {
+          "transaction": "EXx5vJpuhBSOIlkAdsw0yKoY1MymaECUCyQ9u34/B3VC1eSqjTwVqCEFwvafFFBv4zhmkwqLjdIU05ClX+L6cVG/rZl+PQShaIzCAd/R06z1TukcKaw9InjCUqeEg1NSZQRalQ==",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "stringValue": "second"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/t-rest"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 409,
+            "message": "The referenced transaction has expired or is no longer valid.",
+            "status": "ABORTED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 409
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "BeginTransaction (read-write)",
+      "id": "grpc.txn_reused.begin",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)"
+        },
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "message": {
+          "transaction": "<the transaction id from beginTransaction>"
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "the first commit with that transaction",
+      "id": "grpc.txn_reused.commit_first",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "transaction": "<the transaction id from beginTransaction>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "stringValue": "first"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/t-grpc"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "message": {
+          "commitTime": "<commitTime: Timestamp>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "the second commit with that transaction",
+      "error": {
+        "code": 10,
+        "message": "The referenced transaction has expired or is no longer valid.",
+        "status": "ABORTED"
+      },
+      "id": "grpc.txn_reused.commit_second",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "transaction": "<the transaction id from beginTransaction>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "stringValue": "second"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/t-grpc"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f0.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations and transaction ids are replaced by placeholders (normalise in lib.mjs); everything else is as returned.",
+      "computedSize uses the storage-size rules of firebase.google.com/docs/firestore/storage-size (name: each segment + 1, plus 16; field name + 1; string + 1; document + 32).",
+      "Request strings longer than 300 characters are written as their length and SHA-256 (compact in lib.mjs); messages are exact.",
+      "Transaction ids are random per run; they are replaced by a placeholder wherever they appear in a request, a response or a message."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T14:31:15.919Z .. 2026-10-26T14:32:27.875Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "21181fa838abf8cdf6cc14aa590401479e8c830a2cf61981c12b828897faa16c",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

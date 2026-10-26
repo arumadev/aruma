@@ -1,0 +1,482 @@
+{
+  "cases": [
+    {
+      "description": "GET a document",
+      "error": {
+        "http": 404,
+        "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "id": "rest.get",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/aruma-ref-nonexistent/documents/aruma-ref-f0/x"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "ListDocuments of a collection",
+      "error": {
+        "http": 404,
+        "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "id": "rest.list",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/aruma-ref-nonexistent/documents/aruma-ref-f0"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "BatchGetDocuments",
+      "error": {
+        "http": 404,
+        "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "id": "rest.batchGet",
+      "request": {
+        "body": {
+          "documents": [
+            "projects/chatapp-8ae21/databases/aruma-ref-nonexistent/documents/aruma-ref-f0/x"
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/aruma-ref-nonexistent/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 404,
+              "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+              "status": "NOT_FOUND"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "RunQuery",
+      "error": {
+        "http": 404,
+        "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "id": "rest.runQuery",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/aruma-ref-nonexistent/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 404,
+              "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+              "status": "NOT_FOUND"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "RunAggregationQuery count()",
+      "error": {
+        "http": 404,
+        "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "id": "rest.runAggregationQuery",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f0"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/aruma-ref-nonexistent/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 404,
+              "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+              "status": "NOT_FOUND"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "Commit one update",
+      "error": {
+        "http": 404,
+        "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "id": "rest.commit",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/aruma-ref-nonexistent/documents/aruma-ref-f0/x"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/aruma-ref-nonexistent/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "BeginTransaction",
+      "error": {
+        "http": 404,
+        "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "id": "rest.beginTransaction",
+      "request": {
+        "body": {},
+        "method": "POST",
+        "path": "projects/{project}/databases/aruma-ref-nonexistent/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "ListCollectionIds of the root",
+      "error": {
+        "http": 404,
+        "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "id": "rest.listCollectionIds",
+      "request": {
+        "body": {},
+        "method": "POST",
+        "path": "projects/{project}/databases/aruma-ref-nonexistent/documents:listCollectionIds"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "Admin API databases.get (what firebase deploy sends first, firebase-tools prepare.ts:122)",
+      "error": {
+        "http": 404,
+        "message": "Project 'chatapp-8ae21' or database 'aruma-ref-nonexistent' does not exist.",
+        "status": "NOT_FOUND"
+      },
+      "id": "admin.getDatabase",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/aruma-ref-nonexistent"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "Project 'chatapp-8ae21' or database 'aruma-ref-nonexistent' does not exist.",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GetDocument",
+      "error": {
+        "code": 5,
+        "message": "",
+        "status": "NOT_FOUND"
+      },
+      "id": "grpc.getDocument",
+      "request": {
+        "message": {
+          "name": "projects/chatapp-8ae21/databases/aruma-ref-nonexistent/documents/aruma-ref-f0/x"
+        },
+        "resourcePrefix": "projects/{project}/databases/aruma-ref-nonexistent",
+        "rpc": "google.firestore.v1.Firestore/GetDocument"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "ListDocuments",
+      "error": {
+        "code": 5,
+        "message": "",
+        "status": "NOT_FOUND"
+      },
+      "id": "grpc.listDocuments",
+      "request": {
+        "message": {
+          "collectionId": "aruma-ref-f0",
+          "parent": "projects/chatapp-8ae21/databases/aruma-ref-nonexistent/documents"
+        },
+        "resourcePrefix": "projects/{project}/databases/aruma-ref-nonexistent",
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "BatchGetDocuments",
+      "error": {
+        "code": 5,
+        "message": "",
+        "status": "NOT_FOUND"
+      },
+      "id": "grpc.batchGetDocuments",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/aruma-ref-nonexistent",
+          "documents": [
+            "projects/chatapp-8ae21/databases/aruma-ref-nonexistent/documents/aruma-ref-f0/x"
+          ]
+        },
+        "resourcePrefix": "projects/{project}/databases/aruma-ref-nonexistent",
+        "rpc": "google.firestore.v1.Firestore/BatchGetDocuments"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "RunQuery",
+      "error": {
+        "code": 5,
+        "message": "",
+        "status": "NOT_FOUND"
+      },
+      "id": "grpc.runQuery",
+      "request": {
+        "message": {
+          "parent": "projects/chatapp-8ae21/databases/aruma-ref-nonexistent/documents",
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f0"
+              }
+            ]
+          }
+        },
+        "resourcePrefix": "projects/{project}/databases/aruma-ref-nonexistent",
+        "rpc": "google.firestore.v1.Firestore/RunQuery"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "Commit one update",
+      "error": {
+        "code": 5,
+        "message": "",
+        "status": "NOT_FOUND"
+      },
+      "id": "grpc.commit",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/aruma-ref-nonexistent",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/aruma-ref-nonexistent/documents/aruma-ref-f0/x"
+              }
+            }
+          ]
+        },
+        "resourcePrefix": "projects/{project}/databases/aruma-ref-nonexistent",
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "BeginTransaction",
+      "error": {
+        "code": 5,
+        "message": "",
+        "status": "NOT_FOUND"
+      },
+      "id": "grpc.beginTransaction",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/aruma-ref-nonexistent"
+        },
+        "resourcePrefix": "projects/{project}/databases/aruma-ref-nonexistent",
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "Listen with one query target (what web and mobile clients open)",
+      "error": {
+        "code": 5,
+        "message": "",
+        "status": "NOT_FOUND"
+      },
+      "id": "grpc.listen",
+      "request": {
+        "message": {
+          "addTarget": {
+            "query": {
+              "parent": "projects/chatapp-8ae21/databases/aruma-ref-nonexistent/documents",
+              "structuredQuery": {
+                "from": [
+                  {
+                    "collectionId": "aruma-ref-f0"
+                  }
+                ]
+              }
+            },
+            "targetId": 1
+          },
+          "database": "projects/chatapp-8ae21/databases/aruma-ref-nonexistent"
+        },
+        "resourcePrefix": "projects/{project}/databases/aruma-ref-nonexistent",
+        "rpc": "google.firestore.v1.Firestore/Listen"
+      },
+      "response": {
+        "ok": false,
+        "responses": []
+      },
+      "transport": "grpc"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f0.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations and transaction ids are replaced by placeholders (normalise in lib.mjs); everything else is as returned.",
+      "The database id aruma-ref-nonexistent was never created; every call names it in the path (REST) or in the request and the google-cloud-resource-prefix and x-goog-request-params metadata (gRPC).",
+      "Over gRPC the status message is empty. A separate read-only check (2026-10-26) sent GetDocument with both metadata entries, with only one of them, and with neither: always code 5, details \"\", and no trailer but x-debug-tracking-id (no grpc-status-details-bin).",
+      "The REST message ends with a space after \"database.\" and has no full stop after the project id."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T14:31:15.919Z .. 2026-10-26T14:32:27.875Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "21181fa838abf8cdf6cc14aa590401479e8c830a2cf61981c12b828897faa16c",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

@@ -1,0 +1,1619 @@
+{
+  "document": {
+    "1n": {
+      "integerValue": "9"
+    },
+    "_u": {
+      "integerValue": "8"
+    },
+    "`": {
+      "integerValue": "5"
+    },
+    "a": {
+      "mapValue": {
+        "fields": {
+          "b": {
+            "integerValue": "1"
+          },
+          "c": {
+            "integerValue": "2"
+          }
+        }
+      }
+    },
+    "a b": {
+      "integerValue": "6"
+    },
+    "arr": {
+      "arrayValue": {
+        "values": [
+          {
+            "mapValue": {
+              "fields": {
+                "p": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "b\\c": {
+      "integerValue": "7"
+    },
+    "x.y": {
+      "integerValue": "3"
+    },
+    "é": {
+      "integerValue": "4"
+    }
+  },
+  "header": {
+    "generator": "test/oracle/documents/production/record-values.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply.",
+      "Only values, document ids, HTTP statuses and error statuses and messages are recorded; they are exact.",
+      "The document aruma-ref-values-mask/m holds the fields of document; reads are GETs with mask.fieldPaths (one query parameter per path); updates rewrite it, commit one update with updateMask.fieldPaths, and read it back (after)."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T16:35:04.909Z .. 2026-10-26T16:42:32.336Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "api": "firestore.googleapis.com REST v1",
+      "firebase-tools (auth only)": "13.23.0",
+      "generator sha256": "d04c839c74a2530b436f666c1acc03e6e3720bc6fbd1979f3d7b9b64e4157f42",
+      "node": "v24.21.0"
+    }
+  },
+  "reads": [
+    {
+      "fields": {
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "a.b"
+      ]
+    },
+    {
+      "fields": {
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              },
+              "c": {
+                "integerValue": "2"
+              }
+            }
+          }
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "a"
+      ]
+    },
+    {
+      "fields": {
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              },
+              "c": {
+                "integerValue": "2"
+              }
+            }
+          }
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "a",
+        "a.b"
+      ]
+    },
+    {
+      "fields": {
+        "x.y": {
+          "integerValue": "3"
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "`x.y`"
+      ]
+    },
+    {
+      "fields": {},
+      "http": 200,
+      "maskFieldPaths": [
+        "x.y"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid property path \"é\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "é"
+      ]
+    },
+    {
+      "fields": {
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "`é`"
+      ]
+    },
+    {
+      "fields": {
+        "`": {
+          "integerValue": "5"
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "`\\``"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid property path \"`\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "`"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid property path \"a b\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "a b"
+      ]
+    },
+    {
+      "fields": {
+        "a b": {
+          "integerValue": "6"
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "`a b`"
+      ]
+    },
+    {
+      "fields": {
+        "b\\c": {
+          "integerValue": "7"
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "`b\\\\c`"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid property path \"b\\c\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "b\\c"
+      ]
+    },
+    {
+      "fields": {},
+      "http": 200,
+      "maskFieldPaths": [
+        "arr.p"
+      ]
+    },
+    {
+      "fields": {
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "arr"
+      ]
+    },
+    {
+      "fields": {},
+      "http": 200,
+      "maskFieldPaths": [
+        "a.b.c"
+      ]
+    },
+    {
+      "fields": {},
+      "http": 200,
+      "maskFieldPaths": [
+        "__name__"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid property path \"a..b\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "a..b"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid property path \".a\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        ".a"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid property path \"a.\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "a."
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid property path \"``\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "``"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid property path \"`a\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "`a"
+      ]
+    },
+    {
+      "fields": {
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "a.`b`"
+      ]
+    },
+    {
+      "fields": {
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "`a`.`b`"
+      ]
+    },
+    {
+      "fields": {
+        "_u": {
+          "integerValue": "8"
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "_u"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid property path \"1n\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "1n"
+      ]
+    },
+    {
+      "fields": {
+        "1n": {
+          "integerValue": "9"
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "`1n`"
+      ]
+    },
+    {
+      "fields": {},
+      "http": 200,
+      "maskFieldPaths": [
+        "missing"
+      ]
+    },
+    {
+      "error": {
+        "message": "Invalid empty property path string.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        ""
+      ]
+    },
+    {
+      "fields": {
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "a.b",
+        "missing.z"
+      ]
+    },
+    {
+      "fields": {},
+      "http": 200,
+      "maskFieldPaths": [
+        "a.zz"
+      ]
+    },
+    {
+      "fields": {
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "http": 200,
+      "maskFieldPaths": [
+        "a.b",
+        "a.zz"
+      ]
+    },
+    {
+      "error": {
+        "message": "paths must have at most 20 elements",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a"
+      ]
+    },
+    {
+      "error": {
+        "message": "paths must have at most 20 elements",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a"
+      ]
+    },
+    {
+      "error": {
+        "message": "property path is longer than 1500 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    },
+    {
+      "error": {
+        "message": "property path is longer than 1500 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    },
+    {
+      "error": {
+        "message": "property path is longer than 1500 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      ]
+    },
+    {
+      "fields": {},
+      "http": 200,
+      "maskFieldPaths": [
+        "a.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      ]
+    },
+    {
+      "error": {
+        "message": "property path is longer than 1500 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "http": 400,
+      "maskFieldPaths": [
+        "a.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      ]
+    },
+    {
+      "fields": {},
+      "http": 200,
+      "maskFieldPaths": [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    },
+    {
+      "fields": {},
+      "http": 200,
+      "maskFieldPaths": [
+        "a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a"
+      ]
+    },
+    {
+      "fields": {},
+      "http": 200,
+      "maskFieldPaths": [
+        "`aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`"
+      ]
+    },
+    {
+      "fields": {},
+      "http": 200,
+      "maskFieldPaths": [
+        "`aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`"
+      ]
+    }
+  ],
+  "schema": "aruma.documents-oracle/v1",
+  "updates": [
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "9"
+              },
+              "c": {
+                "integerValue": "2"
+              }
+            }
+          }
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "replace a.b",
+      "fields": {
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "9"
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "a.b"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "a.c in the mask, absent from the update: deleted",
+      "fields": {
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "9"
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "a.c"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {
+            "fields": {
+              "z": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "a in the mask: the whole map replaced",
+      "fields": {
+        "a": {
+          "mapValue": {
+            "fields": {
+              "z": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "a"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              },
+              "c": {
+                "integerValue": "2"
+              }
+            }
+          }
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "30"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "quoted `x.y`",
+      "fields": {
+        "x.y": {
+          "integerValue": "30"
+        }
+      },
+      "mask": [
+        "`x.y`"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              },
+              "c": {
+                "integerValue": "2"
+              }
+            }
+          }
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "n": {
+          "mapValue": {
+            "fields": {
+              "m": {
+                "mapValue": {
+                  "fields": {
+                    "o": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "new nested path n.m.o",
+      "fields": {
+        "n": {
+          "mapValue": {
+            "fields": {
+              "m": {
+                "mapValue": {
+                  "fields": {
+                    "o": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "n.m.o"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "mapValue": {
+                  "fields": {
+                    "c": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              },
+              "c": {
+                "integerValue": "2"
+              }
+            }
+          }
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "a.b.c through an integer",
+      "fields": {
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "mapValue": {
+                  "fields": {
+                    "c": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "a.b.c"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "integerValue": "1"
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "field in the update but not in the mask",
+      "fields": {
+        "a": {
+          "integerValue": "1"
+        },
+        "q": {
+          "integerValue": "1"
+        }
+      },
+      "mask": [
+        "a"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "overlapping a and a.b",
+      "fields": {
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "a",
+        "a.b"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              },
+              "c": {
+                "integerValue": "2"
+              }
+            }
+          }
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "duplicate a.b",
+      "fields": {
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "mask": [
+        "a.b",
+        "a.b"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              },
+              "c": {
+                "integerValue": "2"
+              }
+            }
+          }
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "unquoted é",
+      "fields": {
+        "é": {
+          "integerValue": "40"
+        }
+      },
+      "mask": [
+        "é"
+      ],
+      "write": {
+        "error": {
+          "message": "Invalid property path \"é\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              },
+              "c": {
+                "integerValue": "2"
+              }
+            }
+          }
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "__name__",
+      "fields": {},
+      "mask": [
+        "__name__"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {}
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "a.b and a.c absent from the update: a left empty",
+      "fields": {},
+      "mask": [
+        "a.b",
+        "a.c"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              },
+              "c": {
+                "integerValue": "2"
+              }
+            }
+          }
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "missing.z absent from the update, missing absent from the document",
+      "fields": {},
+      "mask": [
+        "missing.z"
+      ],
+      "write": {
+        "http": 200
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              },
+              "c": {
+                "integerValue": "2"
+              }
+            }
+          }
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "invalid a..b",
+      "fields": {},
+      "mask": [
+        "a..b"
+      ],
+      "write": {
+        "error": {
+          "message": "Invalid property path \"a..b\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              },
+              "c": {
+                "integerValue": "2"
+              }
+            }
+          }
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "empty path",
+      "fields": {},
+      "mask": [
+        ""
+      ],
+      "write": {
+        "error": {
+          "message": "Invalid empty property path string.",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    },
+    {
+      "after": {
+        "1n": {
+          "integerValue": "9"
+        },
+        "_u": {
+          "integerValue": "8"
+        },
+        "`": {
+          "integerValue": "5"
+        },
+        "a": {
+          "mapValue": {
+            "fields": {
+              "b": {
+                "integerValue": "1"
+              },
+              "c": {
+                "integerValue": "2"
+              }
+            }
+          }
+        },
+        "a b": {
+          "integerValue": "6"
+        },
+        "arr": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "p": {
+                      "integerValue": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "b\\c": {
+          "integerValue": "7"
+        },
+        "x.y": {
+          "integerValue": "3"
+        },
+        "é": {
+          "integerValue": "4"
+        }
+      },
+      "description": "unterminated backtick",
+      "fields": {},
+      "mask": [
+        "`a"
+      ],
+      "write": {
+        "error": {
+          "message": "Invalid property path \"`a\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+          "status": "INVALID_ARGUMENT"
+        },
+        "http": 400
+      }
+    }
+  ]
+}

@@ -1,0 +1,5815 @@
+{
+  "cases": [
+    {
+      "description": "a == 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "eq1",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 && b == 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "eq2",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "b"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 && b == 1 && c == 'x'",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "eq3",
+      "ids": [
+        "documents/aruma-ref-idx/d1"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "b"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "c"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 orderBy a",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "eq1_ord_same",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 orderBy d",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "eq1_ord_other",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 orderBy d desc",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "eq1_ord_other_desc",
+      "ids": [
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d1"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 orderBy __name__ desc",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "eq1_ord_name_desc",
+      "ids": [
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d1"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 && b == 1 orderBy __name__ desc",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "eq2_ord_name_desc",
+      "ids": [
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d1"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "b"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "d > 15",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "range1",
+      "ids": [
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "d"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "15"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "d > 15 && d < 50",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "range1_both",
+      "ids": [
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "d"
+                      },
+                      "op": "GREATER_THAN",
+                      "value": {
+                        "integerValue": "15"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "d"
+                      },
+                      "op": "LESS_THAN",
+                      "value": {
+                        "integerValue": "50"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "d > 15 orderBy d desc",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "range1_ord_desc",
+      "ids": [
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d2"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "d"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "15"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "d > 15 orderBy d, a",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "range1_ord_other",
+      "ids": [
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              },
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "d"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "15"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "d > 15 orderBy a (raw REST, a first)",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "range1_ord_other_first",
+      "ids": [
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "d"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "15"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "d > 15 orderBy d asc, __name__ desc",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "range1_name_desc",
+      "ids": [
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              },
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "d"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "15"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 && d > 15",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "eq_range",
+      "ids": [
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "d"
+                      },
+                      "op": "GREATER_THAN",
+                      "value": {
+                        "integerValue": "15"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "d > 15 && b > 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "range2",
+      "ids": [
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "d"
+                      },
+                      "op": "GREATER_THAN",
+                      "value": {
+                        "integerValue": "15"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "b"
+                      },
+                      "op": "GREATER_THAN",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "tags array-contains 'red'",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ac",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "tags"
+                },
+                "op": "ARRAY_CONTAINS",
+                "value": {
+                  "stringValue": "red"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "tags array-contains 'red' && a == 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ac_eq",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "tags"
+                      },
+                      "op": "ARRAY_CONTAINS",
+                      "value": {
+                        "stringValue": "red"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "tags array-contains 'red' orderBy d",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ac_ord",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "tags"
+                },
+                "op": "ARRAY_CONTAINS",
+                "value": {
+                  "stringValue": "red"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "tags array-contains 'red' && d > 15",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ac_range",
+      "ids": [
+        "documents/aruma-ref-idx/d2"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "tags"
+                      },
+                      "op": "ARRAY_CONTAINS",
+                      "value": {
+                        "stringValue": "red"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "d"
+                      },
+                      "op": "GREATER_THAN",
+                      "value": {
+                        "integerValue": "15"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "tags array-contains-any ['red','green']",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "aca",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d5"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "tags"
+                },
+                "op": "ARRAY_CONTAINS_ANY",
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "red"
+                      },
+                      {
+                        "stringValue": "green"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "tags array-contains-any ['red','green'] && a == 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "aca_eq",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "tags"
+                      },
+                      "op": "ARRAY_CONTAINS_ANY",
+                      "value": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "stringValue": "red"
+                            },
+                            {
+                              "stringValue": "green"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a in [1,2]",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "in",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "IN",
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "integerValue": "1"
+                      },
+                      {
+                        "integerValue": "2"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a in [1,2] && b == 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "in_eq",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "IN",
+                      "value": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "integerValue": "1"
+                            },
+                            {
+                              "integerValue": "2"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "b"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a in [1,2] orderBy d",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "in_ord_other",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "IN",
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "integerValue": "1"
+                      },
+                      {
+                        "integerValue": "2"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a not-in [1]",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "notin",
+      "ids": [
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "NOT_IN",
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "integerValue": "1"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a not-in [1] && b == 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "notin_eq",
+      "ids": [
+        "documents/aruma-ref-idx/d3"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "NOT_IN",
+                      "value": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "integerValue": "1"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "b"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a != 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "neq",
+      "ids": [
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "NOT_EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a != 1 orderBy a, d",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "neq_ord_other",
+      "ids": [
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              },
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "NOT_EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a != 1 && b == 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "neq_eq",
+      "ids": [
+        "documents/aruma-ref-idx/d3"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "NOT_EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "b"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a IS_NULL",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "is_null",
+      "ids": [],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "unaryFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "IS_NULL"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 || b == 2",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "or2",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "b"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "2"
+                      }
+                    }
+                  }
+                ],
+                "op": "OR"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "(a == 1 && b == 1) || c == 'z'",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "or_and",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "compositeFilter": {
+                      "filters": [
+                        {
+                          "fieldFilter": {
+                            "field": {
+                              "fieldPath": "a"
+                            },
+                            "op": "EQUAL",
+                            "value": {
+                              "integerValue": "1"
+                            }
+                          }
+                        },
+                        {
+                          "fieldFilter": {
+                            "field": {
+                              "fieldPath": "b"
+                            },
+                            "op": "EQUAL",
+                            "value": {
+                              "integerValue": "1"
+                            }
+                          }
+                        }
+                      ],
+                      "op": "AND"
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "c"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "stringValue": "z"
+                      }
+                    }
+                  }
+                ],
+                "op": "OR"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "(a == 1 || b == 2) orderBy d",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "or_ord",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "b"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "2"
+                      }
+                    }
+                  }
+                ],
+                "op": "OR"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 || d > 45",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "or_range",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "d"
+                      },
+                      "op": "GREATER_THAN",
+                      "value": {
+                        "integerValue": "45"
+                      }
+                    }
+                  }
+                ],
+                "op": "OR"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "orderBy a",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ord_a",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "orderBy a desc",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ord_a_desc",
+      "ids": [
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d1"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "orderBy a, d",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ord_a_d",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              },
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "orderBy a desc, d desc",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ord_a_d_desc",
+      "ids": [
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d1"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              },
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "orderBy a desc, d asc",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ord_a_desc_d",
+      "ids": [
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              },
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "limitToLast(2) on orderBy d (wire: orderBy d desc limit 2)",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ltl_single",
+      "ids": [
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d5"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "limit": 2,
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "limitToLast(2) on orderBy a, d (wire: a desc, d desc limit 2)",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ltl_two",
+      "ids": [
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d4"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "limit": 2,
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              },
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 limitToLast(2) on orderBy d (wire: d desc)",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ltl_eq",
+      "ids": [
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d2"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "limit": 2,
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "orderBy d startAt [20]",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "cursor_single",
+      "ids": [
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "startAt": {
+              "before": true,
+              "values": [
+                {
+                  "integerValue": "20"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 orderBy __name__ startAfter d1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "cursor_eq_name",
+      "ids": [
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "startAt": {
+              "before": false,
+              "values": [
+                {
+                  "referenceValue": "{root}/aruma-ref-idx/d1"
+                }
+              ]
+            },
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 orderBy d startAt [20]",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "cursor_eq_other",
+      "ids": [
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "startAt": {
+              "before": true,
+              "values": [
+                {
+                  "integerValue": "20"
+                }
+              ]
+            },
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "orderBy __name__",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "name_asc",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "bodyIsArray": false,
+      "description": "orderBy __name__ desc",
+      "emptyCollection": {
+        "bodyIsArray": false,
+        "collection": "aruma-ref-idx-empty",
+        "http": 400,
+        "message": "Firestore does not support descending key scans",
+        "status": "FAILED_PRECONDITION",
+        "verdict": "FAILED_PRECONDITION"
+      },
+      "http": 400,
+      "id": "name_desc",
+      "kind": "query",
+      "message": "Firestore does not support descending key scans",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "status": "FAILED_PRECONDITION",
+      "verdict": "FAILED_PRECONDITION"
+    },
+    {
+      "description": "__name__ > d2",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "name_range",
+      "ids": [
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "__name__"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "referenceValue": "{root}/aruma-ref-idx/d2"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "__name__ > d2 && a == 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "name_range_eq",
+      "ids": [
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "__name__"
+                      },
+                      "op": "GREATER_THAN",
+                      "value": {
+                        "referenceValue": "{root}/aruma-ref-idx/d2"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "m == {x:1,y:'p'}",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "map_eq_whole",
+      "ids": [
+        "documents/aruma-ref-idx/d1"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "m"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "mapValue": {
+                    "fields": {
+                      "x": {
+                        "integerValue": "1"
+                      },
+                      "y": {
+                        "stringValue": "p"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "m.x == 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "map_sub_eq",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d3"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "m.x"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "m.x == 1 && a == 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "map_sub_eq_eq",
+      "ids": [
+        "documents/aruma-ref-idx/d1"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "m.x"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "orderBy m",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "map_ord",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d4"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "m"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "m.x == 1 orderBy d",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "map_sub_eq_ord",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d3"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "m.x"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "select(a) where a == 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "select_eq",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "select": {
+              "fields": [
+                {
+                  "fieldPath": "a"
+                }
+              ]
+            },
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 offset 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "offset_eq",
+      "ids": [
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "offset": 1,
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 && d == 10 orderBy d",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "eq_eq_ord_eqfield",
+      "ids": [
+        "documents/aruma-ref-idx/d1"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "d"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "10"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 orderBy a, d",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "eq1_ord_a_d",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              },
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a in [1,2] && b in [1,2]",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "in_in",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "IN",
+                      "value": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "integerValue": "1"
+                            },
+                            {
+                              "integerValue": "2"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "b"
+                      },
+                      "op": "IN",
+                      "value": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "integerValue": "1"
+                            },
+                            {
+                              "integerValue": "2"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "tags array-contains 'red' && a in [1,2]",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ac_in",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "tags"
+                      },
+                      "op": "ARRAY_CONTAINS",
+                      "value": {
+                        "stringValue": "red"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "IN",
+                      "value": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "integerValue": "1"
+                            },
+                            {
+                              "integerValue": "2"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a in [1,2] orderBy a desc",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "in_ord_same_desc",
+      "ids": [
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d1"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "IN",
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "integerValue": "1"
+                      },
+                      {
+                        "integerValue": "2"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a not-in [1] orderBy a, d",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "notin_ord_other",
+      "ids": [
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              },
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "NOT_IN",
+                "value": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "integerValue": "1"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 && (b == 1 || c == 'z')",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "and_or",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "compositeFilter": {
+                      "filters": [
+                        {
+                          "fieldFilter": {
+                            "field": {
+                              "fieldPath": "b"
+                            },
+                            "op": "EQUAL",
+                            "value": {
+                              "integerValue": "1"
+                            }
+                          }
+                        },
+                        {
+                          "fieldFilter": {
+                            "field": {
+                              "fieldPath": "c"
+                            },
+                            "op": "EQUAL",
+                            "value": {
+                              "stringValue": "z"
+                            }
+                          }
+                        }
+                      ],
+                      "op": "OR"
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "d < 15 || d > 45",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "or_same_field_range",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "d"
+                      },
+                      "op": "LESS_THAN",
+                      "value": {
+                        "integerValue": "15"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "d"
+                      },
+                      "op": "GREATER_THAN",
+                      "value": {
+                        "integerValue": "45"
+                      }
+                    }
+                  }
+                ],
+                "op": "OR"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "orderBy d desc, __name__ asc",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ord_d_desc_name_asc",
+      "ids": [
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d1"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              },
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "orderBy d asc, __name__ asc (explicit)",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "ord_d_name_asc",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              },
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a IS_NOT_NULL",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "is_not_null",
+      "ids": [
+        "documents/aruma-ref-idx/d1",
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d3",
+        "documents/aruma-ref-idx/d4",
+        "documents/aruma-ref-idx/d5"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "unaryFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "IS_NOT_NULL"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "d > 15 orderBy d desc limit 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "range_ord_same_limit",
+      "ids": [
+        "documents/aruma-ref-idx/d6"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "limit": 1,
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "d"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "15"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "a == 1 && b == 1 orderBy __name__ desc startAt [d6]",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "eq_ord_name_cursor",
+      "ids": [
+        "documents/aruma-ref-idx/d6",
+        "documents/aruma-ref-idx/d1"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "startAt": {
+              "before": true,
+              "values": [
+                {
+                  "referenceValue": "{root}/aruma-ref-idx/d6"
+                }
+              ]
+            },
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "b"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  }
+                ],
+                "op": "AND"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "m.x > 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "map_sub_range",
+      "ids": [
+        "documents/aruma-ref-idx/d2",
+        "documents/aruma-ref-idx/d5",
+        "documents/aruma-ref-idx/d4"
+      ],
+      "kind": "query",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-idx"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "m.x"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "CG: orderBy __name__",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-emptycg",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "cg_name_asc",
+      "ids": [
+        "d1/aruma-ref-idxcg/d1",
+        "d1/aruma-ref-idxcg/d2",
+        "d1/aruma-ref-idxcg/d3",
+        "d1/aruma-ref-idxcg/d4",
+        "d2/aruma-ref-idxcg/e1"
+      ],
+      "kind": "collection-group",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-idxcg"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "CG: orderBy d desc",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-emptycg",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "cg_ord_desc",
+      "ids": [
+        "d2/aruma-ref-idxcg/e1",
+        "d1/aruma-ref-idxcg/d4",
+        "d1/aruma-ref-idxcg/d3",
+        "d1/aruma-ref-idxcg/d2",
+        "d1/aruma-ref-idxcg/d1"
+      ],
+      "kind": "collection-group",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-idxcg"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "CG: a == 1 || b == 2",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-emptycg",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "cg_or",
+      "ids": [
+        "d1/aruma-ref-idxcg/d1",
+        "d1/aruma-ref-idxcg/d2",
+        "d1/aruma-ref-idxcg/d4"
+      ],
+      "kind": "collection-group",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-idxcg"
+              }
+            ],
+            "where": {
+              "compositeFilter": {
+                "filters": [
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "a"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "b"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "integerValue": "2"
+                      }
+                    }
+                  }
+                ],
+                "op": "OR"
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "n": {
+            "integerValue": "2"
+          }
+        }
+      ],
+      "description": "count() where tags array-contains 'red'",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "n": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "count_ac",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "tags"
+                  },
+                  "op": "ARRAY_CONTAINS",
+                  "value": {
+                    "stringValue": "red"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "n": {
+            "integerValue": "4"
+          }
+        }
+      ],
+      "description": "count() where a == 1 || b == 2",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "n": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "count_or",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "where": {
+                "compositeFilter": {
+                  "filters": [
+                    {
+                      "fieldFilter": {
+                        "field": {
+                          "fieldPath": "a"
+                        },
+                        "op": "EQUAL",
+                        "value": {
+                          "integerValue": "1"
+                        }
+                      }
+                    },
+                    {
+                      "fieldFilter": {
+                        "field": {
+                          "fieldPath": "b"
+                        },
+                        "op": "EQUAL",
+                        "value": {
+                          "integerValue": "2"
+                        }
+                      }
+                    }
+                  ],
+                  "op": "OR"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "s": {
+            "integerValue": "210"
+          },
+          "t": {
+            "integerValue": "10"
+          }
+        }
+      ],
+      "description": "sum(d), sum(b)",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "s": {
+              "integerValue": "0"
+            },
+            "t": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "sum2_all",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              },
+              {
+                "alias": "t",
+                "sum": {
+                  "field": {
+                    "fieldPath": "b"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "s": {
+            "integerValue": "210"
+          },
+          "t": {
+            "doubleValue": 35
+          }
+        }
+      ],
+      "description": "sum(d), avg(d)",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "s": {
+              "integerValue": "0"
+            },
+            "t": {
+              "nullValue": null
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "sum2_same",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              },
+              {
+                "alias": "t",
+                "avg": {
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "s": {
+            "integerValue": "70"
+          }
+        }
+      ],
+      "description": "sum(d) where a == 1 && b == 1",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "s": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "sum_eq2",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "where": {
+                "compositeFilter": {
+                  "filters": [
+                    {
+                      "fieldFilter": {
+                        "field": {
+                          "fieldPath": "a"
+                        },
+                        "op": "EQUAL",
+                        "value": {
+                          "integerValue": "1"
+                        }
+                      }
+                    },
+                    {
+                      "fieldFilter": {
+                        "field": {
+                          "fieldPath": "b"
+                        },
+                        "op": "EQUAL",
+                        "value": {
+                          "integerValue": "1"
+                        }
+                      }
+                    }
+                  ],
+                  "op": "AND"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "s": {
+            "integerValue": "210"
+          }
+        }
+      ],
+      "description": "sum(d) orderBy d",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "s": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "sum_ord_same",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "orderBy": [
+                {
+                  "direction": "ASCENDING",
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "s": {
+            "integerValue": "210"
+          }
+        }
+      ],
+      "description": "sum(d) orderBy a",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "s": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "sum_ord_other",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "orderBy": [
+                {
+                  "direction": "ASCENDING",
+                  "field": {
+                    "fieldPath": "a"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "CG: no filter",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-emptycg",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "cg_all",
+      "ids": [
+        "d1/aruma-ref-idxcg/d1",
+        "d1/aruma-ref-idxcg/d2",
+        "d1/aruma-ref-idxcg/d3",
+        "d1/aruma-ref-idxcg/d4",
+        "d2/aruma-ref-idxcg/e1"
+      ],
+      "kind": "collection-group",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-idxcg"
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "CG: a == 1",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-emptycg",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "cg_eq",
+      "ids": [
+        "d1/aruma-ref-idxcg/d1",
+        "d1/aruma-ref-idxcg/d2"
+      ],
+      "kind": "collection-group",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-idxcg"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "CG: orderBy d",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-emptycg",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "cg_ord",
+      "ids": [
+        "d1/aruma-ref-idxcg/d1",
+        "d1/aruma-ref-idxcg/d2",
+        "d1/aruma-ref-idxcg/d3",
+        "d1/aruma-ref-idxcg/d4",
+        "d2/aruma-ref-idxcg/e1"
+      ],
+      "kind": "collection-group",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-idxcg"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "bodyIsArray": false,
+      "description": "CG: orderBy __name__ desc",
+      "emptyCollection": {
+        "bodyIsArray": false,
+        "collection": "aruma-ref-idx-emptycg",
+        "http": 400,
+        "message": "Firestore does not support descending key scans",
+        "status": "FAILED_PRECONDITION",
+        "verdict": "FAILED_PRECONDITION"
+      },
+      "http": 400,
+      "id": "cg_name_desc",
+      "kind": "collection-group",
+      "message": "Firestore does not support descending key scans",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-idxcg"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "status": "FAILED_PRECONDITION",
+      "verdict": "FAILED_PRECONDITION"
+    },
+    {
+      "description": "CG: a == 1 orderBy d",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-emptycg",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "cg_eq_ord",
+      "ids": [
+        "d1/aruma-ref-idxcg/d1",
+        "d1/aruma-ref-idxcg/d2"
+      ],
+      "kind": "collection-group",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-idxcg"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "d"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "CG: tags array-contains 'red'",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-emptycg",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "cg_ac",
+      "ids": [
+        "d1/aruma-ref-idxcg/d1",
+        "d1/aruma-ref-idxcg/d2"
+      ],
+      "kind": "collection-group",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-idxcg"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "tags"
+                },
+                "op": "ARRAY_CONTAINS",
+                "value": {
+                  "stringValue": "red"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "description": "CG: d > 15",
+      "emptyCollection": {
+        "collection": "aruma-ref-idx-emptycg",
+        "http": 200,
+        "ids": [],
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "cg_range",
+      "ids": [
+        "d1/aruma-ref-idxcg/d2",
+        "d1/aruma-ref-idxcg/d3",
+        "d1/aruma-ref-idxcg/d4",
+        "d2/aruma-ref-idxcg/e1"
+      ],
+      "kind": "collection-group",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-idxcg"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "d"
+                },
+                "op": "GREATER_THAN",
+                "value": {
+                  "integerValue": "15"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "n": {
+            "integerValue": "6"
+          }
+        }
+      ],
+      "description": "count()",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "n": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "count_all",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "n": {
+            "integerValue": "3"
+          }
+        }
+      ],
+      "description": "count() where a == 1",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "n": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "count_eq",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "a"
+                  },
+                  "op": "EQUAL",
+                  "value": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "n": {
+            "integerValue": "2"
+          }
+        }
+      ],
+      "description": "count() where a == 1 && b == 1",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "n": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "count_eq2",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "where": {
+                "compositeFilter": {
+                  "filters": [
+                    {
+                      "fieldFilter": {
+                        "field": {
+                          "fieldPath": "a"
+                        },
+                        "op": "EQUAL",
+                        "value": {
+                          "integerValue": "1"
+                        }
+                      }
+                    },
+                    {
+                      "fieldFilter": {
+                        "field": {
+                          "fieldPath": "b"
+                        },
+                        "op": "EQUAL",
+                        "value": {
+                          "integerValue": "1"
+                        }
+                      }
+                    }
+                  ],
+                  "op": "AND"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "n": {
+            "integerValue": "5"
+          }
+        }
+      ],
+      "description": "count() where d > 15",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "n": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "count_range",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "d"
+                  },
+                  "op": "GREATER_THAN",
+                  "value": {
+                    "integerValue": "15"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "n": {
+            "integerValue": "2"
+          }
+        }
+      ],
+      "description": "count() where a == 1 && d > 15",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "n": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "count_eq_range",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "where": {
+                "compositeFilter": {
+                  "filters": [
+                    {
+                      "fieldFilter": {
+                        "field": {
+                          "fieldPath": "a"
+                        },
+                        "op": "EQUAL",
+                        "value": {
+                          "integerValue": "1"
+                        }
+                      }
+                    },
+                    {
+                      "fieldFilter": {
+                        "field": {
+                          "fieldPath": "d"
+                        },
+                        "op": "GREATER_THAN",
+                        "value": {
+                          "integerValue": "15"
+                        }
+                      }
+                    }
+                  ],
+                  "op": "AND"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "n": {
+            "integerValue": "2"
+          }
+        }
+      ],
+      "description": "count(upTo 2) where a == 1",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "n": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "count_up_to",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {
+                  "upTo": "2"
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "a"
+                  },
+                  "op": "EQUAL",
+                  "value": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "s": {
+            "integerValue": "210"
+          }
+        }
+      ],
+      "description": "sum(d)",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "s": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "sum_all",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "s": {
+            "integerValue": "90"
+          }
+        }
+      ],
+      "description": "sum(d) where a == 1",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "s": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "sum_eq",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "a"
+                  },
+                  "op": "EQUAL",
+                  "value": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "s": {
+            "integerValue": "3"
+          }
+        }
+      ],
+      "description": "sum(a) where a == 1",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "s": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "sum_eq_same",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "a"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "a"
+                  },
+                  "op": "EQUAL",
+                  "value": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "s": {
+            "integerValue": "200"
+          }
+        }
+      ],
+      "description": "sum(d) where d > 15",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "s": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "sum_range_same",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "d"
+                  },
+                  "op": "GREATER_THAN",
+                  "value": {
+                    "integerValue": "15"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "v": {
+            "doubleValue": 35
+          }
+        }
+      ],
+      "description": "avg(d)",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "v": {
+              "nullValue": null
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "avg_all",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "v",
+                "avg": {
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "v": {
+            "doubleValue": 30
+          }
+        }
+      ],
+      "description": "avg(d) where a == 1",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "v": {
+              "nullValue": null
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "avg_eq",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "v",
+                "avg": {
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "a"
+                  },
+                  "op": "EQUAL",
+                  "value": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "v": {
+            "doubleValue": 36.666666666666664
+          }
+        }
+      ],
+      "description": "avg(d) where b > 1",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "v": {
+              "nullValue": null
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "avg_range_other",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "v",
+                "avg": {
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "b"
+                  },
+                  "op": "GREATER_THAN",
+                  "value": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "n": {
+            "integerValue": "6"
+          },
+          "s": {
+            "integerValue": "210"
+          },
+          "v": {
+            "doubleValue": 1.6666666666666667
+          }
+        }
+      ],
+      "description": "count(), sum(d), avg(b)",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "n": {
+              "integerValue": "0"
+            },
+            "s": {
+              "integerValue": "0"
+            },
+            "v": {
+              "nullValue": null
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "multi_agg",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              },
+              {
+                "alias": "v",
+                "avg": {
+                  "field": {
+                    "fieldPath": "b"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "n": {
+            "integerValue": "3"
+          }
+        }
+      ],
+      "description": "count() where a == 1 orderBy d",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "n": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-empty",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "count_ord_other",
+      "kind": "aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-idx"
+                }
+              ],
+              "orderBy": [
+                {
+                  "direction": "ASCENDING",
+                  "field": {
+                    "fieldPath": "d"
+                  }
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "a"
+                  },
+                  "op": "EQUAL",
+                  "value": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "n": {
+            "integerValue": "5"
+          }
+        }
+      ],
+      "description": "CG: count()",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "n": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-emptycg",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "cg_count",
+      "kind": "collection-group-aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "allDescendants": true,
+                  "collectionId": "aruma-ref-idxcg"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    },
+    {
+      "aggregates": [
+        {
+          "n": {
+            "integerValue": "2"
+          }
+        }
+      ],
+      "description": "CG: count() where a == 1",
+      "emptyCollection": {
+        "aggregates": [
+          {
+            "n": {
+              "integerValue": "0"
+            }
+          }
+        ],
+        "collection": "aruma-ref-idx-emptycg",
+        "http": 200,
+        "verdict": "ok"
+      },
+      "http": 200,
+      "id": "cg_count_eq",
+      "kind": "collection-group-aggregation",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "allDescendants": true,
+                  "collectionId": "aruma-ref-idxcg"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "a"
+                  },
+                  "op": "EQUAL",
+                  "value": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "verdict": "ok"
+    }
+  ],
+  "cleanup": {
+    "collectionGroupDocsRemaining": 0,
+    "deleted": [
+      "{root}/aruma-ref-idx/d1",
+      "{root}/aruma-ref-idx/d2",
+      "{root}/aruma-ref-idx/d3",
+      "{root}/aruma-ref-idx/d4",
+      "{root}/aruma-ref-idx/d5",
+      "{root}/aruma-ref-idx/d6",
+      "{root}/aruma-ref-idx/d1/aruma-ref-idxcg/d1",
+      "{root}/aruma-ref-idx/d1/aruma-ref-idxcg/d2",
+      "{root}/aruma-ref-idx/d1/aruma-ref-idxcg/d3",
+      "{root}/aruma-ref-idx/d1/aruma-ref-idxcg/d4",
+      "{root}/aruma-ref-idx/d2/aruma-ref-idxcg/e1"
+    ],
+    "listSub_d1": [],
+    "listSub_d2": [],
+    "listTopLevel": [],
+    "note": "showMissing=true lists only docs that still have subcollection children; all empty arrays and 0 means nothing remains"
+  },
+  "database": {
+    "http": 404
+  },
+  "header": {
+    "generator": ".cache/briefs/research/artifacts/composite-index-probe.mjs emu (the same shapes as test/oracle/documents/production/record-indexes.mjs), converted by record-indexes.mjs --import composite-index-probe-emulator.json",
+    "notes": [
+      "Each shape ran twice: on a never-written collection (emptyCollection) and on the populated collection aruma-ref-idx (6 documents, plus 5 collection-group members aruma-ref-idxcg).",
+      "request.body names the database root as {root}; the cursor and __name__ references point into the queried collection.",
+      "The emulator enforces no composite index (firebase.google.com/docs/emulator-suite/connect_firestore).",
+      "gRPC status code for FAILED_PRECONDITION is 9; only REST was recorded, where it is HTTP 400 and the streaming endpoints wrap the error object in a JSON array (bodyIsArray).",
+      "template.text with template.args substituted reproduces message byte for byte; links[].index is the decoded payload (google.firestore.admin.v1.Index field numbers)."
+    ],
+    "oracle": "emulator",
+    "recordedAt": "2026-10-26T13:47:08.843Z .. 2026-10-26T13:47:12.192Z",
+    "target": "Firestore emulator (project demo-aruma), REST v1",
+    "versions": {
+      "emulator": "cloud-firestore-emulator-v1.22.0.jar (firebase-tools cache)",
+      "generator sha256": "f7a208d3eb77d300e0ac5de37f0812f639349638dad35875db85cb3cb43c6b1f",
+      "java": "OpenJDK 21 (Homebrew openjdk@21), -Xmx384m",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}
