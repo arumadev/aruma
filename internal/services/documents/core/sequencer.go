@@ -72,6 +72,9 @@ type sequencer struct {
 
 	mu    sync.Mutex
 	gates map[dbKey]chan struct{}
+
+	// afterStamp, set by tests, runs between a REQUEST_TIME commit's stamp and its second batch.
+	afterStamp func()
 }
 
 func newSequencer(pool *pgxpool.Pool, size int, notify Notifier) *sequencer {
@@ -274,6 +277,9 @@ func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, l
 			rollback(conn)
 			return CommitResult{}, errRetry
 		}
+		if s.afterStamp != nil {
+			s.afterStamp()
+		}
 		*in = stampInput{}
 		if err := p.apply(db, locked, commitTime); err != nil {
 			rollback(conn)
@@ -346,6 +352,11 @@ func failed(err error) error {
 	case "40001", "40P01": // serialization_failure (conflict_unless), deadlock_detected
 		return errRetry
 	case "55P03", "57014": // lock_not_available (lock_timeout), query_canceled (statement_timeout)
+		return ErrContention
+	case "25P03":
+		// idle_in_transaction_session_timeout: the server ended the session while it waited for
+		// the commit's next batch, as it may between a REQUEST_TIME commit's stamp and its
+		// second batch, so COMMIT never ran (MaxCommitWork bounds the work between them).
 		return ErrContention
 	}
 	return err

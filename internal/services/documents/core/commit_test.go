@@ -1,6 +1,8 @@
 package core
 
 import (
+	"errors"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -92,5 +94,40 @@ func TestUnchangedCommitTimeAdvances(t *testing.T) {
 		Write{Kind: WriteDelete, Path: gone})
 	if res.Seq != 0 || !value.Identical(res.Results[0].TransformResults[0], RequestTime(res.CommitTime)) {
 		t.Fatalf("deleted after a server time: %+v", res)
+	}
+}
+
+// A REQUEST_TIME commit whose session the server ends between its stamp and its second batch
+// (idle_in_transaction_session_timeout) committed nothing: it is ABORTED with the contention
+// text, not an unknown outcome, the hub hears of nothing, and the next commit takes its seq
+// (F2 review m3).
+func TestStampFirstIdleTimeout(t *testing.T) {
+	notes := &recordingNotifier{}
+	s, _ := newStore(t, Options{Notifier: notes})
+	p := ParsePath("c/idle")
+	mustCommit(t, s, set("c/idle", doc("n", value.Int(1))))
+	saved := commitSettings
+	commitSettings = slices.Clone(saved)
+	for i, set := range commitSettings {
+		if slices.Contains([]string{"SET LOCAL idle_in_transaction_session_timeout = '5s'"}, set) {
+			commitSettings[i] = "SET LOCAL idle_in_transaction_session_timeout = '100ms'"
+		}
+	}
+	s.seq.afterStamp = func() { time.Sleep(400 * time.Millisecond) }
+	t.Cleanup(func() { commitSettings, s.seq.afterStamp = saved, nil })
+	stamp := Transform{Path: value.FieldPath{"ts"}, Kind: TransformServerTime}
+	_, err := s.Commit(t.Context(), testDB, []Write{{Kind: WriteUpdate, Path: p, Masked: true, Fields: value.Map(), Transforms: []Transform{stamp}}})
+	if !errors.Is(err, ErrContention) {
+		t.Fatalf("got %v, want the contention error", err)
+	}
+	commitSettings, s.seq.afterStamp = saved, nil
+	got, _, _ := s.Get(t.Context(), testDB, p, ReadOptions{})
+	if _, ok := got.Fields.Get("ts"); ok {
+		t.Fatal("the commit is stored")
+	}
+	before := notes.count()
+	res := mustCommit(t, s, set("c/idle", doc("n", value.Int(2))))
+	if res.Seq != 2 || notes.count() != before+1 {
+		t.Fatalf("next seq %d", res.Seq)
 	}
 }
