@@ -53,6 +53,7 @@ trap cleanup EXIT
 
 log "starting the spike server"
 start_spike "$gen" -later "${SPIKE_LATER:-65s}"
+mkdir -p "$here/app/src/main/res/raw"
 cp "$gen/ca.pem" "$here/app/src/main/res/raw/spike_ca.pem"
 
 log "building the app and the tests (firebase-firestore)"
