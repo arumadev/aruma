@@ -52,11 +52,14 @@
       "id": "coarse-query-locks",
       "kind": "restriction",
       "summary": "A query inside a pessimistic read-write transaction locks the whole collection under its parent (a collection-group query: the collection id across the database), coarser than production's range locks.",
-      "production": "Not recorded. Server transactions map to lock-based Spanner transactions (firestore-official.md §1a), which lock the ranges a query scans. Whether a write to a sibling collection with the same id, or to an unscanned range of the queried collection, waits on a transaction's query is to be recorded in F2 (ADR-028 §7.6).",
+      "production": "Locks the index range a query scans (corpus/f2-locks.json, two runs, every outcome stable): with T1 holding `n > 3` on c/A/sub, a plain commit that updates a matched document, inserts a document with n in the range (a phantom), or moves a document into it waits until T1 ends (about 20 s, then ABORTED \"Too much contention on these documents. Please try again.\", corpus/f0-contention.json s6); an insert below the range, an insert without the field, an update of an unmatched document, a write to c/B/sub (same collection id, other parent) and a write to another collection do not wait. A whole-collection query blocks inserts into that collection but not into c/B/sub; `orderBy n limit 2` blocks inserts both before the first and after the last returned document; a collection-group query blocks inserts under any parent with that collection id but not into another collection id.",
       "emulator": "Locks the collection id for every query in a read-write transaction, so writes to every collection with that id wait (measured by hidane; firestore-prior-art-and-verification.md §A2).",
-      "aruma": "A collection query or ListDocuments with a collection id takes a shared lock on (parent path, collection id); a collection-group query takes it on the collection id across the database; a kindless query or ListDocuments with an empty collection id takes it on the database. Every write takes intention locks on all three (ADR-024 §6.1, ADR-025 §7.3). Only service-account and admin pessimistic transactions that run queries are affected: end-user transactions are optimistic and hold no locks while open. F2 records production's lock range and writes the phantom test (planned).",
+      "aruma": "A collection query or ListDocuments with a collection id takes a shared lock on (parent path, collection id); a collection-group query takes it on the collection id across the database; a kindless query or ListDocuments with an empty collection id takes it on the database. Every write takes intention locks on all three (ADR-024 §6.1, ADR-025 §7.3). Only service-account and admin pessimistic transactions that run queries are affected: end-user transactions are optimistic and hold no locks while open. Coarser than production where a write outside the scanned range of the same collection (an insert below the range or without the field, an update of an unmatched document) waits on Aruma and not on production; a phantom insert, a matched update and the sibling-parent and other-collection writes behave as production. F2 writes the phantom test (planned).",
       "follows": "production",
-      "evidence": [],
+      "evidence": [
+        "corpus/f2-locks.json",
+        "corpus/f0-contention.json"
+      ],
       "planned": {
         "test": "test/contention/documents/phantom_test.go:TestPhantom",
         "phase": "F2"
@@ -66,13 +69,14 @@
       "id": "transaction-lost-on-restart",
       "kind": "restriction",
       "summary": "Transactions open when Aruma restarts (or loses its Document Database instance lock) are lost; their authentic ids get ABORTED, so clients retry.",
-      "production": "Production does not restart under a client. An id that never existed gets INVALID_ARGUMENT \"Invalid transaction.\" on commit, GET, runQuery and rollback (corpus/f0-errors.json); a committed id gets HTTP 409 ABORTED \"The referenced transaction has expired or is no longer valid.\" (corpus/f0-errors.json, corpus/f0-contention.json s5). The response after the 270 s lifetime is not recorded.",
+      "production": "Production does not restart under a client. An id that never existed, a forged id (last byte flipped) and an empty id get INVALID_ARGUMENT \"Invalid transaction.\" on commit, GET, runQuery and rollback (corpus/f0-errors.json, corpus/f2-transactions.json); a committed or rolled-back id gets HTTP 409 ABORTED \"The referenced transaction has expired or is no longer valid.\" (corpus/f0-errors.json, corpus/f0-contention.json s5, corpus/f2-transactions.json). Lifetime (corpus/f2-transactions.json `lifetime`): a read-write transaction is usable at 241 s and gets that ABORTED text at 271 s whether it was idle or read every 30 s (the lifetime runs from begin, not from the last use); at 300 s an id idle since its begin, read-write or read-only, gets INVALID_ARGUMENT \"Invalid transaction.\", as an id that never existed. Idle for 70 s, a transaction still holds its read lock: a plain write waits about 20 s and gets ABORTED \"Too much contention on these documents. Please try again.\", and the transaction then commits.",
       "emulator": "Keeps transactions in memory; a restart loses them with all data.",
-      "aruma": "Transaction ids carry an HMAC under a key derived from the master key, over a format version, a per-process boot nonce, a serial, the issue time, and the project, database and principal. A forged, garbage or foreign id gets INVALID_ARGUMENT \"Invalid transaction.\" as production. An authentic id unknown to this process (issued before a restart or before the instance lock was lost) or expired gets ABORTED \"The referenced transaction has expired or is no longer valid.\", on which Go and Node retry with a fresh age (ADR-025 §7.5, ADR-024 §6.2). The expired case is provisional until F2 records production's 270 s response. F2 writes the test (planned).",
+      "aruma": "Transaction ids carry an HMAC under a key derived from the master key, over a format version, a per-process boot nonce, a serial, the issue time, and the project, database and principal. A forged, garbage or foreign id gets INVALID_ARGUMENT \"Invalid transaction.\" as production. An authentic id unknown to this process (issued before a restart or before the instance lock was lost) or expired gets ABORTED \"The referenced transaction has expired or is no longer valid.\", on which Go and Node retry with a fresh age (ADR-025 §7.5, ADR-024 §6.2). Expiry follows the recorded lifetime: ABORTED with that text from 270 s after begin; production's later INVALID_ARGUMENT for an id it has forgotten (seen at 300 s) is matched once Aruma forgets an expired id. F2 writes the test (planned).",
       "follows": "production",
       "evidence": [
         "corpus/f0-errors.json",
-        "corpus/f0-contention.json"
+        "corpus/f0-contention.json",
+        "corpus/f2-transactions.json"
       ],
       "planned": {
         "test": "internal/services/documents/core/txn_expiry_test.go:TestTransactionUnknownAfterRestartAborted",
@@ -122,6 +126,22 @@
       "planned": {
         "test": "internal/services/documents/wire/names_test.go:TestBindStreamNamesF4",
         "phase": "F4"
+      }
+    },
+    {
+      "id": "non-utf8-input",
+      "kind": "provisional",
+      "summary": "A resource id, field name or string that is not valid UTF-8: production refuses it in a REST path and on gRPC with a generic text, and decodes it to a space in a REST query parameter or JSON body.",
+      "production": "Recorded (corpus/f2-non-utf8.json). REST path segment with a byte that is not UTF-8 (%FF, a%FFb, the overlong %C0%AF, the surrogate %ED%A0%80, the truncated %E2%82), in a document or collection id, on GET, PATCH, DELETE, ListDocuments and listCollectionIds: HTTP 400 INVALID_ARGUMENT \"Request contains an invalid argument.\" with no details. gRPC (hand-encoded protobuf: a name, documentId, collectionId, field name or string value holding 0xFF or ED A0 80) on GetDocument, Commit, CreateDocument and ListDocuments: code 3 INVALID_ARGUMENT, the same text. REST query parameter ?documentId=%FF and a raw 0xFF byte inside a JSON string (a name, a field name, a string value, a batchGet name): accepted, the byte read as U+0020 (a space): the document \" \" is created, the field \" \" or the string \" \" stored; mask.fieldPaths=%FF answers the property-path error for \" \". The JSON escape \\udc00 (a lone surrogate) is read as U+FFFD.",
+      "emulator": "Not recorded.",
+      "aruma": "F1's edge refuses an id that is not UTF-8 with INVALID_ARGUMENT `Resource id \"…\" is invalid because it is not UTF-8.` (wire/names.go errNotUTF8) and its JSON parser turns such bytes into U+FFFD (wire/jsonparse.go). Both are provisional and differ from production; F2 changes them to the recorded answers (the generic text on a REST path and gRPC; a space in a REST query parameter or JSON string, U+FFFD for an escaped lone surrogate) and replays corpus/f2-non-utf8.json (planned).",
+      "follows": "production",
+      "evidence": [
+        "corpus/f2-non-utf8.json"
+      ],
+      "planned": {
+        "test": "internal/services/documents/wire/names_test.go:TestNonUTF8AsProductionF2",
+        "phase": "F2"
       }
     }
   ]

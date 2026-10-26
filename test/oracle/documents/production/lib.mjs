@@ -70,10 +70,12 @@ export function versions(extra = {}) {
   return { ...v, ...extra };
 }
 
-// rest calls the Firestore REST API (v1) and returns {http, body}; body is the
-// parsed JSON, or {raw} when it is not JSON. A path is relative to /v1/.
+// rest calls the Firestore REST API (v1) and returns {http, body, text}; body is
+// the parsed JSON, or {raw} when it is not JSON, and text the body as received.
+// A request body is an object (sent as JSON), a string or a Buffer (sent as
+// is). A path is relative to /v1/.
 export async function rest(method, path, body, { origin = ORIGIN, auth = true } = {}) {
-  const text = body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body);
+  const text = body === undefined ? undefined : typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body);
   for (let attempt = 0; ; attempt++) {
     let res, out;
     try {
@@ -98,7 +100,7 @@ export async function rest(method, path, body, { origin = ORIGIN, auth = true } 
     } catch {
       parsed = { raw: out };
     }
-    return { http: res.status, body: parsed };
+    return { http: res.status, body: parsed, text: out };
   }
 }
 
@@ -162,6 +164,19 @@ export async function grpcUnary(method, request, database = DB) {
   const md = await metadata(database);
   return new Promise((done) => {
     grpcState.client[method](request, md, { deadline: Date.now() + 120_000 }, (err, res) => {
+      done(err ? { ok: false, error: grpcError(err) } : { ok: true, response: res });
+    });
+  });
+}
+
+// grpcRawUnary calls a unary method with a request already serialised to
+// protobuf bytes (for a request proto-loader cannot encode, such as a string
+// field that is not UTF-8); the response is decoded as usual.
+export async function grpcRawUnary(method, bytes, database = DB) {
+  const md = await metadata(database);
+  const def = grpcState.client.constructor.service[method];
+  return new Promise((done) => {
+    grpcState.client.makeUnaryRequest(def.path, (b) => b, def.responseDeserialize, bytes, md, { deadline: Date.now() + 120_000 }, (err, res) => {
       done(err ? { ok: false, error: grpcError(err) } : { ok: true, response: res });
     });
   });

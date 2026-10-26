@@ -1,0 +1,1683 @@
+{
+  "cases": [
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: update p1/items/i5 (n 5, matched)",
+      "id": "range.update_scanned.run1",
+      "outcome": "blocked until T1 rolled back",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 6001,
+      "run": 1,
+      "scenario": "range.update_scanned",
+      "totalMs": 7151,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5"
+      ],
+      "writeEndedAfterRollbackMs": 13,
+      "writeLatencyMs": 6704,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: create p1/items/new-in-<k> with n 5 (a phantom)",
+      "id": "range.insert_in_range.run1",
+      "outcome": "blocked until T1 rolled back",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 6001,
+      "run": 1,
+      "scenario": "range.insert_in_range",
+      "totalMs": 7133,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1"
+      ],
+      "writeEndedAfterRollbackMs": 1,
+      "writeLatencyMs": 6688,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: create p1/items/new-out-<k> with n 1 (outside n > 3)",
+      "id": "range.insert_below_range.run1",
+      "outcome": "completed before T1 ended",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 229,
+      "run": 1,
+      "scenario": "range.insert_below_range",
+      "totalMs": 896,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-1"
+      ],
+      "writeEndedAfterRollbackMs": null,
+      "writeLatencyMs": 229,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: update p1/items/i1 (n 1, not matched)",
+      "id": "range.update_unscanned.run1",
+      "outcome": "completed before T1 ended",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 220,
+      "run": 1,
+      "scenario": "range.update_unscanned",
+      "totalMs": 925,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1"
+      ],
+      "writeEndedAfterRollbackMs": null,
+      "writeLatencyMs": 220,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: update p1/items/i2 (run 1) or i3 (run 2) from n 2 or 3 to n 9",
+      "id": "range.move_into_range.run1",
+      "outcome": "blocked until T1 rolled back",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 6001,
+      "run": 1,
+      "scenario": "range.move_into_range",
+      "totalMs": 7153,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2"
+      ],
+      "writeEndedAfterRollbackMs": 5,
+      "writeLatencyMs": 6708,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: create p1/items/new-nofield-<k> with no n",
+      "id": "range.insert_no_field.run1",
+      "outcome": "completed before T1 ended",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 218,
+      "run": 1,
+      "scenario": "range.insert_no_field",
+      "totalMs": 905,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-nofield-1"
+      ],
+      "writeEndedAfterRollbackMs": null,
+      "writeLatencyMs": 218,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: create p2/items/new-sib-<k> with n 5 (same collection id, other parent)",
+      "id": "range.sibling_parent.run1",
+      "outcome": "completed before T1 ended",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 243,
+      "run": 1,
+      "scenario": "range.sibling_parent",
+      "totalMs": 932,
+      "write": [
+        "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-sib-1"
+      ],
+      "writeEndedAfterRollbackMs": null,
+      "writeLatencyMs": 243,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: create p1/others/new-oth-<k> with n 5",
+      "id": "range.other_collection.run1",
+      "outcome": "completed before T1 ended",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 224,
+      "run": 1,
+      "scenario": "range.other_collection",
+      "totalMs": 1064,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-others/new-oth-1"
+      ],
+      "writeEndedAfterRollbackMs": null,
+      "writeLatencyMs": 224,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs whole query; then a commit without transaction: create p1/items/new-w-<k> (query: the whole collection)",
+      "id": "whole.insert.run1",
+      "outcome": "blocked until T1 rolled back",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i3",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-nofield-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-1"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ]
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 6000,
+      "run": 1,
+      "scenario": "whole.insert",
+      "totalMs": 7190,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-w-1"
+      ],
+      "writeEndedAfterRollbackMs": 3,
+      "writeLatencyMs": 6707,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs whole query; then a commit without transaction: create p2/items/new-wsib-<k>",
+      "id": "whole.sibling_parent.run1",
+      "outcome": "completed before T1 ended",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i3",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-nofield-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-w-1"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ]
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 284,
+      "run": 1,
+      "scenario": "whole.sibling_parent",
+      "totalMs": 1123,
+      "write": [
+        "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-wsib-1"
+      ],
+      "writeEndedAfterRollbackMs": null,
+      "writeLatencyMs": 284,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs limit query; then a commit without transaction: create p1/items/new-l-<k> with n 6.5 (beyond the 2 returned, orderBy n limit 2)",
+      "id": "limit.insert_after_last.run1",
+      "outcome": "blocked until T1 rolled back",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-1"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "limit": 2,
+          "orderBy": [
+            {
+              "field": {
+                "fieldPath": "n"
+              }
+            }
+          ]
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 6002,
+      "run": 1,
+      "scenario": "limit.insert_after_last",
+      "totalMs": 7185,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1"
+      ],
+      "writeEndedAfterRollbackMs": 4,
+      "writeLatencyMs": 6665,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs limit query; then a commit without transaction: create p1/items/new-l0-<k> with n 0 (before the first returned)",
+      "id": "limit.insert_before_first.run1",
+      "outcome": "blocked until T1 rolled back",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-1"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "limit": 2,
+          "orderBy": [
+            {
+              "field": {
+                "fieldPath": "n"
+              }
+            }
+          ]
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 6001,
+      "run": 1,
+      "scenario": "limit.insert_before_first",
+      "totalMs": 7136,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l0-1"
+      ],
+      "writeEndedAfterRollbackMs": 4,
+      "writeLatencyMs": 6704,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs group query; then a commit without transaction: create p2/items/new-g-<k> (query: collection group items)",
+      "id": "group.insert_other_parent.run1",
+      "outcome": "blocked until T1 rolled back",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i3",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l0-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-nofield-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-w-1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j2",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j3",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-sib-1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-wsib-1"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents",
+        "structuredQuery": {
+          "from": [
+            {
+              "allDescendants": true,
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ]
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 6002,
+      "run": 1,
+      "scenario": "group.insert_other_parent",
+      "totalMs": 7179,
+      "write": [
+        "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-g-1"
+      ],
+      "writeEndedAfterRollbackMs": 17,
+      "writeLatencyMs": 6703,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs group query; then a commit without transaction: create p1/others/new-go-<k>",
+      "id": "group.other_collection.run1",
+      "outcome": "completed before T1 ended",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i3",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l0-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-nofield-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-w-1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j2",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j3",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-g-1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-sib-1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-wsib-1"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents",
+        "structuredQuery": {
+          "from": [
+            {
+              "allDescendants": true,
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ]
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 222,
+      "run": 1,
+      "scenario": "group.other_collection",
+      "totalMs": 945,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-others/new-go-1"
+      ],
+      "writeEndedAfterRollbackMs": null,
+      "writeLatencyMs": 222,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: update p1/items/i5 (n 5, matched)",
+      "id": "range.update_scanned.run2",
+      "outcome": "blocked until T1 rolled back",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 6002,
+      "run": 2,
+      "scenario": "range.update_scanned",
+      "totalMs": 7192,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5"
+      ],
+      "writeEndedAfterRollbackMs": 4,
+      "writeLatencyMs": 6736,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: create p1/items/new-in-<k> with n 5 (a phantom)",
+      "id": "range.insert_in_range.run2",
+      "outcome": "blocked until T1 rolled back",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 6003,
+      "run": 2,
+      "scenario": "range.insert_in_range",
+      "totalMs": 7287,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-2"
+      ],
+      "writeEndedAfterRollbackMs": 24,
+      "writeLatencyMs": 6764,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: create p1/items/new-out-<k> with n 1 (outside n > 3)",
+      "id": "range.insert_below_range.run2",
+      "outcome": "completed before T1 ended",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 244,
+      "run": 2,
+      "scenario": "range.insert_below_range",
+      "totalMs": 1057,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-2"
+      ],
+      "writeEndedAfterRollbackMs": null,
+      "writeLatencyMs": 244,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: update p1/items/i1 (n 1, not matched)",
+      "id": "range.update_unscanned.run2",
+      "outcome": "completed before T1 ended",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 226,
+      "run": 2,
+      "scenario": "range.update_unscanned",
+      "totalMs": 928,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1"
+      ],
+      "writeEndedAfterRollbackMs": null,
+      "writeLatencyMs": 226,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: update p1/items/i2 (run 1) or i3 (run 2) from n 2 or 3 to n 9",
+      "id": "range.move_into_range.run2",
+      "outcome": "blocked until T1 rolled back",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 6002,
+      "run": 2,
+      "scenario": "range.move_into_range",
+      "totalMs": 7206,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i3"
+      ],
+      "writeEndedAfterRollbackMs": -1,
+      "writeLatencyMs": 6739,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: create p1/items/new-nofield-<k> with no n",
+      "id": "range.insert_no_field.run2",
+      "outcome": "completed before T1 ended",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i3"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 246,
+      "run": 2,
+      "scenario": "range.insert_no_field",
+      "totalMs": 954,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-nofield-2"
+      ],
+      "writeEndedAfterRollbackMs": null,
+      "writeLatencyMs": 246,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: create p2/items/new-sib-<k> with n 5 (same collection id, other parent)",
+      "id": "range.sibling_parent.run2",
+      "outcome": "completed before T1 ended",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i3"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 240,
+      "run": 2,
+      "scenario": "range.sibling_parent",
+      "totalMs": 937,
+      "write": [
+        "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-sib-2"
+      ],
+      "writeEndedAfterRollbackMs": null,
+      "writeLatencyMs": 240,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs range query; then a commit without transaction: create p1/others/new-oth-<k> with n 5",
+      "id": "range.other_collection.run2",
+      "outcome": "completed before T1 ended",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i3"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "where": {
+            "fieldFilter": {
+              "field": {
+                "fieldPath": "n"
+              },
+              "op": "GREATER_THAN",
+              "value": {
+                "integerValue": "3"
+              }
+            }
+          }
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 240,
+      "run": 2,
+      "scenario": "range.other_collection",
+      "totalMs": 922,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-others/new-oth-2"
+      ],
+      "writeEndedAfterRollbackMs": null,
+      "writeLatencyMs": 240,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs whole query; then a commit without transaction: create p1/items/new-w-<k> (query: the whole collection)",
+      "id": "whole.insert.run2",
+      "outcome": "blocked until T1 rolled back",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i3",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l0-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-nofield-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-nofield-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-w-1"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ]
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 6004,
+      "run": 2,
+      "scenario": "whole.insert",
+      "totalMs": 7230,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-w-2"
+      ],
+      "writeEndedAfterRollbackMs": 0,
+      "writeLatencyMs": 6767,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs whole query; then a commit without transaction: create p2/items/new-wsib-<k>",
+      "id": "whole.sibling_parent.run2",
+      "outcome": "completed before T1 ended",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i3",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l0-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-nofield-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-nofield-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-w-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-w-2"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ]
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 229,
+      "run": 2,
+      "scenario": "whole.sibling_parent",
+      "totalMs": 1124,
+      "write": [
+        "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-wsib-2"
+      ],
+      "writeEndedAfterRollbackMs": null,
+      "writeLatencyMs": 229,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs limit query; then a commit without transaction: create p1/items/new-l-<k> with n 6.5 (beyond the 2 returned, orderBy n limit 2)",
+      "id": "limit.insert_after_last.run2",
+      "outcome": "blocked until T1 rolled back",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l0-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "limit": 2,
+          "orderBy": [
+            {
+              "field": {
+                "fieldPath": "n"
+              }
+            }
+          ]
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 6002,
+      "run": 2,
+      "scenario": "limit.insert_after_last",
+      "totalMs": 7241,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-2"
+      ],
+      "writeEndedAfterRollbackMs": 1,
+      "writeLatencyMs": 6759,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs limit query; then a commit without transaction: create p1/items/new-l0-<k> with n 0 (before the first returned)",
+      "id": "limit.insert_before_first.run2",
+      "outcome": "blocked until T1 rolled back",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l0-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1",
+        "structuredQuery": {
+          "from": [
+            {
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ],
+          "limit": 2,
+          "orderBy": [
+            {
+              "field": {
+                "fieldPath": "n"
+              }
+            }
+          ]
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 6002,
+      "run": 2,
+      "scenario": "limit.insert_before_first",
+      "totalMs": 6687,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l0-2"
+      ],
+      "writeEndedAfterRollbackMs": 10,
+      "writeLatencyMs": 6244,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs group query; then a commit without transaction: create p2/items/new-g-<k> (query: collection group items)",
+      "id": "group.insert_other_parent.run2",
+      "outcome": "blocked until T1 rolled back",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i3",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l0-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l0-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-nofield-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-nofield-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-w-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-w-2",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j2",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j3",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-g-1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-sib-1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-sib-2",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-wsib-1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-wsib-2"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents",
+        "structuredQuery": {
+          "from": [
+            {
+              "allDescendants": true,
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ]
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 6002,
+      "run": 2,
+      "scenario": "group.insert_other_parent",
+      "totalMs": 7165,
+      "write": [
+        "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-g-2"
+      ],
+      "writeEndedAfterRollbackMs": 2,
+      "writeLatencyMs": 6683,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 (read-write) runs group query; then a commit without transaction: create p1/others/new-go-<k>",
+      "id": "group.other_collection.run2",
+      "outcome": "completed before T1 ended",
+      "query": {
+        "matched": [
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i3",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-in-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l0-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-l0-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-nofield-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-nofield-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-out-2",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-w-1",
+          "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/new-w-2",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j2",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j3",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-g-1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-g-2",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-sib-1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-sib-2",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-wsib-1",
+          "aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/new-wsib-2"
+        ],
+        "parent": "projects/{project}/databases/(default)/documents",
+        "structuredQuery": {
+          "from": [
+            {
+              "allDescendants": true,
+              "collectionId": "aruma-ref-f2-lock-items"
+            }
+          ]
+        }
+      },
+      "rollbackHttp": 200,
+      "rollbackSentAfterMs": 233,
+      "run": 2,
+      "scenario": "group.other_collection",
+      "totalMs": 925,
+      "write": [
+        "aruma-ref-f2-lock/p1/aruma-ref-f2-lock-others/new-go-2"
+      ],
+      "writeEndedAfterRollbackMs": null,
+      "writeLatencyMs": 233,
+      "writeResult": {
+        "http": 200
+      }
+    },
+    {
+      "description": "T1 and T2 read-write; both read wound; T1 commits a write of it; then every call of T2",
+      "events": [
+        {
+          "http": 200,
+          "latencyMs": 218,
+          "what": "T1 GET wound"
+        },
+        {
+          "http": 200,
+          "latencyMs": 221,
+          "what": "T2 GET wound"
+        },
+        {
+          "http": 200,
+          "latencyMs": 853,
+          "what": "T1 commits a write of wound (T1 is older: wounds T2)"
+        },
+        {
+          "http": 409,
+          "latencyMs": 229,
+          "message": "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability.",
+          "status": "ABORTED",
+          "what": "T2 GET wound (first call after the wound)"
+        },
+        {
+          "http": 409,
+          "latencyMs": 227,
+          "message": "Too much contention on these documents. Please try again.",
+          "status": "ABORTED",
+          "what": "T2 GET wound again (second call)"
+        },
+        {
+          "http": 409,
+          "latencyMs": 224,
+          "message": "Too much contention on these documents. Please try again.",
+          "status": "ABORTED",
+          "what": "T2 commits a write of wound"
+        },
+        {
+          "http": 200,
+          "latencyMs": 226,
+          "what": "T2 rollback"
+        }
+      ],
+      "finalValue": {
+        "integerValue": "1"
+      },
+      "id": "wounded_transaction"
+    },
+    {
+      "description": "beginTransaction {\"options\":{\"readWrite\":{\"concurrencyMode\":\"OPTIMISTIC\"}}} as the owner",
+      "events": [
+        {
+          "http": 200,
+          "latencyMs": 217,
+          "what": "beginTransaction with options.readWrite.concurrencyMode OPTIMISTIC"
+        },
+        {
+          "http": 200,
+          "latencyMs": 212,
+          "what": "GET optimistic in the transaction"
+        },
+        {
+          "http": 200,
+          "latencyMs": 243,
+          "what": "a commit without transaction writes optimistic"
+        },
+        {
+          "http": 409,
+          "latencyMs": 232,
+          "message": "Optimistic transaction was aborted due to a conflict with another concurrent operation. This can occur when there are overlapping reads or writes by other transactions, causing contention with the current transaction. Please retry the transaction.",
+          "status": "ABORTED",
+          "what": "the transaction commits a write of optimistic"
+        }
+      ],
+      "id": "optimistic.options.readWrite.concurrencyMode",
+      "request": {
+        "options": {
+          "readWrite": {
+            "concurrencyMode": "OPTIMISTIC"
+          }
+        }
+      }
+    },
+    {
+      "description": "beginTransaction {\"options\":{\"readWrite\":{}},\"concurrencyMode\":\"OPTIMISTIC\"} as the owner",
+      "events": [
+        {
+          "http": 400,
+          "latencyMs": 214,
+          "message": "Invalid JSON payload received. Unknown name \"concurrencyMode\": Cannot find field.",
+          "status": "INVALID_ARGUMENT",
+          "what": "beginTransaction with top-level concurrencyMode OPTIMISTIC"
+        }
+      ],
+      "id": "optimistic.top-level concurrencyMode",
+      "request": {
+        "concurrencyMode": "OPTIMISTIC",
+        "options": {
+          "readWrite": {}
+        }
+      }
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f2.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so beginTransaction gives a PESSIMISTIC read-write transaction and security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations and transaction ids are replaced by placeholders (normalise in lib.mjs, and the replace maps of record-f2.mjs); everything else is as returned.",
+      "\"items\" in the descriptions is the subcollection aruma-ref-f2-lock-items and \"others\" is aruma-ref-f2-lock-others (unique ids, so the collection-group query reads only this run's documents); p1 and p2 are documents of aruma-ref-f2-lock that are never written themselves.",
+      "Each scenario: T1 begins read-write and runs the query in its transaction; then a commit without transaction sends the write. If the write has not returned after 6000 ms, T1 is rolled back. outcome says whether the write returned before T1 ended; writeEndedAfterRollbackMs is how long after the rollback returned it completed. Latencies include about 0.3-1 s of network.",
+      "Two runs of every scenario, run 2 after run 1, so documents inserted by run 1 are present in run 2."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "00b04e58b1c7fd5b494cdf2a6777e46f896e2541f5cca4d72773dbb43820713c",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1",
+  "setup": {
+    "commits": [
+      {
+        "writes": [
+          {
+            "update": {
+              "fields": {
+                "n": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i1"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i2"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "n": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i3"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "n": {
+                  "integerValue": "4"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i4"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "n": {
+                  "integerValue": "5"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i5"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "n": {
+                  "integerValue": "6"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1/aruma-ref-f2-lock-items/i6"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "n": {
+                  "integerValue": "4"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j1"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "n": {
+                  "integerValue": "5"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j2"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "n": {
+                  "integerValue": "6"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p2/aruma-ref-f2-lock-items/j3"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "n": {
+                  "integerValue": "5"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-lock/p1/aruma-ref-f2-lock-others/o1"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "group.insert_other_parent": {
+      "outcomes": [
+        "blocked until T1 rolled back",
+        "blocked until T1 rolled back"
+      ],
+      "stable": true,
+      "writeHttp": [
+        200,
+        200
+      ]
+    },
+    "group.other_collection": {
+      "outcomes": [
+        "completed before T1 ended",
+        "completed before T1 ended"
+      ],
+      "stable": true,
+      "writeHttp": [
+        200,
+        200
+      ]
+    },
+    "limit.insert_after_last": {
+      "outcomes": [
+        "blocked until T1 rolled back",
+        "blocked until T1 rolled back"
+      ],
+      "stable": true,
+      "writeHttp": [
+        200,
+        200
+      ]
+    },
+    "limit.insert_before_first": {
+      "outcomes": [
+        "blocked until T1 rolled back",
+        "blocked until T1 rolled back"
+      ],
+      "stable": true,
+      "writeHttp": [
+        200,
+        200
+      ]
+    },
+    "range.insert_below_range": {
+      "outcomes": [
+        "completed before T1 ended",
+        "completed before T1 ended"
+      ],
+      "stable": true,
+      "writeHttp": [
+        200,
+        200
+      ]
+    },
+    "range.insert_in_range": {
+      "outcomes": [
+        "blocked until T1 rolled back",
+        "blocked until T1 rolled back"
+      ],
+      "stable": true,
+      "writeHttp": [
+        200,
+        200
+      ]
+    },
+    "range.insert_no_field": {
+      "outcomes": [
+        "completed before T1 ended",
+        "completed before T1 ended"
+      ],
+      "stable": true,
+      "writeHttp": [
+        200,
+        200
+      ]
+    },
+    "range.move_into_range": {
+      "outcomes": [
+        "blocked until T1 rolled back",
+        "blocked until T1 rolled back"
+      ],
+      "stable": true,
+      "writeHttp": [
+        200,
+        200
+      ]
+    },
+    "range.other_collection": {
+      "outcomes": [
+        "completed before T1 ended",
+        "completed before T1 ended"
+      ],
+      "stable": true,
+      "writeHttp": [
+        200,
+        200
+      ]
+    },
+    "range.sibling_parent": {
+      "outcomes": [
+        "completed before T1 ended",
+        "completed before T1 ended"
+      ],
+      "stable": true,
+      "writeHttp": [
+        200,
+        200
+      ]
+    },
+    "range.update_scanned": {
+      "outcomes": [
+        "blocked until T1 rolled back",
+        "blocked until T1 rolled back"
+      ],
+      "stable": true,
+      "writeHttp": [
+        200,
+        200
+      ]
+    },
+    "range.update_unscanned": {
+      "outcomes": [
+        "completed before T1 ended",
+        "completed before T1 ended"
+      ],
+      "stable": true,
+      "writeHttp": [
+        200,
+        200
+      ]
+    },
+    "whole.insert": {
+      "outcomes": [
+        "blocked until T1 rolled back",
+        "blocked until T1 rolled back"
+      ],
+      "stable": true,
+      "writeHttp": [
+        200,
+        200
+      ]
+    },
+    "whole.sibling_parent": {
+      "outcomes": [
+        "completed before T1 ended",
+        "completed before T1 ended"
+      ],
+      "stable": true,
+      "writeHttp": [
+        200,
+        200
+      ]
+    }
+  }
+}
