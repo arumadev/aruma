@@ -119,9 +119,6 @@ var notReplayed = map[string]string{
 	"f1-delete.json rest.exists_false_on_existing": "state from an unrecorded commit",
 	"f1-delete.json rest.exists_true":              "state from an unrecorded commit",
 	"f1-delete.json rest.update_time_stale":        "state from an unrecorded commit",
-	// Marked replay, but its document (i: 5) is written by legacy.update_then_transform and
-	// legacy.transform_existing, which are not marked: replayed alone it starts from no document.
-	"f2-transforms.json legacy.same_field_twice": "state from cases not marked replay",
 }
 
 // unserved are the custom methods of later phases: their cases are not sent.
@@ -200,11 +197,6 @@ func TestCorpusReplay(t *testing.T) {
 				path = strings.ReplaceAll(path, placeholder, url.QueryEscape(id))
 				body = strings.ReplaceAll(body, placeholder, id)
 			}
-			if markedOnly {
-				// The recorder wrote its fixed stale precondition (record-f2.mjs STALE) as a
-				// placeholder; the answers keep its version, 978307200000001.
-				body = strings.ReplaceAll(body, `"<updateTime: RFC 3339>"`, `"2001-01-01T00:00:00.000001Z"`)
-			}
 			if setupTime != "" && strings.Contains(c.ID, "txn.") {
 				path = strings.ReplaceAll(path, "<readTime: the setup commitTime>", setupTime)
 				body = strings.ReplaceAll(body, "<readTime: RFC 3339>", setupTime)
@@ -259,8 +251,10 @@ func TestCorpusReplay(t *testing.T) {
 		}
 	}
 	t.Logf("compared %d recorded REST cases (%d marked replay in F2), skipped %d", compared, marked, skipped)
-	if compared < 300 || marked != 162 {
-		t.Errorf("only %d cases compared, %d of F2's 162 marked replay", compared, marked)
+	// 162 marked by the recorder, less legacy.same_field_twice, unmarked by hand (its answer
+	// depends on cases before it).
+	if compared < 300 || marked != 161 {
+		t.Errorf("only %d cases compared, %d of F2's 161 marked replay", compared, marked)
 	}
 }
 

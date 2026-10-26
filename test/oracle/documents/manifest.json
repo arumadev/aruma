@@ -286,7 +286,7 @@
       "generator": "test/oracle/documents/production/record-f2.mjs",
       "oracle": "production",
       "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
-      "sha256": "82a04663cccc1ff3884ed3c099becfe57481c652bda82b31577423526a4f6a0c",
+      "sha256": "06d08d6504d5812a610c83dd2fffe51e4a5b824fad8c8fbbeb6177122d3a8f49",
       "versions": {
         "@grpc/grpc-js": "1.12.2",
         "@grpc/proto-loader": "0.7.13",

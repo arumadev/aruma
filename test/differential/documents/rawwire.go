@@ -59,7 +59,7 @@ func (r Replayer) Compare(ctx context.Context, f ReplayFile, c ReplayCase, body 
 	if err != nil {
 		return []string{err.Error()}
 	}
-	d := Diff(c.Response, Normalise(res.Body, r.Target.Project(), f.Project))
+	d := Diff(Stable(c.Response), Stable(Normalise(res.Body, r.Target.Project(), f.Project)))
 	if res.HTTP != c.HTTP {
 		d = append([]string{fmt.Sprintf("HTTP %d, want %d", res.HTTP, c.HTTP)}, d...)
 	}
