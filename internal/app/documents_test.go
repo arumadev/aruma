@@ -108,4 +108,20 @@ func TestDocumentsWiring(t *testing.T) {
 	if err := get(); err != nil {
 		t.Errorf("gRPC GetDocument after the REST write: %v", err)
 	}
+
+	// A project whose deletion has expired loses its Document Database rows (review M5).
+	if _, err := a.Service.DeleteProject(t.Context(), owner, proj.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(t.Context(), `UPDATE control.projects SET expire_time = now() - interval '1 second' WHERE project_number = $1`, proj.Number); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.Service.PurgeExpired(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(t.Context(), `SELECT (SELECT count(*) FROM documents.documents WHERE project_number = $1)
+		+ (SELECT count(*) FROM documents.changelog WHERE project_number = $1)
+		+ (SELECT count(*) FROM documents.databases WHERE project_number = $1)`, proj.Number).Scan(&n); err != nil || n != 0 {
+		t.Errorf("%d Document Database rows left after the purge (%v)", n, err)
+	}
 }

@@ -3,7 +3,9 @@ package core
 import (
 	"bytes"
 	"slices"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	"google.golang.org/protobuf/proto"
 
@@ -95,6 +97,11 @@ func (p *plan) apply(db DB, locked map[string]*lockedDoc) error {
 		}
 	}
 	for i, w := range p.writes {
+		// The transports refuse such names; this keeps one from ever being stored, since a name
+		// key's segments are only read back right when they are UTF-8 (0xFF 0x01 would end one).
+		if j := slices.IndexFunc(w.Path, func(id string) bool { return !utf8.ValidString(id) }); j >= 0 {
+			return &Error{InvalidArgument, `Resource id "` + strings.ToValidUTF8(w.Path[j], "\uFFFD") + `" is invalid because it is not UTF-8.`}
+		}
 		d := p.of[i]
 		if err := d.check(db, w.Precondition); err != nil {
 			return err

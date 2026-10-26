@@ -533,3 +533,22 @@ func TestNotServingWithoutTheInstanceLock(t *testing.T) {
 	_, _, err = s.Get(context.Background(), testDB, ParsePath("c/d"), ReadOptions{})
 	wantError(t, err, Unavailable, ErrNotServing.Message)
 }
+
+// A ListRequest.After that is not a document of the listing, as a forged page token makes it,
+// is refused rather than indexed (review M2).
+func TestListDocumentsRefusesAForeignAfter(t *testing.T) {
+	s, _ := newStore(t, Options{})
+	for _, r := range []ListRequest{
+		{After: Path{"a"}},
+		{After: Path{}},
+		{CollectionID: "c", After: ParsePath("other/d")},
+		{Parent: ParsePath("c/d"), After: ParsePath("c/e/s/f")},
+		{Parent: ParsePath("c/d"), CollectionID: "s", ShowMissing: true, After: ParsePath("s/f")},
+	} {
+		_, err := s.ListDocuments(t.Context(), testDB, r)
+		wantError(t, err, InvalidArgument, ErrInvalidAfter.Message)
+	}
+	if _, err := s.ListDocuments(t.Context(), testDB, ListRequest{Parent: ParsePath("c/d"), After: ParsePath("c/d/s/f")}); err != nil {
+		t.Fatal(err)
+	}
+}

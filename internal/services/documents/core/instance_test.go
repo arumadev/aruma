@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"log/slog"
 	"sync/atomic"
 	"testing"
@@ -87,5 +88,72 @@ func TestInstanceLock(t *testing.T) {
 	}
 	if _, err := NewPGStore(admin, Options{Instance: other}).Commit(t.Context(), testDB, nil); err != nil {
 		t.Fatalf("serving instance: %v", err)
+	}
+}
+
+// A check slower than CheckTimeout is cancelled by Postgres, not by closing the connection: the
+// session keeps the lock, the instance keeps serving, and no other process can take it
+// (review M6).
+func TestInstanceSlowCheckKeepsTheLock(t *testing.T) {
+	url := storetest.NewDB(t)
+	cfg, err := pgx.ParseConfig(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	admin, err := store.Open(t.Context(), url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(admin.Close)
+
+	var lost atomic.Int32
+	i := StartInstance(t.Context(), cfg, InstanceOptions{
+		BootWait: 2 * time.Second, Check: 20 * time.Millisecond, CheckTimeout: 50 * time.Millisecond,
+		OnLost: func() { lost.Add(1) }, Log: slog.New(slog.DiscardHandler),
+		checkSQL: "SELECT pg_sleep(0.5) IS NOT NULL AND " + instanceHeldCond,
+	})
+	t.Cleanup(i.Close)
+	if !i.Held() {
+		t.Fatal("the instance does not hold the lock")
+	}
+	time.Sleep(time.Second) // several checks time out
+	if lost.Load() != 0 || !i.Held() {
+		t.Fatalf("slow checks lost the lock: OnLost %d, held %v", lost.Load(), i.Held())
+	}
+	var free bool
+	if err := admin.QueryRow(t.Context(), instanceLock).Scan(&free); err != nil || free {
+		t.Fatalf("another session took the lock (%v): %v", free, err)
+	}
+}
+
+// A check that finds its session alive without the lock reports the loss, and one that finds
+// the connection closed does too.
+func TestInstanceCheckSeesTheLockGone(t *testing.T) {
+	url := storetest.NewDB(t)
+	cfg, err := pgx.ParseConfig(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Check is long, so the guard's goroutine leaves the connection to the test.
+	i := StartInstance(t.Context(), cfg, InstanceOptions{BootWait: 2 * time.Second, Check: time.Hour,
+		Log: slog.New(slog.DiscardHandler)})
+	t.Cleanup(i.Close)
+	if lost, err := i.check(t.Context()); lost || err != nil {
+		t.Fatalf("check while held = %v, %v", lost, err)
+	}
+	i.mu.Lock()
+	conn := i.conn
+	i.mu.Unlock()
+	if _, err := conn.Exec(t.Context(), "SELECT pg_advisory_unlock(hashtext('documents.instance'), 0)"); err != nil {
+		t.Fatal(err)
+	}
+	if lost, err := i.check(t.Context()); !lost || !errors.Is(err, errLockGone) {
+		t.Fatalf("check after unlock = %v, %v", lost, err)
+	}
+	if err := conn.Close(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if lost, _ := i.check(t.Context()); !lost {
+		t.Fatal("check on a closed connection did not report the loss")
 	}
 }

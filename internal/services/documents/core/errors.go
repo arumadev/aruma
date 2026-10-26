@@ -36,6 +36,10 @@ var (
 	ErrReadTimeTooOld = &Error{FailedPrecondition, "The requested 'read_time' is too old."}
 	// ErrReadTimeFuture is a read_time after now (f1-get.json, rest.read_time.future).
 	ErrReadTimeFuture = &Error{InvalidArgument, "The requested 'read_time' cannot be in the future."}
+	// ErrInvalidAfter is a ListRequest.After that is not a document of the listing: the
+	// transport takes it from a page token, which a client can forge (review M2). The text is the
+	// transports' answer to a page token that does not fit its request.
+	ErrInvalidAfter = &Error{InvalidArgument, "Invalid page token."}
 	// ErrContention is a commit that waited too long for its locks (ADR-024 §2.3, §6.2).
 	ErrContention = &Error{Aborted, "Too much contention on these documents. Please try again."}
 	// ErrUnknownOutcome is a commit whose connection was lost after COMMIT was sent: it may have

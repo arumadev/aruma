@@ -36,12 +36,19 @@ type Documents struct {
 	log   *slog.Logger
 
 	instance *documents.Instance
+	// stopRetention ends the retention job Boot started, and retentionDone closes when it has.
+	stopRetention context.CancelFunc
+	retentionDone chan struct{}
 }
 
 // newDocuments wires the Document Database's surfaces on the control plane: its service
 // accounts verify the Admin SDKs' self-signed JWTs, and every key or account deleted is
-// forgotten by the verifier's cache at once (ADR-029 §3.8).
+// forgotten by the verifier's cache at once (ADR-029 §3.8). A purged project's documents go
+// with it (ADR-024 §1.1).
 func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, m *metrics.Metrics, logger *slog.Logger) *Documents {
+	svc.OnProjectPurged(func(ctx context.Context, project int64) error {
+		return documents.PurgeProject(ctx, pool, project)
+	})
 	publicURL := strings.TrimSuffix(cfg.PublicBaseURL().String(), "/")
 	jwts := authn.NewServiceAccountJWTVerifier(svc, publicURL, logger)
 	svc.OnServiceAccountRevoked(jwts)
@@ -84,22 +91,34 @@ func (d *Documents) mount(h *server.Handlers) {
 }
 
 // Boot takes the single-instance lock, trying for up to 30 seconds (ADR-024 §7), opens the
-// store and gives every project its '(default)' database. Without the lock the rest of Aruma
-// serves and the Document Database answers UNAVAILABLE until the guard takes it. It runs
-// before the listener opens.
+// store, starts the retention of versions and the changelog (ADR-024 §8), which runs while the
+// lock is held, and gives every project its '(default)' database. Without the lock the rest of
+// Aruma serves and the Document Database answers UNAVAILABLE until the guard takes it. It runs
+// before the listener opens; Close stops what it started.
 func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error {
 	o.Log = d.log
 	d.instance = documents.StartInstance(ctx, d.pool.Config().ConnConfig, o)
 	store := documents.NewPGStore(d.pool, documents.Options{CommitConcurrency: d.cfg.CommitConcurrency, Instance: d.instance})
 	d.store.set(store)
+	var rctx context.Context
+	rctx, d.stopRetention = context.WithCancel(ctx)
+	d.retentionDone = make(chan struct{})
+	go func() {
+		defer close(d.retentionDone)
+		store.RunRetention(rctx, documents.RetentionOptions{Log: d.log})
+	}()
 	if !d.instance.Held() {
 		return nil
 	}
 	return ensureDatabases(ctx, d.pool, store)
 }
 
-// Close releases the lock.
+// Close stops the retention job and releases the lock.
 func (d *Documents) Close() {
+	if d.stopRetention != nil {
+		d.stopRetention()
+		<-d.retentionDone
+	}
 	if d.instance != nil {
 		d.instance.Close()
 	}

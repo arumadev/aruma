@@ -3,12 +3,16 @@ package core
 import (
 	"cmp"
 	"context"
+	"errors"
 	"log/slog"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgconn/ctxwatch"
 )
 
 // Instance keeps the Document Database on one process per Postgres database (ADR-024 §7): the
@@ -37,6 +41,9 @@ type InstanceOptions struct {
 	BootWait time.Duration
 	// Check is how often the held connection is checked. Default 1s.
 	Check time.Duration
+	// CheckTimeout is how long a check may take before it is cancelled and counted as slow,
+	// which is not a loss: the lock is lost only when its session is (ADR-024 §7). Default 10s.
+	CheckTimeout time.Duration
 	// MinBackoff and MaxBackoff bound the retries while the lock is not held. Default 1s, 30s.
 	MinBackoff, MaxBackoff time.Duration
 	// OnAcquired runs when the lock is taken after StartInstance returned (a takeover, or a
@@ -45,10 +52,28 @@ type InstanceOptions struct {
 	// lock manager. Both run on the guard's goroutine.
 	OnAcquired, OnLost func()
 	Log                *slog.Logger
+
+	// checkSQL replaces instanceHeld in tests, to make a check slow.
+	checkSQL string
 }
 
 // instanceLock is the advisory lock's key, the int4 pair as Storage's are taken.
 const instanceLock = "SELECT pg_try_advisory_lock(hashtext('documents.instance'), 0)"
+
+// instanceHeld reports whether this session still holds the lock: an int4-pair advisory lock
+// is classid = the first key (as oid), objid = the second, objsubid = 2.
+const instanceHeld = "SELECT " + instanceHeldCond
+
+const instanceHeldCond = `EXISTS (SELECT 1 FROM pg_locks WHERE locktype = 'advisory' AND granted
+	AND pid = pg_backend_pid() AND classid = hashtext('documents.instance')::oid AND objid = 0 AND objsubid = 2)`
+
+// cancelGrace is how long a cancelled check may wait for Postgres to answer its cancel request
+// before pgx closes the connection: a server that answers nothing for that long is taken for
+// gone, and closing the connection does release the lock.
+const cancelGrace = 30 * time.Second
+
+// errLockGone is a check that found the session alive without the lock.
+var errLockGone = errors.New("the session no longer holds the advisory lock")
 
 // StartInstance tries to take the lock for up to BootWait, then keeps it, or keeps trying for it,
 // in the background until Close. It returns whether the lock is held; when it is not, the
@@ -56,12 +81,19 @@ const instanceLock = "SELECT pg_try_advisory_lock(hashtext('documents.instance')
 func StartInstance(ctx context.Context, cfg *pgx.ConnConfig, o InstanceOptions) *Instance {
 	o.BootWait = cmp.Or(o.BootWait, 30*time.Second)
 	o.Check = cmp.Or(o.Check, time.Second)
+	o.CheckTimeout = cmp.Or(o.CheckTimeout, 10*time.Second)
+	o.checkSQL = cmp.Or(o.checkSQL, instanceHeld)
 	o.MinBackoff = cmp.Or(o.MinBackoff, time.Second)
 	o.MaxBackoff = cmp.Or(o.MaxBackoff, 30*time.Second)
 	if o.Log == nil {
 		o.Log = slog.Default()
 	}
 	i := &Instance{cfg: cfg.Copy(), o: o, done: make(chan struct{})}
+	// A check that times out sends Postgres a cancel request, and keeps the connection: pgx's
+	// default closes it, which would free the lock over a slow statement.
+	i.cfg.BuildContextWatcherHandler = func(c *pgconn.PgConn) ctxwatch.Handler {
+		return &pgconn.CancelRequestContextWatcherHandler{Conn: c, DeadlineDelay: cancelGrace}
+	}
 	ctx, i.stop = context.WithCancel(context.WithoutCancel(ctx))
 
 	deadline := time.Now().Add(o.BootWait)
@@ -110,12 +142,20 @@ func (i *Instance) run(ctx context.Context) {
 		if !sleep(ctx, i.o.Check) {
 			return
 		}
-		if err := i.check(ctx); err != nil && ctx.Err() == nil {
+		lost, err := i.check(ctx)
+		switch {
+		case ctx.Err() != nil:
+			return
+		case lost:
 			i.release()
-			i.o.Log.Error("documents: lost the single-instance lock's connection; the Document Database is unavailable until it is taken again", "error", err)
+			i.o.Log.Error("documents: lost the single-instance lock; the Document Database is unavailable until it is taken again", "error", err)
 			if i.o.OnLost != nil {
 				i.o.OnLost()
 			}
+		case err != nil:
+			// Slow, or failed without ending the session: the lock is still this process's.
+			// The next check comes after Check, as usual.
+			i.o.Log.Warn("documents: the single-instance lock's check did not complete; the lock is kept", "error", err)
 		}
 	}
 }
@@ -140,16 +180,40 @@ func (i *Instance) tryAcquire(ctx context.Context) bool {
 	return true
 }
 
-// check runs a statement on the lock's connection: an error is a lost session, and with it the
-// lock.
-func (i *Instance) check(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, max(i.o.Check, time.Second))
+// check asks the lock's session whether it still holds the lock. It reports lost when the
+// connection is gone, or when the session answers without the lock; any other error (a check
+// slower than CheckTimeout, cancelled by Postgres) is reported with lost false, since a slow
+// server has not released the lock (ADR-024 §7).
+func (i *Instance) check(ctx context.Context) (lost bool, err error) {
+	ctx, cancel := context.WithTimeout(ctx, i.o.CheckTimeout)
 	defer cancel()
 	i.mu.Lock()
 	conn := i.conn
 	i.mu.Unlock()
-	_, err := conn.Exec(ctx, "SELECT 1")
-	return err
+	if conn == nil || conn.IsClosed() {
+		return true, errors.New("the lock's connection is closed")
+	}
+	var held bool
+	err = conn.QueryRow(ctx, i.o.checkSQL).Scan(&held)
+	switch {
+	case err == nil && !held:
+		return true, errLockGone
+	case err == nil:
+		return false, nil
+	case conn.IsClosed() || sessionEnded(err):
+		return true, err
+	}
+	return false, err
+}
+
+// sessionEnded reports whether err is Postgres ending the session: a connection exception
+// (class 08) or an operator intervention other than a cancelled statement (57P01 to 57P05).
+func sessionEnded(err error) bool {
+	pgErr, ok := errors.AsType[*pgconn.PgError](err)
+	if !ok {
+		return false
+	}
+	return strings.HasPrefix(pgErr.Code, "08") || strings.HasPrefix(pgErr.Code, "57P")
 }
 
 // release stops serving, then closes the connection, which frees the lock.

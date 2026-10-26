@@ -250,6 +250,9 @@ func pageSize(n int) int {
 
 // ListDocuments implements Store.
 func (s *PGStore) ListDocuments(ctx context.Context, db DB, r ListRequest) (ListResult, error) {
+	if r.After != nil && !r.after() {
+		return ListResult{}, ErrInvalidAfter
+	}
 	n := pageSize(r.PageSize)
 	var docs []Document
 	var readTime time.Time
@@ -473,6 +476,13 @@ func (s *PGStore) listWithMissing(ctx context.Context, db DB, r ListRequest, lim
 		}
 	}
 	return docs, readTime, nil
+}
+
+// after reports whether After is a document of the listing: in a collection directly under
+// Parent, and in CollectionID when one is named.
+func (r ListRequest) after() bool {
+	return r.After.IsDocument() && slices.Equal(r.After.Parent(), r.Parent) &&
+		(r.CollectionID == "" || r.After.CollectionID() == r.CollectionID)
 }
 
 // listAll lists the documents of every collection directly under r.Parent, collection by
