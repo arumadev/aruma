@@ -324,43 +324,57 @@ func TestElementSetKeyed(t *testing.T) {
 	}
 }
 
-// The worst writes a 16 MiB request can carry cost about their size, not its square: tens of
-// thousands of transforms of one write, and array transforms of a million elements (F2 review M1).
+// The worst writes a request can carry cost about their size, not its square (F2 review M1):
+// many transforms of one write, up to the transport's bound (api.MaxRequestTransforms), and array
+// transforms of a quarter of a million elements. Each is timed at n and 4n, the best of three runs: a linear
+// cost grows about 4 times, a quadratic one 16.
 func TestTransformsWorstCase(t *testing.T) {
 	if testing.Short() {
 		t.Skip("short")
 	}
 	now := RequestTime(time.UnixMicro(1793042888857123))
-	ts := make([]Transform, maxTransformsBench)
-	for i := range ts {
-		ts[i] = tr(TransformIncrement, "f"+strconv.Itoa(i), value.Int(1))
+	best := func(f func()) time.Duration {
+		d := time.Duration(math.MaxInt64)
+		for range 3 {
+			start := time.Now()
+			f()
+			d = min(d, time.Since(start))
+		}
+		return d
 	}
-	start := time.Now()
-	if _, _, err := applyTransforms(value.Map(), ts, now); err != nil {
-		t.Fatal(err)
-	}
-	if d := time.Since(start); d > 5*time.Second {
-		t.Errorf("%d transforms took %v", len(ts), d)
-	}
-	els := make([]value.Value, 1<<20)
-	for i := range els {
-		els[i] = value.Int(int64(i))
-	}
-	big := value.Array(els...)
-	start = time.Now()
-	base := doc("a", big)
-	for _, kind := range []TransformKind{TransformAppendMissing, TransformRemoveAll} {
-		if _, _, err := tr(kind, "a", big).apply(base, now); err != nil {
-			t.Fatal(err)
+	growth := func(name string, run func(n int), n int) {
+		small, large := best(func() { run(n) }), best(func() { run(4 * n) })
+		t.Logf("%s: %v at %d, %v at %d", name, small, n, large, 4*n)
+		if large > 8*small+50*time.Millisecond {
+			t.Errorf("%s: %v at %d, %v at %d: not linear", name, small, n, large, 4*n)
 		}
 	}
-	if d := time.Since(start); d > 10*time.Second {
-		t.Errorf("array transforms of %d elements took %v", len(els), d)
-	}
+	growth("transforms", func(n int) {
+		ts := make([]Transform, n)
+		for i := range ts {
+			ts[i] = tr(TransformIncrement, "f"+strconv.Itoa(i), value.Int(1))
+		}
+		if _, _, err := applyTransforms(value.Map(), ts, now); err != nil {
+			t.Fatal(err)
+		}
+	}, maxRequestTransforms/4)
+	growth("array transforms", func(n int) {
+		els := make([]value.Value, n)
+		for i := range els {
+			els[i] = value.Int(int64(i))
+		}
+		big := value.Array(els...)
+		base := doc("a", big)
+		for _, kind := range []TransformKind{TransformAppendMissing, TransformRemoveAll} {
+			if _, _, err := tr(kind, "a", big).apply(base, now); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}, 1<<16)
 }
 
-// maxTransformsBench is about as many transforms as a 16 MiB request holds.
-const maxTransformsBench = 200_000
+// maxRequestTransforms is api.MaxRequestTransforms, which core does not import.
+const maxRequestTransforms = 50_000
 
 func BenchmarkApplyTransforms(b *testing.B) {
 	now := RequestTime(time.UnixMicro(1793042888857123))
