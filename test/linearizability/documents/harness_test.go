@@ -27,12 +27,14 @@ import (
 // `make test`); -short leaves it out with every test that needs Postgres. `make linearizability`
 // runs it longer, for a nightly job:
 //
-//	ARUMA_LINEARIZABILITY_DURATION  how long the clients run (a Go duration; default 3s)
+//	ARUMA_LINEARIZABILITY_DURATION  how long the clients run (a Go duration; default 3s), in
+//	                                rounds of at most roundLength, each checked alone
 //	ARUMA_LINEARIZABILITY_SEED      the random seed, to replay a run's choices (default: random)
 const (
 	groups           = 4 // independent groups of keysPerGroup documents: Porcupine's partitions
 	clientsPerGroup  = 6
 	defaultDuration  = 3 * time.Second
+	roundLength      = 10 * time.Second
 	cancelPercent    = 6 // operations run under a context that ends at a random moment
 	recentReadTimes  = 32
 	lockWaitTimeout  = 2 * time.Second
@@ -70,25 +72,41 @@ func TestLinearizability(t *testing.T) {
 	if _, err := store.Database(t.Context(), testDB); err != nil {
 		t.Fatal(err)
 	}
+	// A long run is rounds of at most roundLength, each on documents of its own and checked
+	// alone: Porcupine's memory grows with the square of a group's history.
+	for round, ran := 0, time.Duration(0); ran < duration; round++ {
+		d := min(roundLength, duration-ran)
+		if !runRound(t, store, round, seed, d) {
+			break
+		}
+		ran += d
+	}
+}
+
+// runRound runs the clients for d on the round's documents, then checks what they did. It
+// reports whether every check passed.
+func runRound(t *testing.T, store *core.PGStore, round int, seed uint64, d time.Duration) bool {
 	h := &harness{t: t, s: store, start: time.Now()}
-	h.deadline = h.start.Add(duration)
+	h.deadline = h.start.Add(d)
 	var wg sync.WaitGroup
 	for g := range groups {
 		for c := range clientsPerGroup {
-			cl := &client{h: h, id: g*clientsPerGroup + c, group: g, rng: rand.New(rand.NewPCG(seed, uint64(g*clientsPerGroup+c))),
-				seen: map[int]int64{}}
+			id := g*clientsPerGroup + c
+			cl := &client{h: h, id: id, round: round, group: g, seen: map[int]int64{},
+				rng: rand.New(rand.NewPCG(seed, uint64(round)<<32|uint64(id)))}
 			wg.Go(cl.run)
 		}
 	}
 	wg.Wait()
 	h.finish()
 	ops := h.ops
-	t.Logf("%d operations recorded: %s; %+v", len(ops), h.counts(), store.TransactionStats())
+	t.Logf("round %d: %d operations recorded: %s; %+v", round, len(ops), h.counts(), store.TransactionStats())
 
 	checkCommitOrder(t, ops)
 	checkRealTime(t, ops)
 	checkUpdateTimes(t, ops)
-	checkLinearizable(t, ops, max(minCheckTimeout, 4*duration))
+	checkLinearizable(t, ops, max(minCheckTimeout, 4*d))
+	return !t.Failed()
 }
 
 // harness records the operations of every client.
@@ -187,6 +205,7 @@ func (h *harness) readTimeFor(group int, rng *rand.Rand) (stamp, bool) {
 type client struct {
 	h     *harness
 	id    int
+	round int
 	group int
 	rng   *rand.Rand
 	seen  map[int]int64 // the last update_time seen of each key, for update_time preconditions
@@ -233,7 +252,7 @@ func (c *client) context() (context.Context, context.CancelFunc, bool) {
 }
 
 func (c *client) path(key int) core.Path {
-	return core.Path{"lin" + strconv.Itoa(c.group), "k" + strconv.Itoa(key)}
+	return core.Path{"lin" + strconv.Itoa(c.round) + "-" + strconv.Itoa(c.group), "k" + strconv.Itoa(key)}
 }
 
 // unique returns a value for n that no other set writes.
