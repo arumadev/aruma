@@ -785,7 +785,7 @@
           "writes": [
             {
               "currentDocument": {
-                "updateTime": "<updateTime: RFC 3339>"
+                "updateTime": "2001-01-01T00:00:00.000001Z"
               },
               "update": {
                 "fields": {
@@ -876,7 +876,7 @@
             {
               "currentDocument": {
                 "exists": true,
-                "updateTime": "<updateTime: RFC 3339>"
+                "updateTime": "2001-01-01T00:00:00.000001Z"
               },
               "update": {
                 "fields": {
@@ -1961,7 +1961,8 @@
       "Times, durations and transaction ids are replaced by placeholders (normalise in lib.mjs, and the replace maps of record-f2.mjs); everything else is as returned.",
       "aruma-ref-f2-commit/n1 is written {a: 1} by the setup commit; relations compare each later commit with it (commitTimeAfterSetupCommit, the write results' updateTime, and storedUpdateTimeIsSetup: whether a GET afterwards still shows the setup updateTime).",
       "stored is a GET of the named document after the case (fields a, b, c).",
-      "limit.501_writes keeps only the shape of its request and response."
+      "limit.501_writes keeps only the shape of its request and response.",
+      "Edited by hand (F2 review fixes): the requests of pre.update_time_on_missing and pre.both hold the precondition time the recorder sent, STALE = 2001-01-01T00:00:00.000001Z (record-f2.mjs), where normalise had put its placeholder, so that they replay as sent."
     ],
     "oracle": "production",
     "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",

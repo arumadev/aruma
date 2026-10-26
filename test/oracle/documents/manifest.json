@@ -286,7 +286,7 @@
       "generator": "test/oracle/documents/production/record-f2.mjs",
       "oracle": "production",
       "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
-      "sha256": "418edce77225dd743d40ee9d92f8ff07c5336d1276ab9297a2499fd1e90485d6",
+      "sha256": "82a04663cccc1ff3884ed3c099becfe57481c652bda82b31577423526a4f6a0c",
       "versions": {
         "@grpc/grpc-js": "1.12.2",
         "@grpc/proto-loader": "0.7.13",
@@ -316,7 +316,7 @@
       "generator": "test/oracle/documents/production/record-f2.mjs",
       "oracle": "production",
       "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
-      "sha256": "b278085e84e338d5fcee66ace50a24dba575d6ef95af53dacea3592f54874494",
+      "sha256": "ed2f747a20e9c88bd1ddb9e5a4c1bfcdd796c4bf039ee4bc9f3355c06eb3adbb",
       "versions": {
         "@grpc/grpc-js": "1.12.2",
         "@grpc/proto-loader": "0.7.13",
@@ -376,7 +376,7 @@
       "generator": "test/oracle/documents/production/record-f2.mjs",
       "oracle": "production",
       "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
-      "sha256": "bdc3b1029743061111d0385ba1e11b934ef6a6724d2a4f5b455e2d5851704202",
+      "sha256": "db3704d68f52179a18918a3464c3fedb93283e3aa911ca66338a8681df21009d",
       "versions": {
         "@grpc/grpc-js": "1.12.2",
         "@grpc/proto-loader": "0.7.13",

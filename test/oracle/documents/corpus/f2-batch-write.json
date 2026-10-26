@@ -228,13 +228,12 @@
     {
       "description": "update m1 with updateTime=2001-01-01T00:00:00.000001Z, and update m3",
       "id": "stale_update_time",
-      "replay": true,
       "request": {
         "body": {
           "writes": [
             {
               "currentDocument": {
-                "updateTime": "<updateTime: RFC 3339>"
+                "updateTime": "2001-01-01T00:00:00.000001Z"
               },
               "update": {
                 "fields": {
@@ -1207,7 +1206,8 @@
     "notes": [
       "Auth: the firebase CLI login (a project owner), so beginTransaction gives a PESSIMISTIC read-write transaction and security rules do not apply; end-user behaviour is not recorded here.",
       "Times, durations and transaction ids are replaced by placeholders (normalise in lib.mjs, and the replace maps of record-f2.mjs); everything else is as returned.",
-      "statusCodes lists each write's status code (0 when the status is empty, i.e. OK). stored holds GETs of the named documents after the case."
+      "statusCodes lists each write's status code (0 when the status is empty, i.e. OK). stored holds GETs of the named documents after the case.",
+      "Edited by hand (F2 review fixes): the request of stale_update_time holds the precondition time the recorder sent, STALE = 2001-01-01T00:00:00.000001Z (record-f2.mjs), where normalise had put its placeholder; it is no longer marked replay, since its answer names the stored version of production's own m1."
     ],
     "oracle": "production",
     "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",

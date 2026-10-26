@@ -135,9 +135,14 @@ func TestReplayAgainstFakeServer(t *testing.T) {
 	}
 }
 
+// compact is v as JSON, with <, > and & as they are: json.Marshal escapes them (\u003c), which
+// would hide a placeholder from a search for "<.
 func compact(v any) string {
-	b, _ := json.Marshal(v)
-	return string(b)
+	var b strings.Builder
+	e := json.NewEncoder(&b)
+	e.SetEscapeHTML(false)
+	_ = e.Encode(v)
+	return strings.TrimSuffix(b.String(), "\n")
 }
 
 // TestReplayCorpusOffline: the replayable cases load, each file has a setup, no replayed request

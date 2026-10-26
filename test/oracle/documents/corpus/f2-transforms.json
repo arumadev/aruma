@@ -22213,7 +22213,6 @@
     {
       "description": "a legacy transform with i += 1 twice",
       "id": "legacy.same_field_twice",
-      "replay": true,
       "request": {
         "body": {
           "writes": [
@@ -29059,7 +29058,8 @@
       "Every tf case overwrites its own document aruma-ref-f2-tf/<case id with dots as dashes> with the fixture FIX (shown in each request) and applies the transforms in the same write; stored holds the transformed top-level fields as a GET returned them afterwards, and fieldNames all fields of the document.",
       "timestampValue values (the REQUEST_TIME results, in transformResults and in stored fields) are replaced by their type and precision; requestTimeRelations compares each with the response commitTime.",
       "\"<number -0>\" stands for a JSON number -0 (REST) or a double -0.0 (gRPC), \"<number NaN>\" and \"<number Infinity>\" for gRPC doubles; REST sends NaN and the infinities as the strings \"NaN\", \"Infinity\" and \"-Infinity\". Where a request holds -0.0, bodyText is the exact text sent.",
-      "size.*: the document size counts the name (each segment plus 1, plus 16), 32, and each field name plus 1 and its value (f0-errors.json confirmed the formula to the byte); 1,048,576 is the limit."
+      "size.*: the document size counts the name (each segment plus 1, plus 16), 32, and each field name plus 1 and its value (f0-errors.json confirmed the formula to the byte); 1,048,576 is the limit.",
+      "Edited by hand (F2 review fixes): legacy.same_field_twice is no longer marked replay: its answer depends on the document the cases before it left (legacy.base), which the setup section does not hold."
     ],
     "oracle": "production",
     "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
