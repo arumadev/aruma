@@ -1,6 +1,7 @@
 package core
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"math/rand/v2"
@@ -47,7 +48,7 @@ func queueAcquire(t *testing.T, tb *lockTable, lt *lockTxn, name string, mode lo
 	deadline := time.Now().Add(5 * time.Second)
 	for {
 		tb.mu.Lock()
-		queued := lt.waiting != nil || lt.done || lt.held[name] >= mode
+		queued := lt.waiting[name] != nil || lt.done || lt.held[name] >= mode
 		tb.mu.Unlock()
 		if queued {
 			return done
@@ -251,6 +252,125 @@ func TestCancelledWait(t *testing.T) {
 	}
 }
 
+// One transaction's parallel reads wait at once (Promise.all of two gets in the Node SDK). When
+// the waits time out, the transaction ends with both of its requests withdrawn: no lock is
+// granted to it later, and none is left held (F2 review B1).
+func TestConcurrentWaitsTimeOut(t *testing.T) {
+	tb, _ := newTable(t, TxnConfig{WaitTimeout: 100 * time.Millisecond})
+	h, l := tb.begin(0, false), tb.begin(0, false)
+	for _, n := range []string{"da", "db"} {
+		if err := tb.acquire(t.Context(), h, n, lockExclusive); err != nil {
+			t.Fatal(err)
+		}
+	}
+	a := queueAcquire(t, tb, l, "da", lockShared)
+	b := queueAcquire(t, tb, l, "db", lockShared)
+	for _, done := range []<-chan error{a, b} {
+		if err := outcome(t, done); !errors.Is(err, ErrContention) {
+			t.Fatalf("got %v", err)
+		}
+	}
+	tb.release(h)
+	tb.release(l)
+	if n, locks := tb.open(); n != 0 || locks != 0 {
+		t.Fatalf("%d transactions, %d locks left", n, locks)
+	}
+	w := tb.begin(0, true)
+	for _, n := range []string{"da", "db"} {
+		if err := tb.acquire(t.Context(), w, n, lockExclusive); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// A Rollback (release) or a commit's end that races reads still waiting withdraws every one of
+// them, and a cancelled read withdraws only its own request: the other still waits and is
+// granted.
+func TestEndWithdrawsEveryWait(t *testing.T) {
+	tb, _ := newTable(t, TxnConfig{})
+	h, l := tb.begin(0, false), tb.begin(0, false)
+	for _, n := range []string{"da", "db", "dc"} {
+		if err := tb.acquire(t.Context(), h, n, lockExclusive); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// A cancelled read of c leaves the wait for a.
+	a := queueAcquire(t, tb, l, "da", lockShared)
+	ctx, cancel := context.WithCancel(t.Context())
+	c := make(chan error, 1)
+	go func() { c <- tb.acquire(ctx, l, "dc", lockShared) }()
+	for {
+		tb.mu.Lock()
+		n := len(l.waiting)
+		tb.mu.Unlock()
+		if n == 2 {
+			break
+		}
+		time.Sleep(time.Millisecond)
+	}
+	cancel()
+	if err := outcome(t, c); !errors.Is(err, context.Canceled) {
+		t.Fatal(err)
+	}
+	b := queueAcquire(t, tb, l, "db", lockShared)
+	pending(t, a)
+	// The rollback while a and b wait.
+	tb.release(l)
+	for _, done := range []<-chan error{a, b} {
+		if err := outcome(t, done); !errors.Is(err, ErrTransactionExpired) {
+			t.Fatalf("got %v", err)
+		}
+	}
+	tb.release(h)
+	if n, locks := tb.open(); n != 0 || locks != 0 {
+		t.Fatalf("%d transactions, %d locks left", n, locks)
+	}
+
+	// The same with the holder ending first: the waits are granted, then the transaction ends.
+	h, l = tb.begin(0, false), tb.begin(0, false)
+	if err := tb.acquire(t.Context(), h, "da", lockExclusive); err != nil {
+		t.Fatal(err)
+	}
+	a = queueAcquire(t, tb, l, "da", lockShared)
+	a2 := queueAcquire(t, tb, l, "da", lockExclusive)
+	tb.release(h)
+	for _, done := range []<-chan error{a, a2} {
+		if err := outcome(t, done); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if m := l.held["da"]; m != lockExclusive {
+		t.Fatalf("holds %d", m)
+	}
+	tb.release(l)
+	if n, locks := tb.open(); n != 0 || locks != 0 {
+		t.Fatalf("%d transactions, %d locks left", n, locks)
+	}
+}
+
+// Two retries of one attempt keep its age: begin's order breaks the tie, so a crosswise pair of
+// them does not wait for each other until the timeout (F2 review m1).
+func TestSameAgeOrdered(t *testing.T) {
+	tb, stats := newTable(t, TxnConfig{WaitTimeout: 5 * time.Second})
+	first, second := tb.begin(7, false), tb.begin(7, false)
+	if err := tb.acquire(t.Context(), first, "da", lockExclusive); err != nil {
+		t.Fatal(err)
+	}
+	if err := tb.acquire(t.Context(), second, "db", lockExclusive); err != nil {
+		t.Fatal(err)
+	}
+	wait := queueAcquire(t, tb, second, "da", lockExclusive)
+	if err := tb.acquire(t.Context(), first, "db", lockExclusive); err != nil {
+		t.Fatalf("the first: %v", err)
+	}
+	if err := outcome(t, wait); !errors.Is(err, ErrWounded) {
+		t.Fatalf("the second: %v", err)
+	}
+	if stats.timeouts.Load() != 0 {
+		t.Fatal("a wait timed out")
+	}
+}
+
 // An older request wounds a younger one queued ahead of it that it conflicts with: otherwise
 // the older would wait for the younger, and a cycle could last until the wait timeout.
 func TestOlderWoundsYoungerQueuedAhead(t *testing.T) {
@@ -419,7 +539,7 @@ func lockInvariant(tb *lockTable) error {
 			}
 		}
 		for _, r := range ls.queue {
-			if r.txn.waiting != r {
+			if r.txn.waiting[name] != r || r.txn.done {
 				return errors.New(name + ": a queued request is not its transaction's wait")
 			}
 		}
@@ -464,18 +584,39 @@ func TestLockManagerRandomSchedules(t *testing.T) {
 					lt := tb.begin(age, false)
 					seen := map[int]int64{}
 					err := func() error {
-						for range 1 + rng.IntN(3) {
+						// Up to two goroutines of the transaction ask at once, as parallel
+						// reads of one transaction do.
+						var asks [2][]lockSpec
+						for range 1 + rng.IntN(4) {
 							n := rng.IntN(names)
 							mode := lockShared
 							if rng.IntN(3) == 0 {
 								mode = lockExclusive
 							}
-							if err := tb.acquire(ctx, lt, "d"+strconv.Itoa(n), mode); err != nil {
-								return err
-							}
-							if _, ok := seen[n]; !ok {
-								seen[n] = versions[n].Load()
-							}
+							g := rng.IntN(2)
+							asks[g] = append(asks[g], lockSpec{"d" + strconv.Itoa(n), mode})
+						}
+						var errs [2]error
+						var mu sync.Mutex
+						var g sync.WaitGroup
+						for i := range asks {
+							g.Go(func() {
+								for _, a := range asks[i] {
+									if errs[i] = tb.acquire(ctx, lt, a.name, a.mode); errs[i] != nil {
+										return
+									}
+									n, _ := strconv.Atoi(a.name[1:])
+									mu.Lock()
+									if _, ok := seen[n]; !ok {
+										seen[n] = versions[n].Load()
+									}
+									mu.Unlock()
+								}
+							})
+						}
+						g.Wait()
+						if err := cmp.Or(errs[0], errs[1]); err != nil {
+							return err
 						}
 						return tb.markCommitting(lt)
 					}()

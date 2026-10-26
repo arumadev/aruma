@@ -15,7 +15,9 @@ import (
 // Wound-wait, as production showed (f0-contention.json; .cache/briefs/research/f0-contention.md):
 //
 //   - a transaction's age is taken at its first lock request, not at Begin (s3b); a retry keeps
-//     the age of the attempt it retries (ADR-024 §6.2);
+//     the age of the attempt it retries (ADR-024 §6.2). Two transactions of one age (two retries
+//     of one attempt) are ordered by when they began (lockTxn.serial), so that the order is
+//     total;
 //   - an older requester wounds every younger transaction in its way that is not committing: one
 //     holding a conflicting lock, or queued ahead of it for one. The wounded one's locks go at
 //     once; its wait, or its next call, fails ABORTED with the wound text (s1, s3a);
@@ -24,6 +26,12 @@ import (
 //   - idleness ends nothing and wounds nothing: an idle holder keeps its locks until it ends or
 //     its lifetime does (s5: a commit after 70 s idle succeeds; f2-transactions.json lifetime
 //     idle_70s_then_plain_write: a writer waits 20 s for an idle holder, then the holder commits).
+//
+// A transaction may wait for several locks at once (parallel reads of one transaction). It has
+// at most one request in each queue: a second call for a lock it waits for joins that request,
+// raising its mode if need be, so that none of its calls waits behind another transaction that
+// waits for its own. When the transaction ends every request of it is withdrawn; a lock is never
+// granted to a transaction that has ended.
 //
 // Every edge of the wait-for graph so then runs from a younger transaction to an older one, or to
 // one that is committing and so waits for nothing: there is no cycle, and the wait timeout is a
@@ -72,8 +80,9 @@ const databaseLock = "*"
 // life, or a commit (without a transaction, or of an optimistic one) for the time of its locks.
 type lockTxn struct {
 	age        uint64 // wound-wait order, smaller is older; 0 until the first lock request
+	serial     uint64 // the order of begin, which orders two transactions of one age
 	held       map[string]lockMode
-	waiting    *lockRequest
+	waiting    map[string]*lockRequest // its request in each queue it is in, by lock name
 	committing bool // holds every lock its commit needs: never wounded, never waits again
 	done       bool
 	err        error     // why it ended, for its waiter and its next call
@@ -86,6 +95,7 @@ type lockRequest struct {
 	name    string
 	mode    lockMode // what the transaction will hold once granted
 	upgrade bool
+	waiters int // the calls waiting for it
 	granted chan struct{}
 	err     error // set when the transaction ended while waiting
 }
@@ -124,10 +134,11 @@ func (m *lockManager) table(db DB) *lockTable {
 
 // lockTable is one database's locks.
 type lockTable struct {
-	m     *lockManager
-	mu    sync.Mutex
-	locks map[string]*lockState
-	txns  map[*lockTxn]struct{} // every transaction not yet ended
+	m      *lockManager
+	mu     sync.Mutex
+	locks  map[string]*lockState
+	txns   map[*lockTxn]struct{} // every transaction not yet ended
+	serial uint64
 }
 
 // begin returns a new transaction of the table with age (0: taken at its first lock request).
@@ -136,7 +147,8 @@ type lockTable struct {
 func (t *lockTable) begin(age uint64, forCommit bool) *lockTxn {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	lt := &lockTxn{age: age, held: map[string]lockMode{}, bounded: !forCommit}
+	t.serial++
+	lt := &lockTxn{age: age, serial: t.serial, held: map[string]lockMode{}, waiting: map[string]*lockRequest{}, bounded: !forCommit}
 	t.txns[lt] = struct{}{}
 	return lt
 }
@@ -176,7 +188,7 @@ func (t *lockTable) acquireAll(ctx context.Context, lt *lockTxn, specs []lockSpe
 
 // acquire takes name in mode for lt, waiting in line. It fails with the reason lt ended: wounded
 // (ErrWounded), timed out (ErrContention: lt ends too) or over a limit. A cancelled ctx withdraws
-// the request and leaves lt open.
+// the request and leaves lt open. Several calls of one transaction may wait at once.
 func (t *lockTable) acquire(ctx context.Context, lt *lockTxn, name string, mode lockMode) error {
 	cfg := t.m.cfg
 	t.mu.Lock()
@@ -208,24 +220,35 @@ func (t *lockTable) acquire(ctx context.Context, lt *lockTxn, name string, mode 
 		ls = &lockState{holders: map[*lockTxn]lockMode{}}
 		t.locks[name] = ls
 	}
-	req := &lockRequest{txn: lt, name: name, mode: want, upgrade: have != 0, granted: make(chan struct{})}
-	if (req.upgrade || len(ls.queue) == 0) && grantable(ls, req) {
-		grant(ls, req)
-		t.mu.Unlock()
-		return nil
-	}
-	if req.upgrade {
-		i := slices.IndexFunc(ls.queue, func(r *lockRequest) bool { return !r.upgrade })
-		if i < 0 {
-			i = len(ls.queue)
+	req := lt.waiting[name]
+	switch {
+	case req != nil:
+		// Another call of lt waits for this lock: this one joins it.
+		req.waiters++
+		if m := join(req.mode, want); m != req.mode {
+			req.mode = m
+			t.woundLocked(ls)
 		}
-		ls.queue = slices.Insert(ls.queue, i, req)
-	} else {
-		ls.queue = append(ls.queue, req)
+	default:
+		req = &lockRequest{txn: lt, name: name, mode: want, upgrade: have != 0, waiters: 1, granted: make(chan struct{})}
+		if (req.upgrade || len(ls.queue) == 0) && grantable(ls, req) {
+			grant(ls, req)
+			t.mu.Unlock()
+			return nil
+		}
+		if req.upgrade {
+			i := slices.IndexFunc(ls.queue, func(r *lockRequest) bool { return !r.upgrade })
+			if i < 0 {
+				i = len(ls.queue)
+			}
+			ls.queue = slices.Insert(ls.queue, i, req)
+		} else {
+			ls.queue = append(ls.queue, req)
+		}
+		lt.waiting[name] = req
+		t.m.stats.waits.Add(1)
+		t.woundLocked(ls)
 	}
-	lt.waiting = req
-	t.m.stats.waits.Add(1)
-	t.woundLocked(ls)
 	t.mu.Unlock()
 
 	wait := cfg.WaitTimeout
@@ -243,17 +266,23 @@ func (t *lockTable) acquire(ctx context.Context, lt *lockTxn, name string, mode 
 	}
 	t.mu.Lock()
 	defer t.mu.Unlock()
+	req.waiters--
 	select {
 	case <-req.granted:
+		// Granted, or dropped with why its transaction ended. A request another call raised
+		// grants this one's mode too.
 		return req.err
 	default:
 	}
+	// Still queued: only a grant or the end of lt takes a request out of its queue.
 	if timedOut {
 		t.m.stats.timeouts.Add(1)
 		t.endLocked(lt, ErrContention)
 		return ErrContention
 	}
-	t.withdrawLocked(req)
+	if req.waiters == 0 {
+		t.withdrawLocked(req)
+	}
 	return ctx.Err()
 }
 
@@ -267,9 +296,12 @@ func grantable(ls *lockState, r *lockRequest) bool {
 	return true
 }
 
+// grant makes r's transaction a holder of r's lock, in the mode that also grants what it held
+// already (another request of it may have been granted the lock while r waited).
 func grant(ls *lockState, r *lockRequest) {
-	ls.holders[r.txn] = r.mode
-	r.txn.held[r.name] = r.mode
+	mode := join(r.txn.held[r.name], r.mode)
+	ls.holders[r.txn] = mode
+	r.txn.held[r.name] = mode
 }
 
 // woundLocked ends every transaction a waiter of ls may wound, until none is left.
@@ -309,7 +341,7 @@ func (t *lockTable) victimLocked(ls *lockState) *lockTxn {
 // waits out its 20 s and gets the contention text, and the holder then commits (f2-transactions.json
 // lifetime idle_70s_then_plain_write).
 func woundable(v, by *lockTxn) bool {
-	return !v.committing && !v.done && v.age > by.age
+	return !v.committing && !v.done && (v.age > by.age || v.age == by.age && v.serial > by.serial)
 }
 
 // markCommitting records that lt holds every lock its commit needs: from here it is never
@@ -340,9 +372,9 @@ func (t *lockTable) endLocked(lt *lockTxn, err error) {
 	}
 	lt.done, lt.err = true, err
 	delete(t.txns, lt)
-	if r := lt.waiting; r != nil {
-		r.err = err
+	for _, r := range lt.waiting {
 		t.withdrawLocked(r)
+		r.err = err
 		close(r.granted)
 	}
 	for name := range lt.held {
@@ -353,9 +385,9 @@ func (t *lockTable) endLocked(lt *lockTxn, err error) {
 	clear(lt.held)
 }
 
-// withdrawLocked takes a waiting request out of its queue.
+// withdrawLocked takes a waiting request out of its queue and out of its transaction's waits.
 func (t *lockTable) withdrawLocked(r *lockRequest) {
-	r.txn.waiting = nil
+	delete(r.txn.waiting, r.name)
 	ls := t.locks[r.name]
 	if i := slices.Index(ls.queue, r); i >= 0 {
 		ls.queue = slices.Delete(ls.queue, i, i+1)
@@ -363,12 +395,24 @@ func (t *lockTable) withdrawLocked(r *lockRequest) {
 	t.wakeLocked(r.name, ls)
 }
 
-// wakeLocked grants the head of the queue for as long as it is compatible.
+// wakeLocked grants the head of the queue for as long as it is compatible. A request of a
+// transaction that has ended is dropped, never granted: endLocked withdraws them all, so this
+// is a guard.
 func (t *lockTable) wakeLocked(name string, ls *lockState) {
-	for len(ls.queue) > 0 && grantable(ls, ls.queue[0]) {
+	for len(ls.queue) > 0 {
 		r := ls.queue[0]
+		if r.txn.done {
+			ls.queue = ls.queue[1:]
+			delete(r.txn.waiting, r.name)
+			r.err = r.txn.err
+			close(r.granted)
+			continue
+		}
+		if !grantable(ls, r) {
+			break
+		}
 		ls.queue = ls.queue[1:]
-		r.txn.waiting = nil
+		delete(r.txn.waiting, r.name)
 		grant(ls, r)
 		close(r.granted)
 	}
