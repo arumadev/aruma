@@ -138,7 +138,7 @@ func (s *Service) DeleteServiceAccount(ctx context.Context, p *authn.Principal, 
 	if err := requireAccount(p); err != nil {
 		return err
 	}
-	return internal(s.tx(ctx, func(q *queries.Queries, _ pgx.Tx) error {
+	err := s.tx(ctx, func(q *queries.Queries, _ pgx.Tx) error {
 		proj, sa, err := s.resolveServiceAccount(ctx, q, p, projectRef, id)
 		if err != nil {
 			return err
@@ -147,7 +147,12 @@ func (s *Service) DeleteServiceAccount(ctx context.Context, p *authn.Principal, 
 			return err
 		}
 		return s.audit(ctx, q, p, proj.ProjectNumber, "serviceaccount.delete", sa.Email, nil)
-	}))
+	})
+	if err != nil {
+		return internal(err)
+	}
+	s.revoked(func(r authn.CredentialRevocations) { r.ForgetServiceAccount(id) })
+	return nil
 }
 
 // ListServiceAccountKeys lists a service account's keys (public records only).
@@ -219,12 +224,13 @@ func (s *Service) CreateServiceAccountKey(ctx context.Context, p *authn.Principa
 	return out, internal(err)
 }
 
-// DeleteServiceAccountKey deletes a key; assertions signed with it stop working at once.
+// DeleteServiceAccountKey deletes a key; assertions signed with it stop working at once, the
+// tokens the Document Database cached among them (OnServiceAccountRevoked).
 func (s *Service) DeleteServiceAccountKey(ctx context.Context, p *authn.Principal, projectRef string, id uuid.UUID, keyID string) error {
 	if err := requireAccount(p); err != nil {
 		return err
 	}
-	return internal(s.tx(ctx, func(q *queries.Queries, _ pgx.Tx) error {
+	err := s.tx(ctx, func(q *queries.Queries, _ pgx.Tx) error {
 		proj, sa, err := s.resolveServiceAccount(ctx, q, p, projectRef, id)
 		if err != nil {
 			return err
@@ -237,7 +243,71 @@ func (s *Service) DeleteServiceAccountKey(ctx context.Context, p *authn.Principa
 			return errNotFound()
 		}
 		return s.audit(ctx, q, p, proj.ProjectNumber, "serviceaccount.key.delete", sa.Email, map[string]any{"keyId": keyID})
-	}))
+	})
+	if err != nil {
+		return internal(err)
+	}
+	s.revoked(func(r authn.CredentialRevocations) { r.ForgetKey(keyID) })
+	return nil
+}
+
+// OnServiceAccountRevoked registers r to hear, once each change has committed, of every service
+// account key deleted, service account deleted and project deleted, so caches of verified
+// service account tokens drop them at once (ADR-029 §3.8). internal/app wires the Document
+// Database's *authn.ServiceAccountJWTVerifier here, before the server runs.
+func (s *Service) OnServiceAccountRevoked(r authn.CredentialRevocations) {
+	s.revocations = append(s.revocations, r)
+}
+
+func (s *Service) revoked(tell func(authn.CredentialRevocations)) {
+	for _, r := range s.revocations {
+		tell(r)
+	}
+}
+
+var (
+	_ authn.ServiceAccountDirectory = (*Service)(nil)
+	_ authn.ProjectOwners           = (*Service)(nil)
+)
+
+// LookupServiceAccount implements authn.ServiceAccountDirectory: the account a self-signed JWT
+// names by its iss, with its active keys, as ExchangeAssertion finds them. An unknown email,
+// or an account without an active key, is a record without keys.
+func (s *Service) LookupServiceAccount(ctx context.Context, email string) (authn.ServiceAccountRecord, error) {
+	keys, err := s.q.ListActiveKeysByEmail(ctx, email)
+	if err != nil || len(keys) == 0 {
+		return authn.ServiceAccountRecord{}, internal(err)
+	}
+	sa, err := s.q.GetServiceAccountByEmail(ctx, email)
+	if err != nil {
+		if notFound(err) {
+			return authn.ServiceAccountRecord{}, nil
+		}
+		return authn.ServiceAccountRecord{}, internal(err)
+	}
+	out := authn.ServiceAccountRecord{
+		ID: sa.ID, Email: sa.Email, ProjectNumber: sa.ProjectNumber,
+		Usable: !sa.Disabled && sa.ProjectState == "ACTIVE",
+		Keys:   make([]authn.ServiceAccountPublicKey, 0, len(keys)),
+	}
+	for _, k := range keys {
+		out.Keys = append(out.Keys, authn.ServiceAccountPublicKey{KeyID: k.KeyID, CertificatePEM: k.CertificatePem})
+	}
+	return out, nil
+}
+
+// OwnsProject implements authn.ProjectOwners: whether account owns the project, and it is
+// ACTIVE. The Document Database admits an aruma_pat_ caller on its owner's projects alone
+// (ADR-029 §2).
+func (s *Service) OwnsProject(ctx context.Context, account uuid.UUID, project int64) (bool, error) {
+	proj, err := s.q.GetOwnedProject(ctx, queries.GetOwnedProjectParams{OwnerAccountID: account, Ref: formatNumber(project)})
+	if err != nil {
+		if notFound(err) {
+			return false, nil
+		}
+		return false, internal(err)
+	}
+	return proj.State == "ACTIVE", nil
 }
 
 // PublicCertificates returns a service account's active certificates by key id, served at the

@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/arumadev/aruma/internal/platform/apierr"
+	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/platform/crypto"
 	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/tenancy/queries"
@@ -53,6 +54,9 @@ type Service struct {
 	// purgeHooks remove the data services' data of a purged project (OnProjectPurged). Set
 	// while wiring, before the server runs.
 	purgeHooks []func(ctx context.Context, project int64) error
+	// revocations hear of the service account credentials that stop being valid
+	// (OnServiceAccountRevoked). Set while wiring, before the server runs.
+	revocations []authn.CredentialRevocations
 
 	// compiled caches the compiled rulesets of the releases (rules.go), made on first use.
 	compiledOnce sync.Once

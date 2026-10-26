@@ -199,9 +199,13 @@ func (s *Service) verifyServiceToken(ctx context.Context, token string) (*authn.
 	if row.AccountDisabled || row.ProjectState != "ACTIVE" {
 		return nil, errInvalidCredential
 	}
+	// Scopes are those the assertion asked for, registered with the token by ExchangeAssertion.
+	// The Document Database requires datastore or cloud-platform among them, as it does of a
+	// JWT's scope claim (ADR-029 §2, §3.4); no other surface reads them.
 	return &authn.Principal{
 		Kind: authn.KindServiceAccount, Method: authn.MethodServiceToken,
 		ServiceAccountID: row.PrincipalID, ProjectNumber: row.ProjectNumber, Email: row.Email, ExpiresAt: row.ExpiresAt,
+		Scopes: row.Scopes,
 	}, nil
 }
 
