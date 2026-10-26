@@ -85,8 +85,10 @@ func (s *Service) BatchGetDocuments(ctx context.Context, c Call, req *pb.BatchGe
 		return err
 	}
 	if nt, ok := req.GetConsistencySelector().(*pb.BatchGetDocumentsRequest_NewTransaction); ok {
-		id, end, err := s.newTransaction(ctx, a, nt.NewTransaction)
-		if err != nil {
+		// err is the method's own: the deferred calls below see what it returns.
+		var id []byte
+		var end func(error)
+		if id, end, err = s.newTransaction(ctx, a, nt.NewTransaction); err != nil {
 			return err
 		}
 		defer func() { end(err) }()

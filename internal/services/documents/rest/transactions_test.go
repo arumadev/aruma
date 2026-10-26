@@ -1,6 +1,7 @@
 package rest_test
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"maps"
@@ -246,6 +247,36 @@ func replayContention(t *testing.T, h *harness, tok string, c contentionCase) {
 		if code != want.HTTP || got.Fields.Writer.StringValue != want.Writer || step != wantStep {
 			t.Errorf("final %s: %d writer %q step %q, want %d %q %q", key, code, got.Fields.Writer.StringValue, step, want.HTTP, want.Writer, wantStep)
 		}
+	}
+}
+
+// failingStore fails every read in a transaction of the documents under "fail".
+type failingStore struct{ documents.Store }
+
+func (s failingStore) BatchGet(ctx context.Context, db documents.DB, paths []documents.Path, o documents.ReadOptions) ([]documents.Document, time.Time, error) {
+	if o.Transaction != nil && len(paths) > 0 && paths[0][0] == "fail" {
+		return nil, time.Time{}, documents.ErrWounded
+	}
+	return s.Store.BatchGet(ctx, db, paths, o)
+}
+
+// A read with new_transaction that fails answers the error alone, and its transaction is rolled
+// back: the client never learns of it, so it must hold no lock.
+func TestNewTransactionReadFails(t *testing.T) {
+	h := newHarness(t, apitest.Options{Store: func(s documents.Store) documents.Store { return failingStore{s} }})
+	tok := h.env.JWT(t)
+	code, _, body := h.do(t, http.MethodPost, "/v1/"+root+":batchGet",
+		`{"documents":["`+root+`/fail/d"],"newTransaction":{"readWrite":{}}}`, tok)
+	want := `[{"error":{"code":409,"message":"` + documents.ErrWounded.Message + `","status":"ABORTED"}}]`
+	if code != http.StatusConflict || string(body) != want {
+		t.Errorf("got %d %s\nwant 409 %s", code, body, want)
+	}
+	// The transaction it began holds no lock: a write of the document does not wait.
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	if _, err := h.env.Store.Commit(ctx, documents.DB{Project: h.env.Number, ProjectID: apitest.Project, ID: "(default)"},
+		[]documents.Write{{Kind: documents.WriteDelete, Path: documents.Path{"fail", "d"}}}); err != nil {
+		t.Errorf("a write after the failed read: %v", err)
 	}
 }
 
