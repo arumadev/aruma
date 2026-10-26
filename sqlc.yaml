@@ -129,3 +129,27 @@ sql:
               pointer: true
           - db_type: jsonb
             go_type: encoding/json.RawMessage
+  - engine: postgresql
+    schema:
+      - internal/store/migrations/documents
+    queries: internal/services/documents/queries
+    gen:
+      go:
+        package: queries
+        out: internal/services/documents/queries
+        sql_package: pgx/v5
+        emit_empty_slices: true
+        emit_pointers_for_null_types: true
+        output_db_file_name: db.gen.go
+        output_models_file_name: models.gen.go
+        output_files_suffix: .gen
+        overrides:
+          - db_type: uuid
+            go_type: github.com/google/uuid.UUID
+          - db_type: timestamptz
+            go_type: time.Time
+          - db_type: timestamptz
+            nullable: true
+            go_type:
+              type: time.Time
+              pointer: true

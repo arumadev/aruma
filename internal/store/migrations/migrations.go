@@ -5,8 +5,8 @@ import "embed"
 
 // FS holds every schema's migrations.
 //
-//go:embed control/*.sql events/*.sql auth/*.sql rtdb/*.sql storage/*.sql
+//go:embed control/*.sql events/*.sql auth/*.sql rtdb/*.sql storage/*.sql documents/*.sql
 var FS embed.FS
 
 // Schemas lists the schemas in the order they are migrated.
-var Schemas = []string{"control", "events", "auth", "rtdb", "storage"}
+var Schemas = []string{"control", "events", "auth", "rtdb", "storage", "documents"}
