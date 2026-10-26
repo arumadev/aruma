@@ -10,7 +10,12 @@ name: documents-spike
 #             with a fake service account, under test/ci/egress-guard.sh.
 #   android   firebase-firestore on an emulator (devices.yml's setup), device network guard.
 #   ios       FirebaseFirestore on a simulator (ios-storage.yml's setup), socket guard.
+# The workflow lives on the spike's branch alone, and GitHub dispatches only workflows it knows from
+# the default branch or an earlier run: a push to that branch runs everything once and registers it,
+# then `gh workflow run documents-spike.yml --ref spike/documents-transport -f jobs=…` picks jobs.
 on:
+  push:
+    branches: [spike/documents-transport]
   workflow_dispatch:
     inputs:
       jobs:
@@ -27,7 +32,7 @@ concurrency:
 jobs:
   clients:
     name: Go and Node clients (h2c, TLS, fake service account, egress guard)
-    if: inputs.jobs == 'all' || contains(inputs.jobs, 'clients')
+    if: github.event_name == 'push' || inputs.jobs == 'all' || contains(inputs.jobs, 'clients')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -71,7 +76,7 @@ jobs:
 
   android:
     name: Android firebase-firestore (emulator, h2c and TLS, device guard)
-    if: inputs.jobs == 'all' || contains(inputs.jobs, 'android')
+    if: github.event_name == 'push' || inputs.jobs == 'all' || contains(inputs.jobs, 'android')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -121,7 +126,7 @@ jobs:
 
   ios:
     name: iOS FirebaseFirestore (simulator, h2c and TLS, socket guard)
-    if: inputs.jobs == 'all' || contains(inputs.jobs, 'ios')
+    if: github.event_name == 'push' || inputs.jobs == 'all' || contains(inputs.jobs, 'ios')
     runs-on: macos-15
     timeout-minutes: 60
     env:
