@@ -104,17 +104,6 @@ type corpusFile struct {
 // notReplayed are the recorded REST cases whose answer this phase does not reproduce, each with
 // its reason. A case listed here that does reproduce fails the test, so the list stays true.
 var notReplayed = map[string]string{
-	// ListDocuments ordered by a field: the query engine is F3's (UNIMPLEMENTED until then).
-	"f1-list-documents.json rest.order_by.06": "F3 query", "f1-list-documents.json rest.order_by.07": "F3 query",
-	"f1-list-documents.json rest.order_by.08": "F3 query", "f1-list-documents.json rest.order_by.09": "F3 query",
-	"f1-list-documents.json rest.order_by.10": "F3 query", "f1-list-documents.json rest.order_by.13": "F3 query",
-	"f1-list-documents.json rest.order_by.14": "F3 query", "f1-list-documents.json rest.order_by.16": "F3 query",
-	"f1-list-documents.json rest.order_by.17": "F3 query", "f1-list-documents.json rest.order_by.29": "F3 query",
-	"f1-list-documents.json rest.paging_order_by_n_desc.page1": "F3 query",
-	// __name__ descending, or a field then __name__ against its direction: F3's needs-index error.
-	"f1-list-documents.json rest.order_by.03": "F3 needs-index error", "f1-list-documents.json rest.order_by.04": "F3 needs-index error",
-	"f1-list-documents.json rest.order_by.11": "F3 needs-index error", "f1-list-documents.json rest.order_by.12": "F3 needs-index error",
-	"f1-list-documents.json rest.order_by.15": "F3 needs-index error",
 	// The documents these delete or read were written by :commit calls of the recorder that are
 	// not cases (Commit is F2's).
 	"f1-delete.json rest.exists_false_on_existing": "state from an unrecorded commit",

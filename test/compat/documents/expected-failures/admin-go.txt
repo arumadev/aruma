@@ -12,7 +12,3 @@ TestSDKWrites/update_with_preconditions :: Unimplemented
 TestSDKWrites/delete_with_preconditions :: Unimplemented
 TestSDKWrites/batch :: Unimplemented
 TestSDKWrites/every_type :: Unimplemented
-
-# ListDocuments ordered by a field: production serves it (f1-list-documents.json, orderBy="n"),
-# the F1 server refuses it with UNIMPLEMENTED.
-TestRawListDocuments/ordered_by_a_field :: ListDocuments with an order_by other than __name__ ascending is not supported

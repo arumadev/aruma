@@ -24,6 +24,9 @@ type pageToken struct {
 	Listing []byte `json:"l,omitempty"`
 	// After is the last document of the page (its path), or the last collection id.
 	After []string `json:"a"`
+	// Values are, on a ListDocuments ordered by fields, the last document's values of them
+	// (base64 of the binary google.firestore.v1.Value), where the next page resumes.
+	Values []string `json:"v,omitempty"`
 }
 
 var (

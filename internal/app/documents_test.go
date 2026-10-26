@@ -77,8 +77,8 @@ func TestDocumentsWiring(t *testing.T) {
 		_, err := client.GetDocument(t.Context(), r)
 		return err
 	}
-	if err := get(); connect.CodeOf(err) != connect.CodeUnavailable {
-		t.Errorf("before Boot: %v", err)
+	if ce, ok := get().(*connect.Error); !ok || ce.Code() != connect.CodeUnavailable || !strings.Contains(ce.Message(), "did not call Boot") {
+		t.Errorf("before Boot: %v", ce)
 	}
 
 	if err := a.Documents.Boot(t.Context(), documents.InstanceOptions{}); err != nil {

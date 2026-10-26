@@ -254,8 +254,35 @@ func TestF1Methods(t *testing.T) {
 	if want := []string{"d1", "d2", "d3", "d4", "d5"}; !slices.Equal(listed, want) {
 		t.Errorf("grpc.paging: %q, want %q", listed, want)
 	}
+	// Ordered by a field (rest.paging_order_by_n_desc): ties broken by name in the order's
+	// direction, the documents without the field left out, pages resumed by value and name.
+	if _, err := c.UpdateDocument(ctx, req(&pb.UpdateDocumentRequest{Document: &pb.Document{Name: root + "/l/d3", Fields: intField(0)}}, tok)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.UpdateDocument(ctx, req(&pb.UpdateDocumentRequest{Document: &pb.Document{Name: root + "/l/d6",
+		Fields: map[string]*pb.Value{"s": {ValueType: &pb.Value_StringValue{StringValue: "no a"}}}}}, tok)); err != nil {
+		t.Fatal(err)
+	}
+	listed, token = nil, ""
+	for page := 0; ; page++ {
+		res, err := c.ListDocuments(ctx, req(&pb.ListDocumentsRequest{Parent: root, CollectionId: "l", OrderBy: "a desc", PageSize: 2, PageToken: token}, tok))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, d := range res.Msg.Documents {
+			listed = append(listed, strings.TrimPrefix(d.Name, root+"/l/"))
+		}
+		if token = res.Msg.NextPageToken; token == "" || page > 5 {
+			break
+		}
+	}
+	if want := []string{"d5", "d4", "d2", "d1", "d3"}; !slices.Equal(listed, want) {
+		t.Errorf("ordered paging: %q, want %q", listed, want)
+	}
+	_, err = c.ListDocuments(ctx, req(&pb.ListDocumentsRequest{Parent: root, CollectionId: "l", OrderBy: "a", PageSize: 2, PageToken: firstPageToken(t, c, tok)}, tok))
+	wantErr(t, "rest.token.other_order_by", err, connect.CodeInvalidArgument, "Invalid page token.")
 	missing, err := c.ListDocuments(ctx, req(&pb.ListDocumentsRequest{Parent: root, CollectionId: "l", ShowMissing: true}, tok))
-	if err != nil || len(missing.Msg.Documents) != 6 || missing.Msg.Documents[5].Name != root+"/l/m" || missing.Msg.Documents[5].UpdateTime != nil {
+	if err != nil || len(missing.Msg.Documents) != 7 || missing.Msg.Documents[6].Name != root+"/l/m" || missing.Msg.Documents[6].UpdateTime != nil {
 		t.Errorf("rest.show_missing: %v %v", missing, err)
 	}
 	sub, err := c.ListDocuments(ctx, req(&pb.ListDocumentsRequest{Parent: root + "/l/m"}, tok))
@@ -591,4 +618,14 @@ func TestServerStreamMax(t *testing.T) {
 		err = s.Err()
 	}
 	wantErr(t, "server_stream_max", err, connect.CodeDeadlineExceeded, "Deadline expired before operation could complete.")
+}
+
+// firstPageToken is the token of the first page of collection l by name, two to a page.
+func firstPageToken(t *testing.T, c firestorepbconnect.FirestoreClient, tok string) string {
+	t.Helper()
+	res, err := c.ListDocuments(t.Context(), req(&pb.ListDocumentsRequest{Parent: root, CollectionId: "l", PageSize: 2}, tok))
+	if err != nil || res.Msg.NextPageToken == "" {
+		t.Fatalf("first page: %v %v", res, err)
+	}
+	return res.Msg.NextPageToken
 }

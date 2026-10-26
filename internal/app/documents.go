@@ -20,9 +20,13 @@ import (
 	"github.com/arumadev/aruma/internal/tenancy/core"
 )
 
-// Documents is the Document Database as app wires it (ADR-024 to ADR-029). Its store opens in
-// Boot, once the single-instance lock is taken or given up on; until then every call answers
-// that the Document Database is not served here.
+// Documents is the Document Database as app wires it (ADR-024 to ADR-029).
+//
+// Its store opens in Boot, which Serve calls before the listener opens. A caller that serves
+// App.Server's handler itself, without Serve (a test, a harness), must call Boot first, and
+// Close when done: until Boot, every Document Database call answers UNAVAILABLE with
+// errNotBooted's text. Boot is not run from the request path, since it may wait 30 seconds for
+// the single-instance lock.
 type Documents struct {
 	GRPC  *docgrpc.Handler
 	REST  *docrest.Handler
@@ -131,8 +135,12 @@ func ensureDatabases(ctx context.Context, pool *pgxpool.Pool, store *documents.P
 	return nil
 }
 
+// errNotBooted answers every call before Boot. Our text.
+var errNotBooted = &documents.Error{Code: documents.Unavailable,
+	Message: "The Document Database has not started on this server: the process serving it did not call Boot."}
+
 // bootStore is the Document Database's store once Boot opened it; before, every call is
-// core.ErrNotServing, as when another instance holds the lock.
+// errNotBooted.
 type bootStore struct {
 	s atomic.Pointer[documents.PGStore]
 }
@@ -144,7 +152,7 @@ func (b *bootStore) set(s *documents.PGStore) { b.s.Store(s) }
 func (b *bootStore) get() (*documents.PGStore, error) {
 	s := b.s.Load()
 	if s == nil {
-		return nil, documents.ErrNotServing
+		return nil, errNotBooted
 	}
 	return s, nil
 }

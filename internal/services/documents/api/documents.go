@@ -145,10 +145,6 @@ func (s *Service) ListDocuments(ctx context.Context, c Call, req *pb.ListDocumen
 		return nil, wire.InvalidArgument("cannot specify an order when show_missing is true")
 	case req.GetCollectionId() == "" && !order.byName():
 		return nil, wire.InvalidArgument("kind is required for all orders except __key__ ascending")
-	case !order.byName():
-		// An order on a field, or __name__ descending (which needs a composite index), is a
-		// query: the query engine and index enforcement come in F3.
-		return nil, wire.Unimplemented("ListDocuments with an order_by other than __name__ ascending")
 	}
 	mask, masked, err := maskPaths(req.GetMask())
 	if err != nil {
@@ -167,12 +163,15 @@ func (s *Service) ListDocuments(ctx context.Context, c Call, req *pb.ListDocumen
 		ShowMissing:  req.GetShowMissing(),
 		ReadOptions:  ro,
 	}
+	if !order.byName() {
+		return s.listOrdered(ctx, a, lr, req, order, listing, mask, masked)
+	}
 	if tok := req.GetPageToken(); tok != "" {
 		t, err := decodeToken(tok)
 		if err != nil {
 			return nil, err
 		}
-		if string(t.Listing) != string(listing) {
+		if string(t.Listing) != string(listing) || t.Values != nil {
 			return nil, errForeignToken
 		}
 		lr.After = core.Path(t.After)
