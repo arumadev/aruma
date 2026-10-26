@@ -37,6 +37,28 @@ type Store interface {
 	Commit(ctx context.Context, db DB, writes []Write) (CommitResult, error)
 }
 
+// Transactions is the transactions' part of the store (ADR-025 §7; txn.go). Reads in a
+// transaction are Store's, with ReadOptions.Transaction. PGStore implements it; the handlers'
+// wave folds it into Store.
+//
+// A new_transaction on a read (BatchGetDocuments, RunQuery) is BeginTransaction, then the read
+// with the id, and Rollback if the read fails; the id goes in the first response.
+type Transactions interface {
+	// BeginTransaction begins a transaction for by and returns its id. A read-write one is
+	// pessimistic for an admin, unless it asks for ConcurrencyOptimistic, and optimistic for
+	// anyone else, who must ask for it (ErrOptimisticRequired). A read-only one's ReadTime is
+	// checked as a read's. Over the open transactions' bound it is ABORTED.
+	BeginTransaction(ctx context.Context, db DB, by Principal, o TransactionOptions) ([]byte, error)
+	// CommitTransaction applies writes as Commit does, in the transaction, which it ends
+	// whatever the outcome. A pessimistic one waits for its exclusive locks; an optimistic one
+	// is ABORTED (ErrReadsChanged) if anything it read changed. A read-only one takes no writes
+	// (ErrReadOnlyWrite).
+	CommitTransaction(ctx context.Context, db DB, t TransactionRef, writes []Write) (CommitResult, error)
+	// Rollback ends a transaction and frees its locks. It accepts a transaction that is over
+	// or unknown here (Node sends it without care, ADR-025 §7.5), not a forged id.
+	Rollback(ctx context.Context, db DB, t TransactionRef) error
+}
+
 // DefaultDatabase is the database every project has, and the only one in v0.4.0.
 const DefaultDatabase = "(default)"
 
@@ -101,6 +123,14 @@ type ReadOptions struct {
 	// FailedPrecondition for too old). Zero reads the latest commit, whose commit_time is the
 	// read_time returned.
 	ReadTime time.Time
+	// Transaction reads in a transaction (Transactions), with ReadTime zero: a read-only one's
+	// snapshot; the latest commit, under shared locks, for a pessimistic one; the latest commit,
+	// recorded for its commit to check, for an optimistic one. Get, BatchGet and ListDocuments
+	// take it; ListCollectionIDs does not. An id that is not authentic for the database and
+	// principal is ErrInvalidTransaction; one of a transaction that is over is
+	// ErrTransactionExpired, or, for the call that meets it first, why it ended (ErrWounded,
+	// ErrContention).
+	Transaction *TransactionRef
 }
 
 // ListRequest is a ListDocuments call.

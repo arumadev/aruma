@@ -15,11 +15,13 @@ import (
 
 // The commit path (ADR-024 §2.1), for every commit of a database:
 //
-//  1. (F2) the lock manager's locks on the written documents;
+//  1. the lock manager's locks on the written documents, and a transaction's checks of what it
+//     read (lockCommit);
 //  2. the database's commit gate, then a pooled connection;
 //  3. the first batch: BEGIN READ COMMITTED, the transaction's timeouts, the written documents'
 //     rows FOR UPDATE in name-key order, and the catalog version and last commit_time;
-//  4. in Go: the preconditions and the documents after the writes (plan.apply);
+//  4. in Go: a transaction's documents as it read them (plan.verify), the preconditions and the
+//     documents after the writes (plan.apply);
 //  5. the second batch, one round trip: (F2) the index entries, then the stamp statement, which
 //     takes the sequencer row, then COMMIT;
 //  6. after COMMIT returned, and only then, the hub is told (Notifier.Committed).
@@ -187,6 +189,12 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 		return CommitResult{}, errNoDatabase
 	}
 
+	if p.verify != nil {
+		if err := p.verify(locked); err != nil {
+			rollback(conn)
+			return CommitResult{}, err
+		}
+	}
 	if err := p.apply(db, locked); err != nil {
 		rollback(conn)
 		return CommitResult{}, err

@@ -52,6 +52,9 @@ type plan struct {
 	writes []Write
 	docs   []*docChange // by stored name key
 	of     []*docChange // per write
+	// verify, when set, checks the documents as the first batch locked them (by stored key)
+	// before the writes apply: what a transaction read (ADR-024 §6.4).
+	verify func(locked map[string]*lockedDoc) error
 }
 
 func newPlan(writes []Write) *plan {
