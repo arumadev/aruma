@@ -83,7 +83,7 @@ type lockTxn struct {
 	serial     uint64 // the order of begin, which orders two transactions of one age
 	held       map[string]lockMode
 	waiting    map[string]*lockRequest // its request in each queue it is in, by lock name
-	committing bool // holds every lock its commit needs: never wounded, never waits again
+	committing bool                    // holds every lock its commit needs: never wounded, never waits again
 	done       bool
 	err        error     // why it ended, for its waiter and its next call
 	bounded    bool      // holds at most MaxLocks locks
