@@ -15,11 +15,13 @@ import (
 
 // The commit path (ADR-024 §2.1), for every commit of a database:
 //
-//  1. (F2) the lock manager's locks on the written documents;
+//  1. the lock manager's locks on the written documents, and a transaction's checks of what it
+//     read (lockCommit);
 //  2. the database's commit gate, then a pooled connection;
 //  3. the first batch: BEGIN READ COMMITTED, the transaction's timeouts, the written documents'
 //     rows FOR UPDATE in name-key order, and the catalog version and last commit_time;
-//  4. in Go: the preconditions and the documents after the writes (plan.apply);
+//  4. in Go: a transaction's documents as it read them (plan.verify), the preconditions and the
+//     documents after the writes (plan.apply);
 //  5. the second batch, one round trip: (F3) the index entries, then the stamp, which takes the
 //     sequencer row, the documents and changelog (WriteCommit), then COMMIT. A commit with a
 //     REQUEST_TIME transform sends the stamp alone, builds its documents with the commit_time
@@ -190,6 +192,12 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 		return CommitResult{}, errNoDatabase
 	}
 
+	if p.verify != nil {
+		if err := p.verify(locked); err != nil {
+			rollback(conn)
+			return CommitResult{}, err
+		}
+	}
 	// The documents after the writes. A plan with REQUEST_TIME is folded here with the last
 	// commit's time, for its errors and to know what it changes; its documents are built again
 	// once the commit is stamped.

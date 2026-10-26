@@ -61,6 +61,9 @@ type plan struct {
 	serverTime bool
 	// transformed holds each write's transform results, as the last apply made them.
 	transformed [][]value.Value
+	// verify, when set, checks the documents as the first batch locked them (by stored key)
+	// before the writes apply: what a transaction read (ADR-024 §6.4).
+	verify func(locked map[string]*lockedDoc) error
 }
 
 func newPlan(writes []Write) *plan {
