@@ -794,6 +794,10 @@ func (s *PGStore) TransactionStats() TxnStats {
 	}
 }
 
+// OpenLocks reports a database's transactions that the lock manager has not seen end, and its
+// locks held or asked for: both are zero once every transaction ended, which tests check.
+func (s *PGStore) OpenLocks(db DB) (txns, locks int) { return s.txns.locks.table(db).open() }
+
 // DropTransactions ends every transaction and makes every id issued so far unknown: the service
 // calls it when this process loses the single-instance lock (InstanceOptions.OnLost).
 func (s *PGStore) DropTransactions() { s.txns.drop() }

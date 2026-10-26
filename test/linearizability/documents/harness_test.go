@@ -102,6 +102,10 @@ func runRound(t *testing.T, store *core.PGStore, round int, seed uint64, d time.
 	ops := h.ops
 	t.Logf("round %d: %d operations recorded: %s; %+v", round, len(ops), h.counts(), store.TransactionStats())
 
+	// Every transaction ended: none may hold a lock or wait for one (F2 review B1).
+	if txns, locks := store.OpenLocks(testDB); txns != 0 || locks != 0 {
+		t.Errorf("round %d: %d lock manager transactions and %d locks left", round, txns, locks)
+	}
 	checkCommitOrder(t, ops)
 	checkRealTime(t, ops)
 	checkUpdateTimes(t, ops)
@@ -502,9 +506,14 @@ func (c *client) transaction(by core.Principal, mode core.Concurrency, name stri
 	}
 	keys := c.keys(1 + c.rng.IntN(2))
 	var reads []observation
-	if len(keys) == 2 && c.rng.IntN(2) == 0 {
+	switch n := c.rng.IntN(3); {
+	case len(keys) == 2 && n == 0:
 		reads, _, err = c.get(ctx, keys, core.ReadOptions{Transaction: &ref})
-	} else {
+	case len(keys) == 2 && n == 1:
+		// Both reads at once, as Promise.all of two gets: the first to fail rolls the
+		// transaction back while the other may still wait for its lock.
+		reads, err = c.getParallel(ctx, keys, ref, rollback)
+	default:
 		for _, k := range keys {
 			var r []observation
 			if r, _, err = c.get(ctx, []int{k}, core.ReadOptions{Transaction: &ref}); err != nil {
@@ -547,6 +556,34 @@ func (c *client) transaction(by core.Principal, mode core.Concurrency, name stri
 	res, err := c.h.s.CommitTransaction(ctx, testDB, ref, c.coreWrites(writes))
 	ret := c.h.now()
 	c.commitDone(ctx, in, reads, res, err, call, ret)
+}
+
+// getParallel reads each key in a goroutine of its own, in the transaction ref. The first read
+// that fails runs onFail at once, with the others still running.
+func (c *client) getParallel(ctx context.Context, keys []int, ref core.TransactionRef, onFail func()) ([]observation, error) {
+	docs := make([]core.Document, len(keys))
+	errs := make(chan error, len(keys))
+	for i, k := range keys {
+		go func() {
+			d, _, err := c.h.s.Get(ctx, testDB, c.path(k), core.ReadOptions{Transaction: &ref})
+			if e, ok := errors.AsType[*core.Error](err); ok && e.Code == core.NotFound {
+				d, err = core.Document{Path: c.path(k)}, nil
+			}
+			docs[i] = d
+			errs <- err
+		}()
+	}
+	var first error
+	for range keys {
+		if err := <-errs; err != nil && first == nil {
+			first = err
+			onFail()
+		}
+	}
+	if first != nil {
+		return nil, first
+	}
+	return c.observe(keys, docs), nil
 }
 
 // snapshot is a read-only transaction: two reads, a pause apart, which must answer at one
