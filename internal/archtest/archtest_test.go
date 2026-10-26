@@ -35,6 +35,14 @@ var allowed = map[string][]string{
 	// object name or header reaches the disk except through core (ADR-022 §1).
 	"internal/services/storage/blob": {},
 	"internal/services/storage/wire": {},
+	// The Document Database's values, their order, sort keys and limits stand alone: no
+	// protobuf, no store, nothing of the service (plan v0.4 §8).
+	"internal/services/documents/value": {},
+	// Its index catalogue and composite-index rule are pure logic too: no value, no protobuf, no
+	// storage (index/doc.go). Its protocheck test alone compares the hand-encoded console payload
+	// with the generated admin proto.
+	"internal/services/documents/index":            {},
+	"internal/services/documents/index/protocheck": {"internal/services/documents/index", "internal/services/documents/wire/pb"},
 	// The Document Database's generated protobuf code (make proto, ADR-027) imports nothing internal.
 	"internal/services/documents/wire/pb": {},
 	// The Firestore and Storage rules language imports nothing internal: the services feed it
@@ -285,6 +293,15 @@ func TestRulesThemselves(t *testing.T) {
 		{"internal/admin/mgmt", "internal/services/storage/core", false},
 		{"internal/config", "internal/services/storage/core", false},
 		{"internal/app", "internal/services/storage/core", true},
+		// The Document Database's value package imports nothing of the service or the platform.
+		{"internal/services/documents/value", "internal/services/documents/core", false},
+		{"internal/services/documents/value", "internal/platform/log", false},
+		{"internal/services/documents/core", "internal/services/documents/value", true},
+		{"internal/services/documents/index", "internal/services/documents/value", false},
+		{"internal/services/documents/index", "internal/services/documents/wire/pb/adminpb", false},
+		{"internal/services/documents/index", "internal/platform/log", false},
+		{"internal/services/documents/index/protocheck", "internal/services/documents/wire/pb/adminpb", true},
+		{"internal/services/documents/core", "internal/services/documents/index", true},
 		// Auth's console keeps building on its API.
 		{"internal/services/auth/console", "internal/services/auth/api", true},
 		// The published Go libraries stand alone.
@@ -318,7 +335,8 @@ func TestRulesThemselves(t *testing.T) {
 //   - the external tests of the rules package (package rules_test: the oracle, grammar and fuzz
 //     tests, which use the public contract alone) import the package and rulestest;
 //   - wire's external tests (package wire_test) import wire and wiretest, the checks the surfaces'
-//     tests run on what they send; wire itself and its own tests never import wiretest.
+//     tests run on what they send; wire itself and its own tests never import wiretest;
+//   - the Document Database index package's external tests (package index_test) import it.
 var stdlibOnly = map[string]struct{ files, externalTests []string }{
 	"internal/platform/rules":           {externalTests: []string{"internal/platform/rules", "internal/platform/rules/rulestest"}},
 	"internal/platform/rules/rulestest": {files: []string{"internal/platform/rules"}},
@@ -327,6 +345,8 @@ var stdlibOnly = map[string]struct{ files, externalTests []string }{
 		"internal/services/storage/wire/wiretest"}},
 	"internal/services/storage/wire/wiretest": {},
 	"internal/platform/disposition":           {},
+	"internal/services/documents/value":       {},
+	"internal/services/documents/index":       {externalTests: []string{"internal/services/documents/index"}},
 }
 
 func TestStandardLibraryOnly(t *testing.T) {
