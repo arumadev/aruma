@@ -4,11 +4,4 @@
 # failure must contain. A listed test that passes, fails for another reason, or no longer exists
 # fails the suite: remove the line when the gap closes.
 #
-# F1 serves Get, BatchGet, List, Create, Update, Delete and ListCollectionIds. Every write of
-# cloud.google.com/go/firestore is a Commit, which comes in F2.
-TestSDKWrites/create :: Unimplemented
-TestSDKWrites/set_and_merge :: Unimplemented
-TestSDKWrites/update_with_preconditions :: Unimplemented
-TestSDKWrites/delete_with_preconditions :: Unimplemented
-TestSDKWrites/batch :: Unimplemented
-TestSDKWrites/every_type :: Unimplemented
+# F2 serves Commit and BatchWrite outside transactions; transactions come with F2's second part.

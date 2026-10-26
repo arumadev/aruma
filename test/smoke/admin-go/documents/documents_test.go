@@ -643,6 +643,51 @@ func TestSDKWrites(t *testing.T) {
 			t.Errorf("%d results", len(res))
 		}
 	})
+	check(t, "transforms", func(t T) {
+		doc := col.Doc("t1")
+		_, err := doc.Set(t.Context(), map[string]any{"n": 1, "lo": 5, "hi": 5, "tags": []any{"a", "b"}})
+		mustOK(t, err, "Set")
+		wr, err := doc.Update(t.Context(), []firestore.Update{
+			{Path: "at", Value: firestore.ServerTimestamp},
+			{Path: "n", Value: firestore.Increment(2)},
+			{Path: "lo", Value: firestore.FieldTransformMinimum(3)},
+			{Path: "hi", Value: firestore.FieldTransformMaximum(4.5)},
+			{Path: "tags", Value: firestore.ArrayUnion("b", "c")},
+		})
+		mustOK(t, err, "Update with transforms")
+		_, err = doc.Update(t.Context(), []firestore.Update{{Path: "tags", Value: firestore.ArrayRemove("a")}})
+		mustOK(t, err, "ArrayRemove")
+		s, err := doc.Get(t.Context())
+		mustOK(t, err, "Get")
+		want := map[string]any{"n": int64(3), "lo": int64(3), "hi": int64(5), "tags": []any{"b", "c"}}
+		for k, v := range want {
+			if !sameGo(s.Data()[k], v) {
+				t.Errorf("%s: got %#v, want %#v", k, s.Data()[k], v)
+			}
+		}
+		// REQUEST_TIME: the commit's time at whole milliseconds.
+		if at, ok := s.Data()["at"].(time.Time); !ok || !at.Equal(wr.UpdateTime.Truncate(time.Millisecond)) {
+			t.Errorf("at %v, update time %v", s.Data()["at"], wr.UpdateTime)
+		}
+	})
+	check(t, "bulk writer", func(t T) {
+		bw := c.BulkWriter(t.Context())
+		var jobs []*firestore.BulkWriterJob
+		for i := range 30 {
+			j, err := bw.Set(col.Doc(fmt.Sprintf("bulk%02d", i)), map[string]any{"i": i, "at": firestore.ServerTimestamp})
+			mustOK(t, err, "BulkWriter.Set")
+			jobs = append(jobs, j)
+		}
+		j, err := bw.Update(col.Doc("bulk-missing"), []firestore.Update{{Path: "a", Value: 1}})
+		mustOK(t, err, "BulkWriter.Update")
+		bw.End()
+		for _, j := range jobs {
+			_, err := j.Results()
+			mustOK(t, err, "BulkWriterJob.Results")
+		}
+		_, err = j.Results()
+		wantCode(t, err, codes.NotFound, "No document to update: "+root()+"/sdk-writes/bulk-missing")
+	})
 	check(t, "every type", func(t T) {
 		ref := c.Doc("sdk-values/nope") // a reference value
 		ts := time.Date(2026, 10, 26, 12, 34, 56, 123456000, time.UTC)

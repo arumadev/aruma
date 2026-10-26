@@ -4,17 +4,7 @@
 # " :: " and a text its failure must contain. A listed test that passes, fails for another
 # reason, or no longer exists fails the suite: remove the line when the gap closes.
 #
-# F1 serves Get, BatchGet, List, Create, Update, Delete and ListCollectionIds. Every write of
-# firebase-admin's Firestore is a Commit, which comes in F2.
-grpc/writes: create :: UNIMPLEMENTED
-grpc/writes: set and merge :: UNIMPLEMENTED
-grpc/writes: update with preconditions :: UNIMPLEMENTED
-grpc/writes: delete with preconditions :: UNIMPLEMENTED
-grpc/writes: batch :: UNIMPLEMENTED
-grpc/writes: every type round-trips :: UNIMPLEMENTED
-rest/writes: create :: 12 Commit is not supported
-rest/writes: set and merge :: 12 Commit is not supported
-rest/writes: update with preconditions :: 12 Commit is not supported
-rest/writes: delete with preconditions :: 12 Commit is not supported
-rest/writes: batch :: 12 Commit is not supported
-rest/writes: every type round-trips :: 12 Commit is not supported
+# F2 serves Commit and BatchWrite outside transactions; transactions come with F2's second part.
+# firebase-admin's REST transport (google-gax fallbackRest) writes its body with JSON.stringify,
+# which sends -0 as 0: the sign is lost before the request leaves the client.
+rest/writes: every type round-trips :: negzero: 0

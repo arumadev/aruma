@@ -141,6 +141,18 @@ for (const major of ['11', '12', '13']) {
     await b.commit();
   });
 
+  t('writes: transforms', async ({ db, doc, getDoc, setDoc, updateDoc, serverTimestamp, increment, arrayUnion, arrayRemove }) => {
+    const ref = doc(db, 'lite-writes', `t-${major}`);
+    await setDoc(ref, { n: 1, tags: ['a', 'b'] });
+    await updateDoc(ref, { at: serverTimestamp(), n: increment(2), tags: arrayUnion('b', 'c') });
+    await updateDoc(ref, { tags: arrayRemove('a') });
+    const data = (await getDoc(ref)).data();
+    assert.equal(data.n, 3);
+    assert.deepEqual(data.tags, ['b', 'c']);
+    // REQUEST_TIME has whole milliseconds.
+    assert.equal(data.at.nanoseconds % 1e6, 0);
+  });
+
   t('writes: every type round-trips', async ({ db, doc, getDoc, setDoc, Bytes, GeoPoint, Timestamp, vector }) => {
     const ref = doc(db, 'lite-writes', `types-${major}`);
     const data = {
