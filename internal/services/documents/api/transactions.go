@@ -27,6 +27,13 @@ import (
 // the project's owner, the dev owner) or an end user (an ID token, or none), named stably across
 // its requests. An end user's uid is its ID token's sub, unverified until the rules verify the
 // token (F5): before F5 only documents.dev_open_rules admits an end user at all.
+//
+// TODO(F5): bind an end user to the uid the rules verified, never to UnverifiedSubject, and give
+// a token that fails verification no principal (F2 review M3). Until then the binding of an id
+// to its end user, and the per-user bound (documents.limits.max_open_txns_per_user), rest on a
+// claim anyone can forge; and every caller without a credential is the one principal "", which
+// that bound skips (they share max_open_unlocked_txns). Ids stay unguessable: they carry a
+// 128-bit MAC.
 func principalOf(c *authn.Caller) core.Principal {
 	switch {
 	case c.Role == authn.RoleAdmin && c.Principal == nil: // the dev owner
