@@ -111,7 +111,14 @@ func TestParseNameKinds(t *testing.T) {
 	// Breaks in the form, each at its index.
 	for _, c := range []struct{ name, want string }{
 		{"projects", `Document name "projects" lacks "/" at index 8.`},
-		{"projects/p", `Document name "projects/p" lacks "/" at index 10.`},
+		{"projects/p", "Missing required project ID."},
+		{"projects/p/", "Missing required project ID."},
+		{"projects/p/databases/", "Missing required project ID."},
+		{"projects/p/databases//documents/c/d", "Missing required project ID."},
+		{"projects/p/databases/(other)/documents/c/d", "Invalid database id (other)"},
+		{"projects/p/databases/(default/documents/c/d", "Invalid database id (default"},
+		{"projects/p/databases/(default)/documents/c/\xff\x01", "Resource id \"\uFFFD\x01\" is invalid because it is not UTF-8."},
+		{"projects/\xff/databases/(default)/documents/c/d", "Resource id \"\uFFFD\" is invalid because it is not UTF-8."},
 		{"projects/p/dbs/x", `Document name "projects/p/dbs/x" lacks "databases" at index 11.`},
 		{"projects/p/databases/(default)", `Document name "projects/p/databases/(default)" lacks "/" at index 30.`},
 		{"projects/p/databases/(default)/docs", `Document name "projects/p/databases/(default)/docs" lacks "documents" at index 31.`},
@@ -159,10 +166,18 @@ func TestParseNameLimits(t *testing.T) {
 			t.Errorf("database %q: %v", db, err)
 		}
 	}
-	for _, db := range []string{"abc", "Abcd", "1abc", "abc-", "ab_c", strings.Repeat("a", 64), "(other)", "a b c"} {
-		if _, err := ParseDatabaseName("projects/p/databases/" + db); errText(err) != `Illegal string "`+db+`" in database.` {
+	// A request's database id is the lookup's to refuse (f1-wire-errors.json path.database_id.*);
+	// a reference's is held to the format (values-validate.json ref.bad_database).
+	for _, db := range []string{"abc", "Abcd", "1abc", "abc-", "ab_c", strings.Repeat("a", 64), "a b c"} {
+		if _, err := ParseDatabaseName("projects/p/databases/" + db); err != nil {
 			t.Errorf("database %q: %v", db, err)
 		}
+		if _, err := ParseReference("projects/p/databases/" + db + "/documents/c/d"); errText(err) != `Illegal string "`+db+`" in database.` {
+			t.Errorf("reference in database %q: %v", db, err)
+		}
+	}
+	if _, err := ParseDatabaseName("projects/p/databases/(default)/documents"); errText(err) != `Database name "projects/p/databases/(default)/documents" has extra characters at index 30.` {
+		t.Errorf("database name with documents: %v", err)
 	}
 }
 

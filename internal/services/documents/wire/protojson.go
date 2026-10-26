@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
-	"io"
 	"maps"
 	"math"
 	"net/url"
@@ -59,10 +57,11 @@ func UnmarshalREST(body []byte, m proto.Message, pathFields ...string) error {
 	if err != nil {
 		return err
 	}
-	if n.kind != jsonObject {
-		return InvalidArgument("Invalid JSON payload received. Root element must be a message.")
-	}
 	var d decoder
+	if n.kind != jsonObject {
+		d.unknownName("", "", "Root element must be a message.")
+		return d.err()
+	}
 	d.message(m.ProtoReflect(), n, "", "")
 	if d.poisoned {
 		for _, f := range pathFields {
@@ -184,68 +183,6 @@ type jsonNode struct {
 type jsonMember struct {
 	key string
 	val *jsonNode
-}
-
-func errSyntax() *Error { return InvalidArgument("Invalid JSON payload received. Unexpected token.") }
-
-func parseJSON(body []byte) (*jsonNode, error) {
-	dec := json.NewDecoder(bytes.NewReader(body))
-	dec.UseNumber()
-	n, err := readJSON(dec)
-	if err != nil {
-		return nil, errSyntax()
-	}
-	if _, err := dec.Token(); !errors.Is(err, io.EOF) {
-		return nil, errSyntax()
-	}
-	return n, nil
-}
-
-func readJSON(dec *json.Decoder) (*jsonNode, error) {
-	tok, err := dec.Token()
-	if err != nil {
-		return nil, err
-	}
-	switch t := tok.(type) {
-	case nil:
-		return &jsonNode{kind: jsonNull}, nil
-	case bool:
-		return &jsonNode{kind: jsonBool, b: t}, nil
-	case json.Number:
-		return &jsonNode{kind: jsonNumber, s: string(t)}, nil
-	case string:
-		return &jsonNode{kind: jsonString, s: t}, nil
-	case json.Delim:
-		n := &jsonNode{kind: jsonObject}
-		if t == '[' {
-			n.kind = jsonArray
-		}
-		for dec.More() {
-			if n.kind == jsonObject {
-				kt, err := dec.Token()
-				if err != nil {
-					return nil, err
-				}
-				key, _ := kt.(string)
-				v, err := readJSON(dec)
-				if err != nil {
-					return nil, err
-				}
-				n.members = append(n.members, jsonMember{key, v})
-				continue
-			}
-			v, err := readJSON(dec)
-			if err != nil {
-				return nil, err
-			}
-			n.elems = append(n.elems, v)
-		}
-		if _, err := dec.Token(); err != nil { // the closing delimiter
-			return nil, err
-		}
-		return n, nil
-	}
-	return nil, errors.New("unexpected token")
 }
 
 // raw renders n as the front end quotes a value in a message: a string in double quotes, as it
@@ -435,17 +372,25 @@ func (d *decoder) member(m protoreflect.Message, fd protoreflect.FieldDescriptor
 			}
 		}
 	case fd.IsList():
-		if v.kind != jsonArray {
+		elems := v.elems
+		switch {
+		case v.kind == jsonArray:
+		case fd.Message() == nil && v.kind != jsonObject:
+			// The front end takes a single scalar for a repeated scalar field as a list of it
+			// (f1-wire-errors.json json.wrong_kind_string_for_array: documents: "x").
+			elems = []*jsonNode{v}
+		default:
+			// Not for a repeated message: fields: "x" is refused (json.wrong_kind_fields_string).
 			d.invalidValue(path, typeName(fd), v.raw())
 			return
 		}
 		l := m.Mutable(fd).List()
-		for i, el := range v.elems {
+		for i, el := range elems {
 			at := path + "[" + strconv.Itoa(i) + "]"
 			if fd.Message() != nil {
 				ev := l.NewElement()
 				if el.kind != jsonNull || acceptsNull(fd) {
-					d.message(ev.Message(), el, at, fd.JSONName())
+					d.message(ev.Message(), el, at, d.fieldName(fd))
 				}
 				l.Append(ev)
 			} else if ev, ok := d.scalar(fd, el, at, key, parent); ok {
@@ -458,13 +403,23 @@ func (d *decoder) member(m protoreflect.Message, fd protoreflect.FieldDescriptor
 			return
 		}
 		mv := m.NewField(fd)
-		d.message(mv.Message(), v, path, fd.JSONName())
+		d.message(mv.Message(), v, path, d.fieldName(fd))
 		m.Set(fd, mv)
 	default:
 		if pv, ok := d.scalar(fd, v, path, key, parent); ok {
 			m.Set(fd, pv)
 		}
 	}
+}
+
+// fieldName is how an error names fd: its JSON name in a body, its proto name in a query
+// parameter (f1-wire-errors.json timestamp.month_13 says 'readTime', timestamp.not_a_time
+// 'read_time').
+func (d *decoder) fieldName(fd protoreflect.FieldDescriptor) string {
+	if d.query {
+		return string(fd.Name())
+	}
+	return fd.JSONName()
 }
 
 // acceptsNull reports whether null is a value of fd rather than its absence: the
@@ -679,12 +634,18 @@ func (d *decoder) wellKnown(m protoreflect.Message, n *jsonNode, path, jsonName 
 // parseTimestamp reads an RFC 3339 time, YYYY-MM-DDTHH:MM:SS[.fraction](Z|±HH:MM), into seconds
 // and nanoseconds since the epoch. A time outside 0001-01-01T00:00:00Z to 9999-12-31T23:59:59.
 // 999999999Z, after its offset is applied, "exceeds limits" (values-validate.json time.year_0,
-// time.year_10000); a malformed one gets the front end's format error (provisional text).
+// time.year_10000). A malformed one gets one of the front end's two format errors: a text that
+// does not end in Z or an offset is an "Illegal timestamp format", any other "Invalid time
+// format" (f1-wire-errors.json timestamp.not_a_time, no_zone, value_malformed, month_13).
 func parseTimestamp(s string) (int64, int32, string) {
 	const (
 		bad      = "Invalid time format: Failed to parse input"
+		illegal  = "Illegal timestamp format; timestamps must end with 'Z' or have a valid timezone offset."
 		tooLarge = "Timestamp value exceeds limits"
 	)
+	if !hasZone(s) {
+		return 0, 0, illegal
+	}
 	ymd, rest, ok := strings.Cut(s, "T")
 	if !ok {
 		return 0, 0, bad
@@ -747,6 +708,20 @@ func parseTimestamp(s string) (int64, int32, string) {
 		return 0, 0, tooLarge
 	}
 	return secs, int32(nanos), ""
+}
+
+// hasZone reports whether s ends as an RFC 3339 time must: Z, or an offset ±HH:MM.
+func hasZone(s string) bool {
+	if strings.HasSuffix(s, "Z") {
+		return true
+	}
+	if len(s) < 6 {
+		return false
+	}
+	z := s[len(s)-6:]
+	_, ok1 := twoDigits(z[1:3])
+	_, ok2 := twoDigits(z[4:6])
+	return (z[0] == '+' || z[0] == '-') && z[3] == ':' && ok1 && ok2
 }
 
 func twoDigits(s string) (int, bool) {

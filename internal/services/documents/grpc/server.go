@@ -263,9 +263,9 @@ func (h *Handler) openStream(client netip.Addr) (release func(), err error) {
 }
 
 // serverStream runs a server stream's lifetime around its work (ADR-027 §3.2, §3.4): counted
-// against streams_per_ip; bounded by grpc-timeout (connect's deadline) or server_stream_max;
-// ended by the drain. However it ends, a write stuck on a client that does not read is cut
-// too. finish maps the stream's error to its status.
+// against streams_per_ip; bounded by grpc-timeout (connect's deadline) and server_stream_max,
+// whichever is sooner; ended by the drain. However it ends, a write stuck on a client that does
+// not read is cut too. run maps the stream's error to its status.
 type serverStream struct {
 	ctx     context.Context
 	info    *rpc
@@ -284,12 +284,10 @@ func (h *Handler) serverStream(ctx context.Context) (*serverStream, error) {
 	if err != nil {
 		return nil, err
 	}
-	s := &serverStream{info: info, stall: h.limits.StreamWriteStall, release: release}
-	if _, ok := ctx.Deadline(); !ok {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeoutCause(ctx, h.limits.ServerStreamMax, errStreamMax)
-		s.release = func() { cancel(); release() }
-	}
+	s := &serverStream{info: info, stall: h.limits.StreamWriteStall}
+	// server_stream_max bounds a grpc-timeout too: a client cannot hold a stream for hours.
+	ctx, cancel := context.WithTimeoutCause(ctx, h.limits.ServerStreamMax, errStreamMax)
+	s.release = func() { cancel(); release() }
 	s.ctx, s.cancel = context.WithCancelCause(ctx)
 	s.stops = []func() bool{
 		context.AfterFunc(h.drain, func() { s.cancel(errDraining) }),
@@ -327,6 +325,20 @@ func (s *serverStream) send(send func() error) error {
 	s.sending = false
 	s.mu.Unlock()
 	return err
+}
+
+// run runs the stream's work and ends the stream, even when the work panics: the panic goes on
+// to connect's recovery, the stream's count and its context's callbacks released.
+func (s *serverStream) run(work func() error) (err error) {
+	done := false
+	defer func() {
+		if !done {
+			s.finish(nil)
+		}
+	}()
+	err = work()
+	done = true
+	return s.finish(err)
 }
 
 // finish ends the stream and returns its status for err: the drain's UNAVAILABLE and the

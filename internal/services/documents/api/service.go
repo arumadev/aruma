@@ -53,8 +53,8 @@ type Call struct {
 	Authorization string
 	// Transport is how the request reached Aruma (authn.TransportOf).
 	Transport authn.Transport
-	// ResourcePrefix is google-cloud-resource-prefix, projects/{p}/databases/{d}: the request's
-	// database when its message names none (ADR-027 §2.2).
+	// ResourcePrefix is google-cloud-resource-prefix, projects/{p}/databases/{d}, as sent. No F1
+	// method reads it: a request's database field stands alone (databaseOf).
 	ResourcePrefix string
 }
 
@@ -114,12 +114,13 @@ func (s *Service) permitted(caller *authn.Caller, t authn.Transport) bool {
 	return s.o.DevOpenRules && t.Peer.IsValid() && t.Peer.IsLoopback()
 }
 
-// databaseOf is the primary of a request whose message names its database by a field: that
-// field, or the resource prefix when the field is empty.
-func databaseOf(c Call, database string) func() (wire.Database, error) {
+// databaseOf is the primary of a request whose message names its database by a field. The
+// field is required: production refuses it empty even when google-cloud-resource-prefix names
+// the database (f1-wire-errors.json grpc.database_field.empty).
+func databaseOf(database string) func() (wire.Database, error) {
 	return func() (wire.Database, error) {
-		if database == "" && c.ResourcePrefix != "" {
-			return wire.ParseDatabaseName(c.ResourcePrefix)
+		if database == "" {
+			return wire.Database{}, wire.ErrMissingResourceField
 		}
 		return wire.ParseDatabaseName(database)
 	}

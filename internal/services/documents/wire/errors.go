@@ -112,6 +112,10 @@ func indexURL(msg string) string {
 	return u
 }
 
+// ErrMissingResourceField is production's answer to a request whose database field is empty,
+// whatever google-cloud-resource-prefix says (f1-wire-errors.json grpc.database_field.empty).
+var ErrMissingResourceField = InvalidArgument("Invalid resource field value in the request.")
+
 // PermissionDenied is PERMISSION_DENIED with production's text for a request the caller may
 // not make (f1-resource-names.json, rest.get.invalid_api_key): the binding error for a request
 // whose own database is not of the caller's project (ADR-029 §3 rule 6).

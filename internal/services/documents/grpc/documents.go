@@ -71,17 +71,14 @@ func (f firestore) BatchGetDocuments(ctx context.Context, req *connect.Request[p
 	if err != nil {
 		return connectError(err)
 	}
-	return s.finish(func() error {
-		responses, err := f.h.svc.BatchGetDocuments(s.ctx, call(ctx, req.Header()), req.Msg)
-		if err != nil {
-			return err
-		}
-		s.admitted()
-		for _, r := range responses {
-			if err := s.send(func() error { return stream.Send(r) }); err != nil {
-				return err
+	return s.run(func() error {
+		admitted := false
+		return f.h.svc.BatchGetDocuments(s.ctx, call(ctx, req.Header()), req.Msg, func(r *pb.BatchGetDocumentsResponse) error {
+			if !admitted {
+				s.admitted()
+				admitted = true
 			}
-		}
-		return nil
-	}())
+			return s.send(func() error { return stream.Send(r) })
+		})
+	})
 }

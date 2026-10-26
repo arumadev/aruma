@@ -2,22 +2,30 @@ package rest_test
 
 import (
 	"bytes"
+	"cmp"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"log/slog"
 	"maps"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
 	"slices"
 	"strings"
 	"testing"
+	"time"
+
+	"google.golang.org/protobuf/proto"
 
 	"github.com/arumadev/aruma/internal/platform/httpx"
 	"github.com/arumadev/aruma/internal/services/documents/api/apitest"
 	"github.com/arumadev/aruma/internal/services/documents/rest"
+	pb "github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb"
 )
 
 // The REST surface, in process: plain HTTP against the handler under Common's body cap, the
@@ -315,5 +323,195 @@ func TestOwns(t *testing.T) {
 		if got := rest.Owns(path); got != want {
 			t.Errorf("Owns(%q) = %v", path, got)
 		}
+	}
+}
+
+// wireGaps are the cases of f1-wire-errors.json this server does not answer as production, each
+// with its reason; all are outside F1. A listed case that is answered as production fails the
+// test, so the list stays true.
+var wireGaps = map[string]string{
+	"path.no_database_segment":                  "Google's front end answers a path no API binds with its HTML 404 page; Aruma's router answers it",
+	"path.project_id.Bad_Project!":              "Google's consumer-project check (ErrorInfo, LocalizedMessage, Help) runs before Firestore; Aruma refuses a project the caller may not use as production's rules do",
+	"path.project_id.ab":                        "Google's API-enablement check for a project that is not a Google project",
+	"path.project_id.UPPER-CASE":                "Google's consumer-project check",
+	"path.project_id.aruma-ref-no-such-project": "Google's consumer-project check",
+	"path.project_id.-starts-with-dash":         "Google's consumer-project check",
+	"path.project_id.123456789012":              "Google's consumer-project check",
+	"admin.name_without_projects":               "the Admin API is F3; Google's front end answers an unbound path with its HTML 404 page",
+	"admin.name_other_prefix":                   "the Admin API is F3; Google's front end answers an unbound path with its HTML 404 page",
+	"admin.database_get_bad_id":                 "the Admin API is F3",
+	"admin.database_get_missing":                "the Admin API is F3",
+	"json.bad_enum_number":                      "a query's meaning is checked by RunQuery, F3: this server answers it UNIMPLEMENTED",
+	"value.no_type_in_filter":                   "a query's meaning is checked by RunQuery, F3: this server answers it UNIMPLEMENTED",
+}
+
+// TestWireErrorsReplay replays every REST case of f1-wire-errors.json: production's answers to
+// bodies, query parameters and paths the front end refuses or reads leniently. The few requests
+// the recorder could not keep (a time relative to the run, a transaction id) are rebuilt as
+// recorder sent them, in the order it sent their members.
+func TestWireErrorsReplay(t *testing.T) {
+	h := newHarness(t, apitest.Options{})
+	tok := h.env.JWT(t)
+	b, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "test", "oracle", "documents", "corpus", "f1-wire-errors.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var f corpusFile
+	if err := json.Unmarshal(b, &f); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range f.Setup.Commits {
+		for _, w := range c.Writes {
+			path := "/v1/" + strings.ReplaceAll(w.Update.Name, "{project}", apitest.Project)
+			if code, _, body := h.do(t, http.MethodPatch, path, `{"fields":`+string(w.Update.Fields)+`}`, tok); code != 200 {
+				t.Fatalf("setup %s: %d %s", path, code, body)
+			}
+		}
+	}
+	g1 := root + "/aruma-ref-f1-get/g1"
+	from := `{"from":[{"collectionId":"aruma-ref-f1-get"}]}`
+	readTime := time.Now().Add(-5 * time.Second).UTC().Format(time.RFC3339)
+	// A minute ago in production; here a moment ago, after the setup, at whole microseconds.
+	offset := time.Now().Truncate(time.Microsecond).In(time.FixedZone("", 3600)).Format(time.RFC3339Nano)
+	rebuilt := map[string]struct{ path, body string }{
+		"timestamp.offset":    {"/v1/" + g1 + "?readTime=" + url.QueryEscape(offset), ""},
+		"timestamp.month_13":  {"", `{"documents":["` + g1 + `"],"readTime":"2026-13-01T00:00:00Z"}`},
+		"readtime.year_10000": {"", `{"documents":["` + g1 + `"],"readTime":"10000-01-01T00:00:00Z"}`},
+		"oneof.batch_get_new_transaction_and_read_time": {"",
+			`{"documents":["` + g1 + `"],"newTransaction":{"readOnly":{}},"readTime":"` + readTime + `"}`},
+		"oneof.batch_get_transaction_and_read_time": {"",
+			`{"documents":["` + g1 + `"],"transaction":"AAAA","readTime":"` + readTime + `"}`},
+		"oneof.run_query_transaction_and_read_time": {"",
+			`{"structuredQuery":` + from + `,"transaction":"AAAA","readTime":"` + readTime + `"}`},
+		"oneof.run_query_new_transaction_and_read_time": {"",
+			`{"structuredQuery":` + from + `,"newTransaction":{"readOnly":{}},"readTime":"` + readTime + `"}`},
+	}
+	compared, gaps := 0, map[string]bool{}
+	for _, c := range f.Cases {
+		if c.Transport != "rest" {
+			continue
+		}
+		path := "/v1/" + strings.ReplaceAll(c.Request.Path, "{project}", apitest.Project)
+		body := string(c.Request.Body)
+		if strings.HasPrefix(body, `"`) { // a raw body, sent as it is
+			if err := json.Unmarshal(c.Request.Body, &body); err != nil {
+				t.Fatal(err)
+			}
+		}
+		body = strings.ReplaceAll(body, "{project}", apitest.Project)
+		if r, ok := rebuilt[c.ID]; ok {
+			path, body = cmp.Or(r.path, path), cmp.Or(r.body, body)
+		}
+		if strings.Contains(path, "<") || strings.Contains(body, "<") {
+			t.Errorf("%s: a placeholder is left: %s %s", c.ID, path, body)
+			continue
+		}
+		code, _, got := h.do(t, c.Request.Method, path, body, tok)
+		compared++
+		ok := code == c.Response.HTTP && sameJSON(t, normalise(t, got), c.Response.Body)
+		if reason, known := wireGaps[c.ID]; known {
+			gaps[c.ID] = true
+			if ok {
+				t.Errorf("%s: answered as production, but listed as a gap (%s)", c.ID, reason)
+			}
+			continue
+		}
+		if !ok {
+			t.Errorf("%s: %s %s %s\n got %d %s\nwant %d %s", c.ID, c.Request.Method, path, body, code, got, c.Response.HTTP, c.Response.Body)
+		}
+	}
+	for _, id := range slices.Sorted(maps.Keys(wireGaps)) {
+		if !gaps[id] {
+			t.Errorf("%s is listed as a gap but was not sent", id)
+		}
+	}
+	t.Logf("compared %d recorded REST cases, %d of them known gaps", compared, len(gaps))
+	if compared < 60 {
+		t.Errorf("only %d cases compared", compared)
+	}
+}
+
+// An id that is not UTF-8 reaches REST only through a percent-encoded path or query parameter.
+// It is refused at the edge, so it is never stored and never breaks its collection (0xFF 0x01
+// would end its name key's segment early).
+func TestIDNotUTF8(t *testing.T) {
+	h := newHarness(t, apitest.Options{})
+	tok := h.env.JWT(t)
+	notUTF8 := func(id string) string {
+		return `{"error":{"code":400,"message":"Resource id \"` + id + `\" is invalid because it is not UTF-8.","status":"INVALID_ARGUMENT"}}`
+	}
+	for _, c := range []struct{ method, path, want string }{
+		{http.MethodPatch, "/v1/" + root + "/c/%FF%01", notUTF8(`\uFFFD\u0001`)},
+		{http.MethodGet, "/v1/" + root + "/c/%FF%01", notUTF8(`\uFFFD\u0001`)},
+		{http.MethodPost, "/v1/" + root + "/u?documentId=%FF%01", notUTF8(`\uFFFD\u0001`)},
+		{http.MethodPost, "/v1/" + root + "/%C0", notUTF8(`\uFFFD`)},
+		{http.MethodGet, "/v1/projects/%FF/databases/(default)/documents/c/d", notUTF8(`\uFFFD`)},
+		{http.MethodGet, "/v1/projects/" + apitest.Project + "/databases/%FF/documents/c/d", notUTF8(`\uFFFD`)},
+	} {
+		body := ""
+		if c.method != http.MethodGet {
+			body = `{"fields":{"a":{"integerValue":"1"}}}`
+		}
+		code, _, got := h.do(t, c.method, c.path, body, tok)
+		if code != 400 || !sameJSON(t, got, []byte(c.want)) {
+			t.Errorf("%s %s: %d %s\nwant %s", c.method, c.path, code, got, c.want)
+		}
+	}
+	for _, path := range []string{"/v1/" + root + "/c", "/v1/" + root + "/u"} {
+		if code, _, got := h.do(t, http.MethodGet, path, "", tok); code != 200 || string(got) != "{}" {
+			t.Errorf("list %s: %d %s", path, code, got)
+		}
+	}
+}
+
+// A page token is unsigned: a client can forge one with the right listing digest and any resume
+// point. One that is not a document of the listing is refused, never a crash (F1 review M2).
+func TestForgedPageToken(t *testing.T) {
+	h := newHarness(t, apitest.Options{})
+	tok := h.env.JWT(t)
+	if code, _, body := h.do(t, http.MethodPatch, "/v1/"+root+"/c/d", `{"fields":{"a":{"integerValue":"2"}}}`, tok); code != 200 {
+		t.Fatalf("setup: %d %s", code, body)
+	}
+	forge := func(collectionID, order string, after []string) string {
+		sum := sha256.New()
+		for _, s := range []string{root, collectionID, order, "0"} {
+			sum.Write([]byte(s))
+			sum.Write([]byte{0})
+		}
+		m := map[string]any{"l": sum.Sum(nil), "a": after}
+		if order != "" { // the cursor's value of the ordered field
+			v, err := proto.Marshal(&pb.Value{ValueType: &pb.Value_IntegerValue{IntegerValue: 1}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			m["v"] = []string{base64.RawURLEncoding.EncodeToString(v)}
+		}
+		b, err := json.Marshal(m)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return base64.RawURLEncoding.EncodeToString(b)
+	}
+	const foreign = `{"error":{"code":400,"message":"Invalid page token.","status":"INVALID_ARGUMENT"}}`
+	for _, after := range [][]string{{}, {"a"}, {"c"}, {"c", "d", "e"}, {"x", "d"}, {"c", "__x__"}, {"c", "d", "s", "x"}} {
+		// ListDocuments of c, and of every collection under the root: ListDocuments with an
+		// empty collection id, reached on gRPC alone, shares the check (api.tokenAfter).
+		code, _, got := h.do(t, http.MethodGet, "/v1/"+root+"/c?pageToken="+forge("c", "", after), "", tok)
+		if code != 400 || string(got) != foreign {
+			t.Errorf("after %q: %d %s", after, code, got)
+		}
+		code, _, got = h.do(t, http.MethodGet, "/v1/"+root+"/c?orderBy=a&pageToken="+forge("c", "a", after), "", tok)
+		if code != 400 || string(got) != foreign {
+			t.Errorf("ordered, after %q: %d %s", after, code, got)
+		}
+	}
+	// A forged token that names a document of the listing is a cursor like any other.
+	if code, _, got := h.do(t, http.MethodGet, "/v1/"+root+"/c?pageToken="+forge("c", "", []string{"c", "a"}), "", tok); code != 200 ||
+		!strings.Contains(string(got), root+"/c/d") {
+		t.Errorf("a forged cursor: %d %s", code, got)
+	}
+	if code, _, got := h.do(t, http.MethodGet, "/v1/"+root+"/c?orderBy=a&pageToken="+forge("c", "a", []string{"c", "a"}), "", tok); code != 200 ||
+		!strings.Contains(string(got), root+"/c/d") {
+		t.Errorf("a forged ordered cursor: %d %s", code, got)
 	}
 }

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"cmp"
 	"context"
 	"slices"
 
@@ -42,25 +43,32 @@ func (s *Service) GetDocument(ctx context.Context, c Call, req *pb.GetDocumentRe
 	return documentProto(a.db, d, mask, masked), nil
 }
 
-// BatchGetDocuments reads documents; one that does not exist is missing, and each is answered
-// once, in production's order (answerOrder; f1-batch-get.json). The transports send the
-// responses as a stream (gRPC) or an array (REST).
-func (s *Service) BatchGetDocuments(ctx context.Context, c Call, req *pb.BatchGetDocumentsRequest) ([]*pb.BatchGetDocumentsResponse, error) {
-	a, err := s.admit(ctx, c, req, databaseOf(c, req.GetDatabase()))
+// BatchGetDocuments reads documents and sends a response for each, through send: one that does
+// not exist is missing, and each is answered once, in production's order (f1-batch-get.json
+// order_run1-3, grpc.order, duplicates): those found in name order, then those missing, last
+// name first. The missing ones' order rests on one recording of two names, which reads as
+// descending names and as the request's order reversed alike; the clients match answers to
+// names, so neither changes what they return.
+//
+// The documents are read batchGetChunk at a time, in name order, at the first read's time, and
+// each chunk's found documents are sent before the next is read: a request's memory is bounded
+// by a chunk of documents, not by every document it names (F1 review M3).
+func (s *Service) BatchGetDocuments(ctx context.Context, c Call, req *pb.BatchGetDocumentsRequest, send func(*pb.BatchGetDocumentsResponse) error) error {
+	a, err := s.admit(ctx, c, req, databaseOf(req.GetDatabase()))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	paths := make([]core.Path, len(req.GetDocuments()))
-	for i, name := range req.GetDocuments() {
+	paths := make([]core.Path, 0, len(req.GetDocuments()))
+	for _, name := range req.GetDocuments() {
 		n, err := wire.ParseDocumentName(name)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		paths[i] = pathOf(n)
+		paths = append(paths, pathOf(n))
 	}
 	mask, masked, err := maskPaths(req.GetMask())
 	if err != nil {
-		return nil, err
+		return err
 	}
 	var txn bool
 	switch req.GetConsistencySelector().(type) {
@@ -69,51 +77,47 @@ func (s *Service) BatchGetDocuments(ctx context.Context, c Call, req *pb.BatchGe
 	}
 	ro, err := readOptions(req.GetReadTime(), txn)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	docs, readTime, err := s.o.Store.BatchGet(ctx, a.db, paths, ro)
-	if err != nil {
-		return nil, s.fail(ctx, err)
-	}
-	rt := timestamppb.New(readTime)
-	out := make([]*pb.BatchGetDocumentsResponse, 0, len(docs))
-	for _, d := range answerOrder(docs) {
-		r := &pb.BatchGetDocumentsResponse{ReadTime: rt}
-		if d.Exists() {
-			r.Result = &pb.BatchGetDocumentsResponse_Found{Found: documentProto(a.db, d, mask, masked)}
-		} else {
-			r.Result = &pb.BatchGetDocumentsResponse_Missing{Missing: a.db.DocumentName(d.Path)}
+	slices.SortFunc(paths, comparePaths)
+	paths = slices.CompactFunc(paths, func(x, y core.Path) bool { return comparePaths(x, y) == 0 })
+	var missing []core.Path
+	var rt *timestamppb.Timestamp
+	for chunk := range slices.Chunk(paths, batchGetChunk) {
+		docs, readTime, err := s.o.Store.BatchGet(ctx, a.db, chunk, ro)
+		if err != nil {
+			return s.fail(ctx, err)
 		}
-		out = append(out, r)
+		ro.ReadTime, rt = readTime, timestamppb.New(readTime)
+		for _, d := range docs {
+			if !d.Exists() {
+				missing = append(missing, d.Path)
+				continue
+			}
+			if err := send(&pb.BatchGetDocumentsResponse{ReadTime: rt,
+				Result: &pb.BatchGetDocumentsResponse_Found{Found: documentProto(a.db, d, mask, masked)}}); err != nil {
+				return err
+			}
+		}
 	}
-	return out, nil
+	if len(paths) == 0 {
+		// Nothing to read but the database: it must exist, as production's answer says.
+		if _, _, err := s.o.Store.BatchGet(ctx, a.db, nil, ro); err != nil {
+			return s.fail(ctx, err)
+		}
+	}
+	for _, p := range slices.Backward(missing) {
+		if err := send(&pb.BatchGetDocumentsResponse{ReadTime: rt,
+			Result: &pb.BatchGetDocumentsResponse_Missing{Missing: a.db.DocumentName(p)}}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-// answerOrder is the order production answers a batch get in, on REST and gRPC alike
-// (f1-batch-get.json order_run1-3, grpc.order, duplicates): each document once, those found in
-// name order, then those missing, last name first. The missing ones' order rests on one
-// recording of two names, which reads as descending names and as the request's order reversed
-// alike; the clients match answers to names, so neither changes what they return.
-func answerOrder(docs []core.Document) []core.Document {
-	seen := make(map[string]bool, len(docs))
-	var found, missing []core.Document
-	for _, d := range docs {
-		key := d.Path.String()
-		if seen[key] {
-			continue
-		}
-		seen[key] = true
-		if d.Exists() {
-			found = append(found, d)
-		} else {
-			missing = append(missing, d)
-		}
-	}
-	byName := func(a, b core.Document) int { return slices.Compare(a.Path, b.Path) }
-	slices.SortFunc(found, byName)
-	slices.SortFunc(missing, func(a, b core.Document) int { return byName(b, a) })
-	return append(found, missing...)
-}
+// batchGetChunk is how many documents BatchGetDocuments reads at a time: at most 100 MiB of
+// documents of 1 MiB.
+const batchGetChunk = 100
 
 // ListDocuments lists a collection's documents in name order, or with an empty collection id
 // the documents of every collection directly under the parent (f1-list-documents.json).
@@ -164,7 +168,7 @@ func (s *Service) ListDocuments(ctx context.Context, c Call, req *pb.ListDocumen
 		ReadOptions:  ro,
 	}
 	if !order.byName() {
-		return s.listOrdered(ctx, a, lr, req, order, listing, mask, masked)
+		return s.listOrdered(ctx, a, parent, lr, req, order, listing, mask, masked)
 	}
 	if tok := req.GetPageToken(); tok != "" {
 		t, err := decodeToken(tok)
@@ -174,20 +178,57 @@ func (s *Service) ListDocuments(ctx context.Context, c Call, req *pb.ListDocumen
 		if string(t.Listing) != string(listing) || t.Values != nil {
 			return nil, errForeignToken
 		}
-		lr.After = core.Path(t.After)
+		if lr.After, err = tokenAfter(t.After, parent, req.GetCollectionId()); err != nil {
+			return nil, err
+		}
 	}
-	res, err := s.o.Store.ListDocuments(ctx, a.db, lr)
-	if err != nil {
-		return nil, s.fail(ctx, err)
-	}
+	// The page is read listChunk documents at a time, at the first read's time, and ends at its
+	// size or once it holds maxPageBytes of documents: a short page, which every client follows
+	// by its token (F1 review M3).
+	want := cmp.Or(lr.PageSize, core.MaxPageSize)
 	out := &pb.ListDocumentsResponse{}
-	for _, d := range res.Documents {
-		out.Documents = append(out.Documents, documentProto(a.db, d, mask, masked))
+	var next core.Path
+	for size := 0; ; {
+		chunk := lr
+		chunk.PageSize = min(want-len(out.Documents), listChunk)
+		res, err := s.o.Store.ListDocuments(ctx, a.db, chunk)
+		if err != nil {
+			return nil, s.fail(ctx, err)
+		}
+		lr.ReadTime, next = res.ReadTime, res.Next
+		for i, d := range res.Documents {
+			out.Documents = append(out.Documents, documentProto(a.db, d, mask, masked))
+			if size += docSize(d); size >= maxPageBytes && (i < len(res.Documents)-1 || res.Next != nil) {
+				next = d.Path
+				break
+			}
+		}
+		if next == nil || len(out.Documents) >= want || size >= maxPageBytes {
+			break
+		}
+		lr.After = next
 	}
-	if res.Next != nil {
-		out.NextPageToken = encodeToken(pageToken{Listing: listing, After: res.Next})
+	if next != nil {
+		out.NextPageToken = encodeToken(pageToken{Listing: listing, After: next})
 	}
 	return out, nil
+}
+
+// A ListDocuments page is read listChunk documents at a time and holds at most about
+// maxPageBytes of documents, by value.DocumentSize. Production's bound on a page's bytes is not
+// recorded: these are this server's, so a page of 1000 documents of 1 MiB is neither held nor
+// sent at once.
+const (
+	listChunk    = 100
+	maxPageBytes = 16 << 20
+)
+
+// docSize is a document's size as production measures it, the bound of a page's bytes.
+func docSize(d core.Document) int {
+	if !d.Exists() {
+		return value.NameSize(d.Path.String())
+	}
+	return value.DocumentSize(d.Path.String(), d.Fields)
 }
 
 // CreateDocument creates a document under a collection, with the id given or one of its own,

@@ -3,12 +3,18 @@ package grpc_test
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -628,4 +634,94 @@ func firstPageToken(t *testing.T, c firestorepbconnect.FirestoreClient, tok stri
 		t.Fatalf("first page: %v %v", res, err)
 	}
 	return res.Msg.NextPageToken
+}
+
+// TestWireErrorsReplay replays the gRPC cases of f1-wire-errors.json: a database field production
+// refuses, each recorded on BeginTransaction (F2) with google-cloud-resource-prefix naming
+// (default). The field is read by the one parser every method shares, so they are sent here on
+// BatchGetDocuments, the F1 method with a database field.
+func TestWireErrorsReplay(t *testing.T) {
+	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
+	ctx, tok := t.Context(), x.env.JWT(t)
+	// gaps are the cases this server does not answer as production, with the reason.
+	gaps := map[string]string{
+		// Google's API-enablement check reads "bad" as a project id before Firestore parses the
+		// name; Aruma has no such layer and answers the parser's INVALID_ARGUMENT.
+		"grpc.database_field.bad": "Google's API-enablement check",
+	}
+	b, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "test", "oracle", "documents", "corpus", "f1-wire-errors.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var f struct {
+		Cases []struct {
+			ID        string `json:"id"`
+			Transport string `json:"transport"`
+			Request   struct {
+				RPC     string `json:"rpc"`
+				Message struct {
+					Database string `json:"database"`
+				} `json:"message"`
+			} `json:"request"`
+			Error struct {
+				Code    int    `json:"code"`
+				Message string `json:"message"`
+			} `json:"error"`
+		} `json:"cases"`
+	}
+	if err := json.Unmarshal(b, &f); err != nil {
+		t.Fatal(err)
+	}
+	sent := 0
+	for _, c := range f.Cases {
+		if c.Transport != "grpc" {
+			continue
+		}
+		if c.Request.RPC != "google.firestore.v1.Firestore/BeginTransaction" {
+			t.Fatalf("%s: rpc %s", c.ID, c.Request.RPC)
+		}
+		sent++
+		r := req(&pb.BatchGetDocumentsRequest{Database: c.Request.Message.Database}, tok)
+		r.Header().Set("Google-Cloud-Resource-Prefix", db)
+		stream, err := x.client.BatchGetDocuments(ctx, r)
+		if err == nil {
+			for stream.Receive() {
+			}
+			err = stream.Err()
+		}
+		ce, _ := errors.AsType[*connect.Error](err)
+		ok := ce != nil && int(ce.Code()) == c.Error.Code && ce.Message() == c.Error.Message
+		if reason, known := gaps[c.ID]; known {
+			if ok {
+				t.Errorf("%s: answered as production, but listed as a gap (%s)", c.ID, reason)
+			}
+			continue
+		}
+		if !ok {
+			t.Errorf("%s: database %q: %v, want %d %q", c.ID, c.Request.Message.Database, err, c.Error.Code, c.Error.Message)
+		}
+	}
+	if sent != 6 {
+		t.Errorf("%d gRPC cases sent", sent)
+	}
+}
+
+// A forged page token on ListDocuments with no collection id, which once panicked the store
+// (F1 review M2), is refused.
+func TestForgedPageToken(t *testing.T) {
+	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
+	ctx, tok := t.Context(), x.env.JWT(t)
+	sum := sha256.New()
+	for _, s := range []string{root, "", "", "0"} {
+		sum.Write([]byte(s))
+		sum.Write([]byte{0})
+	}
+	for _, after := range [][]string{{}, {"a"}, {"a", "b", "c"}, {"a", "b", "c", "d"}} {
+		b, err := json.Marshal(map[string]any{"l": sum.Sum(nil), "a": after})
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = x.client.ListDocuments(ctx, req(&pb.ListDocumentsRequest{Parent: root, PageToken: base64.RawURLEncoding.EncodeToString(b)}, tok))
+		wantErr(t, fmt.Sprintf("after %q", after), err, connect.CodeInvalidArgument, "Invalid page token.")
+	}
 }

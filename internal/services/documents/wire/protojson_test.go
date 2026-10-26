@@ -251,9 +251,12 @@ func TestFrontEndErrors(t *testing.T) {
 		{`{"writes":[{"update":5}]}`, "Invalid value at 'writes[0].update' (type.googleapis.com/google.firestore.v1.Document), 5"},
 		{`{"a":1,"b":2}`, "Invalid JSON payload received. Unknown name \"a\": Cannot find field.\nInvalid JSON payload received. Unknown name \"b\": Cannot find field."},
 		{`{"writes":[{"currentDocument":{"exists":"maybe"}}]}`, `Invalid value at 'writes[0].current_document.exists' (TYPE_BOOL), "maybe"`},
-		{`[]`, "Invalid JSON payload received. Root element must be a message."},
-		{`{"writes":`, "Invalid JSON payload received. Unexpected token."},
-		{`{} {}`, "Invalid JSON payload received. Unexpected token."},
+		{`[]`, `Invalid JSON payload received. Unknown name "": Root element must be a message.`},
+		{`{"writes":`, "Invalid JSON payload received. Unexpected end of string. Expected a value.\n\n^"},
+		{`{} {}`, "Invalid JSON payload received. Parsing terminated before end of input.\n{} {}\n   ^"},
+		{`{"writes": [}`, "Invalid JSON payload received. Expected a value.\n{\"writes\": [}\n            ^"},
+		{`{"a" 1}`, "Invalid JSON payload received. Expected : between key:value pair.\n{\"a\" 1}\n     ^"},
+		{`{"a": "x`, "Invalid JSON payload received. Closing quote expected in string.\n{\"a\": \"x\n      ^"},
 	} {
 		var req firestorepb.CommitRequest
 		if got := errText(UnmarshalREST([]byte(c.body), &req)); got != c.want {

@@ -120,25 +120,25 @@ const (
 	nounDocument  = "Document name"
 	nounParent    = "Document parent name"
 	nounReference = "Document parent name"
-	nounDatabase  = "Database name" // provisional
+	nounDatabase  = "Database name" // f1-wire-errors.json grpc.database_field.with_documents
 )
 
 // ParseDocumentName parses a document's full resource name,
 // projects/{p}/databases/{d}/documents/{collection}/{id}[/{collection}/{id}…], with production's
 // rules and messages: see ParseName.
-func ParseDocumentName(s string) (Name, error) { return parseName(s, kindDocument, nounDocument) }
+func ParseDocumentName(s string) (Name, error) { return parseName(s, kindDocument, nounDocument, true) }
 
 // ParseReference parses a reference value: a document name, held to the rules of
 // ParseDocumentName (values-validate.json, ref.*; values-order.json, r-*). The project and
 // database are not bound: a reference to another project or database is data, which production
 // stores, orders and matches.
-func ParseReference(s string) (Name, error) { return parseName(s, kindDocument, nounReference) }
+func ParseReference(s string) (Name, error) { return parseName(s, kindDocument, nounReference, false) }
 
 // ParseParentName parses the parent of a collection: the documents root
 // (projects/{p}/databases/{d}/documents) or a document, as RunQuery, RunAggregationQuery,
 // PartitionQuery, ListDocuments, ListCollectionIds, CreateDocument and Listen's query targets
 // carry it.
-func ParseParentName(s string) (Name, error) { return parseName(s, kindParent, nounParent) }
+func ParseParentName(s string) (Name, error) { return parseName(s, kindParent, nounParent, true) }
 
 // ParseName parses a name below a database's documents: the root, a collection or a document.
 // The rules are production's, as recorded:
@@ -147,8 +147,16 @@ func ParseParentName(s string) (Name, error) { return parseName(s, kindParent, n
 //     index {i}.`, {what} being "projects", "/", "databases", "documents" in quotes, or "a
 //     resource id" for an empty id, and {i} the offset in UTF-16 units (Java's); a parent and a
 //     reference say "Document parent name";
-//   - the database id is (default) or 4 to 63 lowercase letters, digits and hyphens, starting
-//     with a letter and ending with a letter or digit, else `Illegal string "{d}" in database.`;
+//   - in a request's name, a database id that is empty, or a name that ends before it, is
+//     "Missing required project ID."; an id in parentheses other than (default) is `Invalid
+//     database id {d}`; any other id is not checked here: one that does not exist is the
+//     missing database of the lookup (f1-wire-errors.json path.database_*,
+//     grpc.database_field.*);
+//   - in a reference value, the database id is (default) or 4 to 63 lowercase letters, digits
+//     and hyphens, starting with a letter and ending with a letter or digit, else `Illegal
+//     string "{d}" in database.` (values-validate.json ref.bad_database);
+//   - every id is UTF-8: gRPC's strings are, but a REST path is percent-decoded bytes (see
+//     errNotUTF8);
 //   - an id of the form __…__ is reserved, and so are . and ..: `Resource id "{id}" is invalid
 //     because it is reserved.` (f1-create.json dot_id); except a document id __id{LONG}__, the
 //     numeric id, where LONG is a 64-bit integer written canonically; a document id __id…__
@@ -157,12 +165,13 @@ func ParseParentName(s string) (Name, error) { return parseName(s, kindParent, n
 //   - then the key's limits: MaxIDBytes, MaxKeyElements, MaxNameBytes.
 //
 // Every error is INVALID_ARGUMENT.
-func ParseName(s string) (Name, error) { return parseName(s, kindAny, nounDocument) }
+func ParseName(s string) (Name, error) { return parseName(s, kindAny, nounDocument, true) }
 
 // ParseDatabaseName parses a database's resource name, projects/{p}/databases/{d}, as the
-// database field of a request and google-cloud-resource-prefix carry it.
+// database field of a request and google-cloud-resource-prefix carry it, with a request name's
+// rules (ParseName). The empty name is the caller's to refuse (MissingResourceField).
 func ParseDatabaseName(s string) (Database, error) {
-	p := nameParser{s: s, noun: nounDatabase}
+	p := nameParser{s: s, noun: nounDatabase, request: true}
 	db, err := p.database()
 	if err != nil {
 		return Database{}, err
@@ -173,8 +182,8 @@ func ParseDatabaseName(s string) (Database, error) {
 	return db, nil
 }
 
-func parseName(s string, kind nameKind, noun string) (Name, error) {
-	p := nameParser{s: s, noun: noun}
+func parseName(s string, kind nameKind, noun string, request bool) (Name, error) {
+	p := nameParser{s: s, noun: noun, request: request}
 	db, err := p.database()
 	if err != nil {
 		return Name{}, err
@@ -210,6 +219,9 @@ func parseName(s string, kind nameKind, noun string) (Name, error) {
 // f1-create.json slash_id) and is held to ParseName's id rules; document says whether it is a
 // document's id. The empty id is the caller's to handle (CreateDocument picks one).
 func CheckID(id string, document bool) error {
+	if !utf8.ValidString(id) {
+		return errNotUTF8(id)
+	}
 	if strings.Contains(id, "/") {
 		return InvalidArgument(`Resource id "` + id + `" is invalid because it contains "/".`)
 	}
@@ -220,6 +232,14 @@ func CheckID(id string, document bool) error {
 		return InvalidArgument("The key path element name is longer than 1500 bytes.")
 	}
 	return nil
+}
+
+// errNotUTF8 refuses an id that is not UTF-8, which only a REST path or query parameter can
+// carry (%FF): Firestore's ids are strings. Production's answer is not recorded; the text is
+// provisional, in the form of its recorded invalid-id texts (`Resource id "{id}" is invalid
+// because it contains "/".`, f1-create.json slash_id), the id's bad bytes shown as U+FFFD.
+func errNotUTF8(id string) error {
+	return InvalidArgument(`Resource id "` + strings.ToValidUTF8(id, "\uFFFD") + `" is invalid because it is not UTF-8.`)
 }
 
 // checkID applies the reserved-id rules to a collection id or, when document is set, a
@@ -269,7 +289,7 @@ func nameSize(path []string) int {
 	return n
 }
 
-// validDatabaseID reports whether id is a database id production accepts in a name.
+// validDatabaseID reports whether id is a database id production accepts in a reference value.
 func validDatabaseID(id string) bool {
 	if id == DefaultDatabase {
 		return true
@@ -297,7 +317,14 @@ type nameParser struct {
 	s    string
 	pos  int // byte offset
 	noun string
+	// request is set for the names of a request, cleared for a reference value: they differ in
+	// their database rules (ParseName).
+	request bool
 }
+
+// errMissingProject is production's answer to a request's name with no database id
+// (f1-wire-errors.json path.database_empty, grpc.database_field.project_only, empty_id).
+var errMissingProject = InvalidArgument("Missing required project ID.")
 
 // database reads projects/{p}/databases/{d}.
 func (p *nameParser) database() (Database, error) {
@@ -311,21 +338,27 @@ func (p *nameParser) database() (Database, error) {
 	if err != nil {
 		return Database{}, err
 	}
-	if err := p.literal("/"); err != nil {
-		return Database{}, err
+	// A request's name that ends before its database id, or names an empty one, has none.
+	for _, lit := range []string{"/", "databases", "/"} {
+		if p.request && p.pos == len(p.s) {
+			return Database{}, errMissingProject
+		}
+		if err := p.literal(lit); err != nil {
+			return Database{}, err
+		}
 	}
-	if err := p.literal("databases"); err != nil {
-		return Database{}, err
-	}
-	if err := p.literal("/"); err != nil {
-		return Database{}, err
+	if p.request && (p.pos == len(p.s) || p.s[p.pos] == '/') {
+		return Database{}, errMissingProject
 	}
 	id, err := p.id()
 	if err != nil {
 		return Database{}, err
 	}
-	if !validDatabaseID(id) {
+	switch {
+	case !p.request && !validDatabaseID(id):
 		return Database{}, InvalidArgument(`Illegal string "` + id + `" in database.`)
+	case p.request && id != DefaultDatabase && strings.ContainsAny(id, "()"):
+		return Database{}, InvalidArgument("Invalid database id " + id)
 	}
 	return Database{project, id}, nil
 }
@@ -338,7 +371,7 @@ func (p *nameParser) literal(lit string) error {
 	return p.lacks(`"` + lit + `"`)
 }
 
-// id reads one id: everything up to the next slash, which must not be empty.
+// id reads one id: everything up to the next slash, which must not be empty and must be UTF-8.
 func (p *nameParser) id() (string, error) {
 	rest := p.s[p.pos:]
 	n := strings.IndexByte(rest, '/')
@@ -348,6 +381,9 @@ func (p *nameParser) id() (string, error) {
 	if n == 0 {
 		return "", p.lacks("a resource id")
 	}
+	if !utf8.ValidString(rest[:n]) {
+		return "", errNotUTF8(rest[:n])
+	}
 	p.pos += n
 	return rest[:n], nil
 }
@@ -356,9 +392,10 @@ func (p *nameParser) lacks(what string) error {
 	return InvalidArgument(p.noun + ` "` + p.s + `" lacks ` + what + " at index " + strconv.Itoa(utf16Len(p.s[:p.pos])) + ".")
 }
 
-// trailing is the error for a name that goes on where it should end (provisional text).
+// trailing is the error for a name that goes on where it should end (f1-wire-errors.json
+// grpc.database_field.with_documents).
 func (p *nameParser) trailing() error {
-	return InvalidArgument(p.noun + ` "` + p.s + `" has unexpected text at index ` + strconv.Itoa(utf16Len(p.s[:p.pos])) + ".")
+	return InvalidArgument(p.noun + ` "` + p.s + `" has extra characters at index ` + strconv.Itoa(utf16Len(p.s[:p.pos])) + ".")
 }
 
 // utf16Len is the length of s in UTF-16 code units, as Java counts a string's index; a byte

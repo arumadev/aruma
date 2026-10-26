@@ -21,11 +21,16 @@ import (
 // direction of the last order.
 //
 // Until the query engine and the index entries arrive (F3), the collection is read whole at one
-// read time and sorted here: bounded by maxOrderedScan documents.
-const maxOrderedScan = 100_000
+// read time and sorted here: bounded by maxOrderedScan documents and maxOrderedBytes of the
+// documents it keeps, by value.DocumentSize (F1 review M3). Each page reads the collection
+// again, so paging through it is quadratic: the bounds hold that to a collection this size.
+const (
+	maxOrderedScan  = 100_000
+	maxOrderedBytes = 256 << 20
+)
 
 var errOrderedScan = wire.NewError(wire.CodeResourceExhausted,
-	"ListDocuments with an order_by reads at most 100000 documents on this server.")
+	"ListDocuments with an order_by reads at most 100000 documents or 256 MiB on this server.")
 
 // orderedEntry is a document with the values of its ordered fields.
 type orderedEntry struct {
@@ -33,7 +38,7 @@ type orderedEntry struct {
 	vals []value.Value
 }
 
-func (s *Service) listOrdered(ctx context.Context, a admitted, lr core.ListRequest, req *pb.ListDocumentsRequest, order listOrder,
+func (s *Service) listOrdered(ctx context.Context, a admitted, parent wire.Name, lr core.ListRequest, req *pb.ListDocumentsRequest, order listOrder,
 	listing []byte, mask []value.FieldPath, masked bool) (*pb.ListDocumentsResponse, error) {
 	if err := s.checkIndex(ctx, a, req.GetCollectionId(), order); err != nil {
 		return nil, err
@@ -48,7 +53,11 @@ func (s *Service) listOrdered(ctx context.Context, a admitted, lr core.ListReque
 		if string(t.Listing) != string(listing) || len(t.Values) != len(fields) {
 			return nil, errForeignToken
 		}
-		cursor = &orderedEntry{doc: core.Document{Path: core.Path(t.After)}}
+		after, err := tokenAfter(t.After, parent, req.GetCollectionId())
+		if err != nil {
+			return nil, err
+		}
+		cursor = &orderedEntry{doc: core.Document{Path: after}}
 		for _, enc := range t.Values {
 			v, err := decodeValue(enc)
 			if err != nil {
@@ -62,7 +71,7 @@ func (s *Service) listOrdered(ctx context.Context, a admitted, lr core.ListReque
 	var entries []orderedEntry
 	scan := lr
 	scan.PageSize, scan.After = core.MaxPageSize, nil
-	for scanned := 0; ; {
+	for scanned, kept := 0, 0; ; {
 		res, err := s.o.Store.ListDocuments(ctx, a.db, scan)
 		if err != nil {
 			return nil, s.fail(ctx, err)
@@ -78,6 +87,9 @@ func (s *Service) listOrdered(ctx context.Context, a admitted, lr core.ListReque
 				e.vals = append(e.vals, v)
 			}
 			if len(e.vals) == len(fields) {
+				if kept += docSize(d); kept > maxOrderedBytes {
+					return nil, errOrderedScan
+				}
 				entries = append(entries, e)
 			}
 		}
@@ -100,7 +112,7 @@ func (s *Service) listOrdered(ctx context.Context, a admitted, lr core.ListReque
 				return c
 			}
 		}
-		c := slices.Compare(x.doc.Path, y.doc.Path)
+		c := comparePaths(x.doc.Path, y.doc.Path)
 		if nameDesc {
 			c = -c
 		}

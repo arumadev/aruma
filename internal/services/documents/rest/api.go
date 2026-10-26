@@ -125,7 +125,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case rt.verb == "ListCollectionIds" && r.Method == http.MethodPost:
 		h.listCollectionIds(w, r, rt)
 	case rt.verb != "":
-		wire.WriteREST(w, wire.Unimplemented(rt.verb), streaming[rt.verb])
+		h.unserved(w, r, rt)
 	case len(rt.rel) == 0:
 		wire.WriteREST(w, errNotFound, false)
 	case r.Method == http.MethodGet && len(rt.rel)%2 == 0:
@@ -169,6 +169,36 @@ func parse(path string) (route, bool) {
 		rt.rel = strings.Split(docs, "/")
 	}
 	return rt, true
+}
+
+// unservedBodies are the request messages of the custom methods of later phases, with the
+// field their path fills.
+var unservedBodies = map[string]struct {
+	msg       func() proto.Message
+	pathField string
+}{
+	"Commit":              {func() proto.Message { return &pb.CommitRequest{} }, "database"},
+	"BeginTransaction":    {func() proto.Message { return &pb.BeginTransactionRequest{} }, "database"},
+	"Rollback":            {func() proto.Message { return &pb.RollbackRequest{} }, "database"},
+	"BatchWrite":          {func() proto.Message { return &pb.BatchWriteRequest{} }, "database"},
+	"RunQuery":            {func() proto.Message { return &pb.RunQueryRequest{} }, "parent"},
+	"RunAggregationQuery": {func() proto.Message { return &pb.RunAggregationQueryRequest{} }, "parent"},
+	"PartitionQuery":      {func() proto.Message { return &pb.PartitionQueryRequest{} }, "parent"},
+}
+
+// unserved answers a custom method of a later phase: UNIMPLEMENTED, after the front end's
+// reading of its body, whose errors production answers before the method runs
+// (f1-wire-errors.json json.unknown_nested_field, json.bad_enum, oneof.*).
+func (h *Handler) unserved(w http.ResponseWriter, r *http.Request, rt route) {
+	if r.Method == http.MethodPost {
+		if b, ok := unservedBodies[rt.verb]; ok {
+			if err := body(r, b.msg(), b.pathField); err != nil {
+				wire.WriteREST(w, err, streaming[rt.verb])
+				return
+			}
+		}
+	}
+	wire.WriteREST(w, wire.Unimplemented(rt.verb), streaming[rt.verb])
 }
 
 // call is how a REST request arrived, for package api.
@@ -321,7 +351,9 @@ func (h *Handler) listCollectionIds(w http.ResponseWriter, r *http.Request, rt r
 	write(w, res, err)
 }
 
-// batchGet answers an array of responses, or an array holding the error (ADR-027 §5.1).
+// batchGet answers an array of responses, or an array holding the error (ADR-027 §5.1). The
+// responses are written as package api sends them, so the answer is never held whole: an error
+// after the first is the array's last element, the status already sent.
 func (h *Handler) batchGet(w http.ResponseWriter, r *http.Request, rt route) {
 	req := &pb.BatchGetDocumentsRequest{}
 	if err := body(r, req, "database"); err != nil {
@@ -329,15 +361,29 @@ func (h *Handler) batchGet(w http.ResponseWriter, r *http.Request, rt route) {
 		return
 	}
 	req.Database = rt.database
-	res, err := h.svc.BatchGetDocuments(r.Context(), call(r), req)
-	if err != nil {
+	started := false
+	err := h.svc.BatchGetDocuments(r.Context(), call(r), req, func(res *pb.BatchGetDocumentsResponse) error {
+		b, err := wire.MarshalREST(res)
+		if err != nil {
+			return err
+		}
+		sep := byte(',')
+		if !started {
+			w.Header().Set("Content-Type", wire.RESTContentType)
+			w.WriteHeader(http.StatusOK)
+			started, sep = true, '['
+		}
+		_, err = w.Write(append([]byte{sep}, b...))
+		return err
+	})
+	switch {
+	case !started && err != nil:
 		wire.WriteREST(w, err, true)
-		return
+	case !started:
+		writeJSON(w, []byte("[]"))
+	case err != nil:
+		_, _ = w.Write(append(append([]byte{','}, wire.From(err).RESTBody()...), ']'))
+	default:
+		_, _ = w.Write([]byte{']'})
 	}
-	b, err := wire.MarshalRESTStream(res)
-	if err != nil {
-		wire.WriteREST(w, err, true)
-		return
-	}
-	writeJSON(w, b)
 }

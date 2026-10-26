@@ -27,8 +27,9 @@ const (
 	maxTimestampSeconds = 253402300799
 )
 
-// msgNoValue is the error for a Value with none of its kinds set (provisional text).
-const msgNoValue = "Must have a value set."
+// msgNoValue is the error for a Value with none of its kinds set, at any depth
+// (f1-wire-errors.json value.no_type, value.no_type_nested).
+const msgNoValue = "Cannot convert firestore.v1.Value with type unset."
 
 // ValueFromProto converts a value off the wire.
 func ValueFromProto(v *firestorepb.Value) (value.Value, error) {

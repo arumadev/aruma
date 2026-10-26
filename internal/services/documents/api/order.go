@@ -1,8 +1,12 @@
 package api
 
 import (
+	"cmp"
+	"slices"
+	"strconv"
 	"strings"
 
+	"github.com/arumadev/aruma/internal/services/documents/core"
 	"github.com/arumadev/aruma/internal/services/documents/value"
 	"github.com/arumadev/aruma/internal/services/documents/wire"
 )
@@ -81,4 +85,36 @@ func (o listOrder) String() string {
 		}
 	}
 	return b.String()
+}
+
+// comparePaths orders document paths as production orders names, by their keys (core's name
+// keys): id by id, a numeric id __id<n>__ before every other and by n, other ids by their
+// bytes, and a path before the paths below it.
+func comparePaths(a, b core.Path) int { return slices.CompareFunc(a, b, compareIDs) }
+
+func compareIDs(a, b string) int {
+	na, aNumeric := numericID(a)
+	nb, bNumeric := numericID(b)
+	switch {
+	case aNumeric && bNumeric:
+		return cmp.Compare(na, nb)
+	case aNumeric:
+		return -1
+	case bNumeric:
+		return 1
+	}
+	return strings.Compare(a, b)
+}
+
+// numericID reads a numeric id, __id<n>__ with n a 64-bit integer written canonically.
+func numericID(id string) (int64, bool) {
+	digits, ok := strings.CutPrefix(id, "__id")
+	if !ok {
+		return 0, false
+	}
+	if digits, ok = strings.CutSuffix(digits, "__"); !ok {
+		return 0, false
+	}
+	n, err := strconv.ParseInt(digits, 10, 64)
+	return n, err == nil && strconv.FormatInt(n, 10) == digits
 }

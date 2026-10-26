@@ -5,6 +5,7 @@ import (
 	"math"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -13,12 +14,13 @@ import (
 	"github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb"
 )
 
-// FuzzParseName: the parsers never panic, accept only names they format back byte for byte, and
-// agree with each other on a name's kind; every refusal is INVALID_ARGUMENT.
+// FuzzParseName: the parsers never panic, accept only names they format back byte for byte and
+// that are UTF-8, and agree with each other on a name's kind; every refusal is INVALID_ARGUMENT.
 func FuzzParseName(f *testing.F) {
 	for _, s := range []string{root, root + "/c", root + "/c/d", root + "/c//d", root + "/c/__id-1__", root + "/c/__x__",
 		"projects/p/databases/Bad DB/documents/c/d", "c/a", "projects/p/databases/(default)", root + "/é/😀",
-		root + "/c/d/" + strings.Repeat("x", 1501), "projects/p/databases/abcd/documents/./d"} {
+		root + "/c/d/" + strings.Repeat("x", 1501), "projects/p/databases/abcd/documents/./d", root + "/c/\xff\x01",
+		"projects/\xff/databases/(default)/documents/c/d", "projects/p/databases/\xc0/documents"} {
 		f.Add(s)
 	}
 	f.Fuzz(func(t *testing.T, s string) {
@@ -29,6 +31,9 @@ func FuzzParseName(f *testing.F) {
 			if err != nil && From(err).Code != CodeInvalidArgument {
 				t.Fatalf("%q: %v", s, err)
 			}
+		}
+		if errAny == nil && !utf8.ValidString(s) {
+			t.Fatalf("ParseName(%q) accepts a name that is not UTF-8", s)
 		}
 		if errAny == nil && n.String() != s {
 			t.Fatalf("ParseName(%q) formats as %q", s, n.String())
@@ -44,7 +49,7 @@ func FuzzParseName(f *testing.F) {
 				t.Fatalf("%q: kinds disagree: document %v parent %v, name %v", s, errDoc, errPar, n)
 			}
 		}
-		if db, err := ParseDatabaseName(s); err == nil && db.Name() != s {
+		if db, err := ParseDatabaseName(s); err == nil && (db.Name() != s || !utf8.ValidString(s)) {
 			t.Fatalf("ParseDatabaseName(%q) formats as %q", s, db.Name())
 		}
 	})

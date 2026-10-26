@@ -4,7 +4,9 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"slices"
 
+	"github.com/arumadev/aruma/internal/services/documents/core"
 	"github.com/arumadev/aruma/internal/services/documents/wire"
 )
 
@@ -49,6 +51,21 @@ func decodeToken(s string) (pageToken, error) {
 		return pageToken{}, errGarbageToken
 	}
 	return t, nil
+}
+
+// tokenAfter is a ListDocuments token's resume point, which a client can forge: it must be a
+// document directly in the listing's collection under parent (in any collection of parent's
+// when the listing names none), each id one a request could name. Else the token is not the
+// listing's.
+func tokenAfter(after []string, parent wire.Name, collectionID string) (core.Path, error) {
+	n := len(parent.Path)
+	if len(after) != n+2 || !slices.Equal(after[:n], parent.Path) || collectionID != "" && after[n] != collectionID {
+		return nil, errForeignToken
+	}
+	if wire.CheckID(after[n], false) != nil || wire.CheckID(after[n+1], true) != nil {
+		return nil, errForeignToken
+	}
+	return core.Path(after), nil
 }
 
 // listingDigest binds a ListDocuments token to its listing.
