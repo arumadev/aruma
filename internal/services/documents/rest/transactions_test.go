@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -384,5 +385,132 @@ func TestTransactionsReplayF2(t *testing.T) {
 	t.Logf("compared %d cases", compared)
 	if compared < 55 {
 		t.Errorf("compared %d cases", compared)
+	}
+}
+
+// locksCase is a case of f2-locks.json: its events, in order, as the recorder described them.
+type locksCase struct {
+	ID     string `json:"id"`
+	Events []struct {
+		What    string `json:"what"`
+		HTTP    int    `json:"http"`
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	} `json:"events"`
+	FinalValue json.RawMessage `json:"finalValue"`
+}
+
+// TestLocksReplayF2 replays the cases of f2-locks.json that are not queries (those are F3's):
+// a wounded transaction's calls after the wound, and an owner's OPTIMISTIC transaction. The
+// recorder kept each event's description, not its request, so the requests are rebuilt from
+// them; every answer's status and text must be production's, and the document must end as
+// production's did.
+func TestLocksReplayF2(t *testing.T) {
+	h := newHarness(t, apitest.Options{})
+	tok := h.env.JWT(t)
+	var f struct {
+		Cases []locksCase `json:"cases"`
+	}
+	readCorpusFile(t, "f2-locks.json", &f)
+	doc := func(id string) string { return root + "/aruma-ref-f2-lock/" + id }
+	ids := map[string]string{} // T1, T2, OPT: the transactions' ids once begun
+	type step func() (int, []byte)
+	begin := func(name, body string) step {
+		return func() (int, []byte) {
+			code, _, b := h.do(t, http.MethodPost, "/v1/"+root+":beginTransaction", body, tok)
+			ids[name] = transactionOf(b)
+			return code, b
+		}
+	}
+	get := func(id, txn string) step {
+		return func() (int, []byte) {
+			code, _, b := h.do(t, http.MethodGet, "/v1/"+doc(id)+"?transaction="+url.QueryEscape(ids[txn]), "", tok)
+			return code, b
+		}
+	}
+	commit := func(id string, n int, txn string) step {
+		return func() (int, []byte) {
+			body := `{"writes":[{"update":{"name":"` + doc(id) + `","fields":{"n":{"integerValue":"` + strconv.Itoa(n) + `"}}}}]`
+			if txn != "" {
+				body += `,"transaction":"` + ids[txn] + `"`
+			}
+			code, _, b := h.do(t, http.MethodPost, "/v1/"+root+":commit", body+"}", tok)
+			return code, b
+		}
+	}
+	rollback := func(txn string) step {
+		return func() (int, []byte) {
+			code, _, b := h.do(t, http.MethodPost, "/v1/"+root+":rollback", `{"transaction":"`+ids[txn]+`"}`, tok)
+			return code, b
+		}
+	}
+	cases := map[string]struct {
+		before []step // not events of the recording
+		steps  []step // one per event
+		doc    string
+	}{
+		"wounded_transaction": {
+			before: []step{begin("T1", `{}`), begin("T2", `{}`)},
+			steps: []step{get("wound", "T1"), get("wound", "T2"), commit("wound", 1, "T1"),
+				get("wound", "T2"), get("wound", "T2"), commit("wound", 2, "T2"), rollback("T2")},
+			doc: "wound",
+		},
+		"optimistic.options.readWrite.concurrencyMode": {
+			steps: []step{begin("OPT", `{"options":{"readWrite":{"concurrencyMode":"OPTIMISTIC"}}}`),
+				get("optimistic", "OPT"), commit("optimistic", 2, ""), commit("optimistic", 3, "OPT")},
+			doc: "optimistic",
+		},
+		"optimistic.top-level concurrencyMode": {
+			steps: []step{begin("BAD", `{"options":{"readWrite":{}},"concurrencyMode":"OPTIMISTIC"}`)},
+		},
+	}
+	replayed := 0
+	for _, c := range f.Cases {
+		run, ok := cases[c.ID]
+		if !ok {
+			continue // a query: F3
+		}
+		replayed++
+		if run.doc != "" {
+			if code, _, b := h.do(t, http.MethodPatch, "/v1/"+doc(run.doc), `{"fields":{"n":{"integerValue":"0"}}}`, tok); code != 200 {
+				t.Fatalf("setup: %d %s", code, b)
+			}
+		}
+		for _, s := range run.before {
+			if code, b := s(); code != 200 {
+				t.Fatalf("%s: %d %s", c.ID, code, b)
+			}
+		}
+		if len(run.steps) != len(c.Events) {
+			t.Fatalf("%s: %d steps for %d events", c.ID, len(run.steps), len(c.Events))
+		}
+		for i, e := range c.Events {
+			code, b := run.steps[i]()
+			var got struct {
+				Error struct {
+					Message string `json:"message"`
+					Status  string `json:"status"`
+				} `json:"error"`
+			}
+			_ = json.Unmarshal(b, &got)
+			if code != e.HTTP || got.Error.Message != e.Message || got.Error.Status != e.Status {
+				t.Errorf("%s, %s: %d %s %q, want %d %s %q", c.ID, e.What, code, got.Error.Status, got.Error.Message, e.HTTP, e.Status, e.Message)
+			}
+		}
+		if c.FinalValue != nil {
+			_, _, b := h.do(t, http.MethodGet, "/v1/"+doc(run.doc), "", tok)
+			var d struct {
+				Fields struct {
+					N json.RawMessage `json:"n"`
+				} `json:"fields"`
+			}
+			_ = json.Unmarshal(b, &d)
+			if !sameJSON(t, d.Fields.N, c.FinalValue) {
+				t.Errorf("%s: final %s, want %s", c.ID, d.Fields.N, c.FinalValue)
+			}
+		}
+	}
+	if replayed != len(cases) {
+		t.Errorf("replayed %d of %d cases", replayed, len(cases))
 	}
 }
