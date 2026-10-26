@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"connectrpc.com/connect"
+	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -161,6 +162,18 @@ func (e *Error) Connect() *connect.Error {
 		}
 	}
 	return ce
+}
+
+// Status is e as a google.rpc.Status, as a response carries one per item (BatchWriteResponse):
+// its code, REST's message and its details.
+func (e *Error) Status() *status.Status {
+	st := &status.Status{Code: int32(e.Code), Message: e.Message}
+	for _, d := range e.Details {
+		if a, err := anypb.New(d); err == nil {
+			st.Details = append(st.Details, a)
+		}
+	}
+	return st
 }
 
 // HTTPStatus is the HTTP status of e's REST answer.

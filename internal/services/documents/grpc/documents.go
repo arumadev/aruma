@@ -12,7 +12,7 @@ import (
 	"github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb/firestorepbconnect"
 )
 
-// firestore is google.firestore.v1.Firestore. The F1 methods call package api; the others are
+// firestore is google.firestore.v1.Firestore. The F1 and F2 methods call package api; the others are
 // UnimplementedFirestoreHandler's UNIMPLEMENTED until their phase.
 type firestore struct {
 	firestorepbconnect.UnimplementedFirestoreHandler
@@ -63,6 +63,14 @@ func (f firestore) DeleteDocument(ctx context.Context, req *connect.Request[pb.D
 
 func (f firestore) ListCollectionIds(ctx context.Context, req *connect.Request[pb.ListCollectionIdsRequest]) (*connect.Response[pb.ListCollectionIdsResponse], error) {
 	return unary(ctx, req, f.h.svc.ListCollectionIds)
+}
+
+func (f firestore) Commit(ctx context.Context, req *connect.Request[pb.CommitRequest]) (*connect.Response[pb.CommitResponse], error) {
+	return unary(ctx, req, f.h.svc.Commit)
+}
+
+func (f firestore) BatchWrite(ctx context.Context, req *connect.Request[pb.BatchWriteRequest]) (*connect.Response[pb.BatchWriteResponse], error) {
+	return unary(ctx, req, f.h.svc.BatchWrite)
 }
 
 // BatchGetDocuments is a server stream: one response per document asked, in order.

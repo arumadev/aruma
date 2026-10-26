@@ -124,6 +124,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.batchGet(w, r, rt)
 	case rt.verb == "ListCollectionIds" && r.Method == http.MethodPost:
 		h.listCollectionIds(w, r, rt)
+	case rt.verb == "Commit" && r.Method == http.MethodPost && len(rt.rel) == 0:
+		h.commit(w, r, rt)
+	case rt.verb == "BatchWrite" && r.Method == http.MethodPost && len(rt.rel) == 0:
+		h.batchWrite(w, r, rt)
 	case rt.verb != "":
 		h.unserved(w, r, rt)
 	case len(rt.rel) == 0:
@@ -177,10 +181,8 @@ var unservedBodies = map[string]struct {
 	msg       func() proto.Message
 	pathField string
 }{
-	"Commit":              {func() proto.Message { return &pb.CommitRequest{} }, "database"},
 	"BeginTransaction":    {func() proto.Message { return &pb.BeginTransactionRequest{} }, "database"},
 	"Rollback":            {func() proto.Message { return &pb.RollbackRequest{} }, "database"},
-	"BatchWrite":          {func() proto.Message { return &pb.BatchWriteRequest{} }, "database"},
 	"RunQuery":            {func() proto.Message { return &pb.RunQueryRequest{} }, "parent"},
 	"RunAggregationQuery": {func() proto.Message { return &pb.RunAggregationQueryRequest{} }, "parent"},
 	"PartitionQuery":      {func() proto.Message { return &pb.PartitionQueryRequest{} }, "parent"},
@@ -348,6 +350,28 @@ func (h *Handler) listCollectionIds(w http.ResponseWriter, r *http.Request, rt r
 	}
 	req.Parent = rt.name()
 	res, err := h.svc.ListCollectionIds(r.Context(), call(r), req)
+	write(w, res, err)
+}
+
+func (h *Handler) commit(w http.ResponseWriter, r *http.Request, rt route) {
+	req := &pb.CommitRequest{}
+	if err := body(r, req, "database"); err != nil {
+		write(w, nil, err)
+		return
+	}
+	req.Database = rt.database
+	res, err := h.svc.Commit(r.Context(), call(r), req)
+	write(w, res, err)
+}
+
+func (h *Handler) batchWrite(w http.ResponseWriter, r *http.Request, rt route) {
+	req := &pb.BatchWriteRequest{}
+	if err := body(r, req, "database"); err != nil {
+		write(w, nil, err)
+		return
+	}
+	req.Database = rt.database
+	res, err := h.svc.BatchWrite(r.Context(), call(r), req)
 	write(w, res, err)
 }
 

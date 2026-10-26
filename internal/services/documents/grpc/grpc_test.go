@@ -431,16 +431,19 @@ func TestCallers(t *testing.T) {
 func TestUnimplemented(t *testing.T) {
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
-	_, err := x.client.Commit(ctx, req(&pb.CommitRequest{Database: db}, tok))
+	_, err := x.client.PartitionQuery(ctx, req(&pb.PartitionQueryRequest{Parent: root}, tok))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
-		t.Errorf("Commit: %v", err)
+		t.Errorf("PartitionQuery: %v", err)
 	}
+	// A commit in a transaction waits for transactions.
+	_, err = x.client.Commit(ctx, req(&pb.CommitRequest{Database: db, Transaction: []byte("t")}, tok))
+	wantErr(t, "commit in a transaction", err, connect.CodeUnimplemented, "Transactions is not supported by this server")
 	admin := adminpbconnect.NewFirestoreAdminClient(h2c(0), x.url, connect.WithGRPC())
 	_, err = admin.GetDatabase(ctx, req(&adminpb.GetDatabaseRequest{Name: db}, tok))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("FirestoreAdmin.GetDatabase: %v", err)
 	}
-	// A transaction is F2's.
+	// A transaction is F2's, track B.
 	_, err = x.client.GetDocument(ctx, req(&pb.GetDocumentRequest{Name: root + "/a/b",
 		ConsistencySelector: &pb.GetDocumentRequest_Transaction{Transaction: []byte("t")}}, tok))
 	wantErr(t, "transaction", err, connect.CodeUnimplemented, "Transactions is not supported by this server")
