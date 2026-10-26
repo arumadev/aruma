@@ -63,6 +63,8 @@ type admitted struct {
 	db     core.DB
 	wdb    wire.Database
 	caller *authn.Caller
+	// by is the caller as transactions know it (principalOf).
+	by core.Principal
 }
 
 // admit runs the steps every request takes before its own (package doc): the caller, the
@@ -102,6 +104,7 @@ func (s *Service) admit(ctx context.Context, c Call, req proto.Message, primary 
 		db:     core.DB{Project: number, ProjectID: wdb.Project, ID: wdb.ID},
 		wdb:    wdb,
 		caller: caller,
+		by:     principalOf(caller),
 	}, nil
 }
 

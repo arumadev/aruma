@@ -211,3 +211,22 @@ func TestPageTokenMAC(t *testing.T) {
 		t.Error("the MAC does not depend on the master key")
 	}
 }
+
+// The Document Database's transaction key is the master key's, stable across processes, and no
+// other purpose's.
+func TestDocumentsTransactionKey(t *testing.T) {
+	k, again := testKeys(t), testKeys(t)
+	key := k.DocumentsTransactionKey()
+	if len(key) != 32 || !bytes.Equal(key, again.DocumentsTransactionKey()) {
+		t.Fatalf("not a stable 32-byte key: %x", key)
+	}
+	for _, other := range [][]byte{k.tokenMAC, k.csrfMAC, k.pageTokenMAC, k.kek[1]} {
+		if bytes.Equal(key, other) {
+			t.Fatal("the transaction key is another purpose's")
+		}
+	}
+	key[0] ^= 1
+	if bytes.Equal(key, k.DocumentsTransactionKey()) {
+		t.Fatal("the key returned is not a copy")
+	}
+}

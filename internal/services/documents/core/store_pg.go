@@ -39,10 +39,7 @@ type PGStore struct {
 	txns     *transactions
 }
 
-var (
-	_ Store        = (*PGStore)(nil)
-	_ Transactions = (*PGStore)(nil)
-)
+var _ Store = (*PGStore)(nil)
 
 // NewPGStore returns the Postgres store.
 func NewPGStore(pool *pgxpool.Pool, o Options) *PGStore {

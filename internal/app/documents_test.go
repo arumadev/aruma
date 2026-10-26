@@ -109,6 +109,27 @@ func TestDocumentsWiring(t *testing.T) {
 		t.Errorf("gRPC GetDocument after the REST write: %v", err)
 	}
 
+	// Transactions are served: the dev owner's is an admin's, committed once.
+	br := connect.NewRequest(&pb.BeginTransactionRequest{Database: "projects/wired-app/databases/(default)"})
+	br.Header().Set("Authorization", "Bearer owner")
+	began, err := client.BeginTransaction(t.Context(), br)
+	if err != nil {
+		t.Fatal(err)
+	}
+	commit := func() error {
+		r := connect.NewRequest(&pb.CommitRequest{Database: "projects/wired-app/databases/(default)", Transaction: began.Msg.Transaction,
+			Writes: []*pb.Write{{Operation: &pb.Write_Delete{Delete: name}}}})
+		r.Header().Set("Authorization", "Bearer owner")
+		_, err := client.Commit(t.Context(), r)
+		return err
+	}
+	if err := commit(); err != nil {
+		t.Errorf("commit in a transaction: %v", err)
+	}
+	if ce, ok := commit().(*connect.Error); !ok || ce.Code() != connect.CodeAborted {
+		t.Errorf("second commit in the transaction: %v", ce)
+	}
+
 	// A project whose deletion has expired loses its Document Database rows (review M5).
 	if _, err := a.Service.DeleteProject(t.Context(), owner, proj.ID); err != nil {
 		t.Fatal(err)

@@ -121,12 +121,31 @@ var notReplayed = map[string]string{
 }
 
 // unserved are the custom methods of later phases: their cases are not sent.
-var unserved = []string{":beginTransaction", ":rollback", ":runQuery", ":runAggregationQuery", ":partitionQuery"}
+var unserved = []string{":runQuery", ":runAggregationQuery", ":partitionQuery"}
+
+// beginCases are the recorded BeginTransaction cases whose transaction later cases of the same
+// file name by a placeholder.
+var beginCases = map[string]string{
+	"rest.txn.begin_read_only":           "<the read-only transaction>",
+	"rest.txn.begin_read_write":          "<the read-write transaction>",
+	"rest.txn.begin_read_only_read_time": "<the read-only transaction at the setup commitTime>",
+}
+
+// reordered are the recorded requests whose members the recorder sent in another order than the
+// recording keeps (sorted): a oneof's error names the member read second.
+var reordered = map[string]string{
+	"f1-batch-get.json rest.txn.and_new_transaction": `{"documents":["projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"],` +
+		`"transaction":"<the read-only transaction>","newTransaction":{"readOnly":{}}}`,
+	"f1-batch-get.json rest.txn.and_read_time": `{"documents":["projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"],` +
+		`"transaction":"<the read-only transaction>","readTime":"<readTime: RFC 3339>"}`,
+}
 
 // TestCorpusReplay replays the F1 recordings' REST cases in their order on one database: the
-// setup commits as updates, then every case whose request carries no placeholder and needs no
-// later phase (transactions, Commit). Its status and body must be production's, the times and
-// page tokens normalised as the recorder normalised them.
+// setup commits as updates, then every case whose request carries no placeholder but the
+// transactions begun by earlier cases and the setup's commit time, and that needs no later phase.
+// Its status and body must be production's, the times, page tokens and transaction ids
+// normalised as the recorder normalised them. The transactions a file began are rolled back after
+// it, so that the read-write one's locks do not hold the next file's setup.
 func TestCorpusReplay(t *testing.T) {
 	h := newHarness(t, apitest.Options{})
 	tok := h.env.JWT(t)
@@ -143,22 +162,42 @@ func TestCorpusReplay(t *testing.T) {
 		if err := json.Unmarshal(b, &f); err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
+		var setupTime string
 		for _, c := range f.Setup.Commits {
 			for _, w := range c.Writes {
 				if w.Update == nil {
 					t.Fatalf("%s: a setup write that is not an update", name)
 				}
 				path := "/v1/" + strings.ReplaceAll(w.Update.Name, "{project}", apitest.Project)
-				if code, _, body := h.do(t, http.MethodPatch, path, `{"fields":`+string(w.Update.Fields)+`}`, tok); code != 200 {
+				code, _, body := h.do(t, http.MethodPatch, path, `{"fields":`+string(w.Update.Fields)+`}`, tok)
+				if code != 200 {
 					t.Fatalf("%s setup %s: %d %s", name, path, code, body)
 				}
+				var d struct {
+					UpdateTime string `json:"updateTime"`
+				}
+				if err := json.Unmarshal(body, &d); err != nil {
+					t.Fatal(err)
+				}
+				setupTime = d.UpdateTime
 			}
 		}
+		txns := map[string]string{} // placeholder: id
 		for _, c := range f.Cases {
 			path, body := c.Request.Path, string(c.Request.Body)
+			if b, ok := reordered[name+" "+c.ID]; ok {
+				body = b
+			}
+			for placeholder, id := range txns {
+				path = strings.ReplaceAll(path, placeholder, url.QueryEscape(id))
+				body = strings.ReplaceAll(body, placeholder, id)
+			}
+			if setupTime != "" && strings.Contains(c.ID, "txn.") {
+				path = strings.ReplaceAll(path, "<readTime: the setup commitTime>", setupTime)
+				body = strings.ReplaceAll(body, "<readTime: RFC 3339>", setupTime)
+			}
 			if c.Transport != "rest" || strings.Contains(path, "<") || strings.Contains(body, "<") ||
-				slices.ContainsFunc(unserved, func(v string) bool { return strings.Contains(path, v) }) ||
-				strings.Contains(path, "transaction=") || strings.Contains(body, `"newTransaction"`) || strings.Contains(body, `"transaction"`) {
+				slices.ContainsFunc(unserved, func(v string) bool { return strings.Contains(path, v) }) {
 				skipped++
 				continue
 			}
@@ -169,6 +208,13 @@ func TestCorpusReplay(t *testing.T) {
 			path = "/v1/" + strings.ReplaceAll(path, "{project}", apitest.Project)
 			body = strings.ReplaceAll(body, "{project}", apitest.Project)
 			code, _, got := h.do(t, c.Request.Method, path, body, token)
+			if id := transactionOf(got); id != "" {
+				if placeholder, ok := beginCases[c.ID]; ok {
+					txns[placeholder] = id
+				} else {
+					txns["<begun by "+c.ID+">"] = id
+				}
+			}
 			want := string(c.Response.Body)
 			if strings.Contains(want, "<auto id") {
 				skipped++
@@ -187,6 +233,9 @@ func TestCorpusReplay(t *testing.T) {
 				t.Errorf("%s %s: %s %s\n got %d %s\nwant %d %s", name, c.ID, c.Request.Method, path, code, got, c.Response.HTTP, want)
 			}
 		}
+		for _, id := range txns {
+			h.do(t, http.MethodPost, "/v1/"+root+":rollback", `{"transaction":"`+id+`"}`, tok)
+		}
 	}
 	for _, id := range slices.Sorted(maps.Keys(notReplayed)) {
 		if !reproduced[id] {
@@ -197,6 +246,21 @@ func TestCorpusReplay(t *testing.T) {
 	if compared < 80 {
 		t.Errorf("only %d cases compared", compared)
 	}
+}
+
+// transactionOf is the transaction id an answer carries: BeginTransaction's, or a batchGet's with
+// new_transaction, in its first element.
+func transactionOf(body []byte) string {
+	var res struct {
+		Transaction string `json:"transaction"`
+	}
+	if json.Unmarshal(body, &res) != nil {
+		var arr []json.RawMessage
+		if json.Unmarshal(body, &arr) != nil || len(arr) == 0 || json.Unmarshal(arr[0], &res) != nil {
+			return ""
+		}
+	}
+	return res.Transaction
 }
 
 // requestTimeRE matches a REQUEST_TIME transform's result: whole milliseconds.
@@ -225,6 +289,11 @@ func normalise(t *testing.T, b []byte) []byte {
 				case "nextPageToken":
 					x[k] = "<nextPageToken>"
 					continue
+				case "transaction":
+					if _, ok := e.(string); ok {
+						x[k] = "<transaction>"
+						continue
+					}
 				case "transformResults":
 					for _, r := range e.([]any) {
 						if r, ok := r.(map[string]any); ok {
@@ -287,9 +356,10 @@ func TestForms(t *testing.T) {
 		` to add a Cloud Datastore or Cloud Firestore database. ","status":"NOT_FOUND"}}`; code != 404 || string(body) != want {
 		t.Errorf("missing database: %d %s\nwant %s", code, body, want)
 	}
-	code, _, _ = h.do(t, http.MethodPost, "/v1/projects/"+apitest.Project+"/databases/(default)/documents:commit", `{"transaction":"AAAA"}`, tok)
-	if code != http.StatusNotImplemented {
-		t.Errorf(":commit in a transaction: %d", code)
+	// An id this server never issued (f0-errors.json rest.txn_unknown.commit).
+	code, _, body = h.do(t, http.MethodPost, "/v1/projects/"+apitest.Project+"/databases/(default)/documents:commit", `{"transaction":"AAAA"}`, tok)
+	if want := `{"error":{"code":400,"message":"Invalid transaction.","status":"INVALID_ARGUMENT"}}`; code != 400 || string(body) != want {
+		t.Errorf(":commit in a transaction: %d %s", code, body)
 	}
 	code, hd, _ = h.do(t, http.MethodGet, "/v1/projects/"+apitest.Project+"/databases/(default)", "", tok, "Origin", "https://app.example")
 	if code != http.StatusNotImplemented || hd.Get("Access-Control-Allow-Origin") != "" {

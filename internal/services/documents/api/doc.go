@@ -21,6 +21,9 @@
 //   - service.go: Service, Call and the admission above, and the error mapping;
 //   - documents.go: the F1 methods (GetDocument, BatchGetDocuments, ListDocuments,
 //     CreateDocument, UpdateDocument, DeleteDocument, ListCollectionIds);
-//   - fields.go: masks, the values a write stores, and document conversion;
+//   - writes.go: Commit and BatchWrite, and the writes and field transforms they carry;
+//   - transactions.go: BeginTransaction, Rollback, the caller as a transaction's principal, and
+//     the transaction a read begins (new_transaction);
+//   - fields.go: masks, consistency selectors, the values a write stores, and document conversion;
 //   - order.go and pagetoken.go: ListDocuments' order_by and both listings' page tokens.
 package api

@@ -76,7 +76,9 @@ func (s *Service) listOrdered(ctx context.Context, a admitted, parent wire.Name,
 		if err != nil {
 			return nil, s.fail(ctx, err)
 		}
-		scan.ReadTime = res.ReadTime
+		if scan.Transaction == nil {
+			scan.ReadTime = res.ReadTime
+		}
 		for _, d := range res.Documents {
 			e := orderedEntry{doc: d}
 			for _, f := range fields {

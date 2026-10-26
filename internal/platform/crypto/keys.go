@@ -6,6 +6,7 @@
 package crypto
 
 import (
+	"bytes"
 	"crypto/hkdf"
 	"crypto/sha256"
 	"errors"
@@ -17,6 +18,7 @@ type Keys struct {
 	tokenMAC     []byte
 	csrfMAC      []byte
 	pageTokenMAC []byte
+	documentsTxn []byte
 	kek          map[uint32][]byte
 	current      uint32
 }
@@ -39,12 +41,21 @@ func NewKeys(master []byte) (*Keys, error) {
 	if err != nil {
 		return nil, err
 	}
+	txn, err := derive(master, "aruma/v1/documents-transaction")
+	if err != nil {
+		return nil, err
+	}
 	kek, err := derive(master, "aruma/v1/kek")
 	if err != nil {
 		return nil, err
 	}
-	return &Keys{tokenMAC: mac, csrfMAC: csrf, pageTokenMAC: page, kek: map[uint32][]byte{1: kek}, current: 1}, nil
+	return &Keys{tokenMAC: mac, csrfMAC: csrf, pageTokenMAC: page, documentsTxn: txn, kek: map[uint32][]byte{1: kek}, current: 1}, nil
 }
+
+// DocumentsTransactionKey returns a copy of the key that authenticates the Document Database's
+// transaction ids (ADR-024 §6.2, ADR-025 §7.5): derived from the master key, so an id issued
+// before a restart is still known to be authentic, and answered as expired rather than forged.
+func (k *Keys) DocumentsTransactionKey() []byte { return bytes.Clone(k.documentsTxn) }
 
 // AddKEK registers the key-encryption key derived from a newer master key under version v and
 // makes it current. Older versions stay available to open existing data.

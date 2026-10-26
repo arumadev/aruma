@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 
 	"github.com/arumadev/aruma/internal/config"
 	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/crypto"
 	"github.com/arumadev/aruma/internal/platform/metrics"
 	"github.com/arumadev/aruma/internal/server"
 	docapi "github.com/arumadev/aruma/internal/services/documents/api"
@@ -33,19 +35,22 @@ type Documents struct {
 	store *bootStore
 	pool  *pgxpool.Pool
 	cfg   config.DocumentsLimits
+	txns  documents.TxnConfig
 	log   *slog.Logger
 
 	instance *documents.Instance
-	// stopRetention ends the retention job Boot started, and retentionDone closes when it has.
-	stopRetention context.CancelFunc
-	retentionDone chan struct{}
+	// stopJobs ends the jobs Boot started (the retention, the transactions' sweep), and jobsDone
+	// closes when they have.
+	stopJobs context.CancelFunc
+	jobsDone chan struct{}
 }
 
 // newDocuments wires the Document Database's surfaces on the control plane: its service
 // accounts verify the Admin SDKs' self-signed JWTs, and every key or account deleted is
 // forgotten by the verifier's cache at once (ADR-029 §3.8). A purged project's documents go
-// with it (ADR-024 §1.1).
-func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, m *metrics.Metrics, logger *slog.Logger) *Documents {
+// with it (ADR-024 §1.1). Transaction ids are authenticated with a key derived from the master
+// key, so that one issued before a restart is answered as expired, not forged (ADR-025 §7.5).
+func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, keys *crypto.Keys, m *metrics.Metrics, logger *slog.Logger) *Documents {
 	svc.OnProjectPurged(func(ctx context.Context, project int64) error {
 		return documents.PurgeProject(ctx, pool, project)
 	})
@@ -69,6 +74,7 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, m *
 	l := cfg.Documents.Limits
 	rpcMetrics := docgrpc.NewMetrics()
 	m.Registry.MustRegister(rpcMetrics.Collectors()...)
+	m.Registry.MustRegister(docgrpc.TransactionCollectors(store.transactionStats)...)
 	return &Documents{
 		GRPC: docgrpc.New(docgrpc.Options{
 			Service:        api,
@@ -82,6 +88,14 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, m *
 		}),
 		REST:  docrest.New(docrest.Options{Service: api, Logger: logger}),
 		store: store, pool: pool, cfg: l, log: logger,
+		txns: documents.TxnConfig{
+			Key:         keys.DocumentsTransactionKey(),
+			WaitTimeout: l.TxnWaitTimeout,
+			IdleTimeout: l.TxnIdleTimeout,
+			MaxLifetime: l.TxnMaxLifetime,
+			MaxOpen:     l.MaxOpenTxns,
+			MaxLocks:    l.MaxLocksPerTxn,
+		},
 	}
 }
 
@@ -92,20 +106,35 @@ func (d *Documents) mount(h *server.Handlers) {
 
 // Boot takes the single-instance lock, trying for up to 30 seconds (ADR-024 §7), opens the
 // store, starts the retention of versions and the changelog (ADR-024 §8), which runs while the
-// lock is held, and gives every project its '(default)' database. Without the lock the rest of
-// Aruma serves and the Document Database answers UNAVAILABLE until the guard takes it. It runs
-// before the listener opens; Close stops what it started.
+// lock is held, and the transactions' sweep (ADR-024 §6.3), and gives every project its
+// '(default)' database. Losing the lock drops every open transaction, before o.OnLost runs.
+// Without the lock the rest of Aruma serves and the Document Database answers UNAVAILABLE until
+// the guard takes it. It runs before the listener opens; Close stops what it started.
 func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error {
 	o.Log = d.log
+	onLost := o.OnLost
+	o.OnLost = func() {
+		if s := d.store.s.Load(); s != nil {
+			s.DropTransactions()
+		}
+		if onLost != nil {
+			onLost()
+		}
+	}
 	d.instance = documents.StartInstance(ctx, d.pool.Config().ConnConfig, o)
-	store := documents.NewPGStore(d.pool, documents.Options{CommitConcurrency: d.cfg.CommitConcurrency, Instance: d.instance})
+	store := documents.NewPGStore(d.pool, documents.Options{
+		CommitConcurrency: d.cfg.CommitConcurrency, Instance: d.instance, Transactions: d.txns,
+	})
 	d.store.set(store)
-	var rctx context.Context
-	rctx, d.stopRetention = context.WithCancel(ctx)
-	d.retentionDone = make(chan struct{})
+	var jctx context.Context
+	jctx, d.stopJobs = context.WithCancel(ctx)
+	d.jobsDone = make(chan struct{})
+	var jobs sync.WaitGroup
+	jobs.Go(func() { store.RunRetention(jctx, documents.RetentionOptions{Log: d.log}) })
+	jobs.Go(func() { store.RunTransactions(jctx) })
 	go func() {
-		defer close(d.retentionDone)
-		store.RunRetention(rctx, documents.RetentionOptions{Log: d.log})
+		jobs.Wait()
+		close(d.jobsDone)
 	}()
 	if !d.instance.Held() {
 		return nil
@@ -113,11 +142,11 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	return ensureDatabases(ctx, d.pool, store)
 }
 
-// Close stops the retention job and releases the lock.
+// Close stops the retention job and the transactions' sweep, and releases the lock.
 func (d *Documents) Close() {
-	if d.stopRetention != nil {
-		d.stopRetention()
-		<-d.retentionDone
+	if d.stopJobs != nil {
+		d.stopJobs()
+		<-d.jobsDone
 	}
 	if d.instance != nil {
 		d.instance.Close()
@@ -222,4 +251,36 @@ func (b *bootStore) Commit(ctx context.Context, db documents.DB, writes []docume
 		return documents.CommitResult{}, err
 	}
 	return s.Commit(ctx, db, writes)
+}
+
+// transactionStats are the transactions' counters; zero before Boot.
+func (b *bootStore) transactionStats() documents.TxnStats {
+	if s := b.s.Load(); s != nil {
+		return s.TransactionStats()
+	}
+	return documents.TxnStats{}
+}
+
+func (b *bootStore) BeginTransaction(ctx context.Context, db documents.DB, by documents.Principal, o documents.TransactionOptions) ([]byte, error) {
+	s, err := b.get()
+	if err != nil {
+		return nil, err
+	}
+	return s.BeginTransaction(ctx, db, by, o)
+}
+
+func (b *bootStore) CommitTransaction(ctx context.Context, db documents.DB, t documents.TransactionRef, writes []documents.Write) (documents.CommitResult, error) {
+	s, err := b.get()
+	if err != nil {
+		return documents.CommitResult{}, err
+	}
+	return s.CommitTransaction(ctx, db, t, writes)
+}
+
+func (b *bootStore) Rollback(ctx context.Context, db documents.DB, t documents.TransactionRef) error {
+	s, err := b.get()
+	if err != nil {
+		return err
+	}
+	return s.Rollback(ctx, db, t)
 }

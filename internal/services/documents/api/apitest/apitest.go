@@ -49,6 +49,8 @@ type Options struct {
 	DevOpenRules bool
 	// Store wraps the documents store, for tests that need to hold a call.
 	Store func(documents.Store) documents.Store
+	// Transactions bounds the store's transactions; the zero value is production's numbers.
+	Transactions documents.TxnConfig
 }
 
 // Env is a service layer on a fresh database.
@@ -111,7 +113,7 @@ func New(t testing.TB, o Options) *Env {
 		Verifier: svc, ServiceAccountJWTs: jwts, Owners: svc, PublicURL: PublicURL,
 		LoopbackDeployment: true, DevOwnerToken: o.DevOwnerToken, Logger: log,
 	})
-	store := documents.NewPGStore(pool, documents.Options{})
+	store := documents.NewPGStore(pool, documents.Options{Transactions: o.Transactions})
 	var s documents.Store = store
 	if o.Store != nil {
 		s = o.Store(store)

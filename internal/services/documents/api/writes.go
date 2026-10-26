@@ -33,21 +33,24 @@ var (
 // (f1-write-results.json rest.verify_no_precondition).
 var errVerifyPrecondition = wire.InvalidArgument("a verify must contain a precondition")
 
-// Commit applies writes atomically, in order (f1-write-results.json). A commit in a
-// transaction is answered UNIMPLEMENTED until transactions are served.
+// Commit applies writes atomically, in order (f1-write-results.json), in the request's
+// transaction when it names one, which the commit ends whatever its outcome (f0-errors.json
+// txn_unknown.commit, txn_reused.*; f0-contention.json).
 func (s *Service) Commit(ctx context.Context, c Call, req *pb.CommitRequest) (*pb.CommitResponse, error) {
 	a, err := s.admit(ctx, c, req, databaseOf(req.GetDatabase()))
 	if err != nil {
 		return nil, err
 	}
-	if len(req.GetTransaction()) > 0 {
-		return nil, wire.Unimplemented("Transactions")
-	}
 	writes, err := writesOf(req.GetWrites())
 	if err != nil {
 		return nil, err
 	}
-	res, err := s.o.Store.Commit(ctx, a.db, writes)
+	var res core.CommitResult
+	if len(req.GetTransaction()) > 0 {
+		res, err = s.o.Store.CommitTransaction(ctx, a.db, *a.transaction(req.GetTransaction()), writes)
+	} else {
+		res, err = s.o.Store.Commit(ctx, a.db, writes)
+	}
 	if err != nil {
 		return nil, s.fail(ctx, err)
 	}

@@ -2,11 +2,13 @@ package documents
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -726,6 +728,140 @@ func TestSDKWrites(t *testing.T) {
 					t.Errorf("%s: got %#v, want %#v", k, got[k], want)
 				}
 			}
+		}
+	})
+}
+
+// TestSDKTransactions runs the Go client's transactions, which an admin's are: pessimistic,
+// begun with BeginTransaction, retried on ABORTED with retry_transaction (F2).
+func TestSDKTransactions(t *testing.T) {
+	c := newClient(t)
+	defer c.Close()
+	col := c.Collection("sdk-txn")
+	check(t, "read-modify-write", func(t T) {
+		doc := col.Doc("rmw")
+		_, err := doc.Set(t.Context(), map[string]any{"n": 1})
+		mustOK(t, err, "Set")
+		err = c.RunTransaction(t.Context(), func(ctx context.Context, tx *firestore.Transaction) error {
+			s, err := tx.Get(doc)
+			if err != nil {
+				return err
+			}
+			return tx.Update(doc, []firestore.Update{{Path: "n", Value: s.Data()["n"].(int64) + 1}})
+		})
+		mustOK(t, err, "RunTransaction")
+		s, err := doc.Get(t.Context())
+		mustOK(t, err, "Get")
+		if n := s.Data()["n"]; n != int64(2) {
+			t.Errorf("n = %v, want 2", n)
+		}
+	})
+	check(t, "concurrent increments keep the total", func(t T) {
+		doc := col.Doc("counter")
+		_, err := doc.Set(t.Context(), map[string]any{"n": 0})
+		mustOK(t, err, "Set")
+		const workers = 10
+		var wg sync.WaitGroup
+		errs := make([]error, workers)
+		for i := range workers {
+			wg.Go(func() {
+				// Every worker contends for one document: an attempt is wounded or waits, and the
+				// client retries it with its age (retry_transaction).
+				errs[i] = c.RunTransaction(t.Context(), func(ctx context.Context, tx *firestore.Transaction) error {
+					s, err := tx.Get(doc)
+					if err != nil {
+						return err
+					}
+					return tx.Set(doc, map[string]any{"n": s.Data()["n"].(int64) + 1})
+				})
+			})
+		}
+		wg.Wait()
+		for i, err := range errs {
+			mustOK(t, err, fmt.Sprintf("worker %d", i))
+		}
+		s, err := doc.Get(t.Context())
+		mustOK(t, err, "Get")
+		if n := s.Data()["n"]; n != int64(workers) {
+			t.Errorf("n = %v, want %d", n, workers)
+		}
+	})
+	check(t, "read-only", func(t T) {
+		doc := col.Doc("ro")
+		_, err := doc.Set(t.Context(), map[string]any{"a": 1})
+		mustOK(t, err, "Set")
+		err = c.RunTransaction(t.Context(), func(ctx context.Context, tx *firestore.Transaction) error {
+			s, err := tx.Get(doc)
+			if err != nil {
+				return err
+			}
+			if s.Data()["a"] != int64(1) {
+				t.Errorf("a = %v", s.Data()["a"])
+			}
+			// A write commits after the read, outside the transaction: the snapshot does not see it.
+			if _, err := doc.Set(t.Context(), map[string]any{"a": 2}); err != nil {
+				return err
+			}
+			s, err = tx.Get(doc)
+			if err != nil {
+				return err
+			}
+			if s.Data()["a"] != int64(1) {
+				t.Errorf("a read-only transaction saw a later commit: a = %v", s.Data()["a"])
+			}
+			return nil
+		}, firestore.ReadOnly)
+		mustOK(t, err, "RunTransaction ReadOnly")
+	})
+	check(t, "a failed transaction rolls back", func(t T) {
+		doc := col.Doc("rollback")
+		_, err := doc.Set(t.Context(), map[string]any{"a": 1})
+		mustOK(t, err, "Set")
+		boom := errors.New("boom")
+		err = c.RunTransaction(t.Context(), func(ctx context.Context, tx *firestore.Transaction) error {
+			if _, err := tx.Get(doc); err != nil {
+				return err
+			}
+			if err := tx.Set(doc, map[string]any{"a": 2}); err != nil {
+				return err
+			}
+			return boom
+		})
+		if !errors.Is(err, boom) {
+			t.Errorf("RunTransaction: %v, want %v", err, boom)
+		}
+		s, err := doc.Get(t.Context())
+		mustOK(t, err, "Get")
+		if s.Data()["a"] != int64(1) {
+			t.Errorf("a = %v after the rollback", s.Data()["a"])
+		}
+		// Its lock is freed: a write outside a transaction does not wait.
+		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+		defer cancel()
+		_, err = doc.Set(ctx, map[string]any{"a": 3})
+		mustOK(t, err, "Set after the rollback")
+	})
+	check(t, "GetAll in a transaction", func(t T) {
+		a, b, missing := col.Doc("all-a"), col.Doc("all-b"), col.Doc("all-missing")
+		_, err := a.Set(t.Context(), map[string]any{"v": "a"})
+		mustOK(t, err, "Set")
+		_, err = b.Set(t.Context(), map[string]any{"v": "b"})
+		mustOK(t, err, "Set")
+		err = c.RunTransaction(t.Context(), func(ctx context.Context, tx *firestore.Transaction) error {
+			snaps, err := tx.GetAll([]*firestore.DocumentRef{b, missing, a})
+			if err != nil {
+				return err
+			}
+			if len(snaps) != 3 || snaps[0].Data()["v"] != "b" || snaps[1].Exists() || snaps[2].Data()["v"] != "a" {
+				t.Errorf("GetAll: %v", snaps)
+			}
+			return tx.Set(missing, map[string]any{"v": "created"})
+		})
+		mustOK(t, err, "RunTransaction")
+		s, err := missing.Get(t.Context())
+		mustOK(t, err, "Get")
+		if s.Data()["v"] != "created" {
+			t.Errorf("v = %v", s.Data()["v"])
 		}
 	})
 }

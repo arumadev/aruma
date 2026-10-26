@@ -73,7 +73,16 @@ func (f firestore) BatchWrite(ctx context.Context, req *connect.Request[pb.Batch
 	return unary(ctx, req, f.h.svc.BatchWrite)
 }
 
-// BatchGetDocuments is a server stream: one response per document asked, in order.
+func (f firestore) BeginTransaction(ctx context.Context, req *connect.Request[pb.BeginTransactionRequest]) (*connect.Response[pb.BeginTransactionResponse], error) {
+	return unary(ctx, req, f.h.svc.BeginTransaction)
+}
+
+func (f firestore) Rollback(ctx context.Context, req *connect.Request[pb.RollbackRequest]) (*connect.Response[emptypb.Empty], error) {
+	return unary(ctx, req, f.h.svc.Rollback)
+}
+
+// BatchGetDocuments is a server stream: one response per document asked, in order, after the
+// transaction's id when the request asks for a new one.
 func (f firestore) BatchGetDocuments(ctx context.Context, req *connect.Request[pb.BatchGetDocumentsRequest], stream *connect.ServerStream[pb.BatchGetDocumentsResponse]) error {
 	s, err := f.h.serverStream(ctx)
 	if err != nil {

@@ -144,6 +144,23 @@ type Caller struct {
 	credential string // the admin credential as sent, for Recheck
 }
 
+// UnverifiedSubject is a RoleEndUser caller's uid as its ID token claims it (sub), not yet
+// verified: the rules layer verifies the token (UnverifiedIDToken). "" for any other caller.
+func (c *Caller) UnverifiedSubject() string {
+	if c.Role != RoleEndUser {
+		return ""
+	}
+	_, rest, _ := strings.Cut(c.UnverifiedIDToken, ".")
+	payload, _, _ := strings.Cut(rest, ".")
+	var claims struct {
+		Sub string `json:"sub"`
+	}
+	if decodeJWTSegment(payload, &claims) != nil {
+		return ""
+	}
+	return claims.Sub
+}
+
 // Errors of the Document Database's authentication.
 var (
 	// errNeedsTLS refuses an admin credential sent in the clear (ADR-029 §3.7).
