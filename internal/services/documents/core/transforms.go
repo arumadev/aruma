@@ -37,11 +37,11 @@ type Transform struct {
 }
 
 // RequestTime is the value REQUEST_TIME gives a commit at commitTime: the commit_time at
-// millisecond precision, rounded down. write.proto says "with millisecond precision", and
-// production's transform results have whole milliseconds (f1-write-results.json
-// rest.update_with_transform .976Z, grpc.update_with_transform nanos 857000000); that it is
-// the commit_time rounded down, and not the time the request arrived, is this server's choice
-// (every field of a commit gets the same one, as write.proto requires of a transaction).
+// millisecond precision, rounded down. Production's value has whole milliseconds and is one
+// value for the whole commit, as this is, but it is the request's time, a few milliseconds
+// before the commitTime (f2-transforms.json st.*); this server takes the commit's own time on
+// purpose, which is never after the commitTime and follows the commits' order (parity
+// request-time-is-commit-time).
 func RequestTime(commitTime time.Time) value.Value {
 	t := commitTime.Truncate(time.Millisecond)
 	return value.Timestamp(t.Unix(), int32(t.Nanosecond()))
