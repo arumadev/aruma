@@ -71,17 +71,14 @@
       "summary": "Transactions open when Aruma restarts (or loses its Document Database instance lock) are lost; their authentic ids get ABORTED, so clients retry.",
       "production": "Production does not restart under a client. An id that never existed, a forged id (last byte flipped) and an empty id get INVALID_ARGUMENT \"Invalid transaction.\" on commit, GET, runQuery and rollback (corpus/f0-errors.json, corpus/f2-transactions.json); a committed or rolled-back id gets HTTP 409 ABORTED \"The referenced transaction has expired or is no longer valid.\" (corpus/f0-errors.json, corpus/f0-contention.json s5, corpus/f2-transactions.json). Lifetime (corpus/f2-transactions.json `lifetime`): a read-write transaction is usable at 241 s and gets that ABORTED text at 271 s whether it was idle or read every 30 s (the lifetime runs from begin, not from the last use); at 300 s an id idle since its begin, read-write or read-only, gets INVALID_ARGUMENT \"Invalid transaction.\", as an id that never existed. Idle for 70 s, a transaction still holds its read lock: a plain write waits about 20 s and gets ABORTED \"Too much contention on these documents. Please try again.\", and the transaction then commits.",
       "emulator": "Keeps transactions in memory; a restart loses them with all data.",
-      "aruma": "Transaction ids carry an HMAC under a key derived from the master key, over a format version, a per-process boot nonce, a serial, the issue time, and the project, database and principal. A forged, garbage or foreign id gets INVALID_ARGUMENT \"Invalid transaction.\" as production. An authentic id unknown to this process (issued before a restart or before the instance lock was lost) or expired gets ABORTED \"The referenced transaction has expired or is no longer valid.\", on which Go and Node retry with a fresh age (ADR-025 §7.5, ADR-024 §6.2). Expiry follows the recorded lifetime: ABORTED with that text from 270 s after begin; production's later INVALID_ARGUMENT for an id it has forgotten (seen at 300 s) is matched once Aruma forgets an expired id. F2 writes the test (planned).",
+      "aruma": "Transaction ids carry an HMAC under a key derived from the master key, over a format version, a per-process boot nonce, a serial, the issue time, and the project, database and principal. A forged, garbage or foreign id gets INVALID_ARGUMENT \"Invalid transaction.\" as production. An authentic id unknown to this process (issued before a restart or before the instance lock was lost) or expired gets ABORTED \"The referenced transaction has expired or is no longer valid.\", on which Go and Node retry with a fresh age (ADR-025 §7.5, ADR-024 §6.2). Expiry follows the recorded lifetime: ABORTED with that text from 270 s after begin; from 300 s after begin (the issue time in the id) every id is forgotten and gets INVALID_ARGUMENT \"Invalid transaction.\", as production's. The difference left is the restart itself: within 300 s of its begin, a transaction lost by a restart answers ABORTED where production's would still be open.",
       "follows": "production",
       "evidence": [
         "corpus/f0-errors.json",
         "corpus/f0-contention.json",
         "corpus/f2-transactions.json"
       ],
-      "planned": {
-        "test": "internal/services/documents/core/txn_expiry_test.go:TestTransactionUnknownAfterRestartAborted",
-        "phase": "F2"
-      }
+      "test": "internal/services/documents/core/txn_expiry_test.go:TestTransactionUnknownAfterRestartAborted"
     },
     {
       "id": "listen-resume-beyond-window",

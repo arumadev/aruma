@@ -7,11 +7,11 @@ import (
 
 // Expiry (ADR-024 §6.3, ADR-025 §7.5). A transaction ends MaxLifetime (270 s) after Begin; a call
 // that finds it past that ends it at once, and the sweep ends the ones no call comes for, which
-// may hold locks. Idleness alone ends nothing: production commits after 70 s idle (f0-contention
-// s5). A transaction idle past IdleTimeout (60 s) may be wounded by any waiter instead; a waiter
-// meets an idle holder when it queues, and the sweep wounds a holder that became idle while a
-// waiter waited. An ended transaction's record stays MaxLifetime longer, so that
-// retry_transaction finds its age and its id answers the expired text.
+// may hold locks. Idleness alone ends nothing and wounds nothing: production commits after 70 s
+// idle, and keeps an idle holder's locks while a writer waits (f0-contention s5,
+// f2-transactions.json lifetime). An ended transaction's record stays until forgetAfter (300 s)
+// from its Begin, so that retry_transaction finds its age and its id answers the expired text;
+// then its id is "Invalid transaction.", as production's is.
 
 // sweepEvery is how often RunTransactions sweeps.
 const sweepEvery = time.Second
@@ -31,8 +31,8 @@ func (s *PGStore) RunTransactions(ctx context.Context) {
 	}
 }
 
-// SweepTransactions ends the transactions past their lifetime, wounds the idle holders a waiter
-// waits for, and forgets the records of transactions ended long enough ago.
+// SweepTransactions ends the transactions past their lifetime and forgets the records of those
+// past forgetAfter.
 func (s *PGStore) SweepTransactions() {
 	r := s.txns
 	now := r.cfg.now()
@@ -45,7 +45,7 @@ func (s *PGStore) SweepTransactions() {
 	for _, tx := range all {
 		tx.mu.Lock()
 		switch {
-		case tx.ended && now.Sub(tx.endedAt) > r.cfg.MaxLifetime:
+		case tx.ended && now.Sub(tx.issued) > r.cfg.forgetAfter():
 			r.mu.Lock()
 			if r.all[tx.num] == tx {
 				delete(r.all, tx.num)
@@ -57,5 +57,4 @@ func (s *PGStore) SweepTransactions() {
 		}
 		tx.mu.Unlock()
 	}
-	r.locks.each(func(t *lockTable) { t.sweep() })
 }

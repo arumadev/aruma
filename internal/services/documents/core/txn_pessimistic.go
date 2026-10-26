@@ -35,10 +35,9 @@ func listLock(r ListRequest) string {
 // lockPessimistic takes a pessimistic transaction's write locks for its commit.
 func (s *PGStore) lockPessimistic(ctx context.Context, p *plan, c *commitTxn) (func(), error) {
 	table, lt := c.tx.table, c.tx.lt
-	if err := table.enter(lt); err != nil {
+	if err := table.state(lt); err != nil {
 		return nil, err
 	}
-	defer table.leave(lt)
 	if err := table.acquireAll(ctx, lt, writeLocks(p)); err != nil {
 		return nil, err
 	}

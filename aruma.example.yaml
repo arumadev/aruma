@@ -121,7 +121,6 @@ documents:                         # Document Database (ADR-024 to ADR-029); see
     streams_per_ip: 500            # streams open at once from one client address
     commit_concurrency: 4          # commits of one database in Postgres at once
     txn_wait_timeout: 20s          # a wait for a transaction's lock, then ABORTED
-    txn_idle_timeout: 60s          # an idle transaction may then be aborted by a waiter
     txn_max_lifetime: 270s         # a transaction ends this long after it began
     max_open_txns: 1000            # open locking transactions per database
     max_locks_per_txn: 10000       # documents and listings one transaction locks or reads

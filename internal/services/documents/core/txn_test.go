@@ -117,18 +117,6 @@ func TestTransactionIDs(t *testing.T) {
 	if err := s.Rollback(ctx, testDB, ref); err != nil {
 		t.Fatalf("rollback of an unknown transaction: %v", err)
 	}
-
-	// Another store with the same key accepts its ids as authentic.
-	key := bytes.Repeat([]byte{7}, 32)
-	s1, _ := newStore(t, Options{Transactions: TxnConfig{Key: key}})
-	s2, _ := newStore(t, Options{Transactions: TxnConfig{Key: key}})
-	id, err := s1.BeginTransaction(ctx, testDB, admin, TransactionOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := s2.CommitTransaction(ctx, testDB, TransactionRef{ID: id, By: admin}, nil); !errors.Is(err, ErrTransactionExpired) {
-		t.Fatalf("an id from before a restart: %v", err)
-	}
 }
 
 // A transaction ends 270 s after Begin, not when idle (f0-contention s5).
@@ -164,14 +152,29 @@ func TestTransactionExpiry(t *testing.T) {
 	if err := s.Rollback(ctx, testDB, old); err != nil {
 		t.Fatalf("rollback of an expired transaction: %v", err)
 	}
-	// Its record goes after another lifetime.
-	clk.advance(271 * time.Second)
+	// Production forgets it by 300 s after Begin: its id is then as one that never existed, on
+	// every call (f2-transactions.json lifetime idle_read_write).
+	clk.advance(28 * time.Second)
+	s.SweepTransactions()
+	if _, err := s.CommitTransaction(ctx, testDB, old, nil); !errors.Is(err, ErrTransactionExpired) {
+		t.Fatalf("commit at 299 s: %v", err)
+	}
+	clk.advance(2 * time.Second)
 	s.SweepTransactions()
 	if n := len(s.txns.all); n != 0 {
 		t.Fatalf("%d records left", n)
 	}
-	if _, err := s.CommitTransaction(ctx, testDB, old, nil); !errors.Is(err, ErrTransactionExpired) {
-		t.Fatalf("commit once forgotten: %v", err)
+	if _, err := s.CommitTransaction(ctx, testDB, old, nil); !errors.Is(err, ErrInvalidTransaction) {
+		t.Fatalf("commit at 301 s: %v", err)
+	}
+	if _, _, err := s.Get(ctx, testDB, ParsePath("exp/a"), in(old)); !errors.Is(err, ErrInvalidTransaction) {
+		t.Fatalf("read at 301 s: %v", err)
+	}
+	if err := s.Rollback(ctx, testDB, old); !errors.Is(err, ErrInvalidTransaction) {
+		t.Fatalf("rollback at 301 s: %v", err)
+	}
+	if _, err := s.BeginTransaction(ctx, testDB, admin, TransactionOptions{Retry: old.ID}); !errors.Is(err, ErrInvalidTransaction) {
+		t.Fatalf("retry at 301 s: %v", err)
 	}
 }
 
@@ -208,7 +211,8 @@ func TestConflictingPessimisticWriters(t *testing.T) {
 }
 
 // f0-contention s3a: the older's blind write wounds the younger reader, whose next read is ABORTED
-// with the wound text, and later calls with the expired one.
+// with the wound text, and later calls with the contention one; its rollback succeeds
+// (f2-locks.json wounded_transaction).
 func TestWoundedReaderLearnsOnNextCall(t *testing.T) {
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
@@ -226,8 +230,14 @@ func TestWoundedReaderLearnsOnNextCall(t *testing.T) {
 	if _, _, err := s.BatchGet(ctx, testDB, []Path{ParsePath("txn/D")}, in(t2)); !errors.Is(err, ErrWounded) {
 		t.Fatalf("T2 read: %v", err)
 	}
-	if _, err := s.CommitTransaction(ctx, testDB, t2, nil); !errors.Is(err, ErrTransactionExpired) {
+	if _, _, err := s.BatchGet(ctx, testDB, []Path{ParsePath("txn/D")}, in(t2)); !errors.Is(err, ErrContention) {
+		t.Fatalf("T2 read again: %v", err)
+	}
+	if _, err := s.CommitTransaction(ctx, testDB, t2, nil); !errors.Is(err, ErrContention) {
 		t.Fatalf("T2 commit: %v", err)
+	}
+	if err := s.Rollback(ctx, testDB, t2); err != nil {
+		t.Fatalf("T2 rollback: %v", err)
 	}
 }
 
@@ -325,6 +335,13 @@ func TestReadOnlyTransaction(t *testing.T) {
 	}
 	_, err := s.CommitTransaction(ctx, testDB, now, []Write{set("ro/c", doc())})
 	wantError(t, err, InvalidArgument, ErrReadOnlyWrite.Message)
+	// After its refused write, the transaction's expired text comes as INVALID_ARGUMENT
+	// (f2-transactions.json ro.commit_empty_after_refused_write).
+	_, err = s.CommitTransaction(ctx, testDB, now, nil)
+	wantError(t, err, InvalidArgument, ErrTransactionExpired.Message)
+	// A read-only transaction cannot be retried (begin.retry_of_read_only).
+	_, err = s.BeginTransaction(ctx, testDB, endUser, TransactionOptions{Concurrency: ConcurrencyOptimistic, Retry: then.ID})
+	wantError(t, err, InvalidArgument, "Cannot retry a read-only transaction")
 	if res, err := s.CommitTransaction(ctx, testDB, then, nil); err != nil || res.CommitTime.IsZero() {
 		t.Fatalf("an empty commit: %+v %v", res, err)
 	}

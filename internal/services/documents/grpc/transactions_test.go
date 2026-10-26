@@ -2,8 +2,10 @@ package grpc_test
 
 import (
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/arumadev/aruma/internal/services/documents/api/apitest"
 	docgrpc "github.com/arumadev/aruma/internal/services/documents/grpc"
@@ -153,6 +155,40 @@ func TestTransactions(t *testing.T) {
 	d, err = x.client.GetDocument(ctx, req(&pb.GetDocumentRequest{Name: root + "/t/g1"}, tok))
 	if err != nil || d.Msg.Fields["a"].GetIntegerValue() != 2 {
 		t.Errorf("after the commit: %v %v", d, err)
+	}
+}
+
+// The gRPC cases of f2-transactions.json: a retry with an empty id begins afresh; a future
+// read_time, an empty id and a write in a read-only transaction get production's texts; the
+// empty commit in a transaction has a commit_time.
+func TestTransactionsF2(t *testing.T) {
+	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
+	ctx, tok := t.Context(), x.env.JWT(t)
+	begin(t, x.client, tok, &pb.TransactionOptions{Mode: &pb.TransactionOptions_ReadWrite_{ReadWrite: &pb.TransactionOptions_ReadWrite{RetryTransaction: []byte{}}}})
+	_, err := x.client.BeginTransaction(ctx, req(&pb.BeginTransactionRequest{Database: db, Options: &pb.TransactionOptions{Mode: &pb.TransactionOptions_ReadWrite_{
+		ReadWrite: &pb.TransactionOptions_ReadWrite{RetryTransaction: []byte{0, 17, 34, 51, 68, 85, 102, 119, 136, 153, 170, 187, 204, 221, 238, 255}}}}}, tok))
+	wantErr(t, "grpc.begin.retry_unknown", err, connect.CodeInvalidArgument, msgInvalidTransaction)
+	_, err = x.client.BeginTransaction(ctx, req(&pb.BeginTransactionRequest{Database: db, Options: &pb.TransactionOptions{Mode: &pb.TransactionOptions_ReadOnly_{
+		ReadOnly: &pb.TransactionOptions_ReadOnly{ConsistencySelector: &pb.TransactionOptions_ReadOnly_ReadTime{ReadTime: timestamppb.New(time.Now().Add(time.Hour))}}}}}, tok))
+	wantErr(t, "grpc.begin.read_only_read_time_future", err, connect.CodeInvalidArgument, "The requested 'read_time' cannot be in the future.")
+	_, err = x.client.Rollback(ctx, req(&pb.RollbackRequest{Database: db}, tok))
+	wantErr(t, "grpc.rollback.empty", err, connect.CodeInvalidArgument, msgInvalidTransaction)
+
+	ro := begin(t, x.client, tok, readOnly)
+	_, err = x.client.Commit(ctx, req(&pb.CommitRequest{Database: db, Transaction: ro,
+		Writes: []*pb.Write{{Operation: &pb.Write_Update{Update: &pb.Document{Name: root + "/t/gro1", Fields: intField(1)}}}}}, tok))
+	wantErr(t, "grpc.commit.read_only_write", err, connect.CodeInvalidArgument, "Cannot modify entities in a read-only transaction.")
+	_, err = x.client.Commit(ctx, req(&pb.CommitRequest{Database: db, Transaction: ro}, tok))
+	wantErr(t, "the empty commit after the refused write", err, connect.CodeInvalidArgument, msgTransactionExpired)
+
+	rw := begin(t, x.client, tok, nil)
+	if res, err := x.client.Commit(ctx, req(&pb.CommitRequest{Database: db, Transaction: rw}, tok)); err != nil || res.Msg.CommitTime == nil {
+		t.Errorf("the empty commit in a transaction: %v %v", res, err)
+	}
+	for range 2 {
+		if _, err := x.client.Rollback(ctx, req(&pb.RollbackRequest{Database: db, Transaction: rw}, tok)); err != nil {
+			t.Errorf("grpc.rollback.first/second: %v", err)
+		}
 	}
 }
 

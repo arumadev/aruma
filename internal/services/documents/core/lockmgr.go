@@ -21,8 +21,9 @@ import (
 //     once; its wait, or its next call, fails ABORTED with the wound text (s1, s3a);
 //   - a younger requester waits for the older one (s2), up to the wait timeout, about 20 s in
 //     production (s6), after which it is ABORTED with "Too much contention" and its locks go;
-//   - a transaction idle longer than the idle timeout (60 s) may be wounded by any waiter, of any
-//     age; idleness alone ends nothing (s5: a commit after 70 s idle succeeds).
+//   - idleness ends nothing and wounds nothing: an idle holder keeps its locks until it ends or
+//     its lifetime does (s5: a commit after 70 s idle succeeds; f2-transactions.json lifetime
+//     idle_70s_then_plain_write: a writer waits 20 s for an idle holder, then the holder commits).
 //
 // Every edge of the wait-for graph so then runs from a younger transaction to an older one, or to
 // one that is committing and so waits for nothing: there is no cycle, and the wait timeout is a
@@ -75,9 +76,7 @@ type lockTxn struct {
 	waiting    *lockRequest
 	committing bool // holds every lock its commit needs: never wounded, never waits again
 	done       bool
-	err        error // why it ended, for its waiter and its next call
-	active     int   // calls in progress: a transaction inside a call is not idle
-	lastUsed   time.Time
+	err        error     // why it ended, for its waiter and its next call
 	bounded    bool      // holds at most MaxLocks locks
 	waitUntil  time.Time // when set, the end of every wait, instead of WaitTimeout from its start
 }
@@ -123,19 +122,6 @@ func (m *lockManager) table(db DB) *lockTable {
 	return t
 }
 
-// each calls f with every table.
-func (m *lockManager) each(f func(*lockTable)) {
-	m.mu.Lock()
-	tables := make([]*lockTable, 0, len(m.tables))
-	for _, t := range m.tables {
-		tables = append(tables, t)
-	}
-	m.mu.Unlock()
-	for _, t := range tables {
-		f(t)
-	}
-}
-
 // lockTable is one database's locks.
 type lockTable struct {
 	m     *lockManager
@@ -150,32 +136,9 @@ type lockTable struct {
 func (t *lockTable) begin(age uint64, forCommit bool) *lockTxn {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	lt := &lockTxn{age: age, held: map[string]lockMode{}, lastUsed: t.m.cfg.now(), bounded: !forCommit}
-	if forCommit {
-		lt.active = 1
-	}
+	lt := &lockTxn{age: age, held: map[string]lockMode{}, bounded: !forCommit}
 	t.txns[lt] = struct{}{}
 	return lt
-}
-
-// enter and leave bracket a call of the transaction, which is not idle meanwhile. enter fails
-// with the reason the transaction ended, if it did.
-func (t *lockTable) enter(lt *lockTxn) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if lt.done {
-		return lt.err
-	}
-	lt.active++
-	lt.lastUsed = t.m.cfg.now()
-	return nil
-}
-
-func (t *lockTable) leave(lt *lockTxn) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	lt.active--
-	lt.lastUsed = t.m.cfg.now()
 }
 
 // state reports why the transaction ended; nil while it is open.
@@ -323,18 +286,17 @@ func (t *lockTable) woundLocked(ls *lockState) {
 
 // victimLocked returns a transaction that a waiter of ls waits for and may wound: a conflicting
 // holder, or a conflicting request queued ahead of it, that is not committing and is younger
-// than the waiter or idle.
+// than the waiter.
 func (t *lockTable) victimLocked(ls *lockState) *lockTxn {
-	now := t.m.cfg.now()
 	for i, r := range ls.queue {
 		w := r.txn
 		for h, mode := range ls.holders {
-			if h != w && !compatible(mode, r.mode) && t.woundable(h, w, now) {
+			if h != w && !compatible(mode, r.mode) && woundable(h, w) {
 				return h
 			}
 		}
 		for _, a := range ls.queue[:i] {
-			if a.txn != w && !compatible(a.mode, r.mode) && t.woundable(a.txn, w, now) {
+			if a.txn != w && !compatible(a.mode, r.mode) && woundable(a.txn, w) {
 				return a.txn
 			}
 		}
@@ -342,12 +304,12 @@ func (t *lockTable) victimLocked(ls *lockState) *lockTxn {
 	return nil
 }
 
-func (t *lockTable) woundable(v, by *lockTxn, now time.Time) bool {
-	if v.committing || v.done {
-		return false
-	}
-	idle := v.active == 0 && v.waiting == nil && now.Sub(v.lastUsed) > t.m.cfg.IdleTimeout
-	return v.age > by.age || idle
+// woundable reports whether by may wound v: v is younger and not committing. Idleness does not
+// make a transaction woundable: production's idle holder of a read lock keeps it, the writer
+// waits out its 20 s and gets the contention text, and the holder then commits (f2-transactions.json
+// lifetime idle_70s_then_plain_write).
+func woundable(v, by *lockTxn) bool {
+	return !v.committing && !v.done && v.age > by.age
 }
 
 // markCommitting records that lt holds every lock its commit needs: from here it is never
@@ -412,17 +374,6 @@ func (t *lockTable) wakeLocked(name string, ls *lockState) {
 	}
 	if len(ls.holders) == 0 && len(ls.queue) == 0 {
 		delete(t.locks, name)
-	}
-}
-
-// sweep wounds the holders that became idle while a waiter waits for them.
-func (t *lockTable) sweep() {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	for _, ls := range t.locks {
-		if len(ls.queue) > 0 {
-			t.woundLocked(ls)
-		}
 	}
 }
 

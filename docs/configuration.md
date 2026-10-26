@@ -104,7 +104,6 @@ The limits, under `documents.limits` in the file. Each must be positive.
 | `streams_per_ip` | `ARUMA_DOCUMENTS_STREAMS_PER_IP` | count | `500` | Streams open at once from one client address (through `trusted_proxies`) |
 | `commit_concurrency` | `ARUMA_DOCUMENTS_COMMIT_CONCURRENCY` | count | `4` | Commits of one database that run in Postgres at once; the others wait in the process |
 | `txn_wait_timeout` | `ARUMA_DOCUMENTS_TXN_WAIT_TIMEOUT` | duration | `20s` | How long a transaction, or a write outside one, waits for another transaction's lock before it is aborted with `ABORTED` "Too much contention on these documents. Please try again.", as production does |
-| `txn_idle_timeout` | `ARUMA_DOCUMENTS_TXN_IDLE_TIMEOUT` | duration | `60s` | How long a transaction may go without a request before any transaction waiting for its locks may abort it. Idleness alone ends nothing |
 | `txn_max_lifetime` | `ARUMA_DOCUMENTS_TXN_MAX_LIFETIME` | duration | `270s` | A transaction ends this long after it began, and its locks are freed |
 | `max_open_txns` | `ARUMA_DOCUMENTS_MAX_OPEN_TXNS` | count | `1000` | Open locking transactions (those of service accounts and owners) per database; past it, beginning one is `ABORTED` |
 | `max_locks_per_txn` | `ARUMA_DOCUMENTS_MAX_LOCKS_PER_TXN` | count | `10000` | Documents and listings one transaction may lock, or read when optimistic; past it, the transaction is `ABORTED` |

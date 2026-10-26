@@ -287,8 +287,8 @@ var storedVersionRE = regexp.MustCompile(`^the stored version \([1-9]\d*\) does 
 var requestTimeRE = regexp.MustCompile(`^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{3})?Z$`)
 
 // normalise replaces what the recorder replaced (lib.mjs): times and page tokens. A
-// REQUEST_TIME result, which the recorder kept, becomes a placeholder when it has whole
-// milliseconds, on both sides.
+// REQUEST_TIME result, which the F1 recorder kept and the F2 one replaced by a placeholder of
+// three fraction digits, becomes a placeholder when it has whole milliseconds, on both sides.
 func normalise(t *testing.T, b []byte) []byte {
 	t.Helper()
 	var v any
@@ -322,7 +322,7 @@ func normalise(t *testing.T, b []byte) []byte {
 				case "transformResults":
 					for _, r := range e.([]any) {
 						if r, ok := r.(map[string]any); ok {
-							if ts, ok := r["timestampValue"].(string); ok && requestTimeRE.MatchString(ts) {
+							if ts, ok := r["timestampValue"].(string); ok && (requestTimeRE.MatchString(ts) || ts == "<timestampValue: RFC 3339, 3 fraction digits>") {
 								r["timestampValue"] = "<request time: whole milliseconds>"
 							}
 						}

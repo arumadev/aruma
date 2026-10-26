@@ -91,7 +91,6 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 		txns: documents.TxnConfig{
 			Key:         keys.DocumentsTransactionKey(),
 			WaitTimeout: l.TxnWaitTimeout,
-			IdleTimeout: l.TxnIdleTimeout,
 			MaxLifetime: l.TxnMaxLifetime,
 			MaxOpen:     l.MaxOpenTxns,
 			MaxLocks:    l.MaxLocksPerTxn,

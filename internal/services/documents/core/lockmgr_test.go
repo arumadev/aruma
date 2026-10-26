@@ -283,48 +283,29 @@ func TestOlderWoundsYoungerQueuedAhead(t *testing.T) {
 	}
 }
 
-// A transaction idle past the idle timeout may be wounded by any waiter, of any age, when it
-// queues or at the sweep; idleness alone does not end it (f0-contention s5).
-func TestIdleHolderWoundable(t *testing.T) {
+// An idle holder is never wounded: a younger writer waits out its wait timeout and gets the
+// contention text, and the holder keeps its lock (f2-transactions.json lifetime
+// idle_70s_then_plain_write; f0-contention s5).
+func TestIdleHolderNotWounded(t *testing.T) {
 	clk := newClock()
-	tb, _ := newTable(t, TxnConfig{Now: clk.Now})
+	tb, _ := newTable(t, TxnConfig{Now: clk.Now, WaitTimeout: 100 * time.Millisecond})
 	ctx := t.Context()
-	older := tb.begin(0, false)
-	if err := tb.enter(older); err != nil {
-		t.Fatal(err)
-	}
-	if err := tb.acquire(ctx, older, "dD", lockShared); err != nil {
-		t.Fatal(err)
-	}
-	tb.leave(older)
-	clk.advance(70 * time.Second)
-	if tb.state(older) != nil {
-		t.Fatal("idleness ended the transaction")
-	}
-	// A younger waiter that queues now wounds it.
-	younger := tb.begin(0, true)
-	if err := tb.acquire(ctx, younger, "dD", lockExclusive); err != nil {
-		t.Fatalf("younger: %v", err)
-	}
-	if !errors.Is(tb.state(older), ErrWounded) {
-		t.Fatal("the idle holder was not wounded")
-	}
-	tb.release(younger)
-
-	// A holder that becomes idle while a younger waiter waits is wounded at the sweep.
 	holder := tb.begin(0, false)
-	if err := tb.acquire(ctx, holder, "dE", lockShared); err != nil {
+	if err := tb.acquire(ctx, holder, "dD", lockShared); err != nil {
 		t.Fatal(err)
 	}
-	waiter := tb.begin(0, true)
-	write := queueAcquire(t, tb, waiter, "dE", lockExclusive)
-	tb.sweep()
-	pending(t, write)
-	clk.advance(61 * time.Second)
-	tb.sweep()
-	if err := outcome(t, write); err != nil {
-		t.Fatalf("waiter after the sweep: %v", err)
+	clk.advance(70 * time.Second)
+	writer := tb.begin(0, true)
+	if err := tb.acquire(ctx, writer, "dD", lockExclusive); !errors.Is(err, ErrContention) {
+		t.Fatalf("writer: %v, want the contention text", err)
 	}
+	if err := tb.state(holder); err != nil {
+		t.Fatalf("the idle holder ended: %v", err)
+	}
+	if err := tb.acquire(ctx, holder, "dD", lockExclusive); err != nil {
+		t.Fatalf("the holder's upgrade after the writer gave up: %v", err)
+	}
+	tb.release(holder)
 }
 
 // A committing transaction is never wounded: the older one waits for it.

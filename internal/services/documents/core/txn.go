@@ -31,7 +31,7 @@ import (
 // before a restart), is ABORTED "The referenced transaction has expired or is no longer valid.".
 // A transaction ends at its commit, whatever the commit's outcome, at Rollback, when it is
 // wounded or times out waiting for a lock (the call that meets it answers why, later calls the
-// expired text), and 270 s after Begin (txn_expiry.go).
+// contention text after a wound, else the expired text), and 270 s after Begin (txn_expiry.go); its id is forgotten 300 s after Begin.
 
 // TransactionOptions are BeginTransaction's options (google.firestore.v1.TransactionOptions).
 type TransactionOptions struct {
@@ -72,11 +72,9 @@ type TxnConfig struct {
 	Key []byte
 	// WaitTimeout bounds a lock wait (txn_wait_timeout): 20 s, production's (f0-contention s6).
 	WaitTimeout time.Duration
-	// IdleTimeout is how long a transaction may go without a call before any waiter may wound
-	// it (txn_idle_timeout): 60 s. It does not end the transaction (f0-contention s5).
-	IdleTimeout time.Duration
-	// MaxLifetime ends a transaction this long after Begin (txn_max_lifetime): 270 s. An ended
-	// transaction's record stays as long again, for retry_transaction and the expired text.
+	// MaxLifetime ends a transaction this long after Begin (txn_max_lifetime): 270 s. Its id is
+	// forgotten forgetMargin later (forgetAfter): until then it answers the expired text, and
+	// retry_transaction finds its age.
 	MaxLifetime time.Duration
 	// MaxOpen bounds a database's open pessimistic transactions (max_open_txns): 1,000.
 	MaxOpen int
@@ -86,13 +84,12 @@ type TxnConfig struct {
 	// MaxLocks bounds a transaction's locks, and an optimistic one's recorded reads
 	// (max_locks_per_txn): 10,000.
 	MaxLocks int
-	// Now is the clock; nil is time.Now. Tests move it to make transactions idle or old.
+	// Now is the clock; nil is time.Now. Tests move it to make transactions old.
 	Now func() time.Time
 }
 
 func (c *TxnConfig) defaults() {
 	c.WaitTimeout = cmp.Or(c.WaitTimeout, 20*time.Second)
-	c.IdleTimeout = cmp.Or(c.IdleTimeout, 60*time.Second)
 	c.MaxLifetime = cmp.Or(c.MaxLifetime, 270*time.Second)
 	c.MaxOpen = cmp.Or(c.MaxOpen, 1000)
 	c.MaxOpenUnlocked = cmp.Or(c.MaxOpenUnlocked, 10000)
@@ -103,6 +100,13 @@ func (c *TxnConfig) defaults() {
 }
 
 func (c *TxnConfig) now() time.Time { return c.Now() }
+
+// forgetMargin is how long after its lifetime production still knows a transaction: it answered
+// the expired text at 271 s and "Invalid transaction." at 300 s (f2-transactions.json lifetime).
+const forgetMargin = 30 * time.Second
+
+// forgetAfter is how long after Begin a transaction's id is forgotten.
+func (c *TxnConfig) forgetAfter() time.Duration { return c.MaxLifetime + forgetMargin }
 
 var (
 	// ErrInvalidTransaction is an id this server did not issue, or issued for another database
@@ -116,12 +120,18 @@ var (
 	ErrWounded = &Error{Aborted, "Aborted due to cross-transaction contention. This occurs when multiple transactions " +
 		"attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability."}
 	// ErrReadsChanged is a transaction's commit that found changed what the transaction read:
-	// an optimistic one's, or a pessimistic one's after a broken lock. ErrWounded's text,
-	// provisionally: production's for an optimistic conflict is unrecorded.
-	ErrReadsChanged = &Error{Aborted, ErrWounded.Message}
-	// ErrReadOnlyWrite is a commit with writes in a read-only transaction. Provisional: production's
-	// answer is unrecorded.
+	// an optimistic one's (f2-locks.json optimistic.options.readWrite.concurrencyMode), or a
+	// pessimistic one's after a broken lock.
+	ErrReadsChanged = &Error{Aborted, "Optimistic transaction was aborted due to a conflict with another concurrent operation. " +
+		"This can occur when there are overlapping reads or writes by other transactions, causing contention with the current transaction. " +
+		"Please retry the transaction."}
+	// ErrReadOnlyWrite is a commit with writes in a read-only transaction (f2-transactions.json
+	// ro.commit_write); the transaction's later calls get errReadOnlyEnded (ro.commit_empty_after_refused_write).
 	ErrReadOnlyWrite = &Error{InvalidArgument, "Cannot modify entities in a read-only transaction."}
+	errReadOnlyEnded = &Error{InvalidArgument, ErrTransactionExpired.Message}
+	// ErrRetryReadOnly is a read-write transaction that names a read-only one as the attempt it
+	// retries (f2-transactions.json begin.retry_of_read_only).
+	ErrRetryReadOnly = &Error{InvalidArgument, "Cannot retry a read-only transaction"}
 	// ErrOptimisticRequired is an end user's read-write transaction that did not ask for
 	// OPTIMISTIC (ADR-025 §7.2). Provisional: production's answer is unrecorded.
 	ErrOptimisticRequired = &Error{InvalidArgument, "Third-party requests may only create OPTIMISTIC read-write transactions: set concurrency_mode to OPTIMISTIC."}
@@ -186,8 +196,8 @@ type txn struct {
 
 	mu        sync.Mutex
 	ended     bool
-	endedAt   time.Time
 	committed bool                   // the commit started: reads and Rollback no longer apply
+	after     error                  // what calls get once it ended; nil: ErrTransactionExpired
 	reads     map[string]readVersion // by stored name key
 	lists     []listRead             // optimistic
 }
@@ -266,6 +276,12 @@ func (r *transactions) lookup(db DB, ref TransactionRef) (*txn, error) {
 		return nil, ErrInvalidTransaction
 	}
 	num := binary.BigEndian.Uint64(id[9:17])
+	issued := time.UnixMicro(int64(binary.BigEndian.Uint64(id[17:25])))
+	if r.cfg.now().Sub(issued) > r.cfg.forgetAfter() {
+		// Production forgets a transaction by 300 s after its begin, 30 s after it expired: its
+		// id is then as one that never existed (f2-transactions.json lifetime idle_*).
+		return nil, ErrInvalidTransaction
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if [8]byte(id[1:9]) != r.nonce {
@@ -322,6 +338,9 @@ func (r *transactions) retire(db DB, by Principal, id []byte) (uint64, error) {
 	}
 	tx.mu.Lock()
 	defer tx.mu.Unlock()
+	if tx.mode == txnReadOnly {
+		return 0, ErrRetryReadOnly
+	}
 	age := tx.age
 	if tx.lt != nil {
 		age = tx.table.age(tx.lt)
@@ -337,7 +356,7 @@ func (r *transactions) retire(db DB, by Principal, id []byte) (uint64, error) {
 // calls find it ended.
 func (r *transactions) liveLocked(tx *txn) error {
 	if tx.ended || tx.committed {
-		return ErrTransactionExpired
+		return cmp.Or(tx.after, error(ErrTransactionExpired))
 	}
 	if r.cfg.now().Sub(tx.issued) > r.cfg.MaxLifetime {
 		r.stats.expired.Add(1)
@@ -346,14 +365,14 @@ func (r *transactions) liveLocked(tx *txn) error {
 	}
 	if tx.lt != nil {
 		if err := tx.table.state(tx.lt); err != nil {
-			r.finishLocked(tx)
+			r.endedByLocked(tx, err)
 			return err
 		}
 	}
 	return nil
 }
 
-// use returns the open transaction ref names, for a read. done must follow.
+// use returns the open transaction ref names, for a read.
 func (r *transactions) use(db DB, ref TransactionRef) (*txn, error) {
 	tx, err := r.lookup(db, ref)
 	if err != nil {
@@ -367,29 +386,28 @@ func (r *transactions) use(db DB, ref TransactionRef) (*txn, error) {
 	if err := r.liveLocked(tx); err != nil {
 		return nil, err
 	}
-	if tx.lt != nil {
-		if err := tx.table.enter(tx.lt); err != nil {
-			r.finishLocked(tx)
-			return nil, err
-		}
-	}
 	return tx, nil
-}
-
-// done ends a call use began.
-func (r *transactions) done(tx *txn) {
-	if tx.lt != nil {
-		tx.table.leave(tx.lt)
-	}
 }
 
 // failed ends tx when a lock request of its call ended its lock manager side (wounded, timed
 // out), so that later calls find it ended; it returns err.
 func (r *transactions) failed(tx *txn, err error) error {
 	if tx.lt != nil && tx.table.state(tx.lt) != nil {
-		r.finish(tx)
+		tx.mu.Lock()
+		defer tx.mu.Unlock()
+		r.endedByLocked(tx, err)
 	}
 	return err
+}
+
+// endedByLocked ends tx, which its lock manager side ended with why: a wounded transaction's
+// later calls get the contention text (f2-locks.json wounded_transaction), any other's the
+// expired one.
+func (r *transactions) endedByLocked(tx *txn, why error) {
+	if errors.Is(why, ErrWounded) && !tx.ended {
+		tx.after = ErrContention
+	}
+	r.finishLocked(tx)
 }
 
 // record adds the documents a read returned to the transaction's read set, and the listing that
@@ -440,7 +458,7 @@ func (r *transactions) finishLocked(tx *txn) {
 	if tx.ended {
 		return
 	}
-	tx.ended, tx.endedAt = true, r.cfg.now()
+	tx.ended = true
 	tx.reads, tx.lists = nil, nil
 	if tx.lt != nil {
 		tx.table.release(tx.lt)
@@ -539,6 +557,9 @@ func (s *PGStore) CommitTransaction(ctx context.Context, db DB, t TransactionRef
 	}
 	defer s.txns.finish(tx)
 	if tx.mode == txnReadOnly && len(writes) > 0 {
+		tx.mu.Lock()
+		tx.after = errReadOnlyEnded
+		tx.mu.Unlock()
 		return CommitResult{}, ErrReadOnlyWrite
 	}
 	return s.commit(ctx, db, writes, &commitTxn{tx: tx, reads: reads, lists: lists})
@@ -553,7 +574,6 @@ func (s *PGStore) txnBatchGet(ctx context.Context, db DB, paths []Path, o ReadOp
 	if err != nil {
 		return nil, time.Time{}, err
 	}
-	defer s.txns.done(tx)
 	switch tx.mode {
 	case txnReadOnly:
 		return s.BatchGet(ctx, db, paths, ReadOptions{ReadTime: tx.readTime})
@@ -583,7 +603,6 @@ func (s *PGStore) txnList(ctx context.Context, db DB, r ListRequest) (ListResult
 	if err != nil {
 		return ListResult{}, err
 	}
-	defer s.txns.done(tx)
 	switch tx.mode {
 	case txnReadOnly:
 		r.ReadTime = tx.readTime

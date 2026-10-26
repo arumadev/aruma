@@ -1,7 +1,9 @@
 package rest_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"maps"
@@ -301,4 +303,86 @@ func send(base, method, path, body, token string) (int, []byte, error) {
 	defer resp.Body.Close()
 	b, err := io.ReadAll(resp.Body)
 	return resp.StatusCode, b, err
+}
+
+// TestTransactionsReplayF2 replays the REST cases of f2-transactions.json in their order, on the
+// file's setup: Begin's options and read times, retry_transaction, reads and commits in a
+// transaction, read-only commits, Rollback, unknown, forged and empty ids. A transaction a case
+// began stands for the recording's placeholder of it in later requests; the read times the
+// recorder replaced are rebuilt from its descriptions. The queries are F3's and not sent, nor
+// the cases that use their transactions.
+func TestTransactionsReplayF2(t *testing.T) {
+	h := newHarness(t, apitest.Options{})
+	tok := h.env.JWT(t)
+	var f corpusFile
+	readCorpusFile(t, "f2-transactions.json", &f)
+	var setupTime string
+	for _, c := range f.Setup.Commits {
+		for _, w := range c.Writes {
+			path := "/v1/" + strings.ReplaceAll(w.Update.Name, "{project}", apitest.Project)
+			code, _, body := h.do(t, http.MethodPatch, path, `{"fields":`+string(w.Update.Fields)+`}`, tok)
+			if code != 200 {
+				t.Fatalf("setup %s: %d %s", path, code, body)
+			}
+			var d struct {
+				UpdateTime string `json:"updateTime"`
+			}
+			if err := json.Unmarshal(body, &d); err != nil {
+				t.Fatal(err)
+			}
+			setupTime = d.UpdateTime
+		}
+	}
+	now := time.Now().UTC()
+	readTimes := map[string]string{
+		"begin.read_only_read_time":            setupTime,
+		"begin.read_only_read_time_2h":         now.Add(-2 * time.Hour).Format(time.RFC3339Nano),
+		"begin.read_only_read_time_8d":         now.Add(-8 * 24 * time.Hour).Format(time.RFC3339Nano),
+		"begin.read_only_read_time_future":     now.Add(time.Hour).Format(time.RFC3339Nano),
+		"begin.read_only_read_time_2h_seconds": now.Add(-2*time.Hour + 30*time.Second).Format(time.RFC3339Nano),
+		"begin.read_write_read_time":           setupTime,
+	}
+	// The ids the recorder wrote as "<transaction>": the empty one, and one not base64.
+	plainIDs := map[string]string{"rollback.empty_id": "", "rollback.not_base64": "%%%", "unknown.commit_empty_string": ""}
+	ids := map[string]string{} // placeholder: our id, base64
+	compared := 0
+	for _, c := range f.Cases {
+		if c.Transport != "rest" || slices.ContainsFunc(unserved, func(v string) bool { return strings.Contains(c.Request.Path, v) }) {
+			continue
+		}
+		path, body := c.Request.Path, string(c.Request.Body)
+		if rt, ok := readTimes[c.ID]; ok {
+			body = strings.ReplaceAll(body, "<readTime: RFC 3339>", rt)
+		}
+		if id, ok := plainIDs[c.ID]; ok {
+			body = strings.ReplaceAll(body, "<transaction>", id)
+		}
+		if id := ids["<read-write transaction to forge from #14>"]; id != "" {
+			b, _ := base64.StdEncoding.DecodeString(id)
+			b[len(b)-1] ^= 1
+			body = strings.ReplaceAll(body, "<the read-write transaction to forge from, last byte flipped>", base64.StdEncoding.EncodeToString(b))
+		}
+		if strings.Contains(body, "<string 1336 bytes") {
+			body = `{"transaction":"` + base64.StdEncoding.EncodeToString(bytes.Repeat([]byte("Z"), 1000)) + `"}`
+		}
+		for placeholder, id := range ids {
+			path = strings.ReplaceAll(path, placeholder, url.QueryEscape(id))
+			body = strings.ReplaceAll(body, placeholder, id)
+		}
+		if strings.Contains(path, "<") || strings.Contains(body, "<") {
+			continue // a transaction a query began
+		}
+		code, _, got := h.do(t, c.Request.Method, "/v1/"+strings.ReplaceAll(path, "{project}", apitest.Project), strings.ReplaceAll(body, "{project}", apitest.Project), tok)
+		if placeholder := transactionOf(c.Response.Body); placeholder != "" {
+			ids[placeholder] = transactionOf(got)
+		}
+		compared++
+		if code != c.Response.HTTP || !sameJSON(t, normalise(t, got), normalise(t, c.Response.Body)) {
+			t.Errorf("%s: %s %s %s\n got %d %s\nwant %d %s", c.ID, c.Request.Method, path, body, code, got, c.Response.HTTP, c.Response.Body)
+		}
+	}
+	t.Logf("compared %d cases", compared)
+	if compared < 55 {
+		t.Errorf("compared %d cases", compared)
+	}
 }

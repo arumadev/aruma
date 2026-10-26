@@ -79,9 +79,10 @@ func (s *Service) Commit(ctx context.Context, c Call, req *pb.CommitRequest) (*p
 	if err != nil {
 		return nil, s.fail(ctx, err)
 	}
-	if len(writes) == 0 {
+	if len(writes) == 0 && len(req.GetTransaction()) == 0 {
 		// Production answers a commit of no writes with an empty message, no commit_time
-		// (f1-write-results.json rest.empty).
+		// (f1-write-results.json rest.empty); in a transaction, with its commit_time
+		// (f2-transactions.json read.commit_read_write_empty, ro.commit_empty).
 		return &pb.CommitResponse{}, nil
 	}
 	out := &pb.CommitResponse{CommitTime: timestamp(res.CommitTime), WriteResults: make([]*pb.WriteResult, len(res.Results))}
