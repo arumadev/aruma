@@ -35,6 +35,8 @@ var allowed = map[string][]string{
 	// object name or header reaches the disk except through core (ADR-022 §1).
 	"internal/services/storage/blob": {},
 	"internal/services/storage/wire": {},
+	// The Document Database's generated protobuf code (make proto, ADR-027) imports nothing internal.
+	"internal/services/documents/wire/pb": {},
 	// The Firestore and Storage rules language imports nothing internal: the services feed it
 	// values and documents through its own types, and app wires it (ADR-021, rules-layout.md).
 	"internal/platform/rules": {},
