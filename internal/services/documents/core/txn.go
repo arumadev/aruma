@@ -685,18 +685,28 @@ func (s *PGStore) lockWrites(ctx context.Context, db DB, p *plan, age uint64, mo
 		lt := table.begin(age, true)
 		lt.waitUntil = waitUntil
 		release := func() { table.release(lt) }
-		err := table.acquireAll(ctx, lt, specs)
-		if err == nil && check != nil {
-			err = check()
-		}
-		if err == nil {
-			err = table.markCommitting(lt)
-		}
+		err := func() (err error) {
+			held := false
+			// The locks go on any failure, a panic of check included: no sweep finds them.
+			defer func() {
+				if !held {
+					age = table.age(lt)
+					release()
+				}
+			}()
+			err = table.acquireAll(ctx, lt, specs)
+			if err == nil && check != nil {
+				err = check()
+			}
+			if err == nil {
+				err = table.markCommitting(lt)
+			}
+			held = err == nil
+			return err
+		}()
 		if err == nil {
 			return release, nil
 		}
-		age = table.age(lt)
-		release()
 		if !errors.Is(err, ErrWounded) {
 			return nil, err
 		}
