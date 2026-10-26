@@ -34,28 +34,37 @@ type docChange struct {
 	before *lockedDoc // nil: it did not exist
 	exists bool
 	fields value.Value
+	// serverTime: a write set a field of it to the commit's time (TransformServerTime).
+	serverTime bool
 }
 
 // changed reports whether the commit changes the document: a write that leaves it as it was
 // changes nothing, keeps its update_time and is not in the changelog (WriteResult.update_time in
-// write.proto; f1-write-results.json, rest.update_unchanged).
+// write.proto; f1-write-results.json, rest.update_unchanged). A document a write gave the
+// commit's time changes: its fields are known only once the commit is stamped, and the time is
+// later than any it held, but for a field set within the same millisecond.
 func (d *docChange) changed() bool {
 	if d.before == nil || !d.exists {
 		return (d.before != nil) != d.exists
 	}
-	return !value.Identical(d.before.fields, d.fields)
+	return d.serverTime || !value.Identical(d.before.fields, d.fields)
 }
 
-// plan is a commit's writes grouped by document, in the order their rows are locked. F2 adds the
-// index entries and the transforms here; the commit path does not change shape.
+// plan is a commit's writes grouped by document, in the order their rows are locked. F3 adds the
+// index entries here; the commit path does not change shape.
 type plan struct {
 	writes []Write
 	docs   []*docChange // by stored name key
 	of     []*docChange // per write
+	// serverTime: a write has a REQUEST_TIME transform, so the documents are built only once
+	// the commit is stamped (sequencer.attempt).
+	serverTime bool
+	// transformed holds each write's transform results, as the last apply made them.
+	transformed [][]value.Value
 }
 
 func newPlan(writes []Write) *plan {
-	p := &plan{writes: writes, of: make([]*docChange, len(writes))}
+	p := &plan{writes: writes, of: make([]*docChange, len(writes)), transformed: make([][]value.Value, len(writes))}
 	byKey := map[string]*docChange{}
 	for i, w := range writes {
 		k := nameKey(w.Path)
@@ -67,7 +76,16 @@ func newPlan(writes []Write) *plan {
 		}
 		d.writes++
 		if w.Kind == WriteUpdate && w.Masked {
-			d.masked, d.mask = true, w.Mask
+			// A transformed field changes as a masked one does.
+			d.masked, d.mask = true, slices.Clip(w.Mask)
+			for _, t := range w.Transforms {
+				d.mask = append(d.mask, t.Path)
+			}
+		}
+		for _, t := range w.Transforms {
+			if t.Kind == TransformServerTime {
+				p.serverTime = true
+			}
 		}
 		p.of[i] = d
 	}
@@ -86,16 +104,21 @@ func (p *plan) storedKeys() [][]byte {
 
 // apply folds the writes over the documents as locked (by stored key; absent if not there): each
 // write's precondition is checked against the document as the writes before it left it, and the
-// first that fails fails the commit with production's error.
-func (p *plan) apply(db DB, locked map[string]*lockedDoc) error {
+// first that fails fails the commit with production's error. A write's transforms apply after
+// its fields, in order, REQUEST_TIME as RequestTime(commitTime). It may run again with another
+// commitTime: it starts from the documents as locked each time, and only REQUEST_TIME's values
+// differ, which change neither a document's validity nor its size.
+func (p *plan) apply(db DB, locked map[string]*lockedDoc, commitTime time.Time) error {
 	for _, d := range p.docs {
 		d.before = locked[string(d.keys.stored)]
 		d.exists = d.before != nil
+		d.serverTime = false
 		d.fields = value.Map()
 		if d.exists {
 			d.fields = d.before.fields
 		}
 	}
+	now := RequestTime(commitTime)
 	for i, w := range p.writes {
 		// The transports refuse such names; this keeps one from ever being stored, since a name
 		// key's segments are only read back right when they are UTF-8 (0xFF 0x01 would end one).
@@ -111,6 +134,16 @@ func (p *plan) apply(db DB, locked map[string]*lockedDoc) error {
 			after := w.Fields
 			if w.Masked {
 				after = value.ApplyMask(d.fields, w.Fields, w.Mask)
+			}
+			p.transformed[i] = nil
+			if len(w.Transforms) > 0 {
+				p.transformed[i] = make([]value.Value, len(w.Transforms))
+			}
+			for j, t := range w.Transforms {
+				after, p.transformed[i][j] = t.apply(after, now)
+				d.serverTime = d.serverTime || t.Kind == TransformServerTime
+			}
+			if w.Masked || len(w.Transforms) > 0 {
 				if err := value.Validate(after); err != nil {
 					return invalidDocument(err)
 				}
@@ -120,7 +153,7 @@ func (p *plan) apply(db DB, locked map[string]*lockedDoc) error {
 			}
 			d.exists, d.fields = true, after
 		case WriteDelete:
-			d.exists, d.fields = false, value.Map()
+			d.exists, d.fields, d.serverTime = false, value.Map(), false
 		}
 	}
 	return nil
@@ -153,6 +186,7 @@ func (d *docChange) check(db DB, c Precondition) error {
 func (p *plan) results(commitTime time.Time) []WriteResult {
 	out := make([]WriteResult, len(p.writes))
 	for i, w := range p.writes {
+		out[i].TransformResults = p.transformed[i]
 		d := p.of[i]
 		if w.Kind == WriteDelete || !d.exists {
 			continue

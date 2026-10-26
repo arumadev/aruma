@@ -1,8 +1,9 @@
 -- The commit path (ADR-024 §2.1). core queues these in pgx batches rather than calling the
 -- generated methods (core/statements.go): the first batch opens the transaction, sets its
 -- timeouts, locks the written documents and reads the catalog; the second writes the index
--- entries, stamps and COMMITs in one round trip, so that only the stamp statement and COMMIT run
--- while the sequencer row is held.
+-- entries, stamps, writes the documents and COMMITs in one round trip, so that only the stamp,
+-- the write and COMMIT run while the sequencer row is held. A commit whose documents hold its
+-- commit_time splits the second batch after the stamp (StampCommit).
 
 -- name: ReadCatalog :one
 -- The set of indexes this commit writes, as of now, and the last commit_time: run after
@@ -34,18 +35,28 @@ FROM generate_subscripts(@keys::bytea[], 1) AS x(i)
 ON CONFLICT DO NOTHING;
 
 -- name: StampCommit :many
--- The one statement under the sequencer row: the stamp, the documents, the images they replace
--- and the changelog. clock_timestamp(), never now(): now() is the transaction's start, before
--- the locks were waited for. Every write names the update_seq the commit read (inserts expect no
--- row), and conflict_unless fails the statement with 40001 unless each found it (an empty array
--- arrives as NULL, hence the coalesce). No row returned means the catalog changed since
--- ReadCatalog: core rolls back and computes the commit again.
+-- The stamp: the commit's seq and commit_time, taking the sequencer row until COMMIT.
+-- clock_timestamp(), never now(): now() is the transaction's start, before the locks were waited
+-- for. No row returned means the catalog changed since ReadCatalog: core rolls back and computes
+-- the commit again. A commit whose documents hold its commit_time (a REQUEST_TIME transform)
+-- builds them once this returned; any other queues WriteCommit behind it in the same round trip.
+UPDATE documents.sequencer q SET seq = q.seq + 1,
+    last_ts = greatest(clock_timestamp(), q.last_ts + interval '1 microsecond')
+WHERE q.project_number = @project_number AND q.database_id = @database_id
+    AND q.catalog_version = @catalog_version
+RETURNING q.seq, q.last_ts;
+
+-- name: WriteCommit :many
+-- The rest of the commit, under the sequencer row StampCommit took, whose seq and commit_time it
+-- reads back (the transaction sees its own update): the documents, the images they replace and
+-- the changelog. Every write names the update_seq the commit read (inserts expect no row), and
+-- conflict_unless fails the statement with 40001 unless each found it (an empty array arrives as
+-- NULL, hence the coalesce). After a stamp that found the catalog changed, the version differs
+-- here too: no row, and nothing written.
 WITH s AS (
-    UPDATE documents.sequencer q SET seq = q.seq + 1,
-        last_ts = greatest(clock_timestamp(), q.last_ts + interval '1 microsecond')
+    SELECT q.seq, q.last_ts FROM documents.sequencer q
     WHERE q.project_number = @project_number AND q.database_id = @database_id
         AND q.catalog_version = @catalog_version
-    RETURNING q.seq, q.last_ts
 ), v AS (
     INSERT INTO documents.versions (project_number, database_id, name_key, end_seq, name, parent_hash,
         cg_hash, parent, collection_id, begin_time, end_time, create_time, doc)
@@ -86,10 +97,18 @@ WITH s AS (
     FROM s, generate_subscripts(@log_keys::bytea[], 1) AS w(i)
     RETURNING 1
 )
-SELECT s.seq, s.last_ts, documents.conflict_unless(
+SELECT documents.conflict_unless(
         (SELECT count(*) FROM u) = coalesce(cardinality(@update_keys::bytea[]), 0)
         AND (SELECT count(*) FROM i) = coalesce(cardinality(@insert_keys::bytea[]), 0)
         AND (SELECT count(*) FROM x) = coalesce(cardinality(@delete_keys::bytea[]), 0)
         AND (SELECT count(*) FROM v) = coalesce(cardinality(@replaced_keys::bytea[]), 0)
         AND (SELECT count(*) FROM c) = coalesce(cardinality(@log_keys::bytea[]), 0)) AS ok
 FROM s;
+
+-- name: UnchangedCommitTime :one
+-- The commit_time of a commit that changes nothing: the clock, as production's advances for one
+-- (f1-write-results.json rest.update_unchanged, rest.verify_existing), and at or after the last
+-- commit, so at or after every update_time the commit read. It takes no seq: a read at it waits
+-- for the commit that may be between its stamp and COMMIT (WaitHead), as at any time past last_ts.
+SELECT greatest(clock_timestamp(), last_ts)::timestamptz AS commit_time FROM documents.sequencer
+WHERE project_number = @project_number AND database_id = @database_id;

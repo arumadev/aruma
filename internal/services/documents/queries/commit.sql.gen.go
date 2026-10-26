@@ -130,8 +130,9 @@ type ReadCatalogRow struct {
 // The commit path (ADR-024 §2.1). core queues these in pgx batches rather than calling the
 // generated methods (core/statements.go): the first batch opens the transaction, sets its
 // timeouts, locks the written documents and reads the catalog; the second writes the index
-// entries, stamps and COMMITs in one round trip, so that only the stamp statement and COMMIT run
-// while the sequencer row is held.
+// entries, stamps, writes the documents and COMMITs in one round trip, so that only the stamp,
+// the write and COMMIT run while the sequencer row is held. A commit whose documents hold its
+// commit_time splits the second batch after the stamp (StampCommit).
 // The set of indexes this commit writes, as of now, and the last commit_time: run after
 // LockDocuments, its snapshot holds every commit that wrote the locked documents. No lock: the
 // stamp checks the catalog again.
@@ -143,12 +144,75 @@ func (q *Queries) ReadCatalog(ctx context.Context, arg ReadCatalogParams) (ReadC
 }
 
 const stampCommit = `-- name: StampCommit :many
+UPDATE documents.sequencer q SET seq = q.seq + 1,
+    last_ts = greatest(clock_timestamp(), q.last_ts + interval '1 microsecond')
+WHERE q.project_number = $1 AND q.database_id = $2
+    AND q.catalog_version = $3
+RETURNING q.seq, q.last_ts
+`
+
+type StampCommitParams struct {
+	ProjectNumber  int64
+	DatabaseID     string
+	CatalogVersion int64
+}
+
+type StampCommitRow struct {
+	Seq    int64
+	LastTs time.Time
+}
+
+// The stamp: the commit's seq and commit_time, taking the sequencer row until COMMIT.
+// clock_timestamp(), never now(): now() is the transaction's start, before the locks were waited
+// for. No row returned means the catalog changed since ReadCatalog: core rolls back and computes
+// the commit again. A commit whose documents hold its commit_time (a REQUEST_TIME transform)
+// builds them once this returned; any other queues WriteCommit behind it in the same round trip.
+func (q *Queries) StampCommit(ctx context.Context, arg StampCommitParams) ([]StampCommitRow, error) {
+	rows, err := q.db.Query(ctx, stampCommit, arg.ProjectNumber, arg.DatabaseID, arg.CatalogVersion)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StampCommitRow{}
+	for rows.Next() {
+		var i StampCommitRow
+		if err := rows.Scan(&i.Seq, &i.LastTs); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const unchangedCommitTime = `-- name: UnchangedCommitTime :one
+SELECT greatest(clock_timestamp(), last_ts)::timestamptz AS commit_time FROM documents.sequencer
+WHERE project_number = $1 AND database_id = $2
+`
+
+type UnchangedCommitTimeParams struct {
+	ProjectNumber int64
+	DatabaseID    string
+}
+
+// The commit_time of a commit that changes nothing: the clock, as production's advances for one
+// (f1-write-results.json rest.update_unchanged, rest.verify_existing), and at or after the last
+// commit, so at or after every update_time the commit read. It takes no seq: a read at it waits
+// for the commit that may be between its stamp and COMMIT (WaitHead), as at any time past last_ts.
+func (q *Queries) UnchangedCommitTime(ctx context.Context, arg UnchangedCommitTimeParams) (time.Time, error) {
+	row := q.db.QueryRow(ctx, unchangedCommitTime, arg.ProjectNumber, arg.DatabaseID)
+	var commit_time time.Time
+	err := row.Scan(&commit_time)
+	return commit_time, err
+}
+
+const writeCommit = `-- name: WriteCommit :many
 WITH s AS (
-    UPDATE documents.sequencer q SET seq = q.seq + 1,
-        last_ts = greatest(clock_timestamp(), q.last_ts + interval '1 microsecond')
+    SELECT q.seq, q.last_ts FROM documents.sequencer q
     WHERE q.project_number = $6 AND q.database_id = $7
         AND q.catalog_version = $8
-    RETURNING q.seq, q.last_ts
 ), v AS (
     INSERT INTO documents.versions (project_number, database_id, name_key, end_seq, name, parent_hash,
         cg_hash, parent, collection_id, begin_time, end_time, create_time, doc)
@@ -189,7 +253,7 @@ WITH s AS (
     FROM s, generate_subscripts($5::bytea[], 1) AS w(i)
     RETURNING 1
 )
-SELECT s.seq, s.last_ts, documents.conflict_unless(
+SELECT documents.conflict_unless(
         (SELECT count(*) FROM u) = coalesce(cardinality($1::bytea[]), 0)
         AND (SELECT count(*) FROM i) = coalesce(cardinality($2::bytea[]), 0)
         AND (SELECT count(*) FROM x) = coalesce(cardinality($3::bytea[]), 0)
@@ -198,7 +262,7 @@ SELECT s.seq, s.last_ts, documents.conflict_unless(
 FROM s
 `
 
-type StampCommitParams struct {
+type WriteCommitParams struct {
 	UpdateKeys          [][]byte
 	InsertKeys          [][]byte
 	DeleteKeys          [][]byte
@@ -224,20 +288,14 @@ type StampCommitParams struct {
 	LogMasks            [][]byte
 }
 
-type StampCommitRow struct {
-	Seq    int64
-	LastTs time.Time
-	Ok     bool
-}
-
-// The one statement under the sequencer row: the stamp, the documents, the images they replace
-// and the changelog. clock_timestamp(), never now(): now() is the transaction's start, before
-// the locks were waited for. Every write names the update_seq the commit read (inserts expect no
-// row), and conflict_unless fails the statement with 40001 unless each found it (an empty array
-// arrives as NULL, hence the coalesce). No row returned means the catalog changed since
-// ReadCatalog: core rolls back and computes the commit again.
-func (q *Queries) StampCommit(ctx context.Context, arg StampCommitParams) ([]StampCommitRow, error) {
-	rows, err := q.db.Query(ctx, stampCommit,
+// The rest of the commit, under the sequencer row StampCommit took, whose seq and commit_time it
+// reads back (the transaction sees its own update): the documents, the images they replace and
+// the changelog. Every write names the update_seq the commit read (inserts expect no row), and
+// conflict_unless fails the statement with 40001 unless each found it (an empty array arrives as
+// NULL, hence the coalesce). After a stamp that found the catalog changed, the version differs
+// here too: no row, and nothing written.
+func (q *Queries) WriteCommit(ctx context.Context, arg WriteCommitParams) ([]bool, error) {
+	rows, err := q.db.Query(ctx, writeCommit,
 		arg.UpdateKeys,
 		arg.InsertKeys,
 		arg.DeleteKeys,
@@ -266,13 +324,13 @@ func (q *Queries) StampCommit(ctx context.Context, arg StampCommitParams) ([]Sta
 		return nil, err
 	}
 	defer rows.Close()
-	items := []StampCommitRow{}
+	items := []bool{}
 	for rows.Next() {
-		var i StampCommitRow
-		if err := rows.Scan(&i.Seq, &i.LastTs, &i.Ok); err != nil {
+		var ok bool
+		if err := rows.Scan(&ok); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, ok)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

@@ -89,14 +89,14 @@ func TestPlanPreconditions(t *testing.T) {
 			FailedPrecondition, "the stored version (0) does not match the required base version (1793038687926996)"},
 	}
 	for _, c := range cases {
-		err := newPlan([]Write{c.write}).apply(testDB, c.locked)
+		err := newPlan([]Write{c.write}).apply(testDB, c.locked, time.Time{})
 		e, ok := err.(*Error)
 		if !ok || e.Code != c.code || e.Message != c.msg {
 			t.Errorf("%+v: got %v, want %d %q", c.write.Precondition, err, c.code, c.msg)
 		}
 	}
 	ok := Write{Kind: WriteUpdate, Path: p, Fields: value.Map(), Precondition: Precondition{Exists: new(true), UpdateTime: stored}}
-	if err := newPlan([]Write{ok}).apply(testDB, existing); err != nil {
+	if err := newPlan([]Write{ok}).apply(testDB, existing, time.Time{}); err != nil {
 		t.Errorf("matching preconditions: %v", err)
 	}
 }
@@ -111,7 +111,7 @@ func TestPlanMasksAndResults(t *testing.T) {
 	w := Write{Kind: WriteUpdate, Path: p, Masked: true, Mask: []value.FieldPath{mustPath(t, "m.x"), mustPath(t, "a")},
 		Fields: fieldsOf("m", fieldsOf("x", value.Int(9)), "ignored", value.Int(0))}
 	pl := newPlan([]Write{w})
-	if err := pl.apply(testDB, locked); err != nil {
+	if err := pl.apply(testDB, locked, time.Time{}); err != nil {
 		t.Fatal(err)
 	}
 	want := fieldsOf("m", fieldsOf("x", value.Int(9), "y", value.Int(2)))
@@ -126,7 +126,7 @@ func TestPlanMasksAndResults(t *testing.T) {
 	// The same fields again change nothing: the previous update_time, no changelog row.
 	same := newPlan([]Write{{Kind: WriteUpdate, Path: p, Fields: locked[string(storedKey(nameKey(p)))].fields},
 		{Kind: WriteVerify, Path: p, Precondition: Precondition{Exists: new(true)}}})
-	if err := same.apply(testDB, locked); err != nil {
+	if err := same.apply(testDB, locked, time.Time{}); err != nil {
 		t.Fatal(err)
 	}
 	var in stampInput
@@ -139,13 +139,13 @@ func TestPlanMasksAndResults(t *testing.T) {
 
 	// A delete of a missing document is no change and has no update_time.
 	del := newPlan([]Write{{Kind: WriteDelete, Path: ParsePath("c/missing")}})
-	if err := del.apply(testDB, nil); err != nil || del.docs[0].changed() || !del.results(commit)[0].UpdateTime.IsZero() {
+	if err := del.apply(testDB, nil, time.Time{}); err != nil || del.docs[0].changed() || !del.results(commit)[0].UpdateTime.IsZero() {
 		t.Errorf("delete of a missing document: %v", err)
 	}
 
 	// Two writes to one document fold in order; the second's precondition sees the first.
 	fold := newPlan([]Write{{Kind: WriteDelete, Path: p}, {Kind: WriteUpdate, Path: p, Fields: value.Map(), Precondition: Precondition{Exists: new(false)}}})
-	if err := fold.apply(testDB, locked); err != nil || len(fold.docs) != 1 || !fold.docs[0].exists {
+	if err := fold.apply(testDB, locked, time.Time{}); err != nil || len(fold.docs) != 1 || !fold.docs[0].exists {
 		t.Errorf("folded writes: %v", err)
 	}
 }
@@ -155,7 +155,7 @@ func TestPlanDocumentTooLarge(t *testing.T) {
 	// One byte over the limit, as production measures it.
 	base := value.DocumentSize(p.String(), fieldsOf("s", value.String("")))
 	big := fieldsOf("s", value.String(strings.Repeat("x", value.MaxDocumentSize-base+1)))
-	err := newPlan([]Write{{Kind: WriteUpdate, Path: p, Fields: big}}).apply(testDB, nil)
+	err := newPlan([]Write{{Kind: WriteUpdate, Path: p, Fields: big}}).apply(testDB, nil, time.Time{})
 	want := "Document 'projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f0/big' cannot be written because its size (1,048,577 bytes) exceeds the maximum allowed size of 1,048,576 bytes."
 	if e, ok := err.(*Error); !ok || e.Code != InvalidArgument || e.Message != want {
 		t.Fatalf("got %v", err)
