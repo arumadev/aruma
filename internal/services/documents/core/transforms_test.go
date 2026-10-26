@@ -326,8 +326,8 @@ func TestElementSetKeyed(t *testing.T) {
 
 // The worst writes a request can carry cost about their size, not its square (F2 review M1):
 // many transforms of one write, up to the transport's bound (api.MaxRequestTransforms), and array
-// transforms of a quarter of a million elements. Each is timed at n and 4n, the best of three runs: a linear
-// cost grows about 4 times, a quadratic one 16.
+// transforms of a quarter of a million elements. Each is timed at n and 4n, the best of three
+// runs: a linear cost grows about 4 times, a quadratic one 16.
 func TestTransformsWorstCase(t *testing.T) {
 	if testing.Short() {
 		t.Skip("short")
