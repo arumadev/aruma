@@ -45,10 +45,12 @@ import (
 // error is INVALID_ARGUMENT.
 //
 // pathFields name the fields of m the REST path fills (database, parent, name), which the
-// front end binds after the body. When the body set a top-level oneof member that was already
-// set, with a value that is not an object, the front end then fails to bind each of them too,
-// and says so on a line of its own: "Invalid JSON payload received. Unknown name "database":
-// Root element must be a message." (f1-batch-get.json txn.and_read_time; one recording).
+// front end binds after the body. When the body set a oneof member that was already set, a
+// message field given as a string (a Timestamp), at any depth, the front end then fails to bind
+// each of them too, and says so on a line of its own: "Invalid JSON payload received. Unknown
+// name "database": Root element must be a message." (f1-batch-get.json txn.and_read_time,
+// f2-commit.json pre.both); a scalar member (value.two_types) or an object one (kind.two) does
+// not.
 func UnmarshalREST(body []byte, m proto.Message, pathFields ...string) error {
 	if len(bytes.TrimSpace(body)) == 0 {
 		return nil
@@ -120,12 +122,12 @@ func (d *decoder) bindQuery(m protoreflect.Message, key string, vals []string) {
 		if fd.IsList() {
 			arr := &jsonNode{kind: jsonArray}
 			for _, v := range vals {
-				arr.elems = append(arr.elems, &jsonNode{kind: jsonString, s: v})
+				arr.elems = append(arr.elems, &jsonNode{kind: jsonString, s: validUTF8(v)})
 			}
 			d.member(m, fd, arr, path, seg)
 			return
 		}
-		d.member(m, fd, &jsonNode{kind: jsonString, s: vals[len(vals)-1]}, path, seg)
+		d.member(m, fd, &jsonNode{kind: jsonString, s: validUTF8(vals[len(vals)-1])}, path, seg)
 	}
 }
 
@@ -243,8 +245,7 @@ type decoder struct {
 	errs []string
 	// query is set when binding query parameters, whose oneof members errors name by proto name.
 	query bool
-	// poisoned is set by a top-level oneof conflict on a value that is not an object
-	// (UnmarshalREST).
+	// poisoned is set by a oneof conflict on a message field given as a string (UnmarshalREST).
 	poisoned bool
 }
 
@@ -333,7 +334,7 @@ func (d *decoder) member(m protoreflect.Message, fd protoreflect.FieldDescriptor
 			}
 			d.fail("Invalid value" + at(parent) + " (oneof), oneof field '" + string(od.Name()) +
 				"' is already set. Cannot set '" + name + "'")
-			if parent == "" && v.kind != jsonObject {
+			if !d.query && fd.Message() != nil && v.kind != jsonObject {
 				d.poisoned = true
 			}
 			return

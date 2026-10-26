@@ -127,22 +127,6 @@
         "test": "internal/services/documents/wire/names_test.go:TestBindStreamNamesF4",
         "phase": "F4"
       }
-    },
-    {
-      "id": "non-utf8-input",
-      "kind": "provisional",
-      "summary": "A resource id, field name or string that is not valid UTF-8: production refuses it in a REST path and on gRPC with a generic text, and decodes it to a space in a REST query parameter or JSON body.",
-      "production": "Recorded (corpus/f2-non-utf8.json). REST path segment with a byte that is not UTF-8 (%FF, a%FFb, the overlong %C0%AF, the surrogate %ED%A0%80, the truncated %E2%82), in a document or collection id, on GET, PATCH, DELETE, ListDocuments and listCollectionIds: HTTP 400 INVALID_ARGUMENT \"Request contains an invalid argument.\" with no details. gRPC (hand-encoded protobuf: a name, documentId, collectionId, field name or string value holding 0xFF or ED A0 80) on GetDocument, Commit, CreateDocument and ListDocuments: code 3 INVALID_ARGUMENT, the same text. REST query parameter ?documentId=%FF and a raw 0xFF byte inside a JSON string (a name, a field name, a string value, a batchGet name): accepted, the byte read as U+0020 (a space): the document \" \" is created, the field \" \" or the string \" \" stored; mask.fieldPaths=%FF answers the property-path error for \" \". The JSON escape \\udc00 (a lone surrogate) is read as U+FFFD.",
-      "emulator": "Not recorded.",
-      "aruma": "F1's edge refuses an id that is not UTF-8 with INVALID_ARGUMENT `Resource id \"…\" is invalid because it is not UTF-8.` (wire/names.go errNotUTF8) and its JSON parser turns such bytes into U+FFFD (wire/jsonparse.go). Both are provisional and differ from production; F2 changes them to the recorded answers (the generic text on a REST path and gRPC; a space in a REST query parameter or JSON string, U+FFFD for an escaped lone surrogate) and replays corpus/f2-non-utf8.json (planned).",
-      "follows": "production",
-      "evidence": [
-        "corpus/f2-non-utf8.json"
-      ],
-      "planned": {
-        "test": "internal/services/documents/wire/names_test.go:TestNonUTF8AsProductionF2",
-        "phase": "F2"
-      }
     }
   ]
 }

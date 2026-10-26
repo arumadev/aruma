@@ -117,8 +117,8 @@ func TestParseNameKinds(t *testing.T) {
 		{"projects/p/databases//documents/c/d", "Missing required project ID."},
 		{"projects/p/databases/(other)/documents/c/d", "Invalid database id (other)"},
 		{"projects/p/databases/(default/documents/c/d", "Invalid database id (default"},
-		{"projects/p/databases/(default)/documents/c/\xff\x01", "Resource id \"\uFFFD\x01\" is invalid because it is not UTF-8."},
-		{"projects/\xff/databases/(default)/documents/c/d", "Resource id \"\uFFFD\" is invalid because it is not UTF-8."},
+		{"projects/p/databases/(default)/documents/c/\xff\x01", "Request contains an invalid argument."},
+		{"projects/\xff/databases/(default)/documents/c/d", "Request contains an invalid argument."},
 		{"projects/p/dbs/x", `Document name "projects/p/dbs/x" lacks "databases" at index 11.`},
 		{"projects/p/databases/(default)", `Document name "projects/p/databases/(default)" lacks "/" at index 30.`},
 		{"projects/p/databases/(default)/docs", `Document name "projects/p/databases/(default)/docs" lacks "documents" at index 31.`},
@@ -640,4 +640,52 @@ func createID(c f0Case) error {
 	_, query, _ := strings.Cut(c.Request.Path, "?")
 	q, _ := url.ParseQuery(query)
 	return CheckID(q.Get("documentId"), true)
+}
+
+// TestNonUTF8AsProductionF2 reproduces how production reads bytes that are not UTF-8
+// (corpus/f2-non-utf8.json): in a name or id it refuses the request with its generic text and no
+// details (rest.get_*, rest.list_ff, grpc.*); in a REST query parameter or a JSON string each such
+// byte is read as a space (rest.create_document_id_ff, rest.commit_name_raw_ff,
+// rest.get_mask_ff, rest.get_query_ff_in_transaction_parameter), and an escaped lone surrogate
+// as U+FFFD (rest.commit_name_escaped_lone_surrogate).
+func TestNonUTF8AsProductionF2(t *testing.T) {
+	const generic = "Request contains an invalid argument."
+	for _, bad := range []string{"\xff", "a\xffb", "\xc0\xaf", "\xed\xa0\x80", "\xe2\x82"} {
+		if _, err := ParseDocumentName(root + "/aruma-ref-f2-utf/" + bad); errText(err) != generic {
+			t.Errorf("document id %q: %q", bad, errText(err))
+		}
+		if _, err := ParseName(root + "/aruma-ref-f2-utf-" + bad); errText(err) != generic {
+			t.Errorf("collection id %q: %q", bad, errText(err))
+		}
+		if err := CheckID(bad, true); errText(err) != generic {
+			t.Errorf("CheckID(%q): %q", bad, errText(err))
+		}
+		if e, ok := errors.AsType[*Error](CheckID(bad, false)); !ok || len(e.Status().GetDetails()) != 0 {
+			t.Errorf("CheckID(%q): not an error without details: %v", bad, e)
+		}
+	}
+
+	var c firestorepb.CreateDocumentRequest
+	if err := UnmarshalQuery(url.Values{"documentId": {"\xff"}, "mask.fieldPaths": {"a\xffb"}}, &c); err != nil ||
+		c.GetDocumentId() != " " || c.GetMask().GetFieldPaths()[0] != "a b" {
+		t.Errorf("query parameters: %v, %v", &c, err)
+	}
+	var g firestorepb.GetDocumentRequest
+	if err := UnmarshalQuery(url.Values{"transaction": {"\xff"}}, &g); errText(err) != `Invalid value at 'transaction' (TYPE_BYTES), Base64 decoding failed for " "` {
+		t.Errorf("transaction parameter: %q", errText(err))
+	}
+
+	var w firestorepb.CommitRequest
+	body := "{\"writes\":[{\"update\":{\"name\":\"" + root + "/c/\xff\",\"fields\":{\"\xff\":{\"stringValue\":\"\xff\"}}}}," +
+		"{\"update\":{\"name\":\"" + root + "/c/\\udc00\"}}]}"
+	if err := UnmarshalREST([]byte(body), &w); err != nil {
+		t.Fatal(err)
+	}
+	u := w.GetWrites()[0].GetUpdate()
+	if u.GetName() != root+"/c/ " || u.GetFields()[" "].GetStringValue() != " " {
+		t.Errorf("raw 0xFF in JSON: %v", u)
+	}
+	if n := w.GetWrites()[1].GetUpdate().GetName(); n != root+"/c/\uFFFD" {
+		t.Errorf("escaped lone surrogate: %q", n)
+	}
 }

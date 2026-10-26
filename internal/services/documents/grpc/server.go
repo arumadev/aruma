@@ -187,6 +187,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		info.code.Store(int32(connect.CodeUnimplemented))
 	} else {
 		h.mux.ServeHTTP(w, r)
+		genericUTF8Error(w.Header())
 	}
 	code := connect.Code(max(info.code.Load(), 0))
 	h.metrics.observe(procedure, code, time.Since(start))
@@ -197,6 +198,18 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"duration_ms", time.Since(start).Milliseconds(),
 		"client_ip", ip.String(),
 	)
+}
+
+// genericUTF8Error gives a request that did not unmarshal because a string in it is not UTF-8
+// production's generic answer, with no details (f2-non-utf8.json grpc.*): connect words it after
+// the proto decoder. The trailers are in the header map until the handler returns.
+func genericUTF8Error(h http.Header) {
+	for k, vs := range h {
+		if len(vs) == 1 && strings.EqualFold(k, http.TrailerPrefix+"Grpc-Message") &&
+			strings.HasPrefix(vs[0], "unmarshal message: ") && strings.HasSuffix(vs[0], ": string field contains invalid UTF-8") {
+			vs[0] = "Request contains an invalid argument."
+		}
+	}
 }
 
 // recovered answers a panic as INTERNAL, logged with its stack.

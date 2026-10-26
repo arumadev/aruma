@@ -243,8 +243,10 @@ func (p *jsonParser) number() (*jsonNode, bool) {
 	return &jsonNode{kind: jsonNumber, s: text}, true
 }
 
-// str reads a string in double or single quotes. Bytes that are not UTF-8 become U+FFFD: no
-// text off the wire that is not UTF-8 goes further.
+// str reads a string in double or single quotes. Bytes that are not UTF-8 become a space, and an
+// escaped lone surrogate U+FFFD, as production reads them (f2-non-utf8.json
+// rest.commit_name_raw_ff, rest.commit_name_escaped_lone_surrogate): no text off the wire that is
+// not UTF-8 goes further.
 func (p *jsonParser) str() (string, bool) {
 	start := p.pos
 	quote := p.s[p.pos]
@@ -255,7 +257,7 @@ func (p *jsonParser) str() (string, bool) {
 		switch {
 		case c == quote:
 			p.pos++
-			return strings.ToValidUTF8(b.String(), "�"), true
+			return validUTF8(b.String()), true
 		case c != '\\':
 			b.WriteByte(c)
 			p.pos++
@@ -305,4 +307,24 @@ func (p *jsonParser) hex4(i int) (rune, bool) {
 	}
 	n, err := strconv.ParseUint(string(p.s[i:i+4]), 16, 32)
 	return rune(n), err == nil
+}
+
+// validUTF8 is s with each byte that is not UTF-8 read as a space, as production reads a REST
+// query parameter or JSON string (f2-non-utf8.json rest.create_document_id_ff,
+// rest.commit_name_raw_ff, rest.get_mask_ff).
+func validUTF8(s string) string {
+	if utf8.ValidString(s) {
+		return s
+	}
+	var b strings.Builder
+	for len(s) > 0 {
+		r, n := utf8.DecodeRuneInString(s)
+		if r == utf8.RuneError && n <= 1 {
+			b.WriteByte(' ')
+		} else {
+			b.WriteString(s[:n])
+		}
+		s = s[n:]
+	}
+	return b.String()
 }

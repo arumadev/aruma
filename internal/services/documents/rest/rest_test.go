@@ -84,6 +84,7 @@ func (h *harness) do(t *testing.T, method, path, body, token string, header ...s
 type corpusCase struct {
 	ID        string `json:"id"`
 	Transport string `json:"transport"`
+	Replay    bool   `json:"replay"`
 	Request   struct {
 		Method string          `json:"method"`
 		Path   string          `json:"path"`
@@ -118,6 +119,9 @@ var notReplayed = map[string]string{
 	"f1-delete.json rest.exists_false_on_existing": "state from an unrecorded commit",
 	"f1-delete.json rest.exists_true":              "state from an unrecorded commit",
 	"f1-delete.json rest.update_time_stale":        "state from an unrecorded commit",
+	// Marked replay, but its document (i: 5) is written by legacy.update_then_transform and
+	// legacy.transform_existing, which are not marked: replayed alone it starts from no document.
+	"f2-transforms.json legacy.same_field_twice": "state from cases not marked replay",
 }
 
 // unserved are the custom methods of later phases: their cases are not sent.
@@ -140,9 +144,10 @@ var reordered = map[string]string{
 		`"transaction":"<the read-only transaction>","readTime":"<readTime: RFC 3339>"}`,
 }
 
-// TestCorpusReplay replays the F1 recordings' REST cases in their order on one database: the
-// setup commits as updates, then every case whose request carries no placeholder but the
-// transactions begun by earlier cases and the setup's commit time, and that needs no later phase.
+// TestCorpusReplay replays the F1 recordings' REST cases, and the F2 recordings' cases marked
+// replay, in their order on one database: the setup commits as updates, then every case whose
+// request carries no placeholder but the transactions begun by earlier cases and the setup's
+// commit time, and that needs no later phase.
 // Its status and body must be production's, the times, page tokens and transaction ids
 // normalised as the recorder normalised them. The transactions a file began are rolled back after
 // it, so that the read-write one's locks do not hold the next file's setup.
@@ -150,10 +155,13 @@ func TestCorpusReplay(t *testing.T) {
 	h := newHarness(t, apitest.Options{})
 	tok := h.env.JWT(t)
 	dir := filepath.Join("..", "..", "..", "..", "test", "oracle", "documents", "corpus")
-	compared, skipped := 0, 0
+	compared, skipped, marked := 0, 0, 0
 	reproduced := map[string]bool{}
 	for _, name := range []string{"f1-get.json", "f1-batch-get.json", "f1-create.json", "f1-update.json", "f1-delete.json",
-		"f1-list-documents.json", "f1-list-collection-ids.json", "f1-resource-names.json", "f1-write-results.json"} {
+		"f1-list-documents.json", "f1-list-collection-ids.json", "f1-resource-names.json", "f1-write-results.json",
+		"f2-transforms.json", "f2-commit.json", "f2-batch-write.json", "f2-non-utf8.json"} {
+		// From F2 on the recorder marks the cases whose answer depends on the setup alone.
+		markedOnly := strings.HasPrefix(name, "f2-")
 		b, err := os.ReadFile(filepath.Join(dir, name))
 		if err != nil {
 			t.Fatal(err)
@@ -192,11 +200,16 @@ func TestCorpusReplay(t *testing.T) {
 				path = strings.ReplaceAll(path, placeholder, url.QueryEscape(id))
 				body = strings.ReplaceAll(body, placeholder, id)
 			}
+			if markedOnly {
+				// The recorder wrote its fixed stale precondition (record-f2.mjs STALE) as a
+				// placeholder; the answers keep its version, 978307200000001.
+				body = strings.ReplaceAll(body, `"<updateTime: RFC 3339>"`, `"2001-01-01T00:00:00.000001Z"`)
+			}
 			if setupTime != "" && strings.Contains(c.ID, "txn.") {
 				path = strings.ReplaceAll(path, "<readTime: the setup commitTime>", setupTime)
 				body = strings.ReplaceAll(body, "<readTime: RFC 3339>", setupTime)
 			}
-			if c.Transport != "rest" || strings.Contains(path, "<") || strings.Contains(body, "<") ||
+			if c.Transport != "rest" || markedOnly && !c.Replay || strings.Contains(path, "<") || strings.Contains(body, "<") ||
 				slices.ContainsFunc(unserved, func(v string) bool { return strings.Contains(path, v) }) {
 				skipped++
 				continue
@@ -221,6 +234,9 @@ func TestCorpusReplay(t *testing.T) {
 				continue
 			}
 			compared++
+			if markedOnly {
+				marked++
+			}
 			ok := code == c.Response.HTTP && sameJSON(t, normalise(t, got), normalise(t, []byte(want)))
 			if reason, known := notReplayed[name+" "+c.ID]; known {
 				if ok {
@@ -242,9 +258,9 @@ func TestCorpusReplay(t *testing.T) {
 			t.Errorf("%s is listed as not replayed but was not sent", id)
 		}
 	}
-	t.Logf("compared %d recorded REST cases, skipped %d", compared, skipped)
-	if compared < 80 {
-		t.Errorf("only %d cases compared", compared)
+	t.Logf("compared %d recorded REST cases (%d marked replay in F2), skipped %d", compared, marked, skipped)
+	if compared < 300 || marked != 162 {
+		t.Errorf("only %d cases compared, %d of F2's 162 marked replay", compared, marked)
 	}
 }
 
@@ -262,6 +278,10 @@ func transactionOf(body []byte) string {
 	}
 	return res.Transaction
 }
+
+// storedVersionRE matches a stale precondition's message, whose stored version is a document's
+// update time; 0 (no document) is kept.
+var storedVersionRE = regexp.MustCompile(`^the stored version \([1-9]\d*\) does not match`)
 
 // requestTimeRE matches a REQUEST_TIME transform's result: whole milliseconds.
 var requestTimeRE = regexp.MustCompile(`^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{3})?Z$`)
@@ -289,6 +309,11 @@ func normalise(t *testing.T, b []byte) []byte {
 				case "nextPageToken":
 					x[k] = "<nextPageToken>"
 					continue
+				case "message":
+					if m, ok := e.(string); ok {
+						x[k] = storedVersionRE.ReplaceAllString(m, "the stored version (<update time in microseconds>) does not match")
+						continue
+					}
 				case "transaction":
 					if _, ok := e.(string); ok {
 						x[k] = "<transaction>"
@@ -515,36 +540,39 @@ func TestWireErrorsReplay(t *testing.T) {
 	}
 }
 
-// An id that is not UTF-8 reaches REST only through a percent-encoded path or query parameter.
-// It is refused at the edge, so it is never stored and never breaks its collection (0xFF 0x01
-// would end its name key's segment early).
+// An id that is not UTF-8 in a REST path is refused with production's generic text (f2-non-utf8.json
+// rest.get_ff, rest.patch_ff), so it is never stored and never breaks its collection (0xFF 0x01
+// would end its name key's segment early). In a query parameter production reads each such byte
+// as a space (rest.create_document_id_ff): the document " \x01" is created.
 func TestIDNotUTF8(t *testing.T) {
 	h := newHarness(t, apitest.Options{})
 	tok := h.env.JWT(t)
-	notUTF8 := func(id string) string {
-		return `{"error":{"code":400,"message":"Resource id \"` + id + `\" is invalid because it is not UTF-8.","status":"INVALID_ARGUMENT"}}`
-	}
-	for _, c := range []struct{ method, path, want string }{
-		{http.MethodPatch, "/v1/" + root + "/c/%FF%01", notUTF8(`\uFFFD\u0001`)},
-		{http.MethodGet, "/v1/" + root + "/c/%FF%01", notUTF8(`\uFFFD\u0001`)},
-		{http.MethodPost, "/v1/" + root + "/u?documentId=%FF%01", notUTF8(`\uFFFD\u0001`)},
-		{http.MethodPost, "/v1/" + root + "/%C0", notUTF8(`\uFFFD`)},
-		{http.MethodGet, "/v1/projects/%FF/databases/(default)/documents/c/d", notUTF8(`\uFFFD`)},
-		{http.MethodGet, "/v1/projects/" + apitest.Project + "/databases/%FF/documents/c/d", notUTF8(`\uFFFD`)},
+	const generic = `{"error":{"code":400,"message":"Request contains an invalid argument.","status":"INVALID_ARGUMENT"}}`
+	for _, c := range []struct{ method, path string }{
+		{http.MethodPatch, "/v1/" + root + "/c/%FF%01"},
+		{http.MethodGet, "/v1/" + root + "/c/%FF%01"},
+		{http.MethodPost, "/v1/" + root + "/%C0"},
+		{http.MethodGet, "/v1/projects/%FF/databases/(default)/documents/c/d"},
+		{http.MethodGet, "/v1/projects/" + apitest.Project + "/databases/%FF/documents/c/d"},
 	} {
 		body := ""
 		if c.method != http.MethodGet {
 			body = `{"fields":{"a":{"integerValue":"1"}}}`
 		}
 		code, _, got := h.do(t, c.method, c.path, body, tok)
-		if code != 400 || !sameJSON(t, got, []byte(c.want)) {
-			t.Errorf("%s %s: %d %s\nwant %s", c.method, c.path, code, got, c.want)
+		if code != 400 || !sameJSON(t, got, []byte(generic)) {
+			t.Errorf("%s %s: %d %s\nwant %s", c.method, c.path, code, got, generic)
 		}
 	}
-	for _, path := range []string{"/v1/" + root + "/c", "/v1/" + root + "/u"} {
-		if code, _, got := h.do(t, http.MethodGet, path, "", tok); code != 200 || string(got) != "{}" {
-			t.Errorf("list %s: %d %s", path, code, got)
-		}
+	if code, _, got := h.do(t, http.MethodGet, "/v1/"+root+"/c", "", tok); code != 200 || string(got) != "{}" {
+		t.Errorf("list c: %d %s", code, got)
+	}
+	code, _, got := h.do(t, http.MethodPost, "/v1/"+root+"/u?documentId=%FF%01", `{"fields":{"a":{"integerValue":"1"}}}`, tok)
+	if code != 200 || !strings.Contains(string(got), `"name":"`+root+`/u/ \u0001"`) {
+		t.Errorf("documentId=%%FF%%01: %d %s", code, got)
+	}
+	if code, _, got := h.do(t, http.MethodGet, "/v1/"+root+"/u/%20%01", "", tok); code != 200 {
+		t.Errorf("GET u/%%20%%01: %d %s", code, got)
 	}
 }
 

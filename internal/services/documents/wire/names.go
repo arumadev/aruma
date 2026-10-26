@@ -234,13 +234,14 @@ func CheckID(id string, document bool) error {
 	return nil
 }
 
-// errNotUTF8 refuses an id that is not UTF-8, which only a REST path or query parameter can
-// carry (%FF): Firestore's ids are strings. Production's answer is not recorded; the text is
-// provisional, in the form of its recorded invalid-id texts (`Resource id "{id}" is invalid
-// because it contains "/".`, f1-create.json slash_id), the id's bad bytes shown as U+FFFD.
-func errNotUTF8(id string) error {
-	return InvalidArgument(`Resource id "` + strings.ToValidUTF8(id, "\uFFFD") + `" is invalid because it is not UTF-8.`)
-}
+// errNotUTF8 refuses an id that is not UTF-8, which only a REST path or a gRPC message can
+// carry (%FF): production answers its generic text, with no details (f2-non-utf8.json rest.get_*,
+// grpc.*). A REST query parameter or JSON string is read with such bytes as spaces instead
+// (UnmarshalQuery, the JSON parser), as production reads them.
+func errNotUTF8(string) error { return errInvalidRequest }
+
+// errInvalidRequest is production's text for a request it cannot read at all.
+var errInvalidRequest = InvalidArgument("Request contains an invalid argument.")
 
 // checkID applies the reserved-id rules to a collection id or, when document is set, a
 // document id.
