@@ -54,16 +54,13 @@
       "summary": "A query inside a pessimistic read-write transaction locks the whole collection under its parent (a collection-group query: the collection id across the database), coarser than production's range locks.",
       "production": "Locks the index range a query scans (corpus/f2-locks.json, two runs, every outcome stable): with T1 holding `n > 3` on c/A/sub, a plain commit that updates a matched document, inserts a document with n in the range (a phantom), or moves a document into it waits until T1 ends (about 20 s, then ABORTED \"Too much contention on these documents. Please try again.\", corpus/f0-contention.json s6); an insert below the range, an insert without the field, an update of an unmatched document, a write to c/B/sub (same collection id, other parent) and a write to another collection do not wait. A whole-collection query blocks inserts into that collection but not into c/B/sub; `orderBy n limit 2` blocks inserts both before the first and after the last returned document; a collection-group query blocks inserts under any parent with that collection id but not into another collection id.",
       "emulator": "Locks the collection id for every query in a read-write transaction, so writes to every collection with that id wait (measured by hidane; firestore-prior-art-and-verification.md §A2).",
-      "aruma": "A collection query or ListDocuments with a collection id takes a shared lock on (parent path, collection id); a collection-group query takes it on the collection id across the database; a kindless query or ListDocuments with an empty collection id takes it on the database. Every write takes intention locks on all three (ADR-024 §6.1, ADR-025 §7.3). Only service-account and admin pessimistic transactions that run queries are affected: end-user transactions are optimistic and hold no locks while open. Coarser than production where a write outside the scanned range of the same collection (an insert below the range or without the field, an update of an unmatched document) waits on Aruma and not on production; a phantom insert, a matched update and the sibling-parent and other-collection writes behave as production. F2 writes the phantom test (planned).",
+      "aruma": "A collection query or ListDocuments with a collection id takes a shared lock on (parent path, collection id); a collection-group query takes it on the collection id across the database; a kindless query or ListDocuments with an empty collection id takes it on the database. Every write takes intention locks on all three (ADR-024 §6.1, ADR-025 §7.3). Only service-account and admin pessimistic transactions that run queries are affected: end-user transactions are optimistic and hold no locks while open. Coarser than production where a write outside the scanned range of the same collection (an insert below the range or without the field, an update of an unmatched document) waits on Aruma and not on production; a phantom insert, a matched update and the sibling-parent and other-collection writes behave as production. Until F3 runs queries, the test shows it with a listing, which takes the lock a whole-collection query takes: a phantom insert and an update of a listed document wait, an insert below the range, one without the field and an update of an unmatched document wait on Aruma alone, and the sibling-parent and other-collection writes do not wait.",
       "follows": "production",
       "evidence": [
         "corpus/f2-locks.json",
         "corpus/f0-contention.json"
       ],
-      "planned": {
-        "test": "test/contention/documents/phantom_test.go:TestPhantom",
-        "phase": "F2"
-      }
+      "test": "test/contention/documents/phantom_test.go:TestPhantom"
     },
     {
       "id": "transaction-lost-on-restart",
@@ -93,6 +90,20 @@
         "corpus/f2-transactions.json"
       ],
       "test": "internal/services/documents/core/commit_test.go:TestTransformsCommit"
+    },
+    {
+      "id": "request-work-bounds",
+      "kind": "provisional",
+      "summary": "A Commit or BatchWrite holds at most 10,000 writes and 50,000 field transforms, and a commit builds at most 1 GiB of documents; over them it is refused with INVALID_ARGUMENT and Aruma's own text.",
+      "production": "Accepted one commit and one batchWrite of 501 updates (corpus/f2-commit.json and corpus/f2-batch-write.json limit.501_writes). Its bounds above that, on writes, field transforms and the work of many writes of one large document, are not recorded; its documented 10 MiB request limit is not recorded either.",
+      "emulator": "Not recorded.",
+      "aruma": "Bounds the work a request makes before its rules and size checks by count as well as by bytes (documents.limits.message_bytes): 10,000 writes per request and 50,000 field transforms across its writes (api/writes.go MaxRequestWrites, MaxRequestTransforms: \"A request may hold at most 10000 writes.\", \"A request may hold at most 50000 field transforms.\"), and 1 GiB of documents built by one commit, each write's document counted once (core/writes.go MaxCommitWork: \"The commit's writes build more than 1 GiB of documents. Please split it into smaller commits.\"), twice 501 writes of documents at the 1 MiB limit. Every recorded case is far within them. Record production's answers to 10,000 and 100,000 writes and to 20,000 transforms to replace the texts.",
+      "follows": "production",
+      "evidence": [
+        "corpus/f2-commit.json",
+        "corpus/f2-batch-write.json"
+      ],
+      "test": "internal/services/documents/api/writes_test.go:TestRequestWorkBounds"
     },
     {
       "id": "listen-resume-beyond-window",
