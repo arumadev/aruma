@@ -173,6 +173,9 @@ type Write struct {
 	// and an empty Mask changes no field. Unmasked, Fields replace the document's.
 	Masked bool
 	Mask   []value.FieldPath
+	// Transforms apply after Fields, in order (Write.update_transforms; a legacy Write.transform
+	// is a WriteUpdate with an empty Mask and these). Each has a result in WriteResult.
+	Transforms []Transform
 	// Precondition must hold of the document before this write.
 	Precondition Precondition
 }
@@ -191,6 +194,8 @@ type WriteResult struct {
 	// commit changed the document, else its previous one. Zero for a delete, and for a verify
 	// of a document that does not exist.
 	UpdateTime time.Time
+	// TransformResults has one value per transform of the write, in order.
+	TransformResults []value.Value
 }
 
 // CommitResult is a commit's outcome.

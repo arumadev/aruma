@@ -23,6 +23,16 @@ func Equal(a, b Value) bool {
 	return Compare(a, b) == 0
 }
 
+// Equivalent reports whether a and b are the same value as the array transforms see it
+// (DocumentTransform.FieldTransform in write.proto): Compare's order without its index budget,
+// so equivalent numbers of any type are one (3 and 3.0, -0.0 and 0), NaN is NaN and null is
+// null, and arrays and maps are equivalent element by element and field by field. Unlike
+// Compare, two long strings that differ past the index's 1500 bytes are not equivalent.
+func Equivalent(a, b Value) bool {
+	c := comparer{ra: math.MaxInt / 2, rb: math.MaxInt / 2}
+	return c.value(a, b) == 0
+}
+
 // Identical reports whether a and b are the same value: the same kind, the same bits (-0.0 is
 // not 0.0, any NaN is NaN), and for arrays and maps the same elements and fields, identical.
 // It is what a write changes and a listener sees, where Equal is what a query matches.

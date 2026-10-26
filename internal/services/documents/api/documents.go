@@ -295,21 +295,7 @@ func (s *Service) UpdateDocument(ctx context.Context, c Call, req *pb.UpdateDocu
 		return nil, err
 	}
 	w := core.Write{Kind: core.WriteUpdate, Path: pathOf(n)}
-	if req.GetUpdateMask() != nil {
-		// Checked in production's order (value.Validate's doc): the BSON shapes of the update,
-		// the mask's paths, then, in core, the document the mask makes.
-		fields, err := wire.FieldsFromProto(req.GetDocument().GetFields())
-		if err != nil {
-			return nil, err
-		}
-		if err := value.CheckBSON(fields); err != nil {
-			return nil, wire.InvalidArgument(err.Error())
-		}
-		if w.Mask, _, err = maskPaths(req.GetUpdateMask()); err != nil {
-			return nil, err
-		}
-		w.Fields, w.Masked = stored(fields), true
-	} else if w.Fields, err = fieldsOf(req.GetDocument()); err != nil {
+	if w.Fields, w.Mask, w.Masked, err = updateOf(req.GetDocument(), req.GetUpdateMask()); err != nil {
 		return nil, err
 	}
 	if w.Precondition, err = precondition(req.GetCurrentDocument()); err != nil {

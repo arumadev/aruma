@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -120,7 +121,7 @@ var notReplayed = map[string]string{
 }
 
 // unserved are the custom methods of later phases: their cases are not sent.
-var unserved = []string{":commit", ":beginTransaction", ":rollback", ":runQuery", ":runAggregationQuery", ":batchWrite", ":partitionQuery"}
+var unserved = []string{":beginTransaction", ":rollback", ":runQuery", ":runAggregationQuery", ":partitionQuery"}
 
 // TestCorpusReplay replays the F1 recordings' REST cases in their order on one database: the
 // setup commits as updates, then every case whose request carries no placeholder and needs no
@@ -133,7 +134,7 @@ func TestCorpusReplay(t *testing.T) {
 	compared, skipped := 0, 0
 	reproduced := map[string]bool{}
 	for _, name := range []string{"f1-get.json", "f1-batch-get.json", "f1-create.json", "f1-update.json", "f1-delete.json",
-		"f1-list-documents.json", "f1-list-collection-ids.json", "f1-resource-names.json"} {
+		"f1-list-documents.json", "f1-list-collection-ids.json", "f1-resource-names.json", "f1-write-results.json"} {
 		b, err := os.ReadFile(filepath.Join(dir, name))
 		if err != nil {
 			t.Fatal(err)
@@ -174,7 +175,7 @@ func TestCorpusReplay(t *testing.T) {
 				continue
 			}
 			compared++
-			ok := code == c.Response.HTTP && sameJSON(t, normalise(t, got), []byte(want))
+			ok := code == c.Response.HTTP && sameJSON(t, normalise(t, got), normalise(t, []byte(want)))
 			if reason, known := notReplayed[name+" "+c.ID]; known {
 				if ok {
 					t.Errorf("%s %s: reproduced, but listed as not (%s)", name, c.ID, reason)
@@ -198,7 +199,12 @@ func TestCorpusReplay(t *testing.T) {
 	}
 }
 
-// normalise replaces what the recorder replaced (lib.mjs): times and page tokens.
+// requestTimeRE matches a REQUEST_TIME transform's result: whole milliseconds.
+var requestTimeRE = regexp.MustCompile(`^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{3})?Z$`)
+
+// normalise replaces what the recorder replaced (lib.mjs): times and page tokens. A
+// REQUEST_TIME result, which the recorder kept, becomes a placeholder when it has whole
+// milliseconds, on both sides.
 func normalise(t *testing.T, b []byte) []byte {
 	t.Helper()
 	var v any
@@ -211,7 +217,7 @@ func normalise(t *testing.T, b []byte) []byte {
 		case map[string]any:
 			for k, e := range x {
 				switch k {
-				case "createTime", "updateTime", "readTime":
+				case "createTime", "updateTime", "readTime", "commitTime":
 					if _, ok := e.(string); ok {
 						x[k] = "<" + k + ": RFC 3339>"
 						continue
@@ -219,6 +225,14 @@ func normalise(t *testing.T, b []byte) []byte {
 				case "nextPageToken":
 					x[k] = "<nextPageToken>"
 					continue
+				case "transformResults":
+					for _, r := range e.([]any) {
+						if r, ok := r.(map[string]any); ok {
+							if ts, ok := r["timestampValue"].(string); ok && requestTimeRE.MatchString(ts) {
+								r["timestampValue"] = "<request time: whole milliseconds>"
+							}
+						}
+					}
 				}
 				x[k] = walk(e)
 			}
@@ -273,9 +287,9 @@ func TestForms(t *testing.T) {
 		` to add a Cloud Datastore or Cloud Firestore database. ","status":"NOT_FOUND"}}`; code != 404 || string(body) != want {
 		t.Errorf("missing database: %d %s\nwant %s", code, body, want)
 	}
-	code, _, _ = h.do(t, http.MethodPost, "/v1/projects/"+apitest.Project+"/databases/(default)/documents:commit", `{}`, tok)
+	code, _, _ = h.do(t, http.MethodPost, "/v1/projects/"+apitest.Project+"/databases/(default)/documents:commit", `{"transaction":"AAAA"}`, tok)
 	if code != http.StatusNotImplemented {
-		t.Errorf(":commit: %d", code)
+		t.Errorf(":commit in a transaction: %d", code)
 	}
 	code, hd, _ = h.do(t, http.MethodGet, "/v1/projects/"+apitest.Project+"/databases/(default)", "", tok, "Origin", "https://app.example")
 	if code != http.StatusNotImplemented || hd.Get("Access-Control-Allow-Origin") != "" {

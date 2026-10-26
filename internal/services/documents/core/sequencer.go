@@ -20,8 +20,11 @@ import (
 //  3. the first batch: BEGIN READ COMMITTED, the transaction's timeouts, the written documents'
 //     rows FOR UPDATE in name-key order, and the catalog version and last commit_time;
 //  4. in Go: the preconditions and the documents after the writes (plan.apply);
-//  5. the second batch, one round trip: (F2) the index entries, then the stamp statement, which
-//     takes the sequencer row, then COMMIT;
+//  5. the second batch, one round trip: (F3) the index entries, then the stamp, which takes the
+//     sequencer row, the documents and changelog (WriteCommit), then COMMIT. A commit with a
+//     REQUEST_TIME transform sends the stamp alone, builds its documents with the commit_time
+//     it returned (plan.apply again), then sends the rest; one that changes nothing takes no
+//     stamp, only a commit_time from the clock (sequencer.unchanged);
 //  6. after COMMIT returned, and only then, the hub is told (Notifier.Committed).
 //
 // The sequencer row is held from the stamp to the end of COMMIT, so a database's commits become
@@ -187,7 +190,10 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 		return CommitResult{}, errNoDatabase
 	}
 
-	if err := p.apply(db, locked); err != nil {
+	// The documents after the writes. A plan with REQUEST_TIME is folded here with the last
+	// commit's time, for its errors and to know what it changes; its documents are built again
+	// once the commit is stamped.
+	if err := p.apply(db, locked, catalog.LastTs); err != nil {
 		rollback(conn)
 		return CommitResult{}, err
 	}
@@ -197,25 +203,83 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 		return CommitResult{}, err
 	}
 	if len(in.logKeys) == 0 {
-		// Nothing changes: no seq, and the commit_time is the last commit's, which is at or
-		// after every update_time the commit read (ReadCatalog ran after the locks).
-		if _, err := conn.Exec(ctx, "COMMIT"); err != nil {
-			rollback(conn)
-			return CommitResult{}, failed(err)
-		}
-		return CommitResult{CommitTime: catalog.LastTs, Results: p.results(catalog.LastTs)}, nil
+		return s.unchanged(ctx, conn, db, p, locked)
 	}
+	return s.stamp(ctx, conn, db, p, locked, catalog.CatalogVersion, &in)
+}
 
-	// The second batch, under the sequencer row from the stamp to COMMIT. It runs to the end
-	// whatever the caller does: a cancelled request must not leave an unknown outcome.
+// unchanged ends a commit that changes nothing: no seq, and a commit_time from the clock
+// (queries.UnchangedCommitTime), which production's advances too.
+func (s *sequencer) unchanged(ctx context.Context, conn *pgx.Conn, db DB, p *plan, locked map[string]*lockedDoc) (CommitResult, error) {
+	var commitTime time.Time
+	b := &pgx.Batch{}
+	sql, args := statement(func(q *queries.Queries) error {
+		_, err := q.UnchangedCommitTime(ctx, queries.UnchangedCommitTimeParams{ProjectNumber: db.Project, DatabaseID: db.ID})
+		return err
+	})
+	b.Queue(sql, args...).QueryRow(func(row pgx.Row) error { return row.Scan(&commitTime) })
+	b.Queue("COMMIT")
+	if err := conn.SendBatch(ctx, b).Close(); err != nil {
+		rollback(conn)
+		return CommitResult{}, failed(err)
+	}
+	if p.serverTime {
+		// The transform results of writes whose document ends as it was (deleted after).
+		if err := p.apply(db, locked, commitTime); err != nil {
+			return CommitResult{}, err
+		}
+	}
+	return CommitResult{CommitTime: commitTime, Results: p.results(commitTime)}, nil
+}
+
+// stamp runs the second batch, under the sequencer row from the stamp to COMMIT: the stamp, the
+// documents and COMMIT in one round trip. A plan with REQUEST_TIME sends the stamp alone, builds
+// its documents with the commit_time it returned, then sends the rest. It runs to the end
+// whatever the caller does: a cancelled request must not leave an unknown outcome.
+func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, locked map[string]*lockedDoc, catalogVersion int64, in *stampInput) (CommitResult, error) {
+	ctx = context.WithoutCancel(ctx)
 	var seq int64
 	var commitTime time.Time
 	stamped := false
-	b = &pgx.Batch{}
-	// F2 queues the index entries' DeleteIndexEntries and InsertIndexEntries here, before the stamp.
+	b := &pgx.Batch{}
+	// F3 queues the index entries' DeleteIndexEntries and InsertIndexEntries here, before the stamp.
 	stampSQL, stampArgs := statement(func(q *queries.Queries) error {
-		_, err := q.StampCommit(ctx, queries.StampCommitParams{
-			ProjectNumber: db.Project, DatabaseID: db.ID, CatalogVersion: catalog.CatalogVersion,
+		_, err := q.StampCommit(ctx, queries.StampCommitParams{ProjectNumber: db.Project, DatabaseID: db.ID, CatalogVersion: catalogVersion})
+		return err
+	})
+	b.Queue(stampSQL, stampArgs...).Query(func(rows pgx.Rows) error {
+		for rows.Next() {
+			if err := rows.Scan(&seq, &commitTime); err != nil {
+				return err
+			}
+			stamped = true
+		}
+		return rows.Err()
+	})
+	if p.serverTime {
+		if err := conn.SendBatch(ctx, b).Close(); err != nil {
+			rollback(conn)
+			return CommitResult{}, failed(err)
+		}
+		if !stamped {
+			// The catalog changed since the first batch.
+			rollback(conn)
+			return CommitResult{}, errRetry
+		}
+		*in = stampInput{}
+		if err := p.apply(db, locked, commitTime); err != nil {
+			rollback(conn)
+			return CommitResult{}, err
+		}
+		if err := p.stampArgs(in); err != nil {
+			rollback(conn)
+			return CommitResult{}, err
+		}
+		b = &pgx.Batch{}
+	}
+	writeSQL, writeArgs := statement(func(q *queries.Queries) error {
+		_, err := q.WriteCommit(ctx, queries.WriteCommitParams{
+			ProjectNumber: db.Project, DatabaseID: db.ID, CatalogVersion: catalogVersion,
 			UpdateKeys: in.updateKeys, UpdateSeqs: in.updateSeqs, UpdateDocs: in.updateDocs, UpdateSizes: in.updateSizes,
 			InsertKeys: in.insertKeys, InsertNames: in.insertNames, InsertParentHashes: in.insertParentHashes,
 			InsertCgHashes: in.insertCgHashes, InsertParents: in.insertParents, InsertCollectionIds: in.insertCollectionIDs,
@@ -225,18 +289,9 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 		})
 		return err
 	})
-	b.Queue(stampSQL, stampArgs...).Query(func(rows pgx.Rows) error {
-		for rows.Next() {
-			var ok bool
-			if err := rows.Scan(&seq, &commitTime, &ok); err != nil {
-				return err
-			}
-			stamped = true
-		}
-		return rows.Err()
-	})
+	b.Queue(writeSQL, writeArgs...)
 	b.Queue("COMMIT")
-	err = conn.SendBatch(context.WithoutCancel(ctx), b).Close()
+	err := conn.SendBatch(ctx, b).Close()
 	switch {
 	case err == nil && !stamped:
 		// The catalog changed since the first batch; the COMMIT committed nothing.

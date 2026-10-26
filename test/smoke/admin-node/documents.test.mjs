@@ -9,9 +9,10 @@
 //         without the owner token, so the JWT is what admits it.
 //
 // The SDK reads with the F1 RPCs (get and getAll: BatchGetDocuments; listDocuments;
-// listCollections: ListCollectionIds), and every write of the SDK is a Commit, which comes in F2:
-// those tests are listed in test/compat/documents/expected-failures/admin-node.txt, and a
-// listed test that passes fails the run. GetDocument, CreateDocument, UpdateDocument and
+// listCollections: ListCollectionIds), and writes with Commit (F2), BatchWrite for its
+// bulkWriter. What the server does not serve yet is listed in
+// test/compat/documents/expected-failures/admin-node.txt, and a listed test that passes fails
+// the run. GetDocument, CreateDocument, UpdateDocument and
 // DeleteDocument run through the SDK's own client (Firestore.request), on the same transport
 // and with the same credentials, and every value production recorded is written with them and
 // must read back exactly.
@@ -336,6 +337,34 @@ test('writes: batch', async () => {
   assert.equal((await b.commit()).length, 3);
 });
 
+test('writes: transforms', async () => {
+  const ref = db.doc('writes/t1');
+  await ref.set({ n: 1, tags: ['a', 'b'] });
+  const wr = await ref.update({
+    at: FieldValue.serverTimestamp(), n: FieldValue.increment(2), tags: FieldValue.arrayUnion('b', 'c'),
+  });
+  await ref.update({ tags: FieldValue.arrayRemove('a') });
+  const data = (await ref.get()).data();
+  assert.equal(data.n, 3n);
+  assert.deepEqual(data.tags, ['b', 'c']);
+  // REQUEST_TIME: the commit's time at whole milliseconds.
+  assert.equal(data.at.toMillis(), wr.writeTime.toMillis());
+  assert.equal(data.at.nanoseconds % 1e6, 0);
+});
+
+test('writes: bulk writer', async () => {
+  const bw = db.bulkWriter();
+  const done = [];
+  for (let i = 0; i < 30; i++) done.push(bw.set(db.doc(`writes/bulk${i}`), { i, at: FieldValue.serverTimestamp() }));
+  // Its rejection is handled at once: node:test fails a run on an unhandled one.
+  const missing = bw.update(db.doc('writes/bulk-missing'), { a: 1 }).then(() => null, (e) => e);
+  await bw.close();
+  for (const p of done) await p;
+  const err = await missing;
+  assert.equal(err?.code, 5, `got ${err}`);
+  assert.equal(messageOf(err), `No document to update: ${root}/writes/bulk-missing`);
+});
+
 test('writes: every type round-trips', async () => {
   const data = {
     null: null, t: true, f: false,
@@ -350,7 +379,9 @@ test('writes: every type round-trips', async () => {
   };
   await db.doc('writes/types').set(data);
   const got = (await db.doc('writes/types').get()).data();
-  for (const k of ['null', 't', 'f', 'max', 'min', 'nan', 'negzero', 'zero', 'inf', 'dmax', 'unicode']) assert.ok(Object.is(got[k], data[k]), `${k}: ${String(got[k])}`);
+  for (const k of ['null', 't', 'f', 'max', 'min', 'nan', 'negzero', 'inf', 'dmax', 'unicode']) assert.ok(Object.is(got[k], data[k]), `${k}: ${String(got[k])}`);
+  // The SDK writes an integral number as an integer, which reads back as a BigInt (useBigInt).
+  assert.equal(got.zero, 0n);
   assert.deepEqual(got.bytes, data.bytes);
   assert.ok(got.ref.isEqual(data.ref));
   assert.ok(got.geo.isEqual(data.geo));
