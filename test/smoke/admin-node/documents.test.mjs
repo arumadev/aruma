@@ -10,7 +10,7 @@
 //
 // The SDK reads with the F1 RPCs (get and getAll: BatchGetDocuments; listDocuments;
 // listCollections: ListCollectionIds), and writes with Commit (F2), BatchWrite for its
-// bulkWriter. What the server does not serve yet is listed in
+// bulkWriter; its transactions begin with new_transaction and end with Commit or Rollback. What the server does not serve yet is listed in
 // test/compat/documents/expected-failures/admin-node.txt, and a listed test that passes fails
 // the run. GetDocument, CreateDocument, UpdateDocument and
 // DeleteDocument run through the SDK's own client (Firestore.request), on the same transport
@@ -389,4 +389,70 @@ test('writes: every type round-trips', async () => {
   assert.deepEqual(got.map, data.map);
   assert.deepEqual(got.vector.toArray(), [1, -0.5, 3e300]);
   for (const k of ['ts', 'tsMin', 'tsMax']) assert.ok(got[k].isEqual(data[k]), k);
+});
+
+// Transactions (F2). firebase-admin begins one lazily, with new_transaction on its first read
+// (BatchGetDocuments), and retries an ABORTED one with retry_transaction; an admin's is
+// pessimistic.
+const txnDoc = (id) => db.doc(`txn-${transport}/${id}`);
+
+test('transactions: read-modify-write', async () => {
+  const ref = txnDoc('rmw');
+  await ref.set({ n: 1 });
+  const got = await db.runTransaction(async (tx) => {
+    const n = (await tx.get(ref)).get('n');
+    tx.update(ref, { n: n + 1n });
+    return n;
+  });
+  assert.equal(got, 1n);
+  assert.equal((await ref.get()).get('n'), 2n);
+});
+
+test('transactions: concurrent increments keep the total', async () => {
+  const ref = txnDoc('counter');
+  await ref.set({ n: 0 });
+  const workers = 10;
+  await Promise.all(Array.from({ length: workers }, () => db.runTransaction(async (tx) => {
+    const n = (await tx.get(ref)).get('n');
+    tx.set(ref, { n: n + 1n });
+  })));
+  assert.equal((await ref.get()).get('n'), BigInt(workers));
+});
+
+test('transactions: read-only', async () => {
+  const ref = txnDoc('ro');
+  await ref.set({ a: 1 });
+  await db.runTransaction(async (tx) => {
+    assert.equal((await tx.get(ref)).get('a'), 1n);
+    // A commit after the transaction began: its snapshot does not see it.
+    await ref.set({ a: 2 });
+    assert.equal((await tx.get(ref)).get('a'), 1n);
+  }, { readOnly: true });
+  assert.equal((await ref.get()).get('a'), 2n);
+});
+
+test('transactions: one that throws rolls back', async () => {
+  const ref = txnDoc('rollback');
+  await ref.set({ a: 1 });
+  await assert.rejects(db.runTransaction(async (tx) => {
+    await tx.get(ref);
+    tx.set(ref, { a: 2 });
+    throw new Error('boom');
+  }), /boom/);
+  assert.equal((await ref.get()).get('a'), 1n);
+  // Its lock is freed: a write outside a transaction does not wait for it.
+  await ref.set({ a: 3 });
+});
+
+test('transactions: getAll', async () => {
+  const [a, b, missing] = [txnDoc('all-a'), txnDoc('all-b'), txnDoc('all-missing')];
+  await a.set({ v: 'a' });
+  await b.set({ v: 'b' });
+  await missing.delete();
+  await db.runTransaction(async (tx) => {
+    const snaps = await tx.getAll(b, missing, a);
+    assert.deepEqual(snaps.map((s) => (s.exists ? s.get('v') : null)), ['b', null, 'a']);
+    tx.create(missing, { v: 'created' });
+  });
+  assert.equal((await missing.get()).get('v'), 'created');
 });

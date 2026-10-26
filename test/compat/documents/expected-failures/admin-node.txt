@@ -4,7 +4,7 @@
 # " :: " and a text its failure must contain. A listed test that passes, fails for another
 # reason, or no longer exists fails the suite: remove the line when the gap closes.
 #
-# F2 serves Commit and BatchWrite outside transactions; transactions come with F2's second part.
+# F2 serves Commit, BatchWrite and transactions (BeginTransaction, Rollback, reads and commits in one).
 # firebase-admin's REST transport (google-gax fallbackRest) writes its body with JSON.stringify,
 # which sends -0 as 0: the sign is lost before the request leaves the client.
 rest/writes: every type round-trips :: negzero: 0
