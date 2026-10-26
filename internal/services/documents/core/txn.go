@@ -79,8 +79,19 @@ type TxnConfig struct {
 	// MaxOpen bounds a database's open pessimistic transactions (max_open_txns): 1,000.
 	MaxOpen int
 	// MaxOpenUnlocked bounds a database's open read-only and optimistic transactions, which
-	// end users open: 10,000. Our own bound; ADR-024 §6.3 bounds the pessimistic ones only.
+	// end users open (max_open_unlocked_txns): 10,000. Our own bound; ADR-024 §6.3 bounds the
+	// pessimistic ones only.
 	MaxOpenUnlocked int
+	// MaxOpenPerUser bounds one end user's open read-only and optimistic transactions on a
+	// database (max_open_txns_per_user): 100, so that one user cannot take every one of
+	// MaxOpenUnlocked from the others. Admins have no such bound, and callers without a uid
+	// share MaxOpenUnlocked alone until F5 tells them apart.
+	MaxOpenPerUser int
+	// MaxEnded bounds the records of ended transactions kept until forgetAfter (max_ended_txns):
+	// 100,000. Past it the oldest are forgotten early: their ids then answer the expired text, as
+	// an id from before a restart does, without the wound text, and a retry of one takes a new
+	// age.
+	MaxEnded int
 	// MaxLocks bounds a transaction's locks, and an optimistic one's recorded reads
 	// (max_locks_per_txn): 10,000.
 	MaxLocks int
@@ -93,6 +104,8 @@ func (c *TxnConfig) defaults() {
 	c.MaxLifetime = cmp.Or(c.MaxLifetime, 270*time.Second)
 	c.MaxOpen = cmp.Or(c.MaxOpen, 1000)
 	c.MaxOpenUnlocked = cmp.Or(c.MaxOpenUnlocked, 10000)
+	c.MaxOpenPerUser = cmp.Or(c.MaxOpenPerUser, 100)
+	c.MaxEnded = cmp.Or(c.MaxEnded, 100000)
 	c.MaxLocks = cmp.Or(c.MaxLocks, 10000)
 	if c.Now == nil {
 		c.Now = time.Now
@@ -187,6 +200,7 @@ func (v readVersion) same(exists bool, updateTime time.Time) bool {
 type txn struct {
 	num      uint64
 	db       DB
+	user     userKey // the end user it counts against (MaxOpenPerUser); zero for none
 	mode     txnMode
 	issued   time.Time
 	readTime time.Time  // read-only: the snapshot
@@ -200,6 +214,7 @@ type txn struct {
 	after     error                  // what calls get once it ended; nil: ErrTransactionExpired
 	reads     map[string]readVersion // by stored name key
 	lists     []listRead             // optimistic
+	listed    int                    // optimistic: the documents its listings returned
 }
 
 // transactions is the registry of a store's transactions.
@@ -214,9 +229,17 @@ type transactions struct {
 	next  uint64
 	all   map[uint64]*txn
 	open  map[dbKey]*openCounts
+	users map[userKey]int // open read-only and optimistic transactions per end user
+	ended []uint64        // the ended records in all, oldest first (MaxEnded)
 }
 
 type openCounts struct{ locked, unlocked int }
+
+// userKey is an end user of a database, for MaxOpenPerUser.
+type userKey struct {
+	db dbKey
+	id string
+}
 
 func newTransactions(cfg TxnConfig) *transactions {
 	cfg.defaults()
@@ -226,7 +249,7 @@ func newTransactions(cfg TxnConfig) *transactions {
 		_, _ = rand.Read(key)
 	}
 	stats := &txnCounters{}
-	r := &transactions{cfg: &cfg, stats: stats, key: key, all: map[uint64]*txn{}, open: map[dbKey]*openCounts{}}
+	r := &transactions{cfg: &cfg, stats: stats, key: key, all: map[uint64]*txn{}, open: map[dbKey]*openCounts{}, users: map[userKey]int{}}
 	r.locks = newLockManager(r.cfg, stats)
 	_, _ = rand.Read(r.nonce[:])
 	return r
@@ -302,13 +325,18 @@ func (r *transactions) begin(db DB, by Principal, mode txnMode, readTime time.Ti
 		tx.age = age
 	}
 	k := dbKey{db.Project, db.ID}
+	if mode != txnPessimistic && !by.Admin && by.ID != "" {
+		// TODO(F5): by.ID is the token's unverified sub until F5 verifies it (api.principalOf).
+		tx.user = userKey{k, by.ID}
+	}
 	r.mu.Lock()
 	c := r.open[k]
 	if c == nil {
 		c = &openCounts{}
 		r.open[k] = c
 	}
-	if mode == txnPessimistic && c.locked >= r.cfg.MaxOpen || mode != txnPessimistic && c.unlocked >= r.cfg.MaxOpenUnlocked {
+	if mode == txnPessimistic && c.locked >= r.cfg.MaxOpen || mode != txnPessimistic && c.unlocked >= r.cfg.MaxOpenUnlocked ||
+		tx.user.id != "" && r.users[tx.user] >= r.cfg.MaxOpenPerUser {
 		r.mu.Unlock()
 		if tx.lt != nil {
 			tx.table.release(tx.lt)
@@ -320,6 +348,9 @@ func (r *transactions) begin(db DB, by Principal, mode txnMode, readTime time.Ti
 		c.locked++
 	} else {
 		c.unlocked++
+	}
+	if tx.user.id != "" {
+		r.users[tx.user]++
 	}
 	r.next++
 	tx.num = r.next
@@ -427,8 +458,11 @@ func (r *transactions) record(tx *txn, docs []Document, list *listRead) error {
 	}
 	if list != nil {
 		tx.lists = append(tx.lists, *list)
+		tx.listed += len(list.docs)
 	}
-	if tx.mode == txnOptimistic && len(tx.reads)+len(tx.lists) > r.cfg.MaxLocks {
+	// An optimistic transaction keeps what it read for its commit to check: its documents, and
+	// each listing with what it returned, all within MaxLocks.
+	if tx.mode == txnOptimistic && len(tx.reads)+len(tx.lists)+tx.listed > r.cfg.MaxLocks {
 		r.finishLocked(tx)
 		return errTooManyLocks
 	}
@@ -474,6 +508,18 @@ func (r *transactions) finishLocked(tx *txn) {
 	} else {
 		c.unlocked--
 	}
+	if tx.user.id != "" {
+		if r.users[tx.user]--; r.users[tx.user] == 0 {
+			delete(r.users, tx.user)
+		}
+	}
+	// The record stays for its id's answers until forgetAfter, the oldest going first past
+	// MaxEnded.
+	r.ended = append(r.ended, tx.num)
+	for len(r.ended) > r.cfg.MaxEnded {
+		delete(r.all, r.ended[0])
+		r.ended = r.ended[1:]
+	}
 }
 
 // drop ends every transaction and makes every id issued so far unknown (authentic, so ABORTED):
@@ -481,7 +527,7 @@ func (r *transactions) finishLocked(tx *txn) {
 func (r *transactions) drop() {
 	r.mu.Lock()
 	all := r.all
-	r.all, r.open = map[uint64]*txn{}, map[dbKey]*openCounts{}
+	r.all, r.open, r.users, r.ended = map[uint64]*txn{}, map[dbKey]*openCounts{}, map[userKey]int{}, nil
 	_, _ = rand.Read(r.nonce[:])
 	r.mu.Unlock()
 	for _, tx := range all {

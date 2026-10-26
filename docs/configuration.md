@@ -106,6 +106,9 @@ The limits, under `documents.limits` in the file. Each must be positive.
 | `txn_wait_timeout` | `ARUMA_DOCUMENTS_TXN_WAIT_TIMEOUT` | duration | `20s` | How long a transaction, or a write outside one, waits for another transaction's lock before it is aborted with `ABORTED` "Too much contention on these documents. Please try again.", as production does |
 | `txn_max_lifetime` | `ARUMA_DOCUMENTS_TXN_MAX_LIFETIME` | duration | `270s` | A transaction ends this long after it began, and its locks are freed |
 | `max_open_txns` | `ARUMA_DOCUMENTS_MAX_OPEN_TXNS` | count | `1000` | Open locking transactions (those of service accounts and owners) per database; past it, beginning one is `ABORTED` |
+| `max_open_unlocked_txns` | `ARUMA_DOCUMENTS_MAX_OPEN_UNLOCKED_TXNS` | count | `10000` | Open read-only and optimistic transactions (those end users open) per database; past it, beginning one is `ABORTED` |
+| `max_open_txns_per_user` | `ARUMA_DOCUMENTS_MAX_OPEN_TXNS_PER_USER` | count | `100` | Open read-only and optimistic transactions of one signed-in end user per database, so that one user cannot take the others' share of `max_open_unlocked_txns`; past it, beginning one is `ABORTED`. Admins have no such bound, and callers without a credential share `max_open_unlocked_txns` alone |
+| `max_ended_txns` | `ARUMA_DOCUMENTS_MAX_ENDED_TXNS` | count | `100000` | Records of ended transactions kept so that their ids answer as production's do until 300 s after they began (the wound text, a retry's age). Past it the oldest go early: such an id answers the expired text, and a retry of it takes a new age |
 | `max_locks_per_txn` | `ARUMA_DOCUMENTS_MAX_LOCKS_PER_TXN` | count | `10000` | Documents and listings one transaction may lock, or read when optimistic; past it, the transaction is `ABORTED` |
 
 ## Security rules limits

@@ -162,16 +162,19 @@ func Defaults() Config {
 		}},
 		Rules: Rules{Limits: RulesLimits(rules.DefaultLimits())},
 		Documents: Documents{Limits: DocumentsLimits{
-			MessageBytes:       17 << 20,
-			StreamFirstMessage: 10 * time.Second,
-			StreamWriteStall:   30 * time.Second,
-			ServerStreamMax:    5 * time.Minute,
-			StreamsPerIP:       500,
-			CommitConcurrency:  4,
-			TxnWaitTimeout:     20 * time.Second,
-			TxnMaxLifetime:     270 * time.Second,
-			MaxOpenTxns:        1000,
-			MaxLocksPerTxn:     10_000,
+			MessageBytes:        17 << 20,
+			StreamFirstMessage:  10 * time.Second,
+			StreamWriteStall:    30 * time.Second,
+			ServerStreamMax:     5 * time.Minute,
+			StreamsPerIP:        500,
+			CommitConcurrency:   4,
+			TxnWaitTimeout:      20 * time.Second,
+			TxnMaxLifetime:      270 * time.Second,
+			MaxOpenTxns:         1000,
+			MaxOpenUnlockedTxns: 10_000,
+			MaxOpenTxnsPerUser:  100,
+			MaxEndedTxns:        100_000,
+			MaxLocksPerTxn:      10_000,
 		}},
 		Storage: Storage{
 			GCGrace: time.Minute,
@@ -252,6 +255,15 @@ type DocumentsLimits struct {
 	// MaxOpenTxns bounds a database's open locking (pessimistic) transactions; over it,
 	// BeginTransaction is ABORTED.
 	MaxOpenTxns int `yaml:"max_open_txns"`
+	// MaxOpenUnlockedTxns bounds a database's open read-only and optimistic transactions, the
+	// ones end users open; over it, BeginTransaction is ABORTED.
+	MaxOpenUnlockedTxns int `yaml:"max_open_unlocked_txns"`
+	// MaxOpenTxnsPerUser bounds one end user's open read-only and optimistic transactions on a
+	// database, so that one user cannot take MaxOpenUnlockedTxns from the others.
+	MaxOpenTxnsPerUser int `yaml:"max_open_txns_per_user"`
+	// MaxEndedTxns bounds the records of ended transactions kept for their ids' answers until
+	// 300 s after Begin; past it the oldest go early.
+	MaxEndedTxns int `yaml:"max_ended_txns"`
 	// MaxLocksPerTxn bounds the documents and listings one transaction locks or, optimistic, reads.
 	MaxLocksPerTxn int `yaml:"max_locks_per_txn"`
 }
@@ -524,6 +536,9 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	duration("ARUMA_DOCUMENTS_TXN_WAIT_TIMEOUT", &dl.TxnWaitTimeout)
 	duration("ARUMA_DOCUMENTS_TXN_MAX_LIFETIME", &dl.TxnMaxLifetime)
 	count("ARUMA_DOCUMENTS_MAX_OPEN_TXNS", &dl.MaxOpenTxns)
+	count("ARUMA_DOCUMENTS_MAX_OPEN_UNLOCKED_TXNS", &dl.MaxOpenUnlockedTxns)
+	count("ARUMA_DOCUMENTS_MAX_OPEN_TXNS_PER_USER", &dl.MaxOpenTxnsPerUser)
+	count("ARUMA_DOCUMENTS_MAX_ENDED_TXNS", &dl.MaxEndedTxns)
 	count("ARUMA_DOCUMENTS_MAX_LOCKS_PER_TXN", &dl.MaxLocksPerTxn)
 	boolean("ARUMA_STORAGE_ENABLED", &c.Storage.Enabled)
 	str("ARUMA_STORAGE_DATA_DIR", &c.Storage.DataDir)
@@ -715,6 +730,9 @@ func (c *Config) validateDocuments() []error {
 		{"txn_wait_timeout", int64(l.TxnWaitTimeout)},
 		{"txn_max_lifetime", int64(l.TxnMaxLifetime)},
 		{"max_open_txns", int64(l.MaxOpenTxns)},
+		{"max_open_unlocked_txns", int64(l.MaxOpenUnlockedTxns)},
+		{"max_open_txns_per_user", int64(l.MaxOpenTxnsPerUser)},
+		{"max_ended_txns", int64(l.MaxEndedTxns)},
 		{"max_locks_per_txn", int64(l.MaxLocksPerTxn)},
 	} {
 		if f.v < 1 {

@@ -505,6 +505,86 @@ func TestMaxOpenTransactions(t *testing.T) {
 	}
 }
 
+// One end user's open read-only and optimistic transactions are bounded on their own, so the
+// others still begin; an admin, and a caller without a uid, are bounded by the database's alone
+// (F2 review M2).
+func TestMaxOpenPerUser(t *testing.T) {
+	s, _ := newStore(t, Options{Transactions: TxnConfig{MaxOpenPerUser: 2, MaxOpenUnlocked: 6}})
+	ctx := t.Context()
+	ro := TransactionOptions{ReadOnly: true}
+	a := begin(t, s, endUser, ro)
+	begin(t, s, endUser, TransactionOptions{Concurrency: ConcurrencyOptimistic})
+	if _, err := s.BeginTransaction(ctx, testDB, endUser, ro); !isCode(err, Aborted) {
+		t.Fatalf("over the user's bound: %v", err)
+	}
+	begin(t, s, Principal{ID: "uid-2"}, ro)
+	for range 3 {
+		begin(t, s, Principal{}, ro)
+	}
+	if _, err := s.BeginTransaction(ctx, testDB, admin, ro); !isCode(err, Aborted) {
+		t.Fatalf("over the database's bound: %v", err)
+	}
+	if err := s.Rollback(ctx, testDB, a); err != nil {
+		t.Fatal(err)
+	}
+	begin(t, s, endUser, ro)
+}
+
+// Past MaxEnded, the oldest records of ended transactions go: their ids answer the expired text
+// and a retry of one takes a new age; the records kept still answer as before.
+func TestMaxEnded(t *testing.T) {
+	s, _ := newStore(t, Options{Transactions: TxnConfig{MaxEnded: 3}})
+	ctx := t.Context()
+	var refs []TransactionRef
+	for range 5 {
+		ref := begin(t, s, admin, TransactionOptions{})
+		if _, _, err := s.BatchGet(ctx, testDB, []Path{ParsePath("e/a")}, in(ref)); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.Rollback(ctx, testDB, ref); err != nil {
+			t.Fatal(err)
+		}
+		refs = append(refs, ref)
+	}
+	s.txns.mu.Lock()
+	n := len(s.txns.all)
+	s.txns.mu.Unlock()
+	if n != 3 {
+		t.Fatalf("%d records kept", n)
+	}
+	for _, ref := range refs {
+		if _, _, err := s.Get(ctx, testDB, ParsePath("e/a"), in(ref)); !errors.Is(err, ErrTransactionExpired) {
+			t.Fatalf("%v", err)
+		}
+	}
+	retry := begin(t, s, admin, TransactionOptions{Retry: refs[0].ID})
+	rtx, _ := s.txns.lookup(testDB, retry)
+	if rtx.table.age(rtx.lt) != 0 {
+		t.Fatal("a forgotten attempt's retry kept an age")
+	}
+}
+
+// An optimistic transaction's listings count the documents they returned against MaxLocks, as
+// its reads do (F2 review M2).
+func TestOptimisticListingsBounded(t *testing.T) {
+	s, _ := newStore(t, Options{Transactions: TxnConfig{MaxLocks: 5}})
+	ctx := t.Context()
+	var ws []Write
+	for i := range 3 {
+		ws = append(ws, set("ol/d"+strconv.Itoa(i), doc()))
+	}
+	mustCommit(t, s, ws...)
+	ref := begin(t, s, endUser, TransactionOptions{Concurrency: ConcurrencyOptimistic})
+	list := func() error {
+		_, err := s.ListDocuments(ctx, testDB, ListRequest{CollectionID: "ol", PageSize: 10, ReadOptions: in(ref)})
+		return err
+	}
+	// 3 documents, 1 listing, 3 listed.
+	if err := list(); !errors.Is(err, errTooManyLocks) {
+		t.Fatalf("over MaxLocks: %v", err)
+	}
+}
+
 // Bank transfers by pessimistic transactions retried on ABORTED, with commits without a
 // transaction and optimistic transfers mixed in: the total never changes, and every lock is
 // freed. A small randomized stand-in for the contention suite (test/contention/documents).

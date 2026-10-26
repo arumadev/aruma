@@ -89,11 +89,14 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 		REST:  docrest.New(docrest.Options{Service: api, Logger: logger}),
 		store: store, pool: pool, cfg: l, log: logger,
 		txns: documents.TxnConfig{
-			Key:         keys.DocumentsTransactionKey(),
-			WaitTimeout: l.TxnWaitTimeout,
-			MaxLifetime: l.TxnMaxLifetime,
-			MaxOpen:     l.MaxOpenTxns,
-			MaxLocks:    l.MaxLocksPerTxn,
+			Key:             keys.DocumentsTransactionKey(),
+			WaitTimeout:     l.TxnWaitTimeout,
+			MaxLifetime:     l.TxnMaxLifetime,
+			MaxOpen:         l.MaxOpenTxns,
+			MaxOpenUnlocked: l.MaxOpenUnlockedTxns,
+			MaxOpenPerUser:  l.MaxOpenTxnsPerUser,
+			MaxEnded:        l.MaxEndedTxns,
+			MaxLocks:        l.MaxLocksPerTxn,
 		},
 	}
 }
