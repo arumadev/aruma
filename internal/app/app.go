@@ -47,7 +47,9 @@ type App struct {
 	Auth    *identity.Service
 	RTDB    *rtdb.Service    // nil while Realtime Database is disabled
 	Storage *storage.Service // nil while Cloud Storage is disabled
-	// Documents is the Document Database; nil while it is disabled.
+	// Documents is the Document Database; nil while it is disabled. Serve boots it; a caller
+	// that serves Server's handler without Serve must call Documents.Boot first, or every
+	// Document Database call answers UNAVAILABLE.
 	Documents *Documents
 
 	// Auth's side of the ID token contract (platform/idtoken), for the services that accept
