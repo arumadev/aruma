@@ -29,6 +29,7 @@ recording from a lower oracle never overrides a production recording of the same
 README.md                this file
 manifest.json            SHA-256, oracle, generator, date and versions of every corpus file
 parity-exceptions.json   every known difference between oracles, what Aruma does, and its test
+phases.json              the phases of v0.4 and those closed (for planned tests)
 oracle_test.go           the checker (standard library only)
 corpus/                  the recorded answers, one JSON file per topic
 production/              the recorders (Node 24), which write corpus/ and rebuild the manifest
@@ -79,6 +80,21 @@ Normalisation, so that a re-recording differs only where behaviour differs:
 | `values-bson.json` | production | the maps the SDKs send for Enterprise BSON types (MinKey, MaxKey, int32, Decimal128, BSON timestamp, binary, ObjectId, regex) on Standard: malformed shapes and their messages, the stored (canonical) form, order and ties against every neighbouring type, `==`, range, `!=`, `in`, unary and `array-contains` filters, operands production refuses, each shape's storage size and index budget (`record-bson.mjs`) |
 | `values-mask-vector.json` | production | read masks and update masks that reach into a vector or a BSON shape |
 | `values-bson-cleanup.json` | production | the deletion of everything `record-bson.mjs` wrote, verified |
+| `f1-get.json` | production | `GetDocument`: masks, missing documents, `readTime` (the setup commit, before it, an hour and more ago, the future, nanoseconds), transactions (`record-f1.mjs`) |
+| `f1-batch-get.json` | production | `BatchGetDocuments`: response order, found and missing, masks, duplicates, `transaction`, `newTransaction`, `readTime`, bad names |
+| `f1-list-documents.json` | production | `ListDocuments`: paging and page tokens, accepted and refused `orderBy` forms, `showMissing`, masks, the empty collection id, `readTime` |
+| `f1-list-collection-ids.json` | production | `ListCollectionIds`: paging and page tokens, missing parents |
+| `f1-create.json` | production | `CreateDocument`: automatic ids (length and alphabet over 25), existing and bad ids |
+| `f1-update.json` | production | `UpdateDocument`: update masks, `currentDocument` (`exists`, `updateTime`, the version numbers of its message), upsert |
+| `f1-delete.json` | production | `DeleteDocument`: missing documents and failed preconditions |
+| `f1-write-results.json` | production | write results: time precision on both transports, their relations, when `transformResults` appears |
+| `f1-resource-names.json` | production | names of another project or database inside a request, a `google-cloud-resource-prefix` that disagrees with the body, invalid API keys |
+| `f1-wire-errors.json` | production | the REST front end's refusals: unknown fields and query parameters, wrong JSON kinds, syntax errors, non-object roots, bad enums, malformed and out-of-range timestamps, a Value with no type, database and project ids in the path and in gRPC's `database` field, Admin names outside `projects/`, oneof conflicts, and which carry `google.rpc.BadRequest` details (`errorDetailTypes`) |
+| `f1-cleanup.json` | production | the deletion of everything `record-f1.mjs` wrote, verified |
+
+F1 files hold a `setup` section (the commits written before the cases) and mark with
+`replay: true` the cases whose answer depends only on that setup: `test/differential/documents`
+replays exactly those against Aruma.
 
 The analysis of the F0 recordings is in `.cache/briefs/research/f0-production-recordings.md`; the
 composite-index rule derived from `indexes-105.json` is in
@@ -101,8 +117,10 @@ of the files recorded before this check were added by hand, from the scripts tha
 
 One entry per known difference: `id`, `summary`, what `production`, the `emulator` and `aruma`
 do, `follows` (always `production`), the `evidence` corpus files, and `test`, written
-`path/to/x_test.go:TestName`. It starts with the one difference recorded so far: the emulator
-enforces no composite index. The docs table in `docs/compat/documents-v0.4.md` will be generated
+`path/to/x_test.go:TestName`, or `planned: {test, phase}`, the test a later phase of
+`phases.json` writes, or both (`test` for what is proven today, `planned` for the rest). A
+planned test must not exist yet (once written it moves to `test`), and its phase must still be
+open: closing a phase in `phases.json` fails CI for every entry still planned in it. The docs table in `docs/compat/documents-v0.4.md` will be generated
 from it.
 
 ### How CI checks it
@@ -118,7 +136,8 @@ from it.
   `Not recorded`), and **names a test function that exists**: a top-level
   `func TestX(t *testing.T)` found by parsing the file, so one inside a comment does not count,
   that never calls `Skip`, `Skipf` or `SkipNow` (as the rules oracle binds each exclusion to its
-  cases). `TestTestExistsRefusesFakes` holds the checker to that.
+  cases), or a planned test of an open phase (`phases.json`). `TestTestExistsRefusesFakes` and
+  `TestPlannedTestsChecked` hold the checker to that.
 - `TestIndexCorpus`: each refusal's template reproduces its message byte for byte, each link's
   payload decodes (protobuf, `google.firestore.admin.v1.Index`) to the recorded index, and the
   empty collection got the populated collection's verdict.
@@ -136,7 +155,9 @@ equality and range filters, sizes, validation, masks, the BSON shapes), and
   used `aruma-ref-f0`, `-f0-tree`, `-f0-tree2`, `-f0-vec` and `-f0-explain`, the index probe
   `aruma-ref-idx` and its subcollections `aruma-ref-idxcg`, the value runs `aruma-ref-values*`
   and `aruma-ref-bson*` (each swept by its own `__name__` range, since other recorders may run
-  at the same time), and the contention run `aruma-ref-txn`.
+  at the same time), the contention run `aruma-ref-txn`, and the F1 run `aruma-ref-f1-*` (swept
+  over `aruma-ref-f1` .. `aruma-ref-f2`; its cleanup also deletes, and lists as `strays`, any
+  document in that range the run did not track, such as one left by an interrupted run).
 - Everything written is deleted by commit at the end, and the deletion is verified: one kindless
   all-descendants query over every collection id from `aruma-ref` up to `aruma-reg`, plus
   `showMissing` lists of each collection used (`f0-cleanup.json`, `cleanup` in
@@ -170,6 +191,7 @@ node record-indexes.mjs --import <composite-index-probe.json>  # convert a recor
 node record-values.mjs                   # the value model, then cleanup
 node record-bson.mjs                     # BSON shapes and vector masks (about 2 minutes), then cleanup
 node record-contention.mjs               # lock contention between transactions
+node record-f1.mjs                       # the F1 unary RPCs and wire errors (about 9 minutes), then cleanup
 node rebuild-manifest.mjs                # only after a deliberate hand edit
 (cd .. && go test .)                   # the checker
 ```

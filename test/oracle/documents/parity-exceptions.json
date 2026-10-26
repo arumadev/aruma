@@ -1,6 +1,6 @@
 {
   "schema": "aruma.documents-parity/v1",
-  "note": "Every known difference between production Cloud Firestore and another oracle (the emulator, hidane, an SDK's assumption), and what Aruma does. Aruma follows production. Each entry names the test that proves it (path:TestName); oracle_test.go fails when that test does not exist, and when an evidence file is not pinned by manifest.json. kind is restriction (stricter than Firebase on purpose), provisional (no production evidence yet) or emulator-wrong (Aruma follows production where the emulator errs), the categories of ADR-023 §3 and ADR-028 §7.4. An entry whose Aruma-side test is not written yet names the existing test that pins its evidence (or, with no evidence, the checker that keeps the entry complete), and its aruma text says which test replaces it and when. docs/compat/documents-v0.4.md will be generated from this file.",
+  "note": "Every known difference between production Cloud Firestore and another oracle (the emulator, hidane, an SDK's assumption), and what Aruma does. Aruma follows production. Each entry names the test that proves it (test: path:TestName), or the test a later phase writes (planned: {test, phase}), or both; oracle_test.go fails when a named test does not exist, when a planned test's phase is marked closed in phases.json, when a planned test already exists (it then moves to test), and when an evidence file is not pinned by manifest.json. kind is restriction (stricter than Firebase on purpose), provisional (no production evidence yet) or emulator-wrong (Aruma follows production where the emulator errs), the categories of ADR-023 §3 and ADR-028 §7.4. docs/compat/documents-v0.4.md will be generated from this file.",
   "exceptions": [
     {
       "id": "emulator-index-enforcement",
@@ -22,12 +22,15 @@
       "summary": "Query Explain (explain_options on RunQuery and RunAggregationQuery) is rejected in v0.4.0; production supports it on Standard.",
       "production": "Supports it on REST and gRPC alike (corpus/f0-explain.json). analyze false, or {}: one response element holding only explainMetrics.planSummary, with no document and no readTime. analyze true: the documents as usual, with explainMetrics (planSummary, executionStats with string counts, debugStats as a Struct) on the last document's response. Aggregation: planSummary only, or one element with result, explainMetrics and readTime. A query that needs a composite index gets the normal needs-index error and no metrics.",
       "emulator": "Not recorded. The Go client's integration suite skips explain and query profiling on the emulator (firestore-clients.md §6).",
-      "aruma": "v0.4.0 answers UNIMPLEMENTED (HTTP 501) with an English message naming Query Explain, after index enforcement, so a query that needs an index gets production's needs-index error first (ADR-025 §5). Ignoring explain_options would crash Node's explain() with \"No explain results\". Query Explain comes in v0.4.x and must then reproduce the recorded responses. Until F3 writes the contract test of the rejection, the test named here pins the recorded production response.",
+      "aruma": "v0.4.0 answers UNIMPLEMENTED (HTTP 501) with an English message naming Query Explain, after index enforcement, so a query that needs an index gets production's needs-index error first (ADR-025 §5). Ignoring explain_options would crash Node's explain() with \"No explain results\". Query Explain comes in v0.4.x and must then reproduce the recorded responses. F3 writes the test of the rejection (planned).",
       "follows": "production",
       "evidence": [
         "corpus/f0-explain.json"
       ],
-      "test": "test/oracle/documents/oracle_test.go:TestManifestPinsCorpus"
+      "planned": {
+        "test": "internal/services/documents/grpc/unimplemented_test.go:TestExplainOptionsRejected",
+        "phase": "F3"
+      }
     },
     {
       "id": "find-nearest-with-vector-index",
@@ -35,12 +38,15 @@
       "summary": "findNearest is answered with production's exact error when no matching vector index exists, and with UNIMPLEMENTED when one does; production serves it then.",
       "production": "With no matching vector index: HTTP 400 FAILED_PRECONDITION (gRPC 9), the same text on REST and gRPC, array-wrapped on REST: \"Missing vector index configuration. Please create the required index with the following gcloud command: gcloud firestore indexes composite create --project=<p> --collection-group=<cg> --query-scope=COLLECTION --field-config=vector-config='{\"dimension\":\"<n>\",\"flat\": \"{}\"}',field-path=<f>\", with --field-config=order=ASCENDING,field-path=<k> before it for each equality prefilter; the measure and distance options do not appear; a never-written collection gets the same text (corpus/f0-find-nearest.json). With a matching vector index production runs the search (docs; not recorded, since the oracle may not create indexes).",
       "emulator": "Not recorded.",
-      "aruma": "No matching vector index: production's status and message byte for byte. Matching vector index (stored and returned by the Admin API since v0.4.0): UNIMPLEMENTED (HTTP 501) naming findNearest. An exact-scan implementation comes in v0.4.x (ADR-025 §5, ADR-028 §3). Until F3 writes the contract test, the test named here pins the recorded production response.",
+      "aruma": "No matching vector index: production's status and message byte for byte. Matching vector index (stored and returned by the Admin API since v0.4.0): UNIMPLEMENTED (HTTP 501) naming findNearest. An exact-scan implementation comes in v0.4.x (ADR-025 §5, ADR-028 §3). F3 writes the test (planned).",
       "follows": "production",
       "evidence": [
         "corpus/f0-find-nearest.json"
       ],
-      "test": "test/oracle/documents/oracle_test.go:TestManifestPinsCorpus"
+      "planned": {
+        "test": "internal/services/documents/grpc/unimplemented_test.go:TestFindNearestWithVectorIndexRejected",
+        "phase": "F3"
+      }
     },
     {
       "id": "coarse-query-locks",
@@ -48,10 +54,13 @@
       "summary": "A query inside a pessimistic read-write transaction locks the whole collection under its parent (a collection-group query: the collection id across the database), coarser than production's range locks.",
       "production": "Not recorded. Server transactions map to lock-based Spanner transactions (firestore-official.md §1a), which lock the ranges a query scans. Whether a write to a sibling collection with the same id, or to an unscanned range of the queried collection, waits on a transaction's query is to be recorded in F2 (ADR-028 §7.6).",
       "emulator": "Locks the collection id for every query in a read-write transaction, so writes to every collection with that id wait (measured by hidane; firestore-prior-art-and-verification.md §A2).",
-      "aruma": "A collection query or ListDocuments with a collection id takes a shared lock on (parent path, collection id); a collection-group query takes it on the collection id across the database; a kindless query or ListDocuments with an empty collection id takes it on the database. Every write takes intention locks on all three (ADR-024 §6.1, ADR-025 §7.3). Only service-account and admin pessimistic transactions that run queries are affected: end-user transactions are optimistic and hold no locks while open. With no evidence and no Aruma test yet, the test named here only keeps this entry complete; F2's test/contention/documents/phantom_test.go replaces it.",
+      "aruma": "A collection query or ListDocuments with a collection id takes a shared lock on (parent path, collection id); a collection-group query takes it on the collection id across the database; a kindless query or ListDocuments with an empty collection id takes it on the database. Every write takes intention locks on all three (ADR-024 §6.1, ADR-025 §7.3). Only service-account and admin pessimistic transactions that run queries are affected: end-user transactions are optimistic and hold no locks while open. F2 records production's lock range and writes the phantom test (planned).",
       "follows": "production",
       "evidence": [],
-      "test": "test/oracle/documents/oracle_test.go:TestParityExceptionsNameTests"
+      "planned": {
+        "test": "test/contention/documents/phantom_test.go:TestPhantom",
+        "phase": "F2"
+      }
     },
     {
       "id": "transaction-lost-on-restart",
@@ -59,13 +68,16 @@
       "summary": "Transactions open when Aruma restarts (or loses its Document Database instance lock) are lost; their authentic ids get ABORTED, so clients retry.",
       "production": "Production does not restart under a client. An id that never existed gets INVALID_ARGUMENT \"Invalid transaction.\" on commit, GET, runQuery and rollback (corpus/f0-errors.json); a committed id gets HTTP 409 ABORTED \"The referenced transaction has expired or is no longer valid.\" (corpus/f0-errors.json, corpus/f0-contention.json s5). The response after the 270 s lifetime is not recorded.",
       "emulator": "Keeps transactions in memory; a restart loses them with all data.",
-      "aruma": "Transaction ids carry an HMAC under a key derived from the master key, over a format version, a per-process boot nonce, a serial, the issue time, and the project, database and principal. A forged, garbage or foreign id gets INVALID_ARGUMENT \"Invalid transaction.\" as production. An authentic id unknown to this process (issued before a restart or before the instance lock was lost) or expired gets ABORTED \"The referenced transaction has expired or is no longer valid.\", on which Go and Node retry with a fresh age (ADR-025 §7.5, ADR-024 §6.2). The expired case is provisional until F2 records production's 270 s response. Until F2 writes the test, the test named here pins the recorded production responses.",
+      "aruma": "Transaction ids carry an HMAC under a key derived from the master key, over a format version, a per-process boot nonce, a serial, the issue time, and the project, database and principal. A forged, garbage or foreign id gets INVALID_ARGUMENT \"Invalid transaction.\" as production. An authentic id unknown to this process (issued before a restart or before the instance lock was lost) or expired gets ABORTED \"The referenced transaction has expired or is no longer valid.\", on which Go and Node retry with a fresh age (ADR-025 §7.5, ADR-024 §6.2). The expired case is provisional until F2 records production's 270 s response. F2 writes the test (planned).",
       "follows": "production",
       "evidence": [
         "corpus/f0-errors.json",
         "corpus/f0-contention.json"
       ],
-      "test": "test/oracle/documents/oracle_test.go:TestManifestPinsCorpus"
+      "planned": {
+        "test": "internal/services/documents/core/txn_expiry_test.go:TestTransactionUnknownAfterRestartAborted",
+        "phase": "F2"
+      }
     },
     {
       "id": "listen-resume-beyond-window",
@@ -73,10 +85,13 @@
       "summary": "A Listen target resumed from a resume token or read_time older than the one-hour version window: the count path for targets without limit or offset, RESET plus the full current set for targets with either.",
       "production": "Not recorded. The client libraries handle an ExistenceFilter count mismatch by re-querying, and the backend sending a filter on resume is an inference from an integration test (firestore-clients.md §1.8 item 7). To be recorded in F4 with a token kept for more than an hour (ADR-028 §7.6).",
       "emulator": "Restarts every resumed target from scratch: RESET and the full result (firestore-prior-art-and-verification.md §A2).",
-      "aruma": "Without limit or offset: the documents now matching with update_time after T, then ExistenceFilter{count} of the exact current matches, then CURRENT; correct because the current result is a subset of what the client held plus what was sent. With limit or offset, where that fails at the window edge: RESET, the full current result, then CURRENT (ADR-026 §1.5; MUST 7 allows both). Never an error. With no evidence and no Aruma test yet, the test named here only keeps this entry complete; F4's Listen reference model replaces it, with a limit target resuming past the window after a member was deleted.",
+      "aruma": "Without limit or offset: the documents now matching with update_time after T, then ExistenceFilter{count} of the exact current matches, then CURRENT; correct because the current result is a subset of what the client held plus what was sent. With limit or offset, where that fails at the window edge: RESET, the full current result, then CURRENT (ADR-026 §1.5; MUST 7 allows both). Never an error. F4's Listen reference model tests it (planned), with a limit target resuming past the window after a member was deleted.",
       "follows": "production",
       "evidence": [],
-      "test": "test/oracle/documents/oracle_test.go:TestParityExceptionsNameTests"
+      "planned": {
+        "test": "test/model/documents/listen_model_test.go:TestResumeBeyondWindow",
+        "phase": "F4"
+      }
     },
     {
       "id": "index-still-building",
@@ -84,21 +99,30 @@
       "summary": "A query that needs a composite index which exists but is still CREATING gets the needs-index error until production's answer is recorded.",
       "production": "Not recorded: the oracle may not create indexes on the production project. Production answers such a query with its own index-building response, to be recorded with R18 to R22 in a project where indexes may be created (ADR-025 §4.2, ADR-028 §7.6).",
       "emulator": "Enforces no index (see emulator-index-enforcement), so it serves the query.",
-      "aruma": "An index is created CREATING; from then every commit also writes its entries, the existing documents are backfilled in key-range batches, and it becomes READY only after the backfill (ADR-024 §2.5). The planner never uses a CREATING index; until production's response is recorded the query gets the needs-index error (template 1). With no evidence and no Aruma test yet, the test named here only keeps this entry complete; F3's index tests replace it.",
+      "aruma": "An index is created CREATING; from then every commit also writes its entries, the existing documents are backfilled in key-range batches, and it becomes READY only after the backfill (ADR-024 §2.5). The planner never uses a CREATING index; until production's response is recorded the query gets the needs-index error (template 1). F3's index tests cover it (planned).",
       "follows": "production",
       "evidence": [],
-      "test": "test/oracle/documents/oracle_test.go:TestParityExceptionsNameTests"
+      "planned": {
+        "test": "internal/services/documents/index/state_test.go:TestCreatingIndexNotUsed",
+        "phase": "F3"
+      }
     },
     {
       "id": "mixed-project-resource-names",
       "kind": "provisional",
-      "summary": "A request or stream message whose resource names do not all belong to the authorised project and database is refused with PERMISSION_DENIED before any work.",
-      "production": "Not recorded. To be recorded in F1: a commit whose database is the caller's and one of whose writes names another project or database (ADR-028 §7.6).",
+      "summary": "A Listen target or a later Write-stream message naming another database than the stream's is refused with Aruma's modelled answer until production's is recorded; for unary RPCs Aruma matches production's recorded text.",
+      "production": "Recorded for unary RPCs (corpus/f1-resource-names.json): a Commit write or a BatchGet document of another project, or of another database of the same project, is refused with HTTP 400 INVALID_ARGUMENT (gRPC 3) \"The request was for database 'projects/<p>/databases/<d>' but was attempting to access database 'projects/<q>/databases/<e>'\", on REST and gRPC alike; a commit holding one good write and one foreign write is refused whole, naming the foreign database; a google-cloud-resource-prefix naming another project is ignored when the body names the database (gRPC Commit and GetDocument succeed). Not recorded: a Listen add_target, or a Write-stream message after the first, naming another database (F4, ADR-028 §7.6).",
       "emulator": "Not recorded.",
-      "aruma": "Every resource name (database, parent, name, every document in writes, transforms, preconditions and BatchGet, the transaction's binding, every Listen target, every later Write message, the REST path and google-cloud-resource-prefix) must resolve to the same project and database, which must be the principal's. A mismatch is PERMISSION_DENIED (an exception to ADR-010 S-11 on this surface), or production's text once recorded; on Listen it is REMOVE with that cause and the stream stays open (ADR-027 §2.2, ADR-029 §3 rule 6). With no evidence and no Aruma test yet, the test named here only keeps this entry complete; F1's isolation tests replace it.",
+      "aruma": "Unary RPCs match production: wire.Bind takes the request's database from its first name (the REST path's, or the database field), refuses one the caller is not entitled to with PERMISSION_DENIED (ADR-029 §3 rule 6), and answers every later name of another database with production's INVALID_ARGUMENT text; google-cloud-resource-prefix is never bound against the body, as production ignores it (TestBindResourceNamesF1 replays every recorded case). Provisional part: a Listen target naming another database is REMOVE with that INVALID_ARGUMENT as its cause, the stream staying open (ADR-026 §1.3, ADR-027 §2.2), and a later Write-stream message naming another database is refused with the same INVALID_ARGUMENT (TestBindIsolation); F4 records production's answers and replays them (planned).",
       "follows": "production",
-      "evidence": [],
-      "test": "test/oracle/documents/oracle_test.go:TestParityExceptionsNameTests"
+      "evidence": [
+        "corpus/f1-resource-names.json"
+      ],
+      "test": "internal/services/documents/wire/names_test.go:TestBindResourceNamesF1",
+      "planned": {
+        "test": "internal/services/documents/wire/names_test.go:TestBindStreamNamesF4",
+        "phase": "F4"
+      }
     }
   ]
 }

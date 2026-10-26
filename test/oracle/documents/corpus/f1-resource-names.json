@@ -1,0 +1,477 @@
+{
+  "cases": [
+    {
+      "description": "commit to this database, one write naming a document of another project",
+      "error": {
+        "http": 400,
+        "message": "The request was for database 'projects/chatapp-8ae21/databases/(default)' but was attempting to access database 'projects/aruma-ref-no-such-project/databases/(default)'",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.commit.write_other_project",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/aruma-ref-no-such-project/databases/(default)/documents/aruma-ref-f1-write/x"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The request was for database 'projects/chatapp-8ae21/databases/(default)' but was attempting to access database 'projects/aruma-ref-no-such-project/databases/(default)'",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit to this database, one write naming a document of another database of this project",
+      "error": {
+        "http": 400,
+        "message": "The request was for database 'projects/chatapp-8ae21/databases/(default)' but was attempting to access database 'projects/chatapp-8ae21/databases/aruma-ref-nonexistent'",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.commit.write_other_database",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/aruma-ref-nonexistent/documents/aruma-ref-f1-write/x"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The request was for database 'projects/chatapp-8ae21/databases/(default)' but was attempting to access database 'projects/chatapp-8ae21/databases/aruma-ref-nonexistent'",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit to this database: one write here, one in another project",
+      "error": {
+        "http": 400,
+        "message": "The request was for database 'projects/chatapp-8ae21/databases/(default)' but was attempting to access database 'projects/aruma-ref-no-such-project/databases/(default)'",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.commit.mixed",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-write/x"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/aruma-ref-no-such-project/databases/(default)/documents/aruma-ref-f1-write/x"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The request was for database 'projects/chatapp-8ae21/databases/(default)' but was attempting to access database 'projects/aruma-ref-no-such-project/databases/(default)'",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet on this database naming a document of another project",
+      "error": {
+        "http": 400,
+        "message": "The request was for database 'projects/chatapp-8ae21/databases/(default)' but was attempting to access database 'projects/aruma-ref-no-such-project/databases/(default)'",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.batch_get.other_project",
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1",
+            "projects/aruma-ref-no-such-project/databases/(default)/documents/aruma-ref-f1-write/x"
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "The request was for database 'projects/chatapp-8ae21/databases/(default)' but was attempting to access database 'projects/aruma-ref-no-such-project/databases/(default)'",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet on this database naming a document of another database",
+      "error": {
+        "http": 400,
+        "message": "The request was for database 'projects/chatapp-8ae21/databases/(default)' but was attempting to access database 'projects/chatapp-8ae21/databases/aruma-ref-nonexistent'",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rest.batch_get.other_database",
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/aruma-ref-nonexistent/documents/aruma-ref-f1-write/x"
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "The request was for database 'projects/chatapp-8ae21/databases/(default)' but was attempting to access database 'projects/chatapp-8ae21/databases/aruma-ref-nonexistent'",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET with ?key=<an invalid API key> and no Authorization header",
+      "error": {
+        "http": 403,
+        "message": "Missing or insufficient permissions.",
+        "status": "PERMISSION_DENIED"
+      },
+      "id": "rest.get.invalid_api_key",
+      "request": {
+        "auth": "none",
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1?key=AIzaSyA-aruma-ref-invalid-key-000000000"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 403,
+            "message": "Missing or insufficient permissions.",
+            "status": "PERMISSION_DENIED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 403
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET with ?key=<an invalid API key> and the owner token",
+      "id": "rest.get.invalid_api_key_with_auth",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1?key=AIzaSyA-aruma-ref-invalid-key-000000000"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            },
+            "b": {
+              "mapValue": {
+                "fields": {
+                  "c": {
+                    "integerValue": "2"
+                  },
+                  "d": {
+                    "stringValue": "x"
+                  }
+                }
+              }
+            },
+            "s": {
+              "stringValue": "one"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET with ?key=x and no Authorization header",
+      "error": {
+        "http": 403,
+        "message": "Missing or insufficient permissions.",
+        "status": "PERMISSION_DENIED"
+      },
+      "id": "rest.get.malformed_api_key",
+      "request": {
+        "auth": "none",
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1?key=x"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 403,
+            "message": "Missing or insufficient permissions.",
+            "status": "PERMISSION_DENIED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 403
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "Commit to this database, one write naming another project",
+      "error": {
+        "code": 3,
+        "message": "The request was for database 'projects/chatapp-8ae21/databases/(default)' but was attempting to access database 'projects/aruma-ref-no-such-project/databases/(default)'",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.commit.write_other_project",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/aruma-ref-no-such-project/databases/(default)/documents/aruma-ref-f1-write/x"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "Commit whose body names this database, with google-cloud-resource-prefix of another project",
+      "id": "grpc.commit.prefix_other_project",
+      "request": {
+        "message": {
+          "database": "projects/chatapp-8ae21/databases/(default)",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-write/x"
+              }
+            }
+          ]
+        },
+        "resourcePrefix": "projects/aruma-ref-no-such-project/databases/(default)",
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "message": {
+          "commitTime": "<commitTime: Timestamp>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "GetDocument of this database with google-cloud-resource-prefix of another project",
+      "id": "grpc.get.prefix_other_project",
+      "request": {
+        "message": {
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1"
+        },
+        "resourcePrefix": "projects/aruma-ref-no-such-project/databases/(default)",
+        "rpc": "google.firestore.v1.Firestore/GetDocument"
+      },
+      "response": {
+        "message": {
+          "createTime": "<createTime: Timestamp>",
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            },
+            "b": {
+              "mapValue": {
+                "fields": {
+                  "c": {
+                    "integerValue": "2"
+                  },
+                  "d": {
+                    "stringValue": "x"
+                  }
+                }
+              }
+            },
+            "s": {
+              "stringValue": "one"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f1-get/g1",
+          "updateTime": "<updateTime: Timestamp>"
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f1.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations, page tokens and transaction ids are replaced by placeholders (normalise in lib.mjs, and the replace maps of record-f1.mjs); everything else is as returned.",
+      "aruma-ref-no-such-project is a project id that does not exist; projects/{project}/databases/aruma-ref-nonexistent is a database id that was never created.",
+      "The API key is not a real key: the string starts like one and is otherwise made up."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T19:21:38.964Z .. 2026-10-26T19:30:20.851Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "8594f28e4c778d6fe23e86261a79d91ea7dd55157ca5ae9c0a7bd715da38e07c",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1",
+  "setup": {
+    "commits": [
+      {
+        "writes": [
+          {
+            "update": {
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                },
+                "b": {
+                  "mapValue": {
+                    "fields": {
+                      "c": {
+                        "integerValue": "2"
+                      },
+                      "d": {
+                        "stringValue": "x"
+                      }
+                    }
+                  }
+                },
+                "s": {
+                  "stringValue": "one"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g1"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "a": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g2"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "a": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/g3"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "v": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f1-get/gm/sub/k"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
