@@ -19,6 +19,7 @@ import (
 	documents "github.com/arumadev/aruma/internal/services/documents/core"
 	docgrpc "github.com/arumadev/aruma/internal/services/documents/grpc"
 	"github.com/arumadev/aruma/internal/services/documents/index"
+	"github.com/arumadev/aruma/internal/services/documents/listen"
 	"github.com/arumadev/aruma/internal/services/documents/query"
 	docrest "github.com/arumadev/aruma/internal/services/documents/rest"
 	"github.com/arumadev/aruma/internal/tenancy/core"
@@ -41,6 +42,8 @@ type Documents struct {
 	log   *slog.Logger
 
 	instance *documents.Instance
+	// hub is the Listen hub, the store's Notifier (ADR-026 §2).
+	hub *listen.Hub
 	// stopJobs ends the jobs Boot started (the retention, the index builds, the transactions'
 	// sweep), and jobsDone
 	// closes when they have.
@@ -132,10 +135,13 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 		}
 	}
 	d.instance = documents.StartInstance(ctx, d.pool.Config().ConnConfig, o)
+	d.hub = listen.NewHub(listen.Options{Log: d.log})
 	store := documents.NewPGStore(d.pool, documents.Options{
 		CommitConcurrency: d.cfg.CommitConcurrency, Instance: d.instance, Transactions: d.txns,
 		IndexLimits: documents.IndexLimits{Composites: d.cfg.CompositeIndexes, FieldOverrides: d.cfg.FieldOverrides},
+		Notifier:    d.hub,
 	})
+	d.hub.Bind(store)
 	d.store.set(store)
 	var jctx context.Context
 	jctx, d.stopJobs = context.WithCancel(ctx)
@@ -154,11 +160,15 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	return ensureDatabases(ctx, d.pool, store)
 }
 
-// Close stops the retention job and the transactions' sweep, and releases the lock.
+// Close stops the retention job and the transactions' sweep, closes the Listen hub, and
+// releases the lock.
 func (d *Documents) Close() {
 	if d.stopJobs != nil {
 		d.stopJobs()
 		<-d.jobsDone
+	}
+	if d.hub != nil {
+		d.hub.Close()
 	}
 	if d.instance != nil {
 		d.instance.Close()
