@@ -243,6 +243,29 @@ func TestDocumentsLoopbackDeployment(t *testing.T) {
 		t.Errorf("owner over TLS from another machine: %v", err)
 	}
 
+	// From a browser any page may be the sender, and the owner token is no secret: a request with
+	// an Origin is refused it. A credential the page was given is accepted as from anyone.
+	browser := Transport{Peer: loopbackPeer.Peer, Browser: true}
+	if _, err := opted.d.Resolve(t.Context(), "Bearer owner", browser); err == nil || !strings.Contains(err.Error(), "documents.dev_owner_token") {
+		t.Errorf("owner from a browser: %v", err)
+	}
+	if _, err := opted.d.Resolve(t.Context(), "Bearer owner", Transport{TLS: true, Peer: loopbackPeer.Peer, Browser: true}); apierr.CodeOf(err) != apierr.Unauthenticated {
+		t.Errorf("owner over TLS from a browser: %v", err)
+	}
+	if c, err := opted.d.Resolve(t.Context(), "Bearer "+goJWT(t, k[0], opted.clk.now()), browser); err != nil || c.Role != RoleAdmin {
+		t.Errorf("a credential in the clear from a browser: %v", err)
+	}
+	r := httptest.NewRequest("POST", "/v1/projects/demo-project/databases/(default)/documents:commit", nil)
+	r.RemoteAddr = "127.0.0.1:41000"
+	r.Header.Set("Authorization", "Bearer owner")
+	if _, err := opted.d.ResolveHTTP(r); err != nil {
+		t.Errorf("owner without an Origin: %v", err)
+	}
+	r.Header.Set("Origin", "https://evil.example")
+	if _, err := opted.d.ResolveHTTP(r); apierr.CodeOf(err) != apierr.Unauthenticated {
+		t.Errorf("owner with an Origin: %v", err)
+	}
+
 	// The flag without a loopback deployment (config refuses it) is ignored.
 	public := newDocs(t, func(o *DocumentsOptions) { o.DevOwnerToken = true })
 	if _, err := public.d.Resolve(t.Context(), "Bearer owner", loopbackPeer); apierr.CodeOf(err) != apierr.Unauthenticated {

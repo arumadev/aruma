@@ -421,6 +421,28 @@ func TestCORS(t *testing.T) {
 	}
 }
 
+// CORS lets any page read the answers, so nothing a browser lends every page may authorise a
+// request: Bearer owner, authorised by the loopback peer alone, is refused when the request
+// carries an Origin, as a tool on the machine is not.
+func TestOwnerRefusedFromBrowser(t *testing.T) {
+	h := newHarness(t, apitest.Options{DevOwnerToken: true})
+	path := "/v1/" + root + "/aruma-ref-owner/doc"
+	body := `{"fields":{"pwned":{"booleanValue":true}}}`
+	if code, _, b := h.do(t, http.MethodPatch, path, body, "owner"); code != http.StatusOK {
+		t.Fatalf("owner from a tool: %d %s", code, b)
+	}
+	code, hd, b := h.do(t, http.MethodPatch, path, body, "owner", "Origin", "https://evil.example")
+	if code != http.StatusUnauthorized || !strings.Contains(string(b), "documents.dev_owner_token") {
+		t.Errorf("owner from a page: %d %s", code, b)
+	}
+	if hd.Get("Access-Control-Allow-Origin") != "https://evil.example" {
+		t.Errorf("the refusal is readable by the page as production's errors are: %v", hd)
+	}
+	if code, _, b := h.do(t, http.MethodGet, path, "", "owner", "Origin", "null"); code != http.StatusUnauthorized {
+		t.Errorf("owner from an opaque origin: %d %s", code, b)
+	}
+}
+
 func TestOwns(t *testing.T) {
 	for path, want := range map[string]bool{
 		"/v1/projects/p/databases":                         true,

@@ -23,10 +23,13 @@ import (
 	"unicode/utf16"
 
 	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/services/documents/api"
 	"github.com/arumadev/aruma/internal/services/documents/api/apitest"
 	docgrpc "github.com/arumadev/aruma/internal/services/documents/grpc"
 	"github.com/arumadev/aruma/internal/services/documents/rest"
 	"github.com/arumadev/aruma/internal/services/documents/webchannel"
+	"github.com/arumadev/aruma/internal/services/documents/wire"
+	pb "github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb"
 	tcore "github.com/arumadev/aruma/internal/tenancy/core"
 	conformance "github.com/arumadev/aruma/test/conformance/documents"
 )
@@ -119,6 +122,118 @@ type webReplay struct {
 }
 
 func TestReplayWebChannelInProcess(t *testing.T) {
+	r, exchanges := replayWeb(t, "f6-*.json", nil)
+	if exchanges < 80 {
+		t.Errorf("%d exchanges replayed: the f6 corpus has more", exchanges)
+	}
+	for id, exception := range webDiffers {
+		if d, ok := r.diffs[id]; !ok {
+			t.Errorf("%s: not replayed, but listed as differing (%s)", id, exception)
+		} else if len(d) == 0 {
+			t.Errorf("%s: matches production, but is listed as differing (%s)", id, exception)
+		}
+	}
+	for id, d := range r.diffs {
+		if _, listed := webDiffers[id]; !listed && len(d) > 0 {
+			t.Errorf("%s differs from production:\n  %s", id, strings.Join(d, "\n  "))
+		}
+	}
+}
+
+// The replay must see a global snapshot Aruma fails to send, and a message it sends past
+// production's: a server whose Listen streams do so differs from production.
+func TestReplayWebChannelCatchesMutations(t *testing.T) {
+	for name, c := range map[string]struct {
+		send func(docgrpc.ListenConn, *pb.ListenResponse) error
+		want string // in a backchannel's differences
+	}{
+		"never sends the global snapshot": {func(conn docgrpc.ListenConn, m *pb.ListenResponse) error {
+			if isGlobalResponse(m) {
+				return nil
+			}
+			return conn.Send(m)
+		}, "not sent"},
+		"sends every global snapshot twice": {func(conn docgrpc.ListenConn, m *pb.ListenResponse) error {
+			if isGlobalResponse(m) {
+				if err := conn.Send(m); err != nil {
+					return err
+				}
+			}
+			return conn.Send(m)
+		}, "production"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			r, _ := replayWeb(t, "f6-webchannel-listen.json", func(s webchannel.Streams) webchannel.Streams { return mutated{s, c.send} })
+			var found bool
+			for id, d := range r.diffs {
+				found = found || strings.HasSuffix(id, "/backchannel") && strings.Contains(strings.Join(d, "\n"), c.want)
+			}
+			if !found {
+				t.Errorf("a server that %s replays as production", name)
+			}
+		})
+	}
+}
+
+// A session that sent a message past production's last differs, as one that sent fewer does.
+func TestReplayWebChannelReportsExtraMessages(t *testing.T) {
+	global := "[{\n  \"targetChange\": {\n    \"resumeToken\": \"<token>\"\n  }\n}\n]"
+	current := "[{\n  \"targetChange\": {\n    \"targetChangeType\": \"CURRENT\",\n    \"targetIds\": [\n      1\n    ]\n  }\n}\n]"
+	r := &webReplay{t: t, diffs: map[string][]string{}}
+	s := &live{changed: make(chan struct{}), tokens: map[string]string{},
+		recorded: []wcArray{{id: 1, payload: current}}, got: []wcArray{{id: 1, payload: current}, {id: 2, payload: global}}}
+	r.awaitAll("extra", s)
+	if d := r.diffs["extra/backchannel"]; len(d) != 1 || !strings.Contains(d[0], "message 2 sent, production sent no more") {
+		t.Errorf("an extra message: %q", d)
+	}
+	r.awaitAll("extra", s)
+	if d := r.diffs["extra/backchannel"]; len(d) != 1 {
+		t.Errorf("reported again: %q", d)
+	}
+
+	// A global after CURRENT is the snapshot's consistency point, not a heartbeat to let go.
+	r = &webReplay{t: t, diffs: map[string][]string{}}
+	s = &live{changed: make(chan struct{}), tokens: map[string]string{},
+		recorded: []wcArray{{id: 1, payload: current}, {id: 2, payload: global}}, got: []wcArray{{id: 1, payload: current}}}
+	r.awaitAll("missing", s)
+	if d := r.diffs["missing/backchannel"]; len(d) != 1 || !strings.Contains(d[0], "message 2 not sent") {
+		t.Errorf("a missing global: %q", d)
+	}
+	// One repeating it with nothing changed is production's heartbeat.
+	s = &live{changed: make(chan struct{}), tokens: map[string]string{},
+		recorded: []wcArray{{id: 1, payload: current}, {id: 2, payload: global}, {id: 3, payload: global}}, got: []wcArray{{id: 1, payload: current}, {id: 2, payload: global}}}
+	r.awaitAll("heartbeat", s)
+	if d := r.diffs["heartbeat/backchannel"]; len(d) != 0 {
+		t.Errorf("a heartbeat: %q", d)
+	}
+}
+
+// mutated runs the streams with each Listen response sent through send.
+type mutated struct {
+	webchannel.Streams
+	send func(docgrpc.ListenConn, *pb.ListenResponse) error
+}
+
+func (m mutated) ServeListen(ctx context.Context, p docgrpc.Peer, c api.Call, conn docgrpc.ListenConn) *wire.Error {
+	return m.Streams.ServeListen(ctx, p, c, mutatedConn{conn, m.send})
+}
+
+type mutatedConn struct {
+	docgrpc.ListenConn
+	send func(docgrpc.ListenConn, *pb.ListenResponse) error
+}
+
+func (c mutatedConn) Send(m *pb.ListenResponse) error { return c.send(c.ListenConn, m) }
+
+// isGlobalResponse reports whether m is a global targetChange: no target ids, NO_CHANGE.
+func isGlobalResponse(m *pb.ListenResponse) bool {
+	tc := m.GetTargetChange()
+	return tc != nil && len(tc.GetTargetIds()) == 0 && tc.GetTargetChangeType() == pb.TargetChange_NO_CHANGE
+}
+
+// replayWeb replays the f6 recordings matching pattern against an Aruma in this process, its
+// streams wrapped by wrap when set, and returns the replay with its differences.
+func replayWeb(t *testing.T, pattern string, wrap func(webchannel.Streams) webchannel.Streams) (*webReplay, int) {
 	env := apitest.New(t, apitest.Options{})
 	env.PublishFirestoreRules(t, `rules_version = '2';
 service cloud.firestore {
@@ -129,7 +244,10 @@ service cloud.firestore {
   }
 }`)
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	streams := docgrpc.New(docgrpc.Options{Service: env.Service, Metrics: docgrpc.NewMetrics(), Logger: log})
+	var streams webchannel.Streams = docgrpc.New(docgrpc.Options{Service: env.Service, Metrics: docgrpc.NewMetrics(), Logger: log})
+	if wrap != nil {
+		streams = wrap(streams)
+	}
 	wc := webchannel.New(webchannel.Options{Streams: streams, Keys: webKeys{}, Logger: log})
 	ts := httptest.NewServer(httpx.CommonWithLimit(rest.New(rest.Options{Service: env.Service, Channel: wc, Logger: log}), log, nil, 17<<20))
 	t.Cleanup(func() {
@@ -139,7 +257,7 @@ service cloud.firestore {
 	r := &webReplay{t: t, base: ts.URL, user: apitest.UserToken(t, "u1", nil), client: ts.Client(), diffs: map[string][]string{},
 		admin: &conformance.HTTPTarget{BaseURL: ts.URL, ProjectID: apitest.Project, Token: env.JWT(t), Client: ts.Client()}}
 
-	files, _ := filepath.Glob(filepath.Join(conformance.CorpusDir, "f6-*.json"))
+	files, _ := filepath.Glob(filepath.Join(conformance.CorpusDir, pattern))
 	exchanges := 0
 	for _, path := range files {
 		raw, err := os.ReadFile(path)
@@ -164,21 +282,7 @@ service cloud.firestore {
 			}
 		}
 	}
-	if exchanges < 80 {
-		t.Errorf("%d exchanges replayed: the f6 corpus has more", exchanges)
-	}
-	for id, exception := range webDiffers {
-		if d, ok := r.diffs[id]; !ok {
-			t.Errorf("%s: not replayed, but listed as differing (%s)", id, exception)
-		} else if len(d) == 0 {
-			t.Errorf("%s: matches production, but is listed as differing (%s)", id, exception)
-		}
-	}
-	for id, d := range r.diffs {
-		if _, listed := webDiffers[id]; !listed && len(d) > 0 {
-			t.Errorf("%s differs from production:\n  %s", id, strings.Join(d, "\n  "))
-		}
-	}
+	return r, exchanges
 }
 
 // ---- fixtures ----
@@ -370,6 +474,7 @@ type live struct {
 	backs     []*http.Response
 	poll      *webRequest // a long-polled session's last backchannel request
 	open      int         // its backchannels open
+	extra     int         // the arrays received past the recorded ones, reported
 }
 
 // prepare rewrites a recorded request for the live server and session.
@@ -667,16 +772,25 @@ func (r *webReplay) await(id string, s *live, x webExchange) {
 	r.waitFor(id, s, k)
 }
 
-// awaitAll waits for every recorded message of the session.
+// awaitAll waits for every recorded message of the session, and reports any Aruma sent past them.
 func (r *webReplay) awaitAll(id string, s *live) {
-	if s != nil {
-		r.waitFor(id, s, len(s.recorded))
+	if s == nil {
+		return
 	}
+	r.waitFor(id, s, len(s.recorded))
+	// A message past them would come with the last: Aruma flushes each as it makes it.
+	r.receive(s, max(len(s.recorded), s.extra), grace)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i := max(len(s.recorded), s.extra); i < len(s.got); i++ {
+		r.diffs[id+"/backchannel"] = append(r.diffs[id+"/backchannel"], fmt.Sprintf("message %d sent, production sent no more: %.300q", i+1, s.got[i].payload))
+	}
+	s.extra = max(s.extra, len(s.got))
 }
 
 // waitFor waits until s received k messages, comparing each with production's; a message the
 // recorder caused from outside (a document written during the session) is written when reached,
-// and a global snapshot production sent on its own clock is let go.
+// and a heartbeat production sent on its own clock is let go.
 func (r *webReplay) waitFor(id string, s *live, k int) {
 	for i := 0; i < k; i++ {
 		s.mu.Lock()
@@ -685,7 +799,7 @@ func (r *webReplay) waitFor(id string, s *live, k int) {
 		if !have {
 			r.cause(s.recorded[i].payload)
 			if !r.receive(s, i, patience(s.recorded[i].payload)) {
-				if isGlobal(s.recorded[i].payload) || isDelete(s.recorded[i].payload) {
+				if s.heartbeat(i) || isDelete(s.recorded[i].payload) {
 					// A global snapshot on production's clock (listen-heartbeats), or the delete
 					// of a missing document the recorder deleted again during the session.
 					s.recorded = slices.Delete(s.recorded, i, i+1)
@@ -706,7 +820,7 @@ func (r *webReplay) waitFor(id string, s *live, k int) {
 		s.mu.Unlock()
 		// A document's fields are a map, whose order is the server's own.
 		if gw, ww := webNorm(got), webNorm(s.recorded[i].payload); gw != ww && !(strings.Contains(ww, `"fields"`) && jsonEqual(gw, ww)) {
-			if isGlobal(s.recorded[i].payload) && !isGlobal(got) {
+			if s.heartbeat(i) && !isGlobal(got) {
 				// Production's global snapshot of its own clock, which Aruma does not send.
 				s.recorded = slices.Delete(s.recorded, i, i+1)
 				i--
@@ -720,6 +834,35 @@ func (r *webReplay) waitFor(id string, s *live, k int) {
 	}
 }
 
+// heartbeat reports whether the recorded message i is a global snapshot production sent on its
+// own clock: one repeating an earlier global, with no document change and no CURRENT since (a
+// target only added or removed changes no snapshot). The first global after CURRENT or a change
+// is the snapshot's consistency point, which Aruma must send.
+func (s *live) heartbeat(i int) bool {
+	if !isGlobal(s.recorded[i].payload) {
+		return false
+	}
+	for j := i - 1; j >= 0; j-- {
+		switch m := s.recorded[j].payload; {
+		case isGlobal(m):
+			return true
+		case !isTargetAddOrRemove(m):
+			return false
+		}
+	}
+	return false
+}
+
+// isTargetAddOrRemove reports whether msg only adds or removes targets.
+func isTargetAddOrRemove(msg string) bool {
+	var data []map[string]any
+	if json.Unmarshal([]byte(msg), &data) != nil || len(data) != 1 {
+		return false
+	}
+	tc, ok := data[0]["targetChange"].(map[string]any)
+	return ok && (tc["targetChangeType"] == "ADD" || tc["targetChangeType"] == "REMOVE")
+}
+
 // maxWait is how long a message Aruma must send is waited for; a message production sent on
 // its own clock, or for a change Aruma never makes in the replay, is expected to be absent and
 // is waited for only briefly: Aruma flushes its messages to the stream as it makes them, so what
@@ -727,6 +870,8 @@ func (r *webReplay) waitFor(id string, s *live, k int) {
 const (
 	maxWait = 5 * time.Second
 	settle  = 500 * time.Millisecond
+	// grace is how long a message past the recorded ones is waited for at a session's end.
+	grace = 150 * time.Millisecond
 )
 
 func patience(msg string) time.Duration {

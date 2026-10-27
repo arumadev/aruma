@@ -90,6 +90,9 @@ type Transport struct {
 	// ForwardedProto is X-Forwarded-Proto, every value joined by ", ". It counts only when
 	// Peer is a trusted proxy.
 	ForwardedProto string
+	// Browser is set when the request carries an Origin header: a browser sent it, for a page
+	// that may be anyone's. For a WebChannel stream it is the handshake's. gRPC clients send none.
+	Browser bool
 }
 
 // TransportOf returns how r arrived.
@@ -98,6 +101,7 @@ func TransportOf(r *http.Request) Transport {
 		TLS:            r.TLS != nil,
 		Peer:           peerAddr(r.RemoteAddr),
 		ForwardedProto: strings.Join(r.Header.Values("X-Forwarded-Proto"), ", "),
+		Browser:        r.Header.Get("Origin") != "",
 	}
 }
 
@@ -209,7 +213,9 @@ func (d *Documents) Resolve(ctx context.Context, authorization string, t Transpo
 }
 
 func (d *Documents) resolveOwner(ctx context.Context, t Transport) (*Caller, error) {
-	if d.policy.DevOwner && d.opts.DevOwnerToken && d.opts.LoopbackDeployment && t.Peer.IsValid() && t.Peer.IsLoopback() {
+	// The token is no secret: it is authorised by where the request comes from, which a browser
+	// would lend to any page it runs. A request with an Origin is refused it (ADR-029 §6).
+	if d.policy.DevOwner && d.opts.DevOwnerToken && d.opts.LoopbackDeployment && t.Peer.IsValid() && t.Peer.IsLoopback() && !t.Browser {
 		return &Caller{Role: RoleAdmin, IsDevOwner: true}, nil
 	}
 	d.opts.Logger.Warn("rejected emulator owner token", "client_ip", d.clientIP(ctx, t).String())
