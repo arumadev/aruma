@@ -43,14 +43,14 @@ func (s *Service) GetDocument(ctx context.Context, c Call, req *pb.GetDocumentRe
 	d, readTime, err := s.o.Store.Get(ctx, a.db, pathOf(n), ro)
 	if ce, ok := errors.AsType[*core.Error](err); ok && ce.Code == core.NotFound {
 		// The rules decide first: a missing document is NOT_FOUND only to whom may read it.
-		if err := s.allowReads(ctx, a, []core.Document{{Path: pathOf(n)}}, ro.ReadTime); err != nil {
+		if err := s.allowReads(ctx, a, []core.Document{{Path: pathOf(n)}}, ro.ReadTime, readBudget(1)); err != nil {
 			return nil, err
 		}
 	}
 	if err != nil {
 		return nil, s.fail(ctx, err)
 	}
-	if err := s.allowReads(ctx, a, []core.Document{d}, readTime); err != nil {
+	if err := s.allowReads(ctx, a, []core.Document{d}, readTime, readBudget(1)); err != nil {
 		return nil, err
 	}
 	return documentProto(a.db, d, mask, masked), nil
@@ -125,6 +125,7 @@ func (s *Service) BatchGetDocuments(ctx context.Context, c Call, req *pb.BatchGe
 	paths = slices.CompactFunc(paths, func(x, y core.Path) bool { return comparePaths(x, y) == 0 })
 	var missing []core.Path
 	var rt *timestamppb.Timestamp
+	budget := readBudget(len(paths))
 	for chunk := range slices.Chunk(paths, batchGetChunk) {
 		docs, readTime, err := s.o.Store.BatchGet(ctx, a.db, chunk, ro)
 		if err != nil {
@@ -135,7 +136,7 @@ func (s *Service) BatchGetDocuments(ctx context.Context, c Call, req *pb.BatchGe
 		}
 		rt = timestamppb.New(readTime)
 		// Each chunk is judged whole before any of it is sent: a denial ends the request.
-		if err := s.allowReads(ctx, a, docs, readTime); err != nil {
+		if err := s.allowReads(ctx, a, docs, readTime, budget); err != nil {
 			return err
 		}
 		for _, d := range docs {

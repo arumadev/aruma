@@ -303,8 +303,11 @@ service cloud.firestore { match /databases/{d}/documents { match /{p=**} { allow
 	}
 }
 
-// The rules hold in transactions, on the Write stream and per write in BatchWrite; an end user's
-// transaction is bound to the uid verified.
+// The rules hold in read-only transactions and on the Write stream; an end user's transaction is
+// bound to the uid verified. Production refuses an end user a read-write transaction, by
+// BeginTransaction or new_transaction, and BatchWrite even of allowed writes
+// (f5-rules-transactions.json begin.user-readwrite, f5-rules-batches.json batch-write.ok-ok);
+// so does Aruma whatever the concurrency mode, which no recording asked for.
 func TestRulesTransactionsAndStreams(t *testing.T) {
 	r := newRulesEnv(t, apitest.Options{})
 	r.env.PublishFirestoreRules(t, bindingRules)
@@ -313,16 +316,27 @@ func TestRulesTransactionsAndStreams(t *testing.T) {
 	s, ctx := r.env.Service, t.Context()
 	alice := apitest.UserToken(t, "alice", nil)
 
-	begin := func(token string) []byte {
-		res, err := s.BeginTransaction(ctx, call(token), &pb.BeginTransactionRequest{Database: r.db.Name(),
-			Options: &pb.TransactionOptions{Mode: &pb.TransactionOptions_ReadWrite_{ReadWrite: &pb.TransactionOptions_ReadWrite{
-				ConcurrencyMode: pb.TransactionOptions_OPTIMISTIC}}}})
-		if err != nil {
-			t.Fatal(err)
-		}
-		return res.GetTransaction()
+	readWrite := func(mode pb.TransactionOptions_ConcurrencyMode) *pb.TransactionOptions {
+		return &pb.TransactionOptions{Mode: &pb.TransactionOptions_ReadWrite_{ReadWrite: &pb.TransactionOptions_ReadWrite{ConcurrencyMode: mode}}}
 	}
-	txn := begin(alice)
+	for _, o := range []*pb.TransactionOptions{nil, readWrite(pb.TransactionOptions_OPTIMISTIC), readWrite(pb.TransactionOptions_PESSIMISTIC)} {
+		if _, err := s.BeginTransaction(ctx, call(alice), &pb.BeginTransactionRequest{Database: r.db.Name(), Options: o}); codeOf(err) != wire.CodePermissionDenied {
+			t.Fatalf("read-write BeginTransaction %v: %v", o, err)
+		}
+	}
+	err := s.BatchGetDocuments(ctx, call(alice), &pb.BatchGetDocumentsRequest{Database: r.db.Name(), Documents: []string{r.name("owned/alice")},
+		ConsistencySelector: &pb.BatchGetDocumentsRequest_NewTransaction{NewTransaction: readWrite(pb.TransactionOptions_OPTIMISTIC)}},
+		func(*pb.BatchGetDocumentsResponse) error { return nil })
+	if codeOf(err) != wire.CodePermissionDenied {
+		t.Fatalf("read-write new_transaction: %v", err)
+	}
+
+	res, err := s.BeginTransaction(ctx, call(alice), &pb.BeginTransactionRequest{Database: r.db.Name(),
+		Options: &pb.TransactionOptions{Mode: &pb.TransactionOptions_ReadOnly_{ReadOnly: &pb.TransactionOptions_ReadOnly{}}}})
+	if err != nil {
+		t.Fatalf("read-only BeginTransaction: %v", err)
+	}
+	txn := res.GetTransaction()
 	if _, err := s.GetDocument(ctx, call(alice), &pb.GetDocumentRequest{Name: r.name("owned/alice"),
 		ConsistencySelector: &pb.GetDocumentRequest_Transaction{Transaction: txn}}); err != nil {
 		t.Fatalf("read in a transaction: %v", err)
@@ -332,28 +346,14 @@ func TestRulesTransactionsAndStreams(t *testing.T) {
 		t.Fatalf("denied read in a transaction: %v", err)
 	}
 	// Another user cannot use alice's transaction: it is bound to the uid verified.
-	if _, err := s.Commit(ctx, call(apitest.UserToken(t, "mallory", nil)), &pb.CommitRequest{Database: r.db.Name(), Transaction: txn}); codeOf(err) == wire.CodeOK {
-		t.Fatal("another user committed alice's transaction")
-	}
-	txn = begin(alice)
-	_, err := s.Commit(ctx, call(alice), &pb.CommitRequest{Database: r.db.Name(), Transaction: txn,
-		Writes: []*pb.Write{update(r.name("owned/bob"), map[string]*pb.Value{"owner": str("bob"), "n": num(5)})}})
-	if codeOf(err) != wire.CodePermissionDenied {
-		t.Fatalf("denied transaction commit: %v", err)
-	}
-	txn = begin(alice)
-	if _, err := s.Commit(ctx, call(alice), &pb.CommitRequest{Database: r.db.Name(), Transaction: txn,
-		Writes: []*pb.Write{update(r.name("owned/alice"), map[string]*pb.Value{"owner": str("alice"), "n": num(5)})}}); err != nil {
-		t.Fatalf("allowed transaction commit: %v", err)
+	if _, err := s.GetDocument(ctx, call(apitest.UserToken(t, "mallory", nil)), &pb.GetDocumentRequest{Name: r.name("owned/mallory"),
+		ConsistencySelector: &pb.GetDocumentRequest_Transaction{Transaction: txn}}); codeOf(err) == wire.CodeOK || codeOf(err) == wire.CodePermissionDenied {
+		t.Fatalf("another user read in alice's transaction: %v", err)
 	}
 
-	res, err := s.BatchWrite(ctx, call(alice), &pb.BatchWriteRequest{Database: r.db.Name(), Writes: []*pb.Write{
-		update(r.name("open/w"), nil), update(r.name("owned/bob"), map[string]*pb.Value{"n": num(9)})}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.Status[0].GetCode() != 0 || wire.Code(res.Status[1].GetCode()) != wire.CodePermissionDenied {
-		t.Errorf("BatchWrite statuses: %v", res.Status)
+	if _, err := s.BatchWrite(ctx, call(alice), &pb.BatchWriteRequest{Database: r.db.Name(), Writes: []*pb.Write{
+		update(r.name("open/w"), nil)}}); codeOf(err) != wire.CodePermissionDenied {
+		t.Errorf("BatchWrite of an allowed write: %v", err)
 	}
 
 	w, h, err := s.OpenWriteStream(ctx, call(alice), &pb.WriteRequest{Database: r.db.Name()})

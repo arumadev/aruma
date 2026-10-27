@@ -162,6 +162,10 @@ func (s *Service) BatchWrite(ctx context.Context, c Call, req *pb.BatchWriteRequ
 	if err != nil {
 		return nil, err
 	}
+	// Production refuses BatchWrite to end users, even every write allowed (rules.go).
+	if err := a.refuseHeld(); err != nil {
+		return nil, err
+	}
 	writes, err := writesOf(req.GetWrites())
 	if err != nil {
 		return nil, err
@@ -174,7 +178,6 @@ func (s *Service) BatchWrite(ctx context.Context, c Call, req *pb.BatchWriteRequ
 		}
 		seen[k] = true
 	}
-	// Each write is judged alone, as it applies alone: a denied one has its status.
 	ctx, err = s.judged(ctx, a)
 	if err != nil {
 		return nil, err

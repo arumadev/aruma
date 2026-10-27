@@ -90,6 +90,11 @@ func (s *Service) BeginTransaction(ctx context.Context, c Call, req *pb.BeginTra
 	if err != nil {
 		return nil, err
 	}
+	if !o.ReadOnly {
+		if err := a.refuseHeld(); err != nil {
+			return nil, err
+		}
+	}
 	id, err := s.o.Store.BeginTransaction(ctx, a.db, a.by, o)
 	if err != nil {
 		return nil, s.fail(ctx, err)
@@ -118,6 +123,11 @@ func (s *Service) newTransaction(ctx context.Context, a admitted, o *pb.Transact
 	opts, err := transactionOptions(o)
 	if err != nil {
 		return nil, nil, err
+	}
+	if !opts.ReadOnly {
+		if err := a.refuseHeld(); err != nil {
+			return nil, nil, err
+		}
 	}
 	id, err = s.o.Store.BeginTransaction(ctx, a.db, a.by, opts)
 	if err != nil {
