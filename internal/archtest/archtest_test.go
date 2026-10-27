@@ -63,9 +63,11 @@ var allowed = map[string][]string{
 		"internal/services/documents/wire"},
 	// Its Listen hub stands on core, which tells it of commits and reads for it through the
 	// interface it defines (listen/reader.go), and judges them with the query engine: never the
-	// service layer or a transport, which stand on it (ADR-026 §2).
+	// service layer or a transport, which stand on it (ADR-026 §2). Its tests take a database
+	// from storetest.
 	"internal/services/documents/listen": {"internal/services/documents/core", "internal/services/documents/query",
-		"internal/services/documents/value", "internal/services/documents/wire", "internal/platform"},
+		"internal/services/documents/value", "internal/services/documents/wire", "internal/platform",
+		"internal/store/storetest"},
 	// The Firestore and Storage rules language imports nothing internal: the services feed it
 	// values and documents through its own types, and app wires it (ADR-021, rules-layout.md).
 	"internal/platform/rules": {},
