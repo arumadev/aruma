@@ -7,9 +7,8 @@
 //   - binds every resource name the request carries to one database (wire.Bind), so a name of
 //     another project or database is refused with production's text before any work;
 //   - admits the caller to that database's project (authn.Documents.Admit);
-//   - refuses whoever is not an admin until security rules arrive in F5 ("Missing or
-//     insufficient permissions."), unless documents.dev_open_rules opens the database to this
-//     machine;
+//   - verifies an end user's ID token, and holds whoever is not an admin to the security rules
+//     (rules.go), unless documents.dev_open_rules opens the database to this machine;
 //   - checks the request's own fields as production does, and calls core;
 //   - maps every failure to a *wire.Error with production's text, which each transport renders
 //     (core knows no wire form, so the mapping lives here).
@@ -19,6 +18,7 @@
 // The files:
 //
 //   - service.go: Service, Call and the admission above, and the error mapping;
+//   - rules.go: the security rules' binding, and the lookups get() and Storage's firestore.get() read;
 //   - documents.go: the F1 methods (GetDocument, BatchGetDocuments, ListDocuments,
 //     CreateDocument, UpdateDocument, DeleteDocument, ListCollectionIds);
 //   - writes.go: Commit and BatchWrite, and the writes and field transforms they carry;

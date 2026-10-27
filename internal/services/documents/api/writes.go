@@ -109,6 +109,10 @@ func (s *Service) commitWrites(ctx context.Context, a admitted, ws []*pb.Write, 
 	if err := sameDocumentWrites(writes); err != nil {
 		return core.CommitResult{}, err
 	}
+	ctx, err = s.judged(ctx, a)
+	if err != nil {
+		return core.CommitResult{}, err
+	}
 	var res core.CommitResult
 	if len(txn) > 0 {
 		res, err = s.o.Store.CommitTransaction(ctx, a.db, *a.transaction(txn), writes)
@@ -169,6 +173,11 @@ func (s *Service) BatchWrite(ctx context.Context, c Call, req *pb.BatchWriteRequ
 			return nil, errSameDocument
 		}
 		seen[k] = true
+	}
+	// Each write is judged alone, as it applies alone: a denied one has its status.
+	ctx, err = s.judged(ctx, a)
+	if err != nil {
+		return nil, err
 	}
 	results := make([]core.CommitResult, len(writes))
 	errs := make([]error, len(writes))

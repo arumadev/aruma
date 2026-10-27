@@ -14,6 +14,7 @@ import (
 	"github.com/arumadev/aruma/internal/config"
 	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/platform/rules"
 	documents "github.com/arumadev/aruma/internal/services/documents/core"
 	pb "github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb"
 	"github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb/firestorepbconnect"
@@ -107,6 +108,35 @@ func TestDocumentsWiring(t *testing.T) {
 	}
 	if err := get(); err != nil {
 		t.Errorf("gRPC GetDocument after the REST write: %v", err)
+	}
+
+	// Storage's rules read the document through what app gives Storage (ADR-021 §3): of the
+	// request's project, never of another.
+	rs, issues, err := a.Service.CompileRules(t.Context(), rules.Storage, rules.File{Name: "storage.rules", Content: `rules_version = '2';
+service firebase.storage { match /b/{bucket}/o { match /{f} {
+  allow read: if firestore.get(/databases/(default)/documents/c/d).data.a == 1;
+} } }`})
+	if err != nil || rs == nil {
+		t.Fatalf("CompileRules: %v %v", err, issues.Err())
+	}
+	storageRead := func(project int64) bool {
+		d, err := rs.Evaluate(t.Context(), &rules.Request{
+			Project: project, Method: rules.MethodGet, Path: rules.Literals("b", "bucket", "o", "f"),
+			Variables: map[string]rules.Value{"request": rules.Map(map[string]rules.Value{"auth": rules.Null()}), "resource": rules.Null()},
+			Documents: a.Documents.RuleDocuments(), Budget: rules.NewBudget(), Inflight: a.RulesInflight,
+		})
+		if err != nil {
+			t.Fatalf("Evaluate: %v", err)
+		}
+		return d.Allow
+	}
+	other, err := a.Service.CreateProject(t.Context(), owner, core.NewProject{ID: "other-app", DisplayName: "other"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !storageRead(proj.Number) || storageRead(other.Number) {
+		t.Errorf("firestore.get() from Storage's rules: own project %v, another %v, want true, false",
+			storageRead(proj.Number), storageRead(other.Number))
 	}
 
 	// Transactions are served: the dev owner's is an admin's, committed once.

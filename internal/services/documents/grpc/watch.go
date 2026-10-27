@@ -20,16 +20,13 @@ var (
 	// errTooManyProjectStreams refuses a stream past streams_per_project (ADR-026 §3); our text.
 	errTooManyProjectStreams = wire.NewError(wire.CodeResourceExhausted,
 		"Too many streams are open on this project.")
-	// errTokenExpired closes a stream at its token's exp (ADR-026 §4); authn's text.
-	errTokenExpired = wire.NewError(wire.CodeUnauthenticated, "The request's credential has expired.")
-	// errTokenInvalid refuses or closes a stream whose end user's token is no longer valid: the
-	// user disabled or deleted, their tokens revoked. Production's text for a credential it
-	// does not accept (authn.errInvalidCredentials).
-	errTokenInvalid = wire.NewError(wire.CodeUnauthenticated, "Request had invalid authentication credentials. "+
-		"Expected OAuth 2 access token, login cookie or other valid authentication credential. "+
-		"See https://developers.google.com/identity/sign-in/web/devconsole-project.")
-	// errTokenUnchecked refuses a stream whose token could not be verified (an outage); our text.
-	errTokenUnchecked = wire.NewError(wire.CodeUnavailable, "The credential could not be verified. Retry the request.")
+	// The texts of an end user's token refused (api/rules.go): errTokenExpired closes a stream at
+	// its token's exp (ADR-026 §4); errTokenInvalid refuses or closes a stream whose token is no
+	// longer valid (the user disabled or deleted, their tokens revoked); errTokenUnchecked
+	// refuses one whose token could not be verified (an outage).
+	errTokenExpired   = api.ErrTokenExpired
+	errTokenInvalid   = api.ErrTokenInvalid
+	errTokenUnchecked = api.ErrTokenUnchecked
 	// errInstanceLost closes every stream when the single-instance lock is lost (ADR-026 §5),
 	// and refuses new ones until it is taken again; core.ErrNotServing's text.
 	errInstanceLost = wire.NewError(wire.CodeUnavailable, "The Document Database is not served by this Aruma instance: "+
