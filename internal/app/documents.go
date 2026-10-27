@@ -24,6 +24,7 @@ import (
 	"github.com/arumadev/aruma/internal/services/documents/listen"
 	"github.com/arumadev/aruma/internal/services/documents/query"
 	docrest "github.com/arumadev/aruma/internal/services/documents/rest"
+	"github.com/arumadev/aruma/internal/services/documents/webchannel"
 	"github.com/arumadev/aruma/internal/tenancy/core"
 )
 
@@ -95,21 +96,30 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 	m.Registry.MustRegister(rpcMetrics.Collectors()...)
 	m.Registry.MustRegister(docgrpc.TransactionCollectors(store.transactionStats)...)
 	m.Registry.MustRegister(query.Collectors()...)
+	streams := docgrpc.New(docgrpc.Options{
+		Service:        api,
+		TrustedProxies: cfg.TrustedProxyPrefixes(),
+		Limits: docgrpc.Limits{
+			MessageBytes: l.MessageBytes, StreamFirstMessage: l.StreamFirstMessage,
+			StreamIdle: l.StreamIdle, StreamWriteStall: l.StreamWriteStall, ServerStreamMax: l.ServerStreamMax, StreamsPerIP: l.StreamsPerIP,
+			StreamsPerProject: l.StreamsPerProject, StreamOutboxBytes: l.StreamOutboxBytes, TargetsPerStream: l.TargetsPerStream,
+		},
+		Metrics:     rpcMetrics,
+		IDTokens:    idTokens,
+		Revocations: revocations,
+		Logger:      logger,
+	})
+	// WebChannel runs the same streams, under the same limits (ADR-027 §5).
+	channel := webchannel.New(webchannel.Options{
+		Streams: streams, Keys: svc, Logger: logger,
+		Limits: webchannel.Limits{
+			MessageBytes: l.MessageBytes, SessionBytes: l.StreamOutboxBytes, SessionsPerIP: l.StreamsPerIP,
+			SessionsPerProject: l.StreamsPerProject, WriteStall: l.StreamWriteStall,
+		},
+	})
 	return &Documents{
-		GRPC: docgrpc.New(docgrpc.Options{
-			Service:        api,
-			TrustedProxies: cfg.TrustedProxyPrefixes(),
-			Limits: docgrpc.Limits{
-				MessageBytes: l.MessageBytes, StreamFirstMessage: l.StreamFirstMessage,
-				StreamIdle: l.StreamIdle, StreamWriteStall: l.StreamWriteStall, ServerStreamMax: l.ServerStreamMax, StreamsPerIP: l.StreamsPerIP,
-				StreamsPerProject: l.StreamsPerProject, StreamOutboxBytes: l.StreamOutboxBytes, TargetsPerStream: l.TargetsPerStream,
-			},
-			Metrics:     rpcMetrics,
-			IDTokens:    idTokens,
-			Revocations: revocations,
-			Logger:      logger,
-		}),
-		REST:  docrest.New(docrest.Options{Service: api, Logger: logger}),
+		GRPC:  streams,
+		REST:  docrest.New(docrest.Options{Service: api, Channel: channel, Logger: logger}),
 		store: store, pool: pool, cfg: l, log: logger, hub: hub,
 		txns: documents.TxnConfig{
 			Key:             keys.DocumentsTransactionKey(),

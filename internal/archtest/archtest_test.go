@@ -110,14 +110,18 @@ var denied = map[string][]string{
 	// The Document Database's core knows neither its callers' credentials nor the layers above
 	// it: authn is the service layer's (api), which maps core's errors to the wire (ADR-027,
 	// ADR-029). The transports, gRPC and REST, stand side by side on api, core and wire; the
-	// Listen hub stands on core, under api.
+	// Listen hub stands on core, under api. WebChannel runs gRPC's streams (grpc.ServeListen), and
+	// REST mounts it on its channel paths without importing it (ADR-027 §5); its tests mount it on
+	// REST as the server does.
 	"internal/services/documents/core": {"internal/platform/authn", "internal/services/documents/api",
 		"internal/services/documents/grpc", "internal/services/documents/rest", "internal/services/documents/listen"},
 	"internal/services/documents/listen": {"internal/services/documents/api", "internal/services/documents/grpc",
 		"internal/services/documents/rest"},
 	"internal/services/documents/api":  {"internal/services/documents/grpc", "internal/services/documents/rest"},
 	"internal/services/documents/grpc": {"internal/services/documents/rest"},
-	"internal/services/documents/rest": {"internal/services/documents/grpc"},
+	"internal/services/documents/rest": {"internal/services/documents/grpc", "internal/services/documents/webchannel"},
+	"internal/services/documents/webchannel": {"internal/services/documents/core",
+		"internal/services/documents/listen"},
 }
 
 func TestDependencyRules(t *testing.T) {

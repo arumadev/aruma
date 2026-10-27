@@ -179,8 +179,17 @@ var streamProcedures = map[string]bool{
 type rpc struct {
 	transport authn.Transport
 	client    netip.Addr
-	rc        *http.ResponseController
+	rc        Deadlines
 	code      atomic.Int32 // the outcome, set by the interceptor
+}
+
+// Deadlines are a stream's read and write deadlines, as http.ResponseController sets them on a
+// gRPC stream's connection: a read or write in progress when its deadline passes fails with
+// os.ErrDeadlineExceeded, and a deadline moved stops or wakes it. Another transport (a WebChannel
+// session) implements them on its own queues.
+type Deadlines interface {
+	SetReadDeadline(time.Time) error
+	SetWriteDeadline(time.Time) error
 }
 
 type rpcKey struct{}
@@ -408,20 +417,35 @@ func (s *serverStream) sendWithin(d time.Duration, send func() error) error {
 // run runs the stream's work and ends the stream, even when the work panics: the panic goes on
 // to connect's recovery, the stream's count and its context's callbacks released.
 func (s *serverStream) run(work func() error) (err error) {
+	return s.runTo(work, s.finish)
+}
+
+// runTo is run with the stream's end given: finish for gRPC, status for another transport.
+func (s *serverStream) runTo(work func() error, end func(error) error) (err error) {
 	done := false
 	defer func() {
 		if !done {
-			s.finish(nil)
+			end(nil)
 		}
 	}()
 	err = work()
 	done = true
-	return s.finish(err)
+	return end(err)
 }
 
-// finish ends the stream and returns its status for err: the drain's UNAVAILABLE and the
-// deadline's DEADLINE_EXCEEDED take precedence over the error they caused.
+// finish ends the stream and returns its status for err in gRPC form (status).
 func (s *serverStream) finish(err error) error {
+	err = s.status(err)
+	if err == nil {
+		return nil
+	}
+	return connectError(err)
+}
+
+// status ends the stream and returns its status for err: the drain's UNAVAILABLE and the
+// deadline's DEADLINE_EXCEEDED take precedence over the error they caused. It is a *wire.Error,
+// or the *connect.Error of a Send that failed, or nil.
+func (s *serverStream) status(err error) error {
 	for _, stop := range s.stops {
 		stop()
 	}
@@ -434,19 +458,22 @@ func (s *serverStream) finish(err error) error {
 	if ended {
 		switch {
 		case errors.Is(cause, errDraining):
-			return errDraining.Connect()
+			return errDraining
 		case errors.Is(cause, errStreamMax), errors.Is(cause, context.DeadlineExceeded):
-			return wire.From(context.DeadlineExceeded).Connect()
+			return wire.From(context.DeadlineExceeded)
 		}
 		// A status the stream was closed with from outside: its token, a limit, the lock's loss.
 		if we, ok := errors.AsType[*wire.Error](cause); ok {
-			return we.Connect()
+			return we
 		}
 	}
 	if err == nil {
 		return nil
 	}
-	return connectError(err)
+	if ce, ok := errors.AsType[*connect.Error](err); ok {
+		return ce
+	}
+	return wire.From(err)
 }
 
 // connectError renders any error in gRPC form; a *connect.Error (a Send that failed) passes.
