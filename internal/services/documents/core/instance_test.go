@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"sync/atomic"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/arumadev/aruma/internal/services/documents/value"
 	"github.com/arumadev/aruma/internal/store"
 	"github.com/arumadev/aruma/internal/store/storetest"
 )
@@ -155,5 +157,101 @@ func TestInstanceCheckSeesTheLockGone(t *testing.T) {
 	}
 	if lost, _ := i.check(t.Context()); !lost {
 		t.Fatal("check on a closed connection did not report the loss")
+	}
+}
+
+// A commit is fenced on the lock under its sequencer row: once another session holds the lock,
+// this process's commit fails UNAVAILABLE before the guard's next check, and makes the guard see
+// the loss at once (review lock-loss-commit-window).
+func TestInstanceFenceStopsCommits(t *testing.T) {
+	url := storetest.NewDB(t)
+	cfg, err := pgx.ParseConfig(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	admin, err := store.Open(t.Context(), url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(admin.Close)
+	var lost atomic.Int32
+	// Check is long: only the fence can see the loss in time.
+	i := StartInstance(t.Context(), cfg, InstanceOptions{BootWait: 2 * time.Second, Check: time.Hour,
+		OnLost: func() { lost.Add(1) }, Log: slog.New(slog.DiscardHandler)})
+	t.Cleanup(i.Close)
+	s := NewPGStore(admin, Options{Instance: i})
+	if _, err := s.Commit(t.Context(), testDB, []Write{set("c/d", doc("a", value.Int(1)))}); err != nil {
+		t.Fatalf("commit while held: %v", err)
+	}
+
+	var holders int
+	if err := admin.QueryRow(t.Context(), `SELECT count(pg_terminate_backend(pid)) FROM pg_locks
+		WHERE locktype = 'advisory' AND granted AND database = (SELECT oid FROM pg_database WHERE datname = current_database())`).Scan(&holders); err != nil || holders != 1 {
+		t.Fatalf("terminated %d holders: %v", holders, err)
+	}
+	other, err := pgx.Connect(t.Context(), url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = other.Close(context.Background()) })
+	var ok bool
+	if err := other.QueryRow(t.Context(), instanceLock).Scan(&ok); err != nil || !ok {
+		t.Fatalf("another session took the lock: %v, %v", ok, err)
+	}
+	if !i.Held() {
+		t.Fatal("the guard saw the loss before the commit")
+	}
+	_, err = s.Commit(t.Context(), testDB, []Write{set("c/d", doc("a", value.Int(2)))})
+	wantError(t, err, Unavailable, ErrNotServing.Message)
+	waitFor(t, 3*time.Second, "the guard to see the loss the fence found", func() bool { return lost.Load() == 1 })
+	var seq int64
+	if err := admin.QueryRow(t.Context(), `SELECT seq FROM documents.sequencer WHERE project_number = $1 AND database_id = $2`,
+		testDB.Project, testDB.ID).Scan(&seq); err != nil || seq != 1 {
+		t.Fatalf("seq after the fenced commit = %d, %v", seq, err)
+	}
+}
+
+// A process that takes the lock waits for the transactions that hold a sequencer row, so that no
+// commit of the previous holder that passed its fence lands after it serves (ADR-024 §7).
+func TestInstanceTakeWaitsForStampedCommits(t *testing.T) {
+	url := storetest.NewDB(t)
+	cfg, err := pgx.ParseConfig(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	admin, err := store.Open(t.Context(), url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(admin.Close)
+	if _, err := NewPGStore(admin, Options{}).Commit(t.Context(), testDB, []Write{set("c/d", doc("a", value.Int(1)))}); err != nil {
+		t.Fatal(err)
+	}
+	tx, err := admin.Begin(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = tx.Rollback(context.Background()) }()
+	if _, err := tx.Exec(t.Context(), `UPDATE documents.sequencer SET seq = seq + 1`); err != nil {
+		t.Fatal(err)
+	}
+	started := make(chan *Instance)
+	go func() {
+		started <- StartInstance(t.Context(), cfg, InstanceOptions{BootWait: 5 * time.Second, Check: time.Hour,
+			Log: slog.New(slog.DiscardHandler)})
+	}()
+	select {
+	case i := <-started:
+		i.Close()
+		t.Fatal("the lock was taken while a stamped commit was open")
+	case <-time.After(300 * time.Millisecond):
+	}
+	if err := tx.Commit(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	i := <-started
+	t.Cleanup(i.Close)
+	if !i.Held() {
+		t.Fatal("the lock was not taken once the commit ended")
 	}
 }

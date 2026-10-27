@@ -49,6 +49,24 @@ func (q *Queries) DeleteIndexEntries(ctx context.Context, arg DeleteIndexEntries
 	return err
 }
 
+const fenceCommit = `-- name: FenceCommit :exec
+SELECT documents.instance_fence($1::integer, $2::timestamptz)
+`
+
+type FenceCommitParams struct {
+	Holder      int32
+	HolderStart time.Time
+}
+
+// Queued right after StampCommit, under the sequencer row: fails the transaction with AR001 unless
+// the session that took this process's single-instance lock still holds it (ADR-024 §7), so
+// COMMIT never runs. A commit it lets through holds the row until COMMIT, and the next process
+// waits for every such commit before it serves (core.Instance).
+func (q *Queries) FenceCommit(ctx context.Context, arg FenceCommitParams) error {
+	_, err := q.db.Exec(ctx, fenceCommit, arg.Holder, arg.HolderStart)
+	return err
+}
+
 const insertIndexEntries = `-- name: InsertIndexEntries :exec
 INSERT INTO documents.index_entries (project_number, database_id, index_id, key, full_key)
 SELECT $1, $2, x.index_id, x.key, x.full_key

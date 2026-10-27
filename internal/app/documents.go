@@ -43,6 +43,9 @@ type Documents struct {
 	log   *slog.Logger
 
 	instance *documents.Instance
+	// instanceMu orders Boot's admission of streams with the lock's callbacks, which the guard
+	// may run as soon as StartInstance returns.
+	instanceMu sync.Mutex
 	// hub is the Listen hub, the store's Notifier (ADR-026 §2), rebuilt when the
 	// single-instance lock is taken again after its loss (ADR-026 §5).
 	hub *hubs
@@ -131,12 +134,14 @@ func (d *Documents) mount(h *server.Handlers) {
 // '(default)' database. Losing the lock drops every open transaction and closes every Listen
 // and Write stream with UNAVAILABLE, and the Listen hub, before o.OnLost runs; taking it again
 // builds a new hub and admits streams again, before o.OnAcquired runs (ADR-026 §5).
-// Without the lock the rest of Aruma serves and the Document Database answers UNAVAILABLE until
-// the guard takes it. It runs before the listener opens; Close stops what it started.
+// Without the lock the rest of Aruma serves and the Document Database answers UNAVAILABLE, and
+// admits no stream, until the guard takes it. It runs before the listener opens; Close stops what it started.
 func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error {
 	o.Log = d.log
 	onLost := o.OnLost
 	o.OnLost = func() {
+		d.instanceMu.Lock()
+		defer d.instanceMu.Unlock()
 		if s := d.store.s.Load(); s != nil {
 			s.DropTransactions()
 		}
@@ -148,13 +153,22 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	}
 	onAcquired := o.OnAcquired
 	o.OnAcquired = func() {
+		d.instanceMu.Lock()
+		defer d.instanceMu.Unlock()
 		d.hub.rebuild()
 		d.GRPC.InstanceRegained()
 		if onAcquired != nil {
 			onAcquired()
 		}
 	}
+	// No stream joins before the lock is first taken (review streams-admitted-before-first-lock).
+	d.GRPC.InstanceLost()
+	d.instanceMu.Lock()
 	d.instance = documents.StartInstance(ctx, d.pool.Config().ConnConfig, o)
+	if d.instance.Held() {
+		d.GRPC.InstanceRegained()
+	}
+	d.instanceMu.Unlock()
 	store := documents.NewPGStore(d.pool, documents.Options{
 		CommitConcurrency: d.cfg.CommitConcurrency, Instance: d.instance, Transactions: d.txns,
 		IndexLimits: documents.IndexLimits{Composites: d.cfg.CompositeIndexes, FieldOverrides: d.cfg.FieldOverrides},

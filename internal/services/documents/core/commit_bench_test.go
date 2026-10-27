@@ -2,12 +2,25 @@ package core
 
 import (
 	"fmt"
+	"log/slog"
 	"testing"
 	"time"
 
 	"github.com/arumadev/aruma/internal/services/documents/value"
 	"github.com/arumadev/aruma/internal/store/storetest"
 )
+
+// benchStore is a store as a server runs it: holding the single-instance lock, every commit
+// fenced on it (FenceCommit).
+func benchStore(b *testing.B) *PGStore {
+	pool := storetest.NewPool(b)
+	i := StartInstance(b.Context(), pool.Config().ConnConfig, InstanceOptions{Log: slog.New(slog.DiscardHandler)})
+	b.Cleanup(i.Close)
+	if !i.Held() {
+		b.Fatal("the instance does not hold the lock")
+	}
+	return NewPGStore(pool, Options{Instance: i})
+}
 
 // benchDoc is a document of six fields, a map and an array: 16 automatic index entries.
 func benchDoc(i int) value.Value {
@@ -22,7 +35,7 @@ func benchDoc(i int) value.Value {
 func BenchmarkCommitIndexed(b *testing.B) {
 	for _, preload := range []int{50, 20_000} {
 		b.Run(fmt.Sprint(preload), func(b *testing.B) {
-			s := NewPGStore(storetest.NewPool(b), Options{})
+			s := benchStore(b)
 			ctx := b.Context()
 			for j := 0; j < preload; j += 500 {
 				var ws []Write
@@ -74,7 +87,7 @@ func wideDoc(n, v int) value.Value {
 // time it held the sequencer row (the commit_time is the stamp's clock).
 func BenchmarkCommitWide(b *testing.B) {
 	const docs, fields = 500, 200
-	s := NewPGStore(storetest.NewPool(b), Options{})
+	s := benchStore(b)
 	ctx := b.Context()
 	var held time.Duration
 	commit := func(ws []Write) time.Duration {

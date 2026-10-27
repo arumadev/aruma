@@ -65,6 +65,13 @@ WHERE q.project_number = @project_number AND q.database_id = @database_id
     AND documents.conflict_unless(q.catalog_version = @catalog_version)
 RETURNING q.seq, q.last_ts;
 
+-- name: FenceCommit :exec
+-- Queued right after StampCommit, under the sequencer row: fails the transaction with AR001 unless
+-- the session that took this process's single-instance lock still holds it (ADR-024 §7), so
+-- COMMIT never runs. A commit it lets through holds the row until COMMIT, and the next process
+-- waits for every such commit before it serves (core.Instance).
+SELECT documents.instance_fence(@holder::integer, @holder_start::timestamptz);
+
 -- name: WriteCommit :many
 -- The rest of the commit, under the sequencer row StampCommit took, whose seq and commit_time it
 -- reads back (the transaction sees its own update): the documents, the images they replace and
