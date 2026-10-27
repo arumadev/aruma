@@ -1,0 +1,1063 @@
+{
+  "cases": [
+    {
+      "description": "GET the (default) database",
+      "id": "database.get",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)"
+      },
+      "response": {
+        "body": {
+          "appEngineIntegrationMode": "DISABLED",
+          "concurrencyMode": "PESSIMISTIC",
+          "createTime": "<createTime: RFC 3339>",
+          "databaseEdition": "STANDARD",
+          "deleteProtectionState": "DELETE_PROTECTION_DISABLED",
+          "earliestVersionTime": "<earliestVersionTime: RFC 3339>",
+          "etag": "<etag>",
+          "freeTier": true,
+          "locationId": "europe-west1",
+          "name": "projects/chatapp-8ae21/databases/(default)",
+          "pointInTimeRecoveryEnablement": "POINT_IN_TIME_RECOVERY_DISABLED",
+          "realtimeUpdatesMode": "REALTIME_UPDATES_MODE_ENABLED",
+          "type": "FIRESTORE_NATIVE",
+          "uid": "ca7f90ab-d767-4072-9bbc-08c1c814879e",
+          "updateTime": "<updateTime: RFC 3339>",
+          "versionRetentionPeriod": "3600s"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET the project's databases",
+      "id": "database.list",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases"
+      },
+      "response": {
+        "body": {
+          "databases": [
+            {
+              "appEngineIntegrationMode": "DISABLED",
+              "concurrencyMode": "PESSIMISTIC",
+              "createTime": "<createTime: RFC 3339>",
+              "databaseEdition": "STANDARD",
+              "deleteProtectionState": "DELETE_PROTECTION_DISABLED",
+              "earliestVersionTime": "<earliestVersionTime: RFC 3339>",
+              "etag": "<etag>",
+              "freeTier": true,
+              "locationId": "europe-west1",
+              "name": "projects/chatapp-8ae21/databases/(default)",
+              "pointInTimeRecoveryEnablement": "POINT_IN_TIME_RECOVERY_DISABLED",
+              "realtimeUpdatesMode": "REALTIME_UPDATES_MODE_ENABLED",
+              "type": "FIRESTORE_NATIVE",
+              "uid": "ca7f90ab-d767-4072-9bbc-08c1c814879e",
+              "updateTime": "<updateTime: RFC 3339>",
+              "versionRetentionPeriod": "3600s"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "list composite indexes of every collection group (firebase-tools listIndexes)",
+      "id": "indexes.list_all",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/-/indexes"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "list composite indexes of aruma-ref-f3-q",
+      "id": "indexes.list_cg",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-q/indexes"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "list composite indexes, pageSize 1",
+      "error": {
+        "http": 400,
+        "message": "Invalid page size. Only 0 is supported.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "indexes.list_page_size_1",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/-/indexes?pageSize=1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid page size. Only 0 is supported.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "list composite indexes with filter \"queryScope=COLLECTION\"",
+      "error": {
+        "http": 400,
+        "message": "Index filters not supported.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "indexes.list_filter",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/-/indexes?filter=queryScope%3DCOLLECTION"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Index filters not supported.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a composite index that does not exist (a well-formed id)",
+      "error": {
+        "http": 400,
+        "message": "Invalid index resource id \"CICAgICAgICA\".",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "indexes.get_missing",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-q/indexes/CICAgICAgICA"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid index resource id \"CICAgICAgICA\".",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a composite index with the id format of the docs (CICAgOjXh4EK)",
+      "error": {
+        "http": 404,
+        "message": "index not found.",
+        "status": "NOT_FOUND"
+      },
+      "id": "indexes.get_missing_docs_id",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-q/indexes/CICAgOjXh4EK"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "index not found.",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a composite index named \"nonexistent\"",
+      "error": {
+        "http": 400,
+        "message": "Invalid index resource id \"nonexistent\".",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "indexes.get_missing_word",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-q/indexes/nonexistent"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid index resource id \"nonexistent\".",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET collectionGroups/-/indexes/CICAgICAgICA",
+      "error": {
+        "http": 400,
+        "message": "Invalid index resource id \"CICAgICAgICA\".",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "indexes.get_dash_group",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/-/indexes/CICAgICAgICA"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid index resource id \"CICAgICAgICA\".",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "list field overrides with firebase-tools' filter \"indexConfig.usesAncestorConfig=false OR ttlConfig:*\"",
+      "id": "fields.list_firebase_tools",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false%20OR%20ttlConfig:*"
+      },
+      "response": {
+        "body": {
+          "fields": [
+            {
+              "indexConfig": {
+                "indexes": [
+                  {
+                    "fields": [
+                      {
+                        "fieldPath": "*",
+                        "order": "ASCENDING"
+                      }
+                    ],
+                    "queryScope": "COLLECTION",
+                    "state": "READY"
+                  },
+                  {
+                    "fields": [
+                      {
+                        "fieldPath": "*",
+                        "order": "DESCENDING"
+                      }
+                    ],
+                    "queryScope": "COLLECTION",
+                    "state": "READY"
+                  },
+                  {
+                    "fields": [
+                      {
+                        "arrayConfig": "CONTAINS",
+                        "fieldPath": "*"
+                      }
+                    ],
+                    "queryScope": "COLLECTION",
+                    "state": "READY"
+                  }
+                ]
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/collectionGroups/__default__/fields/*"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "list fields with filter \"indexConfig.usesAncestorConfig:false\" (gcloud)",
+      "id": "fields.list_ancestor_false",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig:false"
+      },
+      "response": {
+        "body": {
+          "fields": [
+            {
+              "indexConfig": {
+                "indexes": [
+                  {
+                    "fields": [
+                      {
+                        "fieldPath": "*",
+                        "order": "ASCENDING"
+                      }
+                    ],
+                    "queryScope": "COLLECTION",
+                    "state": "READY"
+                  },
+                  {
+                    "fields": [
+                      {
+                        "fieldPath": "*",
+                        "order": "DESCENDING"
+                      }
+                    ],
+                    "queryScope": "COLLECTION",
+                    "state": "READY"
+                  },
+                  {
+                    "fields": [
+                      {
+                        "arrayConfig": "CONTAINS",
+                        "fieldPath": "*"
+                      }
+                    ],
+                    "queryScope": "COLLECTION",
+                    "state": "READY"
+                  }
+                ]
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/collectionGroups/__default__/fields/*"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "list fields of collectionGroups/- with no filter",
+      "error": {
+        "http": 400,
+        "message": "ListFieldsRequest.filter must include at least fields that do not use their ancestor configuration, or fields with TTLs.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "fields.list_no_filter",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/-/fields"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "ListFieldsRequest.filter must include at least fields that do not use their ancestor configuration, or fields with TTLs.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "list fields of aruma-ref-f3-q with no filter",
+      "error": {
+        "http": 400,
+        "message": "ListFieldsRequest.filter must include at least fields that do not use their ancestor configuration, or fields with TTLs.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "fields.list_cg_no_filter",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-q/fields"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "ListFieldsRequest.filter must include at least fields that do not use their ancestor configuration, or fields with TTLs.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "list fields of aruma-ref-f3-q with firebase-tools' filter",
+      "id": "fields.list_cg_filter",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-q/fields?filter=indexConfig.usesAncestorConfig=false%20OR%20ttlConfig:*"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "list fields with filter \"nonsense\"",
+      "error": {
+        "http": 400,
+        "message": "ListFieldsRequest.filter must include at least fields that do not use their ancestor configuration, or fields with TTLs.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "fields.list_bad_filter",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/-/fields?filter=nonsense"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "ListFieldsRequest.filter must include at least fields that do not use their ancestor configuration, or fields with TTLs.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "list fields with the filter, pageSize 1",
+      "error": {
+        "http": 400,
+        "message": "Invalid page size. Only 0 is supported.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "fields.list_page_size_1",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false%20OR%20ttlConfig:*&pageSize=1"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid page size. Only 0 is supported.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET collectionGroups/__default__/fields/*",
+      "id": "fields.get_default",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/__default__/fields/*"
+      },
+      "response": {
+        "body": {
+          "indexConfig": {
+            "indexes": [
+              {
+                "fields": [
+                  {
+                    "fieldPath": "*",
+                    "order": "ASCENDING"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              },
+              {
+                "fields": [
+                  {
+                    "fieldPath": "*",
+                    "order": "DESCENDING"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              },
+              {
+                "fields": [
+                  {
+                    "arrayConfig": "CONTAINS",
+                    "fieldPath": "*"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              }
+            ]
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/collectionGroups/__default__/fields/*"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET aruma-ref-f3-q/fields/v (no override)",
+      "id": "fields.get_plain",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-q/fields/v"
+      },
+      "response": {
+        "body": {
+          "indexConfig": {
+            "ancestorField": "projects/chatapp-8ae21/databases/(default)/collectionGroups/__default__/fields/*",
+            "indexes": [
+              {
+                "fields": [
+                  {
+                    "fieldPath": "v",
+                    "order": "ASCENDING"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              },
+              {
+                "fields": [
+                  {
+                    "fieldPath": "v",
+                    "order": "DESCENDING"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              },
+              {
+                "fields": [
+                  {
+                    "arrayConfig": "CONTAINS",
+                    "fieldPath": "v"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              }
+            ],
+            "usesAncestorConfig": true
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/collectionGroups/aruma-ref-f3-q/fields/v"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET aruma-ref-f3-q/fields/v.a",
+      "id": "fields.get_nested",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-q/fields/v.a"
+      },
+      "response": {
+        "body": {
+          "indexConfig": {
+            "ancestorField": "projects/chatapp-8ae21/databases/(default)/collectionGroups/__default__/fields/*",
+            "indexes": [
+              {
+                "fields": [
+                  {
+                    "fieldPath": "v.a",
+                    "order": "ASCENDING"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              },
+              {
+                "fields": [
+                  {
+                    "fieldPath": "v.a",
+                    "order": "DESCENDING"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              },
+              {
+                "fields": [
+                  {
+                    "arrayConfig": "CONTAINS",
+                    "fieldPath": "v.a"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              }
+            ],
+            "usesAncestorConfig": true
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/collectionGroups/aruma-ref-f3-q/fields/v.a"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET aruma-ref-f3-q/fields/`a b`",
+      "id": "fields.get_backticked",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-q/fields/%60a%20b%60"
+      },
+      "response": {
+        "body": {
+          "indexConfig": {
+            "ancestorField": "projects/chatapp-8ae21/databases/(default)/collectionGroups/__default__/fields/*",
+            "indexes": [
+              {
+                "fields": [
+                  {
+                    "fieldPath": "`a b`",
+                    "order": "ASCENDING"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              },
+              {
+                "fields": [
+                  {
+                    "fieldPath": "`a b`",
+                    "order": "DESCENDING"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              },
+              {
+                "fields": [
+                  {
+                    "arrayConfig": "CONTAINS",
+                    "fieldPath": "`a b`"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              }
+            ],
+            "usesAncestorConfig": true
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/collectionGroups/aruma-ref-f3-q/fields/`a b`"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET aruma-ref-f3-q/fields/__name__",
+      "error": {
+        "http": 400,
+        "message": "Field path id \"__name__\" is invalid because it is reserved.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "fields.get_name",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-q/fields/__name__"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Field path id \"__name__\" is invalid because it is reserved.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET aruma-ref-f3-q/fields/* (the collection-level default)",
+      "id": "fields.get_star",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-q/fields/*"
+      },
+      "response": {
+        "body": {
+          "indexConfig": {
+            "ancestorField": "projects/chatapp-8ae21/databases/(default)/collectionGroups/__default__/fields/*",
+            "indexes": [
+              {
+                "fields": [
+                  {
+                    "fieldPath": "*",
+                    "order": "ASCENDING"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              },
+              {
+                "fields": [
+                  {
+                    "fieldPath": "*",
+                    "order": "DESCENDING"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              },
+              {
+                "fields": [
+                  {
+                    "arrayConfig": "CONTAINS",
+                    "fieldPath": "*"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              }
+            ],
+            "usesAncestorConfig": true
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/collectionGroups/aruma-ref-f3-q/fields/*"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET fields/v of a collection group never written",
+      "id": "fields.get_never_written_group",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-never/fields/v"
+      },
+      "response": {
+        "body": {
+          "indexConfig": {
+            "ancestorField": "projects/chatapp-8ae21/databases/(default)/collectionGroups/__default__/fields/*",
+            "indexes": [
+              {
+                "fields": [
+                  {
+                    "fieldPath": "v",
+                    "order": "ASCENDING"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              },
+              {
+                "fields": [
+                  {
+                    "fieldPath": "v",
+                    "order": "DESCENDING"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              },
+              {
+                "fields": [
+                  {
+                    "arrayConfig": "CONTAINS",
+                    "fieldPath": "v"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              }
+            ],
+            "usesAncestorConfig": true
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/collectionGroups/aruma-ref-f3-never/fields/v"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET aruma-ref-f3-q/fields/a..b",
+      "error": {
+        "http": 400,
+        "message": "Invalid property path \"a..b\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "fields.get_invalid_path",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-q/fields/a..b"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid property path \"a..b\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET aruma-ref-f3-q/fields/__x__",
+      "error": {
+        "http": 400,
+        "message": "Field path id \"__x__\" is invalid because it is reserved.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "fields.get_reserved",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-q/fields/__x__"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Field path id \"__x__\" is invalid because it is reserved.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET collectionGroups/-/fields/v",
+      "id": "fields.get_dash_group",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/-/fields/v"
+      },
+      "response": {
+        "body": {
+          "indexConfig": {
+            "ancestorField": "projects/chatapp-8ae21/databases/(default)/collectionGroups/__default__/fields/*",
+            "indexes": [
+              {
+                "fields": [
+                  {
+                    "fieldPath": "v",
+                    "order": "ASCENDING"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              },
+              {
+                "fields": [
+                  {
+                    "fieldPath": "v",
+                    "order": "DESCENDING"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              },
+              {
+                "fields": [
+                  {
+                    "arrayConfig": "CONTAINS",
+                    "fieldPath": "v"
+                  }
+                ],
+                "queryScope": "COLLECTION",
+                "state": "READY"
+              }
+            ],
+            "usesAncestorConfig": true
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/collectionGroups/-/fields/v"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET collectionGroups/__default__/fields/v",
+      "error": {
+        "http": 400,
+        "message": "Field path must the default selector \"*\" or a non-default collection ID must be provided.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "fields.get_default_other",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/__default__/fields/v"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Field path must the default selector \"*\" or a non-default collection ID must be provided.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "list the database's long-running operations",
+      "id": "operations.list",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/operations"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "list operations, pageSize 1",
+      "id": "operations.list_page_size_1",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/operations?pageSize=1"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET an operation that does not exist (a well-formed name)",
+      "error": {
+        "http": 404,
+        "message": "Requested entity was not found.",
+        "status": "NOT_FOUND"
+      },
+      "id": "operations.get_missing",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/operations/ASA0NjE1MDcyMDYxChp0bHVhZmVkBxJsYXJ0bmVjc3Utc2Jvai1uaW1kYRQKLRI"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "Requested entity was not found.",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET operations/nonexistent",
+      "error": {
+        "http": 404,
+        "message": "Operation does not exist",
+        "status": "NOT_FOUND"
+      },
+      "id": "operations.get_missing_word",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/operations/nonexistent"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "Operation does not exist",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "list backup schedules",
+      "id": "backup_schedules.list",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/backupSchedules"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET collectionGroups/x (not a resource)",
+      "id": "database.get_missing_collection_group",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/collectionGroups/aruma-ref-f3-q"
+      },
+      "response": {
+        "body": {
+          "raw": "<!DOCTYPE html>\n<html lang=en>\n  <meta charset=utf-8>\n  <meta name=viewport content=\"initial-scale=1, minimum-scale=1, width=device-width\">\n  <title>Error 404 (Not Found)!!1</title>\n  <style>\n    *{margin:0;padding:0}html,code{font:15px/22px arial,sans-serif}html{background:#fff;color:#222;padding:15px}body{margin:7% auto 0;max-width:390px;min-height:180px;padding:30px 0 15px}* > body{background:url(//www.google.com/images/errors/robot.png) 100% 5px no-repeat;padding-right:205px}p{margin:11px 0 22px;overflow:hidden}ins{color:#777;text-decoration:none}a img{border:0}@media screen and (max-width:772px){body{background:none;margin-top:0;max-width:none;padding-right:0}}#logo{background:url(//www.google.com/images/branding/googlelogo/1x/googlelogo_color_150x54dp.png) no-repeat;margin-left:-5px}@media only screen and (min-resolution:192dpi){#logo{background:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) no-repeat 0% 0%/100% 100%;-moz-border-image:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) 0}}@media only screen and (-webkit-min-device-pixel-ratio:2){#logo{background:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) no-repeat;-webkit-background-size:100% 100%}}#logo{display:inline-block;height:54px;width:150px}\n  </style>\n  <a href=//www.google.com/><span id=logo aria-label=Google></span></a>\n  <p><b>404.</b> <ins>That’s an error.</ins>\n  <p>The requested URL <code>/v1/projects/chatapp-8ae21/databases/(default)/collectionGroups/aruma-ref-f3-q</code> was not found on this server.  <ins>That’s all we know.</ins>\n"
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "responseNotJson": true,
+      "transport": "rest"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f3.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner); security rules do not apply.",
+      "Times, durations, page tokens and transaction ids are replaced by placeholders (normalise in lib.mjs); everything else is as returned.",
+      "Every call is a GET; nothing was created, changed or deleted. earliestVersionTime and etag become placeholders (they move on their own); every other value is as returned.",
+      "The project has no composite index and no field override at the time of recording (indexes-105.json saw the same)."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-27T04:15:23.142Z .. 2026-10-27T04:23:59.680Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "ea2aad83c415711da4bfe6d6b7c73cee74f7c367c816a3b67940f1fc389030f1",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

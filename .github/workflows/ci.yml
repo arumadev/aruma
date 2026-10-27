@@ -98,7 +98,7 @@ jobs:
   # serve yet is in test/compat/documents/expected-failures/, and a listed test that passes fails
   # the job.
   documents-smoke:
-    name: Document Database SDK smoke (Admin Go, Admin Node gRPC and REST, JS lite)
+    name: Document Database SDK smoke (Admin Go, Admin Node gRPC and REST, JS lite, firebase-tools)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
@@ -125,17 +125,26 @@ jobs:
           cache-dependency-path: |
             test/smoke/*/package-lock.json
             sdk/node/*/package-lock.json
-      - name: Install (Go modules, the SDKs; genconfig and the Go test binary)
+            test/acceptance/testdata/firebase-cli/package-lock.json
+      - name: Install (Go modules, the SDKs, firebase-tools; genconfig and the Go test binaries)
         run: |
           go mod download
           go build -o /dev/null ./test/smoke/genconfig
           (cd test/smoke/admin-go && go test -count=1 -run '^$' ./documents/)
           (cd test/smoke/admin-node && npm ci --no-audit --no-fund)
           (cd test/smoke/web && npm ci --no-audit --no-fund)
+          (cd test/acceptance/testdata/firebase-cli && npm ci --no-audit --no-fund)
+          go test -count=1 -run '^$' ./test/acceptance/
       - name: Egress guard on
         run: test/ci/egress-guard.sh on
       - name: Documents smoke tests
         run: test/ci/egress-guard.sh run test/smoke/run.sh admin-go-documents admin-node-documents web-documents
+      - name: firebase-tools against the Document Database (netguard alone in the CLI, no sandbox-exec on Linux)
+        env:
+          ARUMA_FIREBASE_CLI: "1"
+        run: >-
+          test/ci/egress-guard.sh run go test -count=1 -v
+          -run '^TestDocumentsWithTheFirebaseCLI$' ./test/acceptance/
       - name: Nothing left the machine
         if: always()
         run: test/ci/egress-guard.sh check

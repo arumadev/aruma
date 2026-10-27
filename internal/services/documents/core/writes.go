@@ -19,6 +19,8 @@ type lockedDoc struct {
 	fields     value.Value
 	createTime time.Time
 	updateTime time.Time
+	// stored is its documents.doc as read, the fields alone (docpb.go); nil when not read.
+	stored []byte
 }
 
 // docChange is one document's part of a commit: its writes folded in order, from the document
@@ -466,26 +468,35 @@ func (p *plan) changes(commitTime time.Time) []Change {
 	return out
 }
 
-// stampArgs fills the stamp statement's arrays from the changed documents.
+// encodedDoc is a changed document as the stamp statement writes it (stampArgs).
+type encodedDoc struct {
+	doc, before, after, mask []byte
+	size                     int32
+	err                      error
+}
+
+// stampArgs fills the stamp statement's arrays from the changed documents, encoded in parallel
+// (indexArgs); the first document in order that fails gives the error.
 func (p *plan) stampArgs(a *stampInput) error {
+	var changed []*docChange
 	for _, d := range p.docs {
-		if !d.changed() {
-			continue
+		if d.changed() {
+			changed = append(changed, d)
 		}
-		var doc []byte
-		if d.exists {
-			var err error
-			if doc, err = encodeDocument(d.fields, time.Time{}, time.Time{}); err != nil {
-				return err
-			}
+	}
+	enc := make([]encodedDoc, len(changed))
+	parallel(len(changed), func(i int) { enc[i] = changed[i].encode() })
+	for i, d := range changed {
+		e := enc[i]
+		if e.err != nil {
+			return e.err
 		}
-		size := int32(value.DocumentSize(d.path.String(), d.fields))
 		switch {
 		case d.before != nil && d.exists:
 			a.updateKeys = append(a.updateKeys, d.keys.stored)
 			a.updateSeqs = append(a.updateSeqs, d.before.seq)
-			a.updateDocs = append(a.updateDocs, doc)
-			a.updateSizes = append(a.updateSizes, size)
+			a.updateDocs = append(a.updateDocs, e.doc)
+			a.updateSizes = append(a.updateSizes, e.size)
 			a.replaced = append(a.replaced, d.keys.stored)
 		case d.exists:
 			a.insertKeys = append(a.insertKeys, d.keys.stored)
@@ -494,32 +505,49 @@ func (p *plan) stampArgs(a *stampInput) error {
 			a.insertCgHashes = append(a.insertCgHashes, d.keys.cgHash)
 			a.insertParents = append(a.insertParents, d.keys.parent)
 			a.insertCollectionIDs = append(a.insertCollectionIDs, d.path.CollectionID())
-			a.insertDocs = append(a.insertDocs, doc)
-			a.insertSizes = append(a.insertSizes, size)
+			a.insertDocs = append(a.insertDocs, e.doc)
+			a.insertSizes = append(a.insertSizes, e.size)
 		default:
 			a.deleteKeys = append(a.deleteKeys, d.keys.stored)
 			a.deleteSeqs = append(a.deleteSeqs, d.before.seq)
 			a.replaced = append(a.replaced, d.keys.stored)
 		}
-		before, after, mask, err := d.logImages()
-		if err != nil {
-			return err
-		}
 		a.logKeys = append(a.logKeys, d.keys.stored)
 		a.logNames = append(a.logNames, d.keys.name)
-		a.logBefores = append(a.logBefores, before)
-		a.logAfters = append(a.logAfters, after)
-		a.logMasks = append(a.logMasks, mask)
+		a.logBefores = append(a.logBefores, e.before)
+		a.logAfters = append(a.logAfters, e.after)
+		a.logMasks = append(a.logMasks, e.mask)
 	}
 	return nil
+}
+
+// encode encodes the document as the commit writes it, its changelog images and its size.
+func (d *docChange) encode() encodedDoc {
+	var e encodedDoc
+	if d.exists {
+		if e.doc, e.err = encodeDocument(d.fields, time.Time{}, time.Time{}); e.err != nil {
+			return e
+		}
+	}
+	e.before, e.after, e.mask, e.err = d.logImages(e.doc)
+	e.size = int32(value.DocumentSize(d.path.String(), d.fields))
+	return e
 }
 
 // logImages encodes the changelog's images (migration documents/00001, changelog): before with
 // its times; after with its create_time when it existed before, its update_time being the
 // commit's; nil for an absent document. The mask is the one masked write's, if it was alone.
-func (d *docChange) logImages() (before, after, mask []byte, err error) {
+// doc is the document's fields encoded, as written: deterministic encoding writes a Document's
+// fields before its times, so an image is the fields' encoding with its times' appended, and
+// the document before is not encoded again from its fields when its stored form was read.
+func (d *docChange) logImages(doc []byte) (before, after, mask []byte, err error) {
 	if d.before != nil {
-		if before, err = encodeDocument(d.before.fields, d.before.createTime, d.before.updateTime); err != nil {
+		if d.before.stored != nil {
+			before, err = appendTimes(d.before.stored, d.before.createTime, d.before.updateTime)
+		} else {
+			before, err = encodeDocument(d.before.fields, d.before.createTime, d.before.updateTime)
+		}
+		if err != nil {
 			return nil, nil, nil, err
 		}
 	}
@@ -528,7 +556,7 @@ func (d *docChange) logImages() (before, after, mask []byte, err error) {
 		if d.before != nil {
 			created = d.before.createTime
 		}
-		if after, err = encodeDocument(d.fields, created, time.Time{}); err != nil {
+		if after, err = appendTimes(doc, created, time.Time{}); err != nil {
 			return nil, nil, nil, err
 		}
 	}

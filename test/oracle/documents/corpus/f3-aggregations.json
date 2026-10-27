@@ -1,0 +1,4035 @@
+{
+  "cases": [
+    {
+      "description": "count, sum(x), avg(x) over aruma-ref-f3-agg-int",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "set.int",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "doubleValue": 2
+                },
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "integerValue": "6"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count, sum(x), avg(x) over aruma-ref-f3-agg-ovf",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "set.ovf",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-ovf"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "doubleValue": 4611686018427388000
+                },
+                "n": {
+                  "integerValue": "2"
+                },
+                "s": {
+                  "doubleValue": 9223372036854776000
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count, sum(x), avg(x) over aruma-ref-f3-agg-ovf-back",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "set.ovf-back",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-ovf-back"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "doubleValue": 3074457345618258400
+                },
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "integerValue": "9223372036854775806"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count, sum(x), avg(x) over aruma-ref-f3-agg-negovf",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "set.negovf",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-negovf"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "doubleValue": -4611686018427388000
+                },
+                "n": {
+                  "integerValue": "2"
+                },
+                "s": {
+                  "doubleValue": -9223372036854776000
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count, sum(x), avg(x) over aruma-ref-f3-agg-mix",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "set.mix",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-mix"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "doubleValue": 1.75
+                },
+                "n": {
+                  "integerValue": "8"
+                },
+                "s": {
+                  "doubleValue": 3.5
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count, sum(x), avg(x) over aruma-ref-f3-agg-nan",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "set.nan",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-nan"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "doubleValue": "NaN"
+                },
+                "n": {
+                  "integerValue": "2"
+                },
+                "s": {
+                  "doubleValue": "NaN"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count, sum(x), avg(x) over aruma-ref-f3-agg-inf",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "set.inf",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-inf"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "doubleValue": "NaN"
+                },
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "doubleValue": "NaN"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count, sum(x), avg(x) over aruma-ref-f3-agg-dbl",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "set.dbl",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-dbl"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "doubleValue": 0.19999999999999998
+                },
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "doubleValue": 0.6
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count, sum(x), avg(x) over aruma-ref-f3-agg-big",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "set.big",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-big"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "doubleValue": 4503599627370497
+                },
+                "n": {
+                  "integerValue": "2"
+                },
+                "s": {
+                  "integerValue": "9007199254740994"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count, sum(x), avg(x) over aruma-ref-f3-agg-empty (never written)",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "set.empty",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-empty"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "nullValue": null
+                },
+                "n": {
+                  "integerValue": "0"
+                },
+                "s": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count, sum(k), avg(k) over the query fixture with k == 999 (no match)",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "set.empty_filter",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "k"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "k"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-q"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "k"
+                  },
+                  "op": "EQUAL",
+                  "value": {
+                    "integerValue": "999"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "nullValue": null
+                },
+                "n": {
+                  "integerValue": "0"
+                },
+                "s": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "sum(zz), avg(zz): no document has zz",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "sum.missing_field",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "zz"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "zz"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "nullValue": null
+                },
+                "s": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "sum(x.a) over the mixed set (one map {a: 1})",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "sum.map_subfield",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x.a"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x.a"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-mix"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "doubleValue": 1
+                },
+                "s": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count upTo 2 over 3 documents",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "count.up_to_2",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {
+                  "upTo": 2
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count upTo 3 over 3 documents",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "count.up_to_3",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {
+                  "upTo": 3
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count upTo \"2\" (the Int64Value as a string)",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "count.up_to_string",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {
+                  "upTo": "2"
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count upTo 0",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "count.up_to_0",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {
+                  "upTo": 0
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count upTo -1",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "The `up_to` value in a COUNT aggregation must be greater than or equal to zero.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "count.up_to_negative",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {
+                  "upTo": -1
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "The `up_to` value in a COUNT aggregation must be greater than or equal to zero.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count upTo 9223372036854775807",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "count.up_to_huge",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {
+                  "upTo": "9223372036854775807"
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count upTo {value: 2}",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "count.up_to_object",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {
+                  "upTo": {
+                    "value": 2
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count over a query with limit 2",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "count.with_limit",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ],
+              "limit": 2
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count over a query with offset 1",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "count.with_offset",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ],
+              "offset": 1
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "sum(x) over a query with limit 2, orderBy x",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "sum.with_limit",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ],
+              "limit": 2,
+              "orderBy": [
+                {
+                  "direction": "ASCENDING",
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "s": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "sum(x), x > 1",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "sum.with_filter_same_field",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "x"
+                  },
+                  "op": "GREATER_THAN",
+                  "value": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "doubleValue": 2.5
+                },
+                "s": {
+                  "integerValue": "5"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count, orderBy x, startAfter [1]",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "count.with_cursor",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ],
+              "orderBy": [
+                {
+                  "direction": "ASCENDING",
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              ],
+              "startAt": {
+                "before": false,
+                "values": [
+                  {
+                    "integerValue": "1"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count over a query with select [x]",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "count.with_select",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ],
+              "select": {
+                "fields": [
+                  {
+                    "fieldPath": "x"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count over the collection group aruma-ref-f3-qcg",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "count.collection_group",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "allDescendants": true,
+                  "collectionId": "aruma-ref-f3-qcg"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count over a kindless query under aruma-ref-f3-q/i1",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "count.kindless",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "allDescendants": true
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f3-q/i1:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "2"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "five aggregations",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "multi.five",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "a1",
+                "count": {}
+              },
+              {
+                "alias": "a2",
+                "count": {
+                  "upTo": 1
+                }
+              },
+              {
+                "alias": "a3",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a4",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a5",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a1": {
+                  "integerValue": "3"
+                },
+                "a2": {
+                  "integerValue": "1"
+                },
+                "a3": {
+                  "integerValue": "6"
+                },
+                "a4": {
+                  "doubleValue": 2
+                },
+                "a5": {
+                  "integerValue": "6"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "six aggregations",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "The maximum number of aggregations allowed in an aggregation query is 5. Received: 6",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "multi.six",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "a1",
+                "count": {}
+              },
+              {
+                "alias": "a2",
+                "count": {
+                  "upTo": 1
+                }
+              },
+              {
+                "alias": "a3",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a4",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a5",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a6",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                  "domain": "firestore.googleapis.com",
+                  "metadata": {
+                    "actual_aggregations": "6",
+                    "max_aggregations": "5"
+                  },
+                  "reason": "TOO_MANY_AGGREGATIONS"
+                }
+              ],
+              "message": "The maximum number of aggregations allowed in an aggregation query is 5. Received: 6",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count and sum both aliased \"n\"",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "Aggregation aliases contain duplicate alias: n.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "multi.duplicate_alias",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "n",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Aggregation aliases contain duplicate alias: n.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count twice under two aliases",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "multi.same_aggregation_twice",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n1",
+                "count": {}
+              },
+              {
+                "alias": "n2",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n1": {
+                  "integerValue": "3"
+                },
+                "n2": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "aggregations []",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "Aggregations can not be empty.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "multi.none",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Aggregations can not be empty.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "no aggregations field",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "Aggregations can not be empty.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "multi.absent",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Aggregations can not be empty.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count with no alias",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "alias.absent",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "field_1": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count and sum with no alias",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "alias.absent_two",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "count": {}
+              },
+              {
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "field_1": {
+                  "integerValue": "3"
+                },
+                "field_2": {
+                  "integerValue": "6"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "alias \"\"",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "alias.empty",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "field_1": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "alias \"a.b\"",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "alias.dot",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "a.b",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a.b": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "alias \"a b\"",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "alias.space",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "a b",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "a b": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "alias \"__x__\"",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "The property.name \"__x__\" is reserved.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "alias.reserved",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "__x__",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "The property.name \"__x__\" is reserved.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "alias \"`a`\"",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "alias.backticked",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "`a`",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "`a`": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "alias of 1500 bytes",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "alias.long_1500",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "alias of 1501 bytes",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "The property.name is longer than 1500 bytes.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "alias.long_1501",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "The property.name is longer than 1500 bytes.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "alias \"field_1\"",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "alias.field_1",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "field_1",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "field_1": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count aliased \"field_1\" and sum with no alias",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "Aggregation aliases contain duplicate alias: field_1.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "alias.absent_with_field_1",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "field_1",
+                "count": {}
+              },
+              {
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Aggregation aliases contain duplicate alias: field_1.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "an aggregation with only an alias",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "Operator field in Aggregation is not set.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "operator.none",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n"
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Operator field in Aggregation is not set.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "an aggregation with count and sum",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'structured_aggregation_query.aggregations[0]' (oneof), oneof field 'operator' is already set. Cannot set 'sum'",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "operator.two",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {},
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.BadRequest",
+                  "fieldViolations": [
+                    {
+                      "description": "Invalid value at 'structured_aggregation_query.aggregations[0]' (oneof), oneof field 'operator' is already set. Cannot set 'sum'",
+                      "field": "structured_aggregation_query.aggregations[0]"
+                    }
+                  ]
+                }
+              ],
+              "message": "Invalid value at 'structured_aggregation_query.aggregations[0]' (oneof), oneof field 'operator' is already set. Cannot set 'sum'",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "sum {} (no field)",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "Invalid empty property path string.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "sum.no_field",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Invalid empty property path string.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "sum(__name__)",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "Aggregations are not supported for the property: __key__",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "sum.name",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "__name__"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Aggregations are not supported for the property: __key__",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "sum(\"a..b\")",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "Invalid property path \"a..b\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "sum.invalid_path",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "a..b"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Invalid property path \"a..b\". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "sum(\"\")",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "Invalid empty property path string.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "sum.empty_path",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": ""
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Invalid empty property path string.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "avg(__name__)",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "Aggregations are not supported for the property: __key__",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "avg.name",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "__name__"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Aggregations are not supported for the property: __key__",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "structuredAggregationQuery with aggregations but no structuredQuery",
+      "documents": [],
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "request.no_query",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "75"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "an empty body",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "Only structured aggregation queries are supported.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "request.empty",
+      "replay": true,
+      "request": {
+        "body": {},
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "Only structured aggregation queries are supported.",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "sum(x) where y == 1: needs a composite index (R13)",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Clpwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjMtYWdnLW1peC9pbmRleGVzL18QARoFCgF5EAEaBQoBeBABGgwKCF9fbmFtZV9fEAE",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "index.sum_with_eq_other",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-mix"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "y"
+                  },
+                  "op": "EQUAL",
+                  "value": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Clpwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjMtYWdnLW1peC9pbmRleGVzL18QARoFCgF5EAEaBQoBeBABGgwKCF9fbmFtZV9fEAE",
+              "status": "FAILED_PRECONDITION"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count with newTransaction readOnly",
+      "documents": [],
+      "elementKeys": [
+        "transaction",
+        "readTime,result"
+      ],
+      "id": "txn.new_read_only",
+      "replay": true,
+      "request": {
+        "body": {
+          "newTransaction": {
+            "readOnly": {}
+          },
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "transaction": "<transaction>"
+          },
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count with readTime two hours ago (before the setup)",
+      "documents": [],
+      "elementKeys": [
+        "error"
+      ],
+      "error": {
+        "http": 400,
+        "message": "The requested 'read_time' is too old.",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "txn.read_time_two_hours_ago",
+      "request": {
+        "body": {
+          "readTime": "<readTime: RFC 3339>",
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "error": {
+              "code": 400,
+              "message": "The requested 'read_time' is too old.",
+              "status": "FAILED_PRECONDITION"
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "count, sum(x), avg(x)",
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "grpc.set.int",
+      "request": {
+        "message": {
+          "parent": "projects/{project}/databases/(default)/documents",
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunAggregationQuery"
+      },
+      "response": {
+        "ok": true,
+        "responses": [
+          {
+            "readTime": "<readTime: Timestamp>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "doubleValue": 2
+                },
+                "n": {
+                  "integerValue": "3"
+                },
+                "s": {
+                  "integerValue": "6"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "count, sum(x), avg(x) over the overflowing set",
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "grpc.set.ovf",
+      "request": {
+        "message": {
+          "parent": "projects/{project}/databases/(default)/documents",
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-ovf"
+                }
+              ]
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunAggregationQuery"
+      },
+      "response": {
+        "ok": true,
+        "responses": [
+          {
+            "readTime": "<readTime: Timestamp>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "doubleValue": 4611686018427388000
+                },
+                "n": {
+                  "integerValue": "2"
+                },
+                "s": {
+                  "doubleValue": 9223372036854776000
+                }
+              }
+            }
+          }
+        ]
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "count, sum(x), avg(x) over the NaN set",
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "grpc.set.nan",
+      "request": {
+        "message": {
+          "parent": "projects/{project}/databases/(default)/documents",
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-nan"
+                }
+              ]
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunAggregationQuery"
+      },
+      "response": {
+        "ok": true,
+        "responses": [
+          {
+            "readTime": "<readTime: Timestamp>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "doubleValue": "<number NaN>"
+                },
+                "n": {
+                  "integerValue": "2"
+                },
+                "s": {
+                  "doubleValue": "<number NaN>"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "count, sum(x), avg(x) over a never-written collection",
+      "elementKeys": [
+        "readTime,result"
+      ],
+      "id": "grpc.set.empty",
+      "request": {
+        "message": {
+          "parent": "projects/{project}/databases/(default)/documents",
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-empty"
+                }
+              ]
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunAggregationQuery"
+      },
+      "response": {
+        "ok": true,
+        "responses": [
+          {
+            "readTime": "<readTime: Timestamp>",
+            "result": {
+              "aggregateFields": {
+                "a": {
+                  "nullValue": "NULL_VALUE"
+                },
+                "n": {
+                  "integerValue": "0"
+                },
+                "s": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "six aggregations",
+      "elementKeys": [],
+      "error": {
+        "code": 3,
+        "message": "The maximum number of aggregations allowed in an aggregation query is 5. Received: 6",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.multi.six",
+      "request": {
+        "message": {
+          "parent": "projects/{project}/databases/(default)/documents",
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "a1",
+                "count": {}
+              },
+              {
+                "alias": "a2",
+                "count": {
+                  "upTo": {
+                    "value": "1"
+                  }
+                }
+              },
+              {
+                "alias": "a3",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a4",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a5",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              },
+              {
+                "alias": "a6",
+                "avg": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunAggregationQuery"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "duplicate alias",
+      "elementKeys": [],
+      "error": {
+        "code": 3,
+        "message": "Aggregation aliases contain duplicate alias: n.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.multi.duplicate_alias",
+      "request": {
+        "message": {
+          "parent": "projects/{project}/databases/(default)/documents",
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              },
+              {
+                "alias": "n",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunAggregationQuery"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "sum(x) where y == 1: needs a composite index",
+      "elementKeys": [],
+      "error": {
+        "code": 9,
+        "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=Clpwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjMtYWdnLW1peC9pbmRleGVzL18QARoFCgF5EAEaBQoBeBABGgwKCF9fbmFtZV9fEAE",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "grpc.index.sum_with_eq_other",
+      "request": {
+        "message": {
+          "parent": "projects/{project}/databases/(default)/documents",
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "s",
+                "sum": {
+                  "field": {
+                    "fieldPath": "x"
+                  }
+                }
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-mix"
+                }
+              ],
+              "where": {
+                "fieldFilter": {
+                  "field": {
+                    "fieldPath": "y"
+                  },
+                  "op": "EQUAL",
+                  "value": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunAggregationQuery"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "count with newTransaction readOnly",
+      "elementKeys": [
+        "transaction",
+        "readTime,result"
+      ],
+      "id": "grpc.txn.new_read_only",
+      "request": {
+        "message": {
+          "newTransaction": {
+            "readOnly": {}
+          },
+          "parent": "projects/{project}/databases/(default)/documents",
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f3-agg-int"
+                }
+              ]
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunAggregationQuery"
+      },
+      "response": {
+        "ok": true,
+        "responses": [
+          {
+            "transaction": "<bytes 100>"
+          },
+          {
+            "readTime": "<readTime: Timestamp>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "3"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "transport": "grpc"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f3.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner); security rules do not apply.",
+      "Times, durations, page tokens and transaction ids are replaced by placeholders (normalise in lib.mjs); everything else is as returned.",
+      "The sets are top-level collections aruma-ref-f3-agg-<set> (setup): int {1, 2, 3}; ovf {int64 max, 1}; ovf-back {int64 max, 1, -2}; negovf {int64 min, -1}; mix {1, 2.5, \"s\", null, true, [1], {a: 1}, a timestamp, and a document without x}; nan {1, NaN}; inf {Infinity, -Infinity, 1}; dbl {0.1, 0.2, 0.3}; big {9007199254740993, 1}. aruma-ref-f3-agg-empty is never written.",
+      "request.no_query (no structuredQuery) counts every document of the database, the project's own included: only that number is recorded, and it is not replayable.",
+      "The collection-group and kindless counts read the run-query fixture (f3-run-query.json), which is not part of this file's setup: they are not replayable."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-27T04:15:23.142Z .. 2026-10-27T04:23:59.680Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "ea2aad83c415711da4bfe6d6b7c73cee74f7c367c816a3b67940f1fc389030f1",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1",
+  "setup": {
+    "commits": [
+      {
+        "writes": [
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-int/d0"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-int/d1"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-int/d2"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "9223372036854775807"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-ovf/d0"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-ovf/d1"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "9223372036854775807"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-ovf-back/d0"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-ovf-back/d1"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "-2"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-ovf-back/d2"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "-9223372036854775808"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-negovf/d0"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "-1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-negovf/d1"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-mix/d0"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "doubleValue": 2.5
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-mix/d1"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "stringValue": "s"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-mix/d2"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "nullValue": null
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-mix/d3"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "booleanValue": true
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-mix/d4"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "integerValue": "1"
+                      }
+                    ]
+                  }
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-mix/d5"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "mapValue": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "1"
+                      }
+                    }
+                  }
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-mix/d6"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "y": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-mix/d7"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "timestampValue": "2020-01-01T00:00:00Z"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-mix/d8"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-nan/d0"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "doubleValue": "NaN"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-nan/d1"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "doubleValue": "Infinity"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-inf/d0"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "doubleValue": "-Infinity"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-inf/d1"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-inf/d2"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "doubleValue": 0.1
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-dbl/d0"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "doubleValue": 0.2
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-dbl/d1"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "doubleValue": 0.3
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-dbl/d2"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "9007199254740993"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-big/d0"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "x": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-agg-big/d1"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -149,6 +149,32 @@
         "test": "internal/services/documents/wire/names_test.go:TestBindStreamNamesF4",
         "phase": "F4"
       }
+    },
+    {
+      "id": "inequality-fields-order",
+      "kind": "provisional",
+      "summary": "A query with more than ten inequality fields is refused with production's status and text, but the fields its message lists are in the request's order, where production lists them in an order of its own.",
+      "production": "Refuses eleven inequality fields f0 … f10 with HTTP 400 INVALID_ARGUMENT (gRPC 3) \"The query contains 11 distinct inequality fields: [f8, f9, f6, f7, f4, f5, f2, f3, f0, f1, f10]. A query may not have more than 10 distinct inequality fields.\", on REST and gRPC alike (corpus/f3-query-limits.json ineq.11_fields, grpc.ineq_11_fields). The order is neither the request's, nor sorted, nor a Java HashSet's of the field names; one recorded set does not show its rule.",
+      "emulator": "Not recorded.",
+      "aruma": "The same status and text, the fields listed in the order the request first names them (query/validate.go errInequalityFields, F3): \"[f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]\" for the recorded query. The two recorded cases are listed as differing in the F3 replays, which fail once they match. Record more sets of field names to find production's order.",
+      "follows": "production",
+      "evidence": [
+        "corpus/f3-query-limits.json"
+      ],
+      "test": "test/differential/documents/inprocess_test.go:TestReplayCorpusInProcess"
+    },
+    {
+      "id": "transaction-too-big-multi-document",
+      "kind": "provisional",
+      "summary": "\"Transaction too big. Decrease transaction size.\" is applied to each document's index entry changes in a commit, as recorded for one document; a commit of many documents is never refused for their sum.",
+      "production": "Recorded for one document only (corpus/f3-index-entries.json total.*): a new document named with 2,677 bytes below documents/ with 5,155 integer fields (10,310 entries of 7,637 bytes) is accepted, one with 5,156 is refused with HTTP 400 INVALID_ARGUMENT \"Transaction too big. Decrease transaction size.\", and so is the delete of the 5,155-field document. The recordings show deletes cost more than inserts, not how much more, and nothing of a commit of many documents: whether production holds a commit's sum to the bound, and with what weights, is not recorded.",
+      "emulator": "Not recorded.",
+      "aruma": "Holds each document's entry changes, those it inserts and twice those it deletes, to 78,750,000 (core/indexentries.go maxTransactionSize), which matches every recorded case exactly. A commit whose changes summed over its documents pass that bound is accepted, counted (PGStore.LargeCommits) and logged, so that no commit production may accept is refused: a 500-write batch deleting documents of about 200 indexed fields, or rewriting about 130 fields of each, sums past it. Record a multi-document Transaction too big case in production (for example 500 deletes of N-field documents with short names) to replace this.",
+      "follows": "production",
+      "evidence": [
+        "corpus/f3-index-entries.json"
+      ],
+      "test": "internal/services/documents/core/indexentries_test.go:TestTransactionBoundPerDocument"
     }
   ]
 }

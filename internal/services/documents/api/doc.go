@@ -25,5 +25,7 @@
 //   - transactions.go: BeginTransaction, Rollback, the caller as a transaction's principal, and
 //     the transaction a read begins (new_transaction);
 //   - fields.go: masks, consistency selectors, the values a write stores, and document conversion;
-//   - order.go and pagetoken.go: ListDocuments' order_by and both listings' page tokens.
+//   - order.go and pagetoken.go: ListDocuments' order_by and both listings' page tokens;
+//   - admin.go: the Admin API (databases, composite indexes, fields, operations), an admin's
+//     alone, as firebase-tools and gcloud call it.
 package api

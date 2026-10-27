@@ -27,6 +27,12 @@ type Options struct {
 	Instance *Instance
 	// Transactions bounds the transactions and keys their ids.
 	Transactions TxnConfig
+	// IndexLimits bounds the Admin API's index configuration; zero values are the defaults.
+	IndexLimits IndexLimits
+	// ChangelogRetention is how long changelog rows are kept: a retention pass prunes none
+	// younger, and an index read continued in a later snapshot relies on it (IndexRead). Default
+	// 1 hour; less than MinChangelogRetention is raised to it.
+	ChangelogRetention time.Duration
 }
 
 // PGStore is Store on Postgres, schema documents (ADR-024).
@@ -37,21 +43,39 @@ type PGStore struct {
 	location string
 	instance *Instance
 	txns     *transactions
+	cats     *catalogs
+	// builds wakes the index build job (RunIndexBuilds).
+	builds chan struct{}
+	// limits bounds a database's composite indexes and field overrides.
+	limits IndexLimits
+	// changelogRetention is Options.ChangelogRetention.
+	changelogRetention time.Duration
 }
 
 var _ Store = (*PGStore)(nil)
 
 // NewPGStore returns the Postgres store.
 func NewPGStore(pool *pgxpool.Pool, o Options) *PGStore {
+	cats := newCatalogs(pool)
 	return &PGStore{
 		pool:     pool,
 		q:        queries.New(pool),
-		seq:      newSequencer(pool, cmp.Or(o.CommitConcurrency, DefaultCommitConcurrency), o.Notifier),
+		seq:      newSequencer(pool, cmp.Or(o.CommitConcurrency, DefaultCommitConcurrency), o.Notifier, cats),
 		location: cmp.Or(o.LocationID, DefaultLocation),
 		instance: o.Instance,
 		txns:     newTransactions(o.Transactions),
+		cats:     cats,
+		builds:   make(chan struct{}, 1),
+		limits:   o.IndexLimits.withDefaults(),
+
+		changelogRetention: changelogRetention(o.ChangelogRetention),
 	}
 }
+
+// LargeCommits is how many commits were accepted whose index entry changes, summed over their
+// documents, pass the bound production holds one document's to: production's answer to such a
+// commit is not recorded (indexentries.go).
+func (s *PGStore) LargeCommits() int64 { return s.seq.largeCommits.Load() }
 
 func (s *PGStore) serving() error {
 	if s.instance != nil && !s.instance.Held() {

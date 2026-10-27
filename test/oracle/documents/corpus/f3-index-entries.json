@@ -1,0 +1,3771 @@
+{
+  "cases": [
+    {
+      "description": "one document with 19990 integer fields",
+      "id": "fields.n_19990",
+      "request": {
+        "bytes": 668677,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "fields n=19990"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with 20010 integer fields",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/fields-20010",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "fields.n_20010",
+      "request": {
+        "bytes": 669357,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "fields n=20010"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/fields-20010"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/fields-20010",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with 20000 integer fields",
+      "id": "fields.n_20000",
+      "request": {
+        "bytes": 669017,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "fields n=20000"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with 20005 integer fields",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/fields-20005",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "fields.n_20005",
+      "request": {
+        "bytes": 669187,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "fields n=20005"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/fields-20005"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/fields-20005",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with 20002 integer fields",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/fields-20002",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "fields.n_20002",
+      "request": {
+        "bytes": 669085,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "fields n=20002"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/fields-20002"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/fields-20002",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with 20001 integer fields",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/fields-20001",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "fields.n_20001",
+      "request": {
+        "bytes": 669051,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "fields n=20001"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/fields-20001"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/fields-20001",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 19000 distinct integers",
+      "id": "array.n_19000",
+      "request": {
+        "bytes": 464048,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=19000"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 39990 distinct integers",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/array-39990",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "array.n_39990",
+      "request": {
+        "bytes": 988798,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=39990"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/array-39990"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/array-39990",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 29495 distinct integers",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/array-29495",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "array.n_29495",
+      "request": {
+        "bytes": 726423,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=29495"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/array-29495"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/array-29495",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 24247 distinct integers",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/array-24247",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "array.n_24247",
+      "request": {
+        "bytes": 595223,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=24247"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/array-24247"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/array-24247",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 21623 distinct integers",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/array-21623",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "array.n_21623",
+      "request": {
+        "bytes": 529623,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=21623"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/array-21623"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/array-21623",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 20311 distinct integers",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/array-20311",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "array.n_20311",
+      "request": {
+        "bytes": 496823,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=20311"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/array-20311"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/array-20311",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 19655 distinct integers",
+      "id": "array.n_19655",
+      "request": {
+        "bytes": 480423,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=19655"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 19983 distinct integers",
+      "id": "array.n_19983",
+      "request": {
+        "bytes": 488623,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=19983"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 20147 distinct integers",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/array-20147",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "array.n_20147",
+      "request": {
+        "bytes": 492723,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=20147"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/array-20147"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/array-20147",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 20065 distinct integers",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/array-20065",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "array.n_20065",
+      "request": {
+        "bytes": 490673,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=20065"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/array-20065"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/array-20065",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 20024 distinct integers",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/array-20024",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "array.n_20024",
+      "request": {
+        "bytes": 489648,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=20024"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/array-20024"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/array-20024",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 20003 distinct integers",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/array-20003",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "array.n_20003",
+      "request": {
+        "bytes": 489123,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=20003"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/array-20003"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/array-20003",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 19993 distinct integers",
+      "id": "array.n_19993",
+      "request": {
+        "bytes": 488873,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=19993"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 19998 distinct integers",
+      "id": "array.n_19998",
+      "request": {
+        "bytes": 488998,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=19998"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 20000 distinct integers",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/array-20000",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "array.n_20000",
+      "request": {
+        "bytes": 489048,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=20000"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/array-20000"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/array-20000",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one array of 19999 distinct integers",
+      "id": "array.n_19999",
+      "request": {
+        "bytes": 489023,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "array n=19999"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one map of 19990 integer subfields",
+      "id": "map.n_19990",
+      "request": {
+        "bytes": 668704,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "map n=19990"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one map of 20010 integer subfields",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/map-20010",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "map.n_20010",
+      "request": {
+        "bytes": 669384,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "map n=20010"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/map-20010"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/map-20010",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one map of 20000 integer subfields",
+      "error": {
+        "http": 400,
+        "message": "too many index entries for entity /aruma-ref-f3-ix/map-20000",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "map.n_20000",
+      "request": {
+        "bytes": 669044,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "map n=20000"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "metadata": {
+                  "docPath": "/aruma-ref-f3-ix/map-20000"
+                },
+                "reason": "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED"
+              }
+            ],
+            "message": "too many index entries for entity /aruma-ref-f3-ix/map-20000",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one map of 19995 integer subfields",
+      "id": "map.n_19995",
+      "request": {
+        "bytes": 668874,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "map n=19995"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one map of 19997 integer subfields",
+      "id": "map.n_19997",
+      "request": {
+        "bytes": 668942,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "map n=19997"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one map of 19998 integer subfields",
+      "id": "map.n_19998",
+      "request": {
+        "bytes": 668976,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "map n=19998"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document with one map of 19999 integer subfields",
+      "id": "map.n_19999",
+      "request": {
+        "bytes": 669010,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "map n=19999"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 4000 bytes below documents/, no field",
+      "id": "entry_no_fields.name_4000",
+      "request": {
+        "bytes": 4100,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<3984 bytes in 5 ids under collections \"c\">: no field"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 6127 bytes below documents/, no field",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_no_fields.name_6127",
+      "request": {
+        "bytes": 6227,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<6111 bytes in 5 ids under collections \"c\">: no field"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 5063 bytes below documents/, no field",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_no_fields.name_5063",
+      "request": {
+        "bytes": 5163,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<5047 bytes in 5 ids under collections \"c\">: no field"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 4531 bytes below documents/, no field",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_no_fields.name_4531",
+      "request": {
+        "bytes": 4631,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<4515 bytes in 5 ids under collections \"c\">: no field"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 4265 bytes below documents/, no field",
+      "id": "entry_no_fields.name_4265",
+      "request": {
+        "bytes": 4365,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<4249 bytes in 5 ids under collections \"c\">: no field"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 4398 bytes below documents/, no field",
+      "id": "entry_no_fields.name_4398",
+      "request": {
+        "bytes": 4498,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<4382 bytes in 5 ids under collections \"c\">: no field"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 4464 bytes below documents/, no field",
+      "id": "entry_no_fields.name_4464",
+      "request": {
+        "bytes": 4564,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<4448 bytes in 5 ids under collections \"c\">: no field"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 4497 bytes below documents/, no field",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_no_fields.name_4497",
+      "request": {
+        "bytes": 4597,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<4481 bytes in 5 ids under collections \"c\">: no field"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 4480 bytes below documents/, no field",
+      "id": "entry_no_fields.name_4480",
+      "request": {
+        "bytes": 4580,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<4464 bytes in 5 ids under collections \"c\">: no field"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 4488 bytes below documents/, no field",
+      "id": "entry_no_fields.name_4488",
+      "request": {
+        "bytes": 4588,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<4472 bytes in 5 ids under collections \"c\">: no field"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 4492 bytes below documents/, no field",
+      "id": "entry_no_fields.name_4492",
+      "request": {
+        "bytes": 4592,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<4476 bytes in 5 ids under collections \"c\">: no field"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 4494 bytes below documents/, no field",
+      "id": "entry_no_fields.name_4494",
+      "request": {
+        "bytes": 4594,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<4478 bytes in 5 ids under collections \"c\">: no field"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 4495 bytes below documents/, no field",
+      "id": "entry_no_fields.name_4495",
+      "request": {
+        "bytes": 4595,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<4479 bytes in 5 ids under collections \"c\">: no field"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 4496 bytes below documents/, no field",
+      "id": "entry_no_fields.name_4496",
+      "request": {
+        "bytes": 4596,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<4480 bytes in 5 ids under collections \"c\">: no field"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 1000 bytes below documents/, one integer field f",
+      "id": "entry_int.name_1000",
+      "request": {
+        "bytes": 1124,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<984 bytes in 5 ids under collections \"c\">: one integer field f"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 6127 bytes below documents/, one integer field f",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_int.name_6127",
+      "request": {
+        "bytes": 6251,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<6111 bytes in 5 ids under collections \"c\">: one integer field f"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 3563 bytes below documents/, one integer field f",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_int.name_3563",
+      "request": {
+        "bytes": 3687,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<3547 bytes in 5 ids under collections \"c\">: one integer field f"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2281 bytes below documents/, one integer field f",
+      "id": "entry_int.name_2281",
+      "request": {
+        "bytes": 2405,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2265 bytes in 5 ids under collections \"c\">: one integer field f"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2922 bytes below documents/, one integer field f",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_int.name_2922",
+      "request": {
+        "bytes": 3046,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2906 bytes in 5 ids under collections \"c\">: one integer field f"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2601 bytes below documents/, one integer field f",
+      "id": "entry_int.name_2601",
+      "request": {
+        "bytes": 2725,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2585 bytes in 5 ids under collections \"c\">: one integer field f"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2761 bytes below documents/, one integer field f",
+      "id": "entry_int.name_2761",
+      "request": {
+        "bytes": 2885,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2745 bytes in 5 ids under collections \"c\">: one integer field f"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2841 bytes below documents/, one integer field f",
+      "id": "entry_int.name_2841",
+      "request": {
+        "bytes": 2965,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2825 bytes in 5 ids under collections \"c\">: one integer field f"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2881 bytes below documents/, one integer field f",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_int.name_2881",
+      "request": {
+        "bytes": 3005,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2865 bytes in 5 ids under collections \"c\">: one integer field f"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2861 bytes below documents/, one integer field f",
+      "id": "entry_int.name_2861",
+      "request": {
+        "bytes": 2985,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2845 bytes in 5 ids under collections \"c\">: one integer field f"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2871 bytes below documents/, one integer field f",
+      "id": "entry_int.name_2871",
+      "request": {
+        "bytes": 2995,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2855 bytes in 5 ids under collections \"c\">: one integer field f"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2876 bytes below documents/, one integer field f",
+      "id": "entry_int.name_2876",
+      "request": {
+        "bytes": 3000,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2860 bytes in 5 ids under collections \"c\">: one integer field f"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2878 bytes below documents/, one integer field f",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_int.name_2878",
+      "request": {
+        "bytes": 3002,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2862 bytes in 5 ids under collections \"c\">: one integer field f"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2877 bytes below documents/, one integer field f",
+      "id": "entry_int.name_2877",
+      "request": {
+        "bytes": 3001,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2861 bytes in 5 ids under collections \"c\">: one integer field f"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2000 bytes below documents/, one string field f of 1500 bytes",
+      "id": "entry_string_1500.name_2000",
+      "request": {
+        "bytes": 3622,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<1984 bytes in 5 ids under collections \"c\">: one string field f of 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 6127 bytes below documents/, one string field f of 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_1500.name_6127",
+      "request": {
+        "bytes": 7749,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<6111 bytes in 5 ids under collections \"c\">: one string field f of 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 4063 bytes below documents/, one string field f of 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_1500.name_4063",
+      "request": {
+        "bytes": 5685,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<4047 bytes in 5 ids under collections \"c\">: one string field f of 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 3031 bytes below documents/, one string field f of 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_1500.name_3031",
+      "request": {
+        "bytes": 4653,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<3015 bytes in 5 ids under collections \"c\">: one string field f of 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2515 bytes below documents/, one string field f of 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_1500.name_2515",
+      "request": {
+        "bytes": 4137,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2499 bytes in 5 ids under collections \"c\">: one string field f of 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2257 bytes below documents/, one string field f of 1500 bytes",
+      "id": "entry_string_1500.name_2257",
+      "request": {
+        "bytes": 3879,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2241 bytes in 5 ids under collections \"c\">: one string field f of 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2386 bytes below documents/, one string field f of 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_1500.name_2386",
+      "request": {
+        "bytes": 4008,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2370 bytes in 5 ids under collections \"c\">: one string field f of 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2321 bytes below documents/, one string field f of 1500 bytes",
+      "id": "entry_string_1500.name_2321",
+      "request": {
+        "bytes": 3943,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2305 bytes in 5 ids under collections \"c\">: one string field f of 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2353 bytes below documents/, one string field f of 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_1500.name_2353",
+      "request": {
+        "bytes": 3975,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2337 bytes in 5 ids under collections \"c\">: one string field f of 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2337 bytes below documents/, one string field f of 1500 bytes",
+      "id": "entry_string_1500.name_2337",
+      "request": {
+        "bytes": 3959,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2321 bytes in 5 ids under collections \"c\">: one string field f of 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2345 bytes below documents/, one string field f of 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_1500.name_2345",
+      "request": {
+        "bytes": 3967,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2329 bytes in 5 ids under collections \"c\">: one string field f of 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2341 bytes below documents/, one string field f of 1500 bytes",
+      "id": "entry_string_1500.name_2341",
+      "request": {
+        "bytes": 3963,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2325 bytes in 5 ids under collections \"c\">: one string field f of 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2343 bytes below documents/, one string field f of 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_1500.name_2343",
+      "request": {
+        "bytes": 3965,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2327 bytes in 5 ids under collections \"c\">: one string field f of 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2342 bytes below documents/, one string field f of 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_1500.name_2342",
+      "request": {
+        "bytes": 3964,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2326 bytes in 5 ids under collections \"c\">: one string field f of 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2000 bytes below documents/, one string field f of 3000 bytes",
+      "id": "entry_string_3000.name_2000",
+      "request": {
+        "bytes": 5122,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<1984 bytes in 5 ids under collections \"c\">: one string field f of 3000 bytes"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 6127 bytes below documents/, one string field f of 3000 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_3000.name_6127",
+      "request": {
+        "bytes": 9249,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<6111 bytes in 5 ids under collections \"c\">: one string field f of 3000 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 4063 bytes below documents/, one string field f of 3000 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_3000.name_4063",
+      "request": {
+        "bytes": 7185,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<4047 bytes in 5 ids under collections \"c\">: one string field f of 3000 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 3031 bytes below documents/, one string field f of 3000 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_3000.name_3031",
+      "request": {
+        "bytes": 6153,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<3015 bytes in 5 ids under collections \"c\">: one string field f of 3000 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2515 bytes below documents/, one string field f of 3000 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_3000.name_2515",
+      "request": {
+        "bytes": 5637,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2499 bytes in 5 ids under collections \"c\">: one string field f of 3000 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2257 bytes below documents/, one string field f of 3000 bytes",
+      "id": "entry_string_3000.name_2257",
+      "request": {
+        "bytes": 5379,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2241 bytes in 5 ids under collections \"c\">: one string field f of 3000 bytes"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2386 bytes below documents/, one string field f of 3000 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_3000.name_2386",
+      "request": {
+        "bytes": 5508,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2370 bytes in 5 ids under collections \"c\">: one string field f of 3000 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2321 bytes below documents/, one string field f of 3000 bytes",
+      "id": "entry_string_3000.name_2321",
+      "request": {
+        "bytes": 5443,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2305 bytes in 5 ids under collections \"c\">: one string field f of 3000 bytes"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2353 bytes below documents/, one string field f of 3000 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_3000.name_2353",
+      "request": {
+        "bytes": 5475,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2337 bytes in 5 ids under collections \"c\">: one string field f of 3000 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2337 bytes below documents/, one string field f of 3000 bytes",
+      "id": "entry_string_3000.name_2337",
+      "request": {
+        "bytes": 5459,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2321 bytes in 5 ids under collections \"c\">: one string field f of 3000 bytes"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2345 bytes below documents/, one string field f of 3000 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_3000.name_2345",
+      "request": {
+        "bytes": 5467,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2329 bytes in 5 ids under collections \"c\">: one string field f of 3000 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2341 bytes below documents/, one string field f of 3000 bytes",
+      "id": "entry_string_3000.name_2341",
+      "request": {
+        "bytes": 5463,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2325 bytes in 5 ids under collections \"c\">: one string field f of 3000 bytes"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2343 bytes below documents/, one string field f of 3000 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_3000.name_2343",
+      "request": {
+        "bytes": 5465,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2327 bytes in 5 ids under collections \"c\">: one string field f of 3000 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2342 bytes below documents/, one string field f of 3000 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_string_3000.name_2342",
+      "request": {
+        "bytes": 5464,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2326 bytes in 5 ids under collections \"c\">: one string field f of 3000 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 1000 bytes below documents/, one integer field whose name is 1500 bytes",
+      "id": "entry_long_field_name.name_1000",
+      "request": {
+        "bytes": 2623,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<984 bytes in 5 ids under collections \"c\">: one integer field whose name is 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 6127 bytes below documents/, one integer field whose name is 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_long_field_name.name_6127",
+      "request": {
+        "bytes": 7750,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<6111 bytes in 5 ids under collections \"c\">: one integer field whose name is 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 3563 bytes below documents/, one integer field whose name is 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_long_field_name.name_3563",
+      "request": {
+        "bytes": 5186,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<3547 bytes in 5 ids under collections \"c\">: one integer field whose name is 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2281 bytes below documents/, one integer field whose name is 1500 bytes",
+      "id": "entry_long_field_name.name_2281",
+      "request": {
+        "bytes": 3904,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2265 bytes in 5 ids under collections \"c\">: one integer field whose name is 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2922 bytes below documents/, one integer field whose name is 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_long_field_name.name_2922",
+      "request": {
+        "bytes": 4545,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2906 bytes in 5 ids under collections \"c\">: one integer field whose name is 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2601 bytes below documents/, one integer field whose name is 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_long_field_name.name_2601",
+      "request": {
+        "bytes": 4224,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2585 bytes in 5 ids under collections \"c\">: one integer field whose name is 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2441 bytes below documents/, one integer field whose name is 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_long_field_name.name_2441",
+      "request": {
+        "bytes": 4064,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2425 bytes in 5 ids under collections \"c\">: one integer field whose name is 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2361 bytes below documents/, one integer field whose name is 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_long_field_name.name_2361",
+      "request": {
+        "bytes": 3984,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2345 bytes in 5 ids under collections \"c\">: one integer field whose name is 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2321 bytes below documents/, one integer field whose name is 1500 bytes",
+      "id": "entry_long_field_name.name_2321",
+      "request": {
+        "bytes": 3944,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2305 bytes in 5 ids under collections \"c\">: one integer field whose name is 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2341 bytes below documents/, one integer field whose name is 1500 bytes",
+      "id": "entry_long_field_name.name_2341",
+      "request": {
+        "bytes": 3964,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2325 bytes in 5 ids under collections \"c\">: one integer field whose name is 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2351 bytes below documents/, one integer field whose name is 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_long_field_name.name_2351",
+      "request": {
+        "bytes": 3974,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2335 bytes in 5 ids under collections \"c\">: one integer field whose name is 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2346 bytes below documents/, one integer field whose name is 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_long_field_name.name_2346",
+      "request": {
+        "bytes": 3969,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2330 bytes in 5 ids under collections \"c\">: one integer field whose name is 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2343 bytes below documents/, one integer field whose name is 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_long_field_name.name_2343",
+      "request": {
+        "bytes": 3966,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2327 bytes in 5 ids under collections \"c\">: one integer field whose name is 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one document named with 2342 bytes below documents/, one integer field whose name is 1500 bytes",
+      "error": {
+        "http": 400,
+        "message": "Index entry is too large.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "entry_long_field_name.name_2342",
+      "request": {
+        "bytes": 3965,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2326 bytes in 5 ids under collections \"c\">: one integer field whose name is 1500 bytes"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "domain": "firestore.googleapis.com",
+                "reason": "INDEX_ENTRY_TOO_LARGE"
+              }
+            ],
+            "message": "Index entry is too large.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 2000 integer fields",
+      "id": "total.n_2000",
+      "request": {
+        "bytes": 67666,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 2000 integer fields"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 20000 integer fields",
+      "error": {
+        "http": 400,
+        "message": "Transaction too big. Decrease transaction size.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "total.n_20000",
+      "request": {
+        "bytes": 671666,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 20000 integer fields"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Transaction too big. Decrease transaction size.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 11000 integer fields",
+      "error": {
+        "http": 400,
+        "message": "Transaction too big. Decrease transaction size.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "total.n_11000",
+      "request": {
+        "bytes": 365666,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 11000 integer fields"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Transaction too big. Decrease transaction size.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 6500 integer fields",
+      "error": {
+        "http": 400,
+        "message": "Transaction too big. Decrease transaction size.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "total.n_6500",
+      "request": {
+        "bytes": 216166,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 6500 integer fields"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Transaction too big. Decrease transaction size.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 4250 integer fields",
+      "id": "total.n_4250",
+      "request": {
+        "bytes": 141916,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 4250 integer fields"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 5375 integer fields",
+      "error": {
+        "http": 400,
+        "message": "Transaction too big. Decrease transaction size.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "total.n_5375",
+      "request": {
+        "bytes": 179041,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 5375 integer fields"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Transaction too big. Decrease transaction size.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 4812 integer fields",
+      "id": "total.n_4812",
+      "request": {
+        "bytes": 160462,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 4812 integer fields"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 5093 integer fields",
+      "id": "total.n_5093",
+      "request": {
+        "bytes": 169735,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 5093 integer fields"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 5234 integer fields",
+      "error": {
+        "http": 400,
+        "message": "Transaction too big. Decrease transaction size.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "total.n_5234",
+      "request": {
+        "bytes": 174388,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 5234 integer fields"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Transaction too big. Decrease transaction size.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 5163 integer fields",
+      "error": {
+        "http": 400,
+        "message": "Transaction too big. Decrease transaction size.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "total.n_5163",
+      "request": {
+        "bytes": 172045,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 5163 integer fields"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Transaction too big. Decrease transaction size.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 5128 integer fields",
+      "id": "total.n_5128",
+      "request": {
+        "bytes": 170890,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 5128 integer fields"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 5145 integer fields",
+      "id": "total.n_5145",
+      "request": {
+        "bytes": 171451,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 5145 integer fields"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 5154 integer fields",
+      "id": "total.n_5154",
+      "request": {
+        "bytes": 171748,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 5154 integer fields"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 5158 integer fields",
+      "error": {
+        "http": 400,
+        "message": "Transaction too big. Decrease transaction size.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "total.n_5158",
+      "request": {
+        "bytes": 171880,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 5158 integer fields"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Transaction too big. Decrease transaction size.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 5156 integer fields",
+      "error": {
+        "http": 400,
+        "message": "Transaction too big. Decrease transaction size.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "total.n_5156",
+      "request": {
+        "bytes": 171814,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 5156 integer fields"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Transaction too big. Decrease transaction size.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a new document named with 2677 bytes below documents/, 5155 integer fields",
+      "id": "total.n_5155",
+      "request": {
+        "bytes": 171781,
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: 5155 integer fields"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "delete, by one commit, the document of the last accepted total.n_* write",
+      "error": {
+        "http": 400,
+        "message": "Transaction too big. Decrease transaction size.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "total.delete",
+      "request": {
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit",
+        "shape": "aruma-ref-f3-ix/<2661 bytes in 5 ids under collections \"c\">: delete"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Transaction too big. Decrease transaction size.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "http": 400
+      },
+      "thenShrunkCommits": 7,
+      "transport": "rest"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f3.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner); security rules do not apply.",
+      "Times, durations, page tokens and transaction ids are replaced by placeholders (normalise in lib.mjs); everything else is as returned.",
+      "The requests are described (shape, byte length), not stored. The documents under aruma-ref-f3-ix were deleted at the cleanup.",
+      "Single-field index entries per value: two (ascending, descending) for a scalar field; for an array one per distinct element (contains) and two for the whole array; for a map two per subfield and two for the whole map (IX §1.1)."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-27T04:15:23.142Z .. 2026-10-27T04:23:59.680Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "ea2aad83c415711da4bfe6d6b7c73cee74f7c367c816a3b67940f1fc389030f1",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1",
+  "summary": [
+    {
+      "kind": "fields",
+      "maxAccepted": 20000,
+      "minRefused": 20001,
+      "tries": [
+        {
+          "accepted": true,
+          "n": 19990
+        },
+        {
+          "accepted": false,
+          "n": 20010
+        },
+        {
+          "accepted": true,
+          "n": 20000
+        },
+        {
+          "accepted": false,
+          "n": 20005
+        },
+        {
+          "accepted": false,
+          "n": 20002
+        },
+        {
+          "accepted": false,
+          "n": 20001
+        }
+      ]
+    },
+    {
+      "kind": "array",
+      "maxAccepted": 19999,
+      "minRefused": 20000,
+      "tries": [
+        {
+          "accepted": true,
+          "n": 19000
+        },
+        {
+          "accepted": false,
+          "n": 39990
+        },
+        {
+          "accepted": false,
+          "n": 29495
+        },
+        {
+          "accepted": false,
+          "n": 24247
+        },
+        {
+          "accepted": false,
+          "n": 21623
+        },
+        {
+          "accepted": false,
+          "n": 20311
+        },
+        {
+          "accepted": true,
+          "n": 19655
+        },
+        {
+          "accepted": true,
+          "n": 19983
+        },
+        {
+          "accepted": false,
+          "n": 20147
+        },
+        {
+          "accepted": false,
+          "n": 20065
+        },
+        {
+          "accepted": false,
+          "n": 20024
+        },
+        {
+          "accepted": false,
+          "n": 20003
+        },
+        {
+          "accepted": true,
+          "n": 19993
+        },
+        {
+          "accepted": true,
+          "n": 19998
+        },
+        {
+          "accepted": false,
+          "n": 20000
+        },
+        {
+          "accepted": true,
+          "n": 19999
+        }
+      ]
+    },
+    {
+      "kind": "map",
+      "maxAccepted": 19999,
+      "minRefused": 20000,
+      "tries": [
+        {
+          "accepted": true,
+          "n": 19990
+        },
+        {
+          "accepted": false,
+          "n": 20010
+        },
+        {
+          "accepted": false,
+          "n": 20000
+        },
+        {
+          "accepted": true,
+          "n": 19995
+        },
+        {
+          "accepted": true,
+          "n": 19997
+        },
+        {
+          "accepted": true,
+          "n": 19998
+        },
+        {
+          "accepted": true,
+          "n": 19999
+        }
+      ]
+    },
+    {
+      "kind": "entry_no_fields",
+      "maxAccepted": 4496,
+      "minRefused": 4497,
+      "tries": [
+        {
+          "accepted": true,
+          "n": 4000
+        },
+        {
+          "accepted": false,
+          "n": 6127
+        },
+        {
+          "accepted": false,
+          "n": 5063
+        },
+        {
+          "accepted": false,
+          "n": 4531
+        },
+        {
+          "accepted": true,
+          "n": 4265
+        },
+        {
+          "accepted": true,
+          "n": 4398
+        },
+        {
+          "accepted": true,
+          "n": 4464
+        },
+        {
+          "accepted": false,
+          "n": 4497
+        },
+        {
+          "accepted": true,
+          "n": 4480
+        },
+        {
+          "accepted": true,
+          "n": 4488
+        },
+        {
+          "accepted": true,
+          "n": 4492
+        },
+        {
+          "accepted": true,
+          "n": 4494
+        },
+        {
+          "accepted": true,
+          "n": 4495
+        },
+        {
+          "accepted": true,
+          "n": 4496
+        }
+      ]
+    },
+    {
+      "kind": "entry_int",
+      "maxAccepted": 2877,
+      "minRefused": 2878,
+      "tries": [
+        {
+          "accepted": true,
+          "n": 1000
+        },
+        {
+          "accepted": false,
+          "n": 6127
+        },
+        {
+          "accepted": false,
+          "n": 3563
+        },
+        {
+          "accepted": true,
+          "n": 2281
+        },
+        {
+          "accepted": false,
+          "n": 2922
+        },
+        {
+          "accepted": true,
+          "n": 2601
+        },
+        {
+          "accepted": true,
+          "n": 2761
+        },
+        {
+          "accepted": true,
+          "n": 2841
+        },
+        {
+          "accepted": false,
+          "n": 2881
+        },
+        {
+          "accepted": true,
+          "n": 2861
+        },
+        {
+          "accepted": true,
+          "n": 2871
+        },
+        {
+          "accepted": true,
+          "n": 2876
+        },
+        {
+          "accepted": false,
+          "n": 2878
+        },
+        {
+          "accepted": true,
+          "n": 2877
+        }
+      ]
+    },
+    {
+      "kind": "entry_string_1500",
+      "maxAccepted": 2341,
+      "minRefused": 2342,
+      "tries": [
+        {
+          "accepted": true,
+          "n": 2000
+        },
+        {
+          "accepted": false,
+          "n": 6127
+        },
+        {
+          "accepted": false,
+          "n": 4063
+        },
+        {
+          "accepted": false,
+          "n": 3031
+        },
+        {
+          "accepted": false,
+          "n": 2515
+        },
+        {
+          "accepted": true,
+          "n": 2257
+        },
+        {
+          "accepted": false,
+          "n": 2386
+        },
+        {
+          "accepted": true,
+          "n": 2321
+        },
+        {
+          "accepted": false,
+          "n": 2353
+        },
+        {
+          "accepted": true,
+          "n": 2337
+        },
+        {
+          "accepted": false,
+          "n": 2345
+        },
+        {
+          "accepted": true,
+          "n": 2341
+        },
+        {
+          "accepted": false,
+          "n": 2343
+        },
+        {
+          "accepted": false,
+          "n": 2342
+        }
+      ]
+    },
+    {
+      "kind": "entry_string_3000",
+      "maxAccepted": 2341,
+      "minRefused": 2342,
+      "tries": [
+        {
+          "accepted": true,
+          "n": 2000
+        },
+        {
+          "accepted": false,
+          "n": 6127
+        },
+        {
+          "accepted": false,
+          "n": 4063
+        },
+        {
+          "accepted": false,
+          "n": 3031
+        },
+        {
+          "accepted": false,
+          "n": 2515
+        },
+        {
+          "accepted": true,
+          "n": 2257
+        },
+        {
+          "accepted": false,
+          "n": 2386
+        },
+        {
+          "accepted": true,
+          "n": 2321
+        },
+        {
+          "accepted": false,
+          "n": 2353
+        },
+        {
+          "accepted": true,
+          "n": 2337
+        },
+        {
+          "accepted": false,
+          "n": 2345
+        },
+        {
+          "accepted": true,
+          "n": 2341
+        },
+        {
+          "accepted": false,
+          "n": 2343
+        },
+        {
+          "accepted": false,
+          "n": 2342
+        }
+      ]
+    },
+    {
+      "kind": "entry_long_field_name",
+      "maxAccepted": 2341,
+      "minRefused": 2342,
+      "tries": [
+        {
+          "accepted": true,
+          "n": 1000
+        },
+        {
+          "accepted": false,
+          "n": 6127
+        },
+        {
+          "accepted": false,
+          "n": 3563
+        },
+        {
+          "accepted": true,
+          "n": 2281
+        },
+        {
+          "accepted": false,
+          "n": 2922
+        },
+        {
+          "accepted": false,
+          "n": 2601
+        },
+        {
+          "accepted": false,
+          "n": 2441
+        },
+        {
+          "accepted": false,
+          "n": 2361
+        },
+        {
+          "accepted": true,
+          "n": 2321
+        },
+        {
+          "accepted": true,
+          "n": 2341
+        },
+        {
+          "accepted": false,
+          "n": 2351
+        },
+        {
+          "accepted": false,
+          "n": 2346
+        },
+        {
+          "accepted": false,
+          "n": 2343
+        },
+        {
+          "accepted": false,
+          "n": 2342
+        }
+      ]
+    },
+    {
+      "kind": "total",
+      "maxAccepted": 5155,
+      "minRefused": 5156,
+      "nameBytes": 2677,
+      "tries": [
+        {
+          "accepted": true,
+          "n": 2000
+        },
+        {
+          "accepted": false,
+          "n": 20000
+        },
+        {
+          "accepted": false,
+          "n": 11000
+        },
+        {
+          "accepted": false,
+          "n": 6500
+        },
+        {
+          "accepted": true,
+          "n": 4250
+        },
+        {
+          "accepted": false,
+          "n": 5375
+        },
+        {
+          "accepted": true,
+          "n": 4812
+        },
+        {
+          "accepted": true,
+          "n": 5093
+        },
+        {
+          "accepted": false,
+          "n": 5234
+        },
+        {
+          "accepted": false,
+          "n": 5163
+        },
+        {
+          "accepted": true,
+          "n": 5128
+        },
+        {
+          "accepted": true,
+          "n": 5145
+        },
+        {
+          "accepted": true,
+          "n": 5154
+        },
+        {
+          "accepted": false,
+          "n": 5158
+        },
+        {
+          "accepted": false,
+          "n": 5156
+        },
+        {
+          "accepted": true,
+          "n": 5155
+        }
+      ]
+    }
+  ]
+}

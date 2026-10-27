@@ -12,6 +12,7 @@ import (
 	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/platform/httpx"
 	"github.com/arumadev/aruma/internal/services/documents/core"
+	"github.com/arumadev/aruma/internal/services/documents/index"
 	"github.com/arumadev/aruma/internal/services/documents/wire"
 )
 
@@ -32,7 +33,13 @@ type Options struct {
 	// DevOpenRules is documents.dev_open_rules: callers that are not admins reach the data from
 	// a loopback peer. Config accepts it only on a loopback deployment (ADR-025 §8).
 	DevOpenRules bool
-	Logger       *slog.Logger
+	// IndexEnforcement is documents.index_enforcement, the composite-index enforcement of every
+	// database that sets none of its own (ADR-025 §4.4); the zero value is index.Enforce.
+	IndexEnforcement index.Mode
+	// ReferenceOnly serves every query on the reference path, never from an index: the
+	// arbiter the planner's differential tests compare it with (ADR-025 §1).
+	ReferenceOnly bool
+	Logger        *slog.Logger
 }
 
 // Service serves the Document Database's methods for every transport. It is safe for
@@ -40,6 +47,13 @@ type Options struct {
 type Service struct {
 	o   Options
 	log *slog.Logger
+
+	// Tests' hooks into the index paths (export_test.go): indexBatch, when set, is the results
+	// of every batch; afterBatch runs after a batch is sent, before the next snapshot begins;
+	// observePeak is told the most bytes of documents a query held.
+	indexBatch  int
+	afterBatch  func()
+	observePeak func(int)
 }
 
 // New returns the service.
@@ -72,9 +86,23 @@ type admitted struct {
 // the rules' default. primary is the name the request's database comes from; empty, the
 // resource prefix stands for it.
 func (s *Service) admit(ctx context.Context, c Call, req proto.Message, primary func() (wire.Database, error)) (admitted, error) {
+	return s.admitAs(ctx, c, req, primary, false)
+}
+
+// admitAs is admit; with adminOnly, the Admin API's: the caller must be an admin, whatever
+// documents.dev_open_rules says, and is refused before its names are looked at
+// (wire.ErrAdminUnauthenticated without a credential, wire.ErrAdminPermissionDenied for an end
+// user).
+func (s *Service) admitAs(ctx context.Context, c Call, req proto.Message, primary func() (wire.Database, error), adminOnly bool) (admitted, error) {
 	caller, err := s.o.Auth.Resolve(ctx, c.Authorization, c.Transport)
 	if err != nil {
 		return admitted{}, s.fail(ctx, err)
+	}
+	if adminOnly && caller.Role != authn.RoleAdmin {
+		if caller.Role == authn.RoleAnonymous {
+			return admitted{}, wire.ErrAdminUnauthenticated
+		}
+		return admitted{}, wire.ErrAdminPermissionDenied
 	}
 	first, err := primary()
 	if err != nil {
@@ -157,6 +185,14 @@ func (s *Service) fail(ctx context.Context, err error) error {
 	}
 	if nf, ok := errors.AsType[*core.DatabaseNotFoundError](err); ok {
 		return wire.MissingDatabase(wire.Database{Project: nf.ProjectID, ID: nf.DatabaseID})
+	}
+	// The core errors production answers with details (f0-errors.json name_bytes_6127,
+	// f3-index-entries.json fields.n_20001).
+	if errors.Is(err, core.ErrIndexEntryTooLarge) {
+		return wire.IndexEntryTooLarge()
+	}
+	if te, ok := errors.AsType[*core.TooManyIndexEntriesError](err); ok {
+		return wire.TooManyIndexEntries(te.DocPath())
 	}
 	if ce, ok := errors.AsType[*core.Error](err); ok {
 		return wire.NewError(wire.Code(ce.Code), ce.Message)

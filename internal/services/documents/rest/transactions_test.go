@@ -306,12 +306,16 @@ func send(base, method, path, body, token string) (int, []byte, error) {
 	return resp.StatusCode, b, err
 }
 
+// transactionGapsF2 are the cases of f2-transactions.json this server does not answer as
+// production, each with its reason. A listed case answered as production fails the test.
+var transactionGapsF2 = map[string]string{}
+
 // TestTransactionsReplayF2 replays the REST cases of f2-transactions.json in their order, on the
 // file's setup: Begin's options and read times, retry_transaction, reads and commits in a
 // transaction, read-only commits, Rollback, unknown, forged and empty ids. A transaction a case
 // began stands for the recording's placeholder of it in later requests; the read times the
-// recorder replaced are rebuilt from its descriptions. The queries are F3's and not sent, nor
-// the cases that use their transactions.
+// recorder replaced are rebuilt from its descriptions. The queries run in their transactions and
+// begin them (new_transaction), as production's did.
 func TestTransactionsReplayF2(t *testing.T) {
 	h := newHarness(t, apitest.Options{})
 	tok := h.env.JWT(t)
@@ -348,7 +352,7 @@ func TestTransactionsReplayF2(t *testing.T) {
 	ids := map[string]string{} // placeholder: our id, base64
 	compared := 0
 	for _, c := range f.Cases {
-		if c.Transport != "rest" || slices.ContainsFunc(unserved, func(v string) bool { return strings.Contains(c.Request.Path, v) }) {
+		if c.Transport != "rest" {
 			continue
 		}
 		path, body := c.Request.Path, string(c.Request.Body)
@@ -378,12 +382,19 @@ func TestTransactionsReplayF2(t *testing.T) {
 			ids[placeholder] = transactionOf(got)
 		}
 		compared++
-		if code != c.Response.HTTP || !sameJSON(t, normalise(t, got), normalise(t, c.Response.Body)) {
+		ok := code == c.Response.HTTP && sameJSON(t, normalise(t, got), normalise(t, c.Response.Body))
+		if reason, known := transactionGapsF2[c.ID]; known {
+			if ok {
+				t.Errorf("%s: answered as production, but listed as a gap (%s)", c.ID, reason)
+			}
+			continue
+		}
+		if !ok {
 			t.Errorf("%s: %s %s %s\n got %d %s\nwant %d %s", c.ID, c.Request.Method, path, body, code, got, c.Response.HTTP, c.Response.Body)
 		}
 	}
 	t.Logf("compared %d cases", compared)
-	if compared < 55 {
+	if compared < 70 {
 		t.Errorf("compared %d cases", compared)
 	}
 }

@@ -431,14 +431,19 @@ func TestCallers(t *testing.T) {
 func TestUnimplemented(t *testing.T) {
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
-	_, err := x.client.PartitionQuery(ctx, req(&pb.PartitionQueryRequest{Parent: root}, tok))
+	st, err := x.client.ExecutePipeline(ctx, req(&pb.ExecutePipelineRequest{Database: db}, tok))
+	if err == nil {
+		for st.Receive() {
+		}
+		err = st.Err()
+	}
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
-		t.Errorf("PartitionQuery: %v", err)
+		t.Errorf("ExecutePipeline: %v", err)
 	}
 	admin := adminpbconnect.NewFirestoreAdminClient(h2c(0), x.url, connect.WithGRPC())
-	_, err = admin.GetDatabase(ctx, req(&adminpb.GetDatabaseRequest{Name: db}, tok))
+	_, err = admin.ExportDocuments(ctx, req(&adminpb.ExportDocumentsRequest{Name: db}, tok))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
-		t.Errorf("FirestoreAdmin.GetDatabase: %v", err)
+		t.Errorf("FirestoreAdmin.ExportDocuments: %v", err)
 	}
 	for _, path := range []string{"/google.firestore.v1.Firestore/NoSuchMethod", "/no.such.Service/Method"} {
 		resp := rawCall(t, x.url, path, nil, 0)

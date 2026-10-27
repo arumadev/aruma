@@ -161,7 +161,7 @@ func Defaults() Config {
 			ReadRows:                    1_000_000,
 		}},
 		Rules: Rules{Limits: RulesLimits(rules.DefaultLimits())},
-		Documents: Documents{Limits: DocumentsLimits{
+		Documents: Documents{IndexEnforcement: "enforce", Limits: DocumentsLimits{
 			MessageBytes:        17 << 20,
 			StreamFirstMessage:  10 * time.Second,
 			StreamWriteStall:    30 * time.Second,
@@ -175,6 +175,8 @@ func Defaults() Config {
 			MaxOpenTxnsPerUser:  100,
 			MaxEndedTxns:        100_000,
 			MaxLocksPerTxn:      10_000,
+			CompositeIndexes:    1000,
+			FieldOverrides:      1000,
 		}},
 		Storage: Storage{
 			GCGrace: time.Minute,
@@ -222,6 +224,11 @@ type Documents struct {
 	// listen are loopback addresses, and it applies only to connections whose peer is a
 	// loopback address (ADR-029 §6). Off, owner is refused as on every other surface.
 	DevOwnerToken bool `yaml:"dev_owner_token"`
+	// IndexEnforcement is how queries meet production's composite-index rule (ADR-025 §4.4):
+	// enforce (the default) refuses a query production refuses, with its error and console
+	// link; warn serves it and logs the index it needs; off serves every query, as the
+	// emulator does. A database's own setting overrides it.
+	IndexEnforcement string `yaml:"index_enforcement"`
 	// Limits bound what the Document Database's transports accept and hold.
 	Limits DocumentsLimits `yaml:"limits"`
 }
@@ -266,6 +273,11 @@ type DocumentsLimits struct {
 	MaxEndedTxns int `yaml:"max_ended_txns"`
 	// MaxLocksPerTxn bounds the documents and listings one transaction locks or, optimistic, reads.
 	MaxLocksPerTxn int `yaml:"max_locks_per_txn"`
+	// CompositeIndexes bounds a database's composite indexes (ADR-025 §3), production's number
+	// with billing; over it, CreateIndex is RESOURCE_EXHAUSTED.
+	CompositeIndexes int `yaml:"composite_indexes"`
+	// FieldOverrides bounds a database's field overrides, its default's aside (ADR-025 §2).
+	FieldOverrides int `yaml:"field_overrides"`
 }
 
 // Storage holds the Cloud Storage for Firebase settings (ADR-022).
@@ -526,6 +538,7 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	boolean("ARUMA_DOCUMENTS_ENABLED", &c.Documents.Enabled)
 	boolean("ARUMA_DOCUMENTS_DEV_OPEN_RULES", &c.Documents.DevOpenRules)
 	boolean("ARUMA_DOCUMENTS_DEV_OWNER_TOKEN", &c.Documents.DevOwnerToken)
+	str("ARUMA_DOCUMENTS_INDEX_ENFORCEMENT", &c.Documents.IndexEnforcement)
 	dl := &c.Documents.Limits
 	integer("ARUMA_DOCUMENTS_MESSAGE_BYTES", &dl.MessageBytes)
 	duration("ARUMA_DOCUMENTS_STREAM_FIRST_MESSAGE", &dl.StreamFirstMessage)
@@ -540,6 +553,8 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	count("ARUMA_DOCUMENTS_MAX_OPEN_TXNS_PER_USER", &dl.MaxOpenTxnsPerUser)
 	count("ARUMA_DOCUMENTS_MAX_ENDED_TXNS", &dl.MaxEndedTxns)
 	count("ARUMA_DOCUMENTS_MAX_LOCKS_PER_TXN", &dl.MaxLocksPerTxn)
+	count("ARUMA_DOCUMENTS_COMPOSITE_INDEXES", &dl.CompositeIndexes)
+	count("ARUMA_DOCUMENTS_FIELD_OVERRIDES", &dl.FieldOverrides)
 	boolean("ARUMA_STORAGE_ENABLED", &c.Storage.Enabled)
 	str("ARUMA_STORAGE_DATA_DIR", &c.Storage.DataDir)
 	duration("ARUMA_STORAGE_GC_GRACE", &c.Storage.GCGrace)
@@ -714,6 +729,11 @@ func (c *Config) validateDocuments() []error {
 	if d.DevOpenRules && !c.LoopbackDeployment() {
 		errs = append(errs, errors.New("documents.dev_open_rules lets anyone read and write every database; it is accepted only when public_url and listen are loopback addresses"))
 	}
+	switch d.IndexEnforcement {
+	case "enforce", "warn", "off":
+	default:
+		errs = append(errs, fmt.Errorf("documents.index_enforcement must be enforce, warn or off, not %q", d.IndexEnforcement))
+	}
 	l := d.Limits
 	if l.MessageBytes < 1<<20 {
 		errs = append(errs, errors.New("documents.limits.message_bytes must be at least 1 MiB"))
@@ -734,6 +754,8 @@ func (c *Config) validateDocuments() []error {
 		{"max_open_txns_per_user", int64(l.MaxOpenTxnsPerUser)},
 		{"max_ended_txns", int64(l.MaxEndedTxns)},
 		{"max_locks_per_txn", int64(l.MaxLocksPerTxn)},
+		{"composite_indexes", int64(l.CompositeIndexes)},
+		{"field_overrides", int64(l.FieldOverrides)},
 	} {
 		if f.v < 1 {
 			errs = append(errs, fmt.Errorf("documents.limits.%s must be positive", f.name))

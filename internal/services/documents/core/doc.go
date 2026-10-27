@@ -24,7 +24,14 @@
 //     Rollback, and the reads in a transaction; txn_pessimistic.go, txn_optimistic.go and
 //     txn_readonly.go the three models; txn_expiry.go the lifetime and the sweep.
 //   - principal.go: who calls, which chooses a read-write transaction's model.
+//   - indexes.go: the index key layout, single-field index ids, the per-database catalog cache
+//     (IndexCatalog), and the planner's read of an index (ScanIndex).
+//   - indexentries.go: a document's index entries (automatic, overridden, composite), the
+//     commit's diff of them, and production's per-document limits.
+//   - indexadmin.go: the Admin API's indexes, fields and operations.
+//   - indexbuild.go: the build job: composites filled and purged, field updates applied
+//     (ADR-024 §2.5).
+//   - indexcheck.go: CheckIndexEntries, the consistency check of stored entries.
 //
-// Not yet here, by phase: transforms, index entries and queries (F2); the hub and Listen (F3);
-// usage counters, retention and purge.
+// Not yet here, by phase: queries, the hub and Listen; usage counters.
 package core

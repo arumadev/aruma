@@ -51,6 +51,22 @@ func MissingDatabaseAdmin(db Database) *Error {
 	return NewError(CodeNotFound, "Project '"+db.Project+"' or database '"+db.ID+"' does not exist.")
 }
 
+// InvalidResourceName is INVALID_ARGUMENT for an Admin API or header name that does not parse
+// (provisional text).
+func InvalidResourceName(name string) *Error {
+	return InvalidArgument(`Invalid resource name "` + name + `".`)
+}
+
+// The Admin API is an admin's (ADR-029 §2, ADR-025 §4.5): a request without a credential is
+// UNAUTHENTICATED and an end user's PERMISSION_DENIED, in Google's front end's texts for a
+// management API (provisional: f3-admin.json records an owner's answers only).
+var (
+	ErrAdminUnauthenticated = NewError(CodeUnauthenticated, "Request is missing required authentication credential. "+
+		"Expected OAuth 2 access token, login cookie or other valid authentication credential. "+
+		"See https://developers.google.com/identity/sign-in/web/devconsole-project.")
+	ErrAdminPermissionDenied = NewError(CodePermissionDenied, "The caller does not have permission")
+)
+
 // DocumentNotFound is NOT_FOUND for a GetDocument of a document that does not exist
 // (f0-list-show-missing.json: `Document "projects/…/m" not found.`).
 func DocumentNotFound(name string) *Error {
@@ -82,6 +98,18 @@ func IndexEntryTooLarge() *Error {
 	return InvalidArgument("Index entry is too large.").withDetails(&errdetails.ErrorInfo{
 		Reason: "INDEX_ENTRY_TOO_LARGE",
 		Domain: "firestore.googleapis.com",
+	})
+}
+
+// TooManyIndexEntries is INVALID_ARGUMENT "too many index entries for entity <docPath>" with the
+// google.rpc.ErrorInfo production attaches, docPath in its metadata (f3-index-entries.json
+// fields.n_20001: "/aruma-ref-f3-ix/fields-20001"; recorded on REST, the same details assumed
+// on gRPC).
+func TooManyIndexEntries(docPath string) *Error {
+	return InvalidArgument("too many index entries for entity " + docPath).withDetails(&errdetails.ErrorInfo{
+		Reason:   "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED",
+		Domain:   "firestore.googleapis.com",
+		Metadata: map[string]string{"docPath": docPath},
 	})
 }
 
@@ -127,3 +155,7 @@ func (e *Error) withDetails(details ...proto.Message) *Error {
 	e.Details = append(e.Details, details...)
 	return e
 }
+
+// WithDetails adds google.rpc.Status details (errdetails messages) to e, sent on both surfaces,
+// and returns it.
+func (e *Error) WithDetails(details ...proto.Message) *Error { return e.withDetails(details...) }

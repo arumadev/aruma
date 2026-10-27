@@ -18,6 +18,8 @@ import (
 	docapi "github.com/arumadev/aruma/internal/services/documents/api"
 	documents "github.com/arumadev/aruma/internal/services/documents/core"
 	docgrpc "github.com/arumadev/aruma/internal/services/documents/grpc"
+	"github.com/arumadev/aruma/internal/services/documents/index"
+	"github.com/arumadev/aruma/internal/services/documents/query"
 	docrest "github.com/arumadev/aruma/internal/services/documents/rest"
 	"github.com/arumadev/aruma/internal/tenancy/core"
 )
@@ -39,7 +41,8 @@ type Documents struct {
 	log   *slog.Logger
 
 	instance *documents.Instance
-	// stopJobs ends the jobs Boot started (the retention, the transactions' sweep), and jobsDone
+	// stopJobs ends the jobs Boot started (the retention, the index builds, the transactions'
+	// sweep), and jobsDone
 	// closes when they have.
 	stopJobs context.CancelFunc
 	jobsDone chan struct{}
@@ -68,13 +71,17 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 		Logger:             logger,
 	})
 	store := &bootStore{}
+	// Config has checked the setting: a value ParseMode refuses never reaches here.
+	enforcement, _ := index.ParseMode(cfg.Documents.IndexEnforcement)
 	api := docapi.New(docapi.Options{
-		Store: store, Auth: resolver, Projects: svc, DevOpenRules: cfg.Documents.DevOpenRules, Logger: logger,
+		Store: store, Auth: resolver, Projects: svc, DevOpenRules: cfg.Documents.DevOpenRules,
+		IndexEnforcement: enforcement, Logger: logger,
 	})
 	l := cfg.Documents.Limits
 	rpcMetrics := docgrpc.NewMetrics()
 	m.Registry.MustRegister(rpcMetrics.Collectors()...)
 	m.Registry.MustRegister(docgrpc.TransactionCollectors(store.transactionStats)...)
+	m.Registry.MustRegister(query.Collectors()...)
 	return &Documents{
 		GRPC: docgrpc.New(docgrpc.Options{
 			Service:        api,
@@ -107,8 +114,9 @@ func (d *Documents) mount(h *server.Handlers) {
 }
 
 // Boot takes the single-instance lock, trying for up to 30 seconds (ADR-024 §7), opens the
-// store, starts the retention of versions and the changelog (ADR-024 §8), which runs while the
-// lock is held, and the transactions' sweep (ADR-024 §6.3), and gives every project its
+// store, starts the retention of versions and the changelog (ADR-024 §8) and the index build job
+// (ADR-024 §2.5), which run while the lock is held, and the transactions' sweep (ADR-024 §6.3),
+// and gives every project its
 // '(default)' database. Losing the lock drops every open transaction, before o.OnLost runs.
 // Without the lock the rest of Aruma serves and the Document Database answers UNAVAILABLE until
 // the guard takes it. It runs before the listener opens; Close stops what it started.
@@ -126,6 +134,7 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	d.instance = documents.StartInstance(ctx, d.pool.Config().ConnConfig, o)
 	store := documents.NewPGStore(d.pool, documents.Options{
 		CommitConcurrency: d.cfg.CommitConcurrency, Instance: d.instance, Transactions: d.txns,
+		IndexLimits: documents.IndexLimits{Composites: d.cfg.CompositeIndexes, FieldOverrides: d.cfg.FieldOverrides},
 	})
 	d.store.set(store)
 	var jctx context.Context
@@ -134,6 +143,7 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	var jobs sync.WaitGroup
 	jobs.Go(func() { store.RunRetention(jctx, documents.RetentionOptions{Log: d.log}) })
 	jobs.Go(func() { store.RunTransactions(jctx) })
+	jobs.Go(func() { store.RunIndexBuilds(jctx, documents.IndexBuildOptions{Log: d.log}) })
 	go func() {
 		jobs.Wait()
 		close(d.jobsDone)
@@ -285,4 +295,28 @@ func (b *bootStore) Rollback(ctx context.Context, db documents.DB, t documents.T
 		return err
 	}
 	return s.Rollback(ctx, db, t)
+}
+
+func (b *bootStore) Scan(ctx context.Context, db documents.DB, r documents.ScanRequest) (documents.ListResult, error) {
+	s, err := b.get()
+	if err != nil {
+		return documents.ListResult{}, err
+	}
+	return s.Scan(ctx, db, r)
+}
+
+func (b *bootStore) IndexCatalog(ctx context.Context, db documents.DB) (*index.Catalog, error) {
+	s, err := b.get()
+	if err != nil {
+		return nil, err
+	}
+	return s.IndexCatalog(ctx, db)
+}
+
+func (b *bootStore) BeginIndexRead(ctx context.Context, db documents.DB) (*documents.IndexRead, error) {
+	s, err := b.get()
+	if err != nil {
+		return nil, err
+	}
+	return s.BeginIndexRead(ctx, db)
 }

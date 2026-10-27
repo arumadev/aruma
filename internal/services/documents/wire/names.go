@@ -290,6 +290,10 @@ func nameSize(path []string) int {
 	return n
 }
 
+// ValidDatabaseID reports whether id is a database id production accepts: '(default)', or 4 to
+// 63 lower-case letters, digits and hyphens, from a letter to a letter or digit.
+func ValidDatabaseID(id string) bool { return validDatabaseID(id) }
+
 // validDatabaseID reports whether id is a database id production accepts in a reference value.
 func validDatabaseID(id string) bool {
 	if id == DefaultDatabase {

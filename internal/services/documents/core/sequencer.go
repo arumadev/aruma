@@ -3,7 +3,12 @@ package core
 import (
 	"context"
 	"errors"
+	"iter"
+	"log/slog"
+	"maps"
+	"slices"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -21,12 +26,15 @@ import (
 //  3. the first batch: BEGIN READ COMMITTED, the transaction's timeouts, the written documents'
 //     rows FOR UPDATE in name-key order, and the catalog version and last commit_time;
 //  4. in Go: a transaction's documents as it read them (plan.verify), the preconditions and the
-//     documents after the writes (plan.apply);
-//  5. the second batch, one round trip: (F3) the index entries, then the stamp, which takes the
-//     sequencer row, the documents and changelog (WriteCommit), then COMMIT. A commit with a
-//     REQUEST_TIME transform sends the stamp alone, builds its documents with the commit_time
-//     it returned (plan.apply again), then sends the rest; one that changes nothing takes no
-//     stamp, only a commit_time from the clock (sequencer.unchanged);
+//     documents after the writes (plan.apply), and the index entries they delete and insert
+//     under the database's catalog (plan.indexArgs), which the commit read before the first
+//     batch (catalogs, cached);
+//  5. the second batch, one round trip: the index entries, then the stamp, which takes the
+//     sequencer row and fails unless the catalog is still the commit's, the documents and
+//     changelog (WriteCommit), then COMMIT. A commit with a REQUEST_TIME transform sends the
+//     stamp alone, builds its documents and their entries with the commit_time it returned
+//     (plan.apply again), then sends the rest; one that changes nothing takes no stamp, only a
+//     commit_time from the clock (sequencer.unchanged);
 //  6. after COMMIT returned, and only then, the hub is told (Notifier.Committed).
 //
 // The sequencer row is held from the stamp to the end of COMMIT, so a database's commits become
@@ -69,16 +77,20 @@ type sequencer struct {
 	pool   *pgxpool.Pool
 	size   int
 	notify Notifier
+	cats   *catalogs
 
 	mu    sync.Mutex
 	gates map[dbKey]chan struct{}
 
 	// afterStamp, set by tests, runs between a REQUEST_TIME commit's stamp and its second batch.
 	afterStamp func()
+	// largeCommits counts the commits accepted whose entry changes, summed, pass
+	// maxTransactionSize (PGStore.LargeCommits).
+	largeCommits atomic.Int64
 }
 
-func newSequencer(pool *pgxpool.Pool, size int, notify Notifier) *sequencer {
-	return &sequencer{pool: pool, size: max(size, 1), notify: notify, gates: map[dbKey]chan struct{}{}}
+func newSequencer(pool *pgxpool.Pool, size int, notify Notifier, cats *catalogs) *sequencer {
+	return &sequencer{pool: pool, size: max(size, 1), notify: notify, cats: cats, gates: map[dbKey]chan struct{}{}}
 }
 
 func (s *sequencer) gate(db DB) chan struct{} {
@@ -108,6 +120,8 @@ func (s *sequencer) commit(ctx context.Context, db DB, p *plan) (CommitResult, e
 		if !errors.Is(err, errRetry) {
 			return res, err
 		}
+		// The catalog may be what changed: read it again.
+		s.cats.drop(db)
 		if attempt == commitAttempts {
 			return CommitResult{}, ErrContention
 		}
@@ -127,9 +141,15 @@ type stampInput struct {
 	deleteSeqs                                                  []int64
 	replaced                                                    [][]byte
 	logKeys, logNames, logBefores, logAfters, logMasks          [][]byte
+	index                                                       indexChanges
 }
 
 func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, error) {
+	// The catalog the commit's index entries are computed with; the stamp checks it is current.
+	cat, err := s.cats.get(ctx, db)
+	if err != nil {
+		return CommitResult{}, err
+	}
 	g := s.gate(db)
 	select {
 	case g <- struct{}{}:
@@ -160,13 +180,9 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 	})
 	b.Queue(lockSQL, lockArgs...).Query(func(rows pgx.Rows) error {
 		for rows.Next() {
-			var key, doc []byte
+			var key []byte
 			d := &lockedDoc{}
-			if err := rows.Scan(&key, &d.seq, &doc, &d.createTime, &d.updateTime); err != nil {
-				return err
-			}
-			var err error
-			if d.fields, _, _, err = decodeDocument(doc); err != nil {
+			if err := rows.Scan(&key, &d.seq, &d.stored, &d.createTime, &d.updateTime); err != nil {
 				return err
 			}
 			locked[string(key)] = d
@@ -194,6 +210,15 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 		rollback(conn)
 		return CommitResult{}, errNoDatabase
 	}
+	if !cat.found || catalog.CatalogVersion != cat.version {
+		rollback(conn)
+		return CommitResult{}, errRetry
+	}
+	// The documents are decoded once read, in parallel (plan.indexArgs).
+	if err := decodeLocked(locked); err != nil {
+		rollback(conn)
+		return CommitResult{}, err
+	}
 
 	if p.verify != nil {
 		if err := p.verify(locked); err != nil {
@@ -216,7 +241,36 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 	if len(in.logKeys) == 0 {
 		return s.unchanged(ctx, conn, db, p, locked)
 	}
-	return s.stamp(ctx, conn, db, p, locked, catalog.CatalogVersion, &in)
+	// A REQUEST_TIME commit's entries are known once it is stamped; its limits are checked
+	// here, since the time it holds changes no entry's size nor number.
+	if in.index, err = p.indexArgs(cat); err != nil {
+		rollback(conn)
+		return CommitResult{}, err
+	}
+	res, err := s.stamp(ctx, conn, db, p, locked, cat, &in)
+	if err == nil && in.index.size > maxTransactionSize {
+		// Production refuses one document's changes past the bound; whether it refuses a
+		// commit's sum is not recorded (indexentries.go), so this one is accepted and counted.
+		s.largeCommits.Add(1)
+		slog.Warn("documents: a commit's index entry changes pass the bound production holds one document to",
+			"project", db.Project, "database", db.ID, "documents", len(p.docs), "size", in.index.size, "bound", maxTransactionSize)
+	}
+	return res, err
+}
+
+// decodeLocked decodes the fields of the documents the first batch locked.
+func decodeLocked(locked map[string]*lockedDoc) error {
+	docs := slices.Collect(maps.Values(locked))
+	errs := make([]error, len(docs))
+	parallel(len(docs), func(i int) {
+		docs[i].fields, _, _, errs[i] = decodeDocument(docs[i].stored)
+	})
+	for _, err := range errs {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // unchanged ends a commit that changes nothing: no seq, and a commit_time from the clock
@@ -247,13 +301,17 @@ func (s *sequencer) unchanged(ctx context.Context, conn *pgx.Conn, db DB, p *pla
 // documents and COMMIT in one round trip. A plan with REQUEST_TIME sends the stamp alone, builds
 // its documents with the commit_time it returned, then sends the rest. It runs to the end
 // whatever the caller does: a cancelled request must not leave an unknown outcome.
-func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, locked map[string]*lockedDoc, catalogVersion int64, in *stampInput) (CommitResult, error) {
+func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, locked map[string]*lockedDoc, cat *catalog, in *stampInput) (CommitResult, error) {
 	ctx = context.WithoutCancel(ctx)
+	catalogVersion := cat.version
 	var seq int64
 	var commitTime time.Time
 	stamped := false
 	b := &pgx.Batch{}
-	// F3 queues the index entries' DeleteIndexEntries and InsertIndexEntries here, before the stamp.
+	if !p.serverTime {
+		// Before the stamp: their cost falls outside the sequencer row (ADR-024 §2.1).
+		queueIndexChanges(ctx, b, db, &in.index)
+	}
 	stampSQL, stampArgs := statement(func(q *queries.Queries) error {
 		_, err := q.StampCommit(ctx, queries.StampCommitParams{ProjectNumber: db.Project, DatabaseID: db.ID, CatalogVersion: catalogVersion})
 		return err
@@ -289,7 +347,13 @@ func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, l
 			rollback(conn)
 			return CommitResult{}, err
 		}
+		var err error
+		if in.index, err = p.indexArgs(cat); err != nil {
+			rollback(conn)
+			return CommitResult{}, err
+		}
 		b = &pgx.Batch{}
+		queueIndexChanges(ctx, b, db, &in.index)
 	}
 	writeSQL, writeArgs := statement(func(q *queries.Queries) error {
 		_, err := q.WriteCommit(ctx, queries.WriteCommitParams{
@@ -327,6 +391,59 @@ func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, l
 		s.notify.Unknown(db, seq)
 	}
 	return CommitResult{}, ErrUnknownOutcome
+}
+
+// indexStatementEntries and indexStatementBytes bound the entries one index statement sends.
+// statement_timeout holds each statement of the commit, not the batch (ADR-024 §2.3): a commit
+// of 500 wide documents changes some 200,000 entries, which go in statements of a few hundred
+// milliseconds each, in one round trip still, and in the order they were sorted in.
+const (
+	indexStatementEntries = 20_000
+	indexStatementBytes   = 8 << 20
+)
+
+// queueIndexChanges queues a commit's index statements, those it has: the deletes, then the
+// inserts, each in chunks (indexStatementEntries).
+func queueIndexChanges(ctx context.Context, b *pgx.Batch, db DB, c *indexChanges) {
+	for i, j := range indexChunks(c.delKeys, nil) {
+		sql, args := statement(func(q *queries.Queries) error {
+			return q.DeleteIndexEntries(ctx, queries.DeleteIndexEntriesParams{ProjectNumber: db.Project, DatabaseID: db.ID,
+				IndexIds: c.delIDs[i:j], Keys: c.delKeys[i:j]})
+		})
+		b.Queue(sql, args...)
+	}
+	for i, j := range indexChunks(c.insKeys, c.insFullKeys) {
+		sql, args := statement(func(q *queries.Queries) error {
+			return q.InsertIndexEntries(ctx, queries.InsertIndexEntriesParams{ProjectNumber: db.Project, DatabaseID: db.ID,
+				IndexIds: c.insIDs[i:j], Keys: c.insKeys[i:j], FullKeys: c.insFullKeys[i:j]})
+		})
+		b.Queue(sql, args...)
+	}
+}
+
+// indexChunks yields the bounds [i, j) of consecutive chunks of entries, keys and their full
+// keys (nil for none), each within indexStatementEntries and, but for a single entry,
+// indexStatementBytes.
+func indexChunks(keys, full [][]byte) iter.Seq2[int, int] {
+	return func(yield func(int, int) bool) {
+		i, size := 0, 0
+		for j, k := range keys {
+			n := len(k)
+			if full != nil {
+				n += len(full[j])
+			}
+			if j > i && (j-i == indexStatementEntries || size+n > indexStatementBytes) {
+				if !yield(i, j) {
+					return
+				}
+				i, size = j, 0
+			}
+			size += n
+		}
+		if i < len(keys) {
+			yield(i, len(keys))
+		}
+	}
 }
 
 // rollback ends a failed commit's transaction; a closed connection has none left.

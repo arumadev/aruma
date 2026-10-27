@@ -287,8 +287,5 @@ func (b *binder) adminName(s string) error {
 	return b.bind(db)
 }
 
-// invalidResourceName is the error for an Admin or header name that is not projects/… (the
-// text is provisional).
-func invalidResourceName(s string) error {
-	return InvalidArgument(`Invalid resource name "` + s + `".`)
-}
+// invalidResourceName is the error for an Admin or header name that is not projects/….
+func invalidResourceName(s string) error { return InvalidResourceName(s) }

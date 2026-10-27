@@ -12,7 +12,7 @@ import (
 	"github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb/firestorepbconnect"
 )
 
-// firestore is google.firestore.v1.Firestore. The F1 and F2 methods call package api; the others are
+// firestore is google.firestore.v1.Firestore. The F1 to F3 methods call package api; the others are
 // UnimplementedFirestoreHandler's UNIMPLEMENTED until their phase.
 type firestore struct {
 	firestorepbconnect.UnimplementedFirestoreHandler
@@ -84,18 +84,43 @@ func (f firestore) Rollback(ctx context.Context, req *connect.Request[pb.Rollbac
 // BatchGetDocuments is a server stream: one response per document asked, in order, after the
 // transaction's id when the request asks for a new one.
 func (f firestore) BatchGetDocuments(ctx context.Context, req *connect.Request[pb.BatchGetDocumentsRequest], stream *connect.ServerStream[pb.BatchGetDocumentsResponse]) error {
-	s, err := f.h.serverStream(ctx)
+	return streamOut(ctx, f.h, req, f.h.svc.BatchGetDocuments, stream.Send)
+}
+
+// RunQuery is a server stream: the transaction's id when the request begins one, then one
+// response per result, or the read time alone when none matches.
+func (f firestore) RunQuery(ctx context.Context, req *connect.Request[pb.RunQueryRequest], stream *connect.ServerStream[pb.RunQueryResponse]) error {
+	return streamOut(ctx, f.h, req, f.h.svc.RunQuery, stream.Send)
+}
+
+// RunAggregationQuery is a server stream: the transaction's id when the request begins one,
+// then the one result.
+func (f firestore) RunAggregationQuery(ctx context.Context, req *connect.Request[pb.RunAggregationQueryRequest],
+	stream *connect.ServerStream[pb.RunAggregationQueryResponse]) error {
+	return streamOut(ctx, f.h, req, f.h.svc.RunAggregationQuery, stream.Send)
+}
+
+func (f firestore) PartitionQuery(ctx context.Context, req *connect.Request[pb.PartitionQueryRequest]) (*connect.Response[pb.PartitionQueryResponse], error) {
+	return unary(ctx, req, f.h.svc.PartitionQuery)
+}
+
+// streamOut runs a server-streaming method of package api within the stream's lifetime
+// (Handler.serverStream): the first response lifts the first-message deadline, and each is
+// sent within stream_write_stall.
+func streamOut[Req, Res any](ctx context.Context, h *Handler, req *connect.Request[Req],
+	method func(context.Context, api.Call, *Req, func(*Res) error) error, send func(*Res) error) error {
+	s, err := h.serverStream(ctx)
 	if err != nil {
 		return connectError(err)
 	}
 	return s.run(func() error {
 		admitted := false
-		return f.h.svc.BatchGetDocuments(s.ctx, call(ctx, req.Header()), req.Msg, func(r *pb.BatchGetDocumentsResponse) error {
+		return method(s.ctx, call(ctx, req.Header()), req.Msg, func(r *Res) error {
 			if !admitted {
 				s.admitted()
 				admitted = true
 			}
-			return s.send(func() error { return stream.Send(r) })
+			return s.send(func() error { return send(r) })
 		})
 	})
 }
