@@ -21,6 +21,13 @@ export interface ArumaViteOptions {
    * `{ required: false }`: do not fail a browser build that has no @firebase/storage module.
    */
   storage?: boolean | { required?: boolean };
+  /**
+   * Also rewrite Cloud Firestore's host (and ssl default on http) at build time, full and lite SDK, so
+   * its requests, WebChannel included, go to Aruma. The URL must then be the root of Aruma's host.
+   * Without it, a build that includes @firebase/firestore fails: its requests would carry the Aruma ID
+   * token to Google. `{ required: false }`: do not fail a browser build that has no @firebase/firestore.
+   */
+  firestore?: boolean | { required?: boolean };
 }
 
 /** A Vite plugin (typed loosely so that this package does not depend on vite). */

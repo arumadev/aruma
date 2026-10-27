@@ -6,9 +6,9 @@
 //
 // The Flutter web build step of flutter-web.js. Exit status 1 with the reason when it cannot do it.
 import { parseArgs } from 'node:util';
-import { flutterWebStorage } from './flutter-web.js';
+import { flutterWeb } from './flutter-web.js';
 
-const usage = 'usage: aruma-web flutter-web --url <aruma url> [--project <flutter project>] [--firebase <firebase npm package dir>] [--allow-insecure]';
+const usage = 'usage: aruma-web flutter-web --url <aruma url> [--project <flutter project>] [--firebase <firebase npm package dir>] [--products storage,firestore] [--allow-insecure]';
 
 const [command, ...rest] = process.argv.slice(2);
 if (command !== 'flutter-web') {
@@ -23,6 +23,7 @@ try {
       url: { type: 'string', default: process.env.ARUMA_URL },
       project: { type: 'string', default: '.' },
       firebase: { type: 'string' },
+      products: { type: 'string', default: 'storage' },
       'allow-insecure': { type: 'boolean', default: false },
     },
   }));
@@ -35,8 +36,9 @@ if (!values.url) {
   process.exit(2);
 }
 try {
-  const r = flutterWebStorage({ url: values.url, allowInsecure: values['allow-insecure'], project: values.project, firebase: values.firebase });
-  console.log(`@aruma/web flutter-web: Firebase JS SDK ${r.version}, Storage host ${r.host}\n  wrote ${r.file}\n  patched ${r.index}`);
+  const products = values.products.split(',').map((p) => p.trim()).filter(Boolean);
+  const r = flutterWeb({ url: values.url, allowInsecure: values['allow-insecure'], project: values.project, firebase: values.firebase, products });
+  console.log(`@aruma/web flutter-web: Firebase JS SDK ${r.version}, ${products.join(' and ')} on ${r.host}\n${r.files.map((f) => `  wrote ${f}\n`).join('')}  patched ${r.index}`);
 } catch (e) {
   console.error(e.message);
   process.exit(1);

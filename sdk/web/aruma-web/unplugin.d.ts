@@ -19,4 +19,12 @@ export interface ArumaStorageOptions {
 
 /** The build-time Storage rewrite: `.webpack()`, `.rspack()`, `.esbuild()`, `.rollup()`, `.rolldown()`. */
 export declare const arumaStorage: UnpluginInstance<ArumaStorageOptions | undefined, false>;
+
+export interface ArumaFirestoreOptions extends Omit<ArumaStorageOptions, 'required'> {
+  /** Fail a browser build in which no @firebase/firestore module carries the Firestore host (default true). */
+  required?: boolean;
+}
+
+/** The build-time Firestore rewrite (SR3-10): `.webpack()`, `.rspack()`, `.esbuild()`, `.rollup()`, `.rolldown()`. */
+export declare const arumaFirestore: UnpluginInstance<ArumaFirestoreOptions | undefined, false>;
 export default arumaStorage;

@@ -10,7 +10,10 @@
 //
 // The hooks and the checks that fail the build are in build.js.
 import { createUnplugin } from 'unplugin';
-import { storageFactory } from './build.js';
+import { firestoreFactory, storageFactory } from './build.js';
 
 export const arumaStorage = createUnplugin(storageFactory);
 export default arumaStorage;
+
+/** The same for Cloud Firestore (SR3-10): arumaFirestore.webpack({ url }) and so on. */
+export const arumaFirestore = createUnplugin(firestoreFactory);

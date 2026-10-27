@@ -158,12 +158,34 @@ const SDK_HEADERS = new Set(['authorization', 'x-firebase-storage-version']);
 
 const storageBlocked = `a Firebase Storage request to ${STORAGE_HOST} was blocked: Firebase Auth is redirected to Aruma but Storage is not, and the request would carry the Aruma ID token to Google. Enable Storage too (Vite: aruma({ url, storage: true }); other bundlers: arumaStorage from @aruma/web/unplugin; or the fallback, installStorage from @aruma/web/storage)`;
 
-function onGoogleStorage(href) {
+// SR3-10: Google's Firestore host. Its requests carry the Aruma ID token too, in the Authorization
+// header (REST, the lite SDK) or inside the WebChannel body (the full SDK), so no header check is
+// possible: every request to the host is refused while Auth is on Aruma. Firestore on Aruma goes
+// to Aruma's host and never matches.
+// Decoded at run time (atob('firestore.googleapis.com')) so that no bundle carries the host as text:
+// a minifier folds string joins, and the build's check for Google's host in a built file would fail.
+const FIRESTORE_HOST = atob('ZmlyZXN0b3JlLmdvb2dsZWFwaXMuY29t');
+
+const firestoreBlocked = `a Cloud Firestore request to ${FIRESTORE_HOST} was blocked: Firebase Auth is redirected to Aruma but Firestore is not, and the request would carry the Aruma ID token to Google. Enable Firestore too (Vite: aruma({ url, firestore: true }); other bundlers: arumaFirestore from @aruma/web/unplugin; or at run time, initializeFirestore(app, arumaFirestoreSettings(url)) from @aruma/web/firestore)`;
+
+const BLOCKED = { storage: storageBlocked, firestore: firestoreBlocked };
+
+// The product whose Google host the URL names, when the guard is on for it, else null.
+function guardedProduct(global, href) {
+  let host;
   try {
-    return stripDot(new URL(String(href)).hostname) === STORAGE_HOST;
+    host = stripDot(new URL(String(href)).hostname);
   } catch {
-    return false;
+    return null;
   }
+  if (host === STORAGE_HOST) return guarding(global) ? 'storage' : null;
+  if (host === FIRESTORE_HOST) return authOn(global) ? 'firestore' : null;
+  return null;
+}
+
+function authOn(global) {
+  const auth = stateOf(global);
+  return Boolean(auth) && auth.mode !== null;
 }
 
 // Whether the guard is on in this global: Auth redirected (or refused), and storage.js not taking
@@ -175,11 +197,12 @@ function guarding(global) {
   return !storage || storage.mode === null;
 }
 
-function reportBlocked(global) {
+function reportBlocked(global, product) {
   const state = stateOf(global);
-  if (state && !state.storageWarned) {
-    state.storageWarned = true;
-    console.error(`${LOG_PREFIX} ${storageBlocked}`);
+  const key = `${product}Warned`;
+  if (state && !state[key]) {
+    state[key] = true;
+    console.error(`${LOG_PREFIX} ${BLOCKED[product]}`);
   }
 }
 
@@ -189,7 +212,7 @@ function reportBlocked(global) {
 // 0.14.6), and turns 403 into storage/unauthorized at once (sharedErrorHandler in
 // implementation/requests.ts:122-124), with the message in serverResponse (the XHR's statusText).
 const REFUSED_STATUS = 403;
-const refusedBody = () => JSON.stringify({ error: { code: REFUSED_STATUS, message: `${LOG_PREFIX} ${storageBlocked}` } });
+const refusedBody = (product) => JSON.stringify({ error: { code: REFUSED_STATUS, message: `${LOG_PREFIX} ${BLOCKED[product]}` } });
 
 function hasSDKHeader(headers) {
   if (headers === undefined || headers === null || typeof Headers === 'undefined') return false;
@@ -203,10 +226,15 @@ function hasSDKHeader(headers) {
   return false;
 }
 
-/** A fetch the guard answers with 403 itself: a Storage SDK request to Google's host. */
+/**
+ * The product of a fetch the guard answers with 403 itself, or null: a Storage SDK request to
+ * Google's host (told by its headers), or any request to Google's Firestore host.
+ */
 function refusedFetch(global, href, input, init) {
-  if (href === null || !onGoogleStorage(href) || !guarding(global)) return false;
-  return hasSDKHeader(init?.headers) || (isRequest(input) && hasSDKHeader(input.headers));
+  const product = href === null ? null : guardedProduct(global, href);
+  if (product === 'firestore') return product;
+  if (product === 'storage' && (hasSDKHeader(init?.headers) || (isRequest(input) && hasSDKHeader(input.headers)))) return product;
+  return null;
 }
 
 // The browser build of @firebase/storage sends with XMLHttpRequest: open(method, url), then
@@ -220,22 +248,24 @@ function guardXHR(global) {
   const { open, setRequestHeader, send } = proto;
   Object.defineProperty(proto, XHR_WRAPPED, { value: true });
   proto.open = function open_(method, href, ...rest) {
-    this[XHR_GUARD] = onGoogleStorage(href) && guarding(global) ? { refuse: false } : null;
+    const product = guardedProduct(global, href);
+    this[XHR_GUARD] = product ? { product, refuse: product === 'firestore' } : null;
     return open.call(this, method, href, ...rest);
   };
   proto.setRequestHeader = function setRequestHeader_(name, value) {
     const g = this[XHR_GUARD];
-    if (g && SDK_HEADERS.has(String(name).toLowerCase())) {
+    if (g && (g.product === 'firestore' ? String(name).toLowerCase() === 'authorization' : SDK_HEADERS.has(String(name).toLowerCase()))) {
       g.refuse = true;
       if (String(name).toLowerCase() === 'authorization') return undefined;
     }
     return setRequestHeader.call(this, name, value);
   };
   proto.send = function send_(...args) {
-    if (!this[XHR_GUARD]?.refuse) return send.apply(this, args);
-    reportBlocked(global);
-    const body = refusedBody();
-    const answer = { readyState: 4, status: REFUSED_STATUS, statusText: `${LOG_PREFIX} ${storageBlocked}`, response: body, responseText: body };
+    const g = this[XHR_GUARD];
+    if (!g?.refuse) return send.apply(this, args);
+    reportBlocked(global, g.product);
+    const body = refusedBody(g.product);
+    const answer = { readyState: 4, status: REFUSED_STATUS, statusText: `${LOG_PREFIX} ${BLOCKED[g.product]}`, response: body, responseText: body };
     for (const [k, value] of Object.entries(answer)) Object.defineProperty(this, k, { value, configurable: true });
     const E = global.ProgressEvent ?? Event;
     setTimeout(() => {
@@ -249,10 +279,11 @@ function guardXHR(global) {
 function makeWrapper(global, state) {
   const wrapped = function fetch(input, init) {
     const href = inputURL(input);
-    if (refusedFetch(global, href, input, init)) {
-      reportBlocked(global);
+    const refused = refusedFetch(global, href, input, init);
+    if (refused) {
+      reportBlocked(global, refused);
       return Promise.resolve(
-        new Response(refusedBody(), { status: REFUSED_STATUS, statusText: 'Forbidden', headers: { 'content-type': 'application/json' } }),
+        new Response(refusedBody(refused), { status: REFUSED_STATUS, statusText: 'Forbidden', headers: { 'content-type': 'application/json' } }),
       );
     }
     const m = href === null ? null : matchAuth(href);
@@ -305,6 +336,8 @@ function wrapOnce(global) {
  *
  * Either way, while it is installed, a Firebase Storage request to Google's Storage host fails
  * instead of carrying the Aruma ID token there, unless Storage is rewritten or installStorage runs.
+ * Any request to Google's Firestore host fails too (SR3-10): Firestore goes to Aruma through
+ * @aruma/web/firestore or the build-time rewrite, and never reaches that host.
  *
  * @param {{ url?: string | URL, allowInsecure?: boolean, log?: boolean }} [options]
  */
