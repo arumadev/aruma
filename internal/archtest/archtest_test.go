@@ -61,6 +61,11 @@ var allowed = map[string][]string{
 	// Never core, so the planner's index paths plug in at the service layer (api/query.go).
 	"internal/services/documents/query": {"internal/services/documents/value", "internal/services/documents/index",
 		"internal/services/documents/wire"},
+	// Its Listen hub stands on core, which tells it of commits and reads for it through the
+	// interface it defines (listen/reader.go), and judges them with the query engine: never the
+	// service layer or a transport, which stand on it (ADR-026 §2).
+	"internal/services/documents/listen": {"internal/services/documents/core", "internal/services/documents/query",
+		"internal/services/documents/value", "internal/services/documents/wire", "internal/platform"},
 	// The Firestore and Storage rules language imports nothing internal: the services feed it
 	// values and documents through its own types, and app wires it (ADR-021, rules-layout.md).
 	"internal/platform/rules": {},
@@ -102,9 +107,12 @@ var denied = map[string][]string{
 	"internal/services/*/media":      {"internal/services/*/api", "internal/services/*/gcs", "internal/services/*/console", "internal/services/*/core"},
 	// The Document Database's core knows neither its callers' credentials nor the layers above
 	// it: authn is the service layer's (api), which maps core's errors to the wire (ADR-027,
-	// ADR-029). The transports, gRPC and REST, stand side by side on api, core and wire.
+	// ADR-029). The transports, gRPC and REST, stand side by side on api, core and wire; the
+	// Listen hub stands on core, under api.
 	"internal/services/documents/core": {"internal/platform/authn", "internal/services/documents/api",
-		"internal/services/documents/grpc", "internal/services/documents/rest"},
+		"internal/services/documents/grpc", "internal/services/documents/rest", "internal/services/documents/listen"},
+	"internal/services/documents/listen": {"internal/services/documents/api", "internal/services/documents/grpc",
+		"internal/services/documents/rest"},
 	"internal/services/documents/api":  {"internal/services/documents/grpc", "internal/services/documents/rest"},
 	"internal/services/documents/grpc": {"internal/services/documents/rest"},
 	"internal/services/documents/rest": {"internal/services/documents/grpc"},
