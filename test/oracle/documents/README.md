@@ -108,7 +108,11 @@ Normalisation, so that a re-recording differs only where behaviour differs:
 
 F1 files hold a `setup` section (the commits written before the cases) and mark with
 `replay: true` the cases whose answer depends only on that setup: `test/differential/documents`
-replays exactly those against Aruma.
+replays exactly those against Aruma, in the normal test run against an Aruma in process
+(`TestReplayCorpusInProcess`, the F3 cases by the planner and by the reference path), and
+against a running server with `ARUMA_DOCUMENTS_URL` (`TestReplayCorpusAgainstAruma`). A case
+that still differs is listed there with its parity exception. `TestF3CorpusReplay`
+(`internal/services/documents/grpc`) sends the F3 cases over gRPC.
 
 The analysis of the F0 recordings is in `.cache/briefs/research/f0-production-recordings.md`; the
 composite-index rule derived from `indexes-105.json` is in

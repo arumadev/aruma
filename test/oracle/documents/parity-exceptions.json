@@ -149,6 +149,19 @@
         "test": "internal/services/documents/wire/names_test.go:TestBindStreamNamesF4",
         "phase": "F4"
       }
+    },
+    {
+      "id": "inequality-fields-order",
+      "kind": "provisional",
+      "summary": "A query with more than ten inequality fields is refused with production's status and text, but the fields its message lists are in the request's order, where production lists them in an order of its own.",
+      "production": "Refuses eleven inequality fields f0 … f10 with HTTP 400 INVALID_ARGUMENT (gRPC 3) \"The query contains 11 distinct inequality fields: [f8, f9, f6, f7, f4, f5, f2, f3, f0, f1, f10]. A query may not have more than 10 distinct inequality fields.\", on REST and gRPC alike (corpus/f3-query-limits.json ineq.11_fields, grpc.ineq_11_fields). The order is neither the request's, nor sorted, nor a Java HashSet's of the field names; one recorded set does not show its rule.",
+      "emulator": "Not recorded.",
+      "aruma": "The same status and text, the fields listed in the order the request first names them (query/validate.go errInequalityFields, F3): \"[f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]\" for the recorded query. The two recorded cases are listed as differing in the F3 replays, which fail once they match. Record more sets of field names to find production's order.",
+      "follows": "production",
+      "evidence": [
+        "corpus/f3-query-limits.json"
+      ],
+      "test": "test/differential/documents/inprocess_test.go:TestReplayCorpusInProcess"
     }
   ]
 }

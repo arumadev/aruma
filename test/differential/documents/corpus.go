@@ -7,8 +7,9 @@
 // The replayed requests are the cases a recorder marks `replay: true`: a fixed request whose
 // answer depends only on the file's `setup` section (record-f1.mjs). Setup writes go through
 // UpdateDocument (PATCH), which F1's server answers; the recorder wrote the same documents by one
-// commit. The suite turns on with ARUMA_DOCUMENTS_URL, as test/conformance/documents does, and a
-// server that cannot be reached then fails it.
+// commit. TestReplayCorpusInProcess replays them in every test run against an Aruma in this
+// process; against a running server the suite turns on with ARUMA_DOCUMENTS_URL, as
+// test/conformance/documents does, and a server that cannot be reached then fails it.
 //
 // Planned next (plan section 8): shapes.go generates query shapes for the live comparison with
 // the emulator, and rawwire.go grows a gRPC sender once the generated protos exist.
