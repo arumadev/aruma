@@ -55,6 +55,7 @@ type ListenStream struct {
 	a    admitted
 	sub  *listen.Subscriber
 	send func(*pb.ListenResponse) error
+	lim  ListenLimits
 
 	targets  map[int32]*listenTarget
 	byTarget map[*listen.Target]*listenTarget
@@ -108,15 +109,51 @@ func (s *Service) OpenListen(ctx context.Context, c Call, first *pb.ListenReques
 // Close ends the stream's subscription.
 func (l *ListenStream) Close() { l.sub.Close() }
 
+// ListenLimits are a Listen stream's own bounds (ADR-026 §3), which the transport sets before
+// Serve; a zero field is no bound.
+type ListenLimits struct {
+	// Targets is targets_per_stream: one more target is removed with RESOURCE_EXHAUSTED.
+	Targets int
+	// Idle is stream_idle: a stream without a target that sent nothing for it ends UNAVAILABLE.
+	Idle time.Duration
+	// Overflow, when set, is told of each bound reached, by its setting's name, for the
+	// transport's metric and log line: targets_per_stream, snapshot_rows, stream_lag_events.
+	Overflow func(limit string)
+}
+
+// Limit sets the stream's bounds.
+func (l *ListenStream) Limit(lim ListenLimits) { l.lim = lim }
+
+// Admission is who the stream was admitted for.
+func (l *ListenStream) Admission() Admission { return l.a.public() }
+
+func (l *ListenStream) overflow(limit string) {
+	if l.lim.Overflow != nil {
+		l.lim.Overflow(limit)
+	}
+}
+
 // Serve answers first, then each request of requests until it closes (the client ended its side)
 // and every commit of the stream's targets, through send, until ctx ends or the stream fails.
 // An error ends the stream with its status.
 func (l *ListenStream) Serve(ctx context.Context, first *pb.ListenRequest, requests <-chan *pb.ListenRequest,
 	send func(*pb.ListenResponse) error) error {
 	l.send = send
+	// idle runs while the stream has no target, from its last request (stream_idle).
+	idle := time.NewTimer(time.Hour)
+	idle.Stop()
+	defer idle.Stop()
+	rearm := func() {
+		if l.lim.Idle > 0 && len(l.targets) == 0 {
+			idle.Reset(l.lim.Idle)
+		} else {
+			idle.Stop()
+		}
+	}
 	if err := l.handle(ctx, first); err != nil {
 		return err
 	}
+	rearm()
 	for {
 		select {
 		case req, ok := <-requests:
@@ -126,10 +163,17 @@ func (l *ListenStream) Serve(ctx context.Context, first *pb.ListenRequest, reque
 			if err := l.handle(ctx, req); err != nil {
 				return err
 			}
+			rearm()
 		case <-l.sub.Ready():
+			had := len(l.targets)
 			if err := l.deliver(ctx, l.sub.Take()); err != nil {
 				return err
 			}
+			if had > 0 && len(l.targets) == 0 {
+				rearm() // the last target went: a once target, or one past snapshot_rows
+			}
+		case <-idle.C:
+			return errListenIdle
 		case <-l.sub.Done():
 			return errListenClosed
 		case <-ctx.Done():
@@ -173,6 +217,10 @@ func (l *ListenStream) add(ctx context.Context, t *pb.Target) error {
 		return errListenDuplicate(id)
 	}
 	l.maxID = max(l.maxID, id)
+	if l.lim.Targets > 0 && len(l.targets) >= l.lim.Targets {
+		l.overflow("targets_per_stream")
+		return l.send(removeTarget(id, errTooManyTargets(l.lim.Targets)))
+	}
 
 	lt, spec, err := l.parseTarget(id, t)
 	if err != nil {
@@ -231,6 +279,9 @@ func (l *ListenStream) targetFailed(lt *listenTarget, err error) error {
 	we, ok := errors.AsType[*wire.Error](err)
 	if !ok {
 		return l.s.fail(context.Background(), err)
+	}
+	if we.Code == wire.CodeResourceExhausted {
+		l.overflow("snapshot_rows")
 	}
 	l.forget(lt)
 	return l.send(removeTarget(lt.id, we))
@@ -505,6 +556,7 @@ func (l *ListenStream) deliver(ctx context.Context, b listen.Batch) error {
 
 	if b.Resync {
 		// The hub lost commits the stream needed: every target's result again (ADR-026 §1.4).
+		l.overflow("stream_lag_events")
 		for _, id := range slices.Sorted(maps.Keys(l.targets)) {
 			lt := l.targets[id]
 			if err := l.targetFailed(lt, l.snapshot(ctx, lt, true)); err != nil {

@@ -28,7 +28,15 @@ var (
 	errListenClosed = wire.NewError(wire.CodeUnavailable, "The server is shutting down. Retry the request.")
 	// errListenUnserved is Listen on a service built without a hub.
 	errListenUnserved = wire.Unimplemented("Listen")
+	// errListenIdle ends a stream without a target that sent nothing for stream_idle (ADR-026
+	// §3); our text. The client that needs no target does not reopen it.
+	errListenIdle = wire.NewError(wire.CodeUnavailable, "The listen stream had no target for too long. Reopen it when needed.")
 )
+
+// errTooManyTargets is the cause of a target past targets_per_stream (ADR-026 §3); our text.
+func errTooManyTargets(n int) *wire.Error {
+	return wire.NewError(wire.CodeResourceExhausted, fmt.Sprintf("The stream has %d targets, the most this server allows. Remove one first.", n))
+}
 
 func errListenTargetID(id int32) error {
 	return wire.InvalidArgument(fmt.Sprintf("Invalid target ID: %d", id))
