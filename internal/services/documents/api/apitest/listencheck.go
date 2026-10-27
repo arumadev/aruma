@@ -40,6 +40,9 @@ type ListenChecker struct {
 	assigned []*ListenTarget         // added with target_id 0, not answered yet
 	removing map[int32]bool
 	global   time.Time
+	// Held are the documents a client holds of targets it resumes on this stream, by target id:
+	// an add_target with a resume token or read_time starts from them.
+	Held map[int32]map[string]*pb.Document
 	// Globals counts the global snapshots received.
 	Globals int
 }
@@ -97,6 +100,9 @@ func (c *ListenChecker) Sent(req *pb.ListenRequest) {
 		t := tc.AddTarget
 		lt := &ListenTarget{ID: t.GetTargetId(), Docs: map[string]*pb.Document{}, Target: t,
 			single: len(t.GetDocuments().GetDocuments()) == 1}
+		if t.GetResumeType() != nil {
+			maps.Copy(lt.Docs, c.Held[lt.ID])
+		}
 		if lt.ID == 0 {
 			c.assigned = append(c.assigned, lt)
 		} else {
@@ -163,15 +169,15 @@ func (c *ListenChecker) Received(res *pb.ListenResponse) (global bool) {
 // data is the target a data frame names, which must have been added and not removed.
 func (c *ListenChecker) data(id int32, what string) *ListenTarget {
 	c.t.Helper()
+	if t := c.targets[id]; t != nil {
+		return t // a target removed and added again holds its data until REMOVE
+	}
 	if _, ok := c.pending[id]; ok {
 		c.fail("%s for target %d before its ADD", what, id)
-		return nil
-	}
-	t := c.targets[id]
-	if t == nil {
+	} else {
 		c.fail("%s for target %d, which the stream does not hold", what, id)
 	}
-	return t
+	return nil
 }
 
 func (c *ListenChecker) targetChange(tc *pb.TargetChange) bool {
@@ -196,7 +202,7 @@ func (c *ListenChecker) targetChange(tc *pb.TargetChange) bool {
 				c.fail("ADD for target %d, which no add_target asked", id)
 				continue
 			}
-			if c.targets[id] != nil {
+			if old := c.targets[id]; old != nil && !c.removing[id] {
 				c.fail("ADD for target %d, which the stream holds", id)
 			}
 			t.added = true
