@@ -122,7 +122,7 @@ func TestListenRandom(t *testing.T) {
 				return
 			}
 			for _, lt := range l.Checker.Targets() {
-				want, err := oracle(lt.ID, time.Now())
+				want, err := oracle(lt.ID, time.Now().Truncate(time.Microsecond))
 				if err != nil {
 					t.Error(err)
 					continue
