@@ -120,6 +120,8 @@ Listen طريق القراءة الأساسي في الويب والجوال: ح
 - **الإطلاق بترتيب `seq` وحده** (ADR-024): الموزّع يحجز ما سبق دوره ويملأ الفجوة من سجل التغييرات، **وكل الأحداث تصل كل بث بترتيب commit** (OF §1b؛ OF §2e: «never receives notifications of updates that are out of order»).
 - **نوافذ limit تُملأ باستعلام** يقرأ عند `seq` الحدث في `REPEATABLE READ` (ADR-024)، بسقف `snapshot_rows` (البند 3).
 - **القواعد** تُقيَّم عند إضافة الهدف، ثم على المستند المطابق قبل إرساله (OF §2e)، من F5 (ADR-021). ورفضها `REMOVE` مع `cause` (البند 1.3).
+  - **إصدار جديد وأهداف مفتوحة (F5):** كل بث يحلّ إصدار `cloud.firestore` مرة كل `listenRecheck` (ثانيتان) من ذاكرة الإصدارات المترجمة، وكل هدف (استعلام أو مستندات) حُكم عليه تحت ruleset غير المنشور الآن يُحكم عليه من جديد تحته. وما دام الـ ruleset المنشور يقرأ `request.time` (`Ruleset.ReadsRequestTime`، تحليل ساكن محافظ) يُحكم على كل هدف في كل نبضة. المرفوض `REMOVE` بـ `7 "Missing or insufficient permissions."`، والمسموح لا يُرسل شيئًا. الإنتاج يقول إن الإصدار قد يحتاج «up to 10 minutes to ... affect any active listeners» (firebase.google.com/docs/firestore/security/get-started)؛ مدته عندنا وسلوك الإنتاج مع `request.time` على هدف مفتوح **تخمين غير مسجَّل**. والذاكرة محلية للنسخة، وهذا يكفي مع النسخة الواحدة (البند 5).
+  - **`get()`/`exists()` في list أو get بـ `read_time` ماضٍ** تُقرأ عند ذلك الـ `read_time` (`rules_list.go`)، فمنحٌ سُحب بعده ما زال يسمح: **تخمين غير مسجَّل**، يُسجَّل في الإنتاج (المراجعة `lookups-at-past-read-time`).
 - **لا كتابة تصل المستمع قبل أن تُلتزم،** ولا تُرسل نتيجة commit فشل.
 
 ### 3. حدود البث وسياسة التجاوز
