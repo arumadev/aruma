@@ -9,6 +9,7 @@ import (
 	"math/rand/v2"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -355,7 +356,10 @@ func TestIndexIDs(t *testing.T) {
 
 // The transaction bound holds each document's entry changes, as every recorded case is one
 // document's, not a commit's sum: a 500-write batch deleting documents of 210 fields, past the
-// bound summed, is accepted, and counted.
+// bound summed, is accepted, and counted. The batch creating them, of as many entries, is one
+// commit too, and both leave the entries the documents have. Each commit sends some 210,000
+// entries in statements of indexStatementEntries, each far within the commit's statement
+// timeout on any machine that runs the tests.
 func TestTransactionBoundPerDocument(t *testing.T) {
 	s, _ := newStore(t, Options{})
 	// Fields of the four common kinds, as an ordinary document holds them.
@@ -390,19 +394,102 @@ func TestTransactionBoundPerDocument(t *testing.T) {
 	for i := range writes {
 		writes[i] = set(name(i), fields(n, 0))
 	}
-	for c := range slices.Chunk(writes, 50) {
-		mustCommit(t, s, c...)
+	start := time.Now()
+	if _, err := s.Commit(t.Context(), testDB, writes); err != nil {
+		t.Fatalf("500 documents created: %v", err)
 	}
+	t.Logf("created %d entries of %d documents in %v", docs*2*n, docs, time.Since(start))
+	mustCheck(t, s)
 	before := s.LargeCommits()
 	for i := range writes {
 		writes[i] = Write{Kind: WriteDelete, Path: ParsePath(name(i))}
 	}
-	start := time.Now()
+	start = time.Now()
 	if _, err := s.Commit(t.Context(), testDB, writes); err != nil {
 		t.Fatalf("500 documents deleted: %v", err)
 	}
 	t.Logf("deleted %d entries of %d documents in %v", docs*2*n, docs, time.Since(start))
 	if got := s.LargeCommits() - before; got != 1 {
 		t.Errorf("%d commits counted past the bound summed, want 1", got)
+	}
+	mustCheck(t, s)
+}
+
+// indexChunks cuts a commit's entries in statements by count and by size, in order, a single
+// entry past the size alone.
+func TestIndexChunks(t *testing.T) {
+	keys := func(sizes ...int) [][]byte {
+		out := make([][]byte, len(sizes))
+		for i, n := range sizes {
+			out[i] = make([]byte, n)
+		}
+		return out
+	}
+	chunks := func(keys, full [][]byte) [][2]int {
+		var out [][2]int
+		for i, j := range indexChunks(keys, full) {
+			out = append(out, [2]int{i, j})
+		}
+		return out
+	}
+	if got := chunks(nil, nil); got != nil {
+		t.Errorf("no entries: %v", got)
+	}
+	many := keys(slices.Repeat([]int{10}, 2*indexStatementEntries+1)...)
+	if got, want := chunks(many, nil), [][2]int{{0, indexStatementEntries}, {indexStatementEntries, 2 * indexStatementEntries},
+		{2 * indexStatementEntries, 2*indexStatementEntries + 1}}; !slices.Equal(got, want) {
+		t.Errorf("by count: %v, want %v", got, want)
+	}
+	big := indexStatementBytes / 2
+	if got, want := chunks(keys(big, big, 1, indexStatementBytes+1, 1), nil), [][2]int{{0, 2}, {2, 3}, {3, 4}, {4, 5}}; !slices.Equal(got, want) {
+		t.Errorf("by size: %v, want %v", got, want)
+	}
+	if got, want := chunks(keys(10, 10), keys(big, big)), [][2]int{{0, 1}, {1, 2}}; !slices.Equal(got, want) {
+		t.Errorf("with full keys: %v, want %v", got, want)
+	}
+}
+
+// parallel calls f once with each index, and a call's panic reaches the caller.
+func TestParallel(t *testing.T) {
+	for _, n := range []int{0, 1, 2, 100} {
+		calls := make([]atomic.Int32, n)
+		parallel(n, func(i int) { calls[i].Add(1) })
+		for i := range calls {
+			if c := calls[i].Load(); c != 1 {
+				t.Errorf("n %d: f(%d) called %d times", n, i, c)
+			}
+		}
+	}
+	defer func() {
+		if r := recover(); r != "f 7" {
+			t.Errorf("recovered %v", r)
+		}
+	}()
+	parallel(100, func(i int) {
+		if i == 7 {
+			panic("f 7")
+		}
+	})
+	t.Error("no panic")
+}
+
+// mergeRuns sorts what sortedEntries would, from each document's sorted entries.
+func TestMergeRuns(t *testing.T) {
+	r := rand.New(rand.NewPCG(1, 2))
+	for _, runs := range []int{0, 1, 2, 3, 7, 64, 501} {
+		var es []entry
+		var ends []int
+		for d := range runs {
+			var run []entry
+			for range r.IntN(20) {
+				run = append(run, entry{int64(r.IntN(5)), fmt.Sprintf("%03d/%d", r.IntN(1000), d)})
+			}
+			es = append(es, sortedEntries(run)...)
+			ends = append(ends, len(es))
+		}
+		want := sortedEntries(slices.Clone(es))
+		if got := mergeRuns(es, ends); !slices.Equal(got, want) {
+			t.Errorf("%d runs: %v, want %v", runs, got, want)
+		}
 	}
 }

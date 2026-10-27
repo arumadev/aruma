@@ -12,9 +12,16 @@ import (
 
 const deleteIndexEntries = `-- name: DeleteIndexEntries :exec
 DELETE FROM documents.index_entries e
-USING (SELECT unnest($1::bigint[]) AS index_id, unnest($2::bytea[]) AS key) x
-WHERE e.project_number = $3 AND e.database_id = $4
-    AND e.index_id = x.index_id AND e.key = x.key
+WHERE e.ctid = ANY(ARRAY(
+    SELECT f.ctid
+    FROM (SELECT unnest($1::bigint[]) AS index_id, unnest($2::bytea[]) AS key) x
+    CROSS JOIN LATERAL (
+        SELECT f.ctid FROM documents.index_entries f
+        WHERE f.project_number = $3 AND f.database_id = $4
+            AND f.index_id = x.index_id AND f.key = x.key
+        LIMIT 1
+    ) f
+))
 `
 
 type DeleteIndexEntriesParams struct {
@@ -26,9 +33,12 @@ type DeleteIndexEntriesParams struct {
 
 // An index entry the documents' images before the commit had and their images after do not
 // (core/indexentries.go). Like InsertIndexEntries it runs before the stamp, under the documents'
-// row locks, and takes no sequencer row. unnest, whose row estimate is the arrays' length, lets
-// the planner probe the primary key per entry; generate_subscripts' estimate of 1000 rows made
-// it hash a scan of the whole table.
+// row locks, and takes no sequencer row. Each entry is found by its primary key, and the rows
+// found deleted by their ctid: the LATERAL subquery, which its LIMIT keeps from being flattened
+// into a join (an entry is unique by its key, so it drops none), leaves the planner no join to
+// choose. A join was planned from estimates that lag a database grown since its statistics, or
+// that a generic plan guesses: it hashed a scan of every entry of the database for each
+// statement, and a statement of 20,000 entries ran past 100 s (BenchmarkCommitWide).
 func (q *Queries) DeleteIndexEntries(ctx context.Context, arg DeleteIndexEntriesParams) error {
 	_, err := q.db.Exec(ctx, deleteIndexEntries,
 		arg.IndexIds,
@@ -41,8 +51,9 @@ func (q *Queries) DeleteIndexEntries(ctx context.Context, arg DeleteIndexEntries
 
 const insertIndexEntries = `-- name: InsertIndexEntries :exec
 INSERT INTO documents.index_entries (project_number, database_id, index_id, key, full_key)
-SELECT $1, $2, ($3::bigint[])[x.i], ($4::bytea[])[x.i], ($5::bytea[])[x.i]
-FROM generate_subscripts($4::bytea[], 1) AS x(i)
+SELECT $1, $2, x.index_id, x.key, x.full_key
+FROM (SELECT unnest($3::bigint[]) AS index_id, unnest($4::bytea[]) AS key,
+    unnest($5::bytea[]) AS full_key) x
 ON CONFLICT DO NOTHING
 `
 
@@ -54,6 +65,8 @@ type InsertIndexEntriesParams struct {
 	FullKeys      [][]byte
 }
 
+// The arrays are unnested, never subscripted: an element of a bytea[] is found by walking the
+// ones before it, so subscripting each made a commit's 200,000 entries take minutes.
 func (q *Queries) InsertIndexEntries(ctx context.Context, arg InsertIndexEntriesParams) error {
 	_, err := q.db.Exec(ctx, insertIndexEntries,
 		arg.ProjectNumber,
@@ -233,30 +246,32 @@ WITH s AS (
     FROM s, (SELECT unnest($1::bytea[]) AS name_key, unnest($9::bigint[]) AS update_seq,
         unnest($10::bytea[]) AS doc, unnest($11::integer[]) AS size) w
     WHERE d.project_number = $6 AND d.database_id = $7
-        AND d.name_key = w.name_key AND d.update_seq = w.update_seq
+        AND d.name_key = ANY($1::bytea[]) AND d.name_key = w.name_key AND d.update_seq = w.update_seq
     RETURNING 1
 ), i AS (
     INSERT INTO documents.documents (project_number, database_id, name_key, name, parent_hash, cg_hash,
         parent, collection_id, doc, create_time, update_time, update_seq, size)
-    SELECT $6, $7, ($2::bytea[])[w.i], ($12::bytea[])[w.i],
-        ($13::bytea[])[w.i], ($14::bytea[])[w.i], ($15::bytea[])[w.i],
-        ($16::text[])[w.i], ($17::bytea[])[w.i], s.last_ts, s.last_ts, s.seq,
-        ($18::integer[])[w.i]
-    FROM s, generate_subscripts($2::bytea[], 1) AS w(i)
+    SELECT $6, $7, w.name_key, w.name, w.parent_hash, w.cg_hash, w.parent,
+        w.collection_id, w.doc, s.last_ts, s.last_ts, s.seq, w.size
+    FROM s, (SELECT unnest($2::bytea[]) AS name_key, unnest($12::bytea[]) AS name,
+        unnest($13::bytea[]) AS parent_hash, unnest($14::bytea[]) AS cg_hash,
+        unnest($15::bytea[]) AS parent, unnest($16::text[]) AS collection_id,
+        unnest($17::bytea[]) AS doc, unnest($18::integer[]) AS size) w
     ON CONFLICT DO NOTHING
     RETURNING 1
 ), x AS (
     DELETE FROM documents.documents d
     USING s, (SELECT unnest($3::bytea[]) AS name_key, unnest($19::bigint[]) AS update_seq) w
     WHERE d.project_number = $6 AND d.database_id = $7
-        AND d.name_key = w.name_key AND d.update_seq = w.update_seq
+        AND d.name_key = ANY($3::bytea[]) AND d.name_key = w.name_key AND d.update_seq = w.update_seq
     RETURNING 1
 ), c AS (
     INSERT INTO documents.changelog (project_number, database_id, seq, name_key, name, commit_time,
         before, after, update_mask)
-    SELECT $6, $7, s.seq, ($5::bytea[])[w.i], ($20::bytea[])[w.i], s.last_ts,
-        ($21::bytea[])[w.i], ($22::bytea[])[w.i], ($23::bytea[])[w.i]
-    FROM s, generate_subscripts($5::bytea[], 1) AS w(i)
+    SELECT $6, $7, s.seq, w.name_key, w.name, s.last_ts, w.before, w.after, w.update_mask
+    FROM s, (SELECT unnest($5::bytea[]) AS name_key, unnest($20::bytea[]) AS name,
+        unnest($21::bytea[]) AS before, unnest($22::bytea[]) AS after,
+        unnest($23::bytea[]) AS update_mask) w
     RETURNING 1
 )
 SELECT documents.conflict_unless(
@@ -299,10 +314,13 @@ type WriteCommitParams struct {
 // the changelog. Every write names the update_seq the commit read (inserts expect no row), and
 // conflict_unless fails the statement with 40001 unless each found it (an empty array arrives as
 // NULL, hence the coalesce). After a stamp that found the catalog changed, the version differs
-// here too: no row, and nothing written. The arrays a write joins documents on are unnested in
-// one select list (zipped, as they have one length): unnest's row estimate is the arrays', so
-// the planner probes the primary key per document; generate_subscripts' 1000 rows made it hash
-// a scan of the whole table, a cost that grew with the database.
+// here too: no row, and nothing written. Each write's arrays are unnested in one select list
+// (zipped, as they have one length), as no element is subscripted, which walks the elements
+// before it (InsertIndexEntries). The documents an update or delete joins are also named by
+// name_key = ANY(keys), so that the primary key finds them whatever the planner estimates: the
+// documents of a database that grew since its statistics, or of any under a generic plan, were
+// estimated at one row, and the join looped over all of them (generate_subscripts' 1000 rows
+// had made it hash a scan of the whole table).
 func (q *Queries) WriteCommit(ctx context.Context, arg WriteCommitParams) ([]bool, error) {
 	rows, err := q.db.Query(ctx, writeCommit,
 		arg.UpdateKeys,

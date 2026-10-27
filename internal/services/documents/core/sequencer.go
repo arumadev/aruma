@@ -3,7 +3,10 @@ package core
 import (
 	"context"
 	"errors"
+	"iter"
 	"log/slog"
+	"maps"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -177,13 +180,9 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 	})
 	b.Queue(lockSQL, lockArgs...).Query(func(rows pgx.Rows) error {
 		for rows.Next() {
-			var key, doc []byte
+			var key []byte
 			d := &lockedDoc{}
-			if err := rows.Scan(&key, &d.seq, &doc, &d.createTime, &d.updateTime); err != nil {
-				return err
-			}
-			var err error
-			if d.fields, _, _, err = decodeDocument(doc); err != nil {
+			if err := rows.Scan(&key, &d.seq, &d.stored, &d.createTime, &d.updateTime); err != nil {
 				return err
 			}
 			locked[string(key)] = d
@@ -214,6 +213,11 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 	if !cat.found || catalog.CatalogVersion != cat.version {
 		rollback(conn)
 		return CommitResult{}, errRetry
+	}
+	// The documents are decoded once read, in parallel (plan.indexArgs).
+	if err := decodeLocked(locked); err != nil {
+		rollback(conn)
+		return CommitResult{}, err
 	}
 
 	if p.verify != nil {
@@ -252,6 +256,21 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 			"project", db.Project, "database", db.ID, "documents", len(p.docs), "size", in.index.size, "bound", maxTransactionSize)
 	}
 	return res, err
+}
+
+// decodeLocked decodes the fields of the documents the first batch locked.
+func decodeLocked(locked map[string]*lockedDoc) error {
+	docs := slices.Collect(maps.Values(locked))
+	errs := make([]error, len(docs))
+	parallel(len(docs), func(i int) {
+		docs[i].fields, _, _, errs[i] = decodeDocument(docs[i].stored)
+	})
+	for _, err := range errs {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // unchanged ends a commit that changes nothing: no seq, and a commit_time from the clock
@@ -374,21 +393,56 @@ func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, l
 	return CommitResult{}, ErrUnknownOutcome
 }
 
-// queueIndexChanges queues a commit's index statements, those it has.
+// indexStatementEntries and indexStatementBytes bound the entries one index statement sends.
+// statement_timeout holds each statement of the commit, not the batch (ADR-024 §2.3): a commit
+// of 500 wide documents changes some 200,000 entries, which go in statements of a few hundred
+// milliseconds each, in one round trip still, and in the order they were sorted in.
+const (
+	indexStatementEntries = 20_000
+	indexStatementBytes   = 8 << 20
+)
+
+// queueIndexChanges queues a commit's index statements, those it has: the deletes, then the
+// inserts, each in chunks (indexStatementEntries).
 func queueIndexChanges(ctx context.Context, b *pgx.Batch, db DB, c *indexChanges) {
-	if len(c.delIDs) > 0 {
+	for i, j := range indexChunks(c.delKeys, nil) {
 		sql, args := statement(func(q *queries.Queries) error {
 			return q.DeleteIndexEntries(ctx, queries.DeleteIndexEntriesParams{ProjectNumber: db.Project, DatabaseID: db.ID,
-				IndexIds: c.delIDs, Keys: c.delKeys})
+				IndexIds: c.delIDs[i:j], Keys: c.delKeys[i:j]})
 		})
 		b.Queue(sql, args...)
 	}
-	if len(c.insIDs) > 0 {
+	for i, j := range indexChunks(c.insKeys, c.insFullKeys) {
 		sql, args := statement(func(q *queries.Queries) error {
 			return q.InsertIndexEntries(ctx, queries.InsertIndexEntriesParams{ProjectNumber: db.Project, DatabaseID: db.ID,
-				IndexIds: c.insIDs, Keys: c.insKeys, FullKeys: c.insFullKeys})
+				IndexIds: c.insIDs[i:j], Keys: c.insKeys[i:j], FullKeys: c.insFullKeys[i:j]})
 		})
 		b.Queue(sql, args...)
+	}
+}
+
+// indexChunks yields the bounds [i, j) of consecutive chunks of entries, keys and their full
+// keys (nil for none), each within indexStatementEntries and, but for a single entry,
+// indexStatementBytes.
+func indexChunks(keys, full [][]byte) iter.Seq2[int, int] {
+	return func(yield func(int, int) bool) {
+		i, size := 0, 0
+		for j, k := range keys {
+			n := len(k)
+			if full != nil {
+				n += len(full[j])
+			}
+			if j > i && (j-i == indexStatementEntries || size+n > indexStatementBytes) {
+				if !yield(i, j) {
+					return
+				}
+				i, size = j, 0
+			}
+			size += n
+		}
+		if i < len(keys) {
+			yield(i, len(keys))
+		}
 	}
 }
 

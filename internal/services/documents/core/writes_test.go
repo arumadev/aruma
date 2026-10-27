@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math"
@@ -48,6 +49,18 @@ func TestDocumentEncodingRoundTrip(t *testing.T) {
 	empty, _ := encodeDocument(value.Map(), time.Time{}, time.Time{})
 	if got, c, _, err := decodeDocument(empty); err != nil || got.Kind() != value.KindMap || len(got.Fields()) != 0 || !c.IsZero() {
 		t.Fatalf("empty document: %v %v %v", got, c, err)
+	}
+	// The changelog's images append the times to the fields' encoding (logImages): the same
+	// bytes as encoding them together.
+	for _, f := range []value.Value{fields, value.Map()} {
+		alone, _ := encodeDocument(f, time.Time{}, time.Time{})
+		for _, ts := range [][2]time.Time{{created, updated}, {created, {}}, {{}, updated}, {}} {
+			want, _ := encodeDocument(f, ts[0], ts[1])
+			got, err := appendTimes(alone, ts[0], ts[1])
+			if err != nil || !bytes.Equal(got, want) {
+				t.Fatalf("appendTimes(%v, %v): %x, want %x (%v)", f, ts, got, want, err)
+			}
+		}
 	}
 }
 

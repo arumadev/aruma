@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -30,6 +31,24 @@ func encodeDocument(fields value.Value, createTime, updateTime time.Time) ([]byt
 		d.UpdateTime = timestamppb.New(updateTime)
 	}
 	return marshal.Marshal(d)
+}
+
+// appendTimes returns a document's encoding with the times that are not zero: doc, the encoding
+// of its fields alone (encodeDocument with no times), then the times' fields, which deterministic
+// encoding writes after them, so the result is encodeDocument's with the times. doc is not
+// changed.
+func appendTimes(doc []byte, createTime, updateTime time.Time) ([]byte, error) {
+	if createTime.IsZero() && updateTime.IsZero() {
+		return doc, nil
+	}
+	d := &firestorepb.Document{}
+	if !createTime.IsZero() {
+		d.CreateTime = timestamppb.New(createTime)
+	}
+	if !updateTime.IsZero() {
+		d.UpdateTime = timestamppb.New(updateTime)
+	}
+	return marshal.MarshalAppend(slices.Clip(doc), d)
 }
 
 // decodeDocument decodes a stored document: its fields, and the times it holds (zero if none).

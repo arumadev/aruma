@@ -2,8 +2,11 @@ package core
 
 import (
 	"cmp"
+	"runtime"
 	"slices"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/arumadev/aruma/internal/services/documents/index"
 	"github.com/arumadev/aruma/internal/services/documents/value"
@@ -352,62 +355,185 @@ type indexChanges struct {
 // are those of the current configuration and, while a field configuration is built, of the one
 // before it, whose entries a document not yet rebuilt still has: a commit leaves a document with
 // exactly the current configuration's entries (indexbuild.go). Each document's entry changes
-// are held to maxTransactionSize: those it inserts, and twice those it deletes.
+// are held to maxTransactionSize: those it inserts, and twice those it deletes. The documents
+// are computed in parallel, as a commit of 500 wide documents changes some 200,000 entries
+// while its transaction waits; the first document in order that fails gives the error.
 func (p *plan) indexArgs(cat *catalog) (indexChanges, error) {
-	var out indexChanges
-	var dels, ins []entry
+	var changed []*docChange
 	for _, d := range p.docs {
-		if !d.changed() {
-			continue
+		if d.changed() {
+			changed = append(changed, d)
 		}
-		size := 0
-		var after *docEntries
-		if d.exists {
-			after = entriesOf(cat, cat.fields, d.path, d.fields, true)
-			if err := after.check(); err != nil {
-				return indexChanges{}, err
-			}
-		}
-		var before, prior entrySet
-		if d.before != nil {
-			before = entriesOf(cat, cat.fields, d.path, d.before.fields, true).set
-			if cat.prior != nil {
-				prior = entriesOf(cat, cat.prior, d.path, d.before.fields, false).set
-			}
-		}
-		if after != nil {
-			for e, n := range after.set {
-				if _, ok := before[e]; !ok {
-					ins = append(ins, e)
-					size += n
-				}
-			}
-		}
-		for i, set := range []entrySet{before, prior} {
-			for e, n := range set {
-				if _, ok := after.entries()[e]; !ok {
-					dels = append(dels, e)
-					if _, both := before[e]; i == 0 || !both {
-						size += 2 * n
-					}
-				}
-			}
-		}
-		if size > maxTransactionSize {
-			return indexChanges{}, ErrTransactionTooBig
-		}
-		out.size += size
 	}
-	dels = sortedEntries(dels)
-	for _, e := range dels {
-		out.delIDs = append(out.delIDs, e.index)
-		out.delKeys = append(out.delKeys, storedKey([]byte(e.key)))
+	per := make([]docIndexChanges, len(changed))
+	parallel(len(changed), func(i int) { per[i] = changed[i].indexChanges(cat) })
+	var out indexChanges
+	nd, ni := 0, 0
+	for _, c := range per {
+		if c.err != nil {
+			return indexChanges{}, c.err
+		}
+		out.size += c.size
+		nd, ni = nd+len(c.dels), ni+len(c.ins)
 	}
-	for _, e := range sortedEntries(ins) {
-		key, full := storedEntry([]byte(e.key))
-		out.insIDs, out.insKeys, out.insFullKeys = append(out.insIDs, e.index), append(out.insKeys, key), append(out.insFullKeys, full)
+	// Each document's entries are sorted; the runs are merged.
+	dels, ins := make([]entry, 0, nd), make([]entry, 0, ni)
+	delEnds, insEnds := make([]int, len(per)), make([]int, len(per))
+	for i, c := range per {
+		dels, ins = append(dels, c.dels...), append(ins, c.ins...)
+		delEnds[i], insEnds[i] = len(dels), len(ins)
+	}
+	dels, ins = mergeRuns(dels, delEnds), mergeRuns(ins, insEnds)
+	// The keys share one buffer each, rather than an allocation per entry.
+	out.delIDs, out.delKeys = make([]int64, len(dels)), make([][]byte, len(dels))
+	buf := make([]byte, 0, keysLen(dels))
+	for i, e := range dels {
+		buf = append(buf, e.key...)
+		out.delIDs[i], out.delKeys[i] = e.index, storedKey(buf[len(buf)-len(e.key):len(buf):len(buf)])
+	}
+	out.insIDs, out.insKeys, out.insFullKeys = make([]int64, len(ins)), make([][]byte, len(ins)), make([][]byte, len(ins))
+	buf = make([]byte, 0, keysLen(ins))
+	for i, e := range ins {
+		buf = append(buf, e.key...)
+		out.insIDs[i] = e.index
+		out.insKeys[i], out.insFullKeys[i] = storedEntry(buf[len(buf)-len(e.key) : len(buf) : len(buf)])
 	}
 	return out, nil
+}
+
+// docIndexChanges is one document's part of a commit's index changes (indexArgs).
+type docIndexChanges struct {
+	dels, ins []entry
+	size      int
+	err       error
+}
+
+// indexChanges computes the entries d deletes and inserts under cat, and their size.
+func (d *docChange) indexChanges(cat *catalog) docIndexChanges {
+	var out docIndexChanges
+	var after *docEntries
+	if d.exists {
+		after = entriesOf(cat, cat.fields, d.path, d.fields, true)
+		if err := after.check(); err != nil {
+			return docIndexChanges{err: err}
+		}
+	}
+	var before, prior entrySet
+	if d.before != nil {
+		before = entriesOf(cat, cat.fields, d.path, d.before.fields, true).set
+		if cat.prior != nil {
+			prior = entriesOf(cat, cat.prior, d.path, d.before.fields, false).set
+		}
+	}
+	if after != nil {
+		out.ins = make([]entry, 0, len(after.set))
+		for e, n := range after.set {
+			if _, ok := before[e]; !ok {
+				out.ins = append(out.ins, e)
+				out.size += n
+			}
+		}
+	}
+	out.dels = make([]entry, 0, len(before)+len(prior))
+	for i, set := range []entrySet{before, prior} {
+		for e, n := range set {
+			if _, ok := after.entries()[e]; !ok {
+				out.dels = append(out.dels, e)
+				if _, both := before[e]; i == 0 || !both {
+					out.size += 2 * n
+				}
+			}
+		}
+	}
+	if out.size > maxTransactionSize {
+		return docIndexChanges{err: ErrTransactionTooBig}
+	}
+	out.dels, out.ins = sortedEntries(out.dels), sortedEntries(out.ins)
+	return out
+}
+
+// mergeRuns sorts es, consecutive sorted runs the i-th of which ends at ends[i], merging pairs
+// of runs in parallel rounds through a second buffer. The runs are distinct documents' entries,
+// so no entry is in two of them.
+func mergeRuns(es []entry, ends []int) []entry {
+	src, dst := es, make([]entry, len(es))
+	for len(ends) > 1 {
+		next := make([]int, (len(ends)+1)/2)
+		parallel(len(next), func(i int) {
+			lo, mid := 0, ends[2*i]
+			if i > 0 {
+				lo = ends[2*i-1]
+			}
+			hi := mid
+			if 2*i+1 < len(ends) {
+				hi = ends[2*i+1]
+			}
+			mergeEntries(dst[lo:hi], src[lo:mid], src[mid:hi])
+			next[i] = hi
+		})
+		src, dst, ends = dst, src, next
+	}
+	return src
+}
+
+// mergeEntries merges the sorted a and b into dst, of their length summed.
+func mergeEntries(dst, a, b []entry) {
+	i, j := 0, 0
+	for k := range dst {
+		if j == len(b) || i < len(a) && compareEntries(a[i], b[j]) <= 0 {
+			dst[k], i = a[i], i+1
+		} else {
+			dst[k], j = b[j], j+1
+		}
+	}
+}
+
+// keysLen is the length of the entries' keys, summed.
+func keysLen(es []entry) int {
+	n := 0
+	for _, e := range es {
+		n += len(e.key)
+	}
+	return n
+}
+
+// parallel calls f with 0 to n-1 on up to GOMAXPROCS goroutines, on the caller's for one, and
+// returns once all returned. A call that panics panics the caller, once all returned, as it
+// would have on the caller's goroutine, where the request's recovery catches it.
+func parallel(n int, f func(i int)) {
+	workers := min(runtime.GOMAXPROCS(0), n)
+	if workers <= 1 {
+		for i := range n {
+			f(i)
+		}
+		return
+	}
+	var (
+		next     atomic.Int64
+		wg       sync.WaitGroup
+		mu       sync.Mutex
+		panicked any
+	)
+	for range workers {
+		wg.Go(func() {
+			defer func() {
+				if r := recover(); r != nil {
+					mu.Lock()
+					if panicked == nil {
+						panicked = r
+					}
+					mu.Unlock()
+				}
+			}()
+			for i := int(next.Add(1) - 1); i < n; i = int(next.Add(1) - 1) {
+				f(i)
+			}
+		})
+	}
+	wg.Wait()
+	if panicked != nil {
+		panic(panicked)
+	}
 }
 
 // entries returns the set, empty for no document.
@@ -421,8 +547,12 @@ func (d *docEntries) entries() entrySet {
 // sortedEntries orders entries by index and key, once each, so that concurrent commits touch
 // index_entries rows in one order.
 func sortedEntries(es []entry) []entry {
-	slices.SortFunc(es, func(a, b entry) int { return cmp.Or(cmp.Compare(a.index, b.index), strings.Compare(a.key, b.key)) })
+	slices.SortFunc(es, compareEntries)
 	return slices.CompactFunc(es, func(a, b entry) bool { return a == b })
+}
+
+func compareEntries(a, b entry) int {
+	return cmp.Or(cmp.Compare(a.index, b.index), strings.Compare(a.key, b.key))
 }
 
 // storedEntry returns an entry's key as stored and its whole key when it is cut.
