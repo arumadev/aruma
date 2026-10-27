@@ -391,20 +391,22 @@ func TestForms(t *testing.T) {
 	}
 }
 
-// The data paths are open to every origin, with ADR-027 §5.2's preflight.
+// The data paths are open to every origin, credentialed as production answers them
+// (f6-cors.json), with ADR-027 §5.2's preflight.
 func TestCORS(t *testing.T) {
 	h := newHarness(t, apitest.Options{})
 	code, hd, _ := h.do(t, http.MethodOptions, "/v1/"+root+"/c/d", "", "",
 		"Origin", "https://app.example", "Access-Control-Request-Method", "PATCH",
 		"Access-Control-Request-Headers", "authorization, x-goog-api-client")
-	if code != http.StatusNoContent || hd.Get("Access-Control-Allow-Origin") != "*" ||
+	if code != http.StatusNoContent || hd.Get("Access-Control-Allow-Origin") != "https://app.example" ||
 		hd.Get("Access-Control-Allow-Methods") != "GET, POST, PATCH, DELETE" ||
 		!strings.Contains(hd.Get("Access-Control-Allow-Headers"), "google-cloud-resource-prefix") ||
-		hd.Get("Access-Control-Allow-Credentials") != "" {
+		hd.Get("Access-Control-Allow-Credentials") != "true" {
 		t.Errorf("preflight: %d %v", code, hd)
 	}
 	_, hd, _ = h.do(t, http.MethodGet, "/v1/"+root+"/c/d", "", h.env.JWT(t), "Origin", "https://app.example")
-	if hd.Get("Access-Control-Allow-Origin") != "*" || hd.Get("Access-Control-Expose-Headers") != "X-HTTP-Session-Id" {
+	if hd.Get("Access-Control-Allow-Origin") != "https://app.example" || hd.Get("Access-Control-Allow-Credentials") != "true" ||
+		hd.Get("Access-Control-Expose-Headers") != "X-HTTP-Session-Id" {
 		t.Errorf("data path: %v", hd)
 	}
 }
