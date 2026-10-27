@@ -29,7 +29,7 @@
 // before the collection's name), and Variables where resource is a Map whose data is a
 // PartialMap: a field the way filters on holds Constraint(its filters...), a field path a.b a
 // nested PartialMap, and resource's other fields Unknown(); request.query is Query(limit,
-// offset). The query is allowed when every way is. A comparison on a Constraint is true when
+// offset, orders). The query is allowed when every way is. A comparison on a Constraint is true when
 // one of its filters alone implies it, and otherwise an error without a message; every other
 // operation on a Constraint, an Unknown or a PartialMap is that error, so the engine never
 // allows what it does not understand. Leaving a filter out never allows more.

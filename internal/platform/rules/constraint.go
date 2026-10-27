@@ -13,10 +13,23 @@ import (
 // way, resource.data is a PartialMap whose fields are what the way's filters say: a Constraint
 // on a field the filters name, a nested PartialMap for a field path a.b, and nothing else.
 //
-// The model is the emulator's as hidane measured it (ADR 0005, #66): a comparison on a
-// Constraint is true when one of the field's filters alone implies it for every document the
-// filter matches, and otherwise an error without a message, never false. n >= 1 and n <= 1
-// together do not imply n == 1, and a filter that matches nothing implies every comparison.
+// The model is the emulator's as hidane measured it (ADR 0005, #66), corrected by production
+// (f5-rules-queries.json, f5-rules-constraints.json): a comparison on a Constraint is true when
+// one of the field's filters alone implies it for every document the filter matches, and
+// otherwise an error without a message, never false. n >= 1 and n <= 1 together do not imply
+// n == 1, and a filter that matches nothing implies every comparison. Production's own rules:
+//
+//   - a range implies a range whose bound it falls inside, never one whose edge it reaches past
+//     (n <= 10 does not imply n < 10; n >= 0 does not imply n > 0, c.*, d.*), and only when the
+//     two bounds are numbers of one kind (n < 5.0 does not imply n < 10, c.lt-5-double); a
+//     range never matches NaN (value.InRange), so n < 5 implies n < 10;
+//   - an equality implies a comparison by value (n == 3.0 implies n == 3, z == -0.0 implies
+//     z > -1, g.*, h.*), and != of a value of any other type (x == 'a' implies x != null);
+//   - an equality makes "field in list" true when the list holds its value, a number of the
+//     same kind (x == 1 implies x in [1, 2], q10.*), as production allows though the rules'
+//     in finds no 1.0 in [1, 2];
+//   - a single-value in and an equality are one: the binding splits in into ways of ==.
+//
 // Where nothing is measured the answer is the stricter one, an error: the engine never allows
 // more than Firebase. Leaving a filter out of a Constraint, or a field out of a PartialMap,
 // never allows more.
@@ -46,8 +59,8 @@ type Filter struct {
 }
 
 // Constraint returns what a list query's filters say of one field. Of the operations, only ==,
-// !=, <, <=, >, >= and "x in field" take it (constrained); every other one is an error without
-// a message.
+// !=, <, <=, >, >=, "x in field" and "field in list" take it (constrained); every other one is
+// an error without a message.
 func Constraint(filters ...Filter) Value {
 	return Value{kind: KindConstraint, x: slices.Clone(filters)}
 }
@@ -69,18 +82,21 @@ func PartialMap(fields map[string]Value) Value {
 	return Value{kind: KindUnknown, x: &mapValue{keys: slices.Sorted(maps.Keys(fields)), entries: fields}}
 }
 
-// Query returns request.query for a list: limit and offset as ints when the query has them, and
-// otherwise, like orderBy, Unknown, so reading them is an error (unmeasured; the Rules Test API
-// allows request.query.limit <= 10 for a query of limit 5, production/methods.json
-// list_query_in_request).
-func Query(limit, offset *int64) Value {
-	q := map[string]Value{"limit": Unknown(), "offset": Unknown(), "orderBy": Unknown()}
+// Query returns request.query for a list, as production shows it (f5-rules-queries.json q2 to
+// q13): limit an int, or null when the query has none; offset an int, 0 when it has none
+// (offset <= 1 allows a query without one); orderBy a list of orders explicitly given, whose
+// size is known and whose elements are Unknown (orderBy[0] == 'x' and orderBy.x are denied).
+// The three keys are always there ('limit' in request.query).
+func Query(limit *int64, offset int64, orders int) Value {
+	q := map[string]Value{"limit": Null(), "offset": Int(offset)}
 	if limit != nil {
 		q["limit"] = Int(*limit)
 	}
-	if offset != nil {
-		q["offset"] = Int(*offset)
+	ob := make([]Value, orders)
+	for i := range ob {
+		ob[i] = Unknown()
 	}
+	q["orderBy"] = List(ob)
 	return Map(q)
 }
 
@@ -115,11 +131,14 @@ func constrained(m *meter, op token, x, y Value) (Value, error) {
 	c, b := x, y
 	switch op {
 	case tokIn:
-		// b in c: c must be the list. A Constraint on the left of in is unmeasured.
-		if y.kind != KindConstraint {
+		// b in c, or c in a list or a set (c, b = x, y).
+		if y.kind == KindConstraint {
+			c, b = y, x
+		} else if y.kind != KindList && y.kind != KindSet {
 			return Value{}, errReserved()
+		} else {
+			op = tokInList
 		}
-		c, b = y, x
 	case tokEQ, tokNE, tokLT, tokLE, tokGT, tokGE:
 		if y.kind == KindConstraint {
 			c, b, op = y, x, flip(op)
@@ -132,7 +151,7 @@ func constrained(m *meter, op token, x, y Value) (Value, error) {
 		return Value{}, err
 	}
 	for _, f := range fs {
-		if implies(f, op, b) {
+		if op == tokInList && inList(m, f, b) || op != tokInList && implies(f, op, b) {
 			return Bool(true), nil
 		}
 	}
@@ -154,8 +173,23 @@ func flip(op token) token {
 	return op // == and != are symmetric
 }
 
+// tokInList is "v in b" for a list or a set b, which constrained tells from tokIn, "b in v".
+const tokInList = token(255)
+
+// inList reports whether every value v that filter f matches is in the list or set b. Every
+// match of an equality equals its value a, and is a itself as far as in can tell, but for a
+// number of the other kind: production allows x == 1 for a rule x in [1, 2] (q10.eq-1), though
+// the rules' in (E3) finds no 1.0 in [1, 2].
+func inList(m *meter, f Filter, b Value) bool {
+	if f.Op != FilterEQ || classOf(f.Value) == vcNone {
+		return false
+	}
+	r, err := binary(m, tokIn, f.Value, b)
+	return err == nil && r.kind == KindBool && r.boolean()
+}
+
 // implies reports whether every value v that filter f matches makes "v op b" true, where op is
-// a comparison or tokIn for "b in v".
+// a comparison, or tokIn for "b in v".
 func implies(f Filter, op token, b Value) bool {
 	if op == tokIn {
 		// array-contains a: every array holds an element Firestore finds equal to a. in compares
@@ -174,8 +208,10 @@ func implies(f Filter, op token, b Value) bool {
 		// Every match equals a (an int or a float of a's value, either zero for a zero), and
 		// the rules compare it to b as they compare a.
 		switch {
-		case ca == vcNone || ca != cb:
+		case ca == vcNone || cb == vcNone:
 			return false
+		case ca != cb:
+			return op == tokNE // a value of another type is never b (x == 'a' implies x != null)
 		case op == tokEQ:
 			return sameScalar(a, b)
 		case op == tokNE:
@@ -211,19 +247,17 @@ func implies(f Filter, op token, b Value) bool {
 
 // rangeImplies reports whether every v with "v fop a" makes "v op b" true. Only values of one
 // order the rules share with Firestore take part: numbers within ±2^53 (exact as floats) or
-// infinite, bytes, timestamps, and strings when b's characters all precede U+D800, where the
-// rules' UTF-16 order and Firestore's UTF-8 order agree.
+// infinite, both ints or both floats (c.lt-5-double), bytes, timestamps, and strings when b's
+// characters all precede U+D800, where the rules' UTF-16 order and Firestore's UTF-8 order
+// agree. Firestore's ranges never match NaN.
 func rangeImplies(fop Comparator, op token, a, b Value, ca, cb valueClass) bool {
-	if ca != cb || ca == vcNone || ca == vcNull || ca == vcBool {
+	if ca != cb || ca == vcNone || ca == vcNull || ca == vcBool || ca == vcNumber && a.kind != b.kind {
 		return false
 	}
 	if cb == vcString && !belowSurrogates(b.str()) {
 		return false
 	}
 	below := fop == FilterLT || fop == FilterLE
-	if below && ca == vcNumber && op != tokNE {
-		return false // NaN precedes every number in Firestore, so v < a may be NaN, which is < nothing
-	}
 	if isZero(a) && isZero(b) && op != tokLE && op != tokGE &&
 		(fop != FilterGT || a.kind == KindFloat && math.Signbit(a.float())) {
 		// Whether Firestore orders -0.0 below 0.0 is unmeasured: v > 0 is never a zero, but
