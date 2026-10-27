@@ -1,0 +1,2047 @@
+{
+  "bulk": {
+    "collection": "aruma-ref-f3-part",
+    "commits": 8,
+    "documents": 3000,
+    "fields": "{i: <its number>}",
+    "ids": "p00000 .. p02999"
+  },
+  "cases": [
+    {
+      "description": "partitionCount 2 over 3000 documents",
+      "id": "valid.count_2",
+      "request": {
+        "body": {
+          "partitionCount": "2",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "partitions": [
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00357"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01451"
+                }
+              ]
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "partitionCount 3 over 3000 documents",
+      "id": "valid.count_3",
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "partitions": [
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00357"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01255"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01451"
+                }
+              ]
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "partitionCount 10 over 3000 documents",
+      "id": "valid.count_10",
+      "request": {
+        "body": {
+          "partitionCount": "10",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "partitions": [
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00276"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00357"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00427"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00789"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00914"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01255"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01451"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01525"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01799"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p02125"
+                }
+              ]
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "partitionCount 1 over 3000 documents",
+      "id": "valid.count_1",
+      "request": {
+        "body": {
+          "partitionCount": "1",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "partitions": [
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01451"
+                }
+              ]
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "partitionCount 100",
+      "id": "valid.count_100",
+      "request": {
+        "body": {
+          "partitionCount": "100",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "partitions": [
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00136"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00276"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00357"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00379"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00427"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00648"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00693"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00789"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00914"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01044"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01169"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01255"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01451"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01492"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01525"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01799"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01928"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p02068"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p02125"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p02377"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p02420"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p02429"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p02498"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p02739"
+                }
+              ]
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "partitionCount 3 as a JSON number",
+      "id": "valid.count_number",
+      "request": {
+        "body": {
+          "partitionCount": 3,
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "partitions": [
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00357"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01255"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01451"
+                }
+              ]
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "partitionCount 3 with no orderBy",
+      "id": "valid.no_order",
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "partitionCount 4, pageSize 1",
+      "id": "valid.page_size_1",
+      "request": {
+        "body": {
+          "pageSize": 1,
+          "partitionCount": "4",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "nextPageToken": "<nextPageToken>",
+          "partitions": [
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01451"
+                }
+              ]
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "the next page (pageToken from valid.page_size_1)",
+      "id": "valid.page_2",
+      "request": {
+        "body": {
+          "pageSize": 1,
+          "pageToken": "<nextPageToken of valid.page_size_1>",
+          "partitionCount": "4",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "nextPageToken": "<nextPageToken>",
+          "partitions": [
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00357"
+                }
+              ]
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "the page after",
+      "id": "valid.page_3",
+      "request": {
+        "body": {
+          "pageSize": 1,
+          "pageToken": "<nextPageToken of valid.page_2>",
+          "partitionCount": "4",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "nextPageToken": "<nextPageToken>",
+          "partitions": [
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01255"
+                }
+              ]
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "pageToken of valid.page_size_1 with partitionCount 5",
+      "error": {
+        "http": 400,
+        "message": "Invalid page token.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "valid.page_token_other_count",
+      "request": {
+        "body": {
+          "pageSize": 1,
+          "pageToken": "<nextPageToken of valid.page_size_1>",
+          "partitionCount": "5",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid page token.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "partitionCount 3 with readTime = the last bulk commit",
+      "id": "valid.read_time",
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "readTime": "<readTime: RFC 3339>",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "partitions": [
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00357"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01255"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01451"
+                }
+              ]
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "partitionCount 3 with readTime 1 µs before the last bulk commit",
+      "id": "valid.read_time_before",
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "readTime": "<readTime: RFC 3339>",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "partitions": [
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00357"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01255"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01451"
+                }
+              ]
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "partitionCount 0",
+      "error": {
+        "http": 400,
+        "message": "Partition count must be greater than zero.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.count_0",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "0",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Partition count must be greater than zero.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "partitionCount -1",
+      "error": {
+        "http": 400,
+        "message": "Partition count must be greater than zero.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.count_negative",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "-1",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Partition count must be greater than zero.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "no partitionCount",
+      "error": {
+        "http": 400,
+        "message": "Partition count must be greater than zero.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.count_missing",
+      "replay": true,
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Partition count must be greater than zero.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "partitionCount 1",
+      "id": "invalid.count_1",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "1",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "partitionCount 3 over one document",
+      "id": "invalid.count_3_one_doc",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "no structuredQuery",
+      "error": {
+        "http": 400,
+        "message": "Query is required.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.no_query",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "3"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Query is required.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy __name__ desc",
+      "error": {
+        "http": 400,
+        "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=ClZwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjMtcHF4L2luZGV4ZXMvXxACGgwKCF9fbmFtZV9fEAI",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "invalid.order_desc",
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=ClZwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjMtcHF4L2luZGV4ZXMvXxACGgwKCF9fbmFtZV9fEAI",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy a",
+      "error": {
+        "http": 400,
+        "message": "The query requires a COLLECTION_GROUP_ASC index for collection aruma-ref-f3-pqx and field a. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_exemption=ClVwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjMtcHF4L2ZpZWxkcy9hEAIaBQoBYRAB",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "invalid.order_field",
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The query requires a COLLECTION_GROUP_ASC index for collection aruma-ref-f3-pqx and field a. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_exemption=ClVwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjMtcHF4L2ZpZWxkcy9hEAIaBQoBYRAB",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "orderBy __name__, a",
+      "error": {
+        "http": 400,
+        "message": "order by clause cannot contain more fields after the key",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.order_name_then_field",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              },
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "a"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "order by clause cannot contain more fields after the key",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "limit 10",
+      "error": {
+        "http": 400,
+        "message": "Query limit is not supported.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.limit",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "limit": 10,
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Query limit is not supported.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "offset 1",
+      "error": {
+        "http": 400,
+        "message": "Query offset is not supported.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.offset",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "offset": 1,
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Query offset is not supported.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "startAt [ref]",
+      "error": {
+        "http": 400,
+        "message": "Query start cursors are not supported.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.start_at",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "startAt": {
+              "before": true,
+              "values": [
+                {
+                  "referenceValue": "projects/{project}/databases/(default)/documents/aruma-ref-f3-pqx/a"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Query start cursors are not supported.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "endAt [ref]",
+      "error": {
+        "http": 400,
+        "message": "Query end cursors are not supported.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.end_at",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "endAt": {
+              "before": false,
+              "values": [
+                {
+                  "referenceValue": "projects/{project}/databases/(default)/documents/aruma-ref-f3-pqx/a"
+                }
+              ]
+            },
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Query end cursors are not supported.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "select [__name__]",
+      "error": {
+        "http": 400,
+        "message": "Property masks are not supported.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.select",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "select": {
+              "fields": [
+                {
+                  "fieldPath": "__name__"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Property masks are not supported.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "__name__ >= ref",
+      "id": "invalid.filter_name",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "__name__"
+                },
+                "op": "GREATER_THAN_OR_EQUAL",
+                "value": {
+                  "referenceValue": "projects/{project}/databases/(default)/documents/aruma-ref-f3-pqx/a"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a == 1 (no order)",
+      "error": {
+        "http": 400,
+        "message": "The query requires a COLLECTION_GROUP_ASC index for collection aruma-ref-f3-pqx and field a. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_exemption=ClVwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjMtcHF4L2ZpZWxkcy9hEAIaBQoBYRAB",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "invalid.filter_eq",
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "where": {
+              "fieldFilter": {
+                "field": {
+                  "fieldPath": "a"
+                },
+                "op": "EQUAL",
+                "value": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The query requires a COLLECTION_GROUP_ASC index for collection aruma-ref-f3-pqx and field a. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_exemption=ClVwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjMtcHF4L2ZpZWxkcy9hEAIaBQoBYRAB",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "pageSize -1",
+      "error": {
+        "http": 400,
+        "message": "Page size must be nonnegative.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.page_size_negative",
+      "replay": true,
+      "request": {
+        "body": {
+          "pageSize": -1,
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Page size must be nonnegative.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "pageToken \"garbage\"",
+      "error": {
+        "http": 400,
+        "message": "invalid page token",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.page_token_garbage",
+      "replay": true,
+      "request": {
+        "body": {
+          "pageToken": "garbage",
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "invalid page token",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "from two collection groups",
+      "error": {
+        "http": 400,
+        "message": "StructuredQuery.from cannot have more than one collection selector.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.two_from",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              },
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "StructuredQuery.from cannot have more than one collection selector.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "collection group aruma-ref-f3-pqx under aruma-ref-f3-pqx/a",
+      "error": {
+        "http": 400,
+        "message": "Ancestor queries are not supported.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.under_document",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f3-pqx/a:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Ancestor queries are not supported.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "parent aruma-ref-f3-pqx (a collection path)",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unknown name \"structuredQuery\" at 'document': Cannot find field.\nInvalid JSON payload received. Unknown name \"partitionCount\" at 'document': Cannot find field.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid.parent_collection",
+      "replay": true,
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f3-pqx:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid JSON payload received. Unknown name \"structuredQuery\" at 'document': Cannot find field.",
+                    "field": "document"
+                  },
+                  {
+                    "description": "Invalid JSON payload received. Unknown name \"partitionCount\" at 'document': Cannot find field.",
+                    "field": "document"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid JSON payload received. Unknown name \"structuredQuery\" at 'document': Cannot find field.\nInvalid JSON payload received. Unknown name \"partitionCount\" at 'document': Cannot find field.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "with findNearest",
+      "error": {
+        "http": 400,
+        "message": "Missing vector index configuration. Please create the required index with the following gcloud command: gcloud firestore indexes composite create --project=chatapp-8ae21 --collection-group=aruma-ref-f3-pqx --query-scope=COLLECTION_GROUP --field-config=vector-config='{\"dimension\":\"1\",\"flat\": \"{}\"}',field-path=e",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "invalid.find_nearest",
+      "request": {
+        "body": {
+          "partitionCount": "3",
+          "structuredQuery": {
+            "findNearest": {
+              "distanceMeasure": "EUCLIDEAN",
+              "limit": 1,
+              "queryVector": {
+                "mapValue": {
+                  "fields": {
+                    "__type__": {
+                      "stringValue": "__vector__"
+                    },
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "doubleValue": 1
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "vectorField": {
+                "fieldPath": "e"
+              }
+            },
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:partitionQuery"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Missing vector index configuration. Please create the required index with the following gcloud command: gcloud firestore indexes composite create --project=chatapp-8ae21 --collection-group=aruma-ref-f3-pqx --query-scope=COLLECTION_GROUP --field-config=vector-config='{\"dimension\":\"1\",\"flat\": \"{}\"}',field-path=e",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "partitionCount 3 over the bulk collection group",
+      "id": "grpc.valid.count_3",
+      "request": {
+        "message": {
+          "parent": "projects/{project}/databases/(default)/documents",
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-part"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/PartitionQuery"
+      },
+      "response": {
+        "message": {
+          "partitions": [
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p00357"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01255"
+                }
+              ]
+            },
+            {
+              "values": [
+                {
+                  "referenceValue": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f3-part/p01451"
+                }
+              ]
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "partitionCount 0",
+      "error": {
+        "code": 3,
+        "message": "Partition count must be greater than zero.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.invalid.count_0",
+      "request": {
+        "message": {
+          "parent": "projects/{project}/databases/(default)/documents",
+          "partitionCount": "0",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "ASCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/PartitionQuery"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "orderBy __name__ desc",
+      "error": {
+        "code": 9,
+        "message": "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chatapp-8ae21/firestore/indexes?create_composite=ClZwcm9qZWN0cy9jaGF0YXBwLThhZTIxL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9hcnVtYS1yZWYtZjMtcHF4L2luZGV4ZXMvXxACGgwKCF9fbmFtZV9fEAI",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "grpc.invalid.order_desc",
+      "request": {
+        "message": {
+          "parent": "projects/{project}/databases/(default)/documents",
+          "partitionCount": "3",
+          "structuredQuery": {
+            "from": [
+              {
+                "allDescendants": true,
+                "collectionId": "aruma-ref-f3-pqx"
+              }
+            ],
+            "orderBy": [
+              {
+                "direction": "DESCENDING",
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/PartitionQuery"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f3.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner); security rules do not apply.",
+      "Times, durations, page tokens and transaction ids are replaced by placeholders (normalise in lib.mjs); everything else is as returned.",
+      "The valid.* cases read 3000 documents written to aruma-ref-f3-part before them (bulk); they are not replayable (the partition points are production's sampling). The invalid.* cases read aruma-ref-f3-pqx, whose one document is the setup.",
+      "f0-descendants.json has the earlier partition cases (a kindless parent, a collection that is not a group, no order, a filter)."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-27T04:15:23.142Z .. 2026-10-27T04:23:59.680Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "ea2aad83c415711da4bfe6d6b7c73cee74f7c367c816a3b67940f1fc389030f1",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1",
+  "setup": {
+    "commits": [
+      {
+        "writes": [
+          {
+            "update": {
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f3-pqx/a"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

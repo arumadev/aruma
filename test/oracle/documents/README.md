@@ -98,6 +98,13 @@ Normalisation, so that a re-recording differs only where behaviour differs:
 | `f2-locks.json` | production | which writes wait on a read-write transaction's query (the scanned index range, phantoms, sibling collections, `limit`, collection groups), a wounded transaction call by call, and an owner's `OPTIMISTIC` transaction |
 | `f2-non-utf8.json` | production | ids, field names and strings that are not UTF-8: REST paths, query parameters and raw JSON bodies, and hand-encoded gRPC |
 | `f2-cleanup.json` | production | the deletion of everything `record-f2.mjs` wrote, verified, and the strays found before the run |
+| `f3-run-query.json` | production | `RunQuery` on one fixture of every value type (`record-f3.mjs`): order of mixed types, a missing ordered field, the implicit order of an inequality, cursors (partial, `__name__`, more values than the explicit order), offset and `skippedResults`, `limit` 0, projections, every operator with null and NaN, `array-contains(-any)`, OR and nested AND/OR, empty results, collection groups, kindless queries with `__name__` ranges, `transaction`/`newTransaction`/`readTime`, the gRPC stream's elements, and the missing-index error over gRPC (code 9) |
+| `f3-query-limits.json` | production | the refusals of a query: `in`/`not-in`/`array-contains-any` sizes, 30 disjunctions, one `!=`/`not-in`/`IS_NOT_*` per query, `not-in` with `IN`/`OR`, one `array-contains` per disjunction, 10 inequality fields, 100 filters + orders + ancestor, cursors, `limit`/`offset`, field paths, `__name__` filters of the wrong type, filter and `from` structure, some over gRPC |
+| `f3-aggregations.json` | production | `count` (`upTo`), `sum` (int64 overflow to double, mixed types, NaN, the infinities, the empty set), `avg`, up to five aggregations, aliases (absent, duplicate, reserved, 1500 bytes), operators, the missing-index error over gRPC |
+| `f3-partition-query.json` | production | `PartitionQuery` over a collection group of 3000 documents (counts, paging, `readTime`), and every refused shape |
+| `f3-admin.json` | production | read-only Admin API: the database, composite indexes, field overrides with firebase-tools' filter, `__default__/fields/*`, one field, missing indexes and operations, page sizes and filters refused |
+| `f3-index-entries.json` | production | per-document index entry limits reached by writes: 40,000 entries (fields, array elements, map subfields), the entry size against the document name, and the transaction size limit a document with long-named entries meets first (also on its delete) |
+| `f3-cleanup.json` | production | the deletion of everything `record-f3.mjs` wrote, verified |
 
 F1 files hold a `setup` section (the commits written before the cases) and mark with
 `replay: true` the cases whose answer depends only on that setup: `test/differential/documents`
@@ -167,7 +174,10 @@ equality and range filters, sizes, validation, masks, the BSON shapes), and
   document in that range the run did not track, such as one left by an interrupted run), and the
   F2 run `aruma-ref-f2-*` (swept over `aruma-ref-f2` .. `aruma-ref-f3` before the run and after it;
   its lock probe uses subcollections named `aruma-ref-f2-lock-items` so that its collection-group
-  query reads only its own documents).
+  query reads only its own documents), and the F3 run `aruma-ref-f3-*` (swept over `aruma-ref-f3` ..
+  `aruma-ref-f4`, paged; documents too big to delete by one commit are emptied 1000 fields at a
+  time first; a query answer that holds a document outside `aruma-ref*` stops the recorder, so
+  the project's own data never reaches a corpus file).
 - Everything written is deleted by commit at the end, and the deletion is verified: one kindless
   all-descendants query over every collection id from `aruma-ref` up to `aruma-reg`, plus
   `showMissing` lists of each collection used (`f0-cleanup.json`, `cleanup` in
@@ -205,6 +215,8 @@ node record-f1.mjs                       # the F1 unary RPCs and wire errors (ab
 node record-f2.mjs                       # writes, transforms, transactions, locks (about 10 minutes), then cleanup
 node record-f2.mjs --only=locks,commit   # a probe of some topics: cleanup verified, no corpus file
                                          # (F2_PROBE_OUT=<file outside the repo> keeps its results)
+node record-f3.mjs                       # queries, aggregations, partitions, Admin GETs, index entry limits (about 9 minutes), then cleanup
+node record-f3.mjs --only=limits,admin   # a probe (F3_PROBE_OUT=<file outside the repo> keeps its results)
 node rebuild-manifest.mjs                # only after a deliberate hand edit
 (cd .. && go test .)                   # the checker
 ```
@@ -228,6 +240,15 @@ These are modelled on the nearest recorded behaviour, and the code's comments sa
   it is the one known gap of `value/corpus_test.go`.
 - **The number of paths an update mask may hold**: `ApplyMask` is linear in them, but the wire
   package should cap them at production's limit, which has not been probed.
+
+- **Index limits that need an index or override to be created**: the number of composite
+  indexes (200 without billing, 1000 with), of field overrides, more than 100 fields in one
+  index, a second array field in one index, a vector index of more than 2048 dimensions, an
+  index identical to an existing one, a query on an index still `CREATING` (R21), merges of
+  declared composites (R18) and exemptions (R20). The owner forbids creating indexes or
+  changing field configuration on the production project, so these wait for a test project.
+- **The 8 MiB total of a document's index entries** (IX §1.5): every attempt met `Transaction
+  too big. Decrease transaction size.` first (`f3-index-entries.json`, `total`).
 
 ## Pending owner action
 
