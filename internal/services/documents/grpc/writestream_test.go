@@ -20,6 +20,9 @@ import (
 	"github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb/firestorepbconnect"
 )
 
+// anyToken is a valid stream token: the server only parses it.
+var anyToken = []byte{0x19, 1, 2, 3, 4, 5, 6, 7, 8}
+
 type writeStream = connect.BidiStreamForClient[pb.WriteRequest, pb.WriteResponse]
 
 func openWrite(t *testing.T, x *harness, tok string) (*writeStream, *pb.WriteResponse) {
@@ -51,7 +54,7 @@ func TestWriteStream(t *testing.T) {
 	maxT := &pb.DocumentTransform_FieldTransform{FieldPath: "hi", TransformType: &pb.DocumentTransform_FieldTransform_Maximum{Maximum: intValue(9)}}
 	for i := range 10 {
 		n := strconv.Itoa(i)
-		req := &pb.WriteRequest{Writes: []*pb.Write{
+		req := &pb.WriteRequest{StreamToken: anyToken, Writes: []*pb.Write{
 			update("s/a"+n, intField(int64(i)), serverTime("ts"), increment("n", intValue(2)), arr, maxT),
 			update("s/b"+n, intField(1)),
 		}}
@@ -62,7 +65,10 @@ func TestWriteStream(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	last := hs.GetStreamToken()
+	hsTok := hs.GetStreamToken()
+	if len(hsTok) != 9 || hsTok[0] != 0x19 {
+		t.Fatalf("handshake token %x: want 19 and 8 bytes (write.handshake-and-batches)", hsTok)
+	}
 	for i := range 10 {
 		res, err := st.Receive()
 		if err != nil {
@@ -72,11 +78,10 @@ func TestWriteStream(t *testing.T) {
 		if i == 0 {
 			wantResults = 3
 		}
-		if len(res.GetWriteResults()) != wantResults || res.GetCommitTime() == nil || res.GetStreamId() != hs.GetStreamId() ||
-			len(res.GetStreamToken()) == 0 || bytes.Compare(res.GetStreamToken(), last) <= 0 {
+		if len(res.GetWriteResults()) != wantResults || res.GetCommitTime() == nil || res.GetStreamId() != "" ||
+			!bytes.Equal(res.GetStreamToken(), append([]byte{0x10, byte(i + 1)}, hsTok...)) {
 			t.Fatalf("reply %d: %v", i, res)
 		}
-		last = res.GetStreamToken()
 		r0 := res.GetWriteResults()[0]
 		if len(r0.GetTransformResults()) != 4 || r0.GetUpdateTime() == nil || len(res.GetWriteResults()[1].GetTransformResults()) != 0 {
 			t.Fatalf("reply %d results: %v", i, res)
@@ -85,8 +90,8 @@ func TestWriteStream(t *testing.T) {
 			r0.GetTransformResults()[1].GetIntegerValue() != 2 || r0.GetTransformResults()[3].GetIntegerValue() != 9 {
 			t.Fatalf("reply %d transforms: %v", i, r0)
 		}
-		if i == 0 && !proto.Equal(res.GetWriteResults()[2].GetUpdateTime(), res.GetCommitTime()) {
-			t.Fatalf("a delete's update_time is the commit_time: %v", res)
+		if i == 0 && !proto.Equal(res.GetWriteResults()[2], &pb.WriteResult{}) {
+			t.Fatalf("a delete's result is empty: %v", res)
 		}
 	}
 	for _, name := range []string{"s/a0", "s/b9"} {
@@ -95,24 +100,17 @@ func TestWriteStream(t *testing.T) {
 		}
 	}
 
-	// A delete of an existing document, and an empty request, which the client sends before closing.
-	if err := st.Send(&pb.WriteRequest{Writes: []*pb.Write{{Operation: &pb.Write_Delete{Delete: root + "/s/b1"}}}}); err != nil {
+	// A delete of an existing document.
+	if err := st.Send(&pb.WriteRequest{StreamToken: anyToken, Writes: []*pb.Write{{Operation: &pb.Write_Delete{Delete: root + "/s/b1"}}}}); err != nil {
 		t.Fatal(err)
 	}
 	res, err := st.Receive()
-	if err != nil || len(res.GetWriteResults()) != 1 || !proto.Equal(res.GetWriteResults()[0].GetUpdateTime(), res.GetCommitTime()) {
+	if err != nil || len(res.GetWriteResults()) != 1 || !proto.Equal(res.GetWriteResults()[0], &pb.WriteResult{}) {
 		t.Fatalf("delete: %v %v", res, err)
-	}
-	if err := st.Send(&pb.WriteRequest{}); err != nil {
-		t.Fatal(err)
-	}
-	empty, err := st.Receive()
-	if err != nil || empty.GetCommitTime() == nil || len(empty.GetWriteResults()) != 0 || len(empty.GetStreamToken()) == 0 {
-		t.Fatalf("empty: %v %v", empty, err)
 	}
 
 	// The legacy separate transform write.
-	if err := st.Send(&pb.WriteRequest{Writes: []*pb.Write{{Operation: &pb.Write_Transform{Transform: &pb.DocumentTransform{
+	if err := st.Send(&pb.WriteRequest{StreamToken: anyToken, Writes: []*pb.Write{{Operation: &pb.Write_Transform{Transform: &pb.DocumentTransform{
 		Document: root + "/s/a0", FieldTransforms: []*pb.DocumentTransform_FieldTransform{increment("n", intValue(5))}}}}}}); err != nil {
 		t.Fatal(err)
 	}
@@ -121,6 +119,67 @@ func TestWriteStream(t *testing.T) {
 		t.Fatalf("legacy transform: %v %v", res, err)
 	}
 
+	// An empty batch ends the stream cancelled (write.empty-first), as production does.
+	if err := st.Send(&pb.WriteRequest{StreamToken: anyToken}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = st.Receive()
+	wantErr(t, "empty batch", err, connect.CodeCanceled, "The operation was cancelled.")
+}
+
+// The stream's refusals are production's, status and text (write.no-handshake, write.token-reuse,
+// write.resume-stream): a stale token and another stream_id are accepted, a missing or unparseable
+// token is not, and a stream is not resumed.
+func TestWriteStreamTokens(t *testing.T) {
+	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
+	tok := x.env.JWT(t)
+	first := func(req *pb.WriteRequest) error {
+		st := x.client.Write(t.Context())
+		st.RequestHeader().Set("Authorization", "Bearer "+tok)
+		t.Cleanup(func() { _ = st.CloseRequest(); _ = st.CloseResponse() })
+		if err := st.Send(req); err != nil {
+			t.Fatal(err)
+		}
+		_, err := st.Receive()
+		return err
+	}
+	wantErr(t, "writes in the first request", first(&pb.WriteRequest{Database: db, Writes: []*pb.Write{update("tk/x", nil)}}),
+		connect.CodeInvalidArgument, "the first request in a stream cannot contain writes")
+	for _, req := range []*pb.WriteRequest{
+		{Database: db, StreamId: "a", StreamToken: anyToken},
+		{Database: db, StreamToken: anyToken},
+	} {
+		wantErr(t, "resume", first(req), connect.CodeAborted, "resuming a stream not supported")
+	}
+
+	st, hs := openWrite(t, x, tok)
+	b := func(id string, token []byte) error {
+		if err := st.Send(&pb.WriteRequest{StreamId: id, StreamToken: token, Writes: []*pb.Write{update("tk/y", intField(1))}}); err != nil {
+			t.Fatal(err)
+		}
+		_, err := st.Receive()
+		return err
+	}
+	if err := b("", hs.GetStreamToken()); err != nil {
+		t.Fatal(err)
+	}
+	if err := b("another", hs.GetStreamToken()); err != nil { // stale, with a foreign stream_id
+		t.Fatalf("stale token: %v", err)
+	}
+	wantErr(t, "garbled token", b("", []byte{1, 2, 3, 4, 5, 6, 7, 8}), connect.CodeInvalidArgument, "invalid stream token")
+	st, _ = openWrite(t, x, tok)
+	wantErr(t, "no token", b("", nil), connect.CodeInvalidArgument, "missing stream token")
+	st, _ = openWrite(t, x, tok)
+	if err := st.Send(&pb.WriteRequest{Database: db}); err != nil {
+		t.Fatal(err)
+	}
+	_, err := st.Receive()
+	wantErr(t, "second handshake", err, connect.CodeInvalidArgument, "missing stream token")
+}
+
+func TestWriteStreamClose(t *testing.T) {
+	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
+	st, _ := openWrite(t, x, x.env.JWT(t))
 	// The client closes its side: the stream ends cleanly.
 	if err := st.CloseRequest(); err != nil {
 		t.Fatal(err)
@@ -139,7 +198,7 @@ func TestWriteStreamPrecondition(t *testing.T) {
 	bad := update("p/x", intField(1))
 	bad.CurrentDocument = stale
 	for _, w := range []*pb.Write{update("p/ok", intField(1)), bad, update("p/after", intField(1))} {
-		if err := st.Send(&pb.WriteRequest{Writes: []*pb.Write{w}}); err != nil {
+		if err := st.Send(&pb.WriteRequest{StreamToken: anyToken, Writes: []*pb.Write{w}}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -174,11 +233,11 @@ func TestWriteStreamAuth(t *testing.T) {
 		t.Fatalf("no credential: %v", err)
 	}
 	st, _ = openWrite(t, x, x.env.JWT(t))
-	_ = st.Send(&pb.WriteRequest{Writes: []*pb.Write{update("q/x", nil)}})
+	_ = st.Send(&pb.WriteRequest{StreamToken: anyToken, Writes: []*pb.Write{update("q/x", nil)}})
 	if res, err := st.Receive(); err != nil || len(res.GetWriteResults()) != 1 {
 		t.Fatalf("%v %v", res, err)
 	}
-	_ = st.Send(&pb.WriteRequest{Writes: []*pb.Write{{Operation: &pb.Write_Delete{Delete: other + "/documents/q/x"}}}})
+	_ = st.Send(&pb.WriteRequest{StreamToken: anyToken, Writes: []*pb.Write{{Operation: &pb.Write_Delete{Delete: other + "/documents/q/x"}}}})
 	if _, err := st.Receive(); connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("another database's name: %v", err)
 	}
