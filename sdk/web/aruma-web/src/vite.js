@@ -24,7 +24,8 @@
 // app's ID token, here Aruma's, with every request (`Authorization: Firebase <token>`), and its
 // host would stay Google's. At run time install() refuses such a request too (index.js).
 import { parseBase } from './index.js';
-import { esbuildOptimizerPlugin, rollupVerify, storageRewriter } from './build.js';
+import { esbuildOptimizerPlugin, firestoreRewriter, rollupVerify, storageRewriter } from './build.js';
+import { isFirestoreModule } from './firestore.js';
 import { isStorageModule } from './storage.js';
 
 const VIRTUAL = 'virtual:aruma-web/install';
@@ -92,11 +93,20 @@ function buildModeRewriter(base, name) {
  * @param {{ url: string, allowInsecure?: boolean, log?: boolean, required?: boolean, worker?: boolean }} options
  */
 export function storagePlugin(options) {
+  return productPlugin(storageRewriter, 'storage', ['@firebase/storage', '@firebase/storage-compat', 'firebase'], options, storagePlugin);
+}
+
+/** The Firestore half (SR3-10), built the same way. Exported for tests. */
+export function firestorePlugin(options) {
+  return productPlugin(firestoreRewriter, 'firestore', ['@firebase/firestore', '@firebase/firestore-compat', 'firebase'], options, firestorePlugin);
+}
+
+function productPlugin(makeRewriter, product, noExternal, options, self) {
   const { worker = false, ...rest } = options;
-  const rw = storageRewriter(worker ? { ...rest, required: false } : rest);
+  const rw = makeRewriter(worker ? { ...rest, required: false } : rest);
   // The optimizer's own plugin: it cannot see the whole app, so it never asks for a module. Its
   // name carries the URL, which Vite hashes into the dependency cache, so a new URL rebuilds it.
-  const name = `aruma-web:storage:${rw.base.origin}`;
+  const name = `aruma-web:${product}:${rw.base.origin}`;
   const rolldownOptimizer = {
     name,
     resolveId: (id) => rw.resolveGstatic(id),
@@ -104,14 +114,14 @@ export function storagePlugin(options) {
   };
   let resolved;
   return {
-    name: 'aruma-web:storage',
+    name: `aruma-web:${product}`,
     enforce: 'pre',
     config() {
       if (worker) return null;
       const rolldown = Boolean(this?.meta?.rolldownVersion);
       return {
-        ssr: { noExternal: ['@firebase/storage', '@firebase/storage-compat', 'firebase'] },
-        worker: { plugins: () => [storagePlugin({ ...rest, worker: true })] },
+        ssr: { noExternal },
+        worker: { plugins: () => [self({ ...rest, worker: true })] },
         optimizeDeps: rolldown
           ? { rolldownOptions: { plugins: [rolldownOptimizer] } }
           : { esbuildOptions: { plugins: [esbuildOptimizerPlugin(rw, name)] } },
@@ -144,18 +154,21 @@ export function storagePlugin(options) {
 
 /**
  * @param {{ url?: string, allowInsecure?: boolean, log?: boolean, mode?: 'fetch' | 'build',
- *   storage?: boolean | { required?: boolean } }} [options]
+ *   storage?: boolean | { required?: boolean }, firestore?: boolean | { required?: boolean } }} [options]
  */
 export default function aruma(options = {}) {
-  const { url, allowInsecure = false, log = false, mode = 'fetch', storage = false } = options;
+  const { url, allowInsecure = false, log = false, mode = 'fetch', storage = false, firestore = false } = options;
   // Not configured: the plugin does nothing.
   if (url === undefined || url === null || String(url).trim() === '') return { name: 'aruma-web' };
   // Refused: stop the build or the dev server instead of shipping an app that talks to Google.
   const base = parseBase(url, { allowInsecure });
-  const auth = authPlugin(base, { allowInsecure, log, mode, storage: Boolean(storage) });
-  if (!storage) return auth;
-  const required = typeof storage === 'object' && storage.required === false ? false : true;
-  return [auth, storagePlugin({ url, allowInsecure, log, required })];
+  const auth = authPlugin(base, { allowInsecure, log, mode, storage: Boolean(storage), firestore: Boolean(firestore) });
+  if (!storage && !firestore) return auth;
+  const required = (o) => !(typeof o === 'object' && o.required === false);
+  const plugins = [auth];
+  if (storage) plugins.push(storagePlugin({ url, allowInsecure, log, required: required(storage) }));
+  if (firestore) plugins.push(firestorePlugin({ url, allowInsecure, log, required: required(firestore) }));
+  return plugins;
 }
 
 /** The error of a build that has Auth on Aruma and @firebase/storage left on Google. */
@@ -163,12 +176,15 @@ export const storageOff = (id) =>
   `@aruma/web: this build includes @firebase/storage (${id}) but Storage is not enabled, so its requests would go to firebasestorage.googleapis.com carrying the Aruma ID token. Add storage: true: aruma({ url, storage: true })`;
 
 // Without the Storage half, a @firebase/storage module stops the build (SR3-06).
-function refuseStorage(id) {
-  if (isStorageModule(id)) throw new Error(storageOff(id.split('?')[0]));
-}
+/** The same for @firebase/firestore: its requests would go to firestore.googleapis.com with the Aruma ID token. */
+export const firestoreOff = (id) =>
+  `@aruma/web: this build includes @firebase/firestore (${id}) but Firestore is not enabled, so its requests would go to firestore.googleapis.com carrying the Aruma ID token. Add firestore: true: aruma({ url, firestore: true })`;
 
-function authPlugin(base, { allowInsecure, log, mode, storage }) {
-  const guard = storage ? () => {} : refuseStorage;
+function authPlugin(base, { allowInsecure, log, mode, storage, firestore }) {
+  const guard = (id) => {
+    if (!storage && isStorageModule(id)) throw new Error(storageOff(id.split('?')[0]));
+    if (!firestore && isFirestoreModule(id)) throw new Error(firestoreOff(id.split('?')[0]));
+  };
 
   if (mode === 'build') {
     // The name carries the URL so that Vite's dependency cache is rebuilt when it changes.

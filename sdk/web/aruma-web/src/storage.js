@@ -76,7 +76,7 @@ export function isStorageModule(id) {
  * esm.sh …). A relative or root-relative import is local and not matched.
  */
 export const GSTATIC_FIREBASE =
-  /(?:https?:)?\/\/(?:www\.gstatic\.com\/firebasejs\/|[^\s"'`()<>]*?(?:\/firebase-storage(?:-compat)?(?:\.min)?\.js|\/@firebase\/storage|\/firebase@[^\/\s"'`]*\/(?:compat\/)?storage))/;
+  /(?:https?:)?\/\/(?:www\.gstatic\.com\/firebasejs\/|[^\s"'`()<>]*?(?:\/firebase-(?:storage|firestore)(?:-compat|-lite)?(?:\.min)?\.js|\/@firebase\/(?:storage|firestore)|\/firebase@[^\/\s"'`]*\/(?:compat\/)?(?:storage|firestore)))/;
 
 const HOST_LITERAL = /(["'])firebasestorage\.googleapis\.com\1/g;
 // `this._protocol = 'https';` in the constructor of FirebaseStorageImpl (`this._protocol="https"`

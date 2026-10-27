@@ -7,6 +7,9 @@
  */
 export declare function withArumaStorage<T extends object>(config: T, options?: { url?: string | URL; allowInsecure?: boolean }): T;
 
+/** The same for Cloud Firestore (SR3-10), alone or on the config withArumaStorage returned. */
+export declare function withArumaFirestore<T extends object>(config: T, options?: { url?: string | URL; allowInsecure?: boolean }): T;
+
 /** Metro's Babel transformer entry (set by withArumaStorage). */
 export declare function transform(args: { filename: string; src: string; [key: string]: unknown }): unknown;
 

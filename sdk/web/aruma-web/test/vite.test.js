@@ -98,7 +98,7 @@ describe('vite plugin, mode build', () => {
     const ok = runBuild(p, [
       [AUTH_ID, AUTH_SNIPPET],
       ['/app/src/main.js', 'const h = "identitytoolkit.googleapis.com";'],
-      ['/app/node_modules/@firebase/firestore/dist/index.esm.js', '"securetoken.googleapis.com"'],
+      ['/app/node_modules/@firebase/database/dist/index.esm.js', '"securetoken.googleapis.com"'],
     ]);
     assert.deepEqual(ok.errors, []);
     assert.match(ok.out[0].code, /apiHost: "localhost:8093\/identitytoolkit\.googleapis\.com"/);

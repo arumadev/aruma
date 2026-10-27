@@ -22,7 +22,7 @@ describe('Next.js and Turbopack', () => {
     const [rule] = c.turbopack.rules['*.js'];
     assert.equal(rule.condition.path.test(ID), true);
     assert.equal(rule.condition.path.test('/app/node_modules/@firebase/auth/dist/index.esm.js'), false);
-    assert.deepEqual(rule.loaders[0].options, { url: URL_, allowInsecure: false });
+    assert.deepEqual(rule.loaders[0].options, { url: URL_, allowInsecure: false, product: 'storage' });
     const out = c.webpack({ plugins: [] }, {});
     assert.equal(out.touched, true);
     assert.equal(out.plugins.length, 1);
