@@ -60,8 +60,8 @@ type wsCase struct {
 }
 
 var (
-	tsLabel         = regexp.MustCompile(`\\u003cts t\d+\\u003e`)
-	bytesLabel      = regexp.MustCompile(`^<bytes (b\d+) len=\d+>$`)
+	writeTSLabel    = regexp.MustCompile(`\\u003cts t\d+\\u003e`)
+	writeBytesLabel = regexp.MustCompile(`^<bytes (b\d+) len=\d+>$`)
 	streamIDLabel   = regexp.MustCompile(`^<stream_id (s\d+) len=(\d+)>$`)
 	wsStoredVersion = regexp.MustCompile(`stored version \(\d+\)`)
 )
@@ -175,7 +175,7 @@ func TestReplayWriteStreamInProcess(t *testing.T) {
 					a.msg = wsJSON(t, res)
 					var want struct{ StreamToken, StreamId string }
 					_ = json.Unmarshal(f.Msg, &want)
-					if m := bytesLabel.FindStringSubmatch(want.StreamToken); m != nil {
+					if m := writeBytesLabel.FindStringSubmatch(want.StreamToken); m != nil {
 						s.bytes[m[1]], global.bytes[m[1]] = res.GetStreamToken(), res.GetStreamToken()
 					}
 					if m := streamIDLabel.FindStringSubmatch(want.StreamId); m != nil {
@@ -282,7 +282,7 @@ func wsRequest(msg json.RawMessage, s, global *wsStream, labels map[string]struc
 		return nil, err
 	}
 	if v, ok := m["streamToken"].(string); ok {
-		l := bytesLabel.FindStringSubmatch(v)
+		l := writeBytesLabel.FindStringSubmatch(v)
 		if l == nil {
 			return nil, fmt.Errorf("stream_token %q is not a label", v)
 		}
@@ -320,7 +320,7 @@ func wsRequest(msg json.RawMessage, s, global *wsStream, labels map[string]struc
 	if err != nil {
 		return nil, err
 	}
-	b = tsLabel.ReplaceAll(b, []byte(sentTime.Format(time.RFC3339)))
+	b = writeTSLabel.ReplaceAll(b, []byte(sentTime.Format(time.RFC3339)))
 	req := &pb.WriteRequest{}
 	return req, protojson.Unmarshal(b, req)
 }
@@ -371,7 +371,7 @@ func wsWant(v any, labels map[string]struct {
 }) any {
 	m := v.(map[string]any)
 	if s, ok := m["streamToken"].(string); ok {
-		if l := bytesLabel.FindStringSubmatch(s); l != nil {
+		if l := writeBytesLabel.FindStringSubmatch(s); l != nil {
 			b, _ := hex.DecodeString(labels[l[1]].Hex)
 			m["streamToken"] = maskedToken(b)
 		}
