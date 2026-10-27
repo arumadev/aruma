@@ -39,8 +39,11 @@ type listQuery struct {
 }
 
 // listOf is a parsed query's list under parent.
-func listOf(parent wire.Name, q *query.Query) listQuery {
-	lq := listQuery{parent: pathOf(parent), collection: q.CollectionID, group: q.AllDescendants,
+func listOf(parent wire.Name, q *query.Query) listQuery { return listOfPath(pathOf(parent), q) }
+
+// listOfPath is a parsed query's list under the document parent (empty: the root).
+func listOfPath(parent core.Path, q *query.Query) listQuery {
+	lq := listQuery{parent: parent, collection: q.CollectionID, group: q.AllDescendants,
 		where: q.Where, offset: int64(q.Offset), orders: len(q.Explicit)}
 	if q.Limit >= 0 {
 		lq.limit = new(int64(q.Limit))

@@ -81,6 +81,9 @@ type listenTarget struct {
 	q        *query.Query
 	windowed bool
 	window   []core.Document
+	parent   core.Path // a query's parent document, empty for the root
+	// lookups is a target whose rules read other documents: judged again (rules_listen.go).
+	lookups bool
 }
 
 // OpenListen admits the caller to the database the stream's first request names, which must be
@@ -95,9 +98,6 @@ func (s *Service) OpenListen(ctx context.Context, c Call, first *pb.ListenReques
 	}
 	if h := c.headerDatabase(); h != "" && h != a.wdb.Name() {
 		return nil, errListenDatabase
-	}
-	if err := a.requireBypass(); err != nil {
-		return nil, err
 	}
 	if _, err := s.o.Store.Database(ctx, a.db); err != nil {
 		return nil, s.fail(ctx, err)
@@ -156,12 +156,22 @@ func (l *ListenStream) Serve(ctx context.Context, first *pb.ListenRequest, reque
 			idle.Stop()
 		}
 	}
+	recheck, stop := l.recheckTicker()
+	defer stop()
 	if err := l.handle(ctx, first); err != nil {
 		return err
 	}
 	rearm()
 	for {
 		select {
+		case <-recheck:
+			had := len(l.targets)
+			if err := l.recheck(ctx); err != nil {
+				return err
+			}
+			if had > 0 && len(l.targets) == 0 {
+				rearm()
+			}
 		case req, ok := <-requests:
 			if !ok {
 				return nil
@@ -252,6 +262,9 @@ func (l *ListenStream) add(ctx context.Context, t *pb.Target) error {
 	// What the database refuses comes after ADD (refused-targets streams 3, 8, 14;
 	// listen.resume-read-time stream 7).
 	if lt.q != nil {
+		if err := l.judgeQuery(ctx, lt); err != nil {
+			return l.refuseNew(ctx, id, err)
+		}
 		if err := l.s.checkQuery(ctx, l.a, lt.q, nil, false); err != nil {
 			return l.send(removeTarget(id, wire.From(err)))
 		}
@@ -425,8 +438,8 @@ func (l *ListenStream) parseTarget(id int32, t *pb.Target) (*listenTarget, liste
 		if q.CollectionID == "" {
 			return nil, spec, errTargetAllKinds
 		}
-		lt.q, lt.windowed = q, q.Limit >= 0 || q.Offset > 0
-		spec.Parent, spec.Query = pathOf(n), q
+		lt.q, lt.windowed, lt.parent = q, q.Limit >= 0 || q.Offset > 0, pathOf(n)
+		spec.Parent, spec.Query = lt.parent, q
 	default:
 		return nil, spec, errTargetType
 	}
@@ -457,7 +470,7 @@ func (l *ListenStream) snapshot(ctx context.Context, lt *listenTarget, reset boo
 	if err != nil {
 		return err
 	}
-	if err := l.documents(lt, found, head, time.Time{}); err != nil {
+	if err := l.documents(ctx, lt, found, head, time.Time{}); err != nil {
 		return err
 	}
 	return l.current(lt, head)
@@ -466,7 +479,10 @@ func (l *ListenStream) snapshot(ctx context.Context, lt *listenTarget, reset boo
 // documents sends a document target's documents found at head, in the request's order, those
 // changed after since: a document that does not exist is a document_delete (listen.doc-missing,
 // refused-targets stream 21).
-func (l *ListenStream) documents(lt *listenTarget, found map[string]core.Document, head listen.Head, since time.Time) error {
+func (l *ListenStream) documents(ctx context.Context, lt *listenTarget, found map[string]core.Document, head listen.Head, since time.Time) error {
+	if err := l.judgeFound(ctx, lt, found, head.ReadTime); err != nil {
+		return err // the rules refuse the target: nothing of its answer is sent
+	}
 	for _, p := range lt.paths {
 		d, ok := found[p.String()]
 		var err error
@@ -518,7 +534,7 @@ func (l *ListenStream) resume(ctx context.Context, lt *listenTarget, since time.
 	if lt.paths != nil {
 		// A document target's answer is exact without a filter, as production's (no filter,
 		// listen.resume-read-time streams 8, 9).
-		if err := l.documents(lt, found, head, since); err != nil {
+		if err := l.documents(ctx, lt, found, head, since); err != nil {
 			return err
 		}
 		return l.current(lt, head)
@@ -708,6 +724,9 @@ type docChange struct {
 // event sends one commit: per document, one message for all the targets it changed, then the
 // windows reset (package doc).
 func (l *ListenStream) event(ctx context.Context, e listen.Event) error {
+	if err := l.recheckEvent(ctx, e.Changes); err != nil {
+		return err
+	}
 	var order []string
 	docs := map[string]*docChange{}
 	at := func(p core.Path) *docChange {
