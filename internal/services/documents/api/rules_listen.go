@@ -30,11 +30,16 @@ import (
 //     document its rule read changed (listen.query-becomes-denied). Ours is a recheck at a fixed
 //     interval, not a watch of the documents read (our choice; production's mechanism is not
 //     recorded), and a target refused is never let back in.
-//
-// Unrecorded, and ours: a rule that reads request.time alone is not judged again; the rules
-// released while a stream is open apply to the judgements after it.
+//   - Every listenRecheck the stream also resolves the project's release once: every target
+//     judged under another ruleset than the one released now is judged again under it, and,
+//     while the released ruleset reads request.time (rules.Ruleset.ReadsRequestTime), every
+//     target is. Production says a release "can take up to 10 minutes to ... affect any active
+//     listeners" (firebase.google.com/docs/firestore/security/get-started); how soon, and how
+//     production treats a rule on request.time, are unrecorded (ADR-026 §2). A target still
+//     allowed sends nothing more.
 
-// listenRecheck is how often a target whose rules read other documents is judged again.
+// listenRecheck is how often a target whose rules read other documents is judged again, and
+// how often the stream looks for a new release.
 const listenRecheck = 2 * time.Second
 
 // trackedLookups records whether the rules read a document through them.
@@ -58,6 +63,7 @@ func (l *ListenStream) judgeQuery(ctx context.Context, lt *listenTarget) error {
 	if err != nil {
 		return err
 	}
+	lt.judgedUnder = rs
 	tr := &trackedLookups{Documents: &lookups{store: l.s.o.Store, db: l.a.db}}
 	err = l.s.judgeList(ctx, l.a, rs, listOfPath(lt.parent, lt.q), tr, rules.NewPooledBudget(), l.s.now())
 	lt.lookups = lt.lookups || tr.used
@@ -65,14 +71,18 @@ func (l *ListenStream) judgeQuery(ctx context.Context, lt *listenTarget) error {
 }
 
 // judgeDocs judges a document target's documents as gets, their lookups read at readTime (zero:
-// the latest). A document that does not exist has only its path.
-func (l *ListenStream) judgeDocs(ctx context.Context, lt *listenTarget, docs []core.Document, readTime time.Time) error {
+// the latest). A document that does not exist has only its path. whole is a judgement of all of
+// the target's documents, which records the ruleset it was under.
+func (l *ListenStream) judgeDocs(ctx context.Context, lt *listenTarget, docs []core.Document, readTime time.Time, whole bool) error {
 	if l.a.guard == nil {
 		return nil
 	}
 	rs, err := l.s.ruleset(ctx, l.a)
 	if err != nil {
 		return err
+	}
+	if whole {
+		lt.judgedUnder = rs
 	}
 	tr := &trackedLookups{Documents: &lookups{store: l.s.o.Store, db: l.a.db, readTime: readTime}}
 	budget, now := readBudget(len(docs)), l.s.now()
@@ -96,7 +106,7 @@ func (l *ListenStream) judgeFound(ctx context.Context, lt *listenTarget, found m
 		}
 		docs[i] = d
 	}
-	return l.judgeDocs(ctx, lt, docs, readTime)
+	return l.judgeDocs(ctx, lt, docs, readTime, true)
 }
 
 // refuseNew refuses a target not yet the stream's: REMOVE with err as its cause. An error that
@@ -125,7 +135,7 @@ func (l *ListenStream) recheckEvent(ctx context.Context, changes []listen.Target
 		var err error
 		switch {
 		case lt.paths != nil:
-			err = l.judgeDocs(ctx, lt, []core.Document{c.After}, time.Time{})
+			err = l.judgeDocs(ctx, lt, []core.Document{c.After}, time.Time{}, false)
 		case lt.lookups && !seen[lt]:
 			seen[lt] = true
 			err = l.judgeQuery(ctx, lt)
@@ -139,11 +149,16 @@ func (l *ListenStream) recheckEvent(ctx context.Context, changes []listen.Target
 	return nil
 }
 
-// recheck judges again every target whose rules read other documents, at the latest commit.
+// recheck judges again, at the latest commit, every target whose rules read other documents,
+// every target judged under another ruleset than the one released now, and every target while
+// that ruleset reads request.time. The release is resolved once; when it cannot be, only the
+// targets whose rules read other documents are judged (and fail).
 func (l *ListenStream) recheck(ctx context.Context) error {
+	rs, rerr := l.s.ruleset(ctx, l.a)
+	clock := rerr == nil && rs != nil && rs.ReadsRequestTime()
 	for _, id := range slices.Sorted(maps.Keys(l.targets)) {
 		lt := l.targets[id]
-		if !lt.lookups {
+		if !lt.lookups && !clock && (rerr != nil || lt.judgedUnder == rs) {
 			continue
 		}
 		var err error
@@ -159,7 +174,7 @@ func (l *ListenStream) recheck(ctx context.Context) error {
 				}
 				docs[i] = d
 			}
-			err = l.judgeDocs(ctx, lt, docs, time.Time{})
+			err = l.judgeDocs(ctx, lt, docs, time.Time{}, true)
 		} else {
 			err = l.judgeQuery(ctx, lt)
 		}

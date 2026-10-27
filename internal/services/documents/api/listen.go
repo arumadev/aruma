@@ -11,6 +11,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/services/documents/core"
 	"github.com/arumadev/aruma/internal/services/documents/listen"
 	"github.com/arumadev/aruma/internal/services/documents/query"
@@ -84,6 +85,9 @@ type listenTarget struct {
 	parent   core.Path // a query's parent document, empty for the root
 	// lookups is a target whose rules read other documents: judged again (rules_listen.go).
 	lookups bool
+	// judgedUnder is the ruleset it was last judged under as a whole: a release of another one
+	// judges it again (rules_listen.go).
+	judgedUnder *rules.Ruleset
 }
 
 // OpenListen admits the caller to the database the stream's first request names, which must be
