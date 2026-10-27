@@ -438,11 +438,16 @@ func (h *Handler) forward(w http.ResponseWriter, r *http.Request, q url.Values) 
 }
 
 // terminate ends a session (WebChannelBase.disconnect): sent by navigator.sendBeacon, an image or
-// an XHR, so by POST or GET, and answered with nothing.
+// an XHR, so by POST or GET, and answered with nothing; an unknown session is Unknown SID, as
+// production answers it (f6-webchannel-errors.json).
 func (h *Handler) terminate(w http.ResponseWriter, q url.Values) {
-	if s := h.lookup(q); s != nil {
-		h.remove(s, errTerminated)
+	s := h.lookup(q)
+	if s == nil {
+		unknownSID(w)
+		return
 	}
+	h.remove(s, errTerminated)
+	w.Header().Set("Content-Length", "0")
 	w.WriteHeader(http.StatusOK)
 }
 
