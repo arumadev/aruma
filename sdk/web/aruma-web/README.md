@@ -44,9 +44,10 @@ host (ADR-014), so a redirect is only a host rewrite:
   untouched, except Storage's and Firestore's (below). **Callable Functions still go to Google and
   carry the user's Aruma ID token** (`Authorization: Bearer <token>`): Aruma does not serve them, so
   an app on Aruma Auth should not use them (SR3-10, the Functions part, still open). Firestore is
-  served by Aruma now: see Cloud Firestore below. While Auth is installed, `install()` refuses every
-  request to `firestore.googleapis.com` (a `403`, never sent), so Firestore cannot reach Google
-  with the token by mistake.
+  served by Aruma now: see Cloud Firestore below. While Auth is installed, `install()` refuses
+  Firestore's connections to `firestore.googleapis.com` and never sends them, so Firestore cannot
+  reach Google with the token by mistake: in a browser, `fetch` and `XMLHttpRequest` get a `403`;
+  in Node, the connection fails (see Limits).
 - The Vite plugin injects the install as the first module of `index.html`, before the app's own
   scripts. Installing after `firebase/auth` is imported also works in the browser, because the SDK
   looks `fetch` up per request (tested).
@@ -145,6 +146,19 @@ rewriteStorageLiterals(code, base): { code, hosts, schemes, ok }   // the build-
   declared exception of ADR-013.
 - **Server-side rendering in Node:** the Node build of `@firebase/auth` captures `fetch` when it is
   imported. Install before importing `firebase/auth`, or use `mode: 'build'`.
+- **Firestore in Node (SSR, scripts).** The Node Firestore SDK talks gRPC over HTTP/2
+  (`@grpc/grpc-js`), not `fetch`. While Auth is on Aruma, `install()` also patches Node's built-in
+  networking so that nothing to `firestore.googleapis.com` (or a subdomain) leaves the process: the
+  DNS lookup (`dns.lookup`, `dns.promises.lookup`), `net.Socket#connect` (so `net.connect`), `tls.connect`,
+  `http2.connect`, and `http.request`/`https.request`/`get`, including an HTTP `CONNECT` whose target
+  is that host (the `HTTP_PROXY`/`HTTPS_PROXY` route of grpc-js). They fail with the error code
+  `ARUMA_FIRESTORE_BLOCKED` before any byte is written; the Firestore SDK reports `unavailable` ("the
+  client is offline") and `install()` logs the reason once. Other hosts are untouched, and the ES
+  module named imports (`import { connect } from 'node:tls'`) see the patched functions. This needs
+  Node 20.16 or later (`process.getBuiltinModule`; the package asks for 20.19), applies to the
+  global scope only (not to `globalObject` options), and does not close a connection opened before
+  `install()` ran. Point Node's Firestore at Aruma with the rewrite or `arumaFirestoreSettings`; it is
+  then never refused, because it does not name Google's host. In a browser none of this runs.
 - **A library that replaces `fetch` without calling the previous one** after `install()` removes the
   redirect. Libraries that wrap `fetch` (calling the previous one) are fine.
 - **Auth, Storage and Firestore.** Realtime Database needs nothing (its `databaseURL` is in the
@@ -290,7 +304,7 @@ change. The URL must be the root of Aruma's host (no path).
 **An app that set up Auth alone must turn Firestore on before it uses Firestore.** The Vite plugin
 without `firestore: true` fails a build that includes `@firebase/firestore`, and `install()` fails
 every request to Google's Firestore host in the browser (with any bundler, and in the Vite dev
-server).
+server), and in Node every connection to it (DNS lookup, TCP, TLS, HTTP/2, HTTP proxy tunnel).
 
 | Bundler | The line |
 |---|---|
@@ -320,7 +334,8 @@ const db = initializeFirestore(app, arumaFirestoreSettings('https://aruma.exampl
 It returns `{ host, ssl }` (and keeps your other settings); call it before the first `getFirestore()`.
 The SDK file still holds Google's host as its default, so with the Vite plugin you still pass
 `firestore: true`; without a rewrite, `install()` still refuses any request that goes to
-`firestore.googleapis.com`.
+`firestore.googleapis.com` from a browser (`fetch`, `XMLHttpRequest`) and any connection to it from
+Node (below).
 
 ### What is not covered
 
@@ -331,7 +346,9 @@ The SDK file still holds Google's host as its default, so with the Vite plugin y
   `install()` refuses its requests. Import `firebase/firestore` from npm.
 - The Node build uses gRPC (`@grpc/grpc-js`) instead of WebChannel; the rewrite sets its host and
   `ssl` the same way, and Aruma's gRPC listener answers it.
-- Tested here: the rewrite rules on the 4.19.0 dist (browser, lite, React Native, Node), the guard,
+- Tested here: the rewrite rules on the 4.19.0 dist (browser, lite, React Native, Node), the guard
+  (browser fetch and XHR; in Node, every connection path above, and the Node SDK itself, which
+  attempts no connection and fails as `unavailable`),
   and a `vite build` of the full and lite SDK that leaves no `firestore.googleapis.com` in any
   emitted file. The end-to-end run against a live Aruma (WebChannel) is F6's browser suite.
 
@@ -369,7 +386,7 @@ export default defineConfig({
 - `install()` يلفّ `globalThis.fetch` مرة واحدة، ولا يحوّل إلا طلبات https على المنفذ الافتراضي إلى هذين النطاقين:
   - نصًا كان الطلب، أو `URL`، أو `Request`.
   - ويُبقي الطريقة والترويسات والجسم وإشارة الإلغاء.
-  - وكل طلب آخر يمر كما هو، إلا طلبات Storage وFirestore (أدناه). **والدوال القابلة للاستدعاء ما زالت تذهب إلى Google ومعها رمز هوية Aruma للمستخدم** (`Authorization: Bearer <token>`): Aruma لا يخدمها، فالتطبيق على Auth في Aruma لا يستعملها (SR3-10، جزء الدوال ما زال مفتوحًا). أما Firestore فيخدمه Aruma الآن (انظر Cloud Firestore أدناه)، و`install()` يرفض ما دام مفعّلًا كل طلب إلى `firestore.googleapis.com` (يردّ 403 ولا يرسله)، فلا يصل Firestore إلى Google بالرمز خطأً.
+  - وكل طلب آخر يمر كما هو، إلا طلبات Storage وFirestore (أدناه). **والدوال القابلة للاستدعاء ما زالت تذهب إلى Google ومعها رمز هوية Aruma للمستخدم** (`Authorization: Bearer <token>`): Aruma لا يخدمها، فالتطبيق على Auth في Aruma لا يستعملها (SR3-10، جزء الدوال ما زال مفتوحًا). أما Firestore فيخدمه Aruma الآن (انظر Cloud Firestore أدناه)، و`install()` يرفض ما دام مفعّلًا اتصالات Firestore بـ `firestore.googleapis.com` ولا يرسلها، فلا يصل Firestore إلى Google بالرمز خطأً: في المتصفح يردّ 403 على `fetch` وXHR، وفي Node يفشل الاتصال (انظر الحدود).
 - إضافة Vite تحقن التثبيت أول وحدة في `index.html`، قبل سكربتات التطبيق.
 - والتثبيت بعد استيراد `firebase/auth` يعمل أيضًا في المتصفح (مُختبَر).
 
@@ -402,6 +419,7 @@ install({ url: 'https://aruma.example.com' });
 
 - دخول Google وApple بالنافذة أو التحويل يحمّل `apis.google.com/js/api.js`، وهو الاستثناء المعلن في ADR-013.
 - في Node (SSR) تلتقط مكتبة Auth `fetch` عند استيرادها: ثبّت قبل الاستيراد، أو استخدم وضع البناء.
+- **Firestore في Node (SSR والسكربتات).** مكتبة Firestore لـ Node تتكلم gRPC فوق HTTP/2 (`@grpc/grpc-js`) لا `fetch`. فما دام Auth على Aruma يرقّع `install()` أيضًا وحدات الشبكة المضمّنة في Node لئلا يخرج من العملية شيء إلى `firestore.googleapis.com` (أو نطاق فرعي منه): ترجمة DNS (`dns.lookup` و`dns.promises.lookup`)، و`net.Socket#connect` (فيشمل `net.connect`)، و`tls.connect`، و`http2.connect`، و`http.request`/`https.request`/`get` ومنها `CONNECT` هدفه ذلك النطاق (طريق `HTTP_PROXY`/`HTTPS_PROXY` في grpc-js). تفشل برمز الخطأ `ARUMA_FIRESTORE_BLOCKED` قبل كتابة أي بايت؛ فتبلّغ المكتبة `unavailable` («العميل غير متصل») ويسجّل `install()` السبب مرة واحدة. وبقية النطاقات لا تُمسّ، واستيراد الأسماء من وحدات ES (`import { connect } from 'node:tls'`) يرى الدوال المرقّعة. يحتاج Node 20.16 فما فوق (`process.getBuiltinModule`؛ والحزمة تطلب 20.19)، ويسري على النطاق العام فقط (لا على `globalObject`)، ولا يغلق اتصالًا فُتح قبل `install()`. وجّه Firestore في Node إلى Aruma بإعادة الكتابة أو `arumaFirestoreSettings`، فلا يُرفض أبدًا لأنه لا يسمّي نطاق Google. وفي المتصفح لا يعمل شيء من هذا.
 - Auth وStorage وFirestore. أما RTDB فلا يحتاج شيئًا (`databaseURL` في الإعداد)، والدوال القابلة للاستدعاء لا يخدمها Aruma وتبقى على Google.
 - SvelteKit وكل إطار بلا `index.html` لا يشغّل حقن إضافة Vite: استدعِ `install()` في كود التطبيق (ونصف Storage لا يحتاج حقنًا).
 
@@ -524,12 +542,12 @@ import { arumaFirestoreSettings } from '@aruma/web/firestore';
 const db = initializeFirestore(app, arumaFirestoreSettings('https://aruma.example.com'));
 ```
 
-يعيد `{ host, ssl }` مع إعداداتك الأخرى، ويُستدعى قبل أول `getFirestore()`. وملف المكتبة يبقى فيه نطاق Google افتراضيًا، فمع إضافة Vite تمرّر `firestore: true` أيضًا؛ وبلا إعادة كتابة يبقى `install()` يرفض أي طلب إلى `firestore.googleapis.com`.
+يعيد `{ host, ssl }` مع إعداداتك الأخرى، ويُستدعى قبل أول `getFirestore()`. وملف المكتبة يبقى فيه نطاق Google افتراضيًا، فمع إضافة Vite تمرّر `firestore: true` أيضًا؛ وبلا إعادة كتابة يبقى `install()` يرفض في المتصفح أي طلب (`fetch` وXHR) إلى `firestore.googleapis.com`، وفي Node أي اتصال به (أدناه).
 
 ### ما لا يغطيه
 
 - **الدوال القابلة للاستدعاء** لا يخدمها Aruma: `httpsCallable` يذهب إلى `https://<region>-<project>.cloudfunctions.net/<name>` ومعه رمز هوية Aruma. لا تستعملها مع Auth في Aruma. (جزء الدوال من SR3-10 مفتوح.)
-- Firestore من صفحة تحمّل المكتبة من CDN لا يمكن إعادة كتابته: البناء يرفضه، و`install()` يرفض طلباته. استورد `firebase/firestore` من npm.
+- Firestore من صفحة تحمّل المكتبة من CDN لا يمكن إعادة كتابته: البناء يرفضه، و`install()` يرفض طلباته (في المتصفح؛ وفي Node اتصالاته). استورد `firebase/firestore` من npm.
 - بناء Node يستعمل gRPC (`@grpc/grpc-js`) لا WebChannel؛ وإعادة الكتابة تضبط نطاقه و`ssl` بالطريقة نفسها، ومستمع gRPC في Aruma يجيبه.
-- المُختبَر هنا: قواعد إعادة الكتابة على dist الإصدار 4.19.0 (المتصفح والخفيفة وReact Native وNode)، والحارس، وبناء `vite build` للمكتبتين الكاملة والخفيفة لا يبقى في أي ملف صادر منه `firestore.googleapis.com`. أما التشغيل الكامل على Aruma حي (WebChannel) ففي مجموعة المتصفح لـ F6.
+- المُختبَر هنا: قواعد إعادة الكتابة على dist الإصدار 4.19.0 (المتصفح والخفيفة وReact Native وNode)، والحارس (`fetch` وXHR في المتصفح؛ وفي Node كل مسار اتصال مذكور أعلاه، وSDK Node نفسه لا يحاول أي اتصال ويفشل بـ `unavailable`)، وبناء `vite build` للمكتبتين الكاملة والخفيفة لا يبقى في أي ملف صادر منه `firestore.googleapis.com`. أما التشغيل الكامل على Aruma حي (WebChannel) ففي مجموعة المتصفح لـ F6.
 
