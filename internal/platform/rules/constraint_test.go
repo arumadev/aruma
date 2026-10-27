@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/big"
 	"math/rand/v2"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -23,6 +24,8 @@ import (
 //	       (test/oracle/rules/production/raw/strings.json).
 //	[QRY]  production/methods.json list_query_in_request: request.query.limit <= 10 allows a
 //	       query of limit 5.
+//	[PROD] production, test/oracle/documents/corpus/f5-rules-constraints.json and
+//	       f5-rules-queries.json, by case id.
 //	[STRICT] unmeasured: the stricter answer, an error, which denies.
 
 // listCase decides "allow list: if cond" on /c/{id} for one way whose resource.data is data.
@@ -45,14 +48,42 @@ func decideList(t *testing.T, src string, path []Segment, data map[string]Value,
 	if rs == nil {
 		t.Fatalf("%s: %v", src, issues)
 	}
+	return decideAt(t, rs, path, data, Query(limit, 0, 0))
+}
+
+func decideAt(t *testing.T, rs *Ruleset, path []Segment, data map[string]Value, query Value) bool {
+	t.Helper()
 	req := request(MethodList, path, nil)
 	req.Variables["resource"] = Map(map[string]Value{
 		"data": PartialMap(data), "id": Unknown(), "__name__": Unknown(),
 	})
 	req.Variables["request"] = Map(map[string]Value{
-		"auth": Null(), "method": String("list"), "path": Unknown(), "query": Query(limit, nil),
+		"auth": Null(), "method": String("list"), "path": Unknown(), "query": query,
 	})
 	return evaluate(t, rs, req).Allow
+}
+
+// compileList compiles "allow list: if cond" on /c/{id}, and decide decides one way of it.
+func compileList(t *testing.T, cond string) *Ruleset {
+	t.Helper()
+	src := fmt.Sprintf(`rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /c/{id} {
+      allow list: if %s;
+    }
+  }
+}`, cond)
+	rs, issues := Compile(Firestore, File{Name: "firestore.rules", Content: src}, DefaultLimits())
+	if rs == nil {
+		t.Fatalf("%s: %v", src, issues)
+	}
+	return rs
+}
+
+func decide(t *testing.T, rs *Ruleset, data map[string]Value, query Value) bool {
+	t.Helper()
+	return decideAt(t, rs, append(docPath("c"), UnknownSegment), data, query)
 }
 
 func n(fs ...Filter) map[string]Value { return map[string]Value{"n": Constraint(fs...)} }
@@ -93,7 +124,10 @@ func TestConstraintComparisons(t *testing.T) {
 		{"H66", "resource.data.n != false", n(flt(FilterEQ, Bool(true))), true},
 		{"STRICT bools are not ordered", "resource.data.n > false", n(flt(FilterEQ, Bool(true))), false},
 		{"STRICT cross-type", "resource.data.n == '3'", n(flt(FilterEQ, Int(3))), false},
-		{"STRICT cross-type", "resource.data.n != '3'", n(flt(FilterEQ, Int(3))), false},
+		{"PROD a.eq-a", "resource.data.n != '3'", n(flt(FilterEQ, Int(3))), true},
+		{"PROD g.eq-3-double", "resource.data.n == 3", n(flt(FilterEQ, Float(3))), true},
+		{"PROD h.eq-neg-zero", "resource.data.n > -1", n(flt(FilterEQ, Float(math.Copysign(0, -1)))), true},
+		{"PROD h.eq-minus-two", "resource.data.n > -1", n(flt(FilterEQ, Int(-2))), false},
 		{"STRICT beyond 2^53", "resource.data.n == 9007199254740993", n(flt(FilterEQ, Int(1<<53+1))), false},
 		{"STRICT containers", "resource.data.n == [1]", n(flt(FilterEQ, List([]Value{Int(1)}))), false},
 		{"STRICT NaN", "resource.data.n != 1", n(flt(FilterEQ, Float(math.NaN()))), false},
@@ -109,7 +143,7 @@ func TestConstraintComparisons(t *testing.T) {
 		{"H66", "resource.data.n > 0", n(flt(FilterGT, Int(0))), true},
 		{"H66", "resource.data.n > -1", n(flt(FilterGT, Int(0))), true},
 		{"H66", "resource.data.n >= 0", n(flt(FilterGT, Int(0))), true},
-		{"H66", "resource.data.n > 0.5", n(flt(FilterGT, Int(1))), true},
+		{"PROD c.lt-5-double, kinds", "resource.data.n > 0.5", n(flt(FilterGT, Int(1))), false},
 		{"H66", "resource.data.n > 1", n(flt(FilterGT, Int(0))), false},
 		{"H66", "resource.data.n < 100", n(flt(FilterGT, Int(0))), false},
 		{"H66", "resource.data.n != -5", n(flt(FilterGT, Int(0))), true},
@@ -117,8 +151,14 @@ func TestConstraintComparisons(t *testing.T) {
 		{"H66", "resource.data.n > 1", n(flt(FilterGE, Int(1))), false},
 		{"H66", "resource.data.n >= 1", n(flt(FilterGE, Int(1))), true},
 		{"H66", "resource.data.n > 0", n(flt(FilterGE, Int(1))), true},
-		{"STRICT NaN sorts first", "resource.data.n < 10", n(flt(FilterLT, Int(10))), false},
-		{"STRICT NaN sorts first", "resource.data.n <= 10", n(flt(FilterLE, Int(10))), false},
+		{"PROD c.lt-10", "resource.data.n < 10", n(flt(FilterLT, Int(10))), true},
+		{"PROD c.lt-5", "resource.data.n < 10", n(flt(FilterLT, Int(5))), true},
+		{"PROD c.lte-9", "resource.data.n < 10", n(flt(FilterLE, Int(9))), true},
+		{"PROD c.lte-10", "resource.data.n < 10", n(flt(FilterLE, Int(10))), false},
+		{"PROD c.lt-5-double", "resource.data.n < 10", n(flt(FilterLT, Float(5))), false},
+		{"STRICT int bound against a float", "resource.data.n < 10.0", n(flt(FilterLT, Int(5))), false},
+		{"PROD d.gte-0", "resource.data.n > 0", n(flt(FilterGE, Int(0))), false},
+		{"H66", "resource.data.n <= 10", n(flt(FilterLE, Int(10))), true},
 		{"H66", "resource.data.n != 10", n(flt(FilterLT, Int(10))), true},
 		{"H66", "resource.data.n != 9", n(flt(FilterLT, Int(10))), false},
 		{"H66", "resource.data.n < 'z'", n(flt(FilterLT, String("m"))), true},
@@ -140,7 +180,13 @@ func TestConstraintComparisons(t *testing.T) {
 		// in and array-contains-any, split into ways by the binding; unsplit they imply nothing.
 		{"H66", "resource.data.n == 'a'", n(flt(FilterIn, strList("a", "b"))), false},
 		{"H66", "resource.data.n == 'a'", n(flt(FilterEQ, String("a"))), true},
-		{"STRICT", "resource.data.n in ['a', 'b']", n(flt(FilterEQ, String("a"))), false},
+		{"PROD b.eq-a", "resource.data.n in ['a', 'b']", n(flt(FilterEQ, String("a"))), true},
+		{"PROD q10.eq-3", "resource.data.n in [1, 2]", n(flt(FilterEQ, Int(3))), false},
+		{"STRICT E3 kind", "resource.data.n in [1.0, 2.0]", n(flt(FilterEQ, Int(1))), false},
+		{"E4", "resource.data.n in [1.0, 2.0].toSet()", n(flt(FilterEQ, Int(1))), true},
+		{"STRICT", "resource.data.n in [1, 2]", n(flt(FilterGE, Int(1)), flt(FilterLE, Int(2))), false},
+		{"STRICT", "resource.data.n in [1, 2]", n(flt(FilterNotIn, List([]Value{Int(3)}))), false},
+		{"STRICT", "resource.data.n in {'a': 1}", n(flt(FilterEQ, String("a"))), false},
 		// not-in.
 		{"H66", "resource.data.n != 'a'", n(flt(FilterNotIn, strList("a", "b"))), true},
 		{"H66", "resource.data.n != 'b'", n(flt(FilterNotIn, strList("a", "b"))), true},
@@ -160,11 +206,11 @@ func TestConstraintComparisons(t *testing.T) {
 		{"H66", "resource.data.n >= 1", n(flt(FilterGE, Int(1)), flt(FilterLE, Int(1))), true},
 		{"H66", "resource.data.n != 5", n(flt(FilterGT, Int(0)), flt(FilterNE, Int(5))), true},
 		{"H66", "resource.data.n > 0 && resource.data.n != 5", n(flt(FilterGT, Int(0)), flt(FilterNE, Int(5))), true},
-		{"H66", "resource.data.n > 0 && resource.data.n < 9", n(flt(FilterGT, Int(0)), flt(FilterLT, Int(9))), false},
+		{"PROD d.range-1-5", "resource.data.n > 0 && resource.data.n < 9", n(flt(FilterGT, Int(0)), flt(FilterLT, Int(9))), true},
 		// null.
 		{"H66", "resource.data.n == null", n(flt(FilterEQ, Null())), true},
 		{"H66", "resource.data.n != null", n(flt(FilterNE, Null())), true},
-		{"STRICT cross-type", "resource.data.n != null", n(flt(FilterEQ, String("a"))), false},
+		{"PROD a.eq-a", "resource.data.n != null", n(flt(FilterEQ, String("a"))), true},
 		{"STRICT", "resource.data.n < null", n(flt(FilterEQ, Null())), false},
 		// Errors absorbed as everywhere else.
 		{"H66", "resource.data.n == 4 || true", n(flt(FilterEQ, Int(3))), true},
@@ -174,7 +220,7 @@ func TestConstraintComparisons(t *testing.T) {
 		// Everything else on a Constraint, an Unknown or a PartialMap is an error.
 		{"STRICT", "resource.data.n is int", n(flt(FilterEQ, Int(3))), false},
 		{"STRICT", "resource.data.n is constraint", n(flt(FilterEQ, Int(3))), false},
-		{"STRICT", "resource.data.n in [3]", n(flt(FilterEQ, Int(3))), false},
+		{"PROD q10.eq-1", "resource.data.n in [3]", n(flt(FilterEQ, Int(3))), true},
 		{"STRICT", "[resource.data.n] != [4]", n(flt(FilterEQ, Int(3))), false},
 		{"STRICT", "{'k': resource.data.n} != {'k': 4}", n(flt(FilterEQ, Int(3))), false},
 		{"STRICT", "int(resource.data.n) == 3", n(flt(FilterEQ, Int(3))), false},
@@ -263,15 +309,27 @@ func TestConstraintQuery(t *testing.T) {
 	if !listCase(t, "request.query.limit <= 10", nil, &five) {
 		t.Error("limit 5 <= 10: denied")
 	}
-	// [STRICT] unmeasured: no limit, offset or orderBy is an error.
-	for _, cond := range []string{"request.query.limit <= 10", "request.query.limit == null",
-		"request.query.offset == 0", "request.query.orderBy != null"} {
-		if listCase(t, cond, nil, nil) {
-			t.Errorf("%s without a limit: allowed", cond)
+	// [PROD] q2, q3, q4 to q7, q12, q13: no limit is null, no offset 0, orderBy a list of
+	// unknown orders.
+	for cond, want := range map[string]bool{
+		"request.query.limit <= 10":         false,
+		"request.query.limit == null":       true,
+		"request.query.offset <= 1":         true,
+		"'orderBy' in request.query":        true,
+		"request.query.orderBy.size() == 0": true,
+		"request.query.size() == 3":         true,
+	} {
+		if got := listCase(t, cond, nil, nil); got != want {
+			t.Errorf("%s without a limit: allow %v, want %v", cond, got, want)
 		}
 	}
-	if !listCase(t, "request.query.size() == 3", nil, nil) {
-		t.Error("request.query has limit, offset and orderBy")
+	rs := compileList(t, "request.query.orderBy[0] == 'x' || request.query.orderBy.x == 'ASCENDING' || 'x' in request.query.orderBy")
+	if decide(t, rs, nil, Query(nil, 0, 1)) {
+		t.Error("orderBy's elements are known")
+	}
+	rs = compileList(t, "request.query.orderBy.size() == 1")
+	if !decide(t, rs, nil, Query(nil, 0, 1)) {
+		t.Error("orderBy.size() == 1 with one order: denied")
 	}
 }
 
@@ -306,23 +364,35 @@ service cloud.firestore {
 func TestConstraintNeverAllowsMore(t *testing.T) {
 	pool := constraintPool()
 	m := constraintMeter()
-	ops := []token{tokEQ, tokNE, tokLT, tokLE, tokGT, tokGE, tokIn}
+	ops := []token{tokEQ, tokNE, tokLT, tokLE, tokGT, tokGE, tokIn, tokInList}
 	comps := []Comparator{FilterEQ, FilterNE, FilterLT, FilterLE, FilterGT, FilterGE, FilterNotIn,
 		FilterContains, FilterIn, FilterContainsAny}
 	check := func(fs []Filter, op token, b Value) {
-		got, err := constrained(m, op, Constraint(fs...), b)
+		var got Value
+		var err error
+		switch op {
+		case tokIn:
+			got, err = constrained(m, tokIn, b, Constraint(fs...))
+		case tokInList:
+			got, err = constrained(m, tokIn, Constraint(fs...), b)
+		default:
+			got, err = constrained(m, op, Constraint(fs...), b)
+		}
 		if err != nil || !got.boolean() {
 			return
 		}
 		for _, v := range pool {
-			if !matchesAll(v, fs) {
+			if !matchesAll(v, fs) || op == tokInList && !ownKind(v, fs) {
 				continue
 			}
 			var r Value
 			var rerr error
-			if op == tokIn {
+			switch op {
+			case tokIn:
 				r, rerr = binary(m, tokIn, b, v)
-			} else {
+			case tokInList:
+				r, rerr = binary(m, tokIn, v, b)
+			default:
 				r, rerr = binary(m, op, v, b)
 			}
 			if rerr != nil || r.kind != KindBool || !r.boolean() {
@@ -331,6 +401,7 @@ func TestConstraintNeverAllowsMore(t *testing.T) {
 		}
 	}
 	filterValues := append(slicesOfPool(pool), strList("a", "b"), List([]Value{Int(0), Float(1.5)}))
+	pool = append(pool, setOf([]Value{Int(1), String("a")}), setOf([]Value{Float(0), Float(3)}))
 	for _, fop := range comps {
 		for _, a := range filterValues {
 			for _, op := range ops {
@@ -362,6 +433,9 @@ func FuzzConstraint(f *testing.F) {
 		fs := []Filter{{Comparator(1 + fop%10), a}}
 		o := ops[int(op)%len(ops)]
 		got, err := constrained(m, o, Constraint(fs...), b)
+		if o == tokIn {
+			got, err = constrained(m, o, b, Constraint(fs...))
+		}
 		if err != nil {
 			if err.Error() != "" {
 				t.Fatalf("error with a message: %v", err)
@@ -420,6 +494,16 @@ func constraintPool() []Value {
 		List([]Value{String("a"), String("b")}), List([]Value{Null()}), List([]Value{Bool(true)}), List(nil),
 		Map(map[string]Value{"k": Int(1)}), Map(nil), LatLng(1, 2), PathOf([]string{"c", "d"}))
 	return pool
+}
+
+// ownKind reports whether v, a document a field equality matches, is of the kind of that
+// equality's value when both are numbers: production allows x == 1 for a rule x in [1, 2]
+// (q10.eq-1), though the rules' in finds no 1.0 there; the property holds for the rest.
+func ownKind(v Value, fs []Filter) bool {
+	if !v.isNumber() {
+		return true
+	}
+	return slices.ContainsFunc(fs, func(f Filter) bool { return f.Op == FilterEQ && f.Value.kind == v.kind })
 }
 
 // The Firestore side of the property: whether the document field v matches every filter.
@@ -482,8 +566,8 @@ func fsMatch(v Value, f Filter, signedZero bool) bool {
 		}
 		return false
 	}
-	if fsType(v) != fsType(a) {
-		return false // inequalities match their own type only
+	if fsType(v) != fsType(a) || isNaN(v) || isNaN(a) {
+		return false // inequalities match their own type only, and never NaN (value.InRange)
 	}
 	c := fsCompare(v, a, signedZero)
 	switch f.Op {
@@ -592,6 +676,8 @@ func fsNumbers(x, y Value, signedZero bool) int {
 	sy := y.kind == KindFloat && math.Signbit(y.float())
 	return compareInts(boolInt(!sx), boolInt(!sy))
 }
+
+func isNaN(v Value) bool { return v.kind == KindFloat && math.IsNaN(v.float()) }
 
 func exact(v Value) *big.Float {
 	if v.kind == KindInt {

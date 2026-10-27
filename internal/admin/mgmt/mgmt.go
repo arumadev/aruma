@@ -39,6 +39,10 @@ type Options struct {
 	// Storage is set when Cloud Storage is served: defaultBucket and the firebaserules API
 	// answer for it (S5-A, ADR-022 §15).
 	Storage bool
+	// Documents is set when the Document Database is served: the firebaserules API answers
+	// for its cloud.firestore release, Storage on or off (firebase deploy --only
+	// firestore:rules).
+	Documents bool
 	// RulesLimits are the rules engine's, for the firebaserules API: the same limits as every
 	// ruleset. :test runs no test case, so it evaluates nothing and needs no rules.Inflight.
 	RulesLimits rules.Limits
@@ -101,9 +105,9 @@ func (a *API) routes() *httpx.Router {
 	}
 	// defaultBucket, buckets and Service Usage (storage.go) for the firebase CLI (ADR-022 §15),
 	// answered with Storage off too, so the CLI learns Storage is not set up; and firebaserules
-	// v1 (rules.go) with Storage on.
+	// v1 (rules.go) with Storage or the Document Database on.
 	a.storageRoutes(r)
-	if a.opts.Storage {
+	if a.opts.Storage || a.opts.Documents {
 		a.rulesRoutes(r)
 	}
 	return r

@@ -110,6 +110,17 @@ func TestDocumentsWiring(t *testing.T) {
 		t.Errorf("gRPC GetDocument after the REST write: %v", err)
 	}
 
+	// The firebaserules API is served with Storage off, for firebase deploy --only
+	// firestore:rules: a request without a credential is refused, not an unknown route.
+	resp, err = http.Get(ts.URL + "/v1/projects/wired-app/releases")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("firebaserules without Storage: %d, want 401", resp.StatusCode)
+	}
+
 	// Storage's rules read the document through what app gives Storage (ADR-021 §3): of the
 	// request's project, never of another.
 	rs, issues, err := a.Service.CompileRules(t.Context(), rules.Storage, rules.File{Name: "storage.rules", Content: `rules_version = '2';

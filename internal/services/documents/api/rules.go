@@ -41,8 +41,9 @@ import (
 // (f5-rules-batches.json batch-write.ok-ok, f5-rules-transactions.json begin.user-readwrite,
 // commit.read-then-allowed). A read-only transaction is theirs (begin.user-readonly).
 //
-// list (queries, ListDocuments, ListCollectionIds) and Listen are not bound yet: they stay an
-// admin's, or dev_open_rules', alone (requireBypass), never more open than production.
+// list (queries, ListDocuments, PartitionQuery) is rules_list.go's, Listen rules_listen.go's.
+// ListCollectionIds is not bound: it stays an admin's, or dev_open_rules', alone (requireBypass;
+// unrecorded, and no client SDK sends it), never more open than production.
 
 // Rulesets resolves a project's compiled release; tenancy/core implements it. An error is an
 // outage of the control plane, never a denial.
