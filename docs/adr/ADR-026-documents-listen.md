@@ -160,15 +160,16 @@ Listen طريق القراءة الأساسي في الويب والجوال: ح
 
 متاح على gRPC (Android وiOS وJS على Node) وWebChannel (المتصفح، F6)، ولا REST له («only available via gRPC or WebChannel»، OF §2d؛ CL §2.1):
 
-- **المصافحة:** أول طلب `WriteRequest{database}` بلا رمز ولا كتابات، ورده `stream_id` و**`stream_token` غير فارغ، بلا `write_results`** (MUST 11). والعميل يتجاهل أي رمز محفوظ.
+- **المصافحة:** أول طلب `WriteRequest{database}` بلا رمز ولا كتابات، ورده `stream_id` (نص قصير، حرف واحد في التسجيل) و**`stream_token` غير فارغ، بلا `write_results`** (MUST 11). والعميل يتجاهل أي رمز محفوظ. **الرمز protobuf** كما سجّله الإنتاج (`write.handshake-and-batches`): في المصافحة تسعة بايتات `19 <8 بايت>`، وفي رد كل دفعة أحد عشر `10 <عدّاد الدفعة> 19 <البايتات نفسها>`. والخادم يقرأ الرمز المرسل ولا يقارنه: الرمز القديم و`stream_id` الغريب مقبولان على دفعة لاحقة (`write.token-reuse`، `write.pipelined`)، ولا يُرسَل `stream_id` إلا في المصافحة.
+- **الرفض بـ `INVALID_ARGUMENT` وإنهاء البث،** بنصوص الإنتاج: «the first request in a stream cannot contain writes» لأول طلب فيه كتابات (`write.no-handshake`)؛ «missing stream token» لطلب لاحق بلا رمز، ومنه طلب `{database}` ثانٍ (`write.no-handshake`، `write.token-reuse`)؛ «invalid stream token» لرمز لا يُقرأ protobuf (`write.token-reuse`). **والاستئناف** (أول طلب فيه `stream_id` أو رمز) `ABORTED` «resuming a stream not supported» (`write.resume-stream`)، فيبدأ العميل بمصافحة جديدة. (أول طلب بأحدهما فقط لم يُسجَّل، ونعامله استئنافًا: تخمين.)
 - **كل طلب بعدها دفعة ذرية واحدة** تُنفَّذ كـ `Commit` (ADR-025)، بالترتيب، والرد بالترتيب (MUST 12):
   - `stream_token` جديد غير فارغ، و`commit_time` إلزامي.
-  - **`write_results` بطول `writes` بالضبط،** وفي كل منها `update_time` (والحذف يعتمد على `commit_time`)، و**`transform_results` بطول `update_transforms`**. وغير ذلك hardAssert في العميل (CL §2.1).
+  - **`write_results` بطول `writes` بالضبط،** وفي كل منها `update_time` عدا **الحذف فنتيجته `{}` فارغة** (`write.handshake-and-batches`)، و**`transform_results` بطول `update_transforms`** بالترتيب: `arrayUnion` و`arrayRemove` يعطيان `nullValue`، و`increment` القيمة الجديدة (`write.handshake-and-batches`، `write.transform-on-missing`). وغير ذلك hardAssert في العميل (CL §2.1).
 - **حتى 10 دفعات معلّقة على الأقل** يرسلها العميل قبل أي رد. والطلبات تُعالج واحدًا بعد واحد، وضغط HTTP/2 يمنع التكدس بلا حد.
-- **الطلب الفارغ** (`writes:[]`) يُقبل، يرسله العميل قبل الإغلاق.
+- **الطلب الفارغ** (`writes:[]`) بعد المصافحة **لا يُقبل:** ينتهي البث بـ `CANCELLED` «The operation was cancelled.» (`write.empty-first`، `write.handshake-and-batches`)، ولا رد فارغًا.
 - **الكتابات** (MUST 13): `update` مع `update_mask`، و`delete`، و`verify`، و`update_transforms` كلها (ومنها `maximum` و`minimum`)، و`current_document`، **و`transform` القديم المنفصل** (SA M9).
 - **الأخطاء تُنهي البث بحالة** (MUST 14):
-  - الرمز الدائم (`INVALID_ARGUMENT`، `NOT_FOUND`، `ALREADY_EXISTS`، `PERMISSION_DENIED`، `FAILED_PRECONDITION`، …) يرفض الدفعة الأولى المعلّقة.
+  - الرمز الدائم (`INVALID_ARGUMENT`، `NOT_FOUND`، `ALREADY_EXISTS`، `PERMISSION_DENIED`، `FAILED_PRECONDITION`، …) يرفض الدفعة الأولى المعلّقة، **وبرمز `Commit` ونصه** (`write.precondition-exists`، `write.precondition-not-exists`، `write.precondition-update-time`، `write.invalid-argument`)، وتُجاب الدفعات قبلها وتُترك التي بعدها بلا تطبيق.
   - `ABORTED` والعابرة تجعل العميل يعيد الطابور كله. **فإعادة دفعة التُزمت ولم يصل ردها مقبولة دون أثر مزدوج غير ما يحدث في الإنتاج نفسه**، إذ لا رمز تكرار في البروتوكول (CL §2.1).
 - **الحدود:** الطلب 10 MiB (OF §2a)، يفرضه الـ core على كل دفعة كما على كل طلب في كل سطح، و17 MiB حد إطار الرسالة وحده (ADR-027 §3.1). ورد الإنتاج على ما فوق 10 MiB لم يُسجَّل، ويُسجَّل في F2. والبث يُحسب في `streams_per_project` و`streams_per_ip`، والإلغاء كما في البند 4.
 
