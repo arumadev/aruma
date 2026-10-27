@@ -164,9 +164,15 @@ func Defaults() Config {
 		Documents: Documents{IndexEnforcement: "enforce", Limits: DocumentsLimits{
 			MessageBytes:        17 << 20,
 			StreamFirstMessage:  10 * time.Second,
+			StreamIdle:          5 * time.Minute,
 			StreamWriteStall:    30 * time.Second,
 			ServerStreamMax:     5 * time.Minute,
 			StreamsPerIP:        500,
+			StreamsPerProject:   10_000,
+			StreamOutboxBytes:   64 << 20,
+			TargetsPerStream:    1000,
+			SnapshotRows:        1_000_000,
+			StreamLagEvents:     4096,
 			CommitConcurrency:   4,
 			TxnWaitTimeout:      20 * time.Second,
 			TxnMaxLifetime:      270 * time.Second,
@@ -177,6 +183,8 @@ func Defaults() Config {
 			MaxLocksPerTxn:      10_000,
 			CompositeIndexes:    1000,
 			FieldOverrides:      1000,
+			TTLSweepInterval:    time.Hour,
+			TTLSweepBatch:       500,
 		}},
 		Storage: Storage{
 			GCGrace: time.Minute,
@@ -242,6 +250,9 @@ type DocumentsLimits struct {
 	// StreamFirstMessage bounds the wait for a stream's first message, read and its credential
 	// checked; only then are the server's read and write timeouts lifted (ADR-027 §3.2).
 	StreamFirstMessage time.Duration `yaml:"stream_first_message"`
+	// StreamIdle ends a Listen stream without a target, or a Write stream that sent no request,
+	// for this long, with UNAVAILABLE (ADR-026 §3).
+	StreamIdle time.Duration `yaml:"stream_idle"`
 	// StreamWriteStall bounds each message a server stream writes, so a client that stopped
 	// reading does not hold its stream (BatchGetDocuments, RunQuery, RunAggregationQuery).
 	StreamWriteStall time.Duration `yaml:"stream_write_stall"`
@@ -251,6 +262,21 @@ type DocumentsLimits struct {
 	// StreamsPerIP caps the streams open from one client address (resolved through
 	// trusted_proxies).
 	StreamsPerIP int `yaml:"streams_per_ip"`
+	// StreamsPerProject caps the Listen and Write streams open on one project's databases.
+	StreamsPerProject int `yaml:"streams_per_project"`
+	// StreamOutboxBytes caps what waits to be sent on one Listen stream; a client that leaves it
+	// full ends with RESOURCE_EXHAUSTED (ADR-026 §3).
+	StreamOutboxBytes int64 `yaml:"stream_outbox_bytes"`
+	// TargetsPerStream caps one Listen stream's targets; one more is removed with
+	// RESOURCE_EXHAUSTED, and the stream stays open.
+	TargetsPerStream int `yaml:"targets_per_stream"`
+	// SnapshotRows bounds the documents one Listen target's read goes through: its first
+	// snapshot, a resume, or the fill of a limit window. Past it the target is removed with
+	// RESOURCE_EXHAUSTED.
+	SnapshotRows int `yaml:"snapshot_rows"`
+	// StreamLagEvents is the commits' events a Listen stream may leave untaken behind the hub;
+	// past it its targets are RESET and read again (ADR-026 §3).
+	StreamLagEvents int `yaml:"stream_lag_events"`
 	// CommitConcurrency is how many commits of one database run in Postgres at once (ADR-024
 	// §6.3); the others wait in the process, not in the pool.
 	CommitConcurrency int `yaml:"commit_concurrency"`
@@ -278,6 +304,12 @@ type DocumentsLimits struct {
 	CompositeIndexes int `yaml:"composite_indexes"`
 	// FieldOverrides bounds a database's field overrides, its default's aside (ADR-025 §2).
 	FieldOverrides int `yaml:"field_overrides"`
+	// TTLSweepInterval is how often the TTL sweeper deletes the documents past their TTL
+	// policy's time (ADR-028 §2); production deletes them "typically within 24 hours".
+	TTLSweepInterval time.Duration `yaml:"ttl_sweep_interval"`
+	// TTLSweepBatch is the due documents the sweeper reads of a database at once; a pass reads
+	// at most 100 batches of each database, the rest waiting for the next pass.
+	TTLSweepBatch int `yaml:"ttl_sweep_batch"`
 }
 
 // Storage holds the Cloud Storage for Firebase settings (ADR-022).
@@ -542,9 +574,15 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	dl := &c.Documents.Limits
 	integer("ARUMA_DOCUMENTS_MESSAGE_BYTES", &dl.MessageBytes)
 	duration("ARUMA_DOCUMENTS_STREAM_FIRST_MESSAGE", &dl.StreamFirstMessage)
+	duration("ARUMA_DOCUMENTS_STREAM_IDLE", &dl.StreamIdle)
 	duration("ARUMA_DOCUMENTS_STREAM_WRITE_STALL", &dl.StreamWriteStall)
 	duration("ARUMA_DOCUMENTS_SERVER_STREAM_MAX", &dl.ServerStreamMax)
 	count("ARUMA_DOCUMENTS_STREAMS_PER_IP", &dl.StreamsPerIP)
+	count("ARUMA_DOCUMENTS_STREAMS_PER_PROJECT", &dl.StreamsPerProject)
+	integer("ARUMA_DOCUMENTS_STREAM_OUTBOX_BYTES", &dl.StreamOutboxBytes)
+	count("ARUMA_DOCUMENTS_TARGETS_PER_STREAM", &dl.TargetsPerStream)
+	count("ARUMA_DOCUMENTS_SNAPSHOT_ROWS", &dl.SnapshotRows)
+	count("ARUMA_DOCUMENTS_STREAM_LAG_EVENTS", &dl.StreamLagEvents)
 	count("ARUMA_DOCUMENTS_COMMIT_CONCURRENCY", &dl.CommitConcurrency)
 	duration("ARUMA_DOCUMENTS_TXN_WAIT_TIMEOUT", &dl.TxnWaitTimeout)
 	duration("ARUMA_DOCUMENTS_TXN_MAX_LIFETIME", &dl.TxnMaxLifetime)
@@ -555,6 +593,8 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	count("ARUMA_DOCUMENTS_MAX_LOCKS_PER_TXN", &dl.MaxLocksPerTxn)
 	count("ARUMA_DOCUMENTS_COMPOSITE_INDEXES", &dl.CompositeIndexes)
 	count("ARUMA_DOCUMENTS_FIELD_OVERRIDES", &dl.FieldOverrides)
+	duration("ARUMA_DOCUMENTS_TTL_SWEEP_INTERVAL", &dl.TTLSweepInterval)
+	count("ARUMA_DOCUMENTS_TTL_SWEEP_BATCH", &dl.TTLSweepBatch)
 	boolean("ARUMA_STORAGE_ENABLED", &c.Storage.Enabled)
 	str("ARUMA_STORAGE_DATA_DIR", &c.Storage.DataDir)
 	duration("ARUMA_STORAGE_GC_GRACE", &c.Storage.GCGrace)
@@ -738,14 +778,22 @@ func (c *Config) validateDocuments() []error {
 	if l.MessageBytes < 1<<20 {
 		errs = append(errs, errors.New("documents.limits.message_bytes must be at least 1 MiB"))
 	}
+	if l.StreamOutboxBytes < l.MessageBytes {
+		errs = append(errs, errors.New("documents.limits.stream_outbox_bytes must be at least message_bytes"))
+	}
 	for _, f := range []struct {
 		name string
 		v    int64
 	}{
 		{"stream_first_message", int64(l.StreamFirstMessage)},
+		{"stream_idle", int64(l.StreamIdle)},
 		{"stream_write_stall", int64(l.StreamWriteStall)},
 		{"server_stream_max", int64(l.ServerStreamMax)},
 		{"streams_per_ip", int64(l.StreamsPerIP)},
+		{"streams_per_project", int64(l.StreamsPerProject)},
+		{"targets_per_stream", int64(l.TargetsPerStream)},
+		{"snapshot_rows", int64(l.SnapshotRows)},
+		{"stream_lag_events", int64(l.StreamLagEvents)},
 		{"commit_concurrency", int64(l.CommitConcurrency)},
 		{"txn_wait_timeout", int64(l.TxnWaitTimeout)},
 		{"txn_max_lifetime", int64(l.TxnMaxLifetime)},
@@ -756,6 +804,8 @@ func (c *Config) validateDocuments() []error {
 		{"max_locks_per_txn", int64(l.MaxLocksPerTxn)},
 		{"composite_indexes", int64(l.CompositeIndexes)},
 		{"field_overrides", int64(l.FieldOverrides)},
+		{"ttl_sweep_interval", int64(l.TTLSweepInterval)},
+		{"ttl_sweep_batch", int64(l.TTLSweepBatch)},
 	} {
 		if f.v < 1 {
 			errs = append(errs, fmt.Errorf("documents.limits.%s must be positive", f.name))

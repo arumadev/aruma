@@ -476,8 +476,9 @@ type encodedDoc struct {
 }
 
 // stampArgs fills the stamp statement's arrays from the changed documents, encoded in parallel
-// (indexArgs); the first document in order that fails gives the error.
-func (p *plan) stampArgs(a *stampInput) error {
+// (indexArgs), each with its expire_time under cat's TTL policies; the first document in order
+// that fails gives the error.
+func (p *plan) stampArgs(a *stampInput, cat *catalog) error {
 	var changed []*docChange
 	for _, d := range p.docs {
 		if d.changed() {
@@ -497,6 +498,7 @@ func (p *plan) stampArgs(a *stampInput) error {
 			a.updateSeqs = append(a.updateSeqs, d.before.seq)
 			a.updateDocs = append(a.updateDocs, e.doc)
 			a.updateSizes = append(a.updateSizes, e.size)
+			a.updateExpires = append(a.updateExpires, cat.storedExpiry(d.path, d.fields))
 			a.replaced = append(a.replaced, d.keys.stored)
 		case d.exists:
 			a.insertKeys = append(a.insertKeys, d.keys.stored)
@@ -507,6 +509,7 @@ func (p *plan) stampArgs(a *stampInput) error {
 			a.insertCollectionIDs = append(a.insertCollectionIDs, d.path.CollectionID())
 			a.insertDocs = append(a.insertDocs, e.doc)
 			a.insertSizes = append(a.insertSizes, e.size)
+			a.insertExpires = append(a.insertExpires, cat.storedExpiry(d.path, d.fields))
 		default:
 			a.deleteKeys = append(a.deleteKeys, d.keys.stored)
 			a.deleteSeqs = append(a.deleteSeqs, d.before.seq)

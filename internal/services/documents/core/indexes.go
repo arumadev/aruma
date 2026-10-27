@@ -166,6 +166,8 @@ type catalog struct {
 	// overrides is the stored rows, for the Admin API.
 	overrides []overrideRow
 	planner   *index.Catalog
+	// ttl is the TTL policies by collection group, CREATING and ACTIVE (ttl.go).
+	ttl map[string][]ttlPolicy
 }
 
 // overrideRow is a field_overrides row as the catalog read it.
@@ -289,6 +291,11 @@ func readCatalog(ctx context.Context, q *queries.Queries, db DB) (*catalog, erro
 		}
 		if r.Building {
 			building = &r
+		}
+		if row.ttlState != "" {
+			if err := cat.addTTL(row); err != nil {
+				return nil, fmt.Errorf("documents: TTL policy %s/%s: %w", r.CollectionGroup, r.FieldPath, err)
+			}
 		}
 		cat.overrides = append(cat.overrides, row)
 	}

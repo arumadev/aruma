@@ -30,8 +30,19 @@ type Instance struct {
 
 	stop context.CancelFunc
 	done chan struct{}
-	mu   sync.Mutex // guards conn
+	// kick asks the guard to check now: a commit's fence found the lock gone.
+	kick chan struct{}
+	mu   sync.Mutex // guards conn and holder
 	conn *pgx.Conn
+	// holder is conn's session, which a commit's fence asks Postgres about (FenceCommit).
+	holder lockHolder
+}
+
+// lockHolder names the session that holds the lock: its backend pid, and its backend_start,
+// which tells it from a later session given the same pid.
+type lockHolder struct {
+	pid   int32
+	start time.Time
 }
 
 // InstanceOptions times the guard; the zero value is ADR-024 §7's.
@@ -59,6 +70,16 @@ type InstanceOptions struct {
 
 // instanceLock is the advisory lock's key, the int4 pair as Storage's are taken.
 const instanceLock = "SELECT pg_try_advisory_lock(hashtext('documents.instance'), 0)"
+
+// instanceTake takes the lock, and names the session that took it (lockHolder).
+const instanceTake = "SELECT pg_try_advisory_lock(hashtext('documents.instance'), 0), pg_backend_pid(), " +
+	"(SELECT backend_start FROM pg_stat_get_activity(pg_backend_pid()))"
+
+// instanceBarrier waits, once the lock is taken, for every transaction that holds a sequencer row:
+// a commit of the previous holder that passed its fence (FenceCommit) holds its row until COMMIT,
+// so none is still to land once this process serves; a commit of it that stamps later fails its
+// fence, as the lock is this process's (ADR-024 §7).
+const instanceBarrier = "LOCK TABLE documents.sequencer IN SHARE MODE"
 
 // instanceHeld reports whether this session still holds the lock: an int4-pair advisory lock
 // is classid = the first key (as oid), objid = the second, objsubid = 2.
@@ -88,7 +109,7 @@ func StartInstance(ctx context.Context, cfg *pgx.ConnConfig, o InstanceOptions) 
 	if o.Log == nil {
 		o.Log = slog.Default()
 	}
-	i := &Instance{cfg: cfg.Copy(), o: o, done: make(chan struct{})}
+	i := &Instance{cfg: cfg.Copy(), o: o, done: make(chan struct{}), kick: make(chan struct{}, 1)}
 	// A check that times out sends Postgres a cancel request, and keeps the connection: pgx's
 	// default closes it, which would free the lock over a slow statement.
 	i.cfg.BuildContextWatcherHandler = func(c *pgconn.PgConn) ctxwatch.Handler {
@@ -112,6 +133,23 @@ func StartInstance(ctx context.Context, cfg *pgx.ConnConfig, o InstanceOptions) 
 
 // Held reports whether this process holds the lock and may serve the Document Database.
 func (i *Instance) Held() bool { return i.held.Load() }
+
+// fence returns the session a commit's fence checks: the zero lockHolder, which no fence passes,
+// when the lock is not held.
+func (i *Instance) fence() lockHolder {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	return i.holder
+}
+
+// suspect makes the guard check the lock now rather than after Check: a commit's fence found it
+// gone, and the guard's check runs the loss (OnLost).
+func (i *Instance) suspect() {
+	select {
+	case i.kick <- struct{}{}:
+	default:
+	}
+}
 
 // Close stops the guard and releases the lock.
 func (i *Instance) Close() {
@@ -139,7 +177,13 @@ func (i *Instance) run(ctx context.Context) {
 			}
 			continue
 		}
-		if !sleep(ctx, i.o.Check) {
+		t := time.NewTimer(i.o.Check)
+		select {
+		case <-t.C:
+		case <-i.kick:
+			t.Stop()
+		case <-ctx.Done():
+			t.Stop()
 			return
 		}
 		lost, err := i.check(ctx)
@@ -169,12 +213,22 @@ func (i *Instance) tryAcquire(ctx context.Context) bool {
 		return false
 	}
 	var ok bool
-	if err := conn.QueryRow(ctx, instanceLock).Scan(&ok); err != nil || !ok {
+	var h lockHolder
+	if err := conn.QueryRow(ctx, instanceTake).Scan(&ok, &h.pid, &h.start); err != nil || !ok {
+		_ = conn.Close(context.Background())
+		return false
+	}
+	if err := pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, instanceBarrier)
+		return err
+	}); err != nil {
+		// The previous holder's commits did not end in time: closing the session frees the
+		// lock, taken again on a later try.
 		_ = conn.Close(context.Background())
 		return false
 	}
 	i.mu.Lock()
-	i.conn = conn
+	i.conn, i.holder = conn, h
 	i.mu.Unlock()
 	i.held.Store(true)
 	return true
@@ -221,7 +275,7 @@ func (i *Instance) release() {
 	i.held.Store(false)
 	i.mu.Lock()
 	conn := i.conn
-	i.conn = nil
+	i.conn, i.holder = nil, lockHolder{}
 	i.mu.Unlock()
 	if conn != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

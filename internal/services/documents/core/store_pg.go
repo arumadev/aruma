@@ -23,7 +23,9 @@ type Options struct {
 	// Notifier hears of every commit; nil for none.
 	Notifier Notifier
 	// Instance, when set, makes every call fail with ErrNotServing while this process does not
-	// hold the single-instance lock (ADR-024 §7). Tests and tools leave it nil.
+	// hold the single-instance lock, and every commit fail so unless the lock's session still
+	// holds it under the commit's sequencer row (FenceCommit, ADR-024 §7). Tests and tools leave
+	// it nil.
 	Instance *Instance
 	// Transactions bounds the transactions and keys their ids.
 	Transactions TxnConfig
@@ -50,6 +52,8 @@ type PGStore struct {
 	limits IndexLimits
 	// changelogRetention is Options.ChangelogRetention.
 	changelogRetention time.Duration
+	// ttl counts the TTL sweeper's work (ttl.go).
+	ttl ttlStats
 }
 
 var _ Store = (*PGStore)(nil)
@@ -60,7 +64,7 @@ func NewPGStore(pool *pgxpool.Pool, o Options) *PGStore {
 	return &PGStore{
 		pool:     pool,
 		q:        queries.New(pool),
-		seq:      newSequencer(pool, cmp.Or(o.CommitConcurrency, DefaultCommitConcurrency), o.Notifier, cats),
+		seq:      newSequencer(pool, cmp.Or(o.CommitConcurrency, DefaultCommitConcurrency), o.Notifier, cats, o.Instance),
 		location: cmp.Or(o.LocationID, DefaultLocation),
 		instance: o.Instance,
 		txns:     newTransactions(o.Transactions),

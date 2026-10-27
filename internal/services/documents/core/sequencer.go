@@ -30,8 +30,8 @@ import (
 //     under the database's catalog (plan.indexArgs), which the commit read before the first
 //     batch (catalogs, cached);
 //  5. the second batch, one round trip: the index entries, then the stamp, which takes the
-//     sequencer row and fails unless the catalog is still the commit's, the documents and
-//     changelog (WriteCommit), then COMMIT. A commit with a REQUEST_TIME transform sends the
+//     sequencer row and fails unless the catalog is still the commit's, the single-instance
+//     lock's fence (FenceCommit), the documents and changelog (WriteCommit), then COMMIT. A commit with a REQUEST_TIME transform sends the
 //     stamp alone, builds its documents and their entries with the commit_time it returned
 //     (plan.apply again), then sends the rest; one that changes nothing takes no stamp, only a
 //     commit_time from the clock (sequencer.unchanged);
@@ -78,6 +78,8 @@ type sequencer struct {
 	size   int
 	notify Notifier
 	cats   *catalogs
+	// instance, when set, is the single-instance lock every stamp is fenced on (FenceCommit).
+	instance *Instance
 
 	mu    sync.Mutex
 	gates map[dbKey]chan struct{}
@@ -89,8 +91,8 @@ type sequencer struct {
 	largeCommits atomic.Int64
 }
 
-func newSequencer(pool *pgxpool.Pool, size int, notify Notifier, cats *catalogs) *sequencer {
-	return &sequencer{pool: pool, size: max(size, 1), notify: notify, cats: cats, gates: map[dbKey]chan struct{}{}}
+func newSequencer(pool *pgxpool.Pool, size int, notify Notifier, cats *catalogs, instance *Instance) *sequencer {
+	return &sequencer{pool: pool, size: max(size, 1), notify: notify, cats: cats, instance: instance, gates: map[dbKey]chan struct{}{}}
 }
 
 func (s *sequencer) gate(db DB) chan struct{} {
@@ -117,6 +119,10 @@ var (
 func (s *sequencer) commit(ctx context.Context, db DB, p *plan) (CommitResult, error) {
 	for attempt := 1; ; attempt++ {
 		res, err := s.attempt(ctx, db, p)
+		if errors.Is(err, ErrNotServing) && s.instance != nil {
+			// The fence found the lock gone before the guard did.
+			s.instance.suspect()
+		}
 		if !errors.Is(err, errRetry) {
 			return res, err
 		}
@@ -133,6 +139,7 @@ type stampInput struct {
 	updateKeys, updateDocs                                      [][]byte
 	updateSeqs                                                  []int64
 	updateSizes                                                 []int32
+	updateExpires, insertExpires                                []time.Time
 	insertKeys, insertNames, insertParentHashes, insertCgHashes [][]byte
 	insertParents, insertDocs                                   [][]byte
 	insertCollectionIDs                                         []string
@@ -234,7 +241,7 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 		return CommitResult{}, err
 	}
 	var in stampInput
-	if err := p.stampArgs(&in); err != nil {
+	if err := p.stampArgs(&in, cat); err != nil {
 		rollback(conn)
 		return CommitResult{}, err
 	}
@@ -325,6 +332,13 @@ func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, l
 		}
 		return rows.Err()
 	})
+	if s.instance != nil {
+		h := s.instance.fence()
+		sql, args := statement(func(q *queries.Queries) error {
+			return q.FenceCommit(ctx, queries.FenceCommitParams{Holder: h.pid, HolderStart: h.start})
+		})
+		b.Queue(sql, args...)
+	}
 	if p.serverTime {
 		if err := conn.SendBatch(ctx, b).Close(); err != nil {
 			rollback(conn)
@@ -343,7 +357,7 @@ func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, l
 			rollback(conn)
 			return CommitResult{}, err
 		}
-		if err := p.stampArgs(in); err != nil {
+		if err := p.stampArgs(in, cat); err != nil {
 			rollback(conn)
 			return CommitResult{}, err
 		}
@@ -358,10 +372,10 @@ func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, l
 	writeSQL, writeArgs := statement(func(q *queries.Queries) error {
 		_, err := q.WriteCommit(ctx, queries.WriteCommitParams{
 			ProjectNumber: db.Project, DatabaseID: db.ID, CatalogVersion: catalogVersion,
-			UpdateKeys: in.updateKeys, UpdateSeqs: in.updateSeqs, UpdateDocs: in.updateDocs, UpdateSizes: in.updateSizes,
+			UpdateKeys: in.updateKeys, UpdateSeqs: in.updateSeqs, UpdateDocs: in.updateDocs, UpdateSizes: in.updateSizes, UpdateExpires: in.updateExpires,
 			InsertKeys: in.insertKeys, InsertNames: in.insertNames, InsertParentHashes: in.insertParentHashes,
 			InsertCgHashes: in.insertCgHashes, InsertParents: in.insertParents, InsertCollectionIds: in.insertCollectionIDs,
-			InsertDocs: in.insertDocs, InsertSizes: in.insertSizes,
+			InsertDocs: in.insertDocs, InsertSizes: in.insertSizes, InsertExpires: in.insertExpires,
 			DeleteKeys: in.deleteKeys, DeleteSeqs: in.deleteSeqs, ReplacedKeys: in.replaced,
 			LogKeys: in.logKeys, LogNames: in.logNames, LogBefores: in.logBefores, LogAfters: in.logAfters, LogMasks: in.logMasks,
 		})
@@ -468,6 +482,8 @@ func failed(err error) error {
 	switch pe.Code {
 	case "40001", "40P01": // serialization_failure (conflict_unless), deadlock_detected
 		return errRetry
+	case "AR001": // documents.instance_fence: the single-instance lock is no longer this process's
+		return ErrNotServing
 	case "55P03", "57014": // lock_not_available (lock_timeout), query_canceled (statement_timeout)
 		return ErrContention
 	case "25P03":

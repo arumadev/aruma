@@ -219,6 +219,18 @@ export async function grpcListen(request, database = DB, waitMs = 8000) {
   });
 }
 
+// grpcDuplex opens a bidirectional stream (listen or write) and returns the
+// raw call; the caller writes requests and reads data, status and error events.
+export async function grpcDuplex(method, database = DB) {
+  const md = await metadata(database);
+  return grpcState.client[method](md);
+}
+
+export function grpcCodeName(code) {
+  const names = grpcState.grpc.status;
+  return Object.keys(names).find((k) => names[k] === code) || String(code);
+}
+
 // ---- values ----
 
 export const v = (x) => {
@@ -370,4 +382,19 @@ export function assertScoped(name) {
   const m = /^projects\/[^/]+\/databases\/[^/]+\/documents\/(.*)$/.exec(name);
   const rel = m ? m[1] : name;
   if (!rel.startsWith(PREFIX)) throw new Error(`refusing to touch ${name.slice(0, 200)}: outside ${PREFIX}*`);
+}
+
+// assertMessageScoped walks a decoded stream message (a ListenResponse, a
+// WriteResponse, or a request) and refuses any string that names a document or
+// collection outside the aruma-ref top-level collections. It covers
+// document_change, document_delete and document_remove, and every other string
+// that holds a resource path, wherever it sits in the message.
+export function assertMessageScoped(msg) {
+  const walk = (x) => {
+    if (typeof x === 'string') {
+      if (/^projects\/[^/]+\/databases\/[^/]+\/documents\/./.test(x)) assertScoped(x);
+    } else if (Array.isArray(x)) x.forEach(walk);
+    else if (x && typeof x === 'object' && !Buffer.isBuffer(x)) Object.values(x).forEach(walk);
+  };
+  walk(msg);
 }

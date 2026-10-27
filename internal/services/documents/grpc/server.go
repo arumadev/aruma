@@ -36,6 +36,7 @@ import (
 
 	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
 	"github.com/arumadev/aruma/internal/services/documents/api"
 	"github.com/arumadev/aruma/internal/services/documents/wire"
 	"github.com/arumadev/aruma/internal/services/documents/wire/pb/adminpb"
@@ -52,12 +53,21 @@ type Limits struct {
 	MessageBytes int64
 	// StreamFirstMessage bounds the wait for a stream's first message (10 s).
 	StreamFirstMessage time.Duration
+	// StreamIdle ends a Listen stream without a target, or a Write stream, that sent no request
+	// for this long (5 min).
+	StreamIdle time.Duration
 	// StreamWriteStall bounds each message a server stream writes (30 s).
 	StreamWriteStall time.Duration
 	// ServerStreamMax bounds a server stream without grpc-timeout (5 min).
 	ServerStreamMax time.Duration
 	// StreamsPerIP caps the streams open from one client address (500).
 	StreamsPerIP int
+	// StreamsPerProject caps the Listen and Write streams open on one project (10000).
+	StreamsPerProject int
+	// StreamOutboxBytes caps what waits to be sent on one Listen stream (64 MiB).
+	StreamOutboxBytes int64
+	// TargetsPerStream caps one Listen stream's targets (1000).
+	TargetsPerStream int
 }
 
 // Options configure the handler.
@@ -68,7 +78,12 @@ type Options struct {
 	Limits         Limits
 	// Metrics, when set, counts every RPC.
 	Metrics *Metrics
-	Logger  *slog.Logger
+	// IDTokens verifies an end user's ID token when its stream opens, and again when
+	// revocations were lost; Revocations tells of the users whose tokens stop being valid
+	// (ADR-026 §4). Without them an end user's stream is watched for neither.
+	IDTokens    idtoken.Verifier
+	Revocations idtoken.Revocations
+	Logger      *slog.Logger
 }
 
 // Handler serves the Document Database's gRPC methods. It is safe for concurrent use.
@@ -87,6 +102,9 @@ type Handler struct {
 	mu      sync.Mutex
 	streams map[netip.Addr]int
 	open    int
+
+	// watch holds the admitted Listen and Write streams (watch.go).
+	watch streamWatch
 }
 
 // New returns the handler.
@@ -94,13 +112,18 @@ func New(o Options) *Handler {
 	l := o.Limits
 	l.MessageBytes = cmp.Or(l.MessageBytes, 17<<20)
 	l.StreamFirstMessage = cmp.Or(l.StreamFirstMessage, 10*time.Second)
+	l.StreamIdle = cmp.Or(l.StreamIdle, 5*time.Minute)
 	l.StreamWriteStall = cmp.Or(l.StreamWriteStall, 30*time.Second)
 	l.ServerStreamMax = cmp.Or(l.ServerStreamMax, 5*time.Minute)
 	l.StreamsPerIP = cmp.Or(l.StreamsPerIP, 500)
+	l.StreamsPerProject = cmp.Or(l.StreamsPerProject, 10_000)
+	l.StreamOutboxBytes = cmp.Or(l.StreamOutboxBytes, 64<<20)
+	l.TargetsPerStream = cmp.Or(l.TargetsPerStream, 1000)
 	h := &Handler{
 		svc: o.Service, trusted: o.TrustedProxies, limits: l, metrics: o.Metrics,
 		log: cmp.Or(o.Logger, slog.Default()), streams: make(map[netip.Addr]int),
 	}
+	h.watch.init(h, o.IDTokens, o.Revocations)
 	h.drain, h.stopDrain = context.WithCancel(context.Background())
 	opts := []connect.HandlerOption{
 		connect.WithReadMaxBytes(int(l.MessageBytes)),
@@ -287,31 +310,54 @@ type serverStream struct {
 	cancel  context.CancelCauseFunc
 	stops   []func() bool
 
-	mu      sync.Mutex // orders the cut of a stuck write with the sends and the trailers
-	sending bool       // a Send is in progress: only then is it cut, which resets the stream
+	mu       sync.Mutex // orders the cut of a stuck write with the sends and the trailers
+	sending  bool       // a Send is in progress: only then is it cut, which resets the stream
+	deadline time.Time  // the Send's own write deadline; zero is none
+	cut      bool       // the stream ended during the Send, and its write deadline was moved up
 }
 
+// cutGrace is how long a Send in progress when its stream ends has to return before it is cut.
+// A Send that already wrote its message may still be on its way back to sendWithin: cut at once,
+// the stream is reset INTERNAL and the client never sees the status it ends with.
+const cutGrace = time.Second
+
+// afterSend, when set, runs after each Send returns and before sendWithin takes it as done.
+var afterSend atomic.Pointer[func(context.Context)]
+
 func (h *Handler) serverStream(ctx context.Context) (*serverStream, error) {
+	return h.openServerStream(ctx, h.limits.ServerStreamMax)
+}
+
+// openServerStream is serverStream with the stream's own bound: a Write stream is bounded by
+// stream_idle and its token (ADR-026 §3, §4), not by server_stream_max, so it passes none.
+func (h *Handler) openServerStream(ctx context.Context, maxLife time.Duration) (*serverStream, error) {
 	info := rpcOf(ctx)
 	release, err := h.openStream(info.client)
+	if errors.Is(err, errTooManyStreams) {
+		h.overflowed(ctx, info, "streams_per_ip")
+	}
 	if err != nil {
 		return nil, err
 	}
 	s := &serverStream{info: info, stall: h.limits.StreamWriteStall}
 	// server_stream_max bounds a grpc-timeout too: a client cannot hold a stream for hours.
-	ctx, cancel := context.WithTimeoutCause(ctx, h.limits.ServerStreamMax, errStreamMax)
+	cancel := context.CancelFunc(func() {})
+	if maxLife > 0 {
+		ctx, cancel = context.WithTimeoutCause(ctx, maxLife, errStreamMax)
+	}
 	s.release = func() { cancel(); release() }
 	s.ctx, s.cancel = context.WithCancelCause(ctx)
 	s.stops = []func() bool{
 		context.AfterFunc(h.drain, func() { s.cancel(errDraining) }),
 		// A Send stuck on flow control returns once its write deadline passes. That resets the
-		// stream, so it is done only to a Send in progress: otherwise the handler sees the end of
-		// its context and answers with a status.
+		// stream, so it is done only to a Send still in progress after cutGrace: otherwise the
+		// handler sees the end of its context and answers with a status.
 		context.AfterFunc(s.ctx, func() {
 			s.mu.Lock()
 			defer s.mu.Unlock()
-			if s.sending {
-				_ = info.rc.SetWriteDeadline(time.Now())
+			if cut := time.Now().Add(cutGrace); s.sending && (s.deadline.IsZero() || cut.Before(s.deadline)) {
+				s.cut = true
+				_ = info.rc.SetWriteDeadline(cut)
 			}
 		}),
 	}
@@ -325,17 +371,36 @@ func (s *serverStream) admitted() {
 
 // send writes one message within stream_write_stall.
 func (s *serverStream) send(send func() error) error {
+	return s.sendWithin(s.stall, send)
+}
+
+// sendWithin writes one message within d; 0 is no bound but the stream's end, which cuts it.
+func (s *serverStream) sendWithin(d time.Duration, send func() error) error {
 	s.mu.Lock()
 	if s.ctx.Err() != nil {
 		s.mu.Unlock()
 		return context.Cause(s.ctx)
 	}
 	s.sending = true
-	_ = s.info.rc.SetWriteDeadline(time.Now().Add(s.stall))
+	s.deadline = time.Time{}
+	if d > 0 {
+		s.deadline = time.Now().Add(d)
+	}
+	_ = s.info.rc.SetWriteDeadline(s.deadline)
 	s.mu.Unlock()
 	err := send()
+	if f := afterSend.Load(); f != nil {
+		(*f)(s.ctx)
+	}
 	s.mu.Lock()
 	s.sending = false
+	if s.cut {
+		// The Send returned within its grace: the cut is called off, or it would reset the
+		// stream. Both changes reach the connection in order, under s.mu; finish bounds the
+		// trailers.
+		s.cut = false
+		_ = s.info.rc.SetWriteDeadline(time.Time{})
+	}
 	s.mu.Unlock()
 	return err
 }
@@ -372,6 +437,10 @@ func (s *serverStream) finish(err error) error {
 			return errDraining.Connect()
 		case errors.Is(cause, errStreamMax), errors.Is(cause, context.DeadlineExceeded):
 			return wire.From(context.DeadlineExceeded).Connect()
+		}
+		// A status the stream was closed with from outside: its token, a limit, the lock's loss.
+		if we, ok := errors.AsType[*wire.Error](cause); ok {
+			return we.Connect()
 		}
 	}
 	if err == nil {

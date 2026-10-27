@@ -91,6 +91,16 @@ ORDER BY name_key
 LIMIT @batch
 FOR SHARE;
 
+-- name: SetExpireTimes :exec
+-- A build batch's documents' expire_time under the catalog it builds with (core/ttl.go), those
+-- that differ; locked FOR SHARE by the batch, as BackfillGroup's. The zero time stands for none
+-- (WriteCommit).
+UPDATE documents.documents d SET expire_time = nullif(w.expire_time, '0001-01-01 00:00:00+00')
+FROM (SELECT unnest(@name_keys::bytea[]) AS name_key, unnest(@expires::timestamptz[]) AS expire_time) w
+WHERE d.project_number = @project_number AND d.database_id = @database_id
+    AND d.name_key = ANY(@name_keys::bytea[]) AND d.name_key = w.name_key
+    AND d.expire_time IS DISTINCT FROM nullif(w.expire_time, '0001-01-01 00:00:00+00');
+
 -- name: SetCompositeCursor :exec
 UPDATE documents.indexes SET build_cursor = @build_cursor
 WHERE project_number = @project_number AND database_id = @database_id AND id = @id;

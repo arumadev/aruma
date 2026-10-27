@@ -89,11 +89,24 @@ Listen طريق القراءة الأساسي في الويب والجوال: ح
 
 العميل يرسل `limitToLast` معكوسًا فلا معاملة خاصة به (CL §1.9). والهدف ذو `limit` يحفظ نافذته: **حين يخرج عضو منها تُرسل إزالته والمستند التالي الداخل قبل اللقطة الشاملة** (MUST 9)، والملء باستعلام كما يفعل الإنتاج («issues a polling query to fill in the gap»، OF §1b). وأهداف `offset` يُعاد استعلامها عند أي تغيير في مجموعتها.
 
+#### 1.8 ما حسمه تسجيل الإنتاج في F4 (يعلو ما سبق حيث يخالفه)
+
+سُجّل الإنتاج في `test/oracle/documents/corpus/f4-listen.json`، ويُعاد تشغيله في كل `go test` (`test/differential/documents/listen_replay_test.go`). والنفاذ في `api/listen.go` و`grpc/listen.go`.
+
+- **المعرّفات (1.1):** `target_id` صفر يعيّنه الخادم: 1 على بث جديد، وإلا أكبر معرّف + 1 (`listen.remove-target`). وينهي البثَّ بحالته: معرّف سالب، وطلب بلا `target_change`، وقاعدة غير قاعدة الترويسة، وإزالة معرّف مجهول (`NOT_FOUND`)، ومعرّف يدوي بعد معيَّن (`refused-targets` البثوث 23 و26 و27). و`once`: ADD، النتيجة، CURRENT، اللقطة الشاملة، ثم REMOVE (البثّان 24 و25).
+- **التسلسل (1.2):** CURRENT يحمل `read_time` والرمز معًا، واللقطة الشاملة بالرمز نفسه. ولا `NO_CHANGE` لهدف بعينه (`listen.two-targets`). والمستند الغائب `document_delete` قبل CURRENT لا «لا مستند» (`listen.doc-missing`). والخارج بتغيير حقل `document_change` بجسمه الجديد و`removed_target_ids` (`listen.query-target`).
+- **الرفض (1.3):** رفض ما في الطلب نفسه REMOVE وحده، ورفض القاعدة (فهرس ناقص، `find_nearest`، `__name__` تنازليًا، `read_time` في المستقبل) ADD ثم REMOVE. والهدف لقاعدة أخرى **`INVALID_ARGUMENT` «Cannot add a target for a different database.» لا `PERMISSION_DENIED`**. والنصوص كلها نصوص الإنتاج (`refused-targets`). و`offset` و`limit` مع `offset` مقبولان.
+- **RESET (1.4):** يحمل الرمز `0a 00`. وهو أيضًا الرد العادي على نافذة `limit` فقدت عضوًا بحذف أو بخروجه منها: RESET والنافذة كاملة ثم CURRENT؛ أما المستند الداخل في المقدمة فـ`document_remove` للمُزاح و`document_change` للداخل (`listen.limit-target`). فقائمة 1.4 ليست حصرية، والبند 1.7 «إزالته والمستند التالي» لا يطابق الإنتاج.
+- **الاستئناف (1.5):** الرمز وقتٌ فقط: `0a 09 08 <varint ميكروثانية>`، يُقبل على أي هدف، فلا «رمز غريب». والرمز الذي لا يُحلَّل `REMOVE` بالسبب 3 «bad resume token» والبث باقٍ، لا RESET (`listen.resume-bad-token`). و`read_time` قديم مهما قدم يُخدم بلا خطأ بمسار العدد (`listen.resume-read-time`). وداخل النافذة: الحذف صريح، والخروج بتغيير حقل يحمله العدد وحده (`listen.resume-token`). ويُحذف المرشح حين لم يُرسل إلا الحذف وعدد العميل ناقصًا المحذوف يساوي العدد الحالي (البثّان 8 و12)، وإلا أُرسل.
+- **الفروق المقصودة** في `parity-exceptions.json`: `listen-heartbeats` (الإنتاج يكرر اللقطات الشاملة والمرشحات وRESET بتوقيته، ولا نكرر)، و`listen-no-bloom`، و`listen-resume-explicit-deletes` (البثّان 10 و11)، و`listen-resume-count` (البثّان 3 و9: مرشح بالعدد لاستئناف بلا expected_count).
+- **تخمينات لم تُسجَّل:** معرّف هدف مكرر ينهي البث بـ`INVALID_ARGUMENT` بنصنا؛ ورمز RESET (`0a 00`) إضافة جديدة؛ ورمز وقته في المستقبل «bad resume token»؛ والاستعلام بلا معرّف مجموعة يُرفض بنص «All-collection queries…»؛ واستئناف هدف `limit` أو `offset`: يُقارن بنتيجته عند T ما دامت النسخ تحفظها، وإلا RESET والنتيجة كاملة.
+
 ### 2. الموزّع داخل العملية
 
 `listen/hub.go`، خلف واجهة قارئ لقطات يعرّفها `listen/` (`reader.go`) وينفذها `core` (PL §8؛ RV، layout).
 
 - **اشترك ثم التقط** (PA §A2، hidane `changes.rs:1-8`): يُسجَّل الهدف في الموزّع عند موضعه H أولًا، ثم تُقرأ اللقطة في `REPEATABLE READ` مع قيمة المتسلسل S ≥ H (ADR-024). والأحداث حتى S تُتخطى لهذا الهدف لأنها في اللقطة، وما بعدها يُطبَّق. فلا حدث يضيع بين القراءة والاشتراك.
+  - **كما نُفّذ في F4 (`listen/`):** S و`last_ts` يُقرآن بجملة واحدة، ثم صفحات اللقطة جمل مستقلة عند `read_time` = `last_ts`، كمعاملة القراءة فقط (ADR-024 §3)، لا معاملة REPEATABLE READ مفتوحة طوال اللقطة. والنتيجة نفسها: كل commit بعد S وقته بعد `last_ts` (ADR-024 §2.1)، ولا اتصال محجوز. و`snapshot_rows` يحد المستندات المقروءة في المسار المرجعي لا المُرسلة. وفرق الاستئناف داخل النافذة (البند 1.5) يُقرأ من سجل التغييرات: صورة كل مستند قبل أول commit بعد T وبعد آخر commit حتى S، والنافذة أقصر الاحتفاظين: سجل التغييرات و`version_retention`.
 - **المطابقة بالمستند قبل الكتابة وبعدها** («Firestore propagates full before and after documents»، OF §1b): كل حدث commit يحمل الصورتين من سجل التغييرات (ADR-024)، ويُقيَّم مرشح الهدف عليهما:
 
   | قبل | بعد | ما يُرسل |
@@ -152,6 +165,7 @@ Listen طريق القراءة الأساسي في الويب والجوال: ح
 - **الآلية في ADR-024 §7:** قفل استشاري على مستوى الجلسة، `pg_try_advisory_lock(hashtext('documents.instance'), 0)`، على اتصال مخصص. فالحارس على Postgres نفسه، فيمسك عملية ثانية على أي مضيف، لا على مجلد واحد.
   - **النسخة الثانية** تنتظره حتى 30 ثانية عند الإقلاع، ثم ترفض تفعيل قاعدة المستندات بخطأ واضح، وترد كل RPC لها `UNAVAILABLE`.
   - **إن سقط اتصال القفل** تتوقف العملية عن خدمتها: كل Listen وWrite يُغلق بـ `UNAVAILABLE`، وكل RPC يفشل سريعًا بالرمز نفسه، حتى تستعيد القفل بموزّع ومدير أقفال جديدين. والعملاء يستأنفون برموزهم (البند 1.5).
+  - **في F4، الموزّع وحده يُعاد بناؤه** عند استعادة القفل، ولا يُقبل بث قبل أخذ القفل أول مرة. أما الـ commit فيحميه الحاجز في ADR-024 §7: كل commit يتحقق من القفل تحت صف المتسلسل، والمالك الجديد ينتظر الـ commits الجارية للقديم قبل أن يخدم. فلا تكتب عمليتان معًا.
 - **النشر إيقاف ثم تشغيل** (`strategy: Recreate` في Kubernetes)، والنسخة الجديدة تنتظر القفل وقت تصريف القديمة (ADR-027 §3.4).
 - **قفل `data_dir` يبقى لـ Storage كما هو** (ADR-022 §5.1)، ولا تحتاج قاعدة المستندات `storage.data_dir`.
 
@@ -159,15 +173,16 @@ Listen طريق القراءة الأساسي في الويب والجوال: ح
 
 متاح على gRPC (Android وiOS وJS على Node) وWebChannel (المتصفح، F6)، ولا REST له («only available via gRPC or WebChannel»، OF §2d؛ CL §2.1):
 
-- **المصافحة:** أول طلب `WriteRequest{database}` بلا رمز ولا كتابات، ورده `stream_id` و**`stream_token` غير فارغ، بلا `write_results`** (MUST 11). والعميل يتجاهل أي رمز محفوظ.
+- **المصافحة:** أول طلب `WriteRequest{database}` بلا رمز ولا كتابات، ورده `stream_id` (نص قصير، حرف واحد في التسجيل) و**`stream_token` غير فارغ، بلا `write_results`** (MUST 11). والعميل يتجاهل أي رمز محفوظ. **الرمز protobuf** كما سجّله الإنتاج (`write.handshake-and-batches`): في المصافحة تسعة بايتات `19 <8 بايت>`، وفي رد كل دفعة أحد عشر `10 <عدّاد الدفعة> 19 <البايتات نفسها>`. والخادم يقرأ الرمز المرسل ولا يقارنه: الرمز القديم و`stream_id` الغريب مقبولان على دفعة لاحقة (`write.token-reuse`، `write.pipelined`)، ولا يُرسَل `stream_id` إلا في المصافحة.
+- **الرفض بـ `INVALID_ARGUMENT` وإنهاء البث،** بنصوص الإنتاج: «the first request in a stream cannot contain writes» لأول طلب فيه كتابات (`write.no-handshake`)؛ «missing stream token» لطلب لاحق بلا رمز، ومنه طلب `{database}` ثانٍ (`write.no-handshake`، `write.token-reuse`)؛ «invalid stream token» لرمز لا يُقرأ protobuf (`write.token-reuse`). **والاستئناف** (أول طلب فيه `stream_id` أو رمز) `ABORTED` «resuming a stream not supported» (`write.resume-stream`)، فيبدأ العميل بمصافحة جديدة. (أول طلب بأحدهما فقط لم يُسجَّل، ونعامله استئنافًا: تخمين.)
 - **كل طلب بعدها دفعة ذرية واحدة** تُنفَّذ كـ `Commit` (ADR-025)، بالترتيب، والرد بالترتيب (MUST 12):
   - `stream_token` جديد غير فارغ، و`commit_time` إلزامي.
-  - **`write_results` بطول `writes` بالضبط،** وفي كل منها `update_time` (والحذف يعتمد على `commit_time`)، و**`transform_results` بطول `update_transforms`**. وغير ذلك hardAssert في العميل (CL §2.1).
+  - **`write_results` بطول `writes` بالضبط،** وفي كل منها `update_time` عدا **الحذف فنتيجته `{}` فارغة** (`write.handshake-and-batches`)، و**`transform_results` بطول `update_transforms`** بالترتيب: `arrayUnion` و`arrayRemove` يعطيان `nullValue`، و`increment` القيمة الجديدة (`write.handshake-and-batches`، `write.transform-on-missing`). وغير ذلك hardAssert في العميل (CL §2.1).
 - **حتى 10 دفعات معلّقة على الأقل** يرسلها العميل قبل أي رد. والطلبات تُعالج واحدًا بعد واحد، وضغط HTTP/2 يمنع التكدس بلا حد.
-- **الطلب الفارغ** (`writes:[]`) يُقبل، يرسله العميل قبل الإغلاق.
+- **الطلب الفارغ** (`writes:[]`) بعد المصافحة **لا يُقبل:** ينتهي البث بـ `CANCELLED` «The operation was cancelled.» (`write.empty-first`، `write.handshake-and-batches`)، ولا رد فارغًا.
 - **الكتابات** (MUST 13): `update` مع `update_mask`، و`delete`، و`verify`، و`update_transforms` كلها (ومنها `maximum` و`minimum`)، و`current_document`، **و`transform` القديم المنفصل** (SA M9).
 - **الأخطاء تُنهي البث بحالة** (MUST 14):
-  - الرمز الدائم (`INVALID_ARGUMENT`، `NOT_FOUND`، `ALREADY_EXISTS`، `PERMISSION_DENIED`، `FAILED_PRECONDITION`، …) يرفض الدفعة الأولى المعلّقة.
+  - الرمز الدائم (`INVALID_ARGUMENT`، `NOT_FOUND`، `ALREADY_EXISTS`، `PERMISSION_DENIED`، `FAILED_PRECONDITION`، …) يرفض الدفعة الأولى المعلّقة، **وبرمز `Commit` ونصه** (`write.precondition-exists`، `write.precondition-not-exists`، `write.precondition-update-time`، `write.invalid-argument`)، وتُجاب الدفعات قبلها وتُترك التي بعدها بلا تطبيق.
   - `ABORTED` والعابرة تجعل العميل يعيد الطابور كله. **فإعادة دفعة التُزمت ولم يصل ردها مقبولة دون أثر مزدوج غير ما يحدث في الإنتاج نفسه**، إذ لا رمز تكرار في البروتوكول (CL §2.1).
 - **الحدود:** الطلب 10 MiB (OF §2a)، يفرضه الـ core على كل دفعة كما على كل طلب في كل سطح، و17 MiB حد إطار الرسالة وحده (ADR-027 §3.1). ورد الإنتاج على ما فوق 10 MiB لم يُسجَّل، ويُسجَّل في F2. والبث يُحسب في `streams_per_project` و`streams_per_ip`، والإلغاء كما في البند 4.
 

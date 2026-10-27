@@ -30,6 +30,14 @@ try {
         ARUMA_NETGUARD_LOG: join(server.dir, 'netguard.log'),
       });
       code ||= c;
+      // Listen is gRPC whatever the transport, so its suite runs once.
+      if (transport === 'grpc') {
+        code ||= await runGuarded(join(here, 'listen.test.mjs'), here, {
+          ARUMA_SMOKE_DIR: server.dir,
+          ARUMA_SMOKE_DOCUMENTS_ADDR: server.addr,
+          ARUMA_NETGUARD_LOG: join(server.dir, 'netguard.log'),
+        });
+      }
     } finally {
       await server.stop();
     }

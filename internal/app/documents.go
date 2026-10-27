@@ -13,12 +13,14 @@ import (
 	"github.com/arumadev/aruma/internal/config"
 	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
 	"github.com/arumadev/aruma/internal/platform/metrics"
 	"github.com/arumadev/aruma/internal/server"
 	docapi "github.com/arumadev/aruma/internal/services/documents/api"
 	documents "github.com/arumadev/aruma/internal/services/documents/core"
 	docgrpc "github.com/arumadev/aruma/internal/services/documents/grpc"
 	"github.com/arumadev/aruma/internal/services/documents/index"
+	"github.com/arumadev/aruma/internal/services/documents/listen"
 	"github.com/arumadev/aruma/internal/services/documents/query"
 	docrest "github.com/arumadev/aruma/internal/services/documents/rest"
 	"github.com/arumadev/aruma/internal/tenancy/core"
@@ -41,6 +43,12 @@ type Documents struct {
 	log   *slog.Logger
 
 	instance *documents.Instance
+	// instanceMu orders Boot's admission of streams with the lock's callbacks, which the guard
+	// may run as soon as StartInstance returns.
+	instanceMu sync.Mutex
+	// hub is the Listen hub, the store's Notifier (ADR-026 §2), rebuilt when the
+	// single-instance lock is taken again after its loss (ADR-026 §5).
+	hub *hubs
 	// stopJobs ends the jobs Boot started (the retention, the index builds, the transactions'
 	// sweep), and jobsDone
 	// closes when they have.
@@ -53,7 +61,8 @@ type Documents struct {
 // forgotten by the verifier's cache at once (ADR-029 §3.8). A purged project's documents go
 // with it (ADR-024 §1.1). Transaction ids are authenticated with a key derived from the master
 // key, so that one issued before a restart is answered as expired, not forged (ADR-025 §7.5).
-func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, keys *crypto.Keys, m *metrics.Metrics, logger *slog.Logger) *Documents {
+func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, keys *crypto.Keys, m *metrics.Metrics,
+	idTokens idtoken.Verifier, revocations idtoken.Revocations, logger *slog.Logger) *Documents {
 	svc.OnProjectPurged(func(ctx context.Context, project int64) error {
 		return documents.PurgeProject(ctx, pool, project)
 	})
@@ -73,11 +82,13 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 	store := &bootStore{}
 	// Config has checked the setting: a value ParseMode refuses never reaches here.
 	enforcement, _ := index.ParseMode(cfg.Documents.IndexEnforcement)
+	l := cfg.Documents.Limits
+	// The Listen hub serves the streams from the start; Boot binds it to the store it opens.
+	hub := newHubs(listen.Options{LagEvents: l.StreamLagEvents, SnapshotRows: l.SnapshotRows, Log: logger})
 	api := docapi.New(docapi.Options{
 		Store: store, Auth: resolver, Projects: svc, DevOpenRules: cfg.Documents.DevOpenRules,
-		IndexEnforcement: enforcement, Logger: logger,
+		IndexEnforcement: enforcement, Listen: hub, Logger: logger,
 	})
-	l := cfg.Documents.Limits
 	rpcMetrics := docgrpc.NewMetrics()
 	m.Registry.MustRegister(rpcMetrics.Collectors()...)
 	m.Registry.MustRegister(docgrpc.TransactionCollectors(store.transactionStats)...)
@@ -88,13 +99,16 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 			TrustedProxies: cfg.TrustedProxyPrefixes(),
 			Limits: docgrpc.Limits{
 				MessageBytes: l.MessageBytes, StreamFirstMessage: l.StreamFirstMessage,
-				StreamWriteStall: l.StreamWriteStall, ServerStreamMax: l.ServerStreamMax, StreamsPerIP: l.StreamsPerIP,
+				StreamIdle: l.StreamIdle, StreamWriteStall: l.StreamWriteStall, ServerStreamMax: l.ServerStreamMax, StreamsPerIP: l.StreamsPerIP,
+				StreamsPerProject: l.StreamsPerProject, StreamOutboxBytes: l.StreamOutboxBytes, TargetsPerStream: l.TargetsPerStream,
 			},
-			Metrics: rpcMetrics,
-			Logger:  logger,
+			Metrics:     rpcMetrics,
+			IDTokens:    idTokens,
+			Revocations: revocations,
+			Logger:      logger,
 		}),
 		REST:  docrest.New(docrest.Options{Service: api, Logger: logger}),
-		store: store, pool: pool, cfg: l, log: logger,
+		store: store, pool: pool, cfg: l, log: logger, hub: hub,
 		txns: documents.TxnConfig{
 			Key:             keys.DocumentsTransactionKey(),
 			WaitTimeout:     l.TxnWaitTimeout,
@@ -114,29 +128,54 @@ func (d *Documents) mount(h *server.Handlers) {
 }
 
 // Boot takes the single-instance lock, trying for up to 30 seconds (ADR-024 §7), opens the
-// store, starts the retention of versions and the changelog (ADR-024 §8) and the index build job
-// (ADR-024 §2.5), which run while the lock is held, and the transactions' sweep (ADR-024 §6.3),
+// store, starts the retention of versions and the changelog (ADR-024 §8), the index build job
+// (ADR-024 §2.5) and the TTL sweeper (ADR-028 §2), which run while the lock is held, and the transactions' sweep (ADR-024 §6.3),
 // and gives every project its
-// '(default)' database. Losing the lock drops every open transaction, before o.OnLost runs.
-// Without the lock the rest of Aruma serves and the Document Database answers UNAVAILABLE until
-// the guard takes it. It runs before the listener opens; Close stops what it started.
+// '(default)' database. Losing the lock drops every open transaction and closes every Listen
+// and Write stream with UNAVAILABLE, and the Listen hub, before o.OnLost runs; taking it again
+// builds a new hub and admits streams again, before o.OnAcquired runs (ADR-026 §5).
+// Without the lock the rest of Aruma serves and the Document Database answers UNAVAILABLE, and
+// admits no stream, until the guard takes it. It runs before the listener opens; Close stops what it started.
 func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error {
 	o.Log = d.log
 	onLost := o.OnLost
 	o.OnLost = func() {
+		d.instanceMu.Lock()
+		defer d.instanceMu.Unlock()
 		if s := d.store.s.Load(); s != nil {
 			s.DropTransactions()
 		}
+		d.GRPC.InstanceLost()
+		d.hub.close()
 		if onLost != nil {
 			onLost()
 		}
 	}
+	onAcquired := o.OnAcquired
+	o.OnAcquired = func() {
+		d.instanceMu.Lock()
+		defer d.instanceMu.Unlock()
+		d.hub.rebuild()
+		d.GRPC.InstanceRegained()
+		if onAcquired != nil {
+			onAcquired()
+		}
+	}
+	// No stream joins before the lock is first taken (review streams-admitted-before-first-lock).
+	d.GRPC.InstanceLost()
+	d.instanceMu.Lock()
 	d.instance = documents.StartInstance(ctx, d.pool.Config().ConnConfig, o)
+	if d.instance.Held() {
+		d.GRPC.InstanceRegained()
+	}
+	d.instanceMu.Unlock()
 	store := documents.NewPGStore(d.pool, documents.Options{
 		CommitConcurrency: d.cfg.CommitConcurrency, Instance: d.instance, Transactions: d.txns,
 		IndexLimits: documents.IndexLimits{Composites: d.cfg.CompositeIndexes, FieldOverrides: d.cfg.FieldOverrides},
+		Notifier:    d.hub,
 	})
 	d.store.set(store)
+	d.hub.bind(store)
 	var jctx context.Context
 	jctx, d.stopJobs = context.WithCancel(ctx)
 	d.jobsDone = make(chan struct{})
@@ -144,6 +183,9 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	jobs.Go(func() { store.RunRetention(jctx, documents.RetentionOptions{Log: d.log}) })
 	jobs.Go(func() { store.RunTransactions(jctx) })
 	jobs.Go(func() { store.RunIndexBuilds(jctx, documents.IndexBuildOptions{Log: d.log}) })
+	jobs.Go(func() {
+		store.RunTTL(jctx, documents.TTLOptions{Every: d.cfg.TTLSweepInterval, Batch: d.cfg.TTLSweepBatch, Log: d.log})
+	})
 	go func() {
 		jobs.Wait()
 		close(d.jobsDone)
@@ -154,16 +196,74 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	return ensureDatabases(ctx, d.pool, store)
 }
 
-// Close stops the retention job and the transactions' sweep, and releases the lock.
+// Close stops the retention job and the transactions' sweep, closes the Listen hub, and
+// releases the lock.
 func (d *Documents) Close() {
 	if d.stopJobs != nil {
 		d.stopJobs()
 		<-d.jobsDone
 	}
+	if d.hub != nil {
+		d.hub.close()
+	}
 	if d.instance != nil {
 		d.instance.Close()
 	}
 }
+
+// hubs is the Listen hub of the moment: the store's Notifier and the streams' source. The lock's
+// loss closes it, and taking the lock again builds a new one bound to the same store.
+type hubs struct {
+	opts listen.Options
+	cur  atomic.Pointer[listen.Hub]
+
+	mu     sync.Mutex // orders bind and rebuild
+	reader listen.Reader
+}
+
+var (
+	_ documents.Notifier = (*hubs)(nil)
+	_ docapi.ListenHub   = (*hubs)(nil)
+)
+
+func newHubs(o listen.Options) *hubs {
+	h := &hubs{opts: o}
+	h.cur.Store(listen.NewHub(o))
+	return h
+}
+
+func (h *hubs) Committed(db documents.DB, seq int64, at time.Time, changes []documents.Change) {
+	h.cur.Load().Committed(db, seq, at, changes)
+}
+
+func (h *hubs) Unknown(db documents.DB, seq int64) { h.cur.Load().Unknown(db, seq) }
+
+func (h *hubs) Subscribe(ctx context.Context, db documents.DB) (*listen.Subscriber, error) {
+	return h.cur.Load().Subscribe(ctx, db)
+}
+
+// bind gives the hub, and every later one, its reader.
+func (h *hubs) bind(r listen.Reader) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.reader = r
+	h.cur.Load().Bind(r)
+}
+
+// rebuild replaces the hub with a new one.
+func (h *hubs) rebuild() {
+	h.mu.Lock()
+	next := listen.NewHub(h.opts)
+	if h.reader != nil {
+		next.Bind(h.reader)
+	}
+	old := h.cur.Swap(next)
+	h.mu.Unlock()
+	old.Close()
+}
+
+// close ends the hub's subscriptions.
+func (h *hubs) close() { h.cur.Load().Close() }
 
 // ensureDatabases creates the '(default)' database of every active project that has none.
 // Core creates it on first use as well, so a project made later needs nothing here.

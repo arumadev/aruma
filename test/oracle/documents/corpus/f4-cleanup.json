@@ -1,0 +1,96 @@
+{
+  "cleanup": {
+    "commitHttp": [
+      200
+    ],
+    "deleted": [
+      "aruma-ref-f4c-doc/d1",
+      "aruma-ref-f4c-doc/d5",
+      "aruma-ref-f4c-doc/missing",
+      "aruma-ref-f4c-lim/r0",
+      "aruma-ref-f4c-lim/r1",
+      "aruma-ref-f4c-lim/r2",
+      "aruma-ref-f4c-lim/r3",
+      "aruma-ref-f4c-lim/r4",
+      "aruma-ref-f4c-multi/m1",
+      "aruma-ref-f4c-multi/m2",
+      "aruma-ref-f4c-q/a",
+      "aruma-ref-f4c-q/b",
+      "aruma-ref-f4c-q/c",
+      "aruma-ref-f4c-q/d",
+      "aruma-ref-f4c-q/e",
+      "aruma-ref-f4c-res/x1",
+      "aruma-ref-f4c-res/x2",
+      "aruma-ref-f4c-res/x3",
+      "aruma-ref-f4c-res/x4",
+      "aruma-ref-f4c-rj/p",
+      "aruma-ref-f4c-rt/y1",
+      "aruma-ref-f4c-rt/y2",
+      "aruma-ref-f4c-w/a",
+      "aruma-ref-f4c-w/b",
+      "aruma-ref-f4c-w/bad",
+      "aruma-ref-f4c-w/gone",
+      "aruma-ref-f4c-w/missing",
+      "aruma-ref-f4c-w/n1",
+      "aruma-ref-f4c-w/n2",
+      "aruma-ref-f4c-w/ok1",
+      "aruma-ref-f4c-w/ok2",
+      "aruma-ref-f4c-w/p1",
+      "aruma-ref-f4c-w/p2",
+      "aruma-ref-f4c-w/p3",
+      "aruma-ref-f4c-w/rs1",
+      "aruma-ref-f4c-w/rs2",
+      "aruma-ref-f4c-w/str",
+      "aruma-ref-f4c-w/t",
+      "aruma-ref-f4c-w/there",
+      "aruma-ref-f4c-w/there2",
+      "aruma-ref-f4c-w/tk1",
+      "aruma-ref-f4c-w/tk2",
+      "aruma-ref-f4c-w/tk3"
+    ],
+    "deletedCount": 43,
+    "listsShowMissing": {
+      "aruma-ref-f4c-doc": [],
+      "aruma-ref-f4c-lim": [],
+      "aruma-ref-f4c-multi": [],
+      "aruma-ref-f4c-q": [],
+      "aruma-ref-f4c-res": [],
+      "aruma-ref-f4c-rj": [],
+      "aruma-ref-f4c-rt": [],
+      "aruma-ref-f4c-w": []
+    },
+    "ok": true,
+    "strays": [],
+    "straysAtStart": {
+      "commitHttp": [],
+      "strays": []
+    },
+    "sweep": {
+      "http": 200,
+      "query": "kindless allDescendants, __name__ in [aruma-ref-f4c/__id-9223372036854775808__, aruma-ref-f4d/__id-9223372036854775808__), paged by 1000",
+      "remaining": []
+    }
+  },
+  "header": {
+    "generator": "test/oracle/documents/production/record-f4.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner); security rules do not apply.",
+      "Every frame of a case is in order, with tMs the milliseconds since its stream opened (stream = index of the stream within the case). dir is send (client to server), recv (server to client), action (something the recorder did outside the stream, with its commit time) or end (the stream's final gRPC status).",
+      "Timestamps are replaced by labels <ts tN> numbered in time order within the case (equal values share a label); labels.timestamps gives each label's offset in microseconds from t1. Byte strings (resume tokens, stream tokens) are replaced by <bytes bN len=L> (equal contents share a label); labels.bytes holds their hex. Stream ids are <stream_id sN len=L>.",
+      "Enums are names, int64 values strings, as @grpc/proto-loader decodes them with defaults off: a field at its default value (target_change_type NO_CHANGE, nanos 0) is absent from a frame, so a missing targetChangeType means NO_CHANGE and a missing targetIds means empty."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-27T10:44:28.311Z .. 2026-10-27T10:50:50.676Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "gRPC google.firestore.v1.Firestore Listen and Write (bidirectional streams); REST commit for the writes made while a Listen stream is open",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "643ddffda22f4646d5ae994e05617b544ceee25fdee334bc49c56c826bb4c8cd",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

@@ -82,23 +82,11 @@ func (s *Service) Commit(ctx context.Context, c Call, req *pb.CommitRequest) (*p
 	if err != nil {
 		return nil, err
 	}
-	writes, err := writesOf(req.GetWrites())
+	res, err := s.commitWrites(ctx, a, req.GetWrites(), req.GetTransaction())
 	if err != nil {
 		return nil, err
 	}
-	if err := sameDocumentWrites(writes); err != nil {
-		return nil, err
-	}
-	var res core.CommitResult
-	if len(req.GetTransaction()) > 0 {
-		res, err = s.o.Store.CommitTransaction(ctx, a.db, *a.transaction(req.GetTransaction()), writes)
-	} else {
-		res, err = s.o.Store.Commit(ctx, a.db, writes)
-	}
-	if err != nil {
-		return nil, s.fail(ctx, err)
-	}
-	if len(writes) == 0 && len(req.GetTransaction()) == 0 {
+	if len(req.GetWrites()) == 0 && len(req.GetTransaction()) == 0 {
 		// Production answers a commit of no writes with an empty message, no commit_time
 		// (f1-write-results.json rest.empty); in a transaction, with its commit_time
 		// (f2-transactions.json read.commit_read_write_empty, ro.commit_empty).
@@ -109,6 +97,28 @@ func (s *Service) Commit(ctx context.Context, c Call, req *pb.CommitRequest) (*p
 		out.WriteResults[i] = writeResultProto(r)
 	}
 	return out, nil
+}
+
+// commitWrites is Commit's work after its admission, which the Write stream's batches share:
+// the writes read and checked, then applied atomically, in the transaction when there is one.
+func (s *Service) commitWrites(ctx context.Context, a admitted, ws []*pb.Write, txn []byte) (core.CommitResult, error) {
+	writes, err := writesOf(ws)
+	if err != nil {
+		return core.CommitResult{}, err
+	}
+	if err := sameDocumentWrites(writes); err != nil {
+		return core.CommitResult{}, err
+	}
+	var res core.CommitResult
+	if len(txn) > 0 {
+		res, err = s.o.Store.CommitTransaction(ctx, a.db, *a.transaction(txn), writes)
+	} else {
+		res, err = s.o.Store.Commit(ctx, a.db, writes)
+	}
+	if err != nil {
+		return core.CommitResult{}, s.fail(ctx, err)
+	}
+	return res, nil
 }
 
 // sameDocumentWrites checks a Commit's writes of one document: production applies them in order

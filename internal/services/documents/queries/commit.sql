@@ -65,6 +65,13 @@ WHERE q.project_number = @project_number AND q.database_id = @database_id
     AND documents.conflict_unless(q.catalog_version = @catalog_version)
 RETURNING q.seq, q.last_ts;
 
+-- name: FenceCommit :exec
+-- Queued right after StampCommit, under the sequencer row: fails the transaction with AR001 unless
+-- the session that took this process's single-instance lock still holds it (ADR-024 §7), so
+-- COMMIT never runs. A commit it lets through holds the row until COMMIT, and the next process
+-- waits for every such commit before it serves (core.Instance).
+SELECT documents.instance_fence(@holder::integer, @holder_start::timestamptz);
+
 -- name: WriteCommit :many
 -- The rest of the commit, under the sequencer row StampCommit took, whose seq and commit_time it
 -- reads back (the transaction sees its own update): the documents, the images they replace and
@@ -77,7 +84,9 @@ RETURNING q.seq, q.last_ts;
 -- name_key = ANY(keys), so that the primary key finds them whatever the planner estimates: the
 -- documents of a database that grew since its statistics, or of any under a generic plan, were
 -- estimated at one row, and the join looped over all of them (generate_subscripts' 1000 rows
--- had made it hash a scan of the whole table).
+-- had made it hash a scan of the whole table). A document's expire_time is its TTL policy's
+-- (core/ttl.go); the zero time.Time, 0001-01-01 00:00:00 UTC, stands for none, as an array's
+-- elements cannot be NULL here (an expiry within that first second is sent a second later).
 WITH s AS (
     SELECT q.seq, q.last_ts FROM documents.sequencer q
     WHERE q.project_number = @project_number AND q.database_id = @database_id
@@ -92,21 +101,24 @@ WITH s AS (
         AND d.name_key = ANY(@replaced_keys::bytea[])
     RETURNING 1
 ), u AS (
-    UPDATE documents.documents d SET doc = w.doc, size = w.size, update_time = s.last_ts, update_seq = s.seq
+    UPDATE documents.documents d SET doc = w.doc, size = w.size, update_time = s.last_ts, update_seq = s.seq,
+        expire_time = nullif(w.expire_time, '0001-01-01 00:00:00+00')
     FROM s, (SELECT unnest(@update_keys::bytea[]) AS name_key, unnest(@update_seqs::bigint[]) AS update_seq,
-        unnest(@update_docs::bytea[]) AS doc, unnest(@update_sizes::integer[]) AS size) w
+        unnest(@update_docs::bytea[]) AS doc, unnest(@update_sizes::integer[]) AS size,
+        unnest(@update_expires::timestamptz[]) AS expire_time) w
     WHERE d.project_number = @project_number AND d.database_id = @database_id
         AND d.name_key = ANY(@update_keys::bytea[]) AND d.name_key = w.name_key AND d.update_seq = w.update_seq
     RETURNING 1
 ), i AS (
     INSERT INTO documents.documents (project_number, database_id, name_key, name, parent_hash, cg_hash,
-        parent, collection_id, doc, create_time, update_time, update_seq, size)
+        parent, collection_id, doc, create_time, update_time, update_seq, size, expire_time)
     SELECT @project_number, @database_id, w.name_key, w.name, w.parent_hash, w.cg_hash, w.parent,
-        w.collection_id, w.doc, s.last_ts, s.last_ts, s.seq, w.size
+        w.collection_id, w.doc, s.last_ts, s.last_ts, s.seq, w.size, nullif(w.expire_time, '0001-01-01 00:00:00+00')
     FROM s, (SELECT unnest(@insert_keys::bytea[]) AS name_key, unnest(@insert_names::bytea[]) AS name,
         unnest(@insert_parent_hashes::bytea[]) AS parent_hash, unnest(@insert_cg_hashes::bytea[]) AS cg_hash,
         unnest(@insert_parents::bytea[]) AS parent, unnest(@insert_collection_ids::text[]) AS collection_id,
-        unnest(@insert_docs::bytea[]) AS doc, unnest(@insert_sizes::integer[]) AS size) w
+        unnest(@insert_docs::bytea[]) AS doc, unnest(@insert_sizes::integer[]) AS size,
+        unnest(@insert_expires::timestamptz[]) AS expire_time) w
     ON CONFLICT DO NOTHING
     RETURNING 1
 ), x AS (
