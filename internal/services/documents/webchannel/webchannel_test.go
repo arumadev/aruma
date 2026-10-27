@@ -170,7 +170,7 @@ func handshake(t *testing.T, base string, headers map[string]string, msgs ...str
 		t.Fatalf("handshake: %d %s", res.StatusCode, b)
 	}
 	if res.Header.Get("Access-Control-Allow-Origin") != "https://app.example" || res.Header.Get("Access-Control-Allow-Credentials") != "true" ||
-		!strings.Contains(res.Header.Get("Access-Control-Expose-Headers"), "X-HTTP-Session-Id") {
+		res.Header.Get("Access-Control-Expose-Headers") != "x-client-wire-protocol,x-http-session-id" {
 		t.Errorf("handshake CORS: %v", res.Header)
 	}
 	c.gsid = res.Header.Get("X-HTTP-Session-Id")
@@ -448,8 +448,8 @@ func TestListenStreamed(t *testing.T) {
 	b.want(t, "ADD[1004]", "delete aruma-ref-wc/missing", "CURRENT[1004]", "global")
 	c.send(removeTarget(1004))
 	b.want(t, "REMOVE[1004]")
-	// The forward answer counts the arrays sent and the bytes not acknowledged.
-	if state := c.send(); state[1] != int64(c.aid) || state[2] != 0 {
+	// The forward answer counts the arrays sent, and production's 7 bytes.
+	if state := c.send(); state[1] != int64(c.aid) || state[2] != 7 {
 		t.Errorf("forward answer %v, last array %d", state, c.aid)
 	}
 
@@ -653,18 +653,28 @@ func TestProtocolErrors(t *testing.T) {
 	c, _ := handshake(t, x.url, admin(t, x), `{"database":"`+db+`","addTarget":{"targetId":"x"}}`)
 	c.back("0").wantStatus(t, "INVALID_ARGUMENT ")
 
-	// The preflight of a channel path.
+	// The preflight of a channel path, as production's (f6-cors.json).
 	req, _ := http.NewRequest(http.MethodOptions, x.url, nil)
 	req.Header.Set("Origin", "https://app.example")
 	req.Header.Set("Access-Control-Request-Method", "POST")
+	req.Header.Set("Access-Control-Request-Headers", "content-type,authorization")
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 	res.Body.Close()
-	if res.StatusCode != http.StatusNoContent || res.Header.Get("Access-Control-Allow-Origin") != "https://app.example" ||
-		res.Header.Get("Access-Control-Allow-Credentials") != "true" {
+	if res.StatusCode != http.StatusOK || res.Header.Get("Access-Control-Allow-Origin") != "https://app.example" ||
+		res.Header.Get("Access-Control-Allow-Credentials") != "true" || res.Header.Get("Access-Control-Allow-Methods") != "GET,POST" ||
+		res.Header.Get("Access-Control-Allow-Headers") != "content-type,authorization" || res.Header.Get("Access-Control-Max-Age") != "" {
 		t.Errorf("preflight: %d %v", res.StatusCode, res.Header)
+	}
+
+	// A request without a version is production's empty 200, and sets no cookie.
+	res = post(t, x.url+"?RID=30000&zx=a", "count=0")
+	b, _ := io.ReadAll(res.Body)
+	res.Body.Close()
+	if res.StatusCode != http.StatusOK || len(b) != 0 || res.Header.Get("Set-Cookie") != "" || res.Header.Get("X-HTTP-Session-Id") != "" {
+		t.Errorf("no version: %d %v %q", res.StatusCode, res.Header, b)
 	}
 }
 

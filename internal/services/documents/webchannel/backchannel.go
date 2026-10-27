@@ -63,6 +63,10 @@ func (h *Handler) backchannel(w http.ResponseWriter, r *http.Request, q url.Valu
 	hd.Set("Content-Type", contentType)
 	hd.Set("Cache-Control", "private, no-store")
 	hd.Set("X-Accel-Buffering", "no")
+	if bc.first {
+		// As production's first backchannel of a session varies (f6-webchannel-*.json).
+		hd["Vary"] = append([]string{"Referer"}, hd["Vary"]...)
+	}
 	w.WriteHeader(http.StatusOK)
 	write := func(text []byte) bool {
 		_ = rc.SetWriteDeadline(time.Now().Add(h.limits.WriteStall))
