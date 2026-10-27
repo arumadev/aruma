@@ -1,0 +1,918 @@
+{
+  "cases": [
+    {
+      "description": "GET …/caf%C3%A9 (valid UTF-8, missing)",
+      "error": {
+        "http": 404,
+        "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/café\" not found.",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.get_valid_utf8_control",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/caf%C3%A9"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/café\" not found.",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET …/%FF",
+      "error": {
+        "http": 400,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.get_ff",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/%FF"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Request contains an invalid argument.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET …/a%FFb",
+      "error": {
+        "http": 400,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.get_ff_inside",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/a%FFb"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Request contains an invalid argument.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET …/%C0%AF (an overlong encoding of /)",
+      "error": {
+        "http": 400,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.get_overlong_slash",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/%C0%AF"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Request contains an invalid argument.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET …/%ED%A0%80 (an encoded UTF-16 surrogate)",
+      "error": {
+        "http": 400,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.get_surrogate",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/%ED%A0%80"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Request contains an invalid argument.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET …/%E2%82 (a truncated sequence)",
+      "error": {
+        "http": 400,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.get_truncated",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/%E2%82"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Request contains an invalid argument.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET …/%FF/x (the collection id is not UTF-8)",
+      "error": {
+        "http": 400,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.get_collection_ff",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf-%FF/x"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Request contains an invalid argument.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "ListDocuments of collection aruma-ref-f2-utf-%FF",
+      "error": {
+        "http": 400,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.list_ff",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf-%FF"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Request contains an invalid argument.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "PATCH …/%FF {a: 1}",
+      "error": {
+        "http": 400,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.patch_ff",
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            }
+          }
+        },
+        "method": "PATCH",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/%FF"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Request contains an invalid argument.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "DELETE …/%FF",
+      "error": {
+        "http": 400,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.delete_ff",
+      "replay": true,
+      "request": {
+        "method": "DELETE",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/%FF"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Request contains an invalid argument.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "POST …?documentId=%FF",
+      "id": "rest.create_document_id_ff",
+      "request": {
+        "body": {
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf?documentId=%FF"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/ ",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "wroteDocument": true
+    },
+    {
+      "description": "after rest.create_document_id_ff: GET …/%20 (a document whose id is one space)",
+      "id": "rest.create_document_id_ff.then_get_space",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/%20"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/ ",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "wroteDocument": true
+    },
+    {
+      "description": "after rest.create_document_id_ff: GET …/%EF%BF%BD (a document whose id is U+FFFD)",
+      "error": {
+        "http": 404,
+        "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/�\" not found.",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.create_document_id_ff.then_get_replacement_character",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/%EF%BF%BD"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/�\" not found.",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET ok?mask.fieldPaths=%FF (a field path that is not UTF-8)",
+      "error": {
+        "http": 400,
+        "message": "Invalid property path \" \". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.get_mask_ff",
+      "replay": true,
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/ok?mask.fieldPaths=%FF"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid property path \" \". Unquoted property paths must match regex ([a-zA-Z_][a-zA-Z_0-9]*), and quoted property paths must match regex (`(?:[^`\\\\]|(?:\\\\.))+`)",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "listCollectionIds of …/%FF",
+      "error": {
+        "http": 400,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.list_collection_ids_ff_parent",
+      "replay": true,
+      "request": {
+        "body": {},
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/%FF:listCollectionIds"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Request contains an invalid argument.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit an update whose name ends in the raw byte 0xFF inside the JSON string",
+      "id": "rest.commit_name_raw_ff",
+      "request": {
+        "bodyBytes": "{\"writes\":[{\"update\":{\"name\":\"projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/<0xFF>\",\"fields\":{\"a\":{\"integerValue\":\"1\"}}}}]}",
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "after rest.commit_name_raw_ff: GET …/%20 (a document whose id is one space)",
+      "id": "rest.commit_name_raw_ff.then_get_space",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/%20"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/ ",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "wroteDocument": true
+    },
+    {
+      "description": "after rest.commit_name_raw_ff: GET …/%EF%BF%BD (a document whose id is U+FFFD)",
+      "error": {
+        "http": 404,
+        "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/�\" not found.",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.commit_name_raw_ff.then_get_replacement_character",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/%EF%BF%BD"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/�\" not found.",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit an update whose name ends in the JSON escape \\udc00 (a lone surrogate)",
+      "id": "rest.commit_name_escaped_lone_surrogate",
+      "request": {
+        "bodyBytes": "{\"writes\":[{\"update\":{\"name\":\"projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/\\udc00\",\"fields\":{\"a\":{\"integerValue\":\"1\"}}}}]}",
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "after rest.commit_name_escaped_lone_surrogate: GET …/%20 (a document whose id is one space)",
+      "error": {
+        "http": 404,
+        "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/ \" not found.",
+        "status": "NOT_FOUND"
+      },
+      "errorDetailTypes": [],
+      "id": "rest.commit_name_escaped_lone_surrogate.then_get_space",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/%20"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/ \" not found.",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "after rest.commit_name_escaped_lone_surrogate: GET …/%EF%BF%BD (a document whose id is U+FFFD)",
+      "id": "rest.commit_name_escaped_lone_surrogate.then_get_replacement_character",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/%EF%BF%BD"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/�",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "wroteDocument": true
+    },
+    {
+      "description": "commit an update of ok-field whose field name is the raw byte 0xFF",
+      "id": "rest.commit_field_name_raw_ff",
+      "request": {
+        "bodyBytes": "{\"writes\":[{\"update\":{\"name\":\"projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/ok-field\",\"fields\":{\"<0xFF>\":{\"integerValue\":\"1\"}}}}]}",
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit an update of ok-string whose string value is the raw byte 0xFF",
+      "id": "rest.commit_string_value_raw_ff",
+      "request": {
+        "bodyBytes": "{\"writes\":[{\"update\":{\"name\":\"projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/ok-string\",\"fields\":{\"s\":{\"stringValue\":\"<0xFF>\"}}}}]}",
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET ok-field: which field name was stored",
+      "id": "rest.commit_field_name_raw_ff.then_get",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/ok-field"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            " ": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/ok-field",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "wroteDocument": true
+    },
+    {
+      "description": "GET ok-string: which string was stored",
+      "id": "rest.commit_string_value_raw_ff.then_get",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/ok-string"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "s": {
+              "stringValue": " "
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/ok-string",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "wroteDocument": true
+    },
+    {
+      "description": "GET ok?transaction=%FF (a transaction id that is one byte 0xFF, not base64)",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'transaction' (TYPE_BYTES), Base64 decoding failed for \" \"",
+        "status": "INVALID_ARGUMENT"
+      },
+      "errorDetailTypes": [
+        "type.googleapis.com/google.rpc.BadRequest"
+      ],
+      "id": "rest.get_query_ff_in_transaction_parameter",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/ok?transaction=%FF"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'transaction' (TYPE_BYTES), Base64 decoding failed for \" \"",
+                    "field": "transaction"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'transaction' (TYPE_BYTES), Base64 decoding failed for \" \"",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet a name ending in the raw byte 0xFF",
+      "id": "rest.batch_get_raw_ff",
+      "request": {
+        "bodyBytes": "{\"documents\":[\"projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/<0xFF>\"]}",
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/ ",
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GetDocument of …/missing, hand-encoded (control)",
+      "error": {
+        "code": 5,
+        "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-utf/missing\" not found.",
+        "status": "NOT_FOUND"
+      },
+      "id": "grpc.get_ascii_control",
+      "request": {
+        "bytes": 79,
+        "messageHandEncoded": "{name: \"projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/missing\"}",
+        "rpc": "google.firestore.v1.Firestore/GetDocument"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "GetDocument name ending in the byte 0xFF",
+      "error": {
+        "code": 3,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.get_ff",
+      "request": {
+        "bytes": 73,
+        "messageHandEncoded": "{name: \"projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/<0xFF>\"}",
+        "rpc": "google.firestore.v1.Firestore/GetDocument"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "GetDocument name ending in ED A0 80 (an encoded surrogate)",
+      "error": {
+        "code": 3,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.get_surrogate",
+      "request": {
+        "bytes": 75,
+        "messageHandEncoded": "{name: \"projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/<0xED 0xA0 0x80>\"}",
+        "rpc": "google.firestore.v1.Firestore/GetDocument"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "Commit an update of ok-grpc {a: 1}, hand-encoded (control)",
+      "id": "grpc.commit_ascii_control",
+      "request": {
+        "bytes": 136,
+        "messageHandEncoded": "{database: \"projects/{project}/databases/(default)\", writes: [{update: {name: \"projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/ok-grpc\", fields: {a: 1}}}]}",
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "message": {
+          "commitTime": "<commitTime: Timestamp>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc",
+      "wroteDocument": true
+    },
+    {
+      "description": "Commit an update whose name ends in 0xFF",
+      "error": {
+        "code": 3,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.commit_name_ff",
+      "request": {
+        "bytes": 130,
+        "messageHandEncoded": "{database: \"projects/{project}/databases/(default)\", writes: [{update: {name: \"projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/<0xFF>\", fields: {a: 1}}}]}",
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "Commit an update of ok-grpc-field whose field name is 0xFF",
+      "error": {
+        "code": 3,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.commit_field_name_ff",
+      "request": {
+        "bytes": 142,
+        "messageHandEncoded": "{database: \"projects/{project}/databases/(default)\", writes: [{update: {name: \"projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/ok-grpc-field\", fields: {<0xFF>: 1}}}]}",
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "Commit an update of ok-grpc-string whose string value is 0xFF",
+      "error": {
+        "code": 3,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.commit_string_value_ff",
+      "request": {
+        "bytes": 145,
+        "messageHandEncoded": "{database: \"projects/{project}/databases/(default)\", writes: [{update: {name: \"projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/ok-grpc-string\", fields: {s: \"<0xFF>\"}}}]}",
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "CreateDocument with documentId 0xFF",
+      "error": {
+        "code": 3,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.create_document_id_ff",
+      "request": {
+        "bytes": 77,
+        "messageHandEncoded": "{parent: \"projects/{project}/databases/(default)/documents\", collectionId: \"aruma-ref-f2-utf\", documentId: \"<0xFF>\", document: {}}",
+        "rpc": "google.firestore.v1.Firestore/CreateDocument"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "ListDocuments with collectionId 0xFF",
+      "error": {
+        "code": 3,
+        "message": "Request contains an invalid argument.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.list_collection_ff",
+      "request": {
+        "bytes": 57,
+        "messageHandEncoded": "{parent: \"projects/{project}/databases/(default)/documents\", collectionId: \"<0xFF>\"}",
+        "rpc": "google.firestore.v1.Firestore/ListDocuments"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f2.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so beginTransaction gives a PESSIMISTIC read-write transaction and security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations and transaction ids are replaced by placeholders (normalise in lib.mjs, and the replace maps of record-f2.mjs); everything else is as returned.",
+      "bodyBytes shows a REST body sent as raw bytes: <0xFF> stands for the single byte 0xFF inside the JSON text (not valid UTF-8); the JSON escape \\udc00 is sent as those six characters.",
+      "The gRPC cases are hand-encoded protobuf (proto-loader always writes valid UTF-8), sent with the usual metadata; messageHandEncoded shows the message, with <0xFF> for the raw byte.",
+      "wroteDocument marks a request production accepted and wrote; the cleanup deletes it."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "00b04e58b1c7fd5b494cdf2a6777e46f896e2541f5cca4d72773dbb43820713c",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1",
+  "setup": {
+    "commits": [
+      {
+        "writes": [
+          {
+            "update": {
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-utf/ok"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

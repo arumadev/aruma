@@ -1,0 +1,2086 @@
+{
+  "cases": [
+    {
+      "description": "commit n1 with the fields it already has ({a: 1})",
+      "id": "noop.same_fields",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "commit n1 with updateMask [] and max(a, 0): the value stays 1",
+      "id": "noop.max_unchanged",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {},
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              },
+              "updateMask": {
+                "fieldPaths": []
+              },
+              "updateTransforms": [
+                {
+                  "fieldPath": "a",
+                  "maximum": {
+                    "integerValue": "0"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "transformResults": [
+                {
+                  "integerValue": "1"
+                }
+              ],
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "transformResults",
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "commit n1 with updateMask [zz] and no zz (deletes a field it does not have)",
+      "id": "noop.mask_absent_field",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {},
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              },
+              "updateMask": {
+                "fieldPaths": [
+                  "zz"
+                ]
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "commit n1 with the fields it has, a second time in a row",
+      "id": "noop.same_fields_again",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "commit a verify of n1 with exists=true",
+      "id": "noop.verify",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "verify": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "commit a verify of n1 with exists=true again",
+      "id": "noop.verify_again",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "verify": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "commit a delete of a missing document",
+      "id": "noop.delete_missing",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "delete": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/never"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {}
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        []
+      ]
+    },
+    {
+      "description": "n1 unchanged and n2 created in one commit",
+      "id": "noop.same_fields_with_change_elsewhere",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "2"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n2"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ],
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "commit with writes [] (the first of two in a row)",
+      "id": "noop.empty_1",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": []
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit with writes [] (the second)",
+      "id": "noop.empty_2",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": []
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit with writes [] to databases/aruma-ref-nonexistent",
+      "error": {
+        "http": 404,
+        "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "id": "missing_database.empty",
+      "request": {
+        "body": {
+          "writes": []
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/aruma-ref-nonexistent/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "Commit with no writes to databases/aruma-ref-nonexistent",
+      "error": {
+        "code": 5,
+        "message": "",
+        "status": "NOT_FOUND"
+      },
+      "id": "grpc.missing_database.empty",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/aruma-ref-nonexistent"
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "in a read-write transaction that read n1: commit n1 with the fields it has",
+      "id": "noop.same_fields_in_transaction",
+      "request": {
+        "body": {
+          "transaction": "<a read-write transaction>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "update of a missing document with {a: 1, b: 2} and updateMask [a]",
+      "id": "mask.missing_document",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  },
+                  "b": {
+                    "integerValue": "2"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/um1"
+              },
+              "updateMask": {
+                "fieldPaths": [
+                  "a"
+                ]
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "stored": {
+        "fieldNames": [
+          "a"
+        ],
+        "fields": {
+          "a": {
+            "integerValue": "1"
+          },
+          "b": "<absent>",
+          "c": "<absent>"
+        }
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "update of a missing document with {a: {x: 1}} and updateMask [a.x, b]",
+      "id": "mask.missing_document_nested",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "mapValue": {
+                      "fields": {
+                        "x": {
+                          "integerValue": "1"
+                        }
+                      }
+                    }
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/um2"
+              },
+              "updateMask": {
+                "fieldPaths": [
+                  "a.x",
+                  "b"
+                ]
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "stored": {
+        "fieldNames": [
+          "a"
+        ],
+        "fields": {
+          "a": {
+            "mapValue": {
+              "fields": {
+                "x": {
+                  "integerValue": "1"
+                }
+              }
+            }
+          },
+          "b": "<absent>",
+          "c": "<absent>"
+        }
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "update of a missing document with {a: 1} and updateMask []",
+      "id": "mask.missing_document_empty",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/um3"
+              },
+              "updateMask": {
+                "fieldPaths": []
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "stored": {
+        "fieldNames": [],
+        "fields": {
+          "a": "<absent>",
+          "b": "<absent>",
+          "c": "<absent>"
+        }
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "update of a missing document with currentDocument.exists=true",
+      "error": {
+        "http": 404,
+        "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/missing1",
+        "status": "NOT_FOUND"
+      },
+      "id": "pre.exists_true_on_missing",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/missing1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/missing1",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "update of n1 with currentDocument.exists=false",
+      "error": {
+        "http": 409,
+        "message": "Document already exists: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/n1",
+        "status": "ALREADY_EXISTS"
+      },
+      "id": "pre.exists_false_on_existing",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": false
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 409,
+            "message": "Document already exists: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/n1",
+            "status": "ALREADY_EXISTS"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 409
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "update of n1 with currentDocument.updateTime=2001-01-01T00:00:00.000001Z",
+      "error": {
+        "http": 400,
+        "message": "the stored version (<the document's updateTime in microseconds>) does not match the required base version (978307200000001)",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "pre.update_time_stale",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "updateTime": "<updateTime: RFC 3339>"
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "the stored version (<the document's updateTime in microseconds>) does not match the required base version (978307200000001)",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest",
+      "versions": {
+        "requiredIsPreconditionMicros": true,
+        "storedIsDocumentUpdateTimeMicros": true
+      }
+    },
+    {
+      "description": "update of a missing document with currentDocument.updateTime=2001-01-01T00:00:00.000001Z",
+      "error": {
+        "http": 400,
+        "message": "the stored version (0) does not match the required base version (978307200000001)",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "pre.update_time_on_missing",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "updateTime": "2001-01-01T00:00:00.000001Z"
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/missing2"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "the stored version (0) does not match the required base version (978307200000001)",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest",
+      "versions": {
+        "requiredIsPreconditionMicros": true,
+        "storedIsDocumentUpdateTimeMicros": true
+      }
+    },
+    {
+      "description": "update of n1 with currentDocument.updateTime=<its current updateTime>",
+      "id": "pre.update_time_current",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "updateTime": "<updateTime: RFC 3339>"
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "update of n1 with currentDocument {exists: true, updateTime}",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'writes[0].current_document' (oneof), oneof field 'condition_type' is already set. Cannot set 'updateTime'\nInvalid JSON payload received. Unknown name \"database\": Root element must be a message.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "pre.both",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": true,
+                "updateTime": "2001-01-01T00:00:00.000001Z"
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'writes[0].current_document' (oneof), oneof field 'condition_type' is already set. Cannot set 'updateTime'",
+                    "field": "writes[0].current_document"
+                  },
+                  {
+                    "description": "Invalid JSON payload received. Unknown name \"database\": Root element must be a message."
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'writes[0].current_document' (oneof), oneof field 'condition_type' is already set. Cannot set 'updateTime'\nInvalid JSON payload received. Unknown name \"database\": Root element must be a message.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "update of n1 with currentDocument {}",
+      "id": "pre.empty",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {},
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "delete of a missing document with currentDocument.exists=true",
+      "error": {
+        "http": 404,
+        "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/missing3",
+        "status": "NOT_FOUND"
+      },
+      "id": "pre.delete_exists_true_on_missing",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "delete": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/missing3"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/missing3",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "verify n1 with currentDocument.exists=false",
+      "error": {
+        "http": 409,
+        "message": "Document already exists: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/n1",
+        "status": "ALREADY_EXISTS"
+      },
+      "id": "pre.verify_exists_false_on_existing",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": false
+              },
+              "verify": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 409,
+            "message": "Document already exists: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/n1",
+            "status": "ALREADY_EXISTS"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 409
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "verify n1 with currentDocument.updateTime=2001-01-01T00:00:00.000001Z",
+      "error": {
+        "http": 400,
+        "message": "the stored version (<the document's updateTime in microseconds>) does not match the required base version (978307200000001)",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "pre.verify_update_time_stale",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "updateTime": "<updateTime: RFC 3339>"
+              },
+              "verify": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "the stored version (<the document's updateTime in microseconds>) does not match the required base version (978307200000001)",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest",
+      "versions": {
+        "requiredIsPreconditionMicros": true,
+        "storedIsDocumentUpdateTimeMicros": true
+      }
+    },
+    {
+      "description": "verify of a missing document with no currentDocument",
+      "error": {
+        "http": 400,
+        "message": "a verify must contain a precondition",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "pre.verify_missing_no_precondition",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "verify": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/missing4"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "a verify must contain a precondition",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "update pw1 (no precondition) and an update of a missing document with exists=true: is pw1 written?",
+      "error": {
+        "http": 404,
+        "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/missing5",
+        "status": "NOT_FOUND"
+      },
+      "id": "pre.second_write_fails",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/pw1"
+              }
+            },
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/missing5"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/missing5",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "stored": {
+        "error": {
+          "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/pw1\" not found.",
+          "status": "NOT_FOUND"
+        },
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "two failing preconditions: which is named?",
+      "error": {
+        "http": 404,
+        "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/missing6",
+        "status": "NOT_FOUND"
+      },
+      "id": "pre.two_failures",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/missing6"
+              }
+            },
+            {
+              "currentDocument": {
+                "exists": false
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/missing6",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "the same two in the other order",
+      "error": {
+        "http": 404,
+        "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/missing6",
+        "status": "NOT_FOUND"
+      },
+      "id": "pre.two_failures_reversed",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": false
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              }
+            },
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/missing6"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/missing6",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "update s1 {a: 1} then update s1 {b: 2}",
+      "id": "same.update_update",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s1"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "b": {
+                    "integerValue": "2"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "stored": {
+        "fieldNames": [
+          "b"
+        ],
+        "fields": {
+          "a": "<absent>",
+          "b": {
+            "integerValue": "2"
+          },
+          "c": "<absent>"
+        }
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ],
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "update s2 {a: 1} then update s2 {b: 2} with updateMask [b]",
+      "id": "same.update_then_masked_update",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s2"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "b": {
+                    "integerValue": "2"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s2"
+              },
+              "updateMask": {
+                "fieldPaths": [
+                  "b"
+                ]
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "stored": {
+        "fieldNames": [
+          "a",
+          "b"
+        ],
+        "fields": {
+          "a": {
+            "integerValue": "1"
+          },
+          "b": {
+            "integerValue": "2"
+          },
+          "c": "<absent>"
+        }
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ],
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "update s3 then delete s3",
+      "id": "same.update_delete",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s3"
+              }
+            },
+            {
+              "delete": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s3"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {},
+            {}
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "stored": {
+        "error": {
+          "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/s3\" not found.",
+          "status": "NOT_FOUND"
+        },
+        "http": 404
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [],
+        []
+      ]
+    },
+    {
+      "description": "delete s4 then update s4",
+      "id": "same.delete_update",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "delete": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s4"
+            },
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s4"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "stored": {
+        "fieldNames": [
+          "a"
+        ],
+        "fields": {
+          "a": {
+            "integerValue": "1"
+          },
+          "b": "<absent>",
+          "c": "<absent>"
+        }
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ],
+        [
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "update s5 with exists=false twice (a missing document)",
+      "error": {
+        "http": 400,
+        "message": "Cannot insert then insert an entity in the same request.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "same.create_create",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": false
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s5"
+              }
+            },
+            {
+              "currentDocument": {
+                "exists": false
+              },
+              "update": {
+                "fields": {
+                  "b": {
+                    "integerValue": "2"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s5"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Cannot insert then insert an entity in the same request.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "stored": {
+        "error": {
+          "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/s5\" not found.",
+          "status": "NOT_FOUND"
+        },
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "update s6 (missing) then verify s6 with exists=true",
+      "error": {
+        "http": 400,
+        "message": "the same document cannot be written and then verified in a single request",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "same.update_then_verify_exists",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s6"
+              }
+            },
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "verify": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s6"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "the same document cannot be written and then verified in a single request",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "stored": {
+        "error": {
+          "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/s6\" not found.",
+          "status": "NOT_FOUND"
+        },
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "update s7 {a: 1} then update s7 with updateMask [] and a += 1",
+      "id": "same.update_then_increment",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s7"
+              }
+            },
+            {
+              "update": {
+                "fields": {},
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s7"
+              },
+              "updateMask": {
+                "fieldPaths": []
+              },
+              "updateTransforms": [
+                {
+                  "fieldPath": "a",
+                  "increment": {
+                    "integerValue": "1"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "transformResults": [
+                {
+                  "integerValue": "2"
+                }
+              ],
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "stored": {
+        "fieldNames": [
+          "a"
+        ],
+        "fields": {
+          "a": {
+            "integerValue": "2"
+          },
+          "b": "<absent>",
+          "c": "<absent>"
+        }
+      },
+      "transport": "rest",
+      "writeResultKeys": [
+        [
+          "updateTime"
+        ],
+        [
+          "transformResults",
+          "updateTime"
+        ]
+      ]
+    },
+    {
+      "description": "one commit of 501 updates",
+      "id": "limit.501_writes",
+      "request": {
+        "body": {
+          "writes": "<501 updates of aruma-ref-f2-commit/w000 .. w500, fields {i}>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": "<501 write results>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "Commit with no writes",
+      "id": "grpc.empty",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "writes": []
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "message": {},
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "Commit n1 with the fields it has",
+      "id": "grpc.noop.same_fields",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "message": {
+          "commitTime": "<commitTime: Timestamp>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "update of a missing document with exists=true",
+      "error": {
+        "code": 5,
+        "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/missing1",
+        "status": "NOT_FOUND"
+      },
+      "id": "grpc.pre.exists_true_on_missing",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/missing1"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "update of n1 with exists=false",
+      "error": {
+        "code": 6,
+        "message": "Document already exists: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-commit/n1",
+        "status": "ALREADY_EXISTS"
+      },
+      "id": "grpc.pre.exists_false_on_existing",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": false
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "update of n1 with updateTime=2001-01-01T00:00:00.000001Z",
+      "error": {
+        "code": 9,
+        "message": "the stored version (<the document's updateTime in microseconds>) does not match the required base version (978307200000001)",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "grpc.pre.update_time_stale",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "writes": [
+            {
+              "currentDocument": {
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc",
+      "versions": {
+        "requiredIsPreconditionMicros": true,
+        "storedIsDocumentUpdateTimeMicros": true
+      }
+    },
+    {
+      "description": "update s1 twice",
+      "id": "grpc.same.update_update",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s1"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "b": {
+                    "integerValue": "2"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/s1"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "message": {
+          "commitTime": "<commitTime: Timestamp>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f2.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so beginTransaction gives a PESSIMISTIC read-write transaction and security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations and transaction ids are replaced by placeholders (normalise in lib.mjs, and the replace maps of record-f2.mjs); everything else is as returned.",
+      "aruma-ref-f2-commit/n1 is written {a: 1} by the setup commit; relations compare each later commit with it (commitTimeAfterSetupCommit, the write results' updateTime, and storedUpdateTimeIsSetup: whether a GET afterwards still shows the setup updateTime).",
+      "stored is a GET of the named document after the case (fields a, b, c).",
+      "limit.501_writes keeps only the shape of its request and response.",
+      "Edited by hand (F2 review fixes): the requests of pre.update_time_on_missing and pre.both hold the precondition time the recorder sent, STALE = 2001-01-01T00:00:00.000001Z (record-f2.mjs), where normalise had put its placeholder, so that they replay as sent."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "00b04e58b1c7fd5b494cdf2a6777e46f896e2541f5cca4d72773dbb43820713c",
+      "node": "v24.21.0"
+    }
+  },
+  "relations": [
+    {
+      "case": "noop.same_fields",
+      "commitTimeAfterPreviousCommit": true,
+      "commitTimeAfterSetupCommit": true,
+      "storedUpdateTimeIsSetup": true,
+      "writeResultUpdateTimes": [
+        "the setup updateTime of n1"
+      ]
+    },
+    {
+      "case": "noop.max_unchanged",
+      "commitTimeAfterPreviousCommit": true,
+      "commitTimeAfterSetupCommit": true,
+      "storedUpdateTimeIsSetup": true,
+      "writeResultUpdateTimes": [
+        "the setup updateTime of n1"
+      ]
+    },
+    {
+      "case": "noop.mask_absent_field",
+      "commitTimeAfterPreviousCommit": true,
+      "commitTimeAfterSetupCommit": true,
+      "storedUpdateTimeIsSetup": true,
+      "writeResultUpdateTimes": [
+        "the setup updateTime of n1"
+      ]
+    },
+    {
+      "case": "noop.same_fields_again",
+      "commitTimeAfterPreviousCommit": false,
+      "commitTimeAfterSetupCommit": true,
+      "storedUpdateTimeIsSetup": true,
+      "writeResultUpdateTimes": [
+        "the setup updateTime of n1"
+      ]
+    },
+    {
+      "case": "noop.verify",
+      "commitTimeAfterPreviousCommit": true,
+      "commitTimeAfterSetupCommit": true,
+      "writeResultUpdateTimes": [
+        "the setup updateTime of n1"
+      ]
+    },
+    {
+      "case": "noop.verify_again",
+      "commitTimeAfterPreviousCommit": false,
+      "commitTimeAfterSetupCommit": true,
+      "writeResultUpdateTimes": [
+        "the setup updateTime of n1"
+      ]
+    },
+    {
+      "case": "noop.delete_missing",
+      "commitTimeAfterPreviousCommit": false,
+      "commitTimeAfterSetupCommit": true,
+      "writeResultUpdateTimes": [
+        "absent"
+      ]
+    },
+    {
+      "case": "noop.same_fields_with_change_elsewhere",
+      "commitTimeAfterPreviousCommit": true,
+      "commitTimeAfterSetupCommit": true,
+      "writeResultUpdateTimes": [
+        "the setup updateTime of n1",
+        "this commitTime"
+      ]
+    },
+    {
+      "case": "noop.empty_1, noop.empty_2",
+      "hasCommitTime": [
+        false,
+        false
+      ]
+    },
+    {
+      "case": "noop.same_fields_in_transaction",
+      "commitTimeAfterPreviousCommit": true,
+      "commitTimeAfterSetupCommit": true,
+      "storedUpdateTimeIsSetup": true,
+      "writeResultUpdateTimes": [
+        "the setup updateTime of n1"
+      ]
+    }
+  ],
+  "schema": "aruma.documents-oracle/v1",
+  "setup": {
+    "commits": [
+      {
+        "writes": [
+          {
+            "update": {
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-commit/n1"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

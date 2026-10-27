@@ -91,6 +91,13 @@ Normalisation, so that a re-recording differs only where behaviour differs:
 | `f1-resource-names.json` | production | names of another project or database inside a request, a `google-cloud-resource-prefix` that disagrees with the body, invalid API keys |
 | `f1-wire-errors.json` | production | the REST front end's refusals: unknown fields and query parameters, wrong JSON kinds, syntax errors, non-object roots, bad enums, malformed and out-of-range timestamps, a Value with no type, database and project ids in the path and in gRPC's `database` field, Admin names outside `projects/`, oneof conflicts, and which carry `google.rpc.BadRequest` details (`errorDetailTypes`) |
 | `f1-cleanup.json` | production | the deletion of everything `record-f1.mjs` wrote, verified |
+| `f2-transforms.json` | production | field transforms (`record-f2.mjs`): `REQUEST_TIME` against `commitTime`, `increment` (integer and double mixes, int64 saturation, NaN, -0.0, missing and non-numeric fields), `maximum`/`minimum`, `appendMissingElements`/`removeAllFromArray` (equality of NaN, -0.0, int against double, maps), BSON shapes and vectors as operands and targets, several transforms on one path, overlap with the update mask, the legacy `transform` write, transforms on a missing document, `transformResults`, the size limit reached by a transform |
+| `f2-commit.json` | production | `Commit`: the no-op write (its `updateTime`, `commitTime`), the empty commit, update masks on a missing document, `exists`/`updateTime` preconditions and `verify`, two writes to one document, 501 writes, a missing database |
+| `f2-batch-write.json` | production | `BatchWrite`: per-write status, mixed success and failure, one document twice, labels, invalid writes, 500 and 501 writes, a missing database |
+| `f2-transactions.json` | production | `BeginTransaction` (read-write, read-only, `readTime`, `retryTransaction`), `Rollback` (twice, unknown, forged, empty), `Commit` with unknown, forged, rolled-back and read-only transactions, reads and `newTransaction` on every read RPC, and `lifetime`: transactions idle or busy for 70, 271 and 300 s |
+| `f2-locks.json` | production | which writes wait on a read-write transaction's query (the scanned index range, phantoms, sibling collections, `limit`, collection groups), a wounded transaction call by call, and an owner's `OPTIMISTIC` transaction |
+| `f2-non-utf8.json` | production | ids, field names and strings that are not UTF-8: REST paths, query parameters and raw JSON bodies, and hand-encoded gRPC |
+| `f2-cleanup.json` | production | the deletion of everything `record-f2.mjs` wrote, verified, and the strays found before the run |
 
 F1 files hold a `setup` section (the commits written before the cases) and mark with
 `replay: true` the cases whose answer depends only on that setup: `test/differential/documents`
@@ -155,9 +162,12 @@ equality and range filters, sizes, validation, masks, the BSON shapes), and
   used `aruma-ref-f0`, `-f0-tree`, `-f0-tree2`, `-f0-vec` and `-f0-explain`, the index probe
   `aruma-ref-idx` and its subcollections `aruma-ref-idxcg`, the value runs `aruma-ref-values*`
   and `aruma-ref-bson*` (each swept by its own `__name__` range, since other recorders may run
-  at the same time), the contention run `aruma-ref-txn`, and the F1 run `aruma-ref-f1-*` (swept
+  at the same time), the contention run `aruma-ref-txn`, the F1 run `aruma-ref-f1-*` (swept
   over `aruma-ref-f1` .. `aruma-ref-f2`; its cleanup also deletes, and lists as `strays`, any
-  document in that range the run did not track, such as one left by an interrupted run).
+  document in that range the run did not track, such as one left by an interrupted run), and the
+  F2 run `aruma-ref-f2-*` (swept over `aruma-ref-f2` .. `aruma-ref-f3` before the run and after it;
+  its lock probe uses subcollections named `aruma-ref-f2-lock-items` so that its collection-group
+  query reads only its own documents).
 - Everything written is deleted by commit at the end, and the deletion is verified: one kindless
   all-descendants query over every collection id from `aruma-ref` up to `aruma-reg`, plus
   `showMissing` lists of each collection used (`f0-cleanup.json`, `cleanup` in
@@ -192,6 +202,9 @@ node record-values.mjs                   # the value model, then cleanup
 node record-bson.mjs                     # BSON shapes and vector masks (about 2 minutes), then cleanup
 node record-contention.mjs               # lock contention between transactions
 node record-f1.mjs                       # the F1 unary RPCs and wire errors (about 9 minutes), then cleanup
+node record-f2.mjs                       # writes, transforms, transactions, locks (about 10 minutes), then cleanup
+node record-f2.mjs --only=locks,commit   # a probe of some topics: cleanup verified, no corpus file
+                                         # (F2_PROBE_OUT=<file outside the repo> keeps its results)
 node rebuild-manifest.mjs                # only after a deliberate hand edit
 (cd .. && go test .)                   # the checker
 ```

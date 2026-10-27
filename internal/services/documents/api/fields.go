@@ -33,12 +33,12 @@ func maskPaths(m *firestorepb.DocumentMask) (paths []value.FieldPath, ok bool, e
 	return paths, true, nil
 }
 
-// readOptions reads a request's consistency selector. A read_time is checked as production
-// checks it before its window (wire.CheckReadTime); the window is core's. Transactions come in
-// F2 (ADR-025 §7): until then a transaction or new_transaction is UNIMPLEMENTED.
-func readOptions(readTime *timestamppb.Timestamp, transaction bool) (core.ReadOptions, error) {
-	if transaction {
-		return core.ReadOptions{}, wire.Unimplemented("Transactions")
+// readOptions reads a request's consistency selector: a read_time, checked as production checks
+// it before its window (wire.CheckReadTime; the window is core's), or a transaction, whose id core
+// checks (ADR-025 §7.5). The oneof holds one of them: the transports refuse both before this.
+func readOptions(readTime *timestamppb.Timestamp, txn *core.TransactionRef) (core.ReadOptions, error) {
+	if txn != nil {
+		return core.ReadOptions{Transaction: txn}, nil
 	}
 	if readTime == nil {
 		return core.ReadOptions{}, nil

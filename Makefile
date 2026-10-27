@@ -46,6 +46,15 @@ test: ## Run all Go tests (needs local Postgres)
 test-short: ## Run Go tests that need no database
 	$(GO) test -short -count=1 ./...
 
+# The default run of the Document Database's linearizability check takes a few seconds and is part
+# of `make test`; this one runs the clients for LIN_DURATION, for a nightly job.
+LIN_DURATION ?= 60s
+
+.PHONY: linearizability
+linearizability: ## Run the Document Database's Porcupine check longer (LIN_DURATION, default 60s)
+	ARUMA_LINEARIZABILITY_DURATION=$(LIN_DURATION) $(GO) test -race -count=1 -timeout 60m -v \
+		-run '^TestLinearizability$$' ./test/linearizability/documents/
+
 .PHONY: lint
 lint: ## gofmt, go vet and the dependency rules
 	@out=$$(gofmt -l $$(git ls-files '*.go')); if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi

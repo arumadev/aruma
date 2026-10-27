@@ -282,6 +282,111 @@
         "node": "v24.21.0"
       }
     },
+    "corpus/f2-batch-write.json": {
+      "generator": "test/oracle/documents/production/record-f2.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
+      "sha256": "06d08d6504d5812a610c83dd2fffe51e4a5b824fad8c8fbbeb6177122d3a8f49",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "00b04e58b1c7fd5b494cdf2a6777e46f896e2541f5cca4d72773dbb43820713c",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f2-cleanup.json": {
+      "generator": "test/oracle/documents/production/record-f2.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
+      "sha256": "823b399d5f6363310461a549b6223ecc9b2109c7372ee1e4cd4a963993fbe40f",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "00b04e58b1c7fd5b494cdf2a6777e46f896e2541f5cca4d72773dbb43820713c",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f2-commit.json": {
+      "generator": "test/oracle/documents/production/record-f2.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
+      "sha256": "ed2f747a20e9c88bd1ddb9e5a4c1bfcdd796c4bf039ee4bc9f3355c06eb3adbb",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "00b04e58b1c7fd5b494cdf2a6777e46f896e2541f5cca4d72773dbb43820713c",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f2-locks.json": {
+      "generator": "test/oracle/documents/production/record-f2.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
+      "sha256": "96f544f2fb4d5cc1a57fcd0b6ec079d5abcf0cc3ebb6d86446a4b17dd2d30fce",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "00b04e58b1c7fd5b494cdf2a6777e46f896e2541f5cca4d72773dbb43820713c",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f2-non-utf8.json": {
+      "generator": "test/oracle/documents/production/record-f2.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
+      "sha256": "c0dc9e6ff12fee2c67eff4beda18790d51e758bb91c69e26d09440bc7c216b88",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "00b04e58b1c7fd5b494cdf2a6777e46f896e2541f5cca4d72773dbb43820713c",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f2-transactions.json": {
+      "generator": "test/oracle/documents/production/record-f2.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
+      "sha256": "73f8bf7060264ecfaddb0de7ce60e77ee85652e6d25914f19929c8befbcf598e",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "00b04e58b1c7fd5b494cdf2a6777e46f896e2541f5cca4d72773dbb43820713c",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f2-transforms.json": {
+      "generator": "test/oracle/documents/production/record-f2.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
+      "sha256": "db3704d68f52179a18918a3464c3fedb93283e3aa911ca66338a8681df21009d",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "00b04e58b1c7fd5b494cdf2a6777e46f896e2541f5cca4d72773dbb43820713c",
+        "node": "v24.21.0"
+      }
+    },
     "corpus/indexes-105.emulator.json": {
       "generator": ".cache/briefs/research/artifacts/composite-index-probe.mjs emu (the same shapes as test/oracle/documents/production/record-indexes.mjs), converted by record-indexes.mjs --import composite-index-probe-emulator.json",
       "oracle": "emulator",

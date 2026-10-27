@@ -31,7 +31,10 @@ func (s *Service) GetDocument(ctx context.Context, c Call, req *pb.GetDocumentRe
 	if err != nil {
 		return nil, err
 	}
-	_, txn := req.GetConsistencySelector().(*pb.GetDocumentRequest_Transaction)
+	var txn *core.TransactionRef
+	if t, ok := req.GetConsistencySelector().(*pb.GetDocumentRequest_Transaction); ok {
+		txn = a.transaction(t.Transaction)
+	}
 	ro, err := readOptions(req.GetReadTime(), txn)
 	if err != nil {
 		return nil, err
@@ -52,8 +55,11 @@ func (s *Service) GetDocument(ctx context.Context, c Call, req *pb.GetDocumentRe
 //
 // The documents are read batchGetChunk at a time, in name order, at the first read's time, and
 // each chunk's found documents are sent before the next is read: a request's memory is bounded
-// by a chunk of documents, not by every document it names (F1 review M3).
-func (s *Service) BatchGetDocuments(ctx context.Context, c Call, req *pb.BatchGetDocumentsRequest, send func(*pb.BatchGetDocumentsResponse) error) error {
+// by a chunk of documents, not by every document it names (F1 review M3). In a transaction each
+// chunk reads as the transaction does. With new_transaction the read runs in a transaction begun
+// for it, whose id is the first response, alone (f1-batch-get.json new_transaction.*,
+// new_transaction.empty_list).
+func (s *Service) BatchGetDocuments(ctx context.Context, c Call, req *pb.BatchGetDocumentsRequest, send func(*pb.BatchGetDocumentsResponse) error) (err error) {
 	a, err := s.admit(ctx, c, req, databaseOf(req.GetDatabase()))
 	if err != nil {
 		return err
@@ -70,14 +76,40 @@ func (s *Service) BatchGetDocuments(ctx context.Context, c Call, req *pb.BatchGe
 	if err != nil {
 		return err
 	}
-	var txn bool
-	switch req.GetConsistencySelector().(type) {
-	case *pb.BatchGetDocumentsRequest_Transaction, *pb.BatchGetDocumentsRequest_NewTransaction:
-		txn = true
+	var txn *core.TransactionRef
+	if t, ok := req.GetConsistencySelector().(*pb.BatchGetDocumentsRequest_Transaction); ok {
+		txn = a.transaction(t.Transaction)
 	}
 	ro, err := readOptions(req.GetReadTime(), txn)
 	if err != nil {
 		return err
+	}
+	if nt, ok := req.GetConsistencySelector().(*pb.BatchGetDocumentsRequest_NewTransaction); ok {
+		// err is the method's own: the deferred calls below see what it returns.
+		var id []byte
+		var end func(error)
+		if id, end, err = s.newTransaction(ctx, a, nt.NewTransaction); err != nil {
+			return err
+		}
+		defer func() { end(err) }()
+		ro.Transaction = a.transaction(id)
+		first := &pb.BatchGetDocumentsResponse{Transaction: id}
+		read := send
+		send = func(r *pb.BatchGetDocumentsResponse) error {
+			if first != nil {
+				f := first
+				first = nil
+				if err := read(f); err != nil {
+					return err
+				}
+			}
+			return read(r)
+		}
+		defer func() {
+			if err == nil && first != nil {
+				err = read(first)
+			}
+		}()
 	}
 	slices.SortFunc(paths, comparePaths)
 	paths = slices.CompactFunc(paths, func(x, y core.Path) bool { return comparePaths(x, y) == 0 })
@@ -88,7 +120,10 @@ func (s *Service) BatchGetDocuments(ctx context.Context, c Call, req *pb.BatchGe
 		if err != nil {
 			return s.fail(ctx, err)
 		}
-		ro.ReadTime, rt = readTime, timestamppb.New(readTime)
+		if ro.Transaction == nil {
+			ro.ReadTime = readTime
+		}
+		rt = timestamppb.New(readTime)
 		for _, d := range docs {
 			if !d.Exists() {
 				missing = append(missing, d.Path)
@@ -154,7 +189,10 @@ func (s *Service) ListDocuments(ctx context.Context, c Call, req *pb.ListDocumen
 	if err != nil {
 		return nil, err
 	}
-	_, txn := req.GetConsistencySelector().(*pb.ListDocumentsRequest_Transaction)
+	var txn *core.TransactionRef
+	if t, ok := req.GetConsistencySelector().(*pb.ListDocumentsRequest_Transaction); ok {
+		txn = a.transaction(t.Transaction)
+	}
 	ro, err := readOptions(req.GetReadTime(), txn)
 	if err != nil {
 		return nil, err
@@ -195,7 +233,11 @@ func (s *Service) ListDocuments(ctx context.Context, c Call, req *pb.ListDocumen
 		if err != nil {
 			return nil, s.fail(ctx, err)
 		}
-		lr.ReadTime, next = res.ReadTime, res.Next
+		if lr.Transaction == nil {
+			// In a transaction every chunk reads as the transaction does.
+			lr.ReadTime = res.ReadTime
+		}
+		next = res.Next
 		for i, d := range res.Documents {
 			out.Documents = append(out.Documents, documentProto(a.db, d, mask, masked))
 			if size += docSize(d); size >= maxPageBytes && (i < len(res.Documents)-1 || res.Next != nil) {
@@ -295,21 +337,7 @@ func (s *Service) UpdateDocument(ctx context.Context, c Call, req *pb.UpdateDocu
 		return nil, err
 	}
 	w := core.Write{Kind: core.WriteUpdate, Path: pathOf(n)}
-	if req.GetUpdateMask() != nil {
-		// Checked in production's order (value.Validate's doc): the BSON shapes of the update,
-		// the mask's paths, then, in core, the document the mask makes.
-		fields, err := wire.FieldsFromProto(req.GetDocument().GetFields())
-		if err != nil {
-			return nil, err
-		}
-		if err := value.CheckBSON(fields); err != nil {
-			return nil, wire.InvalidArgument(err.Error())
-		}
-		if w.Mask, _, err = maskPaths(req.GetUpdateMask()); err != nil {
-			return nil, err
-		}
-		w.Fields, w.Masked = stored(fields), true
-	} else if w.Fields, err = fieldsOf(req.GetDocument()); err != nil {
+	if w.Fields, w.Mask, w.Masked, err = updateOf(req.GetDocument(), req.GetUpdateMask()); err != nil {
 		return nil, err
 	}
 	if w.Precondition, err = precondition(req.GetCurrentDocument()); err != nil {
@@ -371,7 +399,8 @@ func (s *Service) ListCollectionIds(ctx context.Context, c Call, req *pb.ListCol
 	if req.GetPageSize() < 0 {
 		return nil, wire.InvalidArgument("page_size must be greater than or equal to zero.")
 	}
-	ro, err := readOptions(req.GetReadTime(), false)
+	// ListCollectionIdsRequest has no transaction: a read_time or the latest.
+	ro, err := readOptions(req.GetReadTime(), nil)
 	if err != nil {
 		return nil, err
 	}

@@ -431,19 +431,15 @@ func TestCallers(t *testing.T) {
 func TestUnimplemented(t *testing.T) {
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
-	_, err := x.client.Commit(ctx, req(&pb.CommitRequest{Database: db}, tok))
+	_, err := x.client.PartitionQuery(ctx, req(&pb.PartitionQueryRequest{Parent: root}, tok))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
-		t.Errorf("Commit: %v", err)
+		t.Errorf("PartitionQuery: %v", err)
 	}
 	admin := adminpbconnect.NewFirestoreAdminClient(h2c(0), x.url, connect.WithGRPC())
 	_, err = admin.GetDatabase(ctx, req(&adminpb.GetDatabaseRequest{Name: db}, tok))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("FirestoreAdmin.GetDatabase: %v", err)
 	}
-	// A transaction is F2's.
-	_, err = x.client.GetDocument(ctx, req(&pb.GetDocumentRequest{Name: root + "/a/b",
-		ConsistencySelector: &pb.GetDocumentRequest_Transaction{Transaction: []byte("t")}}, tok))
-	wantErr(t, "transaction", err, connect.CodeUnimplemented, "Transactions is not supported by this server")
 	for _, path := range []string{"/google.firestore.v1.Firestore/NoSuchMethod", "/no.such.Service/Method"} {
 		resp := rawCall(t, x.url, path, nil, 0)
 		if resp.Header.Get("Grpc-Status") != "12" && resp.Trailer.Get("Grpc-Status") != "12" {
@@ -637,9 +633,7 @@ func firstPageToken(t *testing.T, c firestorepbconnect.FirestoreClient, tok stri
 }
 
 // TestWireErrorsReplay replays the gRPC cases of f1-wire-errors.json: a database field production
-// refuses, each recorded on BeginTransaction (F2) with google-cloud-resource-prefix naming
-// (default). The field is read by the one parser every method shares, so they are sent here on
-// BatchGetDocuments, the F1 method with a database field.
+// refuses, each recorded on BeginTransaction with google-cloud-resource-prefix naming (default).
 func TestWireErrorsReplay(t *testing.T) {
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
@@ -681,14 +675,9 @@ func TestWireErrorsReplay(t *testing.T) {
 			t.Fatalf("%s: rpc %s", c.ID, c.Request.RPC)
 		}
 		sent++
-		r := req(&pb.BatchGetDocumentsRequest{Database: c.Request.Message.Database}, tok)
+		r := req(&pb.BeginTransactionRequest{Database: c.Request.Message.Database}, tok)
 		r.Header().Set("Google-Cloud-Resource-Prefix", db)
-		stream, err := x.client.BatchGetDocuments(ctx, r)
-		if err == nil {
-			for stream.Receive() {
-			}
-			err = stream.Err()
-		}
+		_, err := x.client.BeginTransaction(ctx, r)
 		ce, _ := errors.AsType[*connect.Error](err)
 		ok := ce != nil && int(ce.Code()) == c.Error.Code && ce.Message() == c.Error.Message
 		if reason, known := gaps[c.ID]; known {

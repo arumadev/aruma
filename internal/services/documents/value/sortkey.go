@@ -67,6 +67,16 @@ func AppendKey(dst []byte, v Value) []byte {
 	return e.buf
 }
 
+// AppendWholeKey appends v's sort key without the index budget, which cuts nothing: two
+// values have the same whole key exactly when they are Equivalent (numbers of any type by their
+// value, -0.0 as 0, NaN as NaN, maps field by field), as Key is Compare without the budget. The
+// array transforms look elements up by it. It costs v's size, however large.
+func AppendWholeKey(dst []byte, v Value) []byte {
+	e := encoder{buf: append(dst, KeyVersion), r: math.MaxInt / 2}
+	e.value(v)
+	return e.buf
+}
+
 // Truncated reports whether the index keeps only part of v: the 1500-byte budget (see Compare)
 // ends inside it, so it ties with every value that agrees on the part kept.
 func Truncated(v Value) bool {

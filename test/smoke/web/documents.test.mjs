@@ -6,8 +6,8 @@
 // F5, only that admits a client without credentials.
 //
 // The values production recorded are written with CreateDocument over REST and read back with
-// getDoc (BatchGetDocuments). Every lite write is a Commit (F2) and getDocs a RunQuery (F3):
-// those tests are listed in test/compat/documents/expected-failures/web-lite.txt, and a listed
+// getDoc (BatchGetDocuments). Every lite write, and runTransaction's commit, is a Commit (F2) and
+// getDocs a RunQuery (F3): those tests are listed in test/compat/documents/expected-failures/web-lite.txt, and a listed
 // test that passes fails the run.
 import { test as nodeTest, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -141,6 +141,18 @@ for (const major of ['11', '12', '13']) {
     await b.commit();
   });
 
+  t('writes: transforms', async ({ db, doc, getDoc, setDoc, updateDoc, serverTimestamp, increment, arrayUnion, arrayRemove }) => {
+    const ref = doc(db, 'lite-writes', `t-${major}`);
+    await setDoc(ref, { n: 1, tags: ['a', 'b'] });
+    await updateDoc(ref, { at: serverTimestamp(), n: increment(2), tags: arrayUnion('b', 'c') });
+    await updateDoc(ref, { tags: arrayRemove('a') });
+    const data = (await getDoc(ref)).data();
+    assert.equal(data.n, 3);
+    assert.deepEqual(data.tags, ['b', 'c']);
+    // REQUEST_TIME has whole milliseconds.
+    assert.equal(data.at.nanoseconds % 1e6, 0);
+  });
+
   t('writes: every type round-trips', async ({ db, doc, getDoc, setDoc, Bytes, GeoPoint, Timestamp, vector }) => {
     const ref = doc(db, 'lite-writes', `types-${major}`);
     const data = {
@@ -160,6 +172,70 @@ for (const major of ['11', '12', '13']) {
     assert.deepEqual(got.map, data.map);
     assert.deepEqual(got.vector.toArray(), [1, -0.5, 3e300]);
     assert.ok(got.ts.isEqual(data.ts));
+  });
+
+  // Transactions. Lite's are the client's own (ADR-025 §7.2): it reads with BatchGetDocuments
+  // outside any transaction, then commits its writes with preconditions on what it read
+  // (update_time, or exists:false) and a verify for each document read and not written, and
+  // retries a commit whose precondition failed. It begins no transaction on the server, so the
+  // end user's concurrency mode never comes up; it has no read-only option either.
+  t('runTransaction: read-modify-write', async ({ db, doc, getDoc, setDoc, runTransaction }) => {
+    const ref = doc(db, 'lite-txn', `rmw-${major}`);
+    await setDoc(ref, { n: 1 });
+    const got = await runTransaction(db, async (tx) => {
+      const n = (await tx.get(ref)).get('n');
+      tx.update(ref, { n: n + 1 });
+      return n;
+    });
+    assert.equal(got, 1);
+    assert.equal((await getDoc(ref)).get('n'), 2);
+  });
+
+  t('runTransaction: concurrent increments keep the total', async ({ db, doc, getDoc, setDoc, runTransaction }) => {
+    const ref = doc(db, 'lite-txn', `counter-${major}`);
+    await setDoc(ref, { n: 0 });
+    // Each round of conflicting commits lets one through: n workers need at most n attempts.
+    const workers = 5;
+    await Promise.all(Array.from({ length: workers }, () => runTransaction(db, async (tx) => {
+      const n = (await tx.get(ref)).get('n');
+      tx.set(ref, { n: n + 1 });
+    }, { maxAttempts: workers + 5 })));
+    assert.equal((await getDoc(ref)).get('n'), workers);
+  });
+
+  t('runTransaction: one that only reads', async ({ db, doc, getDoc, setDoc, runTransaction }) => {
+    const [a, missing] = [doc(db, 'lite-txn', `ro-${major}`), doc(db, 'lite-txn', `ro-missing-${major}`)];
+    await setDoc(a, { a: 1 });
+    // Its commit holds a verify of each document read: that a still has its update_time, and that
+    // the missing one is still missing.
+    const got = await runTransaction(db, async (tx) => [(await tx.get(a)).get('a'), (await tx.get(missing)).exists()]);
+    assert.deepEqual(got, [1, false]);
+    assert.equal((await getDoc(missing)).exists(), false);
+  });
+
+  t('runTransaction: one that throws writes nothing', async ({ db, doc, getDoc, setDoc, runTransaction }) => {
+    const ref = doc(db, 'lite-txn', `throws-${major}`);
+    await setDoc(ref, { a: 1 });
+    await assert.rejects(runTransaction(db, async (tx) => {
+      await tx.get(ref);
+      tx.set(ref, { a: 2 });
+      throw new Error('boom');
+    }), /boom/);
+    assert.equal((await getDoc(ref)).get('a'), 1);
+  });
+
+  t('runTransaction: several reads, a create and a delete', async ({ db, doc, getDoc, setDoc, runTransaction }) => {
+    const [a, b, missing] = [doc(db, 'lite-txn', `all-a-${major}`), doc(db, 'lite-txn', `all-b-${major}`), doc(db, 'lite-txn', `all-missing-${major}`)];
+    await setDoc(a, { v: 'a' });
+    await setDoc(b, { v: 'b' });
+    await runTransaction(db, async (tx) => {
+      const snaps = [await tx.get(b), await tx.get(missing), await tx.get(a)];
+      assert.deepEqual(snaps.map((s) => (s.exists() ? s.get('v') : null)), ['b', null, 'a']);
+      tx.set(missing, { v: 'created' });
+      tx.delete(b);
+    });
+    assert.equal((await getDoc(missing)).get('v'), 'created');
+    assert.equal((await getDoc(b)).exists(), false);
   });
 
   t('getDocs of a collection', async ({ db, collection, getDocs }) => {

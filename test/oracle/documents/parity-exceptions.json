@@ -52,32 +52,58 @@
       "id": "coarse-query-locks",
       "kind": "restriction",
       "summary": "A query inside a pessimistic read-write transaction locks the whole collection under its parent (a collection-group query: the collection id across the database), coarser than production's range locks.",
-      "production": "Not recorded. Server transactions map to lock-based Spanner transactions (firestore-official.md §1a), which lock the ranges a query scans. Whether a write to a sibling collection with the same id, or to an unscanned range of the queried collection, waits on a transaction's query is to be recorded in F2 (ADR-028 §7.6).",
+      "production": "Locks the index range a query scans (corpus/f2-locks.json, two runs, every outcome stable): with T1 holding `n > 3` on c/A/sub, a plain commit that updates a matched document, inserts a document with n in the range (a phantom), or moves a document into it waits until T1 ends (about 20 s, then ABORTED \"Too much contention on these documents. Please try again.\", corpus/f0-contention.json s6); an insert below the range, an insert without the field, an update of an unmatched document, a write to c/B/sub (same collection id, other parent) and a write to another collection do not wait. A whole-collection query blocks inserts into that collection but not into c/B/sub; `orderBy n limit 2` blocks inserts both before the first and after the last returned document; a collection-group query blocks inserts under any parent with that collection id but not into another collection id.",
       "emulator": "Locks the collection id for every query in a read-write transaction, so writes to every collection with that id wait (measured by hidane; firestore-prior-art-and-verification.md §A2).",
-      "aruma": "A collection query or ListDocuments with a collection id takes a shared lock on (parent path, collection id); a collection-group query takes it on the collection id across the database; a kindless query or ListDocuments with an empty collection id takes it on the database. Every write takes intention locks on all three (ADR-024 §6.1, ADR-025 §7.3). Only service-account and admin pessimistic transactions that run queries are affected: end-user transactions are optimistic and hold no locks while open. F2 records production's lock range and writes the phantom test (planned).",
+      "aruma": "A collection query or ListDocuments with a collection id takes a shared lock on (parent path, collection id); a collection-group query takes it on the collection id across the database; a kindless query or ListDocuments with an empty collection id takes it on the database. Every write takes intention locks on all three (ADR-024 §6.1, ADR-025 §7.3). Only service-account and admin pessimistic transactions that run queries are affected: end-user transactions are optimistic and hold no locks while open. Coarser than production where a write outside the scanned range of the same collection (an insert below the range or without the field, an update of an unmatched document) waits on Aruma and not on production; a phantom insert, a matched update and the sibling-parent and other-collection writes behave as production. Until F3 runs queries, the test shows it with a listing, which takes the lock a whole-collection query takes: a phantom insert and an update of a listed document wait, an insert below the range, one without the field and an update of an unmatched document wait on Aruma alone, and the sibling-parent and other-collection writes do not wait.",
       "follows": "production",
-      "evidence": [],
-      "planned": {
-        "test": "test/contention/documents/phantom_test.go:TestPhantom",
-        "phase": "F2"
-      }
+      "evidence": [
+        "corpus/f2-locks.json",
+        "corpus/f0-contention.json"
+      ],
+      "test": "test/contention/documents/phantom_test.go:TestPhantom"
     },
     {
       "id": "transaction-lost-on-restart",
       "kind": "restriction",
       "summary": "Transactions open when Aruma restarts (or loses its Document Database instance lock) are lost; their authentic ids get ABORTED, so clients retry.",
-      "production": "Production does not restart under a client. An id that never existed gets INVALID_ARGUMENT \"Invalid transaction.\" on commit, GET, runQuery and rollback (corpus/f0-errors.json); a committed id gets HTTP 409 ABORTED \"The referenced transaction has expired or is no longer valid.\" (corpus/f0-errors.json, corpus/f0-contention.json s5). The response after the 270 s lifetime is not recorded.",
+      "production": "Production does not restart under a client. An id that never existed, a forged id (last byte flipped) and an empty id get INVALID_ARGUMENT \"Invalid transaction.\" on commit, GET, runQuery and rollback (corpus/f0-errors.json, corpus/f2-transactions.json); a committed or rolled-back id gets HTTP 409 ABORTED \"The referenced transaction has expired or is no longer valid.\" (corpus/f0-errors.json, corpus/f0-contention.json s5, corpus/f2-transactions.json). Lifetime (corpus/f2-transactions.json `lifetime`): a read-write transaction is usable at 241 s and gets that ABORTED text at 271 s whether it was idle or read every 30 s (the lifetime runs from begin, not from the last use); at 300 s an id idle since its begin, read-write or read-only, gets INVALID_ARGUMENT \"Invalid transaction.\", as an id that never existed. Idle for 70 s, a transaction still holds its read lock: a plain write waits about 20 s and gets ABORTED \"Too much contention on these documents. Please try again.\", and the transaction then commits.",
       "emulator": "Keeps transactions in memory; a restart loses them with all data.",
-      "aruma": "Transaction ids carry an HMAC under a key derived from the master key, over a format version, a per-process boot nonce, a serial, the issue time, and the project, database and principal. A forged, garbage or foreign id gets INVALID_ARGUMENT \"Invalid transaction.\" as production. An authentic id unknown to this process (issued before a restart or before the instance lock was lost) or expired gets ABORTED \"The referenced transaction has expired or is no longer valid.\", on which Go and Node retry with a fresh age (ADR-025 §7.5, ADR-024 §6.2). The expired case is provisional until F2 records production's 270 s response. F2 writes the test (planned).",
+      "aruma": "Transaction ids carry an HMAC under a key derived from the master key, over a format version, a per-process boot nonce, a serial, the issue time, and the project, database and principal. A forged, garbage or foreign id gets INVALID_ARGUMENT \"Invalid transaction.\" as production. An authentic id unknown to this process (issued before a restart or before the instance lock was lost) or expired gets ABORTED \"The referenced transaction has expired or is no longer valid.\", on which Go and Node retry with a fresh age (ADR-025 §7.5, ADR-024 §6.2). Expiry follows the recorded lifetime: ABORTED with that text from 270 s after begin; from 300 s after begin (the issue time in the id) every id is forgotten and gets INVALID_ARGUMENT \"Invalid transaction.\", as production's. The difference left is the restart itself: within 300 s of its begin, a transaction lost by a restart answers ABORTED where production's would still be open.",
       "follows": "production",
       "evidence": [
         "corpus/f0-errors.json",
-        "corpus/f0-contention.json"
+        "corpus/f0-contention.json",
+        "corpus/f2-transactions.json"
       ],
-      "planned": {
-        "test": "internal/services/documents/core/txn_expiry_test.go:TestTransactionUnknownAfterRestartAborted",
-        "phase": "F2"
-      }
+      "test": "internal/services/documents/core/txn_expiry_test.go:TestTransactionUnknownAfterRestartAborted"
+    },
+    {
+      "id": "request-time-is-commit-time",
+      "kind": "restriction",
+      "summary": "A REQUEST_TIME transform's value is the commit's commit_time at whole milliseconds, not the time the request arrived.",
+      "production": "Recorded (corpus/f2-transforms.json st.*, corpus/f2-transactions.json time.commit): the value has millisecond precision (3 fraction digits; gRPC nanos a multiple of 10^6) and is not the commitTime nor the commitTime truncated: it is 5 to 27 ms before the commitTime (once, with a delete of the same document in the commit, 140 ms after). The stored value equals the transform result; every REQUEST_TIME of one commit (several fields, several documents, two writes to one document) is the same value; two concurrent commits got different values.",
+      "emulator": "Not recorded.",
+      "aruma": "RequestTime(commit_time): the commit's own commit_time, which Postgres's clock_timestamp() gives under the sequencer row (ADR-024 §2.1), rounded down to the millisecond (core/transforms.go). It keeps every recorded invariant: millisecond precision, one value for the whole commit, the stored value equal to the result. It is stricter on purpose: the value is never after the commitTime (production's once was) and follows the commits' order, from the one clock that orders them. It costs a commit with REQUEST_TIME one extra round trip: the stamp goes alone, the documents are built with the commit_time it returns, then the rest of the commit is sent, while the commit holds the sequencer row (core/sequencer.go stamp); a commit without REQUEST_TIME sends its stamp, documents and COMMIT in one. It differs from production's by the few milliseconds between the request's arrival and its commit; two commits within one millisecond may share a value.",
+      "follows": "production",
+      "evidence": [
+        "corpus/f2-transforms.json",
+        "corpus/f2-transactions.json"
+      ],
+      "test": "internal/services/documents/core/commit_test.go:TestTransformsCommit"
+    },
+    {
+      "id": "request-work-bounds",
+      "kind": "provisional",
+      "summary": "A Commit or BatchWrite holds at most 10,000 writes and 50,000 field transforms, and a commit rebuilds at most 2^22 values of documents it already wrote; over them it is refused with INVALID_ARGUMENT and Aruma's own text.",
+      "production": "Accepted one commit and one batchWrite of 501 updates (corpus/f2-commit.json and corpus/f2-batch-write.json limit.501_writes). Its bounds above that, on writes, field transforms and the work of many writes of one large document, are not recorded; its documented 10 MiB request limit is not recorded either.",
+      "emulator": "Not recorded.",
+      "aruma": "Bounds the work a request makes before its rules and size checks by count as well as by bytes (documents.limits.message_bytes): 10,000 writes per request and 50,000 field transforms across its writes (api/writes.go MaxRequestWrites, MaxRequestTransforms: \"A request may hold at most 10000 writes.\", \"A request may hold at most 50000 field transforms.\"), and 2^22 values (one more per 16 bytes) of the top-level fields a commit's writes rebuild in documents an earlier write of the commit already wrote (core/writes.go MaxCommitWork: \"The commit's writes rebuild more than 4194304 values of documents they already wrote. Please split it into smaller commits.\"), about a second of one core. Every recorded case is far within them: none writes a document more than twice. Record production's answers to 10,000 and 100,000 writes and to 20,000 transforms to replace the texts.",
+      "follows": "production",
+      "evidence": [
+        "corpus/f2-commit.json",
+        "corpus/f2-batch-write.json"
+      ],
+      "test": "internal/services/documents/api/writes_test.go:TestRequestWorkBounds"
     },
     {
       "id": "listen-resume-beyond-window",

@@ -18,7 +18,13 @@
 //   - names.go: paths and their order-preserving name keys, cut for the btree (ADR-024 §1.3, §1.4).
 //   - docpb.go: the stored document encoding.
 //   - errors.go: the errors, with production's messages where they were recorded.
+//   - lockmgr.go: the in-process lock manager, wound-wait with the age taken at the first lock
+//     (ADR-024 §6).
+//   - txn.go: transactions (ADR-025 §7): the authenticated ids, the registry, Begin, Commit and
+//     Rollback, and the reads in a transaction; txn_pessimistic.go, txn_optimistic.go and
+//     txn_readonly.go the three models; txn_expiry.go the lifetime and the sweep.
+//   - principal.go: who calls, which chooses a read-write transaction's model.
 //
-// Not yet here, by phase: transforms, transactions and the lock manager, index entries and
-// queries (F2); the hub and Listen (F3); usage counters, retention and purge.
+// Not yet here, by phase: transforms, index entries and queries (F2); the hub and Listen (F3);
+// usage counters, retention and purge.
 package core

@@ -82,6 +82,33 @@ func Normalise(v any, liveProject, recordedProject string) any {
 	return walk(v)
 }
 
+// storedVersion is a stale precondition's message, whose stored version is the update_time of
+// the document as each side wrote it (f2-batch-write.json stale_update_time).
+var storedVersion = regexp.MustCompile(`^the stored version \([1-9]\d*\) does not match`)
+
+// Stable rewrites, in a recording or a normalised answer alike, what differs between production
+// and Aruma only because each wrote the setup itself: a stale precondition's stored version.
+// The recordings keep it, so it is not a placeholder of Normalise.
+func Stable(v any) any {
+	switch x := v.(type) {
+	case map[string]any:
+		o := make(map[string]any, len(x))
+		for k, y := range x {
+			o[k] = Stable(y)
+		}
+		return o
+	case []any:
+		o := make([]any, len(x))
+		for i, y := range x {
+			o[i] = Stable(y)
+		}
+		return o
+	case string:
+		return storedVersion.ReplaceAllString(x, "the stored version (<update time in microseconds>) does not match")
+	}
+	return v
+}
+
 // Diff lists where got differs from want, one line per difference, each naming its JSON path
 // ("$" is the root). It is empty when they are equal.
 func Diff(want, got any) []string {

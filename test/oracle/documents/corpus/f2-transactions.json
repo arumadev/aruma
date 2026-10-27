@@ -1,0 +1,3401 @@
+{
+  "cases": [
+    {
+      "description": "beginTransaction {options: {\"readWrite\":{}}}",
+      "id": "begin.read_write",
+      "idBytes": 100,
+      "request": {
+        "body": {
+          "options": {
+            "readWrite": {}
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "transaction": "<read-write transaction #1>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readOnly\":{}}}",
+      "id": "begin.read_only",
+      "idBytes": 100,
+      "request": {
+        "body": {
+          "options": {
+            "readOnly": {}
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "transaction": "<read-only transaction #2>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {} (no options)",
+      "id": "begin.no_options",
+      "idBytes": 100,
+      "request": {
+        "body": {},
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "transaction": "<transaction begun with no options #3>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readOnly\":{\"readTime\":\"2026-10-26T22:42:09.819998Z\"}}}",
+      "id": "begin.read_only_read_time",
+      "idBytes": 100,
+      "request": {
+        "body": {
+          "options": {
+            "readOnly": {
+              "readTime": "<readTime: RFC 3339>"
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "transaction": "<read-only transaction at the setup commitTime #4>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readOnly\":{\"readTime\":\"2026-10-26T20:42:00.000Z\"}}}",
+      "error": {
+        "http": 400,
+        "message": "The requested 'read_time' is too old.",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "begin.read_only_read_time_2h",
+      "request": {
+        "body": {
+          "options": {
+            "readOnly": {
+              "readTime": "<readTime: RFC 3339>"
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The requested 'read_time' is too old.",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readOnly\":{\"readTime\":\"2026-10-18T22:42:00.000Z\"}}}",
+      "error": {
+        "http": 400,
+        "message": "The requested 'read_time' is too old.",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "begin.read_only_read_time_8d",
+      "request": {
+        "body": {
+          "options": {
+            "readOnly": {
+              "readTime": "<readTime: RFC 3339>"
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The requested 'read_time' is too old.",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readOnly\":{\"readTime\":\"2026-10-26T23:42:11.560Z\"}}}",
+      "error": {
+        "http": 400,
+        "message": "The requested 'read_time' cannot be in the future.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "begin.read_only_read_time_future",
+      "request": {
+        "body": {
+          "options": {
+            "readOnly": {
+              "readTime": "<readTime: RFC 3339>"
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The requested 'read_time' cannot be in the future.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readOnly\":{\"readTime\":\"2026-10-26T20:42:30.000Z\"}}}",
+      "error": {
+        "http": 400,
+        "message": "The requested 'read_time' is too old.",
+        "status": "FAILED_PRECONDITION"
+      },
+      "id": "begin.read_only_read_time_2h_seconds",
+      "request": {
+        "body": {
+          "options": {
+            "readOnly": {
+              "readTime": "<readTime: RFC 3339>"
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The requested 'read_time' is too old.",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readWrite\":{\"readTime\":\"2026-10-26T22:42:09.819998Z\"}}}",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unknown name \"readTime\" at 'options.read_write': Cannot find field.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "begin.read_write_read_time",
+      "request": {
+        "body": {
+          "options": {
+            "readWrite": {
+              "readTime": "<readTime: RFC 3339>"
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid JSON payload received. Unknown name \"readTime\" at 'options.read_write': Cannot find field.",
+                    "field": "options.read_write"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid JSON payload received. Unknown name \"readTime\" at 'options.read_write': Cannot find field.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a in the read-write transaction (to hold a lock before the retry)",
+      "id": "retry.read_before",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/a?transaction=<read-write transaction #1>"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "v": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readWrite\":{\"retryTransaction\":\"EXzQeHc1/hPtIlkAdsw0yJJdgXxKKHaiVPFnfAAq/rc9Tlv7ueWm/NliL2eBCE23gO9lMWdwm4oaK8ckDX1xV1c58RnSpKoOU0nOV5w77MfTl/BR6I/JEj2EzlZ0II7DA7w+KQ==\"}}}",
+      "id": "begin.retry_of_active",
+      "idBytes": 100,
+      "request": {
+        "body": {
+          "options": {
+            "readWrite": {
+              "retryTransaction": "<read-write transaction #1>"
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "transaction": "<read-write transaction retrying the first #5>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "sameIdAsRetried": false,
+      "transport": "rest"
+    },
+    {
+      "description": "GET a with the retried (old) transaction id",
+      "error": {
+        "http": 409,
+        "message": "The referenced transaction has expired or is no longer valid.",
+        "status": "ABORTED"
+      },
+      "id": "retry.old_id_read",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/a?transaction=<read-write transaction #1>"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 409,
+            "message": "The referenced transaction has expired or is no longer valid.",
+            "status": "ABORTED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 409
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a with the new transaction id",
+      "id": "retry.new_id_read",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/a?transaction=<read-write transaction retrying the first #5>"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "v": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit with the retried (old) transaction id",
+      "error": {
+        "http": 409,
+        "message": "The referenced transaction has expired or is no longer valid.",
+        "status": "ABORTED"
+      },
+      "id": "retry.old_id_commit",
+      "request": {
+        "body": {
+          "transaction": "<read-write transaction #1>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/r1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 409,
+            "message": "The referenced transaction has expired or is no longer valid.",
+            "status": "ABORTED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 409
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit with the new id",
+      "id": "retry.new_id_commit",
+      "request": {
+        "body": {
+          "transaction": "<read-write transaction retrying the first #5>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/r2"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readWrite\":{\"retryTransaction\":\"ABEiM0RVZneImaq7zN3u/w==\"}}}",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "begin.retry_unknown",
+      "request": {
+        "body": {
+          "options": {
+            "readWrite": {
+              "retryTransaction": "ABEiM0RVZneImaq7zN3u/w=="
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readWrite\":{\"retryTransaction\":\"ET0Fe/jvobvXIlkAdsw0yM00zm6PPP87JjAgyZNBkQOvGS5Jby0LLtJhrbC9SdaFmZJoN/RrYCQNUUO7/DdPW6wBlys3/zQgKTL5Gwn28XrKrwbf8Q9TkJKoMcsy/2cmcV7UYQ==\"}}}",
+      "error": {
+        "http": 400,
+        "message": "Cannot retry a read-only transaction",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "begin.retry_of_read_only",
+      "request": {
+        "body": {
+          "options": {
+            "readWrite": {
+              "retryTransaction": "<read-only transaction #2>"
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Cannot retry a read-only transaction",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readWrite\":{\"retryTransaction\":\"%%%\"}}}",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'options.read_write.retry_transaction' (TYPE_BYTES), Base64 decoding failed for \"%%%\"",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "begin.retry_not_base64",
+      "request": {
+        "body": {
+          "options": {
+            "readWrite": {
+              "retryTransaction": "%%%"
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'options.read_write.retry_transaction' (TYPE_BYTES), Base64 decoding failed for \"%%%\"",
+                    "field": "options.read_write.retry_transaction"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'options.read_write.retry_transaction' (TYPE_BYTES), Base64 decoding failed for \"%%%\"",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readOnly\":{\"retryTransaction\":\"EXzQeHc1/hPtIlkAdsw0yJJdgXxKKHaiVPFnfAAq/rc9Tlv7ueWm/NliL2eBCE23gO9lMWdwm4oaK8ckDX1xV1c58RnSpKoOU0nOV5w77MfTl/BR6I/JEj2EzlZ0II7DA7w+KQ==\"}}}",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unknown name \"retryTransaction\" at 'options.read_only': Cannot find field.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "begin.read_only_with_retry",
+      "request": {
+        "body": {
+          "options": {
+            "readOnly": {
+              "retryTransaction": "<read-write transaction #1>"
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid JSON payload received. Unknown name \"retryTransaction\" at 'options.read_only': Cannot find field.",
+                    "field": "options.read_only"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid JSON payload received. Unknown name \"retryTransaction\" at 'options.read_only': Cannot find field.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readWrite\":{}}}",
+      "id": "read.begin_read_write",
+      "idBytes": 100,
+      "request": {
+        "body": {
+          "options": {
+            "readWrite": {}
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "transaction": "<read-write transaction for reads #6>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery in a read-write transaction",
+      "id": "read.run_query_read_write",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f2-txn"
+              }
+            ],
+            "orderBy": [
+              {
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          },
+          "transaction": "<read-write transaction for reads #6>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/b",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/c",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/r2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery in a read-only transaction",
+      "id": "read.run_query_read_only",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f2-txn"
+              }
+            ],
+            "orderBy": [
+              {
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          },
+          "transaction": "<read-only transaction #2>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/b",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/c",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/r2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery in the read-only transaction at the setup commitTime",
+      "id": "read.run_query_read_only_read_time",
+      "request": {
+        "body": {
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f2-txn"
+              }
+            ],
+            "orderBy": [
+              {
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          },
+          "transaction": "<read-only transaction at the setup commitTime #4>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/b",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/c",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "ListDocuments in a read-write transaction",
+      "id": "read.list_read_write",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn?transaction=<read-write transaction for reads #6>"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/b",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/c",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/r2",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "ListDocuments in the read-only transaction at the setup commitTime",
+      "id": "read.list_read_only_read_time",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn?transaction=<read-only transaction at the setup commitTime #4>"
+      },
+      "response": {
+        "body": {
+          "documents": [
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/b",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/c",
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runAggregationQuery count in a read-write transaction",
+      "id": "read.aggregation_read_write",
+      "request": {
+        "body": {
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f2-txn"
+                }
+              ]
+            }
+          },
+          "transaction": "<read-write transaction for reads #6>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "4"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet a, missing in a read-write transaction",
+      "id": "read.batch_get_read_write",
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/a",
+            "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/nope"
+          ],
+          "transaction": "<read-write transaction for reads #6>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "missing": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/nope",
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a in a read-write transaction",
+      "id": "read.get_read_write",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/a?transaction=<read-write transaction for reads #6>"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "v": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit with no writes in the read-write transaction that read",
+      "id": "read.commit_read_write_empty",
+      "request": {
+        "body": {
+          "transaction": "<read-write transaction for reads #6>",
+          "writes": []
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a with that transaction after its commit",
+      "error": {
+        "http": 409,
+        "message": "The referenced transaction has expired or is no longer valid.",
+        "status": "ABORTED"
+      },
+      "id": "read.get_after_commit",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/a?transaction=<read-write transaction for reads #6>"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 409,
+            "message": "The referenced transaction has expired or is no longer valid.",
+            "status": "ABORTED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 409
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a in the transaction begun with no options",
+      "id": "read.get_no_options",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/a?transaction=<transaction begun with no options #3>"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "v": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit a write in the transaction begun with no options (read-write?)",
+      "id": "read.commit_no_options_write",
+      "request": {
+        "body": {
+          "transaction": "<transaction begun with no options #3>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/dflt"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery with newTransaction {readWrite: {}}",
+      "id": "read.run_query_new_transaction_read_write",
+      "request": {
+        "body": {
+          "newTransaction": {
+            "readWrite": {}
+          },
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f2-txn"
+              }
+            ],
+            "orderBy": [
+              {
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "transaction": "<read-write transaction from runQuery #7>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/b",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/c",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/dflt",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/r2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transactionIn": [
+        {
+          "index": 0,
+          "keys": [
+            "transaction"
+          ]
+        },
+        {
+          "index": 1,
+          "keys": [
+            "document",
+            "readTime"
+          ]
+        },
+        {
+          "index": 2,
+          "keys": [
+            "document",
+            "readTime"
+          ]
+        },
+        {
+          "index": 3,
+          "keys": [
+            "document",
+            "readTime"
+          ]
+        },
+        {
+          "index": 4,
+          "keys": [
+            "document",
+            "readTime"
+          ]
+        },
+        {
+          "index": 5,
+          "keys": [
+            "document",
+            "readTime"
+          ]
+        }
+      ],
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery with newTransaction {readOnly: {}}",
+      "id": "read.run_query_new_transaction_read_only",
+      "request": {
+        "body": {
+          "newTransaction": {
+            "readOnly": {}
+          },
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f2-txn"
+              }
+            ],
+            "orderBy": [
+              {
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "transaction": "<read-only transaction from runQuery #8>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/b",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/c",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/dflt",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/r2",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transactionIn": [
+        {
+          "index": 0,
+          "keys": [
+            "transaction"
+          ]
+        },
+        {
+          "index": 1,
+          "keys": [
+            "document",
+            "readTime"
+          ]
+        },
+        {
+          "index": 2,
+          "keys": [
+            "document",
+            "readTime"
+          ]
+        },
+        {
+          "index": 3,
+          "keys": [
+            "document",
+            "readTime"
+          ]
+        },
+        {
+          "index": 4,
+          "keys": [
+            "document",
+            "readTime"
+          ]
+        },
+        {
+          "index": 5,
+          "keys": [
+            "document",
+            "readTime"
+          ]
+        }
+      ],
+      "transport": "rest"
+    },
+    {
+      "description": "runQuery matching nothing with newTransaction {readOnly: {}}",
+      "id": "read.run_query_new_transaction_no_results",
+      "request": {
+        "body": {
+          "newTransaction": {
+            "readOnly": {}
+          },
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f2-txn-none"
+              }
+            ]
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "transaction": "<read-only transaction from an empty runQuery #9>"
+          },
+          {
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transactionIn": [
+        {
+          "index": 0,
+          "keys": [
+            "transaction"
+          ]
+        },
+        {
+          "index": 1,
+          "keys": [
+            "readTime"
+          ]
+        }
+      ],
+      "transport": "rest"
+    },
+    {
+      "description": "runAggregationQuery with newTransaction {readWrite: {}}",
+      "id": "read.aggregation_new_transaction_read_write",
+      "request": {
+        "body": {
+          "newTransaction": {
+            "readWrite": {}
+          },
+          "structuredAggregationQuery": {
+            "aggregations": [
+              {
+                "alias": "n",
+                "count": {}
+              }
+            ],
+            "structuredQuery": {
+              "from": [
+                {
+                  "collectionId": "aruma-ref-f2-txn"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+      },
+      "response": {
+        "body": [
+          {
+            "transaction": "<read-write transaction from runAggregationQuery #10>"
+          },
+          {
+            "readTime": "<readTime: RFC 3339>",
+            "result": {
+              "aggregateFields": {
+                "n": {
+                  "integerValue": "5"
+                }
+              }
+            }
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transactionIn": [
+        {
+          "index": 0,
+          "keys": [
+            "transaction"
+          ]
+        },
+        {
+          "index": 1,
+          "keys": [
+            "readTime",
+            "result"
+          ]
+        }
+      ],
+      "transport": "rest"
+    },
+    {
+      "description": "batchGet b with newTransaction {readWrite: {}}",
+      "id": "read.batch_get_new_transaction_read_write",
+      "request": {
+        "body": {
+          "documents": [
+            "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/b"
+          ],
+          "newTransaction": {
+            "readWrite": {}
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchGet"
+      },
+      "response": {
+        "body": [
+          {
+            "transaction": "<read-write transaction from batchGet #11>"
+          },
+          {
+            "found": {
+              "createTime": "<createTime: RFC 3339>",
+              "fields": {
+                "v": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/b",
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            "readTime": "<readTime: RFC 3339>"
+          }
+        ],
+        "bodyIsArray": true,
+        "http": 200
+      },
+      "transactionIn": [
+        {
+          "index": 0,
+          "keys": [
+            "transaction"
+          ]
+        },
+        {
+          "index": 1,
+          "keys": [
+            "found",
+            "readTime"
+          ]
+        }
+      ],
+      "transport": "rest"
+    },
+    {
+      "description": "rollback of the transaction runAggregationQuery began",
+      "id": "read.rollback_aggregation_transaction",
+      "request": {
+        "body": {
+          "transaction": "<read-write transaction from runAggregationQuery #10>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:rollback"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit a write with the transaction runQuery began",
+      "id": "read.commit_run_query_transaction",
+      "request": {
+        "body": {
+          "transaction": "<read-write transaction from runQuery #7>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/q1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit a write of b with the transaction batchGet began",
+      "id": "read.commit_batch_get_transaction",
+      "request": {
+        "body": {
+          "transaction": "<read-write transaction from batchGet #11>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "v": {
+                    "integerValue": "20"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/b"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit a write in a read-only transaction",
+      "error": {
+        "http": 400,
+        "message": "Cannot modify entities in a read-only transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "ro.commit_write",
+      "request": {
+        "body": {
+          "transaction": "<read-only transaction #2>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/ro1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Cannot modify entities in a read-only transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit with no writes in that read-only transaction, after its refused write",
+      "error": {
+        "http": 400,
+        "message": "The referenced transaction has expired or is no longer valid.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "ro.commit_empty_after_refused_write",
+      "request": {
+        "body": {
+          "transaction": "<read-only transaction #2>",
+          "writes": []
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "The referenced transaction has expired or is no longer valid.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readOnly\":{}}}",
+      "id": "ro.begin_fresh",
+      "idBytes": 100,
+      "request": {
+        "body": {
+          "options": {
+            "readOnly": {}
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "transaction": "<fresh read-only transaction #12>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a in it",
+      "id": "ro.fresh_read",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/a?transaction=<fresh read-only transaction #12>"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "v": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit with no writes in a fresh read-only transaction",
+      "id": "ro.commit_empty",
+      "request": {
+        "body": {
+          "transaction": "<fresh read-only transaction #12>",
+          "writes": []
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a with it after that commit",
+      "error": {
+        "http": 409,
+        "message": "The referenced transaction has expired or is no longer valid.",
+        "status": "ABORTED"
+      },
+      "id": "ro.read_after_commit",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/a?transaction=<fresh read-only transaction #12>"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 409,
+            "message": "The referenced transaction has expired or is no longer valid.",
+            "status": "ABORTED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 409
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit a write in the read-only transaction at the setup commitTime",
+      "error": {
+        "http": 400,
+        "message": "Cannot modify entities in a read-only transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "ro.commit_write_read_time",
+      "request": {
+        "body": {
+          "transaction": "<read-only transaction at the setup commitTime #4>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/ro2"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Cannot modify entities in a read-only transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "rollback of the read-only transaction after its commit",
+      "id": "ro.rollback_after_commit",
+      "request": {
+        "body": {
+          "transaction": "<read-only transaction #2>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:rollback"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readWrite\":{}}}",
+      "id": "rollback.begin",
+      "idBytes": 100,
+      "request": {
+        "body": {
+          "options": {
+            "readWrite": {}
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "transaction": "<read-write transaction to roll back #13>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a in it",
+      "id": "rollback.read",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/a?transaction=<read-write transaction to roll back #13>"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "v": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "rollback",
+      "id": "rollback.first",
+      "request": {
+        "body": {
+          "transaction": "<read-write transaction to roll back #13>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:rollback"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "rollback of the same transaction again",
+      "id": "rollback.second",
+      "request": {
+        "body": {
+          "transaction": "<read-write transaction to roll back #13>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:rollback"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a with the rolled-back transaction",
+      "error": {
+        "http": 409,
+        "message": "The referenced transaction has expired or is no longer valid.",
+        "status": "ABORTED"
+      },
+      "id": "rollback.read_after",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/a?transaction=<read-write transaction to roll back #13>"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 409,
+            "message": "The referenced transaction has expired or is no longer valid.",
+            "status": "ABORTED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 409
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit with the rolled-back transaction",
+      "error": {
+        "http": 409,
+        "message": "The referenced transaction has expired or is no longer valid.",
+        "status": "ABORTED"
+      },
+      "id": "rollback.commit_after",
+      "request": {
+        "body": {
+          "transaction": "<read-write transaction to roll back #13>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/rb1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 409,
+            "message": "The referenced transaction has expired or is no longer valid.",
+            "status": "ABORTED"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 409
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "rollback of 16 bytes that were never a transaction",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rollback.unknown_random16",
+      "request": {
+        "body": {
+          "transaction": "ABEiM0RVZneImaq7zN3u/w=="
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:rollback"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "rollback of a one-byte id",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rollback.unknown_one_byte",
+      "request": {
+        "body": {
+          "transaction": "Bw=="
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:rollback"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "rollback of a 1000-byte id",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rollback.unknown_1000_bytes",
+      "request": {
+        "body": {
+          "transaction": "<string 1336 bytes, sha256 711f7e39c86a19e08615aede355c13e5cd9528c7489b5587f33e0ce22d75132a, starts \"WlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpa\">"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:rollback"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "rollback with transaction \"\"",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rollback.empty_id",
+      "request": {
+        "body": {
+          "transaction": "<transaction>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:rollback"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "rollback with {}",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rollback.no_field",
+      "request": {
+        "body": {},
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:rollback"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "rollback with transaction \"%%%\"",
+      "error": {
+        "http": 400,
+        "message": "Invalid value at 'transaction' (TYPE_BYTES), Base64 decoding failed for \"%%%\"",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "rollback.not_base64",
+      "request": {
+        "body": {
+          "transaction": "<transaction>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:rollback"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid value at 'transaction' (TYPE_BYTES), Base64 decoding failed for \"%%%\"",
+                    "field": "transaction"
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid value at 'transaction' (TYPE_BYTES), Base64 decoding failed for \"%%%\"",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readWrite\":{}}}",
+      "id": "forged.begin",
+      "idBytes": 100,
+      "request": {
+        "body": {
+          "options": {
+            "readWrite": {}
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "transaction": "<read-write transaction to forge from #14>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "rollback of the forged id",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "forged.rollback",
+      "request": {
+        "body": {
+          "transaction": "<the read-write transaction to forge from, last byte flipped>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:rollback"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit with the forged id",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "forged.commit",
+      "request": {
+        "body": {
+          "transaction": "<the read-write transaction to forge from, last byte flipped>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/f1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a with the forged id",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "forged.get",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/a?transaction=EVbq1RKG%2FsaqIlkAdsw0yJsjvq952hnQvIWi%2Fs6pu4o2c9heYrh7FkVoCRvw%2B83CX%2FAIrAqRqJYJBbaCbep0teqmZsOo6izQnAjsNJVjrLwFUEdvN3VBQFjBu39nkCcnefwO%2Bw=="
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit with the real id after the forged ones",
+      "id": "forged.commit_live",
+      "request": {
+        "body": {
+          "transaction": "<read-write transaction to forge from #14>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/f2"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit with 16 bytes that were never a transaction",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "unknown.commit_random16",
+      "request": {
+        "body": {
+          "transaction": "ABEiM0RVZneImaq7zN3u/w==",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/u1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit with a one-byte id",
+      "error": {
+        "http": 400,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "unknown.commit_one_byte",
+      "request": {
+        "body": {
+          "transaction": "Bw==",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/u2"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Invalid transaction.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit with transaction \"\" (no transaction)",
+      "id": "unknown.commit_empty_string",
+      "request": {
+        "body": {
+          "transaction": "<transaction>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/u3"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "beginTransaction {options: {\"readWrite\":{}}}",
+      "id": "time.begin",
+      "idBytes": 100,
+      "request": {
+        "body": {
+          "options": {
+            "readWrite": {}
+          }
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:beginTransaction"
+      },
+      "response": {
+        "body": {
+          "transaction": "<read-write transaction with a REQUEST_TIME write #15>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "GET a in it",
+      "id": "time.read",
+      "request": {
+        "method": "GET",
+        "path": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/a?transaction=<read-write transaction with a REQUEST_TIME write #15>"
+      },
+      "response": {
+        "body": {
+          "createTime": "<createTime: RFC 3339>",
+          "fields": {
+            "v": {
+              "integerValue": "1"
+            }
+          },
+          "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+          "updateTime": "<updateTime: RFC 3339>"
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "commit ts = REQUEST_TIME in the transaction",
+      "id": "time.commit",
+      "request": {
+        "body": {
+          "transaction": "<read-write transaction with a REQUEST_TIME write #15>",
+          "writes": [
+            {
+              "update": {
+                "fields": {},
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/ts1"
+              },
+              "updateTransforms": [
+                {
+                  "fieldPath": "ts",
+                  "setToServerValue": "REQUEST_TIME"
+                }
+              ]
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:commit"
+      },
+      "requestTimeRelations": [
+        {
+          "commitTimeFractionDigits": 6,
+          "commitTimeMinusResultMicros": 7576,
+          "equalsCommitTime": false,
+          "equalsCommitTimeTruncatedToMicros": false,
+          "equalsCommitTimeTruncatedToMillis": false,
+          "order": "result before commitTime",
+          "resultFractionDigits": 3
+        }
+      ],
+      "response": {
+        "body": {
+          "commitTime": "<commitTime: RFC 3339>",
+          "writeResults": [
+            {
+              "transformResults": [
+                {
+                  "timestampValue": "<timestampValue: RFC 3339, 3 fraction digits>"
+                }
+              ],
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "BeginTransaction {\"readWrite\":{}}",
+      "id": "grpc.begin.read_write",
+      "idBytes": 100,
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "options": {
+            "readWrite": {}
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "message": {
+          "transaction": "<gRPC read-write transaction #16>"
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "BeginTransaction {\"readOnly\":{}}",
+      "id": "grpc.begin.read_only",
+      "idBytes": 100,
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "options": {
+            "readOnly": {}
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "message": {
+          "transaction": "<gRPC read-only transaction #17>"
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "BeginTransaction {\"readOnly\":{\"readTime\":{\"seconds\":\"1793054529\",\"nanos\":819998000}}}",
+      "id": "grpc.begin.read_only_read_time",
+      "idBytes": 100,
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "options": {
+            "readOnly": {
+              "readTime": "<readTime: Timestamp>"
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "message": {
+          "transaction": "<gRPC read-only transaction at the setup commitTime #18>"
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "BeginTransaction {\"readOnly\":{\"readTime\":{\"seconds\":\"1793058155\",\"nanos\":730000000}}}",
+      "error": {
+        "code": 3,
+        "message": "The requested 'read_time' cannot be in the future.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.begin.read_only_read_time_future",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "options": {
+            "readOnly": {
+              "readTime": "<readTime: Timestamp>"
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "BeginTransaction {\"readWrite\":{\"retryTransaction\":{\"type\":\"Buffer\",\"data\":[0,17,34,51,68,85,102,119,136,153,170,187,204,221,238,255]}}}",
+      "error": {
+        "code": 3,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.begin.retry_unknown",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "options": {
+            "readWrite": {
+              "retryTransaction": "ABEiM0RVZneImaq7zN3u/w=="
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "BeginTransaction {\"readWrite\":{\"retryTransaction\":{\"type\":\"Buffer\",\"data\":[]}}}",
+      "id": "grpc.begin.retry_empty",
+      "idBytes": 100,
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "options": {
+            "readWrite": {
+              "retryTransaction": "<bytes 0>"
+            }
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "message": {
+          "transaction": "<gRPC retry of an empty id #19>"
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "Commit a write in a read-only transaction",
+      "error": {
+        "code": 3,
+        "message": "Cannot modify entities in a read-only transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.commit.read_only_write",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "transaction": "<gRPC read-only transaction #17>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/gro1"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "Rollback the read-write transaction",
+      "id": "grpc.rollback.first",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "transaction": "<gRPC read-write transaction #16>"
+        },
+        "rpc": "google.firestore.v1.Firestore/Rollback"
+      },
+      "response": {
+        "message": {},
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "Rollback it again",
+      "id": "grpc.rollback.second",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "transaction": "<gRPC read-write transaction #16>"
+        },
+        "rpc": "google.firestore.v1.Firestore/Rollback"
+      },
+      "response": {
+        "message": {},
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "Rollback 16 bytes that were never a transaction",
+      "error": {
+        "code": 3,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.rollback.unknown",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "transaction": "ABEiM0RVZneImaq7zN3u/w=="
+        },
+        "rpc": "google.firestore.v1.Firestore/Rollback"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "Rollback an empty id",
+      "error": {
+        "code": 3,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.rollback.empty",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "transaction": "<bytes 0>"
+        },
+        "rpc": "google.firestore.v1.Firestore/Rollback"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "BeginTransaction {\"readWrite\":{}}",
+      "id": "grpc.forged.begin",
+      "idBytes": 100,
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "options": {
+            "readWrite": {}
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/BeginTransaction"
+      },
+      "response": {
+        "message": {
+          "transaction": "<gRPC read-write transaction to forge from #20>"
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "Commit with the forged id",
+      "error": {
+        "code": 3,
+        "message": "Invalid transaction.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.forged.commit",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "transaction": "<the gRPC read-write transaction to forge from, last byte flipped>",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/gf1"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/Commit"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "Rollback the real id",
+      "id": "grpc.forged.rollback_real",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "transaction": "<gRPC read-write transaction to forge from #20>"
+        },
+        "rpc": "google.firestore.v1.Firestore/Rollback"
+      },
+      "response": {
+        "message": {},
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "RunQuery with newTransaction {readWrite: {}}",
+      "id": "grpc.read.run_query_new_transaction",
+      "request": {
+        "message": {
+          "newTransaction": {
+            "readWrite": {}
+          },
+          "parent": "projects/{project}/databases/(default)/documents",
+          "structuredQuery": {
+            "from": [
+              {
+                "collectionId": "aruma-ref-f2-txn"
+              }
+            ],
+            "orderBy": [
+              {
+                "field": {
+                  "fieldPath": "__name__"
+                }
+              }
+            ]
+          }
+        },
+        "rpc": "google.firestore.v1.Firestore/RunQuery"
+      },
+      "response": {
+        "ok": true,
+        "responses": [
+          {
+            "transaction": "<gRPC read-write transaction from RunQuery #21>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "v": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/a",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "v": {
+                  "integerValue": "20"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/b",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "v": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/c",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/dflt",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/f2",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/q1",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/r2",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "ts": {
+                  "timestampValue": {
+                    "nanos": 76000000,
+                    "seconds": "1793054555"
+                  }
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/ts1",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          },
+          {
+            "document": {
+              "createTime": "<createTime: Timestamp>",
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-txn/u3",
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            "readTime": "<readTime: Timestamp>"
+          }
+        ]
+      },
+      "transactionIn": [
+        {
+          "hasDocument": false,
+          "hasTransaction": true,
+          "index": 0
+        },
+        {
+          "hasDocument": true,
+          "hasTransaction": false,
+          "index": 1
+        },
+        {
+          "hasDocument": true,
+          "hasTransaction": false,
+          "index": 2
+        },
+        {
+          "hasDocument": true,
+          "hasTransaction": false,
+          "index": 3
+        },
+        {
+          "hasDocument": true,
+          "hasTransaction": false,
+          "index": 4
+        },
+        {
+          "hasDocument": true,
+          "hasTransaction": false,
+          "index": 5
+        },
+        {
+          "hasDocument": true,
+          "hasTransaction": false,
+          "index": 6
+        },
+        {
+          "hasDocument": true,
+          "hasTransaction": false,
+          "index": 7
+        },
+        {
+          "hasDocument": true,
+          "hasTransaction": false,
+          "index": 8
+        },
+        {
+          "hasDocument": true,
+          "hasTransaction": false,
+          "index": 9
+        }
+      ],
+      "transport": "grpc"
+    },
+    {
+      "description": "Rollback the transaction RunQuery began",
+      "id": "grpc.read.rollback_run_query_transaction",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "transaction": "<gRPC read-write transaction from RunQuery #21>"
+        },
+        "rpc": "google.firestore.v1.Firestore/Rollback"
+      },
+      "response": {
+        "message": {},
+        "ok": true
+      },
+      "transport": "grpc"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f2.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so beginTransaction gives a PESSIMISTIC read-write transaction and security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations and transaction ids are replaced by placeholders (normalise in lib.mjs, and the replace maps of record-f2.mjs); everything else is as returned.",
+      "Transaction ids are replaced by numbered placeholders naming how each was made (<read-write transaction #1> and so on); the fixed made-up ids (16 bytes 00112233…ff, one byte 0x07, 1000 bytes 0x5a) stay as sent. idBytes is the length of a returned id.",
+      "aruma-ref-f2-txn/a, b and c are written by the setup commit.",
+      "lifetime: six transactions begun at the same moment: idle_70s_then_plain_write read e5, after 70 s idle a commit without transaction wrote e5, then the transaction committed a write of e5; idle_271s_read_write read e6, read it again after 271 s idle, then committed; idle_read_write read e1 and committed after 300 s idle; busy_read_write read e2 every 30 s and committed at 300 s; idle_read_only read e3 again after 300 s; idle_blind_read_write read nothing and committed a write after 300 s. atSeconds is from the begin."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "00b04e58b1c7fd5b494cdf2a6777e46f896e2541f5cca4d72773dbb43820713c",
+      "node": "v24.21.0"
+    }
+  },
+  "lifetime": [
+    {
+      "events": [
+        {
+          "atSeconds": 1,
+          "http": 200,
+          "latencyMs": 217,
+          "what": "GET e5 in the transaction"
+        },
+        {
+          "atSeconds": 71,
+          "http": 409,
+          "latencyMs": 20221,
+          "message": "Too much contention on these documents. Please try again.",
+          "status": "ABORTED",
+          "what": "after 70 s idle: a commit without transaction writes e5 (the transaction holds a read lock on it)"
+        },
+        {
+          "atSeconds": 91,
+          "http": 200,
+          "latencyMs": 233,
+          "what": "then the transaction commits a write of e5"
+        }
+      ],
+      "id": "idle_70s_then_plain_write"
+    },
+    {
+      "events": [
+        {
+          "atSeconds": 1,
+          "http": 200,
+          "latencyMs": 211,
+          "what": "GET e2 in the transaction"
+        },
+        {
+          "atSeconds": 31,
+          "http": 200,
+          "latencyMs": 222,
+          "what": "GET e2 in the transaction"
+        },
+        {
+          "atSeconds": 61,
+          "http": 200,
+          "latencyMs": 832,
+          "what": "GET e2 in the transaction"
+        },
+        {
+          "atSeconds": 91,
+          "http": 200,
+          "latencyMs": 871,
+          "what": "GET e2 in the transaction"
+        },
+        {
+          "atSeconds": 121,
+          "http": 200,
+          "latencyMs": 227,
+          "what": "GET e2 in the transaction"
+        },
+        {
+          "atSeconds": 151,
+          "http": 200,
+          "latencyMs": 223,
+          "what": "GET e2 in the transaction"
+        },
+        {
+          "atSeconds": 181,
+          "http": 200,
+          "latencyMs": 909,
+          "what": "GET e2 in the transaction"
+        },
+        {
+          "atSeconds": 211,
+          "http": 200,
+          "latencyMs": 672,
+          "what": "GET e2 in the transaction"
+        },
+        {
+          "atSeconds": 241,
+          "http": 200,
+          "latencyMs": 293,
+          "what": "GET e2 in the transaction"
+        },
+        {
+          "atSeconds": 271,
+          "http": 409,
+          "latencyMs": 252,
+          "message": "The referenced transaction has expired or is no longer valid.",
+          "status": "ABORTED",
+          "what": "GET e2 in the transaction"
+        },
+        {
+          "atSeconds": 271,
+          "http": 409,
+          "latencyMs": 230,
+          "message": "The referenced transaction has expired or is no longer valid.",
+          "status": "ABORTED",
+          "what": "commit a write of e2 after 300 s of reads every 30 s"
+        }
+      ],
+      "id": "busy_read_write"
+    },
+    {
+      "events": [
+        {
+          "atSeconds": 1,
+          "http": 200,
+          "latencyMs": 233,
+          "what": "GET e6 in the transaction"
+        },
+        {
+          "atSeconds": 272,
+          "http": 409,
+          "latencyMs": 236,
+          "message": "The referenced transaction has expired or is no longer valid.",
+          "status": "ABORTED",
+          "what": "GET e6 in the transaction after 271 s idle"
+        },
+        {
+          "atSeconds": 272,
+          "http": 409,
+          "latencyMs": 215,
+          "message": "The referenced transaction has expired or is no longer valid.",
+          "status": "ABORTED",
+          "what": "then commit a write of e6"
+        }
+      ],
+      "id": "idle_271s_read_write"
+    },
+    {
+      "events": [
+        {
+          "atSeconds": 0,
+          "http": 200,
+          "latencyMs": 221,
+          "what": "GET e1 in the transaction"
+        },
+        {
+          "atSeconds": 300,
+          "http": 400,
+          "latencyMs": 217,
+          "message": "Invalid transaction.",
+          "status": "INVALID_ARGUMENT",
+          "what": "commit a write of e1 after 300 s idle"
+        },
+        {
+          "atSeconds": 301,
+          "http": 400,
+          "latencyMs": 258,
+          "message": "Invalid transaction.",
+          "status": "INVALID_ARGUMENT",
+          "what": "GET e1 with the transaction afterwards"
+        },
+        {
+          "atSeconds": 301,
+          "http": 400,
+          "latencyMs": 227,
+          "message": "Invalid transaction.",
+          "status": "INVALID_ARGUMENT",
+          "what": "rollback (cleanup)"
+        }
+      ],
+      "id": "idle_read_write"
+    },
+    {
+      "events": [
+        {
+          "atSeconds": 1,
+          "http": 200,
+          "latencyMs": 209,
+          "what": "GET e3 in the transaction"
+        },
+        {
+          "atSeconds": 301,
+          "http": 400,
+          "latencyMs": 734,
+          "message": "Invalid transaction.",
+          "status": "INVALID_ARGUMENT",
+          "what": "GET e3 in the transaction after 300 s idle"
+        }
+      ],
+      "id": "idle_read_only"
+    },
+    {
+      "events": [
+        {
+          "atSeconds": 301,
+          "http": 400,
+          "latencyMs": 733,
+          "message": "Invalid transaction.",
+          "status": "INVALID_ARGUMENT",
+          "what": "commit a blind write of e4 after 300 s idle (nothing read)"
+        },
+        {
+          "atSeconds": 301,
+          "http": 400,
+          "latencyMs": 207,
+          "message": "Invalid transaction.",
+          "status": "INVALID_ARGUMENT",
+          "what": "rollback (cleanup)"
+        }
+      ],
+      "id": "idle_blind_read_write"
+    }
+  ],
+  "schema": "aruma.documents-oracle/v1",
+  "setup": {
+    "commits": [
+      {
+        "writes": [
+          {
+            "update": {
+              "fields": {
+                "v": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/a"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "v": {
+                  "integerValue": "2"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/b"
+            }
+          },
+          {
+            "update": {
+              "fields": {
+                "v": {
+                  "integerValue": "3"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-txn/c"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,1245 @@
+{
+  "cases": [
+    {
+      "description": "two updates",
+      "id": "two_updates",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/b1"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "2"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/b2"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "status": [
+            {},
+            {}
+          ],
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "statusCodes": [
+        0,
+        0
+      ],
+      "transport": "rest"
+    },
+    {
+      "description": "update m1; update of a missing document with exists=true; update m2; delete of a missing document with exists=true",
+      "id": "mixed",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/m1"
+              }
+            },
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/missing1"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "2"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/m2"
+              }
+            },
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "delete": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/missing2"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "status": [
+            {},
+            {
+              "code": 5,
+              "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-bw/missing1"
+            },
+            {},
+            {
+              "code": 5,
+              "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-bw/missing2"
+            }
+          ],
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {},
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {}
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "statusCodes": [
+        0,
+        5,
+        0,
+        5
+      ],
+      "stored": {
+        "m1": {
+          "fieldNames": [
+            "a"
+          ],
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            },
+            "b": "<absent>",
+            "i": "<absent>"
+          }
+        },
+        "m2": {
+          "fieldNames": [
+            "a"
+          ],
+          "fields": {
+            "a": {
+              "integerValue": "2"
+            },
+            "b": "<absent>",
+            "i": "<absent>"
+          }
+        },
+        "missing1": {
+          "error": {
+            "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-bw/missing1\" not found.",
+            "status": "NOT_FOUND"
+          },
+          "http": 404
+        }
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "verify m1 with exists=true, and verify a missing document with exists=true",
+      "id": "verify",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "verify": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/m1"
+            },
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "verify": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/missing3"
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "status": [
+            {},
+            {
+              "code": 5,
+              "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-bw/missing3"
+            }
+          ],
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {}
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "statusCodes": [
+        0,
+        5
+      ],
+      "transport": "rest"
+    },
+    {
+      "description": "update m1 with updateTime=2001-01-01T00:00:00.000001Z, and update m3",
+      "id": "stale_update_time",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "currentDocument": {
+                "updateTime": "2001-01-01T00:00:00.000001Z"
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "9"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/m1"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "3"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/m3"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "status": [
+            {
+              "code": 9,
+              "message": "the stored version (1793054516802252) does not match the required base version (978307200000001)"
+            },
+            {}
+          ],
+          "writeResults": [
+            {},
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "statusCodes": [
+        9,
+        0
+      ],
+      "stored": {
+        "m1": {
+          "fieldNames": [
+            "a"
+          ],
+          "fields": {
+            "a": {
+              "integerValue": "1"
+            },
+            "b": "<absent>",
+            "i": "<absent>"
+          }
+        },
+        "m3": {
+          "fieldNames": [
+            "a"
+          ],
+          "fields": {
+            "a": {
+              "integerValue": "3"
+            },
+            "b": "<absent>",
+            "i": "<absent>"
+          }
+        }
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "update d1 {a: 1} then update d1 {b: 2}",
+      "error": {
+        "http": 400,
+        "message": "the same document cannot be written more than once in a single request",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "same_document_twice",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/d1"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "b": {
+                    "integerValue": "2"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/d1"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "the same document cannot be written more than once in a single request",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "stored": {
+        "d1": {
+          "error": {
+            "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-bw/d1\" not found.",
+            "status": "NOT_FOUND"
+          },
+          "http": 404
+        }
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "update d2 {a: 1}, then update d2 with exists=false",
+      "error": {
+        "http": 400,
+        "message": "the same document cannot be written more than once in a single request",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "same_document_one_fails",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/d2"
+              }
+            },
+            {
+              "currentDocument": {
+                "exists": false
+              },
+              "update": {
+                "fields": {
+                  "b": {
+                    "integerValue": "2"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/d2"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "the same document cannot be written more than once in a single request",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "stored": {
+        "d2": {
+          "error": {
+            "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-bw/d2\" not found.",
+            "status": "NOT_FOUND"
+          },
+          "http": 404
+        }
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "two updates with labels {purpose: \"aruma-ref\"}",
+      "id": "labels",
+      "replay": true,
+      "request": {
+        "body": {
+          "labels": {
+            "purpose": "aruma-ref"
+          },
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/l1"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "2"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/l2"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "status": [
+            {},
+            {}
+          ],
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            },
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "statusCodes": [
+        0,
+        0
+      ],
+      "transport": "rest"
+    },
+    {
+      "description": "labels {\"Bad Key!\": \"x\"}",
+      "id": "labels_bad_key",
+      "replay": true,
+      "request": {
+        "body": {
+          "labels": {
+            "Bad Key!": "x"
+          },
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/l3"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "status": [
+            {}
+          ],
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "statusCodes": [
+        0
+      ],
+      "transport": "rest"
+    },
+    {
+      "description": "labels with a 300-character value",
+      "id": "labels_long_value",
+      "request": {
+        "body": {
+          "labels": {
+            "k": "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+          },
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/l4"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "status": [
+            {}
+          ],
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "statusCodes": [
+        0
+      ],
+      "transport": "rest"
+    },
+    {
+      "description": "writes []",
+      "id": "empty",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": []
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {},
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "statusCodes": [],
+      "transport": "rest"
+    },
+    {
+      "description": "update t1 {i: 5} with i += 1 and max(j, 2)",
+      "id": "transform",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "i": {
+                    "integerValue": "5"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/t1"
+              },
+              "updateTransforms": [
+                {
+                  "fieldPath": "i",
+                  "increment": {
+                    "integerValue": "1"
+                  }
+                },
+                {
+                  "fieldPath": "j",
+                  "maximum": {
+                    "integerValue": "2"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "status": [
+            {}
+          ],
+          "writeResults": [
+            {
+              "transformResults": [
+                {
+                  "integerValue": "6"
+                },
+                {
+                  "integerValue": "2"
+                }
+              ],
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "statusCodes": [
+        0
+      ],
+      "transport": "rest"
+    },
+    {
+      "description": "a legacy transform write (i += 1) of t1",
+      "id": "legacy_transform",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "transform": {
+                "document": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/t1",
+                "fieldTransforms": [
+                  {
+                    "fieldPath": "i",
+                    "increment": {
+                      "integerValue": "1"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "status": [
+            {}
+          ],
+          "writeResults": [
+            {
+              "transformResults": [
+                {
+                  "integerValue": "7"
+                }
+              ],
+              "updateTime": "<updateTime: RFC 3339>"
+            }
+          ]
+        },
+        "bodyIsArray": false,
+        "http": 200
+      },
+      "statusCodes": [
+        0
+      ],
+      "transport": "rest"
+    },
+    {
+      "description": "an update with a field named __x__ (refused) and a valid update",
+      "error": {
+        "http": 400,
+        "message": "field name __x__ is reserved",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid_value",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "__x__": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/v1"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/v2"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "field name __x__ is reserved",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "stored": {
+        "v2": {
+          "error": {
+            "message": "Document \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-bw/v2\" not found.",
+            "status": "NOT_FOUND"
+          },
+          "http": 404
+        }
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "an update with i += \"1\" and a valid update",
+      "error": {
+        "http": 400,
+        "message": "Input must be a number.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "invalid_transform",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "i": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/v3"
+              },
+              "updateTransforms": [
+                {
+                  "fieldPath": "i",
+                  "increment": {
+                    "stringValue": "1"
+                  }
+                }
+              ]
+            },
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/v4"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Input must be a number.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "an update whose name is a collection path, and a valid update",
+      "error": {
+        "http": 400,
+        "message": "Document name \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-bw\" lacks \"/\" at index 68.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "collection_name",
+      "replay": true,
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/v5"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Document name \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-bw\" lacks \"/\" at index 68.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "a batchWrite body with a transaction field (not in BatchWriteRequest)",
+      "error": {
+        "http": 400,
+        "message": "Invalid JSON payload received. Unknown name \"transaction\": Cannot find field.",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "with_transaction",
+      "replay": true,
+      "request": {
+        "body": {
+          "transaction": "BwcHBwcHBwcHBwcHBwcHBw==",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/v6"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 400,
+            "details": [
+              {
+                "@type": "type.googleapis.com/google.rpc.BadRequest",
+                "fieldViolations": [
+                  {
+                    "description": "Invalid JSON payload received. Unknown name \"transaction\": Cannot find field."
+                  }
+                ]
+              }
+            ],
+            "message": "Invalid JSON payload received. Unknown name \"transaction\": Cannot find field.",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 400
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "batchWrite one update to databases/aruma-ref-nonexistent",
+      "error": {
+        "http": 404,
+        "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+        "status": "NOT_FOUND"
+      },
+      "id": "missing_database",
+      "request": {
+        "body": {
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/aruma-ref-nonexistent/documents/aruma-ref-f2-bw/x"
+              }
+            }
+          ]
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/aruma-ref-nonexistent/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "error": {
+            "code": 404,
+            "message": "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. ",
+            "status": "NOT_FOUND"
+          }
+        },
+        "bodyIsArray": false,
+        "http": 404
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one batchWrite of 500 updates",
+      "id": "limit.500_writes",
+      "request": {
+        "body": {
+          "writes": "<500 updates of aruma-ref-f2-bw/n500-000 .., fields {i}>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "statusCodes": [
+            0
+          ],
+          "writeResults": "<500 write results>"
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "one batchWrite of 501 updates",
+      "id": "limit.501_writes",
+      "request": {
+        "body": {
+          "writes": "<501 updates of aruma-ref-f2-bw/n501-000 .., fields {i}>"
+        },
+        "method": "POST",
+        "path": "projects/{project}/databases/(default)/documents:batchWrite"
+      },
+      "response": {
+        "body": {
+          "statusCodes": [
+            0
+          ],
+          "writeResults": "<501 write results>"
+        },
+        "http": 200
+      },
+      "transport": "rest"
+    },
+    {
+      "description": "update m1; update of a missing document with exists=true; update m2",
+      "id": "grpc.mixed",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/m1"
+              }
+            },
+            {
+              "currentDocument": {
+                "exists": true
+              },
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/missing1"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "2"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/m2"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/BatchWrite"
+      },
+      "response": {
+        "message": {
+          "status": [
+            {},
+            {
+              "code": 5,
+              "message": "No document to update: projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f2-bw/missing1"
+            },
+            {}
+          ],
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: Timestamp>"
+            },
+            {},
+            {
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "update d1 twice",
+      "error": {
+        "code": 3,
+        "message": "the same document cannot be written more than once in a single request",
+        "status": "INVALID_ARGUMENT"
+      },
+      "id": "grpc.same_document_twice",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/d1"
+              }
+            },
+            {
+              "update": {
+                "fields": {
+                  "b": {
+                    "integerValue": "2"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/d1"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/BatchWrite"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "labels {purpose: \"aruma-ref\"}",
+      "id": "grpc.labels",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "labels": {
+            "purpose": "aruma-ref"
+          },
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/l1"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/BatchWrite"
+      },
+      "response": {
+        "message": {
+          "status": [
+            {}
+          ],
+          "writeResults": [
+            {
+              "updateTime": "<updateTime: Timestamp>"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "no writes",
+      "id": "grpc.empty",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/(default)",
+          "writes": []
+        },
+        "rpc": "google.firestore.v1.Firestore/BatchWrite"
+      },
+      "response": {
+        "message": {},
+        "ok": true
+      },
+      "transport": "grpc"
+    },
+    {
+      "description": "BatchWrite one update to databases/aruma-ref-nonexistent",
+      "error": {
+        "code": 5,
+        "message": "",
+        "status": "NOT_FOUND"
+      },
+      "id": "grpc.missing_database",
+      "request": {
+        "message": {
+          "database": "projects/{project}/databases/aruma-ref-nonexistent",
+          "writes": [
+            {
+              "update": {
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/aruma-ref-nonexistent/documents/aruma-ref-f2-bw/x"
+              }
+            }
+          ]
+        },
+        "rpc": "google.firestore.v1.Firestore/BatchWrite"
+      },
+      "response": {
+        "ok": false
+      },
+      "transport": "grpc"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f2.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner), so beginTransaction gives a PESSIMISTIC read-write transaction and security rules do not apply; end-user behaviour is not recorded here.",
+      "Times, durations and transaction ids are replaced by placeholders (normalise in lib.mjs, and the replace maps of record-f2.mjs); everything else is as returned.",
+      "statusCodes lists each write's status code (0 when the status is empty, i.e. OK). stored holds GETs of the named documents after the case.",
+      "Edited by hand (F2 review fixes): the request of stale_update_time holds the precondition time the recorder sent, STALE = 2001-01-01T00:00:00.000001Z (record-f2.mjs), where normalise had put its placeholder, so that it replays as sent; its answer keeps the stored version of production's own m1, which a replay compares as a placeholder."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-26T22:39:23.320Z .. 2026-10-26T22:45:02.741Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "00b04e58b1c7fd5b494cdf2a6777e46f896e2541f5cca4d72773dbb43820713c",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1",
+  "setup": {
+    "commits": [
+      {
+        "writes": [
+          {
+            "update": {
+              "fields": {
+                "a": {
+                  "integerValue": "1"
+                }
+              },
+              "name": "projects/{project}/databases/(default)/documents/aruma-ref-f2-bw/base"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

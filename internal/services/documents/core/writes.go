@@ -34,28 +34,43 @@ type docChange struct {
 	before *lockedDoc // nil: it did not exist
 	exists bool
 	fields value.Value
+	// serverTime: a write set a field of it to the commit's time (TransformServerTime).
+	serverTime bool
+	// cur builds fields during apply; applied counts the writes applied to it.
+	cur     docFields
+	applied int
 }
 
 // changed reports whether the commit changes the document: a write that leaves it as it was
 // changes nothing, keeps its update_time and is not in the changelog (WriteResult.update_time in
-// write.proto; f1-write-results.json, rest.update_unchanged).
+// write.proto; f1-write-results.json, rest.update_unchanged). A document a write gave the
+// commit's time changes: its fields are known only once the commit is stamped, and the time is
+// later than any it held, but for a field set within the same millisecond.
 func (d *docChange) changed() bool {
 	if d.before == nil || !d.exists {
 		return (d.before != nil) != d.exists
 	}
-	return !value.Identical(d.before.fields, d.fields)
+	return d.serverTime || !value.Identical(d.before.fields, d.fields)
 }
 
-// plan is a commit's writes grouped by document, in the order their rows are locked. F2 adds the
-// index entries and the transforms here; the commit path does not change shape.
+// plan is a commit's writes grouped by document, in the order their rows are locked. F3 adds the
+// index entries here; the commit path does not change shape.
 type plan struct {
 	writes []Write
 	docs   []*docChange // by stored name key
 	of     []*docChange // per write
+	// serverTime: a write has a REQUEST_TIME transform, so the documents are built only once
+	// the commit is stamped (sequencer.attempt).
+	serverTime bool
+	// transformed holds each write's transform results, as the last apply made them.
+	transformed [][]value.Value
+	// verify, when set, checks the documents as the first batch locked them (by stored key)
+	// before the writes apply: what a transaction read (ADR-024 §6.4).
+	verify func(locked map[string]*lockedDoc) error
 }
 
 func newPlan(writes []Write) *plan {
-	p := &plan{writes: writes, of: make([]*docChange, len(writes))}
+	p := &plan{writes: writes, of: make([]*docChange, len(writes)), transformed: make([][]value.Value, len(writes))}
 	byKey := map[string]*docChange{}
 	for i, w := range writes {
 		k := nameKey(w.Path)
@@ -67,7 +82,16 @@ func newPlan(writes []Write) *plan {
 		}
 		d.writes++
 		if w.Kind == WriteUpdate && w.Masked {
-			d.masked, d.mask = true, w.Mask
+			// A transformed field changes as a masked one does.
+			d.masked, d.mask = true, slices.Clip(w.Mask)
+			for _, t := range w.Transforms {
+				d.mask = append(d.mask, t.Path)
+			}
+		}
+		for _, t := range w.Transforms {
+			if t.Kind == TransformServerTime {
+				p.serverTime = true
+			}
 		}
 		p.of[i] = d
 	}
@@ -84,51 +108,292 @@ func (p *plan) storedKeys() [][]byte {
 	return ks
 }
 
+// MaxCommitWork bounds what a commit's writes rebuild of documents an earlier write of the
+// commit already wrote, by weight (F2 re-review N1): a masked write rebuilds the top-level
+// fields it changes, so many writes of one large field cost writes × its size. A document's
+// first write is not counted, its cost being that of the document read, nor is a write that
+// sets a whole document, which costs its own size. 2^22 costs at most about a second of one
+// core across shapes, and a REQUEST_TIME commit applies its writes twice (sequencer.attempt).
+// Recorded commits write a document at most twice, with small fields (parity
+// request-work-bounds).
+const MaxCommitWork = 1 << 22
+
+// errCommitWork is a commit over MaxCommitWork. Our text.
+var errCommitWork = &Error{InvalidArgument, "The commit's writes rebuild more than 4194304 values of documents they already wrote. Please split it into smaller commits."}
+
 // apply folds the writes over the documents as locked (by stored key; absent if not there): each
 // write's precondition is checked against the document as the writes before it left it, and the
-// first that fails fails the commit with production's error.
-func (p *plan) apply(db DB, locked map[string]*lockedDoc) error {
+// first that fails fails the commit with production's error. A write's transforms apply after
+// its fields, in order, REQUEST_TIME as RequestTime(commitTime). It may run again with another
+// commitTime: it starts from the documents as locked each time, and only REQUEST_TIME's values
+// differ, which change neither a document's validity nor its size.
+func (p *plan) apply(db DB, locked map[string]*lockedDoc, commitTime time.Time) error {
 	for _, d := range p.docs {
 		d.before = locked[string(d.keys.stored)]
 		d.exists = d.before != nil
-		d.fields = value.Map()
+		d.serverTime = false
+		d.applied = 0
+		d.cur.reset(value.Map())
 		if d.exists {
-			d.fields = d.before.fields
+			d.cur.reset(d.before.fields)
 		}
 	}
+	now := RequestTime(commitTime)
+	// A failed precondition fails the commit; when several fail, production names a missing
+	// document's first (f2-commit.json pre.two_failures, pre.two_failures_reversed), so the
+	// writes after a failed one are still checked, but not applied.
+	var failed *Error
+	work := 0
 	for i, w := range p.writes {
 		// The transports refuse such names; this keeps one from ever being stored, since a name
 		// key's segments are only read back right when they are UTF-8 (0xFF 0x01 would end one).
-		if j := slices.IndexFunc(w.Path, func(id string) bool { return !utf8.ValidString(id) }); j >= 0 {
-			return &Error{InvalidArgument, `Resource id "` + strings.ToValidUTF8(w.Path[j], "\uFFFD") + `" is invalid because it is not UTF-8.`}
+		if slices.ContainsFunc(w.Path, func(id string) bool { return !utf8.ValidString(id) }) {
+			return &Error{InvalidArgument, "Request contains an invalid argument."}
 		}
 		d := p.of[i]
 		if err := d.check(db, w.Precondition); err != nil {
-			return err
+			if failed == nil || failed.Code != NotFound && err.Code == NotFound {
+				failed = err
+			}
+			continue
 		}
+		if failed != nil {
+			continue
+		}
+		d.applied++
 		switch w.Kind {
 		case WriteUpdate:
-			after := w.Fields
-			if w.Masked {
-				after = value.ApplyMask(d.fields, w.Fields, w.Mask)
-				if err := value.Validate(after); err != nil {
-					return invalidDocument(err)
+			results, rebuilt, err := d.cur.update(db, w, now)
+			if err != nil {
+				return err
+			}
+			p.transformed[i] = results
+			if slices.ContainsFunc(w.Transforms, func(t Transform) bool { return t.Kind == TransformServerTime }) {
+				d.serverTime = true
+			}
+			if d.applied > 1 {
+				if work += rebuilt; work > MaxCommitWork {
+					return errCommitWork
 				}
 			}
-			if size := value.DocumentSize(w.Path.String(), after); size > value.MaxDocumentSize {
-				return documentTooLarge(db.DocumentName(w.Path), size)
-			}
-			d.exists, d.fields = true, after
+			d.exists = true
 		case WriteDelete:
-			d.exists, d.fields = false, value.Map()
+			d.exists, d.serverTime = false, false
+			d.cur.reset(value.Map())
 		}
+	}
+	if failed != nil {
+		return failed
+	}
+	for _, d := range p.docs {
+		d.fields = d.cur.value()
 	}
 	return nil
 }
 
+// docFields is a document's fields as a commit's writes leave them, built a write at a time. A
+// masked write changes the top-level fields its paths start with, and only those are rebuilt,
+// checked and sized: base holds the fields as an earlier write left them and over those changed
+// since, so many small writes of one large document cost their fields, not the document once
+// per write (F2 re-review N1). value folds them together once.
+type docFields struct {
+	base  value.Value
+	over  map[string]overField
+	n     int // how many fields
+	odd   int // how many named __x__ (oddName)
+	size  int // value.DocumentSize, once sized
+	sized bool
+	valid bool // the fields passed value.Validate
+}
+
+// overField is a top-level field a write changed: its value (ok false: deleted) and its part
+// of the document's size.
+type overField struct {
+	v    value.Value
+	ok   bool
+	size int
+}
+
+// reset makes fields the whole document, not yet sized nor checked.
+func (f *docFields) reset(fields value.Value) {
+	*f = docFields{base: fields, n: len(fields.Fields()), odd: oddFields(fields.Fields())}
+}
+
+// oddName reports whether a field is named __x__, as the keys of vectors and BSON shapes are.
+func oddName(name string) bool {
+	return len(name) >= 4 && strings.HasPrefix(name, "__") && strings.HasSuffix(name, "__")
+}
+
+func oddFields(fields []value.Field) int {
+	n := 0
+	for _, f := range fields {
+		if oddName(f.Name) {
+			n++
+		}
+	}
+	return n
+}
+
+// get returns a field and its part of the document's size.
+func (f *docFields) get(name string) (value.Value, bool, int) {
+	if o, ok := f.over[name]; ok {
+		return o.v, o.ok, o.size
+	}
+	v, ok := f.base.Get(name)
+	if !ok {
+		return value.Value{}, false, 0
+	}
+	return v, true, fieldSize(name, v)
+}
+
+// fieldsOf returns the fields of those names that the document holds, and the document's size
+// without them.
+func (f *docFields) fieldsOf(names []string) ([]value.Field, int) {
+	fields := make([]value.Field, 0, len(names))
+	size := f.size
+	for _, n := range names {
+		if v, ok, s := f.get(n); ok {
+			fields = append(fields, value.Field{Name: n, Value: v})
+			size -= s
+		}
+	}
+	return fields, size
+}
+
+// fieldSize is a field's part of value.DocumentSize.
+func fieldSize(name string, v value.Value) int { return len(name) + 1 + value.Size(v) }
+
+// value returns the fields as a map.
+func (f *docFields) value() value.Value {
+	if len(f.over) == 0 {
+		return f.base
+	}
+	fields := make([]value.Field, 0, f.n)
+	for _, fl := range f.base.Fields() {
+		if _, ok := f.over[fl.Name]; !ok {
+			fields = append(fields, fl)
+		}
+	}
+	for name, o := range f.over {
+		if o.ok {
+			fields = append(fields, value.Field{Name: name, Value: o.v})
+		}
+	}
+	f.base, f.over = value.Map(fields...), nil
+	return f.base
+}
+
+// update applies an update write and checks the document it leaves as production checks each
+// write: valid, when a mask or a transform made it, then within the size limit. It returns the
+// transforms' results and the weight of the fields it rebuilt in a document already there.
+func (f *docFields) update(db DB, w Write, now value.Value) (results []value.Value, rebuilt int, err error) {
+	name := w.Path.String()
+	if !w.Masked {
+		after := w.Fields
+		if len(w.Transforms) > 0 {
+			if after, results, err = applyTransforms(after, w.Transforms, now); err != nil {
+				return nil, 0, err
+			}
+			if err := value.Validate(after); err != nil {
+				return nil, 0, invalidDocument(err)
+			}
+		}
+		size := value.DocumentSize(name, after)
+		if size > value.MaxDocumentSize {
+			return nil, 0, documentTooLarge(db.DocumentName(w.Path), size)
+		}
+		f.reset(after)
+		f.size, f.sized, f.valid = size, true, len(w.Transforms) > 0
+		return results, 0, nil
+	}
+	if !f.sized {
+		f.size, f.sized = value.DocumentSize(name, f.value()), true
+	}
+	// The write reads and changes only the fields its paths start with (ApplyMask,
+	// applyTransforms), so it applies to them alone.
+	var names []string
+	for _, p := range w.Mask {
+		if len(p) > 0 && !p.IsDocumentID() {
+			names = append(names, p[0])
+		}
+	}
+	whole := false
+	for _, t := range w.Transforms {
+		if whole = whole || len(t.Path) == 0; !whole {
+			names = append(names, t.Path[0])
+		}
+	}
+	slices.Sort(names)
+	names = slices.Compact(names)
+	before, size := f.fieldsOf(names)
+	// ApplyMask and applyTransforms read a map that is a vector or a BSON shape as no map. Only a
+	// map with a field named __x__ can be one, which Validate refuses a document; where one
+	// could arise, in the document or in the part, at any step of the write, the write applies
+	// to the whole document, as it does when a transform names no field.
+	if whole || f.odd > 0 || slices.ContainsFunc(names, oddName) {
+		whole = true
+		for _, fl := range f.value().Fields() {
+			names = append(names, fl.Name)
+		}
+		slices.Sort(names)
+		names = slices.Compact(names)
+		before, size = f.fieldsOf(names)
+	}
+	after := value.ApplyMask(value.Map(before...), w.Fields, w.Mask)
+	if len(w.Transforms) > 0 {
+		if after, results, err = applyTransforms(after, w.Transforms, now); err != nil {
+			return nil, 0, err
+		}
+	}
+	if f.over == nil {
+		f.over = make(map[string]overField, len(names))
+	}
+	changed := after.Fields()
+	f.n += len(changed) - len(before)
+	if whole {
+		f.odd = oddFields(changed)
+	}
+	for _, n := range names {
+		f.over[n] = overField{}
+	}
+	for _, c := range changed {
+		s := fieldSize(c.Name, c.Value)
+		f.over[c.Name] = overField{v: c.Value, ok: true, size: s}
+		size += s
+		rebuilt += weight(c.Value) + s/16
+	}
+	f.size = size
+	if f.valid {
+		err = value.ValidateChanged(changed, f.n)
+	} else {
+		err = value.Validate(f.value())
+	}
+	if err != nil {
+		return nil, 0, invalidDocument(err)
+	}
+	f.valid = true
+	if size > value.MaxDocumentSize {
+		return nil, 0, documentTooLarge(db.DocumentName(w.Path), size)
+	}
+	return results, rebuilt, nil
+}
+
+// weight is the values v holds, itself included: the work of rebuilding, checking and sizing it,
+// with one more per 16 bytes of size (counted by the caller).
+func weight(v value.Value) int {
+	n := 1
+	for _, e := range v.Elements() {
+		n += weight(e)
+	}
+	for _, f := range v.Fields() {
+		n += weight(f.Value)
+	}
+	return n
+}
+
 // check evaluates a precondition. update_time is matched against the stored document's: a
 // document an earlier write of the same commit created has none yet.
-func (d *docChange) check(db DB, c Precondition) error {
+func (d *docChange) check(db DB, c Precondition) *Error {
 	if c.Exists != nil {
 		switch {
 		case *c.Exists && !d.exists:
@@ -149,12 +414,16 @@ func (d *docChange) check(db DB, c Precondition) error {
 	return nil
 }
 
-// results returns each write's result once the commit took commitTime.
+// results returns each write's result once the commit took commitTime. Every write of a
+// document has the document's update_time as the commit leaves it, none when it leaves it absent:
+// an update followed by a delete of it has none, a delete followed by an update has it
+// (f2-commit.json same.update_delete, same.delete_update).
 func (p *plan) results(commitTime time.Time) []WriteResult {
 	out := make([]WriteResult, len(p.writes))
-	for i, w := range p.writes {
+	for i := range p.writes {
+		out[i].TransformResults = p.transformed[i]
 		d := p.of[i]
-		if w.Kind == WriteDelete || !d.exists {
+		if !d.exists {
 			continue
 		}
 		switch {

@@ -206,6 +206,9 @@ func checkPair(t *testing.T, a, b, c Value) {
 	if Compare(a, a) != 0 {
 		t.Fatalf("Compare(%v, itself) != 0", a)
 	}
+	if eq := Equivalent(a, b); eq != bytes.Equal(AppendWholeKey(nil, a), AppendWholeKey(nil, b)) {
+		t.Fatalf("Equivalent(%v, %v) = %v, but their whole keys are equal: %v", a, b, eq, !eq)
+	}
 	bc, ac := Compare(b, c), Compare(a, c)
 	if ab <= 0 && bc <= 0 && ac > 0 || ab >= 0 && bc >= 0 && ac < 0 || ab == 0 && bc == 0 && ac != 0 {
 		t.Fatalf("not transitive: a=%v b=%v c=%v: %d %d %d", a, b, c, ab, bc, ac)

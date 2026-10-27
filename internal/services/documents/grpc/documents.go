@@ -12,7 +12,7 @@ import (
 	"github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb/firestorepbconnect"
 )
 
-// firestore is google.firestore.v1.Firestore. The F1 methods call package api; the others are
+// firestore is google.firestore.v1.Firestore. The F1 and F2 methods call package api; the others are
 // UnimplementedFirestoreHandler's UNIMPLEMENTED until their phase.
 type firestore struct {
 	firestorepbconnect.UnimplementedFirestoreHandler
@@ -65,7 +65,24 @@ func (f firestore) ListCollectionIds(ctx context.Context, req *connect.Request[p
 	return unary(ctx, req, f.h.svc.ListCollectionIds)
 }
 
-// BatchGetDocuments is a server stream: one response per document asked, in order.
+func (f firestore) Commit(ctx context.Context, req *connect.Request[pb.CommitRequest]) (*connect.Response[pb.CommitResponse], error) {
+	return unary(ctx, req, f.h.svc.Commit)
+}
+
+func (f firestore) BatchWrite(ctx context.Context, req *connect.Request[pb.BatchWriteRequest]) (*connect.Response[pb.BatchWriteResponse], error) {
+	return unary(ctx, req, f.h.svc.BatchWrite)
+}
+
+func (f firestore) BeginTransaction(ctx context.Context, req *connect.Request[pb.BeginTransactionRequest]) (*connect.Response[pb.BeginTransactionResponse], error) {
+	return unary(ctx, req, f.h.svc.BeginTransaction)
+}
+
+func (f firestore) Rollback(ctx context.Context, req *connect.Request[pb.RollbackRequest]) (*connect.Response[emptypb.Empty], error) {
+	return unary(ctx, req, f.h.svc.Rollback)
+}
+
+// BatchGetDocuments is a server stream: one response per document asked, in order, after the
+// transaction's id when the request asks for a new one.
 func (f firestore) BatchGetDocuments(ctx context.Context, req *connect.Request[pb.BatchGetDocumentsRequest], stream *connect.ServerStream[pb.BatchGetDocumentsResponse]) error {
 	s, err := f.h.serverStream(ctx)
 	if err != nil {

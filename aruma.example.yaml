@@ -120,3 +120,10 @@ documents:                         # Document Database (ADR-024 to ADR-029); see
     server_stream_max: 5m          # a streamed answer without a client deadline
     streams_per_ip: 500            # streams open at once from one client address
     commit_concurrency: 4          # commits of one database in Postgres at once
+    txn_wait_timeout: 20s          # a wait for a transaction's lock, then ABORTED
+    txn_max_lifetime: 270s         # a transaction ends this long after it began
+    max_open_txns: 1000            # open locking transactions per database
+    max_open_unlocked_txns: 10000  # open read-only and optimistic transactions per database
+    max_open_txns_per_user: 100    # of those, one end user's
+    max_ended_txns: 100000         # ended transactions remembered for their ids' answers
+    max_locks_per_txn: 10000       # documents and listings one transaction locks or reads

@@ -25,6 +25,8 @@ type Options struct {
 	// Instance, when set, makes every call fail with ErrNotServing while this process does not
 	// hold the single-instance lock (ADR-024 §7). Tests and tools leave it nil.
 	Instance *Instance
+	// Transactions bounds the transactions and keys their ids.
+	Transactions TxnConfig
 }
 
 // PGStore is Store on Postgres, schema documents (ADR-024).
@@ -34,6 +36,7 @@ type PGStore struct {
 	seq      *sequencer
 	location string
 	instance *Instance
+	txns     *transactions
 }
 
 var _ Store = (*PGStore)(nil)
@@ -46,6 +49,7 @@ func NewPGStore(pool *pgxpool.Pool, o Options) *PGStore {
 		seq:      newSequencer(pool, cmp.Or(o.CommitConcurrency, DefaultCommitConcurrency), o.Notifier),
 		location: cmp.Or(o.LocationID, DefaultLocation),
 		instance: o.Instance,
+		txns:     newTransactions(o.Transactions),
 	}
 }
 
@@ -58,10 +62,21 @@ func (s *PGStore) serving() error {
 
 // Commit implements Store.
 func (s *PGStore) Commit(ctx context.Context, db DB, writes []Write) (CommitResult, error) {
+	return s.commit(ctx, db, writes, nil)
+}
+
+// commit runs writes as one commit, in a transaction when c is set, under the lock manager's
+// locks (lockCommit).
+func (s *PGStore) commit(ctx context.Context, db DB, writes []Write, c *commitTxn) (CommitResult, error) {
 	if err := s.serving(); err != nil {
 		return CommitResult{}, err
 	}
 	p := newPlan(writes)
+	release, err := s.lockCommit(ctx, db, p, c)
+	if err != nil {
+		return CommitResult{}, err
+	}
+	defer release()
 	res, err := s.seq.commit(ctx, db, p)
 	if errors.Is(err, errNoDatabase) {
 		if err := s.missing(ctx, db); err != nil {
@@ -205,6 +220,9 @@ func (s *PGStore) Get(ctx context.Context, db DB, p Path, o ReadOptions) (Docume
 
 // BatchGet implements Store.
 func (s *PGStore) BatchGet(ctx context.Context, db DB, paths []Path, o ReadOptions) ([]Document, time.Time, error) {
+	if o.Transaction != nil {
+		return s.txnBatchGet(ctx, db, paths, o)
+	}
 	keys := make([][]byte, len(paths))
 	for i, p := range paths {
 		keys[i] = storedKey(nameKey(p))
@@ -250,6 +268,9 @@ func pageSize(n int) int {
 
 // ListDocuments implements Store.
 func (s *PGStore) ListDocuments(ctx context.Context, db DB, r ListRequest) (ListResult, error) {
+	if r.Transaction != nil {
+		return s.txnList(ctx, db, r)
+	}
 	if r.After != nil && !r.after() {
 		return ListResult{}, ErrInvalidAfter
 	}
@@ -537,6 +558,9 @@ func (s *PGStore) listAll(ctx context.Context, db DB, r ListRequest, limit int) 
 
 // ListCollectionIDs implements Store.
 func (s *PGStore) ListCollectionIDs(ctx context.Context, db DB, r ListCollectionIDsRequest) (CollectionIDs, error) {
+	if r.Transaction != nil {
+		return CollectionIDs{}, errTxnListCollectionIDs
+	}
 	n := pageSize(r.PageSize)
 	parent := prefixKey(r.Parent)
 	var after []byte
