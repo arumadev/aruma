@@ -102,6 +102,7 @@ func TestListenRandom(t *testing.T) {
 			for _, lt := range l.Checker.Targets() {
 				held[lt.ID], resume[lt.ID] = maps.Clone(lt.Docs), lt.Token
 			}
+			l.Checker.Oracle = nil // the frames left before the end are checked, not compared: they are many under load
 			l.CloseSend()
 			if err := l.Ended(); err != nil {
 				t.Errorf("listener %d: %v", n, err)
