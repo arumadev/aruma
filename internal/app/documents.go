@@ -114,8 +114,8 @@ func (d *Documents) mount(h *server.Handlers) {
 }
 
 // Boot takes the single-instance lock, trying for up to 30 seconds (ADR-024 §7), opens the
-// store, starts the retention of versions and the changelog (ADR-024 §8) and the index build job
-// (ADR-024 §2.5), which run while the lock is held, and the transactions' sweep (ADR-024 §6.3),
+// store, starts the retention of versions and the changelog (ADR-024 §8), the index build job
+// (ADR-024 §2.5) and the TTL sweeper (ADR-028 §2), which run while the lock is held, and the transactions' sweep (ADR-024 §6.3),
 // and gives every project its
 // '(default)' database. Losing the lock drops every open transaction, before o.OnLost runs.
 // Without the lock the rest of Aruma serves and the Document Database answers UNAVAILABLE until
@@ -144,6 +144,9 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	jobs.Go(func() { store.RunRetention(jctx, documents.RetentionOptions{Log: d.log}) })
 	jobs.Go(func() { store.RunTransactions(jctx) })
 	jobs.Go(func() { store.RunIndexBuilds(jctx, documents.IndexBuildOptions{Log: d.log}) })
+	jobs.Go(func() {
+		store.RunTTL(jctx, documents.TTLOptions{Every: d.cfg.TTLSweepInterval, Batch: d.cfg.TTLSweepBatch, Log: d.log})
+	})
 	go func() {
 		jobs.Wait()
 		close(d.jobsDone)

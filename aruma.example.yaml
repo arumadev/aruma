@@ -133,3 +133,5 @@ documents:                         # Document Database (ADR-024 to ADR-029); see
     max_locks_per_txn: 10000       # documents and listings one transaction locks or reads
     composite_indexes: 1000        # composite indexes per database
     field_overrides: 1000          # field overrides per database, its default aside
+    ttl_sweep_interval: 1h         # how often documents past their TTL policy's time are deleted
+    ttl_sweep_batch: 500           # due documents read of a database at once (100 batches a pass)
