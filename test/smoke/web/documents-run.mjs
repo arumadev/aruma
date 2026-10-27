@@ -11,11 +11,15 @@ let code = 1;
 try {
   const server = await startServer(gen.bin, ['-documents-open-rules']);
   try {
-    code = await runGuarded(join(here, 'documents.test.mjs'), here, {
-      ARUMA_SMOKE_DIR: server.dir,
-      ARUMA_SMOKE_DOCUMENTS_ADDR: server.addr,
-      ARUMA_NETGUARD_LOG: join(server.dir, 'netguard.log'),
-    });
+    // documents.test.mjs is Firestore lite (REST); listen.test.mjs the full SDK (gRPC in Node).
+    code = 0;
+    for (const file of ['documents.test.mjs', 'listen.test.mjs']) {
+      code ||= await runGuarded(join(here, file), here, {
+        ARUMA_SMOKE_DIR: server.dir,
+        ARUMA_SMOKE_DOCUMENTS_ADDR: server.addr,
+        ARUMA_NETGUARD_LOG: join(server.dir, 'netguard.log'),
+      });
+    }
   } finally {
     await server.stop();
   }
