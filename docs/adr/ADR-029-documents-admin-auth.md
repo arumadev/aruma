@@ -153,10 +153,11 @@
 
 ### 6. `Bearer owner`
 
-- **يُقبل على هذا السطح وحده، بثلاثة شروط معًا،** كـ `rtdb.dev_open_rules` (`config.go:89-91`، `:570`) وكما يشترط MUST 25 («only in an explicit dev/emulator mode»):
+- **يُقبل على هذا السطح وحده، بأربعة شروط معًا،** كـ `rtdb.dev_open_rules` (`config.go:89-91`، `:570`) وكما يشترط MUST 25 («only in an explicit dev/emulator mode»):
   1. **علم صريح** `documents.dev_owner_token: true` (و`ARUMA_DOCUMENTS_DEV_OWNER_TOKEN`)، **معطّل افتراضيًا**؛
   2. **والإعداد loopback:** العلم يُرفض عند التحقق من الإعداد إن لم يكن `public_url` و`listen` كلاهما loopback، برسالة كرسالة `dev_open_rules`؛
   3. **والنظير loopback** (`PeerIsLoopback`). وهذا لا يكفي وحده، لأن وكيلًا على الجهاز يجعل كل عميل محليًا، لكنه مع الشرط 2 لا يترك مسارًا من خارج الجهاز.
+  4. **والطلب ليس من متصفح:** لا يحمل ترويسة `Origin` (`authn.Transport.Browser`؛ ولقناة WebChannel ترويسة المصافحة). فالرمز ليس سرًا، والمتصفح يعيره لكل صفحة يشغّلها، ومسارات البيانات تجيب أي أصل معتمدة (ADR-027 §5.2)، ومصافحة القناة POST نموذج بلا preflight. وأدوات الجهاز (firebase-admin، gRPC) لا ترسل `Origin`.
 - يصير الطالب مديرًا لكل مشروع على الخادم (ADR-025 §7.1)، ويُسجَّل سطر تحذير واحد عند الإقلاع. وبلا العلم، أي عملية أو حاوية جانبية على الجهاز كانت ستصير مديرًا لكل مشروع.
 - **في كل حالة أخرى يُرفض ويُسجَّل** كما يقول S-3. والنص يقول ما العمل: «`Bearer owner` is accepted only when documents.dev_owner_token is set on a server whose public_url and listen are loopback addresses; connect with TLS to send the service account's credentials».
 

@@ -305,12 +305,22 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ matrix.engine }}-${{ hashFiles('test/e2e/browser-matrix/package-lock.json') }}
-      - name: Install (Go modules, Playwright 1.64.1 and ${{ matrix.engine }})
+      - name: Install (Go modules, Playwright 1.64.1)
         working-directory: test/e2e/browser-matrix
         run: |
           go mod download
           npm ci --no-audit --no-fund
-          npx playwright install --with-deps ${{ matrix.engine }}
+      # `playwright install --with-deps webkit` has hung twice: each attempt is cut at 5 minutes,
+      # and there is one retry.
+      - name: Install ${{ matrix.engine }} and its system dependencies
+        working-directory: test/e2e/browser-matrix
+        timeout-minutes: 12
+        run: |
+          for attempt in 1 2; do
+            timeout 5m npx playwright install --with-deps ${{ matrix.engine }} && exit 0
+            echo "playwright install failed or timed out (attempt $attempt)" >&2
+          done
+          exit 1
       # The runner has no sound device. Case 14 browses to the song, whose media document plays
       # it aloud, and Firefox then fails the element with MEDIA_ERR_DECODE
       # (NS_ERROR_DOM_MEDIA_MEDIASINK_ERR, OnMediaSinkAudioError) for MP3, Opus and WAV alike:
@@ -338,6 +348,72 @@ jobs:
             test/e2e/browser-matrix/playwright-report
             test/e2e/browser-matrix/test-results
             test/e2e/browser-matrix/.generated/server.log
+
+  web-documents:
+    name: Web Document Database e2e (${{ matrix.engine }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, firefox, webkit]
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: |
+            sdk/web/aruma-web/package-lock.json
+            test/e2e/web-documents/package-lock.json
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ matrix.engine }}-${{ hashFiles('test/e2e/web-documents/package-lock.json') }}
+      # @aruma/web is a file: link here, so its own dependency comes from its directory.
+      - name: Install (Go modules, @aruma/web, the app)
+        working-directory: test/e2e/web-documents
+        run: |
+          go mod download
+          (cd ../../../sdk/web/aruma-web && npm ci --no-audit --no-fund)
+          npm ci --no-audit --no-fund
+      # See the browser matrix: the install is cut at 5 minutes per attempt, with one retry.
+      - name: Install ${{ matrix.engine }} and its system dependencies
+        working-directory: test/e2e/web-documents
+        timeout-minutes: 12
+        run: |
+          for attempt in 1 2; do
+            timeout 5m npx playwright install --with-deps ${{ matrix.engine }} && exit 0
+            echo "playwright install failed or timed out (attempt $attempt)" >&2
+          done
+          exit 1
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: Firestore in ${{ matrix.engine }} (WebChannel, REST, rules, @aruma/web)
+        run: test/ci/egress-guard.sh run test/e2e/web-documents/run.sh ${{ matrix.engine }}
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: web-documents-${{ matrix.engine }}
+          include-hidden-files: true
+          path: |
+            test/e2e/web-documents/playwright-report
+            test/e2e/web-documents/test-results
+            test/e2e/web-documents/.generated/server.log
 
   web-storage:
     name: Web Storage e2e (bundlers, SvelteKit)

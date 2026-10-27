@@ -73,13 +73,7 @@ func findNearestOf(fn *pb.StructuredQuery_FindNearest) (*FindNearest, error) {
 
 // VectorIndex is a declared vector index as a find_nearest needs it: its collection group and
 // scope, the ascending fields before its vector field, and the vector field's dimension.
-type VectorIndex struct {
-	CollectionGroup string
-	Scope           index.Scope
-	Prefix          []string
-	Field           string
-	Dimension       int
-}
+type VectorIndex = index.VectorIndex
 
 // NearestError is what a find_nearest query is answered with, given the database's vector
 // indexes: with one that matches (the query's collection and scope, its equality fields as the

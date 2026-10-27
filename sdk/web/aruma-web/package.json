@@ -1,7 +1,7 @@
 {
   "name": "@aruma/web",
   "version": "0.1.0",
-  "description": "Send the official Firebase web SDK (Auth and Storage), in production mode, to an Aruma server: one line in the bundler's config, no change in the app.",
+  "description": "Send the official Firebase web SDK (Auth, Storage and Firestore), in production mode, to an Aruma server: one line in the bundler's config, no change in the app.",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -20,6 +20,10 @@
     "./storage": {
       "types": "./storage.d.ts",
       "default": "./src/storage.js"
+    },
+    "./firestore": {
+      "types": "./firestore.d.ts",
+      "default": "./src/firestore.js"
     },
     "./unplugin": {
       "types": "./unplugin.d.ts",
@@ -52,6 +56,7 @@
     "auto.d.ts",
     "vite.d.ts",
     "storage.d.ts",
+    "firestore.d.ts",
     "unplugin.d.ts",
     "metro.d.ts",
     "flutter-web.d.ts",
@@ -67,5 +72,12 @@
   },
   "scripts": {
     "test": "node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "firebase": "^13.1.0",
+    "vite": "^8.3.5"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.4"
   }
 }

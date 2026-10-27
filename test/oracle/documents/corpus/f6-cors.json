@@ -1,0 +1,812 @@
+{
+  "cases": [
+    {
+      "description": "OPTIONS to channel and REST data paths",
+      "id": "cors.preflights",
+      "requests": [
+        {
+          "label": "Listen channel preflight POST, headers the SDK sends",
+          "request": {
+            "body": null,
+            "headers": {
+              "access-control-request-headers": "content-type,x-goog-api-client,x-goog-request-params,authorization,x-firebase-gmpid",
+              "access-control-request-method": "POST",
+              "origin": "http://localhost:18765"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&RID=30001&CVER=22&X-HTTP-Session-Id=gsessionid&zx=abc&t=1"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-headers": "content-type,x-goog-api-client,x-goog-request-params,authorization,x-firebase-gmpid",
+              "access-control-allow-methods": "GET,POST",
+              "access-control-allow-origin": "http://localhost:18765",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "Listen channel preflight GET (backchannel)",
+          "request": {
+            "body": null,
+            "headers": {
+              "access-control-request-method": "GET",
+              "origin": "http://localhost:18765"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&RID=30001&CVER=22&X-HTTP-Session-Id=gsessionid&zx=abc&t=1"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-methods": "GET,POST",
+              "access-control-allow-origin": "http://localhost:18765",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "Write channel preflight POST",
+          "request": {
+            "body": null,
+            "headers": {
+              "access-control-request-headers": "content-type,x-goog-api-client,x-goog-request-params,authorization,x-firebase-gmpid",
+              "access-control-request-method": "POST",
+              "origin": "http://localhost:18765"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Write/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&RID=30001&CVER=22&X-HTTP-Session-Id=gsessionid&zx=abc&t=1"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-headers": "content-type,x-goog-api-client,x-goog-request-params,authorization,x-firebase-gmpid",
+              "access-control-allow-methods": "GET,POST",
+              "access-control-allow-origin": "http://localhost:18765",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "REST get preflight (GET) with authorization and x-goog-api-client",
+          "request": {
+            "body": null,
+            "headers": {
+              "access-control-request-headers": "authorization,x-goog-api-client",
+              "access-control-request-method": "GET",
+              "origin": "http://localhost:18765"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-headers": "authorization,x-goog-api-client",
+              "access-control-allow-methods": "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-max-age": "3600",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin, referer, x-origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "REST list preflight (GET), headers of the lite SDK",
+          "request": {
+            "body": null,
+            "headers": {
+              "access-control-request-headers": "authorization,content-type,x-goog-api-client,x-goog-request-params,x-firebase-gmpid,x-goog-api-key,x-firebase-appcheck",
+              "access-control-request-method": "GET",
+              "origin": "http://localhost:18765"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-headers": "authorization,content-type,x-goog-api-client,x-goog-request-params,x-firebase-gmpid,x-goog-api-key,x-firebase-appcheck",
+              "access-control-allow-methods": "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-max-age": "3600",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin, referer, x-origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "REST commit preflight (POST)",
+          "request": {
+            "body": null,
+            "headers": {
+              "access-control-request-headers": "authorization,content-type,x-goog-api-client,x-goog-request-params,x-firebase-gmpid,x-goog-api-key,x-firebase-appcheck",
+              "access-control-request-method": "POST",
+              "origin": "http://localhost:18765"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:commit"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-headers": "authorization,content-type,x-goog-api-client,x-goog-request-params,x-firebase-gmpid,x-goog-api-key,x-firebase-appcheck",
+              "access-control-allow-methods": "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-max-age": "3600",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin, referer, x-origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "REST PATCH preflight",
+          "request": {
+            "body": null,
+            "headers": {
+              "access-control-request-headers": "authorization,content-type,x-goog-api-client,x-goog-request-params,x-firebase-gmpid,x-goog-api-key,x-firebase-appcheck",
+              "access-control-request-method": "PATCH",
+              "origin": "http://localhost:18765"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-headers": "authorization,content-type,x-goog-api-client,x-goog-request-params,x-firebase-gmpid,x-goog-api-key,x-firebase-appcheck",
+              "access-control-allow-methods": "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-max-age": "3600",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin, referer, x-origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "REST DELETE preflight",
+          "request": {
+            "body": null,
+            "headers": {
+              "access-control-request-headers": "authorization,content-type,x-goog-api-client,x-goog-request-params,x-firebase-gmpid,x-goog-api-key,x-firebase-appcheck",
+              "access-control-request-method": "DELETE",
+              "origin": "http://localhost:18765"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-headers": "authorization,content-type,x-goog-api-client,x-goog-request-params,x-firebase-gmpid,x-goog-api-key,x-firebase-appcheck",
+              "access-control-allow-methods": "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-max-age": "3600",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin, referer, x-origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "lite preflight as Chromium sends it: batchGet?key=",
+          "request": {
+            "body": null,
+            "headers": {
+              "accept": "*/*",
+              "access-control-request-headers": "google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client,x-goog-request-params",
+              "access-control-request-method": "POST",
+              "origin": "http://localhost:18765",
+              "referer": "http://localhost:18765/",
+              "sec-fetch-dest": "empty",
+              "sec-fetch-mode": "cors",
+              "sec-fetch-site": "cross-site",
+              "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:batchGet?key=<api-key>"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-headers": "google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client,x-goog-request-params",
+              "access-control-allow-methods": "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-max-age": "3600",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin, referer, x-origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "lite preflight as Chromium sends it: commit?key=",
+          "request": {
+            "body": null,
+            "headers": {
+              "accept": "*/*",
+              "access-control-request-headers": "google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client,x-goog-request-params",
+              "access-control-request-method": "POST",
+              "origin": "http://localhost:18765",
+              "referer": "http://localhost:18765/",
+              "sec-fetch-dest": "empty",
+              "sec-fetch-mode": "cors",
+              "sec-fetch-site": "cross-site",
+              "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:commit?key=<api-key>"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-headers": "google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client,x-goog-request-params",
+              "access-control-allow-methods": "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-max-age": "3600",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin, referer, x-origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "lite preflight as Chromium sends it: runQuery?key=",
+          "request": {
+            "body": null,
+            "headers": {
+              "accept": "*/*",
+              "access-control-request-headers": "google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client,x-goog-request-params",
+              "access-control-request-method": "POST",
+              "origin": "http://localhost:18765",
+              "referer": "http://localhost:18765/",
+              "sec-fetch-dest": "empty",
+              "sec-fetch-mode": "cors",
+              "sec-fetch-site": "cross-site",
+              "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:runQuery?key=<api-key>"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-headers": "google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client,x-goog-request-params",
+              "access-control-allow-methods": "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-max-age": "3600",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin, referer, x-origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "lite preflight as Chromium sends it, plus authorization",
+          "request": {
+            "body": null,
+            "headers": {
+              "accept": "*/*",
+              "access-control-request-headers": "authorization,google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client,x-goog-request-params",
+              "access-control-request-method": "POST",
+              "origin": "http://localhost:18765",
+              "referer": "http://localhost:18765/",
+              "sec-fetch-dest": "empty",
+              "sec-fetch-mode": "cors",
+              "sec-fetch-site": "cross-site",
+              "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:commit?key=<api-key>"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-headers": "authorization,google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client,x-goog-request-params",
+              "access-control-allow-methods": "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-max-age": "3600",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin, referer, x-origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "REST preflight asking for an arbitrary header",
+          "request": {
+            "body": null,
+            "headers": {
+              "access-control-request-headers": "x-made-up-header",
+              "access-control-request-method": "POST",
+              "origin": "http://localhost:18765"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:commit"
+          },
+          "response": {
+            "body": "<!DOCTYPE html>\n<html lang=en>\n  <meta charset=utf-8>\n  <meta name=viewport content=\"initial-scale=1, minimum-scale=1, width=device-width\">\n  <title>Error 403 (Forbidden)!!1</title>\n  <style>\n    *{margin:0;padding:0}html,code{font:15px/22px arial,sans-serif}html{background:#fff;color:#222;padding:15px}body{margin:7% auto 0;max-width:390px;min-height:180px;padding:30px 0 15px}* > body{background:url(//www.google.com/images/errors/robot.png) 100% 5px no-repeat;padding-right:205px}p{margin:11px 0 22px;overflow:hidden}ins{color:#777;text-decoration:none}a img{border:0}@media screen and (max-width:772px){body{background:none;margin-top:0;max-width:none;padding-right:0}}#logo{background:url(//www.google.com/images/branding/googlelogo/1x/googlelogo_color_150x54dp.png) no-repeat;margin-left:-5px}@media only screen and (min-resolution:192dpi){#logo{background:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) no-repeat 0% 0%/100% 100%;-moz-border-image:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) 0}}@media only screen and (-webkit-min-device-pixel-ratio:2){#logo{background:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) no-repeat;-webkit-background-size:100% 100%}}#logo{display:inline-block;height:54px;width:150px}\n  </style>\n  <a href=//www.google.com/><span id=logo aria-label=Google></span></a>\n  <p><b>403.</b> <ins>That’s an error.</ins>\n  <p>Your client does not have permission to get URL <code>/v1/projects/chatapp-8ae21/databases/(default)/documents:commit</code> from this server.  <ins>That’s all we know.</ins>\n",
+            "headers": {
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "1641",
+              "content-type": "text/html; charset=UTF-8",
+              "date": "<date>",
+              "server": "ESF",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 403
+          }
+        },
+        {
+          "label": "REST preflight with no Access-Control-Request-Headers",
+          "request": {
+            "body": null,
+            "headers": {
+              "access-control-request-method": "POST",
+              "origin": "http://localhost:18765"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:commit"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-methods": "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-max-age": "3600",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin, referer, x-origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "REST preflight from https://example.com",
+          "request": {
+            "body": null,
+            "headers": {
+              "access-control-request-headers": "authorization,content-type,x-goog-api-client,x-goog-request-params,x-firebase-gmpid,x-goog-api-key,x-firebase-appcheck",
+              "access-control-request-method": "POST",
+              "origin": "https://example.com"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:commit"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-headers": "authorization,content-type,x-goog-api-client,x-goog-request-params,x-firebase-gmpid,x-goog-api-key,x-firebase-appcheck",
+              "access-control-allow-methods": "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT",
+              "access-control-allow-origin": "https://example.com",
+              "access-control-max-age": "3600",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin, referer, x-origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "REST preflight from Origin: null",
+          "request": {
+            "body": null,
+            "headers": {
+              "access-control-request-headers": "authorization,content-type,x-goog-api-client,x-goog-request-params,x-firebase-gmpid,x-goog-api-key,x-firebase-appcheck",
+              "access-control-request-method": "POST",
+              "origin": "null"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:commit"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-headers": "authorization,content-type,x-goog-api-client,x-goog-request-params,x-firebase-gmpid,x-goog-api-key,x-firebase-appcheck",
+              "access-control-allow-methods": "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT",
+              "access-control-allow-origin": "null",
+              "access-control-max-age": "3600",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin, referer, x-origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "REST OPTIONS without Origin",
+          "request": {
+            "body": null,
+            "headers": {
+              "access-control-request-method": "POST"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:commit"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "application/json; charset=UTF-8",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "Origin, X-Origin, Referer",
+              "x-content-type-options": "nosniff",
+              "x-debug-tracking-id": "<tracking-id>",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 400
+          }
+        },
+        {
+          "label": "channel path OPTIONS from https://example.com",
+          "request": {
+            "body": null,
+            "headers": {
+              "access-control-request-headers": "content-type",
+              "access-control-request-method": "POST",
+              "origin": "https://example.com"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&RID=30001&CVER=22&X-HTTP-Session-Id=gsessionid&zx=abc&t=1"
+          },
+          "response": {
+            "body": "",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-headers": "content-type",
+              "access-control-allow-methods": "GET,POST",
+              "access-control-allow-origin": "https://example.com",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/html",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "REST GET document (open path), Origin set, no auth",
+          "request": {
+            "body": null,
+            "headers": {
+              "origin": "http://localhost:18765"
+            },
+            "method": "GET",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a?key=<api-key>"
+          },
+          "response": {
+            "body": "{\n  \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a\",\n  \"fields\": {\n    \"n\": {\n      \"integerValue\": \"3\"\n    },\n    \"s\": {\n      \"stringValue\": \"after the query was removed\"\n    }\n  },\n  \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n  \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n}\n",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-expose-headers": "x-debug-tracking-id,vary,vary,vary,content-encoding,date,server,content-length",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-encoding": "gzip",
+              "content-type": "application/json; charset=UTF-8",
+              "date": "<date>",
+              "server": "ESF",
+              "transfer-encoding": "chunked",
+              "vary": "Origin, X-Origin, Referer",
+              "x-content-type-options": "nosniff",
+              "x-debug-tracking-id": "<tracking-id>",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "REST GET a missing document, Origin set",
+          "request": {
+            "body": null,
+            "headers": {
+              "origin": "http://localhost:18765"
+            },
+            "method": "GET",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/nonexistent?key=<api-key>"
+          },
+          "response": {
+            "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"Document \\\"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/nonexistent\\\" not found.\",\n    \"status\": \"NOT_FOUND\"\n  }\n}\n",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-expose-headers": "x-debug-tracking-id,vary,vary,vary,content-encoding,date,server,content-length",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-encoding": "gzip",
+              "content-type": "application/json; charset=UTF-8",
+              "date": "<date>",
+              "server": "ESF",
+              "transfer-encoding": "chunked",
+              "vary": "Origin, X-Origin, Referer",
+              "x-content-type-options": "nosniff",
+              "x-debug-tracking-id": "<tracking-id>",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 404
+          }
+        },
+        {
+          "label": "REST GET denied path, Origin set",
+          "request": {
+            "body": null,
+            "headers": {
+              "origin": "http://localhost:18765"
+            },
+            "method": "GET",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-deny/x?key=<api-key>"
+          },
+          "response": {
+            "body": "{\n  \"error\": {\n    \"code\": 403,\n    \"message\": \"Missing or insufficient permissions.\",\n    \"status\": \"PERMISSION_DENIED\"\n  }\n}\n",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-expose-headers": "x-debug-tracking-id,vary,vary,vary,content-encoding,date,server,content-length",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-encoding": "gzip",
+              "content-type": "application/json; charset=UTF-8",
+              "date": "<date>",
+              "server": "ESF",
+              "transfer-encoding": "chunked",
+              "vary": "Origin, X-Origin, Referer",
+              "x-content-type-options": "nosniff",
+              "x-debug-tracking-id": "<tracking-id>",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 403
+          }
+        },
+        {
+          "label": "REST GET without key, Origin set",
+          "request": {
+            "body": null,
+            "headers": {
+              "origin": "http://localhost:18765"
+            },
+            "method": "GET",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a"
+          },
+          "response": {
+            "body": "{\n  \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a\",\n  \"fields\": {\n    \"n\": {\n      \"integerValue\": \"3\"\n    },\n    \"s\": {\n      \"stringValue\": \"after the query was removed\"\n    }\n  },\n  \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n  \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n}\n",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-expose-headers": "x-debug-tracking-id,vary,vary,vary,content-encoding,date,server,content-length",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-encoding": "gzip",
+              "content-type": "application/json; charset=UTF-8",
+              "date": "<date>",
+              "server": "ESF",
+              "transfer-encoding": "chunked",
+              "vary": "Origin, X-Origin, Referer",
+              "x-content-type-options": "nosniff",
+              "x-debug-tracking-id": "<tracking-id>",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "REST GET, Origin set to https://example.com",
+          "request": {
+            "body": null,
+            "headers": {
+              "origin": "https://example.com"
+            },
+            "method": "GET",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a?key=<api-key>"
+          },
+          "response": {
+            "body": "{\n  \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a\",\n  \"fields\": {\n    \"n\": {\n      \"integerValue\": \"3\"\n    },\n    \"s\": {\n      \"stringValue\": \"after the query was removed\"\n    }\n  },\n  \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n  \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n}\n",
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-origin": "https://example.com",
+              "access-control-expose-headers": "x-debug-tracking-id,vary,vary,vary,content-encoding,date,server,content-length",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-encoding": "gzip",
+              "content-type": "application/json; charset=UTF-8",
+              "date": "<date>",
+              "server": "ESF",
+              "transfer-encoding": "chunked",
+              "vary": "Origin, X-Origin, Referer",
+              "x-content-type-options": "nosniff",
+              "x-debug-tracking-id": "<tracking-id>",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        },
+        {
+          "label": "REST GET without Origin",
+          "request": {
+            "body": null,
+            "headers": {},
+            "method": "GET",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a?key=<api-key>"
+          },
+          "response": {
+            "body": "{\n  \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a\",\n  \"fields\": {\n    \"s\": {\n      \"stringValue\": \"after the query was removed\"\n    },\n    \"n\": {\n      \"integerValue\": \"3\"\n    }\n  },\n  \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n  \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n}\n",
+            "headers": {
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-encoding": "gzip",
+              "content-type": "application/json; charset=UTF-8",
+              "date": "<date>",
+              "server": "ESF",
+              "transfer-encoding": "chunked",
+              "vary": "Origin, X-Origin, Referer",
+              "x-content-type-options": "nosniff",
+              "x-debug-tracking-id": "<tracking-id>",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "status": 200
+          }
+        }
+      ]
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f6-web.mjs",
+    "notes": [
+      "Driver: Playwright (headless Chromium) on the page http://localhost:18765/ (origin of every request), Firebase JS SDK 13.0.0; HTTP seen through CDP (Network domain; streaming bodies via Network.streamResourceContent).",
+      "Placeholders: SID and gsessionid values become S.../G... of the same length; the first RID of a session is <rid0>, later ones <rid0+k>; zx is <zx>; tokens and the API key are placeholders; timestamps inside bodies keep their length with digits as N.",
+      "atMs / durationMs are milliseconds since the first request of the scenario (rounded to 100 ms) and are indicative only. chunks[].atMs is since the response headers.",
+      "\"framing\" parses a response body as \"<len>\\n<payload>\" records and says whether len counts UTF-16 code units or UTF-8 bytes (both are true when the body is ASCII; nonAscii says whether the body had non-ASCII characters).",
+      "\"net\" lists what the page asked of XMLHttpRequest / fetch / WebSocket / sendBeacon (credentials mode, withCredentials, headers set by script).",
+      "CORS: OPTIONS preflights sent from Node with Origin http://localhost:18765 (and others) and the headers the SDK sends, plus the browser-seen preflights of the other files (type Preflight in their entries)."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-27T20:36:49.305Z .. 2026-10-27T20:41:39.278Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, europe-west1; the browser transports (WebChannel and REST) of firestore.googleapis.com, from the foreign origin http://localhost:18765; rules deployed by the recorder for aruma-ref-f6-* (originals restored)",
+    "versions": {
+      "chromium": "156.0.8078.4",
+      "firebase JS SDK": "13.0.0",
+      "firebase-tools (auth only)": "13.23.0",
+      "generator sha256": "b6733b468d210c8d44cd14088c070f0d20c8baabf7931d954f3adfcf9026fff9",
+      "node": "v24.21.0",
+      "playwright": "1.64.1"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

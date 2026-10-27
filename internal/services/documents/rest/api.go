@@ -55,18 +55,22 @@ func Owns(path string) bool {
 // Options configure the handler.
 type Options struct {
 	Service *api.Service
+	// Channel serves the WebChannel paths past CORS (package webchannel); without it they
+	// answer UNIMPLEMENTED.
+	Channel http.Handler
 	Logger  *slog.Logger
 }
 
 // Handler serves the REST surface. The body cap is the mount's (documents.limits.message_bytes).
 type Handler struct {
-	svc *api.Service
-	log *slog.Logger
+	svc     *api.Service
+	channel http.Handler
+	log     *slog.Logger
 }
 
 // New returns the handler.
 func New(o Options) *Handler {
-	return &Handler{svc: o.Service, log: cmp.Or(o.Logger, slog.Default())}
+	return &Handler{svc: o.Service, channel: o.Channel, log: cmp.Or(o.Logger, slog.Default())}
 }
 
 // verbs are the custom methods of the documents paths, by their name after ':'.
@@ -102,7 +106,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	for _, c := range ChannelPaths {
 		if path == c {
-			if cors(w, r) {
+			if cors(w, r, true) {
+				return
+			}
+			if h.channel != nil {
+				h.channel.ServeHTTP(w, r)
 				return
 			}
 			wire.WriteREST(w, wire.Unimplemented("WebChannel"), false)
@@ -116,7 +124,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.admin(w, r)
 		return
 	}
-	if cors(w, r) {
+	if cors(w, r, false) {
 		return
 	}
 	switch {

@@ -1,0 +1,662 @@
+{
+  "cases": [
+    {
+      "description": "initializeFirestore(app, {}) ; Listen on a document, a query added and removed, idle, terminate",
+      "entries": [
+        {
+          "atMs": 0,
+          "durationMs": 800,
+          "request": {
+            "body": "headers=X-Goog-Api-Client%3Agl-js%2F%20fire%2F13.0.0%0D%0AContent-Type%3Atext%2Fplain%0D%0AX-Firebase-GMPID%3A1%3A639975380415%3Aweb%3A70270fc8cda6474c5afd0a%0D%0Ax-goog-api-key%3A<api-key>%0D%0A&count=1&ofs=0&req0___data__=%7B%22database%22%3A%22projects%2Fchatapp-8ae21%2Fdatabases%2F(default)%22%2C%22addTarget%22%3A%7B%22documents%22%3A%7B%22documents%22%3A%5B%22projects%2Fchatapp-8ae21%2Fdatabases%2F(default)%2Fdocuments%2Faruma-ref-f6-open%2Fa%22%5D%7D%2C%22targetId%22%3A1002%7D%7D",
+            "headers": {
+              ":authority": "firestore.googleapis.com",
+              ":method": "POST",
+              ":path": "/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&RID=8566&CVER=22&X-HTTP-Session-Id=gsessionid&zx=ozjjaln8u50n&t=1",
+              ":scheme": "https",
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br, zstd",
+              "cache-control": "no-cache",
+              "content-length": "520",
+              "content-type": "application/x-www-form-urlencoded",
+              "origin": "http://localhost:18765",
+              "pragma": "no-cache",
+              "priority": "u=1, i",
+              "referer": "http://localhost:18765/",
+              "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\", \"HeadlessChrome\";v=\"156\"",
+              "sec-ch-ua-mobile": "?0",
+              "sec-ch-ua-platform": "\"macOS\"",
+              "sec-fetch-dest": "empty",
+              "sec-fetch-mode": "cors",
+              "sec-fetch-site": "cross-site",
+              "sec-fetch-storage-access": "active",
+              "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36"
+            },
+            "method": "POST",
+            "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&RID=<rid0>&CVER=22&X-HTTP-Session-Id=gsessionid&zx=<zx>&t=1"
+          },
+          "response": {
+            "body": "51\n[[0,[\"c\",\"SSSSSSSSSSSSSSSSSSSSSS\",\"\",8,15,30000]]]\n",
+            "bodyBytes": 54,
+            "chunks": [
+              {
+                "atMs": 0,
+                "bytes": 54,
+                "text": "51\n[[0,[\"c\",\"SSSSSSSSSSSSSSSSSSSSSS\",\"\",8,15,30000]]]\n"
+              }
+            ],
+            "framing": {
+              "frames": [
+                {
+                  "len": 51,
+                  "payload": "[[0,[\"c\",\"SSSSSSSSSSSSSSSSSSSSSS\",\"\",8,15,30000]]]\n"
+                }
+              ],
+              "lengthCountsUtf16CodeUnits": true,
+              "lengthCountsUtf8Bytes": true,
+              "nonAscii": false
+            },
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-expose-headers": "x-client-wire-protocol,x-http-session-id",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-encoding": "gzip",
+              "content-length": "71",
+              "content-type": "text/plain; charset=utf-8",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin",
+              "x-client-wire-protocol": "h2",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-http-session-id": "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+              "x-xss-protection": "0"
+            },
+            "protocol": "h2",
+            "status": 200,
+            "statusFromNetwork": 200
+          },
+          "type": "Fetch"
+        },
+        {
+          "atMs": 800,
+          "durationMs": 47700,
+          "request": {
+            "body": null,
+            "headers": {
+              ":authority": "firestore.googleapis.com",
+              ":method": "GET",
+              ":path": "/google.firestore.v1.Firestore/Listen/channel?gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&RID=rpc&SID=SSSSSSSSSSSSSSSSSSSSSS&AID=0&CI=0&TYPE=xmlhttp&zx=kcwubjqhbclx&t=1",
+              ":scheme": "https",
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br, zstd",
+              "cache-control": "no-cache",
+              "origin": "http://localhost:18765",
+              "pragma": "no-cache",
+              "priority": "u=1, i",
+              "referer": "http://localhost:18765/",
+              "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\", \"HeadlessChrome\";v=\"156\"",
+              "sec-ch-ua-mobile": "?0",
+              "sec-ch-ua-platform": "\"macOS\"",
+              "sec-fetch-dest": "empty",
+              "sec-fetch-mode": "cors",
+              "sec-fetch-site": "cross-site",
+              "sec-fetch-storage-access": "active",
+              "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36"
+            },
+            "method": "GET",
+            "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&RID=rpc&SID=SSSSSSSSSSSSSSSSSSSSSS&AID=0&CI=0&TYPE=xmlhttp&zx=<zx>&t=1"
+          },
+          "response": {
+            "body": "974\n[[1,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"ADD\",\n    \"targetIds\": [\n      1002\n    ]\n  }\n}\n]],[2,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a\",\n      \"fields\": {\n        \"n\": {\n          \"integerValue\": \"1\"\n        },\n        \"s\": {\n          \"stringValue\": \"héllo ✓ 日本語 😀\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1002\n    ]\n  }\n}\n]],[3,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"CURRENT\",\n    \"targetIds\": [\n      1002\n    ],\n    \"resumeToken\": \"CgkIxNLlxobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]],[4,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkIxNLlxobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]],[5,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkI4qnoxobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]448\n[[6,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a\",\n      \"fields\": {\n        \"n\": {\n          \"integerValue\": \"2\"\n        },\n        \"s\": {\n          \"stringValue\": \"héllo ✓ 日本語 😀 changed\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1002\n    ]\n  }\n}\n]]]121\n[[7,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkI+63hyIbblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]103\n[[8,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"ADD\",\n    \"targetIds\": [\n      1004\n    ]\n  }\n}\n]]]430\n[[9,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/q1\",\n      \"fields\": {\n        \"s\": {\n          \"stringValue\": \"one\"\n        },\n        \"v\": {\n          \"integerValue\": \"1\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1004\n    ]\n  }\n}\n]]]194\n[[10,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"CURRENT\",\n    \"targetIds\": [\n      1004\n    ],\n    \"resumeToken\": \"CgkIztS6yobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]122\n[[11,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkIztS6yobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]431\n[[12,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/q2\",\n      \"fields\": {\n        \"s\": {\n          \"stringValue\": \"two\"\n        },\n        \"v\": {\n          \"integerValue\": \"1\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1004\n    ]\n  }\n}\n]]]122\n[[13,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkIpZ+QzIbblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]107\n[[14,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"REMOVE\",\n    \"targetIds\": [\n      1004\n    ]\n  }\n}\n]]]454\n[[15,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a\",\n      \"fields\": {\n        \"n\": {\n          \"integerValue\": \"3\"\n        },\n        \"s\": {\n          \"stringValue\": \"after the query was removed\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1002\n    ]\n  }\n}\n]]]122\n[[16,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkI3Juez4bblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]15\n[[17,[\"noop\"]]]",
+            "bodyBytes": 3716,
+            "chunks": [
+              {
+                "atMs": 0,
+                "bytes": 989,
+                "text": "974\n[[1,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"ADD\",\n    \"targetIds\": [\n      1002\n    ]\n  }\n}\n]],[2,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a\",\n      \"fields\": {\n        \"n\": {\n          \"integerValue\": \"1\"\n        },\n        \"s\": {\n          \"stringValue\": \"héllo ✓ 日本語 😀\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1002\n    ]\n  }\n}\n]],[3,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"CURRENT\",\n    \"targetIds\": [\n      1002\n    ],\n    \"resumeToken\": \"CgkIxNLlxobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]],[4,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkIxNLlxobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]],[5,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkI4qnoxobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]"
+              },
+              {
+                "atMs": 4000,
+                "bytes": 588,
+                "text": "448\n[[6,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a\",\n      \"fields\": {\n        \"n\": {\n          \"integerValue\": \"2\"\n        },\n        \"s\": {\n          \"stringValue\": \"héllo ✓ 日本語 😀 changed\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1002\n    ]\n  }\n}\n]]]121\n[[7,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkI+63hyIbblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]"
+              },
+              {
+                "atMs": 7400,
+                "bytes": 107,
+                "text": "103\n[[8,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"ADD\",\n    \"targetIds\": [\n      1004\n    ]\n  }\n}\n]]]"
+              },
+              {
+                "atMs": 7400,
+                "bytes": 758,
+                "text": "430\n[[9,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/q1\",\n      \"fields\": {\n        \"s\": {\n          \"stringValue\": \"one\"\n        },\n        \"v\": {\n          \"integerValue\": \"1\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1004\n    ]\n  }\n}\n]]]194\n[[10,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"CURRENT\",\n    \"targetIds\": [\n      1004\n    ],\n    \"resumeToken\": \"CgkIztS6yobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]122\n[[11,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkIztS6yobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]"
+              },
+              {
+                "atMs": 10900,
+                "bytes": 561,
+                "text": "431\n[[12,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/q2\",\n      \"fields\": {\n        \"s\": {\n          \"stringValue\": \"two\"\n        },\n        \"v\": {\n          \"integerValue\": \"1\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1004\n    ]\n  }\n}\n]]]122\n[[13,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkIpZ+QzIbblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]"
+              },
+              {
+                "atMs": 13700,
+                "bytes": 111,
+                "text": "107\n[[14,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"REMOVE\",\n    \"targetIds\": [\n      1004\n    ]\n  }\n}\n]]]"
+              },
+              {
+                "atMs": 17400,
+                "bytes": 458,
+                "text": "454\n[[15,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a\",\n      \"fields\": {\n        \"n\": {\n          \"integerValue\": \"3\"\n        },\n        \"s\": {\n          \"stringValue\": \"after the query was removed\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1002\n    ]\n  }\n}\n]]]"
+              },
+              {
+                "atMs": 17400,
+                "bytes": 126,
+                "text": "122\n[[16,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkI3Juez4bblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]"
+              },
+              {
+                "atMs": 47400,
+                "bytes": 18,
+                "text": "15\n[[17,[\"noop\"]]]"
+              }
+            ],
+            "failed": {
+              "canceled": true,
+              "errorText": "net::ERR_ABORTED"
+            },
+            "framing": {
+              "frames": [
+                {
+                  "len": 974,
+                  "payload": "[[1,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"ADD\",\n    \"targetIds\": [\n      1002\n    ]\n  }\n}\n]],[2,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a\",\n      \"fields\": {\n        \"n\": {\n          \"integerValue\": \"1\"\n        },\n        \"s\": {\n          \"stringValue\": \"héllo ✓ 日本語 😀\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1002\n    ]\n  }\n}\n]],[3,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"CURRENT\",\n    \"targetIds\": [\n      1002\n    ],\n    \"resumeToken\": \"CgkIxNLlxobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]],[4,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkIxNLlxobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]],[5,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkI4qnoxobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]"
+                },
+                {
+                  "len": 448,
+                  "payload": "[[6,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a\",\n      \"fields\": {\n        \"n\": {\n          \"integerValue\": \"2\"\n        },\n        \"s\": {\n          \"stringValue\": \"héllo ✓ 日本語 😀 changed\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1002\n    ]\n  }\n}\n]]]"
+                },
+                {
+                  "len": 121,
+                  "payload": "[[7,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkI+63hyIbblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]"
+                },
+                {
+                  "len": 103,
+                  "payload": "[[8,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"ADD\",\n    \"targetIds\": [\n      1004\n    ]\n  }\n}\n]]]"
+                },
+                {
+                  "len": 430,
+                  "payload": "[[9,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/q1\",\n      \"fields\": {\n        \"s\": {\n          \"stringValue\": \"one\"\n        },\n        \"v\": {\n          \"integerValue\": \"1\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1004\n    ]\n  }\n}\n]]]"
+                },
+                {
+                  "len": 194,
+                  "payload": "[[10,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"CURRENT\",\n    \"targetIds\": [\n      1004\n    ],\n    \"resumeToken\": \"CgkIztS6yobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]"
+                },
+                {
+                  "len": 122,
+                  "payload": "[[11,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkIztS6yobblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]"
+                },
+                {
+                  "len": 431,
+                  "payload": "[[12,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/q2\",\n      \"fields\": {\n        \"s\": {\n          \"stringValue\": \"two\"\n        },\n        \"v\": {\n          \"integerValue\": \"1\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1004\n    ]\n  }\n}\n]]]"
+                },
+                {
+                  "len": 122,
+                  "payload": "[[13,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkIpZ+QzIbblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]"
+                },
+                {
+                  "len": 107,
+                  "payload": "[[14,[{\n  \"targetChange\": {\n    \"targetChangeType\": \"REMOVE\",\n    \"targetIds\": [\n      1004\n    ]\n  }\n}\n]]]"
+                },
+                {
+                  "len": 454,
+                  "payload": "[[15,[{\n  \"documentChange\": {\n    \"document\": {\n      \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/a\",\n      \"fields\": {\n        \"n\": {\n          \"integerValue\": \"3\"\n        },\n        \"s\": {\n          \"stringValue\": \"after the query was removed\"\n        }\n      },\n      \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    },\n    \"targetIds\": [\n      1002\n    ]\n  }\n}\n]]]"
+                },
+                {
+                  "len": 122,
+                  "payload": "[[16,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkI3Juez4bblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]"
+                },
+                {
+                  "len": 15,
+                  "payload": "[[17,[\"noop\"]]]"
+                }
+              ],
+              "lengthCountsUtf16CodeUnits": true,
+              "lengthCountsUtf8Bytes": false,
+              "nonAscii": true
+            },
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-origin": "http://localhost:18765",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "cache-control": "private, no-store",
+              "content-encoding": "gzip",
+              "content-type": "text/plain; charset=utf-8",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "Referer\norigin",
+              "x-content-type-options": "nosniff",
+              "x-debug-tracking-id": "<tracking-id>",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "protocol": "h2",
+            "status": 200,
+            "statusFromNetwork": 200
+          },
+          "type": "Fetch"
+        },
+        {
+          "atMs": 8100,
+          "durationMs": 400,
+          "request": {
+            "body": "count=1&ofs=1&req0___data__=%7B%22database%22%3A%22projects%2Fchatapp-8ae21%2Fdatabases%2F(default)%22%2C%22addTarget%22%3A%7B%22query%22%3A%7B%22structuredQuery%22%3A%7B%22from%22%3A%5B%7B%22collectionId%22%3A%22aruma-ref-f6-open%22%7D%5D%2C%22where%22%3A%7B%22fieldFilter%22%3A%7B%22field%22%3A%7B%22fieldPath%22%3A%22v%22%7D%2C%22op%22%3A%22EQUAL%22%2C%22value%22%3A%7B%22integerValue%22%3A%221%22%7D%7D%7D%2C%22orderBy%22%3A%5B%7B%22field%22%3A%7B%22fieldPath%22%3A%22__name__%22%7D%2C%22direction%22%3A%22ASCENDING%22%7D%5D%7D%2C%22parent%22%3A%22projects%2Fchatapp-8ae21%2Fdatabases%2F(default)%2Fdocuments%22%7D%2C%22targetId%22%3A1004%7D%7D",
+            "headers": {
+              ":authority": "firestore.googleapis.com",
+              ":method": "POST",
+              ":path": "/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&SID=SSSSSSSSSSSSSSSSSSSSSS&RID=8567&AID=7&zx=1767fzy7k6oi&t=1",
+              ":scheme": "https",
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br, zstd",
+              "cache-control": "no-cache",
+              "content-length": "648",
+              "content-type": "application/x-www-form-urlencoded",
+              "origin": "http://localhost:18765",
+              "pragma": "no-cache",
+              "priority": "u=1, i",
+              "referer": "http://localhost:18765/",
+              "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\", \"HeadlessChrome\";v=\"156\"",
+              "sec-ch-ua-mobile": "?0",
+              "sec-ch-ua-platform": "\"macOS\"",
+              "sec-fetch-dest": "empty",
+              "sec-fetch-mode": "cors",
+              "sec-fetch-site": "cross-site",
+              "sec-fetch-storage-access": "active",
+              "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36"
+            },
+            "method": "POST",
+            "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&SID=SSSSSSSSSSSSSSSSSSSSSS&RID=<rid0+1>&AID=7&zx=<zx>&t=1"
+          },
+          "response": {
+            "body": "8\n[1,7,7]\n",
+            "bodyBytes": 10,
+            "chunks": [
+              {
+                "atMs": 0,
+                "bytes": 10,
+                "text": "8\n[1,7,7]\n"
+              }
+            ],
+            "framing": {
+              "frames": [
+                {
+                  "len": 8,
+                  "payload": "[1,7,7]\n"
+                }
+              ],
+              "lengthCountsUtf16CodeUnits": true,
+              "lengthCountsUtf8Bytes": true,
+              "nonAscii": false
+            },
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-origin": "http://localhost:18765",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-encoding": "gzip",
+              "content-length": "30",
+              "content-type": "text/plain; charset=utf-8",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "protocol": "h3",
+            "status": 200,
+            "statusFromNetwork": 200
+          },
+          "type": "Fetch"
+        },
+        {
+          "atMs": 14600,
+          "durationMs": 300,
+          "request": {
+            "body": "count=1&ofs=2&req0___data__=%7B%22database%22%3A%22projects%2Fchatapp-8ae21%2Fdatabases%2F(default)%22%2C%22removeTarget%22%3A1004%7D",
+            "headers": {
+              ":authority": "firestore.googleapis.com",
+              ":method": "POST",
+              ":path": "/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&SID=SSSSSSSSSSSSSSSSSSSSSS&RID=8568&AID=13&zx=otbtssx2b078&t=1",
+              ":scheme": "https",
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br, zstd",
+              "cache-control": "no-cache",
+              "content-length": "133",
+              "content-type": "application/x-www-form-urlencoded",
+              "origin": "http://localhost:18765",
+              "pragma": "no-cache",
+              "priority": "u=1, i",
+              "referer": "http://localhost:18765/",
+              "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\", \"HeadlessChrome\";v=\"156\"",
+              "sec-ch-ua-mobile": "?0",
+              "sec-ch-ua-platform": "\"macOS\"",
+              "sec-fetch-dest": "empty",
+              "sec-fetch-mode": "cors",
+              "sec-fetch-site": "cross-site",
+              "sec-fetch-storage-access": "active",
+              "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36"
+            },
+            "method": "POST",
+            "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&SID=SSSSSSSSSSSSSSSSSSSSSS&RID=<rid0+2>&AID=13&zx=<zx>&t=1"
+          },
+          "response": {
+            "body": "9\n[1,13,7]\n",
+            "bodyBytes": 11,
+            "chunks": [
+              {
+                "atMs": 0,
+                "bytes": 11,
+                "text": "9\n[1,13,7]\n"
+              }
+            ],
+            "framing": {
+              "frames": [
+                {
+                  "len": 9,
+                  "payload": "[1,13,7]\n"
+                }
+              ],
+              "lengthCountsUtf16CodeUnits": true,
+              "lengthCountsUtf8Bytes": true,
+              "nonAscii": false
+            },
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-origin": "http://localhost:18765",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-encoding": "gzip",
+              "content-length": "31",
+              "content-type": "text/plain; charset=utf-8",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "protocol": "h3",
+            "status": 200,
+            "statusFromNetwork": 200
+          },
+          "type": "Fetch"
+        },
+        {
+          "atMs": 48600,
+          "durationMs": 47600,
+          "request": {
+            "body": null,
+            "headers": {
+              ":authority": "firestore.googleapis.com",
+              ":method": "GET",
+              ":path": "/google.firestore.v1.Firestore/Listen/channel?gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&RID=rpc&SID=SSSSSSSSSSSSSSSSSSSSSS&AID=17&CI=0&TYPE=xmlhttp&zx=vapz2w2u7gdt&t=1",
+              ":scheme": "https",
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br, zstd",
+              "cache-control": "no-cache",
+              "origin": "http://localhost:18765",
+              "pragma": "no-cache",
+              "priority": "u=1, i",
+              "referer": "http://localhost:18765/",
+              "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\", \"HeadlessChrome\";v=\"156\"",
+              "sec-ch-ua-mobile": "?0",
+              "sec-ch-ua-platform": "\"macOS\"",
+              "sec-fetch-dest": "empty",
+              "sec-fetch-mode": "cors",
+              "sec-fetch-site": "cross-site",
+              "sec-fetch-storage-access": "active",
+              "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36"
+            },
+            "method": "GET",
+            "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&RID=rpc&SID=SSSSSSSSSSSSSSSSSSSSSS&AID=17&CI=0&TYPE=xmlhttp&zx=<zx>&t=1"
+          },
+          "response": {
+            "body": "15\n[[18,[\"noop\"]]]122\n[[19,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkI7qrZ5IbblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]15\n[[20,[\"noop\"]]]",
+            "bodyBytes": 162,
+            "chunks": [
+              {
+                "atMs": 0,
+                "bytes": 18,
+                "text": "15\n[[18,[\"noop\"]]]"
+              },
+              {
+                "atMs": 14600,
+                "bytes": 126,
+                "text": "122\n[[19,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkI7qrZ5IbblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]"
+              },
+              {
+                "atMs": 44600,
+                "bytes": 18,
+                "text": "15\n[[20,[\"noop\"]]]"
+              }
+            ],
+            "failed": {
+              "canceled": true,
+              "errorText": "net::ERR_ABORTED"
+            },
+            "framing": {
+              "frames": [
+                {
+                  "len": 15,
+                  "payload": "[[18,[\"noop\"]]]"
+                },
+                {
+                  "len": 122,
+                  "payload": "[[19,[{\n  \"targetChange\": {\n    \"resumeToken\": \"CgkI7qrZ5IbblwM=\",\n    \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  }\n}\n]]]"
+                },
+                {
+                  "len": 15,
+                  "payload": "[[20,[\"noop\"]]]"
+                }
+              ],
+              "lengthCountsUtf16CodeUnits": true,
+              "lengthCountsUtf8Bytes": true,
+              "nonAscii": false
+            },
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-origin": "http://localhost:18765",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "cache-control": "private, no-store",
+              "content-encoding": "gzip",
+              "content-type": "text/plain; charset=utf-8",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "protocol": "h3",
+            "status": 200,
+            "statusFromNetwork": 200
+          },
+          "type": "Fetch"
+        },
+        {
+          "atMs": 96100,
+          "durationMs": 300,
+          "request": {
+            "body": null,
+            "headers": {
+              ":authority": "firestore.googleapis.com",
+              ":method": "POST",
+              ":path": "/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&SID=SSSSSSSSSSSSSSSSSSSSSS&RID=8569&TYPE=terminate&zx=2e4pt568pr5p",
+              ":scheme": "https",
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br, zstd",
+              "cache-control": "no-cache",
+              "content-length": "0",
+              "content-type": "text/plain;charset=UTF-8",
+              "origin": "http://localhost:18765",
+              "pragma": "no-cache",
+              "priority": "u=4, i",
+              "referer": "http://localhost:18765/",
+              "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\", \"HeadlessChrome\";v=\"156\"",
+              "sec-ch-ua-mobile": "?0",
+              "sec-ch-ua-platform": "\"macOS\"",
+              "sec-fetch-dest": "empty",
+              "sec-fetch-mode": "no-cors",
+              "sec-fetch-site": "cross-site",
+              "sec-fetch-storage-access": "active",
+              "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36"
+            },
+            "method": "POST",
+            "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&SID=SSSSSSSSSSSSSSSSSSSSSS&RID=<rid0+3>&TYPE=terminate&zx=<zx>"
+          },
+          "response": {
+            "body": "",
+            "bodyBytes": 0,
+            "chunks": [],
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-origin": "http://localhost:18765",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-length": "0",
+              "content-type": "text/plain; charset=utf-8",
+              "cross-origin-resource-policy": "cross-origin",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "protocol": "h3",
+            "status": 200,
+            "statusFromNetwork": 200
+          },
+          "type": "Ping"
+        }
+      ],
+      "id": "listen.default",
+      "label": "listen-default",
+      "net": [
+        {
+          "credentials": "include",
+          "headersSet": [],
+          "keepalive": false,
+          "kind": "fetch",
+          "method": "POST",
+          "mode": "cors",
+          "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&RID=8566&CVER=22&X-HTTP-Session-Id=gsessionid&zx=ozjjaln8u50n&t=1"
+        },
+        {
+          "credentials": "include",
+          "headersSet": [],
+          "keepalive": false,
+          "kind": "fetch",
+          "method": "GET",
+          "mode": "cors",
+          "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&RID=rpc&SID=SSSSSSSSSSSSSSSSSSSSSS&AID=0&CI=0&TYPE=xmlhttp&zx=kcwubjqhbclx&t=1"
+        },
+        {
+          "credentials": "include",
+          "headersSet": [],
+          "keepalive": false,
+          "kind": "fetch",
+          "method": "POST",
+          "mode": "cors",
+          "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&SID=SSSSSSSSSSSSSSSSSSSSSS&RID=8567&AID=7&zx=1767fzy7k6oi&t=1"
+        },
+        {
+          "credentials": "include",
+          "headersSet": [],
+          "keepalive": false,
+          "kind": "fetch",
+          "method": "POST",
+          "mode": "cors",
+          "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&SID=SSSSSSSSSSSSSSSSSSSSSS&RID=8568&AID=13&zx=otbtssx2b078&t=1"
+        },
+        {
+          "credentials": "include",
+          "headersSet": [],
+          "keepalive": false,
+          "kind": "fetch",
+          "method": "GET",
+          "mode": "cors",
+          "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&RID=rpc&SID=SSSSSSSSSSSSSSSSSSSSSS&AID=17&CI=0&TYPE=xmlhttp&zx=vapz2w2u7gdt&t=1"
+        },
+        {
+          "kind": "beacon",
+          "url": "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fchatapp-8ae21%2Fdatabases%2F(default)&gsessionid=GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&SID=SSSSSSSSSSSSSSSSSSSSSS&RID=8569&TYPE=terminate&zx=2e4pt568pr5p"
+        }
+      ],
+      "result": {
+        "events": [
+          {
+            "data": {
+              "n": 1,
+              "s": "héllo ✓ 日本語 😀"
+            },
+            "exists": true,
+            "fromCache": false,
+            "kind": "doc"
+          },
+          {
+            "data": {
+              "n": 2,
+              "s": "héllo ✓ 日本語 😀 changed"
+            },
+            "exists": true,
+            "fromCache": false,
+            "kind": "doc"
+          },
+          {
+            "fromCache": false,
+            "ids": [
+              "q1"
+            ],
+            "kind": "query",
+            "size": 1
+          },
+          {
+            "fromCache": false,
+            "ids": [
+              "q1",
+              "q2"
+            ],
+            "kind": "query",
+            "size": 2
+          },
+          {
+            "data": {
+              "n": 3,
+              "s": "after the query was removed"
+            },
+            "exists": true,
+            "fromCache": false,
+            "kind": "doc"
+          }
+        ]
+      }
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f6-web.mjs",
+    "notes": [
+      "Driver: Playwright (headless Chromium) on the page http://localhost:18765/ (origin of every request), Firebase JS SDK 13.0.0; HTTP seen through CDP (Network domain; streaming bodies via Network.streamResourceContent).",
+      "Placeholders: SID and gsessionid values become S.../G... of the same length; the first RID of a session is <rid0>, later ones <rid0+k>; zx is <zx>; tokens and the API key are placeholders; timestamps inside bodies keep their length with digits as N.",
+      "atMs / durationMs are milliseconds since the first request of the scenario (rounded to 100 ms) and are indicative only. chunks[].atMs is since the response headers.",
+      "\"framing\" parses a response body as \"<len>\\n<payload>\" records and says whether len counts UTF-16 code units or UTF-8 bytes (both are true when the body is ASCII; nonAscii says whether the body had non-ASCII characters).",
+      "\"net\" lists what the page asked of XMLHttpRequest / fetch / WebSocket / sendBeacon (credentials mode, withCredentials, headers set by script).",
+      "Full SDK with default settings. Steps: onSnapshot on a document (non-ASCII string), the owner changes it over REST, a query target is added (where v == 1) and removed, the document changes again, ~40 s idle (keep-alive), terminate()."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-27T20:36:49.305Z .. 2026-10-27T20:41:39.094Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, europe-west1; the browser transports (WebChannel and REST) of firestore.googleapis.com, from the foreign origin http://localhost:18765; rules deployed by the recorder for aruma-ref-f6-* (originals restored)",
+    "versions": {
+      "chromium": "156.0.8078.4",
+      "firebase JS SDK": "13.0.0",
+      "firebase-tools (auth only)": "13.23.0",
+      "generator sha256": "b6733b468d210c8d44cd14088c070f0d20c8baabf7931d954f3adfcf9026fff9",
+      "node": "v24.21.0",
+      "playwright": "1.64.1"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

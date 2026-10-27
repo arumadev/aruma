@@ -245,7 +245,7 @@ describe('pass-through', () => {
     const { g, calls } = fakeGlobal();
     install({ url: 'https://aruma.example.com', globalObject: g });
     const init = { method: 'POST', body: 'b' };
-    const req = new Request('https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen');
+    const req = new Request('https://firebasedatabase.googleapis.com/x/Listen');
     const u = new URL('https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo');
     await g.fetch('https://firebaseinstallations.googleapis.com/v1/x', init);
     await g.fetch(req);
@@ -524,5 +524,97 @@ describe('the Storage guard', () => {
         ['https://aruma.example.com/v0/b/p.appspot.com/o/a?alt=media', 'Firebase ID_TOKEN'],
       ], order.join(' then '));
     }
+  });
+});
+
+// SR3-10: Firestore's requests carry the Aruma ID token too (the Authorization header of REST, and
+// the WebChannel body, where no header check sees it), so while Auth is on Aruma every request to
+// Google's Firestore host is refused, whatever it carries.
+describe('the Firestore guard', () => {
+  const google = 'https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fp%2Fdatabases%2F(default)';
+  const rest = 'https://firestore.googleapis.com/v1/projects/p/databases/(default)/documents:commit';
+
+  function browserGlobal() {
+    const { g, calls } = fakeGlobal();
+    const xhr = [];
+    class XHR extends EventTarget {
+      open(method, url) {
+        this.log = { method, url, headers: {}, body: null };
+      }
+      setRequestHeader(name, value) {
+        this.log.headers[name] = value;
+      }
+      send(body) {
+        this.log.body = body;
+        xhr.push(this.log);
+      }
+    }
+    g.XMLHttpRequest = XHR;
+    return { g, calls, xhr };
+  }
+
+  // The WebChannel request: no token header, the token inside the body (headers=… encoded).
+  function channelXHR(g, url, body) {
+    const x = new g.XMLHttpRequest();
+    const done = new Promise((resolve) => {
+      x.addEventListener('load', () => resolve({ status: x.status, statusText: x.statusText, body: JSON.parse(x.response) }));
+    });
+    x.open('POST', url, true);
+    x.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    x.send(body);
+    return done;
+  }
+
+  test('a WebChannel XHR is never sent, although its token is in the body, and gets a 403', async () => {
+    const { g, xhr } = browserGlobal();
+    install({ url: 'https://aruma.example.com', globalObject: g });
+    const lines = await captureConsole(async () => {
+      const r = await channelXHR(g, google, 'count=1&req0___data__=headers%3DAuthorization%253ABearer%2520ID_TOKEN');
+      assert.equal(r.status, 403);
+      assert.match(r.statusText, /Cloud Firestore request to firestore\.googleapis\.com was blocked/);
+      assert.equal((await channelXHR(g, google, 'x')).status, 403);
+    });
+    assert.deepEqual(xhr, []);
+    assert.equal(lines.length, 1, 'reported once');
+    assert.match(lines[0], /firestore: true.*arumaFirestoreSettings/);
+  });
+
+  test('a REST fetch (the lite SDK) or a Request to Google gets a 403 and is not sent', async () => {
+    const { g, calls } = fakeGlobal();
+    install({ url: 'https://aruma.example.com', globalObject: g });
+    await captureConsole(async () => {
+      const r = await g.fetch(rest, { method: 'POST', headers: { Authorization: 'Bearer ID_TOKEN' }, body: '{}' });
+      assert.equal(r.status, 403);
+      assert.match((await r.json()).error.message, /Cloud Firestore request .* was blocked/);
+      assert.equal((await g.fetch(new Request(google))).status, 403);
+      assert.equal((await g.fetch(new URL(rest))).status, 403);
+    });
+    assert.equal(calls.length, 0);
+  });
+
+  test('Aruma, other hosts and a refused Aruma URL', async () => {
+    const { g, xhr } = browserGlobal();
+    install({ url: 'https://aruma.example.com', globalObject: g });
+    channelXHR(g, 'https://aruma.example.com/google.firestore.v1.Firestore/Listen/channel', 'x');
+    channelXHR(g, 'https://firestoreXgoogleapis.example.com/x', 'x');
+    assert.deepEqual(xhr.map((r) => r.url), [
+      'https://aruma.example.com/google.firestore.v1.Firestore/Listen/channel',
+      'https://firestoreXgoogleapis.example.com/x',
+    ]);
+    const other = browserGlobal();
+    await captureConsole(async () => {
+      assert.throws(() => install({ url: 'http://aruma.example.com', globalObject: other.g }), ArumaConfigError);
+      assert.equal((await channelXHR(other.g, google, 'x')).status, 403);
+    });
+    assert.deepEqual(other.xhr, []);
+  });
+
+  test('not installed, or uninstalled: no guard', () => {
+    const { g, xhr } = browserGlobal();
+    channelXHR(g, google, 'x');
+    install({ url: 'https://aruma.example.com', globalObject: g });
+    uninstall({ globalObject: g });
+    channelXHR(g, google, 'x');
+    assert.equal(xhr.length, 2);
   });
 });

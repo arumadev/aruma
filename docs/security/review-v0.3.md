@@ -58,7 +58,7 @@
 | SR3-07 | minor | Android مع `ArumaStorageRedirect=false` يمرر طلبات Storage إلى Google، وiOS يرفضها | **مُصلحة في `s7-sdk-fixes`** |
 | SR3-08 | minor | المخاطرة المقبولة لإعادة توجيه Node أوسع مما يقوله README | **وُثّقت في `s7-sdk-fixes`** |
 | SR3-09 | minor | لا شيء يثبّت محتوى مرآة iOS (بند S6-I المفتوح) | **مُصلحة في `s7-sdk-fixes`** |
-| SR3-10 | major | Auth على Aruma في الويب: Firestore والدوال القابلة للاستدعاء ما زالت ترسل رمز هوية Aruma إلى Google | **مؤجلة إلى v0.4** (Firestore)، موثّقة في README |
+| SR3-10 | major | Auth على Aruma في الويب: Firestore والدوال القابلة للاستدعاء ما زالت ترسل رمز هوية Aruma إلى Google | **Firestore: مُصلحة في v0.4** ([`04f0740`](https://github.com/arumadev/aruma/commit/04f0740))؛ **الدوال القابلة للاستدعاء: ما زالت مفتوحة**، موثّقة في README |
 
 ### SR3-01: مجلد بيانات فارغ تحت قاعدة فيها كائنات
 
@@ -187,7 +187,16 @@
   - `@firebase/functions` 0.14.0: `dist/esm/index.esm.js:593` يضع `Authorization: Bearer <authToken>`، و`:488` العنوان `https://<region>-<project>.cloudfunctions.net/<name>`.
   - و`sdk/web/aruma-web/README.md:43` كان يقول إن هذه الطلبات تمر، دون أن يقول إنها تحمل الرمز.
 - **العاقبة:** ما قيّم SR3-06 major عليه، عبر مسار أشيع: كل طلب Firestore ودالة من تطبيق على Auth في Aruma يحمل رمز هوية Aruma حيًّا إلى Google. ولا يمسكه حارس بالترويسات، لأن رمز Firestore في الجسم.
-- **القرار: مؤجلة إلى v0.4 (Firestore)،** حين تنتقل هذه الخدمات إلى Aruma. وحتى ذلك README (بالإنجليزية والعربية) يقول إن هذه الطلبات تذهب إلى Google ومعها الرمز، وإن التطبيق على Auth في Aruma لا يستعملها.
+- **القرار الأول: مؤجلة إلى v0.4،** حين تنتقل هذه الخدمات إلى Aruma. وحتى ذلك قال README (بالإنجليزية والعربية) إن هذه الطلبات تذهب إلى Google ومعها الرمز، وإن التطبيق على Auth في Aruma لا يستعملها.
+- **المعالجة لـ Firestore (v0.4، F6، [`04f0740`](https://github.com/arumadev/aruma/commit/04f0740)):** Aruma يخدم Firestore (REST وWebChannel) من جذر نطاقه، فصار `@aruma/web` يوجّهه إليه ولا يدعه يصل إلى Google بالرمز. بطبقات Storage نفسها:
+  - **إعادة كتابة وقت البناء:** تعريف النطاق الافتراضي (و`ssl` الافتراضية `false` على http) في كل ملف dist من `@firebase/firestore` (الكاملة والخفيفة، المتصفح وReact Native وNode). تعمل في Vite (`firestore: true`) وunplugin (`arumaFirestore`: webpack وRspack وRollup وesbuild وRolldown) وNext.js (`withArumaFirestore`، webpack وTurbopack) وMetro (`withArumaFirestore`) وFlutter web (`--products storage,firestore`). والمكتبة في وضع الإنتاج لا `connectFirestoreEmulator`، فسلوك العميل كما هو مع Google. (المصدر: `FirestoreSettingsImpl` يأخذ `host` و`ssl` من الإعدادات، و`isUsingEmulator` من `emulatorOptions` وحده.)
+  - **وقت التشغيل:** `arumaFirestoreSettings(url)` يعيد `{ host, ssl }` لـ `initializeFirestore`، للمكتبتين الكاملة والخفيفة.
+  - **الرفض بدل الصمت، في المتصفح:** `install()` يردّ 403 على كل طلب إلى `firestore.googleapis.com` (XHR لـ WebChannel، و`fetch` لـ REST) ولا يرسله، ما دام Auth على Aruma. لا فحص ترويسات لأن الرمز في الجسم. وإضافة Vite بلا `firestore: true` تُفشل بناءً فيه `@firebase/firestore`.
+  - **الرفض بدل الصمت، في Node (ثُغرة وجدتها مراجعة F6 وأُغلقت):** مكتبة Node تتكلم gRPC فوق HTTP/2 عبر `@grpc/grpc-js` لا `fetch` ولا XHR، فكان الحارس أعلاه لا يمسكها ويذهب رمز الهوية في بيانات الاستدعاء إلى Google (خرج المراجع: `tls firestore.googleapis.com`). صار `install()` يرقّع وحدات Node المضمّنة (`src/nodeguard.js`) ويفشل، قبل كتابة أي بايت وبالرمز `ARUMA_FIRESTORE_BLOCKED`، كل مسار يبلغه grpc-js إلى ذلك النطاق ونطاقاته الفرعية: `dns.lookup` و`dns.promises.lookup`، و`net.Socket#connect`، و`tls.connect`، و`http2.connect`، و`http.request`/`https.request`/`get` ومنها `CONNECT` هدفه النطاق (الطريق عبر وكيل HTTP). يرى استيراد ES المسمّى الدوال المرقّعة (`syncBuiltinESMExports`). تبلّغ المكتبة `unavailable`. الحدود: Node 20.16 فما فوق، والنطاق العام فقط، ولا يغلق اتصالًا فُتح قبل `install()`، وما سوى مضيف Firestore لا يُمسّ. وFirestore الموجَّه إلى Aruma لا يسمّي نطاق Google فلا يُرفض.
+  - **الفشل في البناء** بدل شحن نطاق Google: إصدار لا تعرفه القاعدة (نطاقان، أو `ssl` غائبة على http)، ووحدة ما زالت تسمّي Google أو خارجية، وبناء متصفح بلا وحدة تحمل النطاق، وسكربت صادر يحمل النطاق نصًّا (Web Worker)، والمكتبة من CDN (gstatic وjsdelivr وunpkg وesm.sh).
+  - **التحقق من النطاق:** `firestoreBase` بجذر النطاق بلا مسار، ورفض نطاقات Google، وشكل `HOST_SHAPE` لأنه يُكتب في سلسلة نصية من المكتبة.
+- **الاختبار:** `sdk/web/aruma-web/test/firestore.test.js` (القاعدة على لقطات dist 4.19.0 للمتصفح والخفيفة وReact Native وNode، والتحقق، والإضافات، ومُحمِّل Turbopack، وMetro، وFlutter) و`redirect.test.js` (الحارس: XHR بجسم WebChannel، وfetch وRequest وURL، وAruma والمضيفات الأخرى تمر) و`vite-build.test.js` (`vite build` حقيقي للمكتبتين الكاملة والخفيفة: لا `firestore.googleapis.com` في أي ملف صادر، وssl مطفأة على http، وبناء Auth وحده يفشل، والشاهد بلا إضافة يحمله). و`node-guard.test.js` (Node: كل مسار من المسارات أعلاه يفشل قبل أي اتصال، وتحت الحارس مُسجِّلات تثبت ألا شيء يبلغ طبقة الشبكة، والوحدات الفرعية والاستيراد المسمّى، وCONNECT عبر وكيل، وما سوى النطاق يمر، وشاهد بلا `install()` يثبت أن المُسجِّل يرى محاولة المكتبة، ومكتبة Firestore الحقيقية في عملية فرعية تنتهي بـ `unavailable` دون أي اتصال). والتشغيل الكامل على Aruma حي (WebChannel) ضمن مجموعة المتصفح لـ F6.
+- **الدوال القابلة للاستدعاء: ما زالت مفتوحة.** Aruma لا يخدمها، و`httpsCallable` يذهب إلى `<region>-<project>.cloudfunctions.net` ومعه رمز هوية Aruma. README يقول ذلك ويطلب ألّا تُستعمل مع Auth في Aruma. تُغلق حين يخدمها Aruma أو يُحجب مضيفها.
 
 ## ما فُحص ووُجد سليمًا
 
@@ -258,7 +267,7 @@
 - [x] SR3-06 مُصلحة (major): `install()` يرفض و`vite` يُفشل البناء (`s7-sdk-fixes`، [`d9391be`](https://github.com/arumadev/aruma/commit/d9391be)).
 - [x] SR3-05 مُصلحة: [`a67de58`](https://github.com/arumadev/aruma/commit/a67de58) و[`6e7b526`](https://github.com/arumadev/aruma/commit/6e7b526)؛ `TestEveryCompilationTakesASlot`. وتكدّس التحميل بالنشر (SR3-05-publish-pileup) مؤجَّل وموثّق في `docs/compat/rules-v0.3.md` (القيود) و`docs/releases/v0.3.0.md`.
 - [x] SR3-07 وSR3-09 مُصلحتان (`s7-sdk-fixes`).
-- [x] SR3-10 (major): مؤجلة إلى v0.4 بقرار المنسّق، وموثّقة في README `@aruma/web` (`sdk/web/aruma-web/README.md:43-47`، وبالعربية) وفي `docs/releases/v0.3.0.md`. تُغلق حين يخدم Aruma Firestore (والدوال).
+- [x] SR3-10 (major): Firestore مُصلحة في v0.4 ([`04f0740`](https://github.com/arumadev/aruma/commit/04f0740)، `sdk/web/aruma-web/README.md`، قسم Cloud Firestore، وبالعربية). **جزء الدوال القابلة للاستدعاء ما زال مفتوحًا** وموثّقًا في README وفي `docs/releases/v0.3.0.md`، ويُغلق حين يخدمها Aruma.
 - [x] README حزمة Node بنطاق إعادة التوجيه الصحيح (SR3-08، `s7-sdk-fixes`).
 - [x] `govulncheck ./...` نظيف، ومعه `npm audit` على الحزم الثلاث (2026-10-24):
   - govulncheck 1.9.0 (قاعدة 2026-10-21) وجد GO-2026-6809 (`crypto/x509`، مُصلحة في go1.27.3) قابلة للوصول عبر مصافحة TLS. سطر `toolchain go1.27.3` في `go.mod` ([`ee609d6`](https://github.com/arumadev/aruma/commit/ee609d6)) يصلحها: «Your code is affected by 0 vulnerabilities». والباقي GO-2026-5932 (`x/crypto/openpgp`) غير مستورد. و`sdk/go/adminauth` و`sdk/go/adminstorage` نظيفتان بـ go1.27.3؛ وهما مكتبتان، فالمكتبة القياسية فيهما من Go المستعمِل.

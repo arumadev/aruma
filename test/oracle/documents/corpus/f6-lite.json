@@ -1,0 +1,379 @@
+{
+  "cases": [
+    {
+      "description": "lite SDK: get, set (non-ASCII), runQuery",
+      "entries": [
+        {
+          "atMs": 0,
+          "durationMs": 1100,
+          "request": {
+            "body": "{\"documents\":[\"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/l1\"]}",
+            "headers": {
+              ":authority": "firestore.googleapis.com",
+              ":method": "POST",
+              ":path": "/v1/projects/chatapp-8ae21/databases/(default)/documents:batchGet?key=<api-key>",
+              ":scheme": "https",
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br, zstd",
+              "cache-control": "no-cache",
+              "content-length": "91",
+              "content-type": "text/plain",
+              "google-cloud-resource-prefix": "projects/chatapp-8ae21/databases/(default)",
+              "origin": "http://localhost:18765",
+              "pragma": "no-cache",
+              "priority": "u=1, i",
+              "referer": "http://localhost:18765/",
+              "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\", \"HeadlessChrome\";v=\"156\"",
+              "sec-ch-ua-mobile": "?0",
+              "sec-ch-ua-platform": "\"macOS\"",
+              "sec-fetch-dest": "empty",
+              "sec-fetch-mode": "cors",
+              "sec-fetch-site": "cross-site",
+              "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36",
+              "x-firebase-gmpid": "1:639975380415:web:70270fc8cda6474c5afd0a",
+              "x-goog-api-client": "gl-js/ fire/13.0.0_lite",
+              "x-goog-request-params": "project_id=chatapp-8ae21"
+            },
+            "method": "POST",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:batchGet?key=<api-key>"
+          },
+          "response": {
+            "body": "[{\n  \"found\": {\n    \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/l1\",\n    \"fields\": {\n      \"n\": {\n        \"integerValue\": \"1\"\n      },\n      \"s\": {\n        \"stringValue\": \"héllo ✓ 日本語 😀\"\n      }\n    },\n    \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n    \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  },\n  \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n}\n]",
+            "bodyBytes": 399,
+            "chunks": [
+              {
+                "atMs": 0,
+                "bytes": 399,
+                "text": "[{\n  \"found\": {\n    \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/l1\",\n    \"fields\": {\n      \"n\": {\n        \"integerValue\": \"1\"\n      },\n      \"s\": {\n        \"stringValue\": \"héllo ✓ 日本語 😀\"\n      }\n    },\n    \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n    \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  },\n  \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n}\n]"
+              }
+            ],
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-expose-headers": "x-debug-tracking-id,vary,vary,vary,content-encoding,transfer-encoding,date,server",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-encoding": "gzip",
+              "content-type": "application/json; charset=UTF-8",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "Origin\nX-Origin\nReferer",
+              "x-content-type-options": "nosniff",
+              "x-debug-tracking-id": "<tracking-id>",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "protocol": "h2",
+            "status": 200,
+            "statusFromNetwork": 200
+          },
+          "type": "Fetch"
+        },
+        {
+          "atMs": 0,
+          "durationMs": 0,
+          "request": {
+            "body": null,
+            "headers": {
+              "Accept": "*/*",
+              "Access-Control-Request-Headers": "google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client,x-goog-request-params",
+              "Access-Control-Request-Method": "POST",
+              "Origin": "http://localhost:18765",
+              "Sec-Fetch-Mode": "cors",
+              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:batchGet?key=<api-key>"
+          },
+          "response": {
+            "body": "",
+            "bodyBytes": 0,
+            "headers": {
+              "Access-Control-Allow-Credentials": "true",
+              "Access-Control-Allow-Headers": "google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client,x-goog-request-params",
+              "Access-Control-Allow-Methods": "POST",
+              "Access-Control-Allow-Origin": "http://localhost:18765"
+            },
+            "protocol": "http/1.1",
+            "status": 204
+          },
+          "type": "Other"
+        },
+        {
+          "atMs": 1100,
+          "durationMs": 500,
+          "request": {
+            "body": "{\"writes\":[{\"update\":{\"name\":\"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/l2\",\"fields\":{\"s\":{\"stringValue\":\"héllo ✓ 日本語 😀\"},\"n\":{\"integerValue\":\"2\"}}}}]}",
+            "headers": {
+              ":authority": "firestore.googleapis.com",
+              ":method": "POST",
+              ":path": "/v1/projects/chatapp-8ae21/databases/(default)/documents:commit?key=<api-key>",
+              ":scheme": "https",
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br, zstd",
+              "cache-control": "no-cache",
+              "content-length": "192",
+              "content-type": "text/plain",
+              "google-cloud-resource-prefix": "projects/chatapp-8ae21/databases/(default)",
+              "origin": "http://localhost:18765",
+              "pragma": "no-cache",
+              "priority": "u=1, i",
+              "referer": "http://localhost:18765/",
+              "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\", \"HeadlessChrome\";v=\"156\"",
+              "sec-ch-ua-mobile": "?0",
+              "sec-ch-ua-platform": "\"macOS\"",
+              "sec-fetch-dest": "empty",
+              "sec-fetch-mode": "cors",
+              "sec-fetch-site": "cross-site",
+              "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36",
+              "x-firebase-gmpid": "1:639975380415:web:70270fc8cda6474c5afd0a",
+              "x-goog-api-client": "gl-js/ fire/13.0.0_lite",
+              "x-goog-request-params": "project_id=chatapp-8ae21"
+            },
+            "method": "POST",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:commit?key=<api-key>"
+          },
+          "response": {
+            "body": "{\n  \"writeResults\": [\n    {\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    }\n  ],\n  \"commitTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n}\n",
+            "bodyBytes": 137,
+            "chunks": [
+              {
+                "atMs": 0,
+                "bytes": 137,
+                "text": "{\n  \"writeResults\": [\n    {\n      \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n    }\n  ],\n  \"commitTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n}\n"
+              }
+            ],
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-expose-headers": "x-debug-tracking-id,vary,vary,vary,content-encoding,date,server,content-length",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-encoding": "gzip",
+              "content-length": "109",
+              "content-type": "application/json; charset=UTF-8",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "Origin\nX-Origin\nReferer",
+              "x-content-type-options": "nosniff",
+              "x-debug-tracking-id": "<tracking-id>",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "protocol": "h2",
+            "status": 200,
+            "statusFromNetwork": 200
+          },
+          "type": "Fetch"
+        },
+        {
+          "atMs": 1100,
+          "durationMs": 0,
+          "request": {
+            "body": null,
+            "headers": {
+              "Accept": "*/*",
+              "Access-Control-Request-Headers": "google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client,x-goog-request-params",
+              "Access-Control-Request-Method": "POST",
+              "Origin": "http://localhost:18765",
+              "Sec-Fetch-Mode": "cors",
+              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:commit?key=<api-key>"
+          },
+          "response": {
+            "body": "",
+            "bodyBytes": 0,
+            "headers": {
+              "Access-Control-Allow-Credentials": "true",
+              "Access-Control-Allow-Headers": "google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client,x-goog-request-params",
+              "Access-Control-Allow-Methods": "POST",
+              "Access-Control-Allow-Origin": "http://localhost:18765"
+            },
+            "protocol": "http/1.1",
+            "status": 204
+          },
+          "type": "Other"
+        },
+        {
+          "atMs": 1700,
+          "durationMs": 1500,
+          "request": {
+            "body": "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"aruma-ref-f6-open\"}],\"where\":{\"fieldFilter\":{\"field\":{\"fieldPath\":\"n\"},\"op\":\"EQUAL\",\"value\":{\"integerValue\":\"2\"}}},\"orderBy\":[{\"field\":{\"fieldPath\":\"__name__\"},\"direction\":\"ASCENDING\"}]}}",
+            "headers": {
+              ":authority": "firestore.googleapis.com",
+              ":method": "POST",
+              ":path": "/v1/projects/chatapp-8ae21/databases/(default)/documents:runQuery?key=<api-key>",
+              ":scheme": "https",
+              "accept": "*/*",
+              "accept-encoding": "gzip, deflate, br, zstd",
+              "cache-control": "no-cache",
+              "content-length": "232",
+              "content-type": "text/plain",
+              "google-cloud-resource-prefix": "projects/chatapp-8ae21/databases/(default)",
+              "origin": "http://localhost:18765",
+              "pragma": "no-cache",
+              "priority": "u=1, i",
+              "referer": "http://localhost:18765/",
+              "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\", \"HeadlessChrome\";v=\"156\"",
+              "sec-ch-ua-mobile": "?0",
+              "sec-ch-ua-platform": "\"macOS\"",
+              "sec-fetch-dest": "empty",
+              "sec-fetch-mode": "cors",
+              "sec-fetch-site": "cross-site",
+              "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36",
+              "x-firebase-gmpid": "1:639975380415:web:70270fc8cda6474c5afd0a",
+              "x-goog-api-client": "gl-js/ fire/13.0.0_lite",
+              "x-goog-request-params": "project_id=chatapp-8ae21"
+            },
+            "method": "POST",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:runQuery?key=<api-key>"
+          },
+          "response": {
+            "body": "[{\n  \"document\": {\n    \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/l2\",\n    \"fields\": {\n      \"s\": {\n        \"stringValue\": \"héllo ✓ 日本語 😀\"\n      },\n      \"n\": {\n        \"integerValue\": \"2\"\n      }\n    },\n    \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n    \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  },\n  \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n}\n]",
+            "bodyBytes": 402,
+            "chunks": [
+              {
+                "atMs": 0,
+                "bytes": 401,
+                "text": "[{\n  \"document\": {\n    \"name\": \"projects/chatapp-8ae21/databases/(default)/documents/aruma-ref-f6-open/l2\",\n    \"fields\": {\n      \"s\": {\n        \"stringValue\": \"héllo ✓ 日本語 😀\"\n      },\n      \"n\": {\n        \"integerValue\": \"2\"\n      }\n    },\n    \"createTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\",\n    \"updateTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n  },\n  \"readTime\": \"NNNN-NN-NNTNN:NN:NN.NNNNNNZ\"\n}\n"
+              },
+              {
+                "atMs": 0,
+                "bytes": 1,
+                "text": "]"
+              }
+            ],
+            "headers": {
+              "access-control-allow-credentials": "true",
+              "access-control-allow-origin": "http://localhost:18765",
+              "access-control-expose-headers": "x-debug-tracking-id,vary,vary,vary,content-encoding,transfer-encoding,date,server",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "content-encoding": "gzip",
+              "content-type": "application/json; charset=UTF-8",
+              "date": "<date>",
+              "server": "ESF",
+              "vary": "Origin\nX-Origin\nReferer",
+              "x-content-type-options": "nosniff",
+              "x-debug-tracking-id": "<tracking-id>",
+              "x-frame-options": "SAMEORIGIN",
+              "x-xss-protection": "0"
+            },
+            "protocol": "h3",
+            "status": 200,
+            "statusFromNetwork": 200
+          },
+          "type": "Fetch"
+        },
+        {
+          "atMs": 1700,
+          "durationMs": 0,
+          "request": {
+            "body": null,
+            "headers": {
+              "Accept": "*/*",
+              "Access-Control-Request-Headers": "google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client,x-goog-request-params",
+              "Access-Control-Request-Method": "POST",
+              "Origin": "http://localhost:18765",
+              "Sec-Fetch-Mode": "cors",
+              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36"
+            },
+            "method": "OPTIONS",
+            "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:runQuery?key=<api-key>"
+          },
+          "response": {
+            "body": "",
+            "bodyBytes": 0,
+            "headers": {
+              "Access-Control-Allow-Credentials": "true",
+              "Access-Control-Allow-Headers": "google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client,x-goog-request-params",
+              "Access-Control-Allow-Methods": "POST",
+              "Access-Control-Allow-Origin": "http://localhost:18765"
+            },
+            "protocol": "http/1.1",
+            "status": 204
+          },
+          "type": "Other"
+        }
+      ],
+      "id": "lite.get-set-query",
+      "label": "lite",
+      "net": [
+        {
+          "credentials": "default(same-origin)",
+          "headersSet": [
+            "google-cloud-resource-prefix",
+            "x-goog-request-params",
+            "X-Goog-Api-Client",
+            "Content-Type",
+            "X-Firebase-GMPID"
+          ],
+          "keepalive": false,
+          "kind": "fetch",
+          "method": "POST",
+          "mode": "default(cors)",
+          "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:batchGet?key=<api-key>"
+        },
+        {
+          "credentials": "default(same-origin)",
+          "headersSet": [
+            "google-cloud-resource-prefix",
+            "x-goog-request-params",
+            "X-Goog-Api-Client",
+            "Content-Type",
+            "X-Firebase-GMPID"
+          ],
+          "keepalive": false,
+          "kind": "fetch",
+          "method": "POST",
+          "mode": "default(cors)",
+          "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:commit?key=<api-key>"
+        },
+        {
+          "credentials": "default(same-origin)",
+          "headersSet": [
+            "google-cloud-resource-prefix",
+            "x-goog-request-params",
+            "X-Goog-Api-Client",
+            "Content-Type",
+            "X-Firebase-GMPID"
+          ],
+          "keepalive": false,
+          "kind": "fetch",
+          "method": "POST",
+          "mode": "default(cors)",
+          "url": "https://firestore.googleapis.com/v1/projects/chatapp-8ae21/databases/(default)/documents:runQuery?key=<api-key>"
+        }
+      ],
+      "result": {
+        "got": {
+          "n": 1,
+          "s": "héllo ✓ 日本語 😀"
+        },
+        "queried": 1
+      }
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f6-web.mjs",
+    "notes": [
+      "Driver: Playwright (headless Chromium) on the page http://localhost:18765/ (origin of every request), Firebase JS SDK 13.0.0; HTTP seen through CDP (Network domain; streaming bodies via Network.streamResourceContent).",
+      "Placeholders: SID and gsessionid values become S.../G... of the same length; the first RID of a session is <rid0>, later ones <rid0+k>; zx is <zx>; tokens and the API key are placeholders; timestamps inside bodies keep their length with digits as N.",
+      "atMs / durationMs are milliseconds since the first request of the scenario (rounded to 100 ms) and are indicative only. chunks[].atMs is since the response headers.",
+      "\"framing\" parses a response body as \"<len>\\n<payload>\" records and says whether len counts UTF-16 code units or UTF-8 bytes (both are true when the body is ASCII; nonAscii says whether the body had non-ASCII characters).",
+      "\"net\" lists what the page asked of XMLHttpRequest / fetch / WebSocket / sendBeacon (credentials mode, withCredentials, headers set by script).",
+      "firebase/firestore/lite on fetch: getDoc, setDoc, a query."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-27T20:36:49.305Z .. 2026-10-27T20:41:39.307Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, europe-west1; the browser transports (WebChannel and REST) of firestore.googleapis.com, from the foreign origin http://localhost:18765; rules deployed by the recorder for aruma-ref-f6-* (originals restored)",
+    "versions": {
+      "chromium": "156.0.8078.4",
+      "firebase JS SDK": "13.0.0",
+      "firebase-tools (auth only)": "13.23.0",
+      "generator sha256": "b6733b468d210c8d44cd14088c070f0d20c8baabf7931d954f3adfcf9026fff9",
+      "node": "v24.21.0",
+      "playwright": "1.64.1"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

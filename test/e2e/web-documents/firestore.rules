@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// Signed-out clients read /open and nothing else; signed-in users read and write /open and /e2e;
+// /locked is denied to everyone.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /open/{path=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /e2e/{path=**} {
+      allow read, write: if request.auth != null;
+    }
+    match /locked/{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

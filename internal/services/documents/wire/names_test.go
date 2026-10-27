@@ -689,3 +689,71 @@ func TestNonUTF8AsProductionF2(t *testing.T) {
 		t.Errorf("escaped lone surrogate: %q", n)
 	}
 }
+
+// TestBindStreamNamesF4: the names of a stream's later messages are bound against the database
+// its first message fixed (parity exception mixed-project-resource-names). A Write message after
+// the first whose write names another project or database is INVALID_ARGUMENT with the mismatch
+// text, whatever the write kind, and one of the stream's own database binds. A Listen add_target
+// naming another database is a *TargetError (the stream removes the target and stays open; the
+// target's cause text is production's, recorded in f4-listen.json and replayed by the grpc
+// tests), never an error of the stream; the stream's own database binds.
+func TestBindStreamNamesF4(t *testing.T) {
+	const p = "proj-a"
+	db := Database{p, DefaultDatabase}
+	foreign := []Database{{"proj-b", DefaultDatabase}, {p, "second"}}
+	doc := func(d Database, rel string) string { return d.DocumentsName() + "/" + rel }
+	later := func(w *firestorepb.Write) *firestorepb.WriteRequest {
+		return &firestorepb.WriteRequest{StreamToken: []byte{1}, Writes: []*firestorepb.Write{w}}
+	}
+	writes := map[string]func(d Database) *firestorepb.Write{
+		"update": func(d Database) *firestorepb.Write {
+			return &firestorepb.Write{Operation: &firestorepb.Write_Update{Update: &firestorepb.Document{Name: doc(d, "c/a")}}}
+		},
+		"delete": func(d Database) *firestorepb.Write {
+			return &firestorepb.Write{Operation: &firestorepb.Write_Delete{Delete: doc(d, "c/a")}}
+		},
+		"transform": func(d Database) *firestorepb.Write {
+			return &firestorepb.Write{Operation: &firestorepb.Write_Transform{Transform: &firestorepb.DocumentTransform{Document: doc(d, "c/a")}}}
+		},
+	}
+	for kind, w := range writes {
+		if got, err := Bind(later(w(db)), db); err != nil || got != db {
+			t.Errorf("later %s of the stream's database: %v, %v", kind, got, err)
+		}
+		for _, d := range foreign {
+			_, err := Bind(later(w(d)), db)
+			if e := From(err); e.Code != CodeInvalidArgument || e.Message != mismatch(db, d) {
+				t.Errorf("later %s of %v: %v, want INVALID_ARGUMENT %q", kind, d, err, mismatch(db, d))
+			}
+		}
+	}
+	// A foreign database field is the same error.
+	for _, d := range foreign {
+		if _, err := Bind(&firestorepb.WriteRequest{Database: d.Name()}, db); errText(err) != mismatch(db, d) {
+			t.Errorf("later message's database field %v: %v", d, err)
+		}
+	}
+
+	listen := func(id int32, name string) *firestorepb.ListenRequest {
+		return &firestorepb.ListenRequest{Database: db.Name(), TargetChange: &firestorepb.ListenRequest_AddTarget{
+			AddTarget: &firestorepb.Target{TargetId: id, TargetType: &firestorepb.Target_Documents{
+				Documents: &firestorepb.Target_DocumentsTarget{Documents: []string{name}}}}}}
+	}
+	if got, err := Bind(listen(1, doc(db, "c/a")), db); err != nil || got != db {
+		t.Errorf("Listen target of the stream's database: %v, %v", got, err)
+	}
+	for i, d := range foreign {
+		id := int32(10 + i)
+		_, err := Bind(listen(id, doc(d, "c/a")), db)
+		te, ok := errors.AsType[*TargetError](err)
+		if !ok || te.TargetID != id || te.Err.Code != CodeInvalidArgument {
+			t.Errorf("Listen target of %v: %v, want a *TargetError of target %d", d, err, id)
+		}
+	}
+	// The stream's own database field naming another one is the stream's error, not a target's.
+	bad := listen(1, doc(db, "c/a"))
+	bad.Database = foreign[1].Name()
+	if _, err := Bind(bad, db); err == nil || errors.As(err, new(*TargetError)) || errText(err) != mismatch(db, foreign[1]) {
+		t.Errorf("Listen database field of another database: %v", err)
+	}
+}

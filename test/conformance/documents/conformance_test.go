@@ -12,7 +12,7 @@ import (
 
 // allCases is every case of every phase written so far.
 func allCases() []Case {
-	return slices.Concat(f1Cases)
+	return slices.Concat(f1Cases, f6Cases)
 }
 
 type phaseList struct {

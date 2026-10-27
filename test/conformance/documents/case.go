@@ -367,6 +367,20 @@ func jsonEqual(a, b any) bool {
 	return reflect.DeepEqual(x, y)
 }
 
+// Header checks one header of the answer. A recorded answer has no headers, so a case using it
+// judges a running server only.
+func Header(name, want string) Check {
+	return func(c *Context, r Response) error {
+		if r.Header == nil {
+			return fmt.Errorf("the answer carries no headers to check %s", name)
+		}
+		if got, w := r.Header.Get(name), c.Expand(want); got != w {
+			return fmt.Errorf("header %s is %q, want %q", name, got, w)
+		}
+		return nil
+	}
+}
+
 // Absent checks that path is not in the answer.
 func Absent(path string) Check {
 	return func(_ *Context, r Response) error {

@@ -391,21 +391,55 @@ func TestForms(t *testing.T) {
 	}
 }
 
-// The data paths are open to every origin, with ADR-027 §5.2's preflight.
+// The data paths are open to every origin, credentialed, as production answers them
+// (f6-cors.json): the preflight echoes the headers asked for; an answer without Origin carries
+// no CORS header; an OPTIONS without Origin is an empty 400.
 func TestCORS(t *testing.T) {
 	h := newHarness(t, apitest.Options{})
 	code, hd, _ := h.do(t, http.MethodOptions, "/v1/"+root+"/c/d", "", "",
-		"Origin", "https://app.example", "Access-Control-Request-Method", "PATCH",
-		"Access-Control-Request-Headers", "authorization, x-goog-api-client")
-	if code != http.StatusNoContent || hd.Get("Access-Control-Allow-Origin") != "*" ||
-		hd.Get("Access-Control-Allow-Methods") != "GET, POST, PATCH, DELETE" ||
-		!strings.Contains(hd.Get("Access-Control-Allow-Headers"), "google-cloud-resource-prefix") ||
-		hd.Get("Access-Control-Allow-Credentials") != "" {
+		"Origin", "null", "Access-Control-Request-Method", "PATCH",
+		"Access-Control-Request-Headers", "authorization,x-goog-api-client,x-made-up-header")
+	if code != http.StatusOK || hd.Get("Access-Control-Allow-Origin") != "null" ||
+		hd.Get("Access-Control-Allow-Methods") != "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT" ||
+		hd.Get("Access-Control-Allow-Headers") != "authorization,x-goog-api-client,x-made-up-header" ||
+		hd.Get("Access-Control-Allow-Credentials") != "true" || hd.Get("Access-Control-Max-Age") != "3600" ||
+		hd.Get("Vary") != "origin, referer, x-origin" {
 		t.Errorf("preflight: %d %v", code, hd)
 	}
+	if code, hd, _ := h.do(t, http.MethodOptions, "/v1/"+root+"/c/d", "", ""); code != http.StatusBadRequest ||
+		hd.Get("Access-Control-Allow-Origin") != "" {
+		t.Errorf("OPTIONS without Origin: %d %v", code, hd)
+	}
 	_, hd, _ = h.do(t, http.MethodGet, "/v1/"+root+"/c/d", "", h.env.JWT(t), "Origin", "https://app.example")
-	if hd.Get("Access-Control-Allow-Origin") != "*" || hd.Get("Access-Control-Expose-Headers") != "X-HTTP-Session-Id" {
+	if hd.Get("Access-Control-Allow-Origin") != "https://app.example" || hd.Get("Access-Control-Allow-Credentials") != "true" ||
+		hd.Get("Access-Control-Expose-Headers") != "x-debug-tracking-id,vary,vary,vary,content-encoding,date,server,content-length" ||
+		strings.Join(hd.Values("Vary"), ", ") != "Origin, X-Origin, Referer" {
 		t.Errorf("data path: %v", hd)
+	}
+	if _, hd, _ := h.do(t, http.MethodGet, "/v1/"+root+"/c/d", "", h.env.JWT(t)); hd.Get("Access-Control-Allow-Origin") != "" {
+		t.Errorf("data path without Origin: %v", hd)
+	}
+}
+
+// CORS lets any page read the answers, so nothing a browser lends every page may authorise a
+// request: Bearer owner, authorised by the loopback peer alone, is refused when the request
+// carries an Origin, as a tool on the machine is not.
+func TestOwnerRefusedFromBrowser(t *testing.T) {
+	h := newHarness(t, apitest.Options{DevOwnerToken: true})
+	path := "/v1/" + root + "/aruma-ref-owner/doc"
+	body := `{"fields":{"pwned":{"booleanValue":true}}}`
+	if code, _, b := h.do(t, http.MethodPatch, path, body, "owner"); code != http.StatusOK {
+		t.Fatalf("owner from a tool: %d %s", code, b)
+	}
+	code, hd, b := h.do(t, http.MethodPatch, path, body, "owner", "Origin", "https://evil.example")
+	if code != http.StatusUnauthorized || !strings.Contains(string(b), "documents.dev_owner_token") {
+		t.Errorf("owner from a page: %d %s", code, b)
+	}
+	if hd.Get("Access-Control-Allow-Origin") != "https://evil.example" {
+		t.Errorf("the refusal is readable by the page as production's errors are: %v", hd)
+	}
+	if code, _, b := h.do(t, http.MethodGet, path, "", "owner", "Origin", "null"); code != http.StatusUnauthorized {
+		t.Errorf("owner from an opaque origin: %d %s", code, b)
 	}
 }
 

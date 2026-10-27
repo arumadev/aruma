@@ -13,7 +13,7 @@
 //     Firestore REST protocol, fails the run. It never skips.
 //
 // The package is standard library only and speaks REST (the transport the Admin SDKs' preferRest
-// and the JS lite SDK use). test/differential/documents reuses its Aruma target.
+// and the JS lite SDK use), and, for MUST 21, one WebChannel session (webchannel.go). test/differential/documents reuses its Aruma target.
 package documents
 
 import (
@@ -53,16 +53,18 @@ type Request struct {
 	Method      string
 	Path        string
 	Body        any
-	ContentType string // "application/json" when empty
-	NoAuth      bool   // send no Authorization header
+	ContentType string            // "application/json" when empty
+	NoAuth      bool              // send no Authorization header
+	Header      map[string]string // further request headers, such as a browser's Origin
 }
 
 // Response is what a target answered: the HTTP status and the decoded JSON body (a string
 // holding the raw text when it is not JSON). Case is the recorded case behind a recorded answer.
 type Response struct {
-	HTTP int
-	Body any
-	Case map[string]any
+	HTTP   int
+	Body   any
+	Case   map[string]any
+	Header http.Header // the answer's headers; nil for a recorded answer
 }
 
 // Target answers the steps of a case.
@@ -103,6 +105,9 @@ func (h *HTTPTarget) Do(ctx context.Context, _ Step, req Request) (Response, err
 
 // Send sends one request and decodes the answer.
 func (h *HTTPTarget) Send(ctx context.Context, req Request) (Response, error) {
+	if req.Method == MethodWebChannel {
+		return h.webChannel(ctx, req)
+	}
 	var body io.Reader
 	if req.Body != nil {
 		b, err := json.Marshal(req.Body)
@@ -119,6 +124,9 @@ func (h *HTTPTarget) Send(ctx context.Context, req Request) (Response, error) {
 	if h.Token != "" && !req.NoAuth {
 		hr.Header.Set("Authorization", "Bearer "+h.Token)
 	}
+	for k, v := range req.Header {
+		hr.Header.Set(k, v)
+	}
 	res, err := h.Client.Do(hr)
 	if err != nil {
 		return Response{}, err
@@ -128,7 +136,7 @@ func (h *HTTPTarget) Send(ctx context.Context, req Request) (Response, error) {
 	if err != nil {
 		return Response{}, err
 	}
-	out := Response{HTTP: res.StatusCode, Body: string(raw)}
+	out := Response{HTTP: res.StatusCode, Body: string(raw), Header: res.Header}
 	var v any
 	if json.Unmarshal(raw, &v) == nil {
 		out.Body = v

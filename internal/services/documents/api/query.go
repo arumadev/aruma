@@ -230,15 +230,12 @@ func (s *Service) checkQuery(ctx context.Context, a admitted, q *query.Query, ag
 	if err != nil {
 		return err
 	}
-	if q.FindNearest != nil {
-		// TODO(F3 planner wave): the database's vector indexes, from the catalogue track B
-		// stores; until then none is declared and every find_nearest is production's
-		// missing-index answer.
-		return q.NearestError(a.wdb.Project, nil)
-	}
 	cat, err := s.o.Store.IndexCatalog(ctx, a.db)
 	if err != nil {
 		return s.fail(ctx, err)
+	}
+	if q.FindNearest != nil {
+		return q.NearestError(a.wdb.Project, cat.Vectors())
 	}
 	if err := s.enforce(a, q.Shape(aggs), cat, mode); err != nil {
 		return err

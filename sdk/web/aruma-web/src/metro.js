@@ -25,6 +25,13 @@
 // @firebase/storage module whose code still names Google, or not Aruma, fails the bundle.
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import {
+  firestoreBase,
+  firestoreLiteralProblem,
+  firestoreModuleRewritten,
+  isFirestoreModule,
+  rewriteFirestoreLiterals,
+} from './firestore.js';
 import { isStorageModule, literalProblem, rewriteStorageLiterals, storageBase, storageModuleRewritten } from './storage.js';
 
 const require = createRequire(import.meta.url);
@@ -45,24 +52,63 @@ function upstreamTransformer() {
   return upstream;
 }
 
-/** Metro's Babel transformer entry: rewrite a @firebase/storage file, then the upstream transformer. */
+/** Metro's Babel transformer entry: rewrite a @firebase/storage or @firebase/firestore file, then the upstream transformer. */
 export function transform(args) {
   let { src } = args;
-  if (isStorageModule(args.filename)) {
-    const s = settings();
+  const s = settings();
+  if (isStorageModule(args.filename) && s.url) {
     const base = storageBase(s.url, { allowInsecure: s.allowInsecure });
     const r = rewriteStorageLiterals(src, base);
     if (!r.ok) throw new Error(literalProblem(args.filename, r, base));
+    src = r.code;
+  } else if (isFirestoreModule(args.filename) && s.firestore) {
+    const base = firestoreBase(s.firestore.url, { allowInsecure: s.firestore.allowInsecure });
+    const r = rewriteFirestoreLiterals(src, base);
+    if (!r.ok) throw new Error(firestoreLiteralProblem(args.filename, r, base));
     src = r.code;
   }
   return upstreamTransformer().transform({ ...args, src });
 }
 
-/** Part of Metro's transform cache key: the upstream's key, this rule's version and the URL. */
+/** Part of Metro's transform cache key: the upstream's key, this rule's version and the URLs. */
 export function getCacheKey(...args) {
   const u = upstreamTransformer();
   const s = settings();
-  return [typeof u.getCacheKey === 'function' ? u.getCacheKey(...args) : '', CACHE_VERSION, s.url, s.allowInsecure].join('\0');
+  const parts = [typeof u.getCacheKey === 'function' ? u.getCacheKey(...args) : '', CACHE_VERSION, s.url, s.allowInsecure];
+  if (s.firestore) parts.push('firestore', s.firestore.url, s.firestore.allowInsecure);
+  return parts.join('\0');
+}
+
+// The settings of the transformer, and of the serializer's check, merged over the calls of
+// withArumaStorage and withArumaFirestore on the same config (the second finds the first's).
+function wrap(config, product, { url, allowInsecure }) {
+  const self = fileURLToPath(import.meta.url);
+  const current = config.transformer?.babelTransformerPath;
+  const prev = current === self && process.env[ENV] ? JSON.parse(process.env[ENV]) : null;
+  const upstreamPath = prev?.upstream ?? (current && current !== self ? current : require.resolve('@react-native/metro-babel-transformer'));
+  const own = { url: new URL(url).origin, allowInsecure: Boolean(allowInsecure) };
+  const next = product === 'storage' ? { ...prev, ...own, upstream: upstreamPath } : { ...prev, firestore: own, upstream: upstreamPath };
+  process.env[ENV] = JSON.stringify(next);
+  const filter = config.serializer?.processModuleFilter;
+  const check = (module) => {
+    const code = () => (module.output ?? []).map((o) => o?.data?.code ?? '').join('\n');
+    if (product === 'storage' && isStorageModule(module.path)) {
+      if (!storageModuleRewritten(code(), storageBase(url, { allowInsecure }))) throw new Error(notRewritten(module.path));
+    } else if (product === 'firestore' && isFirestoreModule(module.path)) {
+      if (!firestoreModuleRewritten(code())) throw new Error(notRewritten(module.path, 'Firestore', 'firestore.googleapis.com'));
+    }
+  };
+  return {
+    ...config,
+    transformer: { ...config.transformer, babelTransformerPath: self },
+    serializer: {
+      ...config.serializer,
+      processModuleFilter(module) {
+        check(module);
+        return filter ? filter(module) : true;
+      },
+    },
+  };
 }
 
 /**
@@ -75,26 +121,15 @@ export function getCacheKey(...args) {
 export function withArumaStorage(config, { url, allowInsecure = false } = {}) {
   if (url === undefined || url === null || String(url).trim() === '') return config;
   const base = storageBase(url, { allowInsecure });
-  const self = fileURLToPath(import.meta.url);
-  const current = config.transformer?.babelTransformerPath;
-  const upstreamPath = current && current !== self ? current : require.resolve('@react-native/metro-babel-transformer');
-  process.env[ENV] = JSON.stringify({ url: base.origin, allowInsecure: Boolean(allowInsecure), upstream: upstreamPath });
-  const filter = config.serializer?.processModuleFilter;
-  return {
-    ...config,
-    transformer: { ...config.transformer, babelTransformerPath: self },
-    serializer: {
-      ...config.serializer,
-      processModuleFilter(module) {
-        if (isStorageModule(module.path)) {
-          const code = (module.output ?? []).map((o) => o?.data?.code ?? '').join('\n');
-          if (!storageModuleRewritten(code, base)) throw new Error(notRewritten(module.path));
-        }
-        return filter ? filter(module) : true;
-      },
-    },
-  };
+  return wrap(config, 'storage', { url: base.origin, allowInsecure });
 }
 
-const notRewritten = (path) =>
-  `@aruma/web/metro: ${path} was bundled without the Storage rewrite, so it keeps firebasestorage.googleapis.com. A config wrapper applied after withArumaStorage replaced transformer.babelTransformerPath (react-native-svg-transformer and the like): apply withArumaStorage last, around the others`;
+/** The same for Cloud Firestore (SR3-10), alone or on the config withArumaStorage returned. */
+export function withArumaFirestore(config, { url, allowInsecure = false } = {}) {
+  if (url === undefined || url === null || String(url).trim() === '') return config;
+  const base = firestoreBase(url, { allowInsecure });
+  return wrap(config, 'firestore', { url: base.origin, allowInsecure });
+}
+
+const notRewritten = (path, product = 'Storage', host = 'firebasestorage.googleapis.com') =>
+  `@aruma/web/metro: ${path} was bundled without the ${product} rewrite, so it keeps ${host}. A config wrapper applied after withAruma${product} replaced transformer.babelTransformerPath (react-native-svg-transformer and the like): apply withAruma${product} last, around the others`;

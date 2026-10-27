@@ -1,12 +1,13 @@
 // Copyright 2026 The Aruma Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// The build-time Storage rewrite, bundler by bundler (ADR-022 §16.1): the hooks unplugin.js turns
+// The build-time Storage and Firestore rewrite, bundler by bundler (ADR-022 §16.1, SR3-10): the hooks unplugin.js turns
 // into a webpack, Rspack, esbuild, Rollup and Rolldown plugin, and that vite.js uses directly (so
 // the Vite plugin, which Auth-only apps load too, does not need unplugin).
 //
-// It rewrites DEFAULT_HOST in @firebase/storage to Aruma's host (storage.js), and fails the build,
-// never silently ships Google's host:
+// It rewrites DEFAULT_HOST in @firebase/storage (storage.js) or @firebase/firestore (firestore.js) to
+// Aruma's host, and fails the build, never silently ships Google's host. Read "storage" below as
+// either product; a Firestore dist file with no host literal is fine (the shared chunk has it):
 //
 // 1. A @firebase/storage module whose literals are not found exactly once (another release).
 // 2. A @firebase/storage module that is in the final module set but still names Google, or that
@@ -19,6 +20,15 @@
 //    copy never passes through the bundler.
 import { readFile } from 'node:fs/promises';
 import {
+  firestoreBase,
+  firestoreLiteralProblem,
+  firestoreModuleCarries,
+  firestoreModuleRewritten,
+  isFirestoreModule,
+  namesGoogleFirestore,
+  rewriteFirestoreLiterals,
+} from './firestore.js';
+import {
   GSTATIC_FIREBASE,
   isStorageModule,
   literalProblem,
@@ -27,23 +37,64 @@ import {
   storageModuleRewritten,
 } from './storage.js';
 
-const NAME = 'aruma-web:storage';
-
-// A bare request for the Storage SDK, as a bundler names an external module.
+// A bare request for an SDK, as a bundler names an external module.
 const STORAGE_REQUEST = /^(?:@firebase\/storage(?:-compat)?|firebase\/(?:compat\/)?storage)(?:$|\/)/;
+const FIRESTORE_REQUEST = /^(?:@firebase\/firestore(?:-compat)?|firebase\/(?:compat\/)?firestore)(?:$|\/)/;
 
-const isStorageExternal = (id) => STORAGE_REQUEST.test(String(id)) || isStorageModule(id);
-
-const notRewritten = (id) =>
-  `@aruma/web: ${id} still names firebasestorage.googleapis.com in the bundle. Another plugin or a cached build replaced the rewritten module; clear the bundler's cache`;
-const externalized = (id) =>
-  `@aruma/web: ${id} is external to this bundle, so the Storage SDK loaded at run time keeps Google's host. Bundle it (Vite: ssr.noExternal, which the Vite plugin sets; webpack: remove it from externals)`;
-const noneSeen =
-  "@aruma/web: no @firebase/storage module was in this build, so nothing was rewritten. Import Storage from the 'firebase/storage' npm package, or pass required: false if this bundle does not use Storage";
 const gstatic = (where) =>
-  `@aruma/web: ${where} loads the Firebase SDK from a CDN (www.gstatic.com, or the Storage SDK from jsdelivr, unpkg and the like), which never passes through the build and keeps Google's Storage host. Import it from the 'firebase' npm package instead`;
-const unrewrittenCopy = (file) =>
-  `@aruma/web: ${file} holds a copy of the Storage SDK that still names firebasestorage.googleapis.com: a bundle the plugin did not reach (a Web Worker, a child compiler). Add the plugin there too (Vite: worker.plugins, which the Vite plugin sets)`;
+  `@aruma/web: ${where} loads the Firebase SDK from a CDN (www.gstatic.com, or the Storage or Firestore SDK from jsdelivr, unpkg and the like), which never passes through the build and keeps Google's Storage and Firestore hosts. Import it from the 'firebase' npm package instead`;
+
+// What differs between the products the build rewrites: Storage's DEFAULT_HOST and Firestore's. A
+// Firestore dist file that holds no host literal is fine (most import the shared chunk): the build
+// needs one module that carries the rewritten definition.
+const STORAGE = {
+  name: 'aruma-web:storage',
+  label: '@firebase/storage',
+  host: 'firebasestorage.googleapis.com',
+  base: storageBase,
+  isModule: isStorageModule,
+  filter: /[\\/]@firebase[\\/]storage[\\/]dist[\\/]/,
+  request: STORAGE_REQUEST,
+  rewrite: rewriteStorageLiterals,
+  problem: literalProblem,
+  rewritten: storageModuleRewritten,
+  carries: () => true,
+  // The Storage SDK is told by its version header, so an app's own mention of the host is not flagged.
+  leaks: (code) => code.includes('X-Firebase-Storage-Version') && /["'`]firebasestorage\.googleapis\.com["'`]/.test(code),
+  notRewritten: (id) =>
+    `@aruma/web: ${id} still names firebasestorage.googleapis.com in the bundle. Another plugin or a cached build replaced the rewritten module; clear the bundler's cache`,
+  externalized: (id) =>
+    `@aruma/web: ${id} is external to this bundle, so the Storage SDK loaded at run time keeps Google's host. Bundle it (Vite: ssr.noExternal, which the Vite plugin sets; webpack: remove it from externals)`,
+  noneSeen:
+    "@aruma/web: no @firebase/storage module was in this build, so nothing was rewritten. Import Storage from the 'firebase/storage' npm package, or pass required: false if this bundle does not use Storage",
+  unrewrittenCopy: (file) =>
+    `@aruma/web: ${file} holds a copy of the Storage SDK that still names firebasestorage.googleapis.com: a bundle the plugin did not reach (a Web Worker, a child compiler). Add the plugin there too (Vite: worker.plugins, which the Vite plugin sets)`,
+};
+
+const FIRESTORE = {
+  name: 'aruma-web:firestore',
+  label: '@firebase/firestore',
+  host: 'firestore.googleapis.com',
+  base: firestoreBase,
+  isModule: isFirestoreModule,
+  filter: /[\\/]@firebase[\\/]firestore[\\/]dist[\\/]/,
+  request: FIRESTORE_REQUEST,
+  rewrite: rewriteFirestoreLiterals,
+  problem: firestoreLiteralProblem,
+  rewritten: firestoreModuleRewritten,
+  carries: firestoreModuleCarries,
+  leaks: namesGoogleFirestore,
+  notRewritten: (id) =>
+    `@aruma/web: ${id} still names firestore.googleapis.com in the bundle. Another plugin or a cached build replaced the rewritten module; clear the bundler's cache`,
+  externalized: (id) =>
+    `@aruma/web: ${id} is external to this bundle, so the Firestore SDK loaded at run time keeps Google's host and sends the Aruma ID token there. Bundle it (Vite: ssr.noExternal, which the Vite plugin sets; webpack: remove it from externals)`,
+  noneSeen:
+    "@aruma/web: no @firebase/firestore module carrying the Firestore host was in this build, so nothing was rewritten. Import Firestore from the 'firebase/firestore' npm package, or pass required: false if this bundle does not use Firestore",
+  unrewrittenCopy: (file) =>
+    `@aruma/web: ${file} holds a copy of the Firestore SDK that still names firestore.googleapis.com and would send the Aruma ID token there: a bundle the plugin did not reach (a Web Worker, a child compiler). Add the plugin there too (Vite: worker.plugins, which the Vite plugin sets)`,
+};
+
+export { FIRESTORE, STORAGE };
 
 /**
  * The options every adapter takes.
@@ -55,20 +106,32 @@ const unrewrittenCopy = (file) =>
  * @param {StorageOptions} options
  */
 export function storageRewriter(options) {
+  return productRewriter(STORAGE, options);
+}
+
+/** The same for Cloud Firestore (SR3-10). */
+export function firestoreRewriter(options) {
+  return productRewriter(FIRESTORE, options);
+}
+
+function productRewriter(P, options) {
   const { url, allowInsecure = false, required = true, log = false } = options;
-  const base = storageBase(url, { allowInsecure });
+  const base = P.base(url, { allowInsecure });
   const rewritten = new Set();
   return {
     base,
     required,
     rewritten,
+    product: P,
+    isModule: P.isModule,
     /** The transform of one module, or null. Throws on a module it cannot rewrite. */
     transform(code, id) {
-      if (!isStorageModule(id)) return null;
-      const r = rewriteStorageLiterals(code, base);
-      if (!r.ok) throw new Error(literalProblem(id, r, base));
+      if (!P.isModule(id)) return null;
+      const r = P.rewrite(code, base);
+      if (!r.ok) throw new Error(P.problem(id, r, base));
+      if (r.hosts === 0 && P !== STORAGE) return null;
       rewritten.add(id);
-      if (log) console.info(`[aruma] storage: ${id} -> ${base.host}`);
+      if (log) console.info(`[aruma] ${P.name.slice(10)}: ${id} -> ${base.host}`);
       return { code: r.code, map: null };
     },
     /**
@@ -80,14 +143,15 @@ export function storageRewriter(options) {
       let storage = 0;
       for (const m of modules) {
         if (m.external) {
-          if (isStorageExternal(m.id)) problems.push(externalized(m.id));
+          if (P.request.test(String(m.id)) || P.isModule(m.id)) problems.push(P.externalized(m.id));
           continue;
         }
-        if (!isStorageModule(m.id)) continue;
-        storage++;
-        if (!storageModuleRewritten(m.code ?? '', base)) problems.push(notRewritten(m.id));
+        if (!P.isModule(m.id)) continue;
+        const code = m.code ?? '';
+        if (!P.rewritten(code, base)) problems.push(P.notRewritten(m.id));
+        else if (P.carries(code, base)) storage++;
       }
-      if (storage === 0 && required && browser && !watch) problems.push(noneSeen);
+      if (storage === 0 && required && browser && !watch) problems.push(P.noneSeen);
       return problems;
     },
     /**
@@ -99,9 +163,7 @@ export function storageRewriter(options) {
       const problems = [];
       for (const f of files) {
         if (GSTATIC_FIREBASE.test(f.code)) problems.push(gstatic(f.name));
-        if (f.code.includes('X-Firebase-Storage-Version') && /["'`]firebasestorage\.googleapis\.com["'`]/.test(f.code)) {
-          problems.push(unrewrittenCopy(f.name));
-        }
+        if (P.leaks(f.code)) problems.push(P.unrewrittenCopy(f.name));
       }
       return problems;
     },
@@ -137,6 +199,7 @@ function rollupVerify(rw, ctx, bundle, { browser }) {
 // webpack and Rspack: the module set at finishModules (also the modules a persistent cache
 // restored, which the transform never saw), and the emitted assets.
 function tapWebpack(rw, compiler) {
+  const NAME = rw.product.name;
   // Asked per compilation: webpack sets the compiler's name and target defaults after the plugins
   // are applied. Next.js names its compilers client, server and edge-server.
   const server = () =>
@@ -155,7 +218,7 @@ function tapWebpack(rw, compiler) {
           continue;
         }
         const id = m.resource ?? '';
-        if (!isStorageModule(id)) continue;
+        if (!rw.isModule(id)) continue;
         let code = '';
         try {
           code = String(m.originalSource()?.source() ?? '');
@@ -178,10 +241,20 @@ function tapWebpack(rw, compiler) {
 
 /** The unplugin factory. Exported for the Vite plugin. */
 export function storageFactory(options = {}, meta = {}) {
+  return productFactory(STORAGE, options, meta);
+}
+
+/** The unplugin factory for Firestore. */
+export function firestoreFactory(options = {}, meta = {}) {
+  return productFactory(FIRESTORE, options, meta);
+}
+
+function productFactory(P, options, meta) {
   const { url } = options;
+  const NAME = P.name;
   // Not configured: the plugin does nothing (as the Auth plugins).
   if (url === undefined || url === null || String(url).trim() === '') return { name: NAME };
-  const rw = storageRewriter(options);
+  const rw = productRewriter(P, options);
   // esbuild has no module set to inspect after the build: the transforms of this build count.
   const esbuild = { browser: true, built: 0 };
   return {
@@ -192,7 +265,7 @@ export function storageFactory(options = {}, meta = {}) {
     },
     resolveId: { filter: { id: GSTATIC_FIREBASE }, handler: (id) => rw.resolveGstatic(id) },
     transform: {
-      filter: { id: /[\\/]@firebase[\\/]storage[\\/]dist[\\/]/ },
+      filter: { id: P.filter },
       handler(code, id) {
         const r = rw.transform(code, id);
         if (r) esbuild.built++;
@@ -201,10 +274,10 @@ export function storageFactory(options = {}, meta = {}) {
     },
     buildEnd() {
       if (meta.framework !== 'esbuild') return;
-      if (esbuild.built === 0 && rw.required && esbuild.browser) throw new Error(noneSeen);
+      if (esbuild.built === 0 && rw.required && esbuild.browser) throw new Error(P.noneSeen);
     },
     esbuild: {
-      onLoadFilter: /[\\/]@firebase[\\/]storage[\\/]dist[\\/]/,
+      onLoadFilter: P.filter,
       config(initial) {
         esbuild.browser = initial.platform !== 'node';
       },
@@ -236,7 +309,7 @@ export function esbuildOptimizerPlugin(rw, name) {
         rw.resolveGstatic(args.path);
         return null;
       });
-      build.onLoad({ filter: /[\\/]@firebase[\\/]storage[\\/]dist[\\/]/ }, async (args) => {
+      build.onLoad({ filter: rw.product.filter }, async (args) => {
         const r = rw.transform(await readFile(args.path, 'utf8'), args.path);
         return r ? { contents: r.code, loader: 'js' } : null;
       });

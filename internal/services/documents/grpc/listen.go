@@ -29,83 +29,93 @@ var errOutboxFull = wire.NewError(wire.CodeResourceExhausted,
 // stream is bounded by its token and the stream limits (ADR-026 §3, §4), not by
 // server_stream_max.
 func (f firestore) Listen(ctx context.Context, conn *connect.BidiStream[pb.ListenRequest, pb.ListenResponse]) error {
-	h := f.h
-	s, err := h.openServerStream(ctx, 0)
+	s, err := f.h.openServerStream(ctx, 0)
 	if err != nil {
 		return connectError(err)
 	}
-	return s.run(func() error {
-		defer s.cutReadsAtEnd()()
+	return s.run(func() error { return f.h.listen(s, call(ctx, conn.RequestHeader()), conn) })
+}
 
-		first, err := receive(s, conn.Receive, errFirstMessage)
-		if err != nil {
-			return endOfRequests(err)
-		}
-		ls, err := h.svc.OpenListen(s.ctx, call(ctx, conn.RequestHeader()), first)
-		if err != nil {
-			return err
-		}
-		defer ls.Close()
-		release, err := h.watchListenStream(s, ls)
-		if err != nil {
-			return err
-		}
-		defer release()
-		s.admitted()
+// ListenConn is a Listen stream's messages on its transport: gRPC's bidi stream, or a WebChannel
+// session (ServeListen). Receive returns io.EOF once the client ended its side, and
+// os.ErrDeadlineExceeded past the read deadline; Send fails past the write deadline.
+type ListenConn interface {
+	Receive() (*pb.ListenRequest, error)
+	Send(*pb.ListenResponse) error
+}
 
-		requests := make(chan *pb.ListenRequest)
-		done := make(chan struct{})
-		var ending atomic.Bool
-		var reader sync.WaitGroup
-		reader.Go(func() {
-			defer close(requests)
-			for {
-				req, err := conn.Receive()
-				if err != nil {
-					// A client that closed its side ends the stream normally (requests closes);
-					// a failed read ends it with the read's error, unless the stream is ending
-					// and cut the read itself.
-					if !errors.Is(err, io.EOF) && !ending.Load() {
-						s.cancel(err)
-					}
-					return
-				}
-				select {
-				case requests <- req:
-				case <-done:
-					return
-				}
-			}
-		})
-		defer func() {
-			ending.Store(true)
-			close(done)
-			_ = s.info.rc.SetReadDeadline(time.Now())
-			reader.Wait()
-		}()
+// listen is a Listen stream's work on s, for either transport.
+func (h *Handler) listen(s *serverStream, c api.Call, conn ListenConn) error {
+	defer s.cutReadsAtEnd()()
 
-		out := newOutbox(s, h.limits.StreamOutboxBytes, h.limits.StreamWriteStall)
-		var sender sync.WaitGroup
-		sender.Go(func() {
-			// No write deadline: the outbox bounds a client that does not read.
-			out.run(func(r *pb.ListenResponse) error { return s.sendWithin(0, func() error { return conn.Send(r) }) })
-		})
-		defer func() {
-			out.stop()
-			sender.Wait()
-		}()
-		err = ls.Serve(s.ctx, first, requests, out.push)
-		// What was queued goes before the stream's status, unless the stream ended from outside.
-		if s.ctx.Err() == nil {
-			if ferr := out.flush(); ferr != nil && err == nil {
-				err = ferr
-			}
-		}
-		if out.overflowed.Load() {
-			h.overflow(s, "stream_outbox_bytes")
-		}
+	first, err := receive(s, conn.Receive, errFirstMessage)
+	if err != nil {
+		return endOfRequests(err)
+	}
+	ls, err := h.svc.OpenListen(s.ctx, c, first)
+	if err != nil {
 		return err
+	}
+	defer ls.Close()
+	release, err := h.watchListenStream(s, ls)
+	if err != nil {
+		return err
+	}
+	defer release()
+	s.admitted()
+
+	requests := make(chan *pb.ListenRequest)
+	done := make(chan struct{})
+	var ending atomic.Bool
+	var reader sync.WaitGroup
+	reader.Go(func() {
+		defer close(requests)
+		for {
+			req, err := conn.Receive()
+			if err != nil {
+				// A client that closed its side ends the stream normally (requests closes);
+				// a failed read ends it with the read's error, unless the stream is ending
+				// and cut the read itself.
+				if !errors.Is(err, io.EOF) && !ending.Load() {
+					s.cancel(err)
+				}
+				return
+			}
+			select {
+			case requests <- req:
+			case <-done:
+				return
+			}
+		}
 	})
+	defer func() {
+		ending.Store(true)
+		close(done)
+		_ = s.info.rc.SetReadDeadline(time.Now())
+		reader.Wait()
+	}()
+
+	out := newOutbox(s, h.limits.StreamOutboxBytes, h.limits.StreamWriteStall)
+	var sender sync.WaitGroup
+	sender.Go(func() {
+		// No write deadline: the outbox bounds a client that does not read.
+		out.run(func(r *pb.ListenResponse) error { return s.sendWithin(0, func() error { return conn.Send(r) }) })
+	})
+	defer func() {
+		out.stop()
+		sender.Wait()
+	}()
+	err = ls.Serve(s.ctx, first, requests, out.push)
+	// What was queued goes before the stream's status, unless the stream ended from outside.
+	if s.ctx.Err() == nil {
+		if ferr := out.flush(); ferr != nil && err == nil {
+			err = ferr
+		}
+	}
+	if out.overflowed.Load() {
+		h.overflow(s, "stream_outbox_bytes")
+	}
+	return err
 }
 
 // cutReadsAtEnd makes a stream ended from outside (the drain, the client's reset) stop waiting on
