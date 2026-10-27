@@ -29,6 +29,9 @@ import (
 // binary applies x op y for every binary operator but && and ||, which the interpreter
 // evaluates itself: + - * / % < <= > >= == != and in.
 func binary(m *meter, op token, x, y Value) (Value, error) {
+	if x.kind == KindConstraint || y.kind == KindConstraint {
+		return constrained(m, op, x, y) // constraint.go
+	}
 	if err := reserved(x); err != nil {
 		return Value{}, err
 	}
@@ -340,6 +343,9 @@ func absUint(a int64) uint64 {
 // name like constructor (Pyric prototype-chain-keys, undefined-field-access); a path's fields
 // are the variables bound into it, and the paths the rules hold bind none (hidane).
 func selectField(m *meter, x Value, name string) (Value, error) {
+	if mv, ok := x.partial(); ok {
+		return partialField(mv, name)
+	}
 	if err := reserved(x); err != nil {
 		return Value{}, err
 	}
@@ -355,11 +361,14 @@ func selectField(m *meter, x Value, name string) (Value, error) {
 }
 
 // entry returns a map's entry: an error when it is missing, and an error without a message
-// when it holds a reserved value.
+// when it holds a reserved value other than a PartialMap (resource.data in a list).
 func entry(x Value, name string) (Value, error) {
 	v, ok := x.mapv().entries[name]
 	if !ok {
 		return Value{}, errProperty(name)
+	}
+	if _, ok := v.partial(); ok {
+		return v, nil
 	}
 	if err := reserved(v); err != nil {
 		return Value{}, err
@@ -371,6 +380,9 @@ func entry(x Value, name string) (Value, error) {
 // segment, string indexes counting UTF-16 code units. A negative index or one past the end is
 // an error, never null (Pyric undefined-field-access).
 func selectIndex(m *meter, x, i Value) (Value, error) {
+	if mv, ok := x.partial(); ok && i.kind == KindString {
+		return partialField(mv, i.str())
+	}
 	if err := reserved(x); err != nil {
 		return Value{}, err
 	}
