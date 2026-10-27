@@ -713,6 +713,90 @@
         "node": "v24.21.0"
       }
     },
+    "corpus/f6-cors.json": {
+      "generator": "test/oracle/documents/production/record-f6-web.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T20:36:49.305Z .. 2026-10-27T20:41:39.278Z",
+      "sha256": "f58cfbf9bf392672fe2392b6b30fa7c6f1680d6806ef35448ce5506d68b778cc",
+      "versions": {
+        "chromium": "156.0.8078.4",
+        "firebase JS SDK": "13.0.0",
+        "firebase-tools (auth only)": "13.23.0",
+        "generator sha256": "b6733b468d210c8d44cd14088c070f0d20c8baabf7931d954f3adfcf9026fff9",
+        "node": "v24.21.0",
+        "playwright": "1.64.1"
+      }
+    },
+    "corpus/f6-lite.json": {
+      "generator": "test/oracle/documents/production/record-f6-web.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T20:36:49.305Z .. 2026-10-27T20:41:39.307Z",
+      "sha256": "b638944c4e9eef4c655bb1d520a27950856809624c21bb5a11f193e65b95733c",
+      "versions": {
+        "chromium": "156.0.8078.4",
+        "firebase JS SDK": "13.0.0",
+        "firebase-tools (auth only)": "13.23.0",
+        "generator sha256": "b6733b468d210c8d44cd14088c070f0d20c8baabf7931d954f3adfcf9026fff9",
+        "node": "v24.21.0",
+        "playwright": "1.64.1"
+      }
+    },
+    "corpus/f6-webchannel-errors.json": {
+      "generator": "test/oracle/documents/production/record-f6-web.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T20:36:49.305Z .. 2026-10-27T20:41:39.247Z",
+      "sha256": "07c846e44d3dc8cb1ac2c232fb43ae57b2367490abbd581e4d4dbeca48fd312d",
+      "versions": {
+        "chromium": "156.0.8078.4",
+        "firebase JS SDK": "13.0.0",
+        "firebase-tools (auth only)": "13.23.0",
+        "generator sha256": "b6733b468d210c8d44cd14088c070f0d20c8baabf7931d954f3adfcf9026fff9",
+        "node": "v24.21.0",
+        "playwright": "1.64.1"
+      }
+    },
+    "corpus/f6-webchannel-listen.json": {
+      "generator": "test/oracle/documents/production/record-f6-web.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T20:36:49.305Z .. 2026-10-27T20:41:39.094Z",
+      "sha256": "ec3e8119d29ee5658dc862a668f435df3785d96d63381db12f33030a64a49e3d",
+      "versions": {
+        "chromium": "156.0.8078.4",
+        "firebase JS SDK": "13.0.0",
+        "firebase-tools (auth only)": "13.23.0",
+        "generator sha256": "b6733b468d210c8d44cd14088c070f0d20c8baabf7931d954f3adfcf9026fff9",
+        "node": "v24.21.0",
+        "playwright": "1.64.1"
+      }
+    },
+    "corpus/f6-webchannel-longpoll.json": {
+      "generator": "test/oracle/documents/production/record-f6-web.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T20:36:49.305Z .. 2026-10-27T20:41:39.185Z",
+      "sha256": "66555b3ad3e9e448e27b1541396940ec12f9542efe55107fea9352ca4c26b8de",
+      "versions": {
+        "chromium": "156.0.8078.4",
+        "firebase JS SDK": "13.0.0",
+        "firebase-tools (auth only)": "13.23.0",
+        "generator sha256": "b6733b468d210c8d44cd14088c070f0d20c8baabf7931d954f3adfcf9026fff9",
+        "node": "v24.21.0",
+        "playwright": "1.64.1"
+      }
+    },
+    "corpus/f6-webchannel-write.json": {
+      "generator": "test/oracle/documents/production/record-f6-web.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T20:36:49.305Z .. 2026-10-27T20:41:39.216Z",
+      "sha256": "dacd948296667db86b0567cf2eabeb4a9a0066270fc4fe74af3989ff9de276de",
+      "versions": {
+        "chromium": "156.0.8078.4",
+        "firebase JS SDK": "13.0.0",
+        "firebase-tools (auth only)": "13.23.0",
+        "generator sha256": "b6733b468d210c8d44cd14088c070f0d20c8baabf7931d954f3adfcf9026fff9",
+        "node": "v24.21.0",
+        "playwright": "1.64.1"
+      }
+    },
     "corpus/indexes-105.emulator.json": {
       "generator": ".cache/briefs/research/artifacts/composite-index-probe.mjs emu (the same shapes as test/oracle/documents/production/record-indexes.mjs), converted by record-indexes.mjs --import composite-index-probe-emulator.json",
       "oracle": "emulator",
