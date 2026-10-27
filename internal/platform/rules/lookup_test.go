@@ -37,7 +37,7 @@ func TestLookups(t *testing.T) {
 		{"exists of a stored document", exists("request"), OutcomeTrue, 1},
 		{"exists of a missing one", exists("resource"), OutcomeFalse, 1},
 		{"get of a stored document is its value", or(get("request"), tru()), OutcomeTrue, 1},
-		{"get of a missing one is null", get("resource"), OutcomeError, 1},
+		{"get of a missing one is an error", get("resource"), OutcomeError, 1},
 		{"get of a missing one, absorbed", or(get("resource"), tru()), OutcomeTrue, 1},
 		{"get and exists of one path: one read", and(exists("request"), or(get("request"), tru())), OutcomeTrue, 1},
 		{"getAfter is another state", and(exists("request"), call("existsAfter", ident("request"))), OutcomeTrue, 2},
@@ -65,39 +65,64 @@ func TestLookups(t *testing.T) {
 	}
 }
 
-// Firestore's limits: 10 lookups an operation and 20 a request; a cached lookup does not count;
-// going past one denies the whole evaluation, which || does not absorb (ADR-021 §4).
+// Firestore's limits: 10 distinct documents an operation and 20 a request. A document looked up
+// again is read once, counts once against the request, and against each operation that looks it
+// up; a document the request writes is free; a pooled budget has the request's limit alone.
+// Going past a limit is an evaluation error, which || absorbs (production, f5-rules-lookup-limits
+// miss-exists; ADR-021 §4).
 func TestLookupBudget(t *testing.T) {
-	cond := or(or(call("exists", ident("request")), call("exists", ident("resource"))), tru())
-	rs := lookupRules(t, cond)
-	rs.lim.LookupsPerOperation = 1
-	docs := &memDocs{}
-	d := evaluate(t, rs, lookupRequest(docs, "x/1", "x/2"))
+	stored := map[string]Value{}
+	for _, p := range []string{"x/1", "x/2", "x/3", "x/4"} {
+		stored["databases/(default)/documents/"+p] = Map(nil)
+	}
+	both := and(call("exists", ident("request")), call("exists", ident("resource")))
+	limited := func(cond expr, perOperation, perRequest int) *Ruleset {
+		rs := lookupRules(t, cond)
+		rs.lim.LookupsPerOperation, rs.lim.LookupsPerRequest = perOperation, perRequest
+		return rs
+	}
+	docs := &memDocs{docs: stored}
+	d := evaluate(t, limited(both, 1, 20), lookupRequest(docs, "x/1", "x/2"))
 	if d.Allow || !strings.Contains(d.Statements[0].Message, "limit of 1 document lookups") || docs.total() != 1 {
 		t.Fatalf("past the operation's limit: %+v after %d reads", d, docs.total())
 	}
-	// The same path twice is one lookup.
-	if d := evaluate(t, rs, lookupRequest(docs, "x/1", "x/1")); !d.Allow {
-		t.Fatalf("a cached lookup counted: %+v", d)
+	if d := evaluate(t, limited(or(both, tru()), 1, 20), lookupRequest(docs, "x/1", "x/2")); !d.Allow {
+		t.Fatalf("past the operation's limit, not absorbed by ||: %+v", d)
+	}
+	// The same path twice is one document.
+	if d := evaluate(t, limited(both, 1, 20), lookupRequest(docs, "x/1", "x/1")); !d.Allow {
+		t.Fatalf("one document counted twice: %+v", d)
+	}
+	// A pooled budget has the request's limit alone; an exempt document counts against none.
+	req := lookupRequest(docs, "x/1", "x/2")
+	req.Budget = NewPooledBudget()
+	if d := evaluate(t, limited(both, 1, 2), req); !d.Allow {
+		t.Fatalf("a pooled budget held to the operation's limit: %+v", d)
+	}
+	req = lookupRequest(docs, "x/1", "x/2")
+	req.Budget.Exempt([]string{"databases", "(default)", "documents", "x", "2"})
+	if d := evaluate(t, limited(both, 1, 1), req); !d.Allow {
+		t.Fatalf("an exempt document counted: %+v", d)
 	}
 
-	// The request's limit is shared by the operations of a batch, and so is the cache.
-	rs = lookupRules(t, cond)
-	rs.lim.LookupsPerRequest = 3
+	// The request's limit is shared by the operations of a batch, and so is the cache; each
+	// operation counts a document another read first against its own limit.
 	budget := NewBudget()
-	docs = &memDocs{}
+	docs = &memDocs{docs: stored}
 	for i, c := range []struct {
 		request, resource string
+		perOperation      int
 		allow             bool
 	}{
-		{"x/1", "x/2", true},  // two lookups
-		{"x/1", "x/2", true},  // both cached
-		{"x/2", "x/3", true},  // one more: three
-		{"x/3", "x/4", false}, // the fourth
+		{"x/1", "x/2", 2, true},  // two documents
+		{"x/1", "x/2", 2, true},  // both cached
+		{"x/1", "x/2", 1, false}, // cached, but two for this operation
+		{"x/2", "x/3", 2, true},  // one more: three
+		{"x/3", "x/4", 2, false}, // the fourth
 	} {
 		req := lookupRequest(docs, c.request, c.resource)
 		req.Budget = budget
-		if d := evaluate(t, rs, req); d.Allow != c.allow {
+		if d := evaluate(t, limited(both, c.perOperation, 3), req); d.Allow != c.allow {
 			t.Fatalf("operation %d: %+v", i+1, d)
 		}
 	}
@@ -169,10 +194,11 @@ func TestLookupOutage(t *testing.T) {
 	}
 }
 
-// get() of a missing document is null (the rules.firestore reference, the emulator).
-func TestGetMissingIsNull(t *testing.T) {
+// get() of a missing document is an evaluation error, not null as the reference says
+// (production: f5-rules-lookups.json read.lk-get-missing, read.lk-get-missing-or; ADR-021 F5-A2b).
+func TestGetMissingIsAnError(t *testing.T) {
 	got := evaluate(t, lookupRules(t, call("get", ident("resource"))), lookupRequest(&memDocs{}, "x/1", "x/2"))
-	if got.Statements[0].Message != "Type error. Received: [null] Expected: [bool]." {
+	if got.Statements[0].Outcome != OutcomeError || !strings.Contains(got.Statements[0].Message, "does not exist") {
 		t.Errorf("get of a missing document: %+v", got.Statements[0])
 	}
 }

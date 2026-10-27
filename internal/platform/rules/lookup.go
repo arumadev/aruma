@@ -3,7 +3,6 @@ package rules
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -34,18 +33,24 @@ func (NoDocuments) Get(context.Context, int64, []string, bool) (Value, bool, err
 
 // Budget holds Firebase's limits on document lookups for one request, and the lookups made so
 // far: a service makes one per request and passes it to each operation of the request, so a
-// batch or a transaction shares it (ADR-021 §3). Only Firebase's limits are shared; Aruma's are
-// each evaluation's own (meter).
+// multi-document read, a batch or a transaction shares it (ADR-021 §3). Only Firebase's limits
+// are shared; Aruma's are each evaluation's own (meter).
 //
-// A lookup answered from the cache does not count ("cached calls do not count"). get() and
-// exists() on the same path in the same state are one lookup. The limits are not the budget's:
-// Evaluate takes them from the ruleset (lookupLimits), so a budget made for one service cannot
-// give another service's limits. Each evaluation counts its own lookups against the operation's
-// limit; the budget counts the request's against the request's.
+// The limits count distinct documents (production, f5-rules-lookup-limits.json): get() and
+// exists() of one path, and getAfter() and existsAfter() of it, are one document, read from
+// Documents once per state. An operation counts every document it looks up against its own
+// limit, whether another operation of the request read it first or not (commit.r1a-r11a: the
+// second write alone looks up 11); the request counts each document once against its limit. A
+// document the request writes (Exempt) counts against neither (commit.peer-a-peer-b,
+// write.self-after). The limits are not the budget's: Evaluate takes them from the ruleset
+// (lookupLimits), so a budget made for one service cannot give another service's limits; a
+// pooled budget only lifts the operation's limit to the request's.
 type Budget struct {
-	mu    sync.Mutex
-	used  int // lookups the request has made, cached ones excluded
-	cache map[lookupKey]lookupResult
+	mu      sync.Mutex
+	pooled  bool
+	counted map[string]bool // the documents the request has counted, by encoded path
+	exempt  map[string]bool // the documents the request writes, which count against no limit
+	cache   map[lookupKey]lookupResult
 }
 
 // lookupKey names one cached lookup.
@@ -62,9 +67,27 @@ type lookupResult struct {
 	err   error // an *evalError, or nil
 }
 
-// NewBudget returns an empty budget for one request.
+// NewBudget returns an empty budget for one request whose operations each have the operation's
+// limit as well as the request's: a get of one document, a commit's writes.
 func NewBudget() *Budget {
-	return &Budget{cache: map[lookupKey]lookupResult{}}
+	return &Budget{counted: map[string]bool{}, exempt: map[string]bool{}, cache: map[lookupKey]lookupResult{}}
+}
+
+// NewPooledBudget returns an empty budget for one request whose operations have the request's
+// limit alone: a read of several documents (batch-get-r1a-r20a: 10 and 20 lookups, 20
+// distinct, allowed), a list query (run-query-20).
+func NewPooledBudget() *Budget {
+	b := NewBudget()
+	b.pooled = true
+	return b
+}
+
+// Exempt makes the lookups of the document at path (databases/(default)/documents/...) free:
+// one the request writes.
+func (b *Budget) Exempt(path []string) {
+	b.mu.Lock()
+	b.exempt[encodePath(path)] = true
+	b.mu.Unlock()
 }
 
 // lookupLimits returns the lookups one operation and one request of svc may make: in Firestore
@@ -90,12 +113,12 @@ var lookupFunctions = map[Service]map[string]bool{
 // isLookup reports whether name ("get", "firestore.get") is a lookup svc enables.
 func isLookup(svc Service, name string) bool { return lookupFunctions[svc][name] }
 
-// lookup calls a lookup: get and getAfter return the document, or null when it does not exist
-// (the rules.firestore reference: "the document, or null if it does not exist"; the emulator
-// agrees, and no deployed capture tells the two apart); exists and existsAfter whether it does.
-// The argument is a path to a document of the default database. A Documents that cannot read
-// Firestore (ErrNoDocuments) is an evaluation error; going past a lookup limit ends the
-// evaluation with a denial (ADR-021 §4); any other failure of Documents is an outage.
+// lookup calls a lookup: get and getAfter return the document, and are an evaluation error when
+// it does not exist (production: get(missing).data.v == 1 || true allows, the same alone
+// denies; not the reference's "null"); exists and existsAfter whether it does. The argument is
+// a path to a document of the default database. A Documents that cannot read Firestore
+// (ErrNoDocuments) and going past a lookup limit are evaluation errors, which || absorbs
+// (ADR-021 §4); any other failure of Documents is an outage.
 func (ev *evaluator) lookup(e *callExpr, fr *frame) (Value, error) {
 	if len(e.args) != 1 {
 		return Value{}, errorf("Incorrect number of arguments. Received: %d. Expected: %s(path).", len(e.args), e.name)
@@ -119,7 +142,7 @@ func (ev *evaluator) lookup(e *callExpr, fr *frame) (Value, error) {
 		return Bool(found), nil
 	}
 	if !found {
-		return Null(), nil
+		return Value{}, errorf("Service call error. Function: [%s], Argument: [/%s]: the document does not exist.", e.name, clip(strings.Join(segs, "/")))
 	}
 	return doc, nil
 }
@@ -132,33 +155,46 @@ func isDocumentPath(segs []string) bool {
 		segs[0] == "databases" && segs[1] == "(default)" && segs[2] == "documents"
 }
 
-// read reads a document through the request's budget: a cached lookup is free; any other counts
-// against the operation's limit and the request's before Documents is asked. A lookup that
-// failed with ErrNoDocuments counts once, as a document does.
+// read reads a document through the request's budget. A document the request writes is free;
+// any other counts once against the operation's limit and once against the request's, before
+// it is first looked up by each, and is read from Documents once per state. Going past a limit
+// is an evaluation error, as production's is (lookup-limits miss-exists, live-after: absorbed by
+// ||), and is not cached: nothing was read. A lookup that failed with ErrNoDocuments counts
+// once, as a document does.
 func (ev *evaluator) read(segs []string, after bool) (Value, bool, error) {
+	if err := ev.ctx.Err(); err != nil {
+		return Value{}, false, &abort{msg: "evaluation cancelled", err: err}
+	}
 	b := ev.req.Budget
-	key := lookupKey{after: after, path: encodePath(segs)}
+	path := encodePath(segs)
+	key := lookupKey{after: after, path: path}
+	perOperation, perRequest := lookupLimits(ev.rs.service, &ev.rs.lim)
 	b.mu.Lock()
+	if b.pooled {
+		perOperation = perRequest
+	}
+	if !b.exempt[path] && !ev.lookups[path] {
+		if len(ev.lookups) >= perOperation {
+			b.mu.Unlock()
+			return Value{}, false, errorf("evaluation exceeded the limit of %d document lookups", perOperation)
+		}
+		if !b.counted[path] {
+			if len(b.counted) >= perRequest {
+				b.mu.Unlock()
+				return Value{}, false, errorf("request exceeded the limit of %d document lookups", perRequest)
+			}
+			b.counted[path] = true
+		}
+		if ev.lookups == nil {
+			ev.lookups = map[string]bool{}
+		}
+		ev.lookups[path] = true
+	}
 	r, hit := b.cache[key]
 	b.mu.Unlock()
 	if hit {
 		return r.doc, r.found, r.err
 	}
-	if err := ev.ctx.Err(); err != nil {
-		return Value{}, false, &abort{msg: "evaluation cancelled", err: err}
-	}
-	perOperation, perRequest := lookupLimits(ev.rs.service, &ev.rs.lim)
-	if ev.lookups >= perOperation {
-		return Value{}, false, &abort{msg: fmt.Sprintf("evaluation exceeded the limit of %d document lookups", perOperation)}
-	}
-	b.mu.Lock()
-	if b.used >= perRequest {
-		b.mu.Unlock()
-		return Value{}, false, &abort{msg: fmt.Sprintf("request exceeded the limit of %d document lookups", perRequest)}
-	}
-	b.used++
-	b.mu.Unlock()
-	ev.lookups++
 
 	doc, found, err := ev.req.Documents.Get(ev.ctx, ev.req.Project, segs, after)
 	r = lookupResult{doc: doc, found: found}

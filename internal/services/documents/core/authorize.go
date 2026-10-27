@@ -19,10 +19,16 @@ import (
 // the commit's writes leave it, folded without their preconditions (the rules decide before
 // whether the document exists does). Exists is false on either side for no document. A document
 // the commit only verifies is not proposed.
+//
+// Asserts is whether the first precondition of the commit's writes of it says the document
+// exists (exists, or an update_time) or does not (exists: false); nil when none says. The rules
+// judge such a write by what it asserts, not by what is stored: a create over a stored document
+// is a create, then ALREADY_EXISTS (f5-rules-methods.json order.create-existing-create-only).
 type Proposal struct {
-	Path   Path
-	Before Document
-	After  Document
+	Path    Path
+	Before  Document
+	After   Document
+	Asserts *bool
 }
 
 // Authorizer judges a commit's proposals, in lock order; now is the request time the writes'
@@ -77,12 +83,25 @@ func (s *PGStore) authorize(ctx context.Context, db DB, p *plan) error {
 	if err != nil {
 		return err
 	}
+	asserts := make(map[*docChange]*bool, len(p.docs))
+	for i, w := range p.writes {
+		d := p.of[i]
+		if _, ok := asserts[d]; ok {
+			continue
+		}
+		switch {
+		case w.Precondition.Exists != nil:
+			asserts[d] = new(*w.Precondition.Exists)
+		case !w.Precondition.UpdateTime.IsZero():
+			asserts[d] = new(true)
+		}
+	}
 	proposals := make([]Proposal, 0, len(p.docs))
 	for _, d := range p.docs {
 		if !d.mutates {
 			continue
 		}
-		pr := Proposal{Path: d.path, Before: Document{Path: d.path}, After: Document{Path: d.path}}
+		pr := Proposal{Path: d.path, Before: Document{Path: d.path}, After: Document{Path: d.path}, Asserts: asserts[d]}
 		if d.before != nil {
 			pr.Before.Fields, pr.Before.CreateTime, pr.Before.UpdateTime = d.before.fields, d.before.createTime, d.before.updateTime
 		}

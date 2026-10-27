@@ -22,16 +22,24 @@ import (
 //
 //	get     a read: Get, BatchGet, the reads of a transaction. resource is the document read, or
 //	        null; request.resource null
-//	create  a write whose document did not exist before the commit and does after
-//	update  a write whose document existed before and after
+//	create  a write whose document does exist after the commit, and either did not before or
+//	        has a precondition exists: false
+//	update  a write whose document exists after the commit, and either did before or has a
+//	        precondition that it does (exists, update_time)
 //	delete  a write whose document does not exist after (resource the one before, or null)
 //
-// A write is judged by its document as stored before the commit (resource) and as the commit's
-// writes leave it, transforms applied (request.resource): a commit's writes of one document are
-// judged once, together. A commit, Write stream batch or transaction commit is denied whole when
-// any of its documents is; BatchWrite judges each write alone, as it applies each alone. The rules
-// decide before the document's existence: a create of a document that exists, denied, is
-// PERMISSION_DENIED, not ALREADY_EXISTS.
+// A write is judged by its document as stored before the commit (resource, the stored document
+// even for a create: f5-rules-request.json rr.create-existing-res-null) and as the
+// commit's writes leave it, transforms applied (request.resource): a commit's writes of one
+// document are judged once, together. A commit, Write stream batch or transaction commit is
+// denied whole when any of its documents is. The rules decide before the preconditions: a create
+// of a document that exists is ALREADY_EXISTS when the rules allow the create, PERMISSION_DENIED
+// when they do not (f5-rules-methods.json order.*).
+//
+// An end user may not use BatchWrite, nor begin a read-write transaction, by BeginTransaction or
+// a read's new_transaction: production answers PERMISSION_DENIED whatever the rules say
+// (f5-rules-batches.json batch-write.ok-ok, f5-rules-transactions.json begin.user-readwrite,
+// commit.read-then-allowed). A read-only transaction is theirs (begin.user-readonly).
 //
 // list (queries, ListDocuments, ListCollectionIds) and Listen are not bound yet: they stay an
 // admin's, or dev_open_rules', alone (requireBypass), never more open than production.
@@ -109,6 +117,15 @@ func (a admitted) requireBypass() error {
 	return nil
 }
 
+// refuseHeld refuses what production refuses to a caller the rules hold, whatever they say:
+// BatchWrite, and a read-write transaction (the package comment).
+func (a admitted) refuseHeld() error {
+	if a.guard != nil {
+		return wire.PermissionDenied()
+	}
+	return nil
+}
+
 // ruleset resolves the release of a's project, once per request.
 func (s *Service) ruleset(ctx context.Context, a admitted) (*rules.Ruleset, error) {
 	if s.o.Rulesets == nil {
@@ -178,9 +195,19 @@ type ruleOp struct {
 	budget  *rules.Budget
 }
 
-// allowReads decides a read of docs (get), as read at readTime (zero: the latest). The request is
-// denied whole when any document is.
-func (s *Service) allowReads(ctx context.Context, a admitted, docs []core.Document, readTime time.Time) error {
+// readBudget is the lookup budget of a request reading n documents: one document has the
+// operation's limit of 10, several share the request's 20 with no limit each
+// (f5-rules-lookup-limits.json batch-get-r20a denied, batch-get-r1a-r20a allowed).
+func readBudget(n int) *rules.Budget {
+	if n > 1 {
+		return rules.NewPooledBudget()
+	}
+	return rules.NewBudget()
+}
+
+// allowReads decides a read of docs (get), as read at readTime (zero: the latest), under budget,
+// the request's (readBudget). The request is denied whole when any document is.
+func (s *Service) allowReads(ctx context.Context, a admitted, docs []core.Document, readTime time.Time, budget *rules.Budget) error {
 	if a.guard == nil {
 		return nil
 	}
@@ -189,7 +216,7 @@ func (s *Service) allowReads(ctx context.Context, a admitted, docs []core.Docume
 		return err
 	}
 	l := &lookups{store: s.o.Store, db: a.db, readTime: readTime}
-	budget, now := rules.NewBudget(), s.now()
+	now := s.now()
 	for _, d := range docs {
 		op := ruleOp{method: rules.MethodGet, path: d.Path, before: d, now: now, lookups: l, budget: budget}
 		if err := s.judge(ctx, a, rs, op); err != nil {
@@ -214,13 +241,18 @@ func (s *Service) judged(ctx context.Context, a admitted) (context.Context, erro
 		for _, p := range proposals {
 			l.after[p.Path.String()] = p.After
 		}
+		// Each write has the operation's limit and the commit the request's; the documents the
+		// commit writes are free to look up (lookup-limits commit.peer-a-peer-b, write.self-get).
 		budget := rules.NewBudget()
+		for _, p := range proposals {
+			budget.Exempt(documentPath(a.db, p.Path))
+		}
 		for _, p := range proposals {
 			op := ruleOp{path: p.Path, before: p.Before, after: p.After, now: now, lookups: l, budget: budget}
 			switch {
 			case !p.After.Exists():
 				op.method = rules.MethodDelete
-			case p.Before.Exists():
+			case p.Asserts != nil && *p.Asserts, p.Asserts == nil && p.Before.Exists():
 				op.method = rules.MethodUpdate
 			default:
 				op.method = rules.MethodCreate
