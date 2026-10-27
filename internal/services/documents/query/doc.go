@@ -23,5 +23,5 @@
 //   - aggregate.go: count (with up_to), sum and avg;
 //   - nearest.go: find_nearest, answered as production answers without a vector index;
 //   - partition.go: PartitionQuery's checks;
-//   - coverage.go: the path counters (documents_query_path_total).
+//   - paths.go: the path counters (documents_query_path_total).
 package query
