@@ -23,6 +23,10 @@ import (
 //   - a global snapshot (NO_CHANGE without target ids) has a read time, never earlier than the
 //     last one, and comes only when every target of the stream is CURRENT;
 //   - a CURRENT's read time never goes back for its target;
+//   - a document's versions never go back on the stream, across all its targets: a
+//     document_change's update_time is never older than one already sent for the document, nor
+//     than a document_delete's read_time, and a document_delete's read_time never older than
+//     either (ADR-026 §2: commit order);
 //   - a single-document target's ExistenceFilter counts 0 or 1;
 //   - with Oracle set, at every global snapshot each target's documents are its result at the
 //     snapshot's read time: whole commits, nothing missed or left over.
@@ -40,6 +44,8 @@ type ListenChecker struct {
 	assigned []*ListenTarget         // added with target_id 0, not answered yet
 	removing map[int32]bool
 	global   time.Time
+	// versions is, by document name, the newest version the stream sent of it.
+	versions map[string]time.Time
 	// Held are the documents a client holds of targets it resumes on this stream, by target id:
 	// an add_target with a resume token or read_time starts from them.
 	Held map[int32]map[string]*pb.Document
@@ -66,7 +72,8 @@ type ListenTarget struct {
 
 // NewListenChecker returns a checker for one stream.
 func NewListenChecker(t testing.TB) *ListenChecker {
-	return &ListenChecker{t: t, targets: map[int32]*ListenTarget{}, pending: map[int32]*ListenTarget{}, removing: map[int32]bool{}}
+	return &ListenChecker{t: t, targets: map[int32]*ListenTarget{}, pending: map[int32]*ListenTarget{}, removing: map[int32]bool{},
+		versions: map[string]time.Time{}}
 }
 
 // Target is the target id holds, or nil.
@@ -122,6 +129,7 @@ func (c *ListenChecker) Received(res *pb.ListenResponse) (global bool) {
 	case *pb.ListenResponse_DocumentChange:
 		dc := r.DocumentChange
 		name := dc.GetDocument().GetName()
+		c.version(name, dc.GetDocument().GetUpdateTime().AsTime(), "document_change")
 		for _, id := range dc.GetTargetIds() {
 			if t := c.data(id, "document_change"); t != nil {
 				if t.single && t.Target.GetDocuments().GetDocuments()[0] != name {
@@ -136,6 +144,7 @@ func (c *ListenChecker) Received(res *pb.ListenResponse) (global bool) {
 			}
 		}
 	case *pb.ListenResponse_DocumentDelete:
+		c.version(r.DocumentDelete.GetDocument(), r.DocumentDelete.GetReadTime().AsTime(), "document_delete")
 		for _, id := range r.DocumentDelete.GetRemovedTargetIds() {
 			if t := c.data(id, "document_delete"); t != nil {
 				delete(t.Docs, r.DocumentDelete.GetDocument())
@@ -164,6 +173,18 @@ func (c *ListenChecker) Received(res *pb.ListenResponse) (global bool) {
 		c.fail("an empty response")
 	}
 	return false
+}
+
+// version records a document's version sent at, failing when it is older than one sent before.
+// A document_remove is not one: the document may come back into a window unchanged, older.
+func (c *ListenChecker) version(name string, at time.Time, what string) {
+	c.t.Helper()
+	if last := c.versions[name]; at.Before(last) {
+		c.fail("%s of %s at %v after a version at %v: out of commit order", what, name,
+			at.Format(time.RFC3339Nano), last.Format(time.RFC3339Nano))
+		return
+	}
+	c.versions[name] = at
 }
 
 // data is the target a data frame names, which must have been added and not removed.
