@@ -376,8 +376,9 @@ func TestForms(t *testing.T) {
 	if want := `{"error":{"code":400,"message":"Invalid transaction.","status":"INVALID_ARGUMENT"}}`; code != 400 || string(body) != want {
 		t.Errorf(":commit in a transaction: %d %s", code, body)
 	}
+	// The Admin API is not open to browsers (ADR-027 §5.2).
 	code, hd, _ = h.do(t, http.MethodGet, "/v1/projects/"+apitest.Project+"/databases/(default)", "", tok, "Origin", "https://app.example")
-	if code != http.StatusNotImplemented || hd.Get("Access-Control-Allow-Origin") != "" {
+	if code != http.StatusOK || hd.Get("Access-Control-Allow-Origin") != "" {
 		t.Errorf("Admin API: %d, CORS %q", code, hd.Get("Access-Control-Allow-Origin"))
 	}
 	// Before F5 only admins: an end user and an anonymous caller are refused as production
@@ -436,10 +437,8 @@ var wireGaps = map[string]string{
 	"path.project_id.aruma-ref-no-such-project": "Google's consumer-project check",
 	"path.project_id.-starts-with-dash":         "Google's consumer-project check",
 	"path.project_id.123456789012":              "Google's consumer-project check",
-	"admin.name_without_projects":               "the Admin API is F3; Google's front end answers an unbound path with its HTML 404 page",
-	"admin.name_other_prefix":                   "the Admin API is F3; Google's front end answers an unbound path with its HTML 404 page",
-	"admin.database_get_bad_id":                 "the Admin API is F3",
-	"admin.database_get_missing":                "the Admin API is F3",
+	"admin.name_without_projects":               "Google's front end answers a path no API binds with its HTML 404 page; Aruma's router answers it",
+	"admin.name_other_prefix":                   "Google's front end answers a path no API binds with its HTML 404 page; Aruma's router answers it",
 }
 
 // TestWireErrorsReplay replays every REST case of f1-wire-errors.json: production's answers to

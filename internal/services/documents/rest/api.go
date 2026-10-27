@@ -111,9 +111,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	rt, ok := parse(path)
 	if !ok {
-		// The Admin API (databases, indexes, fields, operations) comes in F3, closed to
-		// browsers like every management path.
-		wire.WriteREST(w, wire.Unimplemented("The Document Database's Admin API"), false)
+		// The Admin API (databases, indexes, fields, operations), closed to browsers like every
+		// management path (admin.go).
+		h.admin(w, r)
 		return
 	}
 	if cors(w, r) {

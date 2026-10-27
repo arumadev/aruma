@@ -441,9 +441,9 @@ func TestUnimplemented(t *testing.T) {
 		t.Errorf("ExecutePipeline: %v", err)
 	}
 	admin := adminpbconnect.NewFirestoreAdminClient(h2c(0), x.url, connect.WithGRPC())
-	_, err = admin.GetDatabase(ctx, req(&adminpb.GetDatabaseRequest{Name: db}, tok))
+	_, err = admin.ExportDocuments(ctx, req(&adminpb.ExportDocumentsRequest{Name: db}, tok))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
-		t.Errorf("FirestoreAdmin.GetDatabase: %v", err)
+		t.Errorf("FirestoreAdmin.ExportDocuments: %v", err)
 	}
 	for _, path := range []string{"/google.firestore.v1.Firestore/NoSuchMethod", "/no.such.Service/Method"} {
 		resp := rawCall(t, x.url, path, nil, 0)

@@ -51,6 +51,22 @@ func MissingDatabaseAdmin(db Database) *Error {
 	return NewError(CodeNotFound, "Project '"+db.Project+"' or database '"+db.ID+"' does not exist.")
 }
 
+// InvalidResourceName is INVALID_ARGUMENT for an Admin API or header name that does not parse
+// (provisional text).
+func InvalidResourceName(name string) *Error {
+	return InvalidArgument(`Invalid resource name "` + name + `".`)
+}
+
+// The Admin API is an admin's (ADR-029 §2, ADR-025 §4.5): a request without a credential is
+// UNAUTHENTICATED and an end user's PERMISSION_DENIED, in Google's front end's texts for a
+// management API (provisional: f3-admin.json records an owner's answers only).
+var (
+	ErrAdminUnauthenticated = NewError(CodeUnauthenticated, "Request is missing required authentication credential. "+
+		"Expected OAuth 2 access token, login cookie or other valid authentication credential. "+
+		"See https://developers.google.com/identity/sign-in/web/devconsole-project.")
+	ErrAdminPermissionDenied = NewError(CodePermissionDenied, "The caller does not have permission")
+)
+
 // DocumentNotFound is NOT_FOUND for a GetDocument of a document that does not exist
 // (f0-list-show-missing.json: `Document "projects/…/m" not found.`).
 func DocumentNotFound(name string) *Error {

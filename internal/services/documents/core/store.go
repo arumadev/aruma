@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/arumadev/aruma/internal/services/documents/value"
+	"github.com/arumadev/aruma/internal/services/documents/wire/pb/adminpb"
+	"github.com/arumadev/aruma/internal/services/documents/wire/pb/longrunningpb"
 )
 
 // Store is the Document Database's storage, as the transports and the later phases use it. Every
@@ -37,6 +39,23 @@ type Store interface {
 	Commit(ctx context.Context, db DB, writes []Write) (CommitResult, error)
 	Transactions
 	Queries
+	IndexAdmin
+}
+
+// IndexAdmin is the Admin API's index configuration (indexadmin.go; ADR-025 §3, §4.5): composite
+// indexes, single-field configurations and the long-running operations that report their
+// builds, as google.firestore.admin.v1 and google.longrunning messages. A collection group of
+// "-" (or "") lists every group's.
+type IndexAdmin interface {
+	CreateIndex(ctx context.Context, db DB, group string, ix *adminpb.Index) (*longrunningpb.Operation, error)
+	ListIndexes(ctx context.Context, db DB, group string) ([]*adminpb.Index, error)
+	GetIndex(ctx context.Context, db DB, group, id string) (*adminpb.Index, error)
+	DeleteIndex(ctx context.Context, db DB, group, id string) error
+	GetField(ctx context.Context, db DB, group, path string) (*adminpb.Field, error)
+	ListFields(ctx context.Context, db DB, group string) ([]*adminpb.Field, error)
+	UpdateField(ctx context.Context, db DB, group string, f *adminpb.Field, mask []string) (*longrunningpb.Operation, error)
+	GetOperation(ctx context.Context, db DB, id string) (*longrunningpb.Operation, error)
+	ListOperations(ctx context.Context, db DB) ([]*longrunningpb.Operation, error)
 }
 
 // Transactions is the transactions' part of the store (ADR-025 §7; txn.go). Reads in a

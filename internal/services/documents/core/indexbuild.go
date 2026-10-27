@@ -283,11 +283,10 @@ func (s *PGStore) compositeReady(ctx context.Context, q *queries.Queries, db DB,
 	if err != nil {
 		return err
 	}
-	out := proto.CloneOf(ix.spec)
+	out := db.indexOutput(ix.spec, ix.group, ix.id, true)
 	if m, ok := md.(*adminpb.IndexOperationMetadata); ok {
 		out.Name = m.GetIndex()
 	}
-	out.State = adminpb.Index_READY
 	return finishOperation(ctx, q, db, *opID, adminpb.OperationState_SUCCESSFUL, out)
 }
 
