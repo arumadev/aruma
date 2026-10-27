@@ -132,6 +132,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.beginTransaction(w, r, rt)
 	case rt.verb == "Rollback" && r.Method == http.MethodPost && len(rt.rel) == 0:
 		h.rollback(w, r, rt)
+	case rt.verb == "RunQuery" && r.Method == http.MethodPost:
+		h.runQuery(w, r, rt)
+	case rt.verb == "RunAggregationQuery" && r.Method == http.MethodPost:
+		h.runAggregationQuery(w, r, rt)
+	case rt.verb == "PartitionQuery" && r.Method == http.MethodPost:
+		h.partitionQuery(w, r, rt)
 	case rt.verb != "":
 		h.unserved(w, r, rt)
 	case len(rt.rel) == 0:
@@ -179,29 +185,8 @@ func parse(path string) (route, bool) {
 	return rt, true
 }
 
-// unservedBodies are the request messages of the custom methods of later phases, with the
-// field their path fills.
-var unservedBodies = map[string]struct {
-	msg       func() proto.Message
-	pathField string
-}{
-	"RunQuery":            {func() proto.Message { return &pb.RunQueryRequest{} }, "parent"},
-	"RunAggregationQuery": {func() proto.Message { return &pb.RunAggregationQueryRequest{} }, "parent"},
-	"PartitionQuery":      {func() proto.Message { return &pb.PartitionQueryRequest{} }, "parent"},
-}
-
-// unserved answers a custom method of a later phase: UNIMPLEMENTED, after the front end's
-// reading of its body, whose errors production answers before the method runs
-// (f1-wire-errors.json json.unknown_nested_field, json.bad_enum, oneof.*).
-func (h *Handler) unserved(w http.ResponseWriter, r *http.Request, rt route) {
-	if r.Method == http.MethodPost {
-		if b, ok := unservedBodies[rt.verb]; ok {
-			if err := body(r, b.msg(), b.pathField); err != nil {
-				wire.WriteREST(w, err, streaming[rt.verb])
-				return
-			}
-		}
-	}
+// unserved answers a custom method of a later phase: UNIMPLEMENTED.
+func (h *Handler) unserved(w http.ResponseWriter, _ *http.Request, rt route) {
 	wire.WriteREST(w, wire.Unimplemented(rt.verb), streaming[rt.verb])
 }
 
@@ -399,9 +384,7 @@ func (h *Handler) rollback(w http.ResponseWriter, r *http.Request, rt route) {
 	write(w, res, err)
 }
 
-// batchGet answers an array of responses, or an array holding the error (ADR-027 §5.1). The
-// responses are written as package api sends them, so the answer is never held whole: an error
-// after the first is the array's last element, the status already sent.
+// batchGet answers an array of responses, or an array holding the error (ADR-027 §5.1).
 func (h *Handler) batchGet(w http.ResponseWriter, r *http.Request, rt route) {
 	req := &pb.BatchGetDocumentsRequest{}
 	if err := body(r, req, "database"); err != nil {
@@ -409,8 +392,57 @@ func (h *Handler) batchGet(w http.ResponseWriter, r *http.Request, rt route) {
 		return
 	}
 	req.Database = rt.database
+	stream(w, func(send func(*pb.BatchGetDocumentsResponse) error) error {
+		return h.svc.BatchGetDocuments(r.Context(), call(r), req, send)
+	})
+}
+
+// runQuery answers an array of responses, or an array holding the error (indexes-105.json,
+// f0-errors.json: bodyIsArray). The parent is the path: the documents root or a document.
+func (h *Handler) runQuery(w http.ResponseWriter, r *http.Request, rt route) {
+	req := &pb.RunQueryRequest{}
+	if err := body(r, req, "parent"); err != nil {
+		wire.WriteREST(w, err, true)
+		return
+	}
+	req.Parent = rt.name()
+	stream(w, func(send func(*pb.RunQueryResponse) error) error {
+		return h.svc.RunQuery(r.Context(), call(r), req, send)
+	})
+}
+
+// runAggregationQuery answers an array of responses, or an array holding the error.
+func (h *Handler) runAggregationQuery(w http.ResponseWriter, r *http.Request, rt route) {
+	req := &pb.RunAggregationQueryRequest{}
+	if err := body(r, req, "parent"); err != nil {
+		wire.WriteREST(w, err, true)
+		return
+	}
+	req.Parent = rt.name()
+	stream(w, func(send func(*pb.RunAggregationQueryResponse) error) error {
+		return h.svc.RunAggregationQuery(r.Context(), call(r), req, send)
+	})
+}
+
+// partitionQuery answers one object, not an array (f0-descendants.json rest.partition.*).
+func (h *Handler) partitionQuery(w http.ResponseWriter, r *http.Request, rt route) {
+	req := &pb.PartitionQueryRequest{}
+	if err := body(r, req, "parent"); err != nil {
+		write(w, nil, err)
+		return
+	}
+	req.Parent = rt.name()
+	res, err := h.svc.PartitionQuery(r.Context(), call(r), req)
+	write(w, res, err)
+}
+
+// stream answers a streaming method with an array of its responses, written as package api
+// sends them, so the answer is never held whole: an error after the first response is the
+// array's last element, the status already sent; an error before any is an array holding it,
+// with its status (ADR-027 §5.1).
+func stream[M proto.Message](w http.ResponseWriter, run func(send func(M) error) error) {
 	started := false
-	err := h.svc.BatchGetDocuments(r.Context(), call(r), req, func(res *pb.BatchGetDocumentsResponse) error {
+	err := run(func(res M) error {
 		b, err := wire.MarshalREST(res)
 		if err != nil {
 			return err

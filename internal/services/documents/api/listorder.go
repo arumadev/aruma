@@ -146,32 +146,22 @@ func (s *Service) listOrdered(ctx context.Context, a admitted, parent wire.Name,
 }
 
 // checkIndex is production's index rule for the listing's query, against the database's
-// enforcement (enforce unless the database overrides it): a needs-index query fails with
-// production's error and console link (f1-list-documents.json order_by.03).
+// enforcement (checkQuery): a needs-index query fails with production's error and console link
+// (f1-list-documents.json order_by.03).
 func (s *Service) checkIndex(ctx context.Context, a admitted, collectionID string, order listOrder) error {
-	mode := index.Enforce
-	settings, err := s.o.Store.Database(ctx, a.db)
+	mode, err := s.indexMode(ctx, a)
+	if err != nil {
+		return err
+	}
+	cat, err := s.o.Store.IndexCatalog(ctx, a.db)
 	if err != nil {
 		return s.fail(ctx, err)
-	}
-	if settings.IndexEnforcement != "" {
-		if m, err := index.ParseMode(settings.IndexEnforcement); err == nil {
-			mode = m
-		}
 	}
 	shape := index.QueryShape{CollectionID: collectionID, Scope: index.ScopeCollection}
 	for _, c := range order {
 		shape.OrderBy = append(shape.OrderBy, index.Order{Field: c.path.String(), Desc: c.desc})
 	}
-	d := index.Check(shape, nil, mode)
-	if d.Reject() {
-		return wire.IndexError(index.Suggest(a.wdb.Project, a.wdb.ID, d))
-	}
-	if d.Log() {
-		s.log.Warn("documents: a ListDocuments order is served without the index production requires",
-			"project", a.wdb.Project, "collection", collectionID, "order", order.String())
-	}
-	return nil
+	return s.enforce(a, shape, cat, mode)
 }
 
 // fields are the order's clauses on fields, and the direction of the name order that breaks

@@ -4,7 +4,4 @@
 # by " :: " and a text its failure must contain. A listed test that passes, fails for another
 # reason, or no longer exists fails the suite: remove the line when the gap closes.
 #
-# Every lite write is a Commit, served since F2; getDocs is a RunQuery, which comes in F3.
-firebase@11/getDocs of a collection :: unimplemented Request failed with error: RunQuery is not supported
-firebase@12/getDocs of a collection :: unimplemented Request failed with error: RunQuery is not supported
-firebase@13/getDocs of a collection :: unimplemented Request failed with error: RunQuery is not supported
+# Every lite write is a Commit, served since F2; getDocs is a RunQuery, served since F3.

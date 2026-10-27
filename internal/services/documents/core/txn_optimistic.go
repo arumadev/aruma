@@ -14,9 +14,11 @@ import (
 // reads again what it read and does not write, lists again, and checks the documents it writes
 // under their row locks. Any difference is ABORTED, which the clients retry.
 
-// listRead is a listing an optimistic transaction made, and what it returned.
+// listRead is a listing or a query's scan an optimistic transaction made, and what it
+// returned.
 type listRead struct {
-	req  ListRequest // with no transaction
+	req  ListRequest  // with no transaction
+	scan *ScanRequest // a scan instead, with no transaction
 	lock string
 	docs []readVersion
 }
@@ -84,7 +86,13 @@ func (s *PGStore) recheck(ctx context.Context, db DB, unwritten []readVersion, l
 		}
 	}
 	for _, l := range lists {
-		res, err := s.ListDocuments(ctx, db, l.req)
+		var res ListResult
+		var err error
+		if l.scan != nil {
+			res, err = s.Scan(ctx, db, *l.scan)
+		} else {
+			res, err = s.ListDocuments(ctx, db, l.req)
+		}
 		if err != nil {
 			return err
 		}

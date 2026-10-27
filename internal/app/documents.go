@@ -18,6 +18,8 @@ import (
 	docapi "github.com/arumadev/aruma/internal/services/documents/api"
 	documents "github.com/arumadev/aruma/internal/services/documents/core"
 	docgrpc "github.com/arumadev/aruma/internal/services/documents/grpc"
+	"github.com/arumadev/aruma/internal/services/documents/index"
+	"github.com/arumadev/aruma/internal/services/documents/query"
 	docrest "github.com/arumadev/aruma/internal/services/documents/rest"
 	"github.com/arumadev/aruma/internal/tenancy/core"
 )
@@ -68,13 +70,17 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 		Logger:             logger,
 	})
 	store := &bootStore{}
+	// Config has checked the setting: a value ParseMode refuses never reaches here.
+	enforcement, _ := index.ParseMode(cfg.Documents.IndexEnforcement)
 	api := docapi.New(docapi.Options{
-		Store: store, Auth: resolver, Projects: svc, DevOpenRules: cfg.Documents.DevOpenRules, Logger: logger,
+		Store: store, Auth: resolver, Projects: svc, DevOpenRules: cfg.Documents.DevOpenRules,
+		IndexEnforcement: enforcement, Logger: logger,
 	})
 	l := cfg.Documents.Limits
 	rpcMetrics := docgrpc.NewMetrics()
 	m.Registry.MustRegister(rpcMetrics.Collectors()...)
 	m.Registry.MustRegister(docgrpc.TransactionCollectors(store.transactionStats)...)
+	m.Registry.MustRegister(query.Collectors()...)
 	return &Documents{
 		GRPC: docgrpc.New(docgrpc.Options{
 			Service:        api,
@@ -285,4 +291,20 @@ func (b *bootStore) Rollback(ctx context.Context, db documents.DB, t documents.T
 		return err
 	}
 	return s.Rollback(ctx, db, t)
+}
+
+func (b *bootStore) Scan(ctx context.Context, db documents.DB, r documents.ScanRequest) (documents.ListResult, error) {
+	s, err := b.get()
+	if err != nil {
+		return documents.ListResult{}, err
+	}
+	return s.Scan(ctx, db, r)
+}
+
+func (b *bootStore) IndexCatalog(ctx context.Context, db documents.DB) (*index.Catalog, error) {
+	s, err := b.get()
+	if err != nil {
+		return nil, err
+	}
+	return s.IndexCatalog(ctx, db)
 }

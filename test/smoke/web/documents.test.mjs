@@ -6,8 +6,9 @@
 // F5, only that admits a client without credentials.
 //
 // The values production recorded are written with CreateDocument over REST and read back with
-// getDoc (BatchGetDocuments). Every lite write, and runTransaction's commit, is a Commit (F2) and
-// getDocs a RunQuery (F3): those tests are listed in test/compat/documents/expected-failures/web-lite.txt, and a listed
+// getDoc (BatchGetDocuments). Every lite write, and runTransaction's commit, is a Commit (F2),
+// getDocs a RunQuery and getCount and getAggregate a RunAggregationQuery (F3). What the server
+// does not serve is listed in test/compat/documents/expected-failures/web-lite.txt, and a listed
 // test that passes fails the run.
 import { test as nodeTest, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -242,5 +243,32 @@ for (const major of ['11', '12', '13']) {
     await seed();
     const snap = await getDocs(collection(db, 'lite-values'));
     assert.equal(snap.size, stored.length);
+  });
+
+  // Queries (F3) on the documents of indexes-105.json's populated run.
+  t('queries: filters, orders, cursors, collection group, aggregations', async (s) => {
+    const { db, collection, collectionGroup, doc, writeBatch, query, where, orderBy, limit, startAfter, or, getDocs,
+      getCount, getAggregate, sum, average } = s;
+    const col = collection(db, `lite-queries-${major}`);
+    const batch = writeBatch(db);
+    [{ a: 1, c: 'x', d: 10, tags: ['red', 'blue'] }, { a: 1, c: 'y', d: 20, tags: ['red'] }, { a: 2, c: 'x', d: 30, tags: ['green'] },
+      { a: 3, c: 'z', d: 40, tags: [] }].forEach((d, i) => {
+      batch.set(doc(col, `d${i + 1}`), d);
+      batch.set(doc(col, `d${i + 1}`, `lite-queries-cg-${major}`, 's'), d);
+    });
+    await batch.commit();
+    const ids = async (q) => (await getDocs(q)).docs.map((d) => d.id);
+    assert.deepEqual(await ids(query(col, where('a', '==', 1))), ['d1', 'd2']);
+    assert.deepEqual(await ids(query(col, orderBy('d', 'desc'), limit(2))), ['d4', 'd3']);
+    assert.deepEqual(await ids(query(col, orderBy('d'), startAfter(20))), ['d3', 'd4']);
+    assert.deepEqual(await ids(query(col, where('c', 'in', ['x', 'z']))), ['d1', 'd3', 'd4']);
+    assert.deepEqual(await ids(query(col, where('tags', 'array-contains', 'red'))), ['d1', 'd2']);
+    assert.deepEqual(await ids(query(col, or(where('a', '==', 3), where('c', '==', 'y')))), ['d2', 'd4']);
+    const cg = await getDocs(collectionGroup(db, `lite-queries-cg-${major}`));
+    assert.deepEqual(cg.docs.map((d) => d.ref.parent.parent.id), ['d1', 'd2', 'd3', 'd4']);
+    await assert.rejects(getDocs(query(col, where('a', '==', 1), orderBy('d'))), (e) => e.code === 'failed-precondition' &&
+      e.message.includes('The query requires an index. You can create it here: https://console.firebase.google.com/'));
+    assert.equal((await getCount(query(col, where('a', '==', 1)))).data().count, 2);
+    assert.deepEqual((await getAggregate(col, { s: sum('d'), v: average('d') })).data(), { s: 100, v: 25 });
   });
 }

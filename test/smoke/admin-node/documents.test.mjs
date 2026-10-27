@@ -10,7 +10,9 @@
 //
 // The SDK reads with the F1 RPCs (get and getAll: BatchGetDocuments; listDocuments;
 // listCollections: ListCollectionIds), and writes with Commit (F2), BatchWrite for its
-// bulkWriter; its transactions begin with new_transaction and end with Commit or Rollback. What the server does not serve yet is listed in
+// bulkWriter; its transactions begin with new_transaction and end with Commit or Rollback; its
+// queries, aggregations and recursiveDelete are RunQuery and RunAggregationQuery (F3). What the
+// server does not serve yet is listed in
 // test/compat/documents/expected-failures/admin-node.txt, and a listed test that passes fails
 // the run. GetDocument, CreateDocument, UpdateDocument and
 // DeleteDocument run through the SDK's own client (Firestore.request), on the same transport
@@ -21,7 +23,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { initializeApp, cert, deleteApp } from 'firebase-admin/app';
-import { getFirestore, FieldValue, GeoPoint, Timestamp, DocumentReference } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, GeoPoint, Timestamp, DocumentReference, Filter, AggregateField } from 'firebase-admin/firestore';
 import { checked, expectedFailures } from '../documents-server.mjs';
 import { loadValues, protoValue, protoFields, canon, canonFields, parseTimestamp } from '../documents-values.mjs';
 
@@ -455,4 +457,93 @@ test('transactions: getAll', async () => {
     tx.create(missing, { v: 'created' });
   });
   assert.equal((await missing.get()).get('v'), 'created');
+});
+
+// Queries (F3): RunQuery and RunAggregationQuery on the documents of indexes-105.json's populated
+// run, a shape that needs a composite index, and recursiveDelete, whose kindless
+// allDescendants query under a document or a collection finds what it deletes.
+const qcol = () => db.collection(`queries-${transport}`);
+const ids = (snap) => snap.docs.map((d) => d.id);
+let seeded;
+const seedQueries = () => (seeded ??= (async () => {
+  const docs = [
+    { a: 1, b: 1, c: 'x', d: 10, tags: ['red', 'blue'] },
+    { a: 1, b: 2, c: 'y', d: 20, tags: ['red'] },
+    { a: 2, b: 1, c: 'x', d: 30, tags: ['green'] },
+    { a: 2, b: 2, c: 'z', d: 40, tags: [] },
+    { a: 3, b: 3, c: 'y', d: 50, tags: ['blue', 'green'] },
+    { a: 1, b: 1, c: 'z', d: 60 },
+  ];
+  const batch = db.batch();
+  docs.forEach((d, i) => {
+    batch.set(qcol().doc(`d${i + 1}`), d);
+    if (i < 3) batch.set(qcol().doc(`d${i + 1}`).collection(`queries-cg-${transport}`).doc('s'), d);
+  });
+  await batch.commit();
+})());
+
+test('queries: where, orderBy, limit', async () => {
+  await seedQueries();
+  assert.deepEqual(ids(await qcol().where('a', '==', 1).get()), ['d1', 'd2', 'd6']);
+  assert.deepEqual(ids(await qcol().where('d', '>', 25).get()), ['d3', 'd4', 'd5', 'd6']);
+  assert.deepEqual(ids(await qcol().orderBy('d', 'desc').limit(2).get()), ['d6', 'd5']);
+  assert.deepEqual(ids(await qcol().orderBy('d').limitToLast(2).get()), ['d5', 'd6']);
+  assert.deepEqual(ids(await qcol().select('a').where('tags', 'array-contains', 'red').get()), ['d1', 'd2']);
+});
+
+test('queries: cursors and offset', async () => {
+  await seedQueries();
+  assert.deepEqual(ids(await qcol().orderBy('d').startAfter(30).get()), ['d4', 'd5', 'd6']);
+  assert.deepEqual(ids(await qcol().orderBy('d').endBefore(30).get()), ['d1', 'd2']);
+  const d3 = await qcol().doc('d3').get();
+  assert.deepEqual(ids(await qcol().orderBy('d').startAt(d3).limit(2).get()), ['d3', 'd4']);
+  assert.deepEqual(ids(await qcol().orderBy('d').offset(4).get()), ['d5', 'd6']);
+});
+
+test('queries: in, not-in, array-contains-any, or', async () => {
+  await seedQueries();
+  assert.deepEqual(ids(await qcol().where('c', 'in', ['x', 'z']).get()), ['d1', 'd3', 'd4', 'd6']);
+  assert.deepEqual(ids(await qcol().where('c', 'not-in', ['x', 'z']).get()), ['d2', 'd5']);
+  assert.deepEqual(ids(await qcol().where('tags', 'array-contains-any', ['green', 'blue']).get()), ['d1', 'd3', 'd5']);
+  assert.deepEqual(ids(await qcol().where(Filter.or(Filter.where('a', '==', 3), Filter.where('b', '==', 2))).get()), ['d2', 'd4', 'd5']);
+});
+
+test('queries: a collection group', async () => {
+  await seedQueries();
+  const cg = db.collectionGroup(`queries-cg-${transport}`);
+  assert.deepEqual((await cg.get()).docs.map((d) => d.ref.parent.parent.id), ['d1', 'd2', 'd3']);
+  // A filter on a field needs the collection group's single-field exemption.
+  await rejects(cg.where('a', '==', 1).get(), 9);
+});
+
+test('queries: a shape that needs an index', async () => {
+  await seedQueries();
+  let err;
+  try {
+    await qcol().where('a', '==', 1).orderBy('d').get();
+  } catch (e) {
+    err = e;
+  }
+  assert.equal(err?.code, 9, `got ${err?.code}: ${err?.message}`);
+  assert.ok(messageOf(err).startsWith('The query requires an index. You can create it here: ' +
+    `https://console.firebase.google.com/v1/r/project/${project}/firestore/indexes?create_composite=`), messageOf(err));
+});
+
+test('queries: count, sum, avg', async () => {
+  await seedQueries();
+  assert.equal((await qcol().where('a', '==', 1).count().get()).data().count, 3n);
+  const res = (await qcol().aggregate({ s: AggregateField.sum('d'), v: AggregateField.average('d'), n: AggregateField.count() }).get()).data();
+  assert.deepEqual({ ...res }, { s: 210n, v: 35, n: 6n });
+});
+
+test('queries: recursiveDelete', async () => {
+  const top = db.collection(`recursive-${transport}`);
+  const batch = db.batch();
+  for (const p of ['a', 'a/sub/x', 'a/sub/x/deep/y', 'a/other/z', 'b']) batch.set(top.doc(p), { v: 1 });
+  await batch.commit();
+  await db.recursiveDelete(top.doc('a'));
+  assert.deepEqual((await top.listDocuments()).map((d) => d.id), ['b']);
+  assert.equal((await top.doc('a/sub/x/deep/y').get()).exists, false);
+  await db.recursiveDelete(top);
+  assert.deepEqual(await top.listDocuments(), []);
 });

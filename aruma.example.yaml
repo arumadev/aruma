@@ -113,6 +113,9 @@ documents:                         # Document Database (ADR-024 to ADR-029); see
   # dev_owner_token: true          # accept the emulators' "Bearer owner" from this machine as an
                                    # admin of every project; accepted only when public_url and
                                    # listen are loopback. Off, owner is always refused
+  index_enforcement: enforce       # enforce: refuse a query that needs a composite index, as
+                                   # production does; warn: serve it and log the index; off:
+                                   # serve every query, as the emulator does
   limits:
     message_bytes: 17825792        # one gRPC message or REST body (17 MiB)
     stream_first_message: 10s      # until a stream's first message and credential

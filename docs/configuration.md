@@ -92,6 +92,7 @@ Anything else is refused with `UNAUTHENTICATED`, and the client's address is log
 | `enabled` | `ARUMA_DOCUMENTS_ENABLED` | `false` | Serve the Document Database |
 | `dev_open_rules` | `ARUMA_DOCUMENTS_DEV_OPEN_RULES` | `false` | Let clients on this machine read and write every database without admin credentials, until security rules arrive. The server refuses to start with it unless `public_url` and `listen` are loopback addresses, and it applies only to loopback peers |
 | `dev_owner_token` | `ARUMA_DOCUMENTS_DEV_OWNER_TOKEN` | `false` | Accept `Bearer owner`, which the Admin SDKs send in emulator mode, as an admin of every project, from a loopback peer only. The server refuses to start with it unless `public_url` and `listen` are loopback addresses, and logs a warning when it is on. Off, `owner` is refused and logged, as on every other surface |
+| `index_enforcement` | `ARUMA_DOCUMENTS_INDEX_ENFORCEMENT` | `enforce` | How queries meet production's composite-index rule: `enforce` refuses a query that needs an index with production's error and Firebase console link; `warn` serves it and logs the index it needs; `off` serves every query, as the emulator does |
 
 The limits, under `documents.limits` in the file. Each must be positive.
 
