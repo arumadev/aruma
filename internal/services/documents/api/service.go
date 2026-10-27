@@ -47,6 +47,13 @@ type Options struct {
 type Service struct {
 	o   Options
 	log *slog.Logger
+
+	// Tests' hooks into the index paths (export_test.go): indexBatch, when set, is the results
+	// of every batch; afterBatch runs after a batch is sent, before the next snapshot begins;
+	// observePeak is told the most bytes of documents a query held.
+	indexBatch  int
+	afterBatch  func()
+	observePeak func(int)
 }
 
 // New returns the service.

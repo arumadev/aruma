@@ -332,7 +332,12 @@ func (g *gen) values(path string) value.Value {
 
 func (g *gen) leaf() *pb.StructuredQuery_Filter {
 	path := fieldPaths[g.r.IntN(len(fieldPaths))]
-	switch k := g.r.IntN(20); {
+	name := func() value.Value { return value.Reference(docsRoot + "/" + g.names[g.r.IntN(len(g.names))]) }
+	switch k := g.r.IntN(22); {
+	case k == 20:
+		return fieldFilter("__name__", pb.StructuredQuery_FieldFilter_EQUAL, name())
+	case k == 21:
+		return fieldFilter("__name__", pb.StructuredQuery_FieldFilter_IN, value.Array(name(), name(), name()))
 	case k < 6:
 		return fieldFilter(path, pb.StructuredQuery_FieldFilter_EQUAL, g.operand(path))
 	case k < 10:
@@ -406,12 +411,11 @@ func (g *gen) query() *pb.StructuredQuery {
 	return sq
 }
 
-// TestPlannerDifferential runs random queries over random documents, through the planner and the
-// reference path alone, with composite indexes and collection-group overrides, and requires the
-// same answers.
-func TestPlannerDifferential(t *testing.T) {
+// differentialSetup writes random documents, builds the differential tests' indexes and
+// overrides, then updates and deletes some: the generator's seed is ARUMA_PLAN_SEED, else 1.
+func differentialSetup(t *testing.T) (*planEnv, *gen) {
+	t.Helper()
 	p := newPlanEnv(t)
-	ctx := t.Context()
 	seed := uint64(1)
 	if s, err := strconv.ParseUint(os.Getenv("ARUMA_PLAN_SEED"), 10, 64); err == nil {
 		seed = s
@@ -444,7 +448,15 @@ func TestPlannerDifferential(t *testing.T) {
 		}
 		p.commit(t, w)
 	}
+	return p, g
+}
 
+// TestPlannerDifferential runs random queries over random documents, through the planner and the
+// reference path alone, with composite indexes and collection-group overrides, and requires the
+// same answers.
+func TestPlannerDifferential(t *testing.T) {
+	p, g := differentialSetup(t)
+	ctx := t.Context()
 	mismatches, served := query.MismatchCount(), indexServed()
 	n := 1500
 	if testing.Short() {

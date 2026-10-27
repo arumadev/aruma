@@ -203,6 +203,50 @@ WHERE project_number = @project_number AND database_id = @database_id AND index_
 ORDER BY key
 LIMIT @row_limit;
 
+-- name: IndexReadHead :one
+-- The commit an index read's snapshot is at, and its catalogue version (core/indexread.go).
+SELECT seq, last_ts, catalog_version FROM documents.sequencer
+WHERE project_number = @project_number AND database_id = @database_id;
+
+-- name: GetDocumentsWithin :many
+-- The documents of @name_keys in their order, as far as @budget bytes of them (by size) go: the
+-- first key always, then each key while the documents before it hold less than @budget. A key
+-- without a document comes with a NULL name and costs nothing. The sizes are read first, so a
+-- document past the budget is not read.
+WITH k AS (
+    SELECT u.key, u.ord FROM unnest(@name_keys::bytea[]) WITH ORDINALITY AS u(key, ord)
+), s AS (
+    SELECT k.key, k.ord,
+        sum(coalesce(d.size, 0)) OVER (ORDER BY k.ord) - coalesce(d.size, 0) AS before
+    FROM k LEFT JOIN documents.documents d ON d.project_number = @project_number
+        AND d.database_id = @database_id AND d.name_key = k.key
+)
+SELECT s.ord::bigint AS ord, d.name, d.doc, d.create_time, d.update_time
+FROM s LEFT JOIN documents.documents d ON d.project_number = @project_number
+    AND d.database_id = @database_id AND d.name_key = s.key
+WHERE s.ord = 1 OR s.before < @budget::bigint
+ORDER BY s.ord;
+
+-- name: ChangedSince :many
+-- The documents with a whole name in [@lo, @hi) that the commits after @after_seq changed, each
+-- once, with its image before the first of those commits (NULL when it did not exist then), in
+-- name order: what an index read continued in a later snapshot reads instead of their entries.
+SELECT DISTINCT ON (c.name_key) c.name, c.before
+FROM documents.changelog c
+WHERE c.project_number = @project_number AND c.database_id = @database_id AND c.seq > @after_seq
+    AND c.name >= @lo AND c.name < @hi
+ORDER BY c.name_key, c.seq;
+
+-- name: ChangelogFloor :many
+-- The oldest changelog row of a database, and whether it is younger than @min_secs, which no
+-- retention prunes: retention deletes a prefix of (seq, name_key), so the changelog holds every
+-- row after the floor's seq, and every row of that seq when the row is young.
+SELECT c.seq, (c.commit_time > now() - make_interval(secs => @min_secs::float8))::boolean AS young
+FROM documents.changelog c
+WHERE c.project_number = @project_number AND c.database_id = @database_id
+ORDER BY c.seq, c.name_key
+LIMIT 1;
+
 -- name: AllIndexEntries :many
 -- Every entry of a database, for the consistency check (CheckIndexEntries), in a snapshot.
 SELECT index_id, key, full_key FROM documents.index_entries
