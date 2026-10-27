@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"maps"
+	"math"
 	"slices"
 	"time"
 
@@ -51,11 +52,13 @@ import (
 // ListenStream is one open Listen stream, admitted at its first request. It is not safe for
 // concurrent use: Serve runs it on one goroutine.
 type ListenStream struct {
-	s    *Service
-	a    admitted
-	sub  *listen.Subscriber
-	send func(*pb.ListenResponse) error
-	lim  ListenLimits
+	s     *Service
+	a     admitted
+	sub   *listen.Subscriber
+	write func(*pb.ListenResponse) error
+	lim   ListenLimits
+	// held, while a target is answered, keeps its answer back (answer).
+	held *held
 
 	targets  map[int32]*listenTarget
 	byTarget map[*listen.Target]*listenTarget
@@ -138,7 +141,7 @@ func (l *ListenStream) overflow(limit string) {
 // An error ends the stream with its status.
 func (l *ListenStream) Serve(ctx context.Context, first *pb.ListenRequest, requests <-chan *pb.ListenRequest,
 	send func(*pb.ListenResponse) error) error {
-	l.send = send
+	l.write = send
 	// idle runs while the stream has no target, from its last request (stream_idle).
 	idle := time.NewTimer(time.Hour)
 	idle.Stop()
@@ -261,16 +264,79 @@ func (l *ListenStream) add(ctx context.Context, t *pb.Target) error {
 		return err
 	}
 	l.targets[id], l.byTarget[lt.t] = lt, lt
-	if resumed {
-		var expected *int32
-		if e := t.GetExpectedCount(); e != nil {
-			expected = new(e.GetValue())
+	resync, err := l.answer(ctx, lt, func() error {
+		if resumed {
+			var expected *int32
+			if e := t.GetExpectedCount(); e != nil {
+				expected = new(e.GetValue())
+			}
+			return l.resume(ctx, lt, since, expected)
 		}
-		err = l.resume(ctx, lt, since, expected)
-	} else {
-		err = l.snapshot(ctx, lt, false)
+		return l.snapshot(ctx, lt, false)
+	})
+	if resync {
+		return l.deliver(ctx, listen.Batch{Resync: true})
 	}
 	return l.targetFailed(lt, err)
+}
+
+// held is a target's answer kept back, and the commit it is at.
+type held struct {
+	out []*pb.ListenResponse
+	at  listen.Head
+}
+
+// send sends a response, or keeps it while a target's answer is held.
+func (l *ListenStream) send(r *pb.ListenResponse) error {
+	if l.held != nil {
+		l.held.out = append(l.held.out, r)
+		return nil
+	}
+	return l.write(r)
+}
+
+// answer sends what fn answers for a target at the store's head S (its snapshot or its resume)
+// once the stream has sent the other targets' events up to S: they are older, and a document's
+// versions never go back on the stream (ADR-026 §2). The events after S follow the answer. A
+// resync meanwhile drops the answer: every target's result is taken again.
+func (l *ListenStream) answer(ctx context.Context, lt *listenTarget, fn func() error) (resync bool, err error) {
+	h := &held{}
+	l.held = h
+	err = fn()
+	l.held = nil
+	if err != nil {
+		return false, err
+	}
+	for {
+		b := l.sub.Take()
+		if b.Resync {
+			return true, nil
+		}
+		i := slices.IndexFunc(b.Events, func(e listen.Event) bool { return e.Seq > h.at.Seq })
+		if i < 0 {
+			i = len(b.Events)
+		}
+		if err := l.events(ctx, b.Events[:i]); err != nil {
+			return false, err
+		}
+		if b.Through.Seq >= h.at.Seq {
+			lt.snap = h.at.Seq
+			for _, r := range h.out {
+				if err := l.write(r); err != nil {
+					return false, err
+				}
+			}
+			return false, l.deliver(ctx, listen.Batch{Events: b.Events[i:], Through: b.Through})
+		}
+		// Snapshot asked Ready for S.
+		select {
+		case <-l.sub.Ready():
+		case <-l.sub.Done():
+			return false, errListenClosed
+		case <-ctx.Done():
+			return false, context.Cause(ctx)
+		}
+	}
 }
 
 // targetFailed ends one target on err, a *wire.Error (a read past snapshot_rows): REMOVE with it
@@ -418,6 +484,10 @@ func (l *ListenStream) documents(lt *listenTarget, found map[string]core.Documen
 // waits for it.
 func (l *ListenStream) current(lt *listenTarget, head listen.Head) error {
 	lt.snap, l.dirty = head.Seq, true
+	if l.held != nil {
+		// No global snapshot until the answer is out.
+		l.held.at, lt.snap = head, math.MaxInt64
+	}
 	return l.send(snapshotChange(pb.TargetChange_CURRENT, head.ReadTime, lt.id))
 }
 
@@ -557,15 +627,37 @@ func (l *ListenStream) deliver(ctx context.Context, b listen.Batch) error {
 	if b.Resync {
 		// The hub lost commits the stream needed: every target's result again (ADR-026 §1.4).
 		l.overflow("stream_lag_events")
-		for _, id := range slices.Sorted(maps.Keys(l.targets)) {
-			lt := l.targets[id]
-			if err := l.targetFailed(lt, l.snapshot(ctx, lt, true)); err != nil {
-				return err
+		for resync := true; resync; {
+			resync = false
+			// No global snapshot until every target is answered again.
+			for _, lt := range l.targets {
+				lt.snap = math.MaxInt64
+			}
+			for _, id := range slices.Sorted(maps.Keys(l.targets)) {
+				lt, ok := l.targets[id]
+				if !ok {
+					continue // failed while an earlier one was answered
+				}
+				var err error
+				if resync, err = l.answer(ctx, lt, func() error { return l.snapshot(ctx, lt, true) }); resync {
+					break
+				}
+				if err := l.targetFailed(lt, err); err != nil {
+					return err
+				}
 			}
 		}
 		return nil
 	}
-	for _, e := range b.Events {
+	if err := l.events(ctx, b.Events); err != nil {
+		return err
+	}
+	return l.global(b.Through.Seq, b.Through.ReadTime)
+}
+
+// events sends commits, each followed by the global snapshot it allows.
+func (l *ListenStream) events(ctx context.Context, events []listen.Event) error {
+	for _, e := range events {
 		if err := l.event(ctx, e); err != nil {
 			return err
 		}
@@ -573,7 +665,7 @@ func (l *ListenStream) deliver(ctx context.Context, b listen.Batch) error {
 			return err
 		}
 	}
-	return l.global(b.Through.Seq, b.Through.ReadTime)
+	return nil
 }
 
 // global sends the global snapshot at a commit when something was sent since the last one and

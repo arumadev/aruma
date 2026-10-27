@@ -35,8 +35,8 @@ import (
 // requests sent as recorded and the commits it made (listenActions) made again. Every response
 // passes apitest.ListenChecker. Then, per stream and per target, Aruma's frames are compared in
 // order with production's: the kinds, document names and fields, causes and counts; times and
-// tokens differ by run. Global snapshots are not compared per target (the checker holds them to
-// the protocol), and production's repeats that depend on its timing are tolerated by rule
+// tokens differ by run. No NO_CHANGE is compared, global or per target: the checker holds the
+// global snapshots to the protocol (parity exception listen-heartbeats), and production's repeats that depend on its timing are tolerated by rule
 // (listenRepeats). A case that still differs is listed in listenDiffers with its parity exception.
 func TestReplayListenInProcess(t *testing.T) {
 	b, err := os.ReadFile(filepath.Join(conformance.CorpusDir, "f4-listen.json"))
@@ -580,7 +580,8 @@ func mapsUnion[V any](a, b map[int32]V) map[int32]bool {
 
 // eventDiff compares one target's events. Aruma counts every resumed query unless the client's
 // own count proves it right, where production's count is sometimes absent (listen.resume-token
-// streams 3, 9): Aruma's filters before CURRENT may be extra when production sent none.
+// streams 3, 9): Aruma's filters before CURRENT may be extra when production sent none (parity
+// exception listen-resume-count).
 func eventDiff(prod, ours []targetEvent) []string {
 	text := func(es []targetEvent) []string {
 		out := make([]string, len(es))
