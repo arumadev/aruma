@@ -334,7 +334,7 @@ func TestTransactionsReplayF2(t *testing.T) {
 			setupTime = d.UpdateTime
 		}
 	}
-	now := time.Now().UTC()
+	now := time.Now().UTC().Truncate(time.Microsecond)
 	readTimes := map[string]string{
 		"begin.read_only_read_time":            setupTime,
 		"begin.read_only_read_time_2h":         now.Add(-2 * time.Hour).Format(time.RFC3339Nano),

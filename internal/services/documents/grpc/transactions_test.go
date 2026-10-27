@@ -169,7 +169,7 @@ func TestTransactionsF2(t *testing.T) {
 		ReadWrite: &pb.TransactionOptions_ReadWrite{RetryTransaction: []byte{0, 17, 34, 51, 68, 85, 102, 119, 136, 153, 170, 187, 204, 221, 238, 255}}}}}, tok))
 	wantErr(t, "grpc.begin.retry_unknown", err, connect.CodeInvalidArgument, msgInvalidTransaction)
 	_, err = x.client.BeginTransaction(ctx, req(&pb.BeginTransactionRequest{Database: db, Options: &pb.TransactionOptions{Mode: &pb.TransactionOptions_ReadOnly_{
-		ReadOnly: &pb.TransactionOptions_ReadOnly{ConsistencySelector: &pb.TransactionOptions_ReadOnly_ReadTime{ReadTime: timestamppb.New(time.Now().Add(time.Hour))}}}}}, tok))
+		ReadOnly: &pb.TransactionOptions_ReadOnly{ConsistencySelector: &pb.TransactionOptions_ReadOnly_ReadTime{ReadTime: timestamppb.New(time.Now().Add(time.Hour).Truncate(time.Microsecond))}}}}}, tok))
 	wantErr(t, "grpc.begin.read_only_read_time_future", err, connect.CodeInvalidArgument, "The requested 'read_time' cannot be in the future.")
 	_, err = x.client.Rollback(ctx, req(&pb.RollbackRequest{Database: db}, tok))
 	wantErr(t, "grpc.rollback.empty", err, connect.CodeInvalidArgument, msgInvalidTransaction)
