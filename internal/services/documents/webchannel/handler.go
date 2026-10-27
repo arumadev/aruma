@@ -207,14 +207,11 @@ func unknownSID(w http.ResponseWriter) {
 	_, _ = io.WriteString(w, body)
 }
 
-// writeChunks answers a request with chunks of the given texts. A handshake's and a forward
-// POST's answers end with a newline in production, a backchannel's records do not.
-func writeChunks(w http.ResponseWriter, texts ...[]byte) {
-	var b []byte
-	for _, t := range texts {
-		b = chunk(b, t)
-	}
-	b = append(b, '\n')
+// writeChunks answers a request with one chunk of text. A handshake's and a forward POST's chunk
+// end with a newline in production, counted in its length ("51\n[[0,[…]]]\n",
+// f6-webchannel-*.json); a backchannel's do not.
+func writeChunks(w http.ResponseWriter, text []byte) {
+	b := chunk(nil, append(text, '\n'))
 	hd := w.Header()
 	hd.Set("Content-Type", contentType)
 	hd.Set("Content-Length", strconv.Itoa(len(b)))

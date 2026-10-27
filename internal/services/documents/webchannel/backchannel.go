@@ -1,6 +1,7 @@
 package webchannel
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -172,11 +173,39 @@ func (c listenConn) Receive() (*pb.ListenRequest, error) {
 
 // Send queues a response for the backchannel.
 func (c listenConn) Send(r *pb.ListenResponse) error {
-	b, err := wire.MarshalREST(r)
+	var b []byte
+	var err error
+	if dd := r.GetDocumentDelete(); dd != nil {
+		b, err = documentDelete(dd)
+	} else {
+		b, err = wire.MarshalREST(r)
+	}
 	if err != nil {
 		return err
 	}
 	return c.s.send(message(b))
+}
+
+// documentDelete is a DocumentDelete response in production's order of its fields, their
+// numbers' (f6-webchannel-errors.json): document, readTime, removedTargetIds, where protojson
+// writes them as the proto declares them, removedTargetIds before readTime.
+func documentDelete(dd *pb.DocumentDelete) ([]byte, error) {
+	var readTime json.RawMessage
+	if dd.ReadTime != nil {
+		b, err := wire.MarshalREST(dd.ReadTime)
+		if err != nil {
+			return nil, err
+		}
+		readTime = b
+	}
+	type body struct {
+		Document         string          `json:"document,omitempty"`
+		ReadTime         json.RawMessage `json:"readTime,omitempty"`
+		RemovedTargetIDs []int32         `json:"removedTargetIds,omitempty"`
+	}
+	return json.Marshal(struct {
+		DocumentDelete body `json:"documentDelete"`
+	}{body{dd.GetDocument(), readTime, dd.GetRemovedTargetIds()}})
 }
 
 // Receive reads the stream's next request.
