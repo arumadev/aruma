@@ -45,7 +45,11 @@ func (f firestore) Write(ctx context.Context, conn *connect.BidiStream[pb.WriteR
 		if err != nil {
 			return err
 		}
-		defer h.watchWriteStream(s, ws)()
+		release, err := h.watchWriteStream(s, ws)
+		if err != nil {
+			return err
+		}
+		defer release()
 		s.admitted()
 		if err := send(res); err != nil {
 			return err
@@ -67,11 +71,11 @@ func (f firestore) Write(ctx context.Context, conn *connect.BidiStream[pb.WriteR
 	})
 }
 
-// watchWriteStream is where the shared track of stream admission (A3) joins a Write stream once
-// it is admitted: its count per project, and its token's expiry and revocation, which end the
-// stream through s. It returns what to call when the stream ends.
-func (h *Handler) watchWriteStream(*serverStream, *api.WriteStream) (release func()) {
-	return func() {}
+// watchWriteStream joins an admitted Write stream to the handler's watch (watch.go): its count
+// per project, its token's expiry and revocation, and the lock's loss, which end the stream
+// through s. It returns what to call when the stream ends.
+func (h *Handler) watchWriteStream(s *serverStream, ws *api.WriteStream) (release func(), err error) {
+	return h.watch.join(s, ws.Admission())
 }
 
 // receive reads a stream's next request; a read that ran into its deadline is timeout.

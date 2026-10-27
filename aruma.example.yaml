@@ -119,10 +119,17 @@ documents:                         # Document Database (ADR-024 to ADR-029); see
   limits:
     message_bytes: 17825792        # one gRPC message or REST body (17 MiB)
     stream_first_message: 10s      # until a stream's first message and credential
-    stream_idle: 5m                # a write stream that sent no request, then UNAVAILABLE
+    stream_idle: 5m                # a listen stream without a target, or a write stream that
+                                   # sent no request, then UNAVAILABLE
     stream_write_stall: 30s        # a streamed answer waiting on a client that stopped reading
     server_stream_max: 5m          # a streamed answer without a client deadline
     streams_per_ip: 500            # streams open at once from one client address
+    streams_per_project: 10000     # listen and write streams open at once on one project
+    stream_outbox_bytes: 67108864  # unsent on one listen stream (64 MiB); left full, the stream
+                                   # ends RESOURCE_EXHAUSTED
+    targets_per_stream: 1000       # targets of one listen stream; past it, the target is removed
+    snapshot_rows: 1000000         # documents one listen target's read goes through
+    stream_lag_events: 4096        # events a listen stream may fall behind, then its targets reset
     commit_concurrency: 4          # commits of one database in Postgres at once
     txn_wait_timeout: 20s          # a wait for a transaction's lock, then ABORTED
     txn_max_lifetime: 270s         # a transaction ends this long after it began

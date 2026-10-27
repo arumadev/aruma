@@ -41,6 +41,9 @@ type WriteStream struct {
 	last uint64  // the sequence of the last token sent
 }
 
+// Admission is who the stream was admitted for.
+func (w *WriteStream) Admission() Admission { return w.a.public() }
+
 // streamIDAlphabet is the alphabet of the stream id, a one character string as production's is.
 const streamIDAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 

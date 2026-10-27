@@ -6,16 +6,21 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 
 	"github.com/arumadev/aruma/internal/services/documents/core"
 )
 
 // Metrics counts the Document Database's RPCs: documents_rpcs_total by method and code, and
 // documents_rpc_duration_seconds by method. The method label is the procedure of one of the
-// three services served (procedures), or "unknown", so clients cannot create series.
+// three services served (procedures), or "unknown", so clients cannot create series. And the
+// streams' ends of their own (ADR-026 §3, §4, §5): documents_stream_overflows_total by the limit
+// reached, and documents_stream_closes_total by why the server closed a Listen or Write stream.
 type Metrics struct {
-	rpcs     *prometheus.CounterVec
-	duration *prometheus.HistogramVec
+	rpcs      *prometheus.CounterVec
+	duration  *prometheus.HistogramVec
+	overflows *prometheus.CounterVec
+	closes    *prometheus.CounterVec
 }
 
 // NewMetrics returns the metrics, to register with Collectors.
@@ -30,12 +35,52 @@ func NewMetrics() *Metrics {
 			Help:    "Document Database gRPC call durations, streams included, by method.",
 			Buckets: prometheus.DefBuckets,
 		}, []string{"method"}),
+		overflows: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "documents_stream_overflows_total",
+			Help: "Document Database stream limits reached, by the limit's setting.",
+		}, []string{"limit"}),
+		closes: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "documents_stream_closes_total",
+			Help: "Document Database Listen and Write streams the server closed, by reason: token_expired, token_revoked, instance_lost.",
+		}, []string{"reason"}),
 	}
 }
 
 // Collectors are the metrics to register.
 func (m *Metrics) Collectors() []prometheus.Collector {
-	return []prometheus.Collector{m.rpcs, m.duration}
+	return []prometheus.Collector{m.rpcs, m.duration, m.overflows, m.closes}
+}
+
+// overflow counts a stream limit reached; limit is the setting's name, a constant of ours.
+func (m *Metrics) overflow(limit string) {
+	if m != nil {
+		m.overflows.WithLabelValues(limit).Inc()
+	}
+}
+
+// closed counts a stream the server closed for reason, a constant of ours.
+func (m *Metrics) closed(reason string) {
+	if m != nil {
+		m.closes.WithLabelValues(reason).Inc()
+	}
+}
+
+// Overflows is the count of the limit's overflows, for tests.
+func (m *Metrics) Overflows(limit string) float64 {
+	return counterValue(m.overflows.WithLabelValues(limit))
+}
+
+// Closes is the count of the streams closed for reason, for tests.
+func (m *Metrics) Closes(reason string) float64 {
+	return counterValue(m.closes.WithLabelValues(reason))
+}
+
+func counterValue(c prometheus.Counter) float64 {
+	var out dto.Metric
+	if c.Write(&out) != nil {
+		return 0
+	}
+	return out.GetCounter().GetValue()
 }
 
 func (m *Metrics) observe(procedure string, code connect.Code, d time.Duration) {

@@ -42,7 +42,7 @@ type Options struct {
 	ReferenceOnly bool
 	// Listen is the hub the Listen streams subscribe to (ADR-026 §2); without it Listen is
 	// UNIMPLEMENTED.
-	Listen *listen.Hub
+	Listen ListenHub
 	Logger *slog.Logger
 }
 
@@ -77,6 +77,31 @@ type Call struct {
 	// RequestParams is x-goog-request-params, as sent: a Listen stream's database must be the
 	// one it names, when google-cloud-resource-prefix does not.
 	RequestParams string
+}
+
+// ListenHub is what the Listen streams subscribe to: a *listen.Hub, or what stands for the hub
+// of the moment when it is rebuilt after the single-instance lock is regained (ADR-026 §5).
+type ListenHub interface {
+	Subscribe(ctx context.Context, db core.DB) (*listen.Subscriber, error)
+}
+
+// Admission is who a stream was admitted for, which its transport watches while it is open
+// (ADR-026 §4): the project, and the caller as its credential resolved.
+type Admission struct {
+	Project int64
+	Caller  *authn.Caller
+}
+
+func (a admitted) public() Admission { return Admission{Project: a.db.Project, Caller: a.caller} }
+
+// Supervise watches an admitted caller while ctx lives, as authn.Documents.Supervise does: an
+// admin credential's expiry and its rechecks. It returns the status that ends the stream, or nil
+// once ctx is done.
+func (s *Service) Supervise(ctx context.Context, a Admission) error {
+	if err := s.o.Auth.Supervise(ctx, a.Caller, a.Project); err != nil {
+		return s.fail(ctx, err)
+	}
+	return nil
 }
 
 // admitted is a request admitted to its database.
