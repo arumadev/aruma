@@ -75,7 +75,7 @@ func (l *ListenStream) judgeDocs(ctx context.Context, lt *listenTarget, docs []c
 		return err
 	}
 	tr := &trackedLookups{Documents: &lookups{store: l.s.o.Store, db: l.a.db, readTime: readTime}}
-	budget, now := readBudget(len(docs)), l.s.now()
+	budget, now := readBudget(), l.s.now()
 	defer func() { lt.lookups = lt.lookups || tr.used }()
 	for _, d := range docs {
 		op := ruleOp{method: rules.MethodGet, path: d.Path, before: d, now: now, lookups: tr, budget: budget}
