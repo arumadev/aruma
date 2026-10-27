@@ -58,15 +58,20 @@ type DocumentsDocument struct {
 }
 
 type DocumentsFieldOverride struct {
-	ProjectNumber   int64
-	DatabaseID      string
-	KeyHash         []byte
-	CollectionGroup string
-	FieldPath       string
-	IndexConfig     []byte
-	TtlState        *string
-	UpdateTime      time.Time
-	Etag            string
+	ProjectNumber    int64
+	DatabaseID       string
+	KeyHash          []byte
+	CollectionGroup  string
+	FieldPath        string
+	IndexConfig      []byte
+	TtlState         *string
+	UpdateTime       time.Time
+	Etag             string
+	Building         bool
+	PriorIndexConfig []byte
+	Reverting        bool
+	BuildCursor      []byte
+	OperationID      *string
 }
 
 type DocumentsIndex struct {
@@ -82,6 +87,8 @@ type DocumentsIndex struct {
 	CreateTime      time.Time
 	ReadyTime       *time.Time
 	KeyFormat       int16
+	BuildCursor     []byte
+	OperationID     *string
 }
 
 type DocumentsIndexEntry struct {
@@ -101,6 +108,7 @@ type DocumentsOperation struct {
 	Done          bool
 	Result        []byte
 	CreateTime    time.Time
+	Request       []byte
 }
 
 type DocumentsSequencer struct {

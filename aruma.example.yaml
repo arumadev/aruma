@@ -127,3 +127,5 @@ documents:                         # Document Database (ADR-024 to ADR-029); see
     max_open_txns_per_user: 100    # of those, one end user's
     max_ended_txns: 100000         # ended transactions remembered for their ids' answers
     max_locks_per_txn: 10000       # documents and listings one transaction locks or reads
+    composite_indexes: 1000        # composite indexes per database
+    field_overrides: 1000          # field overrides per database, its default aside

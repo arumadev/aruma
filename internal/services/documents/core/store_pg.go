@@ -27,6 +27,8 @@ type Options struct {
 	Instance *Instance
 	// Transactions bounds the transactions and keys their ids.
 	Transactions TxnConfig
+	// IndexLimits bounds the Admin API's index configuration; zero values are the defaults.
+	IndexLimits IndexLimits
 }
 
 // PGStore is Store on Postgres, schema documents (ADR-024).
@@ -37,19 +39,28 @@ type PGStore struct {
 	location string
 	instance *Instance
 	txns     *transactions
+	cats     *catalogs
+	// builds wakes the index build job (RunIndexBuilds).
+	builds chan struct{}
+	// limits bounds a database's composite indexes and field overrides.
+	limits IndexLimits
 }
 
 var _ Store = (*PGStore)(nil)
 
 // NewPGStore returns the Postgres store.
 func NewPGStore(pool *pgxpool.Pool, o Options) *PGStore {
+	cats := newCatalogs(pool)
 	return &PGStore{
 		pool:     pool,
 		q:        queries.New(pool),
-		seq:      newSequencer(pool, cmp.Or(o.CommitConcurrency, DefaultCommitConcurrency), o.Notifier),
+		seq:      newSequencer(pool, cmp.Or(o.CommitConcurrency, DefaultCommitConcurrency), o.Notifier, cats),
 		location: cmp.Or(o.LocationID, DefaultLocation),
 		instance: o.Instance,
 		txns:     newTransactions(o.Transactions),
+		cats:     cats,
+		builds:   make(chan struct{}, 1),
+		limits:   o.IndexLimits.withDefaults(),
 	}
 }
 

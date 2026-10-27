@@ -12,25 +12,29 @@ import (
 
 const deleteIndexEntries = `-- name: DeleteIndexEntries :exec
 DELETE FROM documents.index_entries e
-USING generate_subscripts($1::bytea[], 1) AS x(i)
-WHERE e.project_number = $2 AND e.database_id = $3
-    AND e.index_id = ($4::bigint[])[x.i] AND e.key = ($1::bytea[])[x.i]
+USING (SELECT unnest($1::bigint[]) AS index_id, unnest($2::bytea[]) AS key) x
+WHERE e.project_number = $3 AND e.database_id = $4
+    AND e.index_id = x.index_id AND e.key = x.key
 `
 
 type DeleteIndexEntriesParams struct {
+	IndexIds      []int64
 	Keys          [][]byte
 	ProjectNumber int64
 	DatabaseID    string
-	IndexIds      []int64
 }
 
-// An index entry the documents' images before the commit had and their images after do not.
+// An index entry the documents' images before the commit had and their images after do not
+// (core/indexentries.go). Like InsertIndexEntries it runs before the stamp, under the documents'
+// row locks, and takes no sequencer row. unnest, whose row estimate is the arrays' length, lets
+// the planner probe the primary key per entry; generate_subscripts' estimate of 1000 rows made
+// it hash a scan of the whole table.
 func (q *Queries) DeleteIndexEntries(ctx context.Context, arg DeleteIndexEntriesParams) error {
 	_, err := q.db.Exec(ctx, deleteIndexEntries,
+		arg.IndexIds,
 		arg.Keys,
 		arg.ProjectNumber,
 		arg.DatabaseID,
-		arg.IndexIds,
 	)
 	return err
 }
@@ -147,7 +151,7 @@ const stampCommit = `-- name: StampCommit :many
 UPDATE documents.sequencer q SET seq = q.seq + 1,
     last_ts = greatest(clock_timestamp(), q.last_ts + interval '1 microsecond')
 WHERE q.project_number = $1 AND q.database_id = $2
-    AND q.catalog_version = $3
+    AND documents.conflict_unless(q.catalog_version = $3)
 RETURNING q.seq, q.last_ts
 `
 
@@ -164,9 +168,11 @@ type StampCommitRow struct {
 
 // The stamp: the commit's seq and commit_time, taking the sequencer row until COMMIT.
 // clock_timestamp(), never now(): now() is the transaction's start, before the locks were waited
-// for. No row returned means the catalog changed since ReadCatalog: core rolls back and computes
-// the commit again. A commit whose documents hold its commit_time (a REQUEST_TIME transform)
-// builds them once this returned; any other queues WriteCommit behind it in the same round trip.
+// for. A catalog changed since the commit computed its index entries fails the statement with
+// 40001 (conflict_unless, checked again on the row it waited for), so the entries queued before
+// it never commit: core rolls back and computes the commit again with the new catalog. A commit
+// whose documents hold its commit_time (a REQUEST_TIME transform) builds them once this
+// returned; any other queues WriteCommit behind it in the same round trip.
 func (q *Queries) StampCommit(ctx context.Context, arg StampCommitParams) ([]StampCommitRow, error) {
 	rows, err := q.db.Query(ctx, stampCommit, arg.ProjectNumber, arg.DatabaseID, arg.CatalogVersion)
 	if err != nil {
@@ -223,11 +229,11 @@ WITH s AS (
         AND d.name_key = ANY($4::bytea[])
     RETURNING 1
 ), u AS (
-    UPDATE documents.documents d SET doc = ($9::bytea[])[w.i], size = ($10::integer[])[w.i],
-        update_time = s.last_ts, update_seq = s.seq
-    FROM s, generate_subscripts($1::bytea[], 1) AS w(i)
+    UPDATE documents.documents d SET doc = w.doc, size = w.size, update_time = s.last_ts, update_seq = s.seq
+    FROM s, (SELECT unnest($1::bytea[]) AS name_key, unnest($9::bigint[]) AS update_seq,
+        unnest($10::bytea[]) AS doc, unnest($11::integer[]) AS size) w
     WHERE d.project_number = $6 AND d.database_id = $7
-        AND d.name_key = ($1::bytea[])[w.i] AND d.update_seq = ($11::bigint[])[w.i]
+        AND d.name_key = w.name_key AND d.update_seq = w.update_seq
     RETURNING 1
 ), i AS (
     INSERT INTO documents.documents (project_number, database_id, name_key, name, parent_hash, cg_hash,
@@ -241,9 +247,9 @@ WITH s AS (
     RETURNING 1
 ), x AS (
     DELETE FROM documents.documents d
-    USING s, generate_subscripts($3::bytea[], 1) AS w(i)
+    USING s, (SELECT unnest($3::bytea[]) AS name_key, unnest($19::bigint[]) AS update_seq) w
     WHERE d.project_number = $6 AND d.database_id = $7
-        AND d.name_key = ($3::bytea[])[w.i] AND d.update_seq = ($19::bigint[])[w.i]
+        AND d.name_key = w.name_key AND d.update_seq = w.update_seq
     RETURNING 1
 ), c AS (
     INSERT INTO documents.changelog (project_number, database_id, seq, name_key, name, commit_time,
@@ -271,9 +277,9 @@ type WriteCommitParams struct {
 	ProjectNumber       int64
 	DatabaseID          string
 	CatalogVersion      int64
+	UpdateSeqs          []int64
 	UpdateDocs          [][]byte
 	UpdateSizes         []int32
-	UpdateSeqs          []int64
 	InsertNames         [][]byte
 	InsertParentHashes  [][]byte
 	InsertCgHashes      [][]byte
@@ -293,7 +299,10 @@ type WriteCommitParams struct {
 // the changelog. Every write names the update_seq the commit read (inserts expect no row), and
 // conflict_unless fails the statement with 40001 unless each found it (an empty array arrives as
 // NULL, hence the coalesce). After a stamp that found the catalog changed, the version differs
-// here too: no row, and nothing written.
+// here too: no row, and nothing written. The arrays a write joins documents on are unnested in
+// one select list (zipped, as they have one length): unnest's row estimate is the arrays', so
+// the planner probes the primary key per document; generate_subscripts' 1000 rows made it hash
+// a scan of the whole table, a cost that grew with the database.
 func (q *Queries) WriteCommit(ctx context.Context, arg WriteCommitParams) ([]bool, error) {
 	rows, err := q.db.Query(ctx, writeCommit,
 		arg.UpdateKeys,
@@ -304,9 +313,9 @@ func (q *Queries) WriteCommit(ctx context.Context, arg WriteCommitParams) ([]boo
 		arg.ProjectNumber,
 		arg.DatabaseID,
 		arg.CatalogVersion,
+		arg.UpdateSeqs,
 		arg.UpdateDocs,
 		arg.UpdateSizes,
-		arg.UpdateSeqs,
 		arg.InsertNames,
 		arg.InsertParentHashes,
 		arg.InsertCgHashes,
