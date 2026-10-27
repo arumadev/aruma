@@ -1,0 +1,17 @@
+{
+  "name": "aruma-e2e-web-documents",
+  "private": true,
+  "type": "module",
+  "description": "The Firebase JS SDK's Firestore (full and lite) in a browser, built with Vite through @aruma/web, driven by Playwright against a real Aruma server with the Document Database.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "firebase": "^13"
+  },
+  "devDependencies": {
+    "@aruma/web": "file:../../../sdk/web/aruma-web",
+    "@playwright/test": "1.64.1",
+    "vite": "^8"
+  }
+}
