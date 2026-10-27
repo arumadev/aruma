@@ -111,7 +111,7 @@ The limits, under `documents.limits` in the file. Each must be positive.
 | `max_ended_txns` | `ARUMA_DOCUMENTS_MAX_ENDED_TXNS` | count | `100000` | Records of ended transactions kept so that their ids answer as production's do until 300 s after they began (the wound text, a retry's age). Past it the oldest go early: such an id answers the expired text, and a retry of it takes a new age |
 | `max_locks_per_txn` | `ARUMA_DOCUMENTS_MAX_LOCKS_PER_TXN` | count | `10000` | Documents and listings one transaction may lock, or read when optimistic (with the documents its listings returned); past it, the transaction is `ABORTED` |
 
-Some bounds are fixed, not configured, and far above anything production was seen to accept (`parity-exceptions.json`, `request-work-bounds`): a Commit or BatchWrite holds at most 10,000 writes and 50,000 field transforms, and one commit builds at most 1 GiB of documents (each write's document counted once). Past them the request is `INVALID_ARGUMENT`. An optimistic transaction's commit checks again what it read for at most `txn_wait_timeout`, then is `ABORTED` with the contention text.
+Some bounds are fixed, not configured, and far above anything production was seen to accept (`parity-exceptions.json`, `request-work-bounds`): a Commit or BatchWrite holds at most 10,000 writes and 50,000 field transforms, and one commit's writes rebuild at most 2^22 values of documents an earlier write of the commit already wrote (each write rebuilds the top-level fields it changes). Past them the request is `INVALID_ARGUMENT`. An optimistic transaction's commit checks again what it read for at most `txn_wait_timeout`, then is `ABORTED` with the contention text.
 
 ## Security rules limits
 

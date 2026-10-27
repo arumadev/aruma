@@ -2,7 +2,10 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"math"
+	"math/rand/v2"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -216,29 +219,226 @@ func TestDatabaseNotFoundTexts(t *testing.T) {
 	}
 }
 
-// A commit of many writes of one large document stops at MaxCommitWork (F2 review M1): its
-// checks cost writes × the document's size, which the budget bounds.
+// A commit of many writes of one large field stops at MaxCommitWork (F2 review M1, re-review
+// N1): each write rebuilds the field, which the budget bounds.
 func TestCommitWorkBound(t *testing.T) {
 	p := ParsePath("c/d")
-	fs := make([]value.Field, 1000)
-	for i := range fs {
-		fs[i] = value.Field{Name: "f" + strconv.Itoa(i), Value: value.String(strings.Repeat("x", 1000))}
+	els := make([]value.Value, 10_000)
+	for i := range els {
+		els[i] = value.Int(int64(i))
 	}
-	locked := map[string]*lockedDoc{string(storedKey(nameKey(p))): {fields: value.Map(fs...)}}
-	size := value.DocumentSize(p.String(), value.Map(fs...))
+	locked := map[string]*lockedDoc{string(storedKey(nameKey(p))): {fields: doc("a", value.Array(els...), "b", value.Int(1))}}
 	writes := func(n int) []Write {
 		ws := make([]Write, n)
 		for i := range ws {
-			ws[i] = Write{Kind: WriteUpdate, Path: p, Masked: true, Mask: []value.FieldPath{{"g"}}, Fields: doc("g", value.Int(int64(i)))}
+			ws[i] = Write{Kind: WriteUpdate, Path: p, Masked: true,
+				Transforms: []Transform{tr(TransformAppendMissing, "a", value.Array(value.Int(int64(-1-i))))}}
 		}
 		return ws
 	}
+	// Each write rebuilds about 10,000 values and 80,000 bytes: 15,000 of the budget.
 	start := time.Now()
-	if err := newPlan(writes(MaxCommitWork/size+10)).apply(testDB, locked, time.Now()); !errors.Is(err, errCommitWork) {
+	if err := newPlan(writes(MaxCommitWork/10_000)).apply(testDB, locked, time.Now()); !errors.Is(err, errCommitWork) {
 		t.Fatalf("over the budget: %v", err)
 	}
-	t.Logf("%d writes of %d bytes: %v", MaxCommitWork/size+10, size, time.Since(start))
-	if err := newPlan(writes(MaxCommitWork/(size+20))).apply(testDB, locked, time.Now()); err != nil {
+	t.Logf("%d writes: %v", MaxCommitWork/10_000, time.Since(start))
+	if err := newPlan(writes(MaxCommitWork/20_000)).apply(testDB, locked, time.Now()); err != nil {
 		t.Fatalf("within the budget: %v", err)
 	}
+	// Writes of other fields rebuild little, however large the document.
+	ws := make([]Write, 10_000)
+	for i := range ws {
+		ws[i] = Write{Kind: WriteUpdate, Path: p, Masked: true, Mask: []value.FieldPath{{"b"}}, Fields: doc("b", value.Int(int64(i)))}
+	}
+	if err := newPlan(ws).apply(testDB, locked, time.Now()); err != nil {
+		t.Fatalf("writes of a small field: %v", err)
+	}
+}
+
+// Many small writes of one large document cost their fields, not the document once per write
+// (F2 re-review N1): a 1 MiB document of 60,000 small maps, written n and 4n times with a field
+// and a REQUEST_TIME transform each, the best of three runs. A linear cost grows about 4 times;
+// one that checks the whole document per write grows 4 times from about 10 ms a write.
+func TestManyWritesOfOneDocument(t *testing.T) {
+	if testing.Short() {
+		t.Skip("short")
+	}
+	p := ParsePath("c/d")
+	fs := make([]value.Field, 60_000)
+	for i := range fs {
+		fs[i] = value.Field{Name: "f" + strconv.Itoa(i), Value: doc("k", value.Int(1))}
+	}
+	locked := map[string]*lockedDoc{string(storedKey(nameKey(p))): {fields: value.Map(fs...)}}
+	run := func(n int) time.Duration {
+		ws := make([]Write, n)
+		for i := range ws {
+			ws[i] = Write{Kind: WriteUpdate, Path: p, Masked: true, Mask: []value.FieldPath{{"g"}}, Fields: doc("g", value.Int(int64(i))),
+				Transforms: []Transform{{Path: value.FieldPath{"t"}, Kind: TransformServerTime}}}
+		}
+		best := time.Duration(math.MaxInt64)
+		for range 3 {
+			start := time.Now()
+			if err := newPlan(ws).apply(testDB, locked, time.Now()); err != nil {
+				t.Fatal(err)
+			}
+			best = min(best, time.Since(start))
+		}
+		return best
+	}
+	const n = 1000
+	small, large := run(n), run(4*n)
+	t.Logf("%v at %d writes, %v at %d", small, n, large, 4*n)
+	if large > 8*small+50*time.Millisecond {
+		t.Errorf("%v at %d writes, %v at %d: not linear", small, n, large, 4*n)
+	}
+}
+
+// Writes folded a top-level field at a time leave the document, results and errors that
+// folding each write over the whole document does, as production checks each write: random
+// writes of one document, masked, whole, transformed and deleting, some invalid, some too
+// large.
+func TestApplyMatchesWholeDocumentFold(t *testing.T) {
+	seed := uint64(time.Now().UnixNano())
+	t.Logf("seed %d", seed)
+	r := rand.New(rand.NewPCG(seed, 3))
+	p := ParsePath("c/d")
+	names := []string{"a", "b", "c", "__int__", "m"}
+	big := value.String(strings.Repeat("x", 400_000))
+	// Fields no write names, so that most writes change part of the document.
+	var extra []value.Field
+	for _, n := range []string{"p", "q", "r", "s", "t"} {
+		extra = append(extra, value.Field{Name: n, Value: value.Array(value.Int(1))})
+	}
+	val := func() value.Value {
+		switch r.IntN(9) {
+		case 0:
+			return big
+		case 1:
+			return value.Map(value.Field{Name: "__bad__", Value: value.Int(1)})
+		case 2:
+			return value.String("x")
+		case 3:
+			return doc("k", value.Int(int64(r.IntN(3))), "l", value.Array(value.Int(1)))
+		case 4:
+			return value.Array(value.Int(int64(r.IntN(3))), value.Null())
+		}
+		return value.Int(int64(r.IntN(5)))
+	}
+	path := func() value.FieldPath {
+		fp := value.FieldPath{names[r.IntN(len(names))]}
+		if r.IntN(3) == 0 {
+			fp = append(fp, []string{"k", "l", "n"}[r.IntN(3)])
+		}
+		return fp
+	}
+	write := func() Write {
+		if r.IntN(10) == 0 {
+			return Write{Kind: WriteDelete, Path: p}
+		}
+		w := Write{Kind: WriteUpdate, Path: p, Masked: r.IntN(4) != 0}
+		var fs []value.Field
+		for range r.IntN(3) {
+			fp := path()
+			if w.Masked {
+				w.Mask = append(w.Mask, fp)
+			}
+			if r.IntN(4) != 0 {
+				v := val()
+				for i := len(fp) - 1; i > 0; i-- {
+					v = doc(fp[i], v)
+				}
+				fs = append(fs, value.Field{Name: fp[0], Value: v})
+			}
+		}
+		if !w.Masked && r.IntN(2) == 0 {
+			fs = append(fs, extra...)
+		}
+		w.Fields = value.Map(fs...)
+		used := map[string]bool{}
+		for range r.IntN(3) {
+			fp := path()
+			if used[fp[0]] {
+				continue
+			}
+			used[fp[0]] = true
+			kinds := []TransformKind{TransformServerTime, TransformIncrement, TransformAppendMissing, TransformRemoveAll, TransformMaximum}
+			k := kinds[r.IntN(len(kinds))]
+			w.Transforms = append(w.Transforms, Transform{Path: fp, Kind: k, Operand: map[TransformKind]value.Value{
+				TransformIncrement: value.Int(1), TransformMaximum: value.Int(2),
+				TransformAppendMissing: value.Array(value.Int(1), value.Int(2)), TransformRemoveAll: value.Array(value.Int(0)),
+			}[k]})
+		}
+		return w
+	}
+	now := time.UnixMicro(1793042888857123)
+	for range 3000 {
+		var stored value.Value
+		locked := map[string]*lockedDoc{}
+		if r.IntN(4) != 0 {
+			stored = value.Map(append([]value.Field{{Name: "a", Value: value.Int(1)}, {Name: "m", Value: doc("k", value.Int(2))}}, extra[:r.IntN(len(extra)+1)]...)...)
+			locked[string(storedKey(nameKey(p)))] = &lockedDoc{fields: stored}
+		}
+		ws := make([]Write, 1+r.IntN(6))
+		for i := range ws {
+			ws[i] = write()
+		}
+		want, wantResults, wantErr := foldWholeDocument(ws, stored, RequestTime(now))
+		pl := newPlan(ws)
+		err := pl.apply(testDB, locked, now)
+		if fmt.Sprint(err) != fmt.Sprint(wantErr) {
+			t.Fatalf("%+v on %v: error %v, want %v", ws, stored, err, wantErr)
+		}
+		if err != nil {
+			continue
+		}
+		d := pl.docs[0]
+		got := value.Value{}
+		if d.exists {
+			got = d.fields
+		}
+		if !value.Identical(got, want) || !slices.EqualFunc(pl.transformed, wantResults, func(a, b []value.Value) bool {
+			return slices.EqualFunc(a, b, value.Identical)
+		}) {
+			t.Fatalf("%+v on %v: %v %v, want %v %v", ws, stored, got, pl.transformed, want, wantResults)
+		}
+	}
+}
+
+// foldWholeDocument applies writes of one document as apply did before it folded them a field at
+// a time: each write's whole document checked and sized. An absent document is the zero Value.
+func foldWholeDocument(ws []Write, stored value.Value, now value.Value) (value.Value, [][]value.Value, error) {
+	fields, exists := stored, stored.Kind() == value.KindMap
+	if !exists {
+		fields = value.Map()
+	}
+	results := make([][]value.Value, len(ws))
+	for i, w := range ws {
+		if w.Kind == WriteDelete {
+			fields, exists = value.Map(), false
+			continue
+		}
+		after := w.Fields
+		if w.Masked {
+			after = value.ApplyMask(fields, w.Fields, w.Mask)
+		}
+		if len(w.Transforms) > 0 {
+			var err error
+			if after, results[i], err = applyTransforms(after, w.Transforms, now); err != nil {
+				return value.Value{}, nil, err
+			}
+		}
+		if w.Masked || len(w.Transforms) > 0 {
+			if err := value.Validate(after); err != nil {
+				return value.Value{}, nil, invalidDocument(err)
+			}
+		}
+		if size := value.DocumentSize(w.Path.String(), after); size > value.MaxDocumentSize {
+			return value.Value{}, nil, documentTooLarge(testDB.DocumentName(w.Path), size)
+		}
+		fields, exists = after, true
+	}
+	if !exists {
+		return value.Value{}, results, nil
+	}
+	return fields, results, nil
 }

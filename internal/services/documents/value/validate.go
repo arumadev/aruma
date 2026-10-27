@@ -58,7 +58,30 @@ func Validate(fields Value) error {
 	if err := CheckBSON(fields); err != nil {
 		return err
 	}
-	for _, f := range fields.Fields() {
+	return validateFields(fields.Fields())
+}
+
+// ValidateChanged returns what Validate returns for a document of n fields whose other fields
+// passed Validate, in this document or another: changed holds its fields that are new or
+// changed, in name order. A field is checked alone but for one thing, a document of a single
+// field named by a BSON key, which CheckBSON reads as that shape; a field that passed is never
+// so named, since the name is reserved. So a write that changes a few fields of a large
+// document costs those fields (F2 re-review N1).
+func ValidateChanged(changed []Field, n int) error {
+	if n == 1 && len(changed) == 1 {
+		return Validate(Value{kind: KindMap, m: changed})
+	}
+	for _, f := range changed {
+		if err := CheckBSON(f.Value); err != nil {
+			return err
+		}
+	}
+	return validateFields(changed)
+}
+
+// validateFields checks fields, once CheckBSON passed them, in order.
+func validateFields(fields []Field) error {
+	for _, f := range fields {
 		switch {
 		case f.Name == "":
 			return errors.New("The property.name is the empty string.")
