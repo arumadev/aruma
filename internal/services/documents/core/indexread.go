@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"slices"
@@ -31,11 +30,13 @@ type IndexRead struct {
 	cat      *catalog
 	readTime time.Time
 	seq      int64
+	// retention is the changelog's (Options.ChangelogRetention): no row younger is pruned.
+	retention time.Duration
 }
 
 // ErrIndexReadTooLong is a query continued in a later snapshot after the changelog retention
 // pruned commits it would read: it can no longer answer at its read time. The changelog keeps
-// at least MinChangelogRetention, which the index path's batches never approach.
+// every commit for its retention (Options.ChangelogRetention, an hour by default).
 var ErrIndexReadTooLong = &Error{Aborted, "The query ran too long to finish at its read time. Run it again."}
 
 // BeginIndexRead begins an index read of db at its latest commit.
@@ -51,7 +52,7 @@ func (s *PGStore) BeginIndexRead(ctx context.Context, db DB) (*IndexRead, error)
 	if err != nil {
 		return nil, err
 	}
-	r := &IndexRead{tx: tx, q: queries.New(tx), db: db}
+	r := &IndexRead{tx: tx, q: queries.New(tx), db: db, retention: s.changelogRetention}
 	head, err := r.q.IndexReadHead(ctx, queries.IndexReadHeadParams{ProjectNumber: db.Project, DatabaseID: db.ID})
 	if errors.Is(err, pgx.ErrNoRows) {
 		err = &DatabaseNotFoundError{ProjectID: db.ProjectID, DatabaseID: db.ID}
@@ -155,49 +156,67 @@ func (c ChangeScope) holds(p Path) bool {
 	return p.CollectionID() == c.CollectionID && (c.Group || slices.Equal(p.Parent(), c.Parent))
 }
 
-// ChangedSince returns the documents of scope that the commits after seq, up to the read's,
-// changed: each once, as it was before the first of those commits, in name order; one that did
-// not exist then has its Path alone. It fails with ErrIndexReadTooLong when the changelog may no
-// longer hold every such commit.
-func (r *IndexRead) ChangedSince(ctx context.Context, seq int64, scope ChangeScope) ([]Document, error) {
+// ChangedSince calls each with the documents of scope that the commits after seq, up to the
+// read's, changed: each once, as it was before the first of those commits, in stored name key
+// order; one that did not exist then has its Path alone. The rows stream from the snapshot one
+// at a time, and Postgres keeps out those of other scopes (queries.ChangedSince), so what this
+// holds does not grow with what changed: each holds what it keeps to its own bound. It stops at
+// each's first error, and fails with ErrIndexReadTooLong when the changelog may no longer hold
+// every such commit.
+func (r *IndexRead) ChangedSince(ctx context.Context, seq int64, scope ChangeScope, each func(Document) error) error {
 	if r.seq == seq {
-		return nil, nil
+		return nil
 	}
 	floor, err := r.q.ChangelogFloor(ctx, queries.ChangelogFloorParams{ProjectNumber: r.db.Project, DatabaseID: r.db.ID,
-		MinSecs: MinChangelogRetention.Seconds()})
+		RetentionSecs: r.retention.Seconds()})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if len(floor) == 0 || floor[0].Seq > seq+1 || floor[0].Seq == seq+1 && !floor[0].Young {
-		return nil, ErrIndexReadTooLong
+		return ErrIndexReadTooLong
 	}
-	lo, hi := []byte{value.KeyVersion}, []byte{value.KeyVersion + 1}
-	if !scope.Group {
-		lo = collectionPrefix(scope.Parent, scope.CollectionID)
-		hi = IndexPrefixEnd(lo)
+	arg := queries.ChangedSinceParams{ProjectNumber: r.db.Project, DatabaseID: r.db.ID, AfterSeq: seq}
+	if scope.Group {
+		// The group's segment reversed, as the name reversed holds it before a document id. A
+		// collection id is never numeric (wire.checkID), so its segment is text.
+		seg := appendSegment(nil, scope.CollectionID)
+		slices.Reverse(seg)
+		arg.InGroup, arg.Lo, arg.Hi = true, []byte{value.KeyVersion}, []byte{value.KeyVersion + 1}
+		arg.GroupNumeric, arg.GroupText = append([]byte{segNumeric}, seg...), append([]byte{segText}, seg...)
+	} else {
+		arg.Lo = collectionPrefix(scope.Parent, scope.CollectionID)
+		arg.Hi, arg.PrefixLen = IndexPrefixEnd(arg.Lo), int32(len(arg.Lo))
 	}
-	rows, err := r.q.ChangedSince(ctx, queries.ChangedSinceParams{ProjectNumber: r.db.Project, DatabaseID: r.db.ID,
-		AfterSeq: seq, Lo: lo, Hi: hi})
+	sql, args := statement(func(q *queries.Queries) error {
+		_, err := q.ChangedSince(ctx, arg)
+		return err
+	})
+	rows, err := r.tx.Query(ctx, sql, args...)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	var out []Document
-	for _, x := range rows {
-		p, err := pathOfKey(x.Name)
+	defer rows.Close()
+	for rows.Next() {
+		var name, before []byte
+		if err := rows.Scan(&name, &before); err != nil {
+			return err
+		}
+		p, err := pathOfKey(name)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if !scope.holds(p) {
 			continue
 		}
 		d := Document{Path: p}
-		if x.Before != nil {
-			if d.Fields, d.CreateTime, d.UpdateTime, err = decodeDocument(x.Before); err != nil {
-				return nil, err
+		if before != nil {
+			if d.Fields, d.CreateTime, d.UpdateTime, err = decodeDocument(before); err != nil {
+				return err
 			}
 		}
-		out = append(out, d)
+		if err := each(d); err != nil {
+			return err
+		}
 	}
-	slices.SortFunc(out, func(a, b Document) int { return bytes.Compare(nameKey(a.Path), nameKey(b.Path)) })
-	return out, nil
+	return rows.Err()
 }

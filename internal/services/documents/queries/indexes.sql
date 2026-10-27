@@ -228,20 +228,40 @@ WHERE s.ord = 1 OR s.before < @budget::bigint
 ORDER BY s.ord;
 
 -- name: ChangedSince :many
--- The documents with a whole name in [@lo, @hi) that the commits after @after_seq changed, each
--- once, with its image before the first of those commits (NULL when it did not exist then), in
--- name order: what an index read continued in a later snapshot reads instead of their entries.
+-- The documents of a query's scope that the commits after @after_seq changed, each once, with its
+-- image before the first of those commits (NULL when it did not exist then), in name_key order:
+-- what an index read continued in a later snapshot reads instead of their entries. The scope is
+-- filtered here, so that no other document's image is read or sent (core/indexread.go). On the
+-- name reversed (r), a document's last id follows its end 0x00: a numeric id is 8 bytes then
+-- 0x01; a text id is 0x01 0x00, the escaped text, which never holds 0x01 0x00, then 0x02, so the
+-- first 0x01 0x00 past r's third byte ends the segment before the id. In scope:
+--   - a collection's (not @in_group): a name in [@lo, @hi), the collection's prefix key of
+--     @prefix_len bytes, with one id after the prefix;
+--   - a collection group's (@in_group): a name whose id follows the group's segment, reversed
+--     after 0x01 in @group_numeric, after 0x02 in @group_text.
+-- A numeric id's 8 bytes may pass a test meant for a text id: core holds every row to the scope
+-- by its decoded name, and this filter keeps out only what is surely not in it.
 SELECT DISTINCT ON (c.name_key) c.name, c.before
-FROM documents.changelog c
+FROM documents.changelog c, LATERAL (SELECT reverse(c.name) AS r) x
 WHERE c.project_number = @project_number AND c.database_id = @database_id AND c.seq > @after_seq
     AND c.name >= @lo AND c.name < @hi
+    AND (@in_group::boolean
+            AND (substr(x.r, 10, octet_length(@group_numeric::bytea)) = @group_numeric::bytea
+                OR substr(x.r, 1, 3) = '\x000100'::bytea
+                    AND substr(x.r, position('\x0100'::bytea IN substr(x.r, 4)) + 2,
+                        octet_length(@group_text::bytea)) = @group_text::bytea)
+        OR NOT @in_group::boolean
+            AND (octet_length(c.name) - @prefix_len::int = 10
+                OR substr(x.r, 1, 3) = '\x000100'::bytea
+                    AND position('\x0100'::bytea IN substr(x.r, 4)) + 2 = octet_length(c.name) - @prefix_len::int))
 ORDER BY c.name_key, c.seq;
 
 -- name: ChangelogFloor :many
--- The oldest changelog row of a database, and whether it is younger than @min_secs, which no
--- retention prunes: retention deletes a prefix of (seq, name_key), so the changelog holds every
--- row after the floor's seq, and every row of that seq when the row is young.
-SELECT c.seq, (c.commit_time > now() - make_interval(secs => @min_secs::float8))::boolean AS young
+-- The oldest changelog row of a database, and whether it is younger than @retention_secs, the
+-- changelog retention, which no pass prunes: retention deletes a prefix of (seq, name_key), so
+-- the changelog holds every row after the floor's seq, and every row of that seq when the row
+-- is young.
+SELECT c.seq, (c.commit_time > now() - make_interval(secs => @retention_secs::float8))::boolean AS young
 FROM documents.changelog c
 WHERE c.project_number = @project_number AND c.database_id = @database_id
 ORDER BY c.seq, c.name_key

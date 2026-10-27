@@ -320,9 +320,18 @@ func (q *Queries) CatalogOverrides(ctx context.Context, arg CatalogOverridesPara
 
 const changedSince = `-- name: ChangedSince :many
 SELECT DISTINCT ON (c.name_key) c.name, c.before
-FROM documents.changelog c
+FROM documents.changelog c, LATERAL (SELECT reverse(c.name) AS r) x
 WHERE c.project_number = $1 AND c.database_id = $2 AND c.seq > $3
     AND c.name >= $4 AND c.name < $5
+    AND ($6::boolean
+            AND (substr(x.r, 10, octet_length($7::bytea)) = $7::bytea
+                OR substr(x.r, 1, 3) = '\x000100'::bytea
+                    AND substr(x.r, position('\x0100'::bytea IN substr(x.r, 4)) + 2,
+                        octet_length($8::bytea)) = $8::bytea)
+        OR NOT $6::boolean
+            AND (octet_length(c.name) - $9::int = 10
+                OR substr(x.r, 1, 3) = '\x000100'::bytea
+                    AND position('\x0100'::bytea IN substr(x.r, 4)) + 2 = octet_length(c.name) - $9::int))
 ORDER BY c.name_key, c.seq
 `
 
@@ -332,6 +341,10 @@ type ChangedSinceParams struct {
 	AfterSeq      int64
 	Lo            []byte
 	Hi            []byte
+	InGroup       bool
+	GroupNumeric  []byte
+	GroupText     []byte
+	PrefixLen     int32
 }
 
 type ChangedSinceRow struct {
@@ -339,9 +352,20 @@ type ChangedSinceRow struct {
 	Before []byte
 }
 
-// The documents with a whole name in [@lo, @hi) that the commits after @after_seq changed, each
-// once, with its image before the first of those commits (NULL when it did not exist then), in
-// name order: what an index read continued in a later snapshot reads instead of their entries.
+// The documents of a query's scope that the commits after @after_seq changed, each once, with its
+// image before the first of those commits (NULL when it did not exist then), in name_key order:
+// what an index read continued in a later snapshot reads instead of their entries. The scope is
+// filtered here, so that no other document's image is read or sent (core/indexread.go). On the
+// name reversed (r), a document's last id follows its end 0x00: a numeric id is 8 bytes then
+// 0x01; a text id is 0x01 0x00, the escaped text, which never holds 0x01 0x00, then 0x02, so the
+// first 0x01 0x00 past r's third byte ends the segment before the id. In scope:
+//   - a collection's (not @in_group): a name in [@lo, @hi), the collection's prefix key of
+//     @prefix_len bytes, with one id after the prefix;
+//   - a collection group's (@in_group): a name whose id follows the group's segment, reversed
+//     after 0x01 in @group_numeric, after 0x02 in @group_text.
+//
+// A numeric id's 8 bytes may pass a test meant for a text id: core holds every row to the scope
+// by its decoded name, and this filter keeps out only what is surely not in it.
 func (q *Queries) ChangedSince(ctx context.Context, arg ChangedSinceParams) ([]ChangedSinceRow, error) {
 	rows, err := q.db.Query(ctx, changedSince,
 		arg.ProjectNumber,
@@ -349,6 +373,10 @@ func (q *Queries) ChangedSince(ctx context.Context, arg ChangedSinceParams) ([]C
 		arg.AfterSeq,
 		arg.Lo,
 		arg.Hi,
+		arg.InGroup,
+		arg.GroupNumeric,
+		arg.GroupText,
+		arg.PrefixLen,
 	)
 	if err != nil {
 		return nil, err
@@ -377,7 +405,7 @@ LIMIT 1
 `
 
 type ChangelogFloorParams struct {
-	MinSecs       float64
+	RetentionSecs float64
 	ProjectNumber int64
 	DatabaseID    string
 }
@@ -387,11 +415,12 @@ type ChangelogFloorRow struct {
 	Young bool
 }
 
-// The oldest changelog row of a database, and whether it is younger than @min_secs, which no
-// retention prunes: retention deletes a prefix of (seq, name_key), so the changelog holds every
-// row after the floor's seq, and every row of that seq when the row is young.
+// The oldest changelog row of a database, and whether it is younger than @retention_secs, the
+// changelog retention, which no pass prunes: retention deletes a prefix of (seq, name_key), so
+// the changelog holds every row after the floor's seq, and every row of that seq when the row
+// is young.
 func (q *Queries) ChangelogFloor(ctx context.Context, arg ChangelogFloorParams) ([]ChangelogFloorRow, error) {
-	rows, err := q.db.Query(ctx, changelogFloor, arg.MinSecs, arg.ProjectNumber, arg.DatabaseID)
+	rows, err := q.db.Query(ctx, changelogFloor, arg.RetentionSecs, arg.ProjectNumber, arg.DatabaseID)
 	if err != nil {
 		return nil, err
 	}

@@ -17,7 +17,7 @@ type RetentionOptions struct {
 	Every time.Duration
 	// Changelog is how long changelog rows are kept: the hub fills gaps and settles unknown
 	// outcomes from them for up to about 10 seconds, so less than MinChangelogRetention is
-	// raised to it. Default 1 hour.
+	// raised to it. Less than the store's Options.ChangelogRetention, or zero, is raised to that.
 	Changelog time.Duration
 	// Operations is how long a done operation stays readable (GetOperation, ListOperations).
 	// Default 30 days; production's is not recorded.
@@ -34,9 +34,15 @@ type RetentionOptions struct {
 // MinChangelogRetention is the least changelog retention: well above the hub's 10 seconds.
 const MinChangelogRetention = time.Minute
 
-func (o RetentionOptions) withDefaults() RetentionOptions {
+// changelogRetention is a configured changelog retention with its default and least.
+func changelogRetention(d time.Duration) time.Duration {
+	return max(cmp.Or(d, time.Hour), MinChangelogRetention)
+}
+
+// withDefaults fills o's zero values, and keeps the changelog at least the store's retention.
+func (o RetentionOptions) withDefaults(s *PGStore) RetentionOptions {
 	o.Every = cmp.Or(o.Every, time.Minute)
-	o.Changelog = max(cmp.Or(o.Changelog, time.Hour), MinChangelogRetention)
+	o.Changelog = max(o.Changelog, s.changelogRetention)
 	o.Operations = cmp.Or(o.Operations, 30*24*time.Hour)
 	o.Batch = cmp.Or(o.Batch, 1000)
 	o.MaxBatches = cmp.Or(o.MaxBatches, 100)
@@ -54,7 +60,7 @@ type Pruned struct {
 // RunRetention runs a retention pass every o.Every until ctx ends. A pass runs only while this
 // process holds the single-instance lock (ADR-024 §7), and stops between batches when it loses it.
 func (s *PGStore) RunRetention(ctx context.Context, o RetentionOptions) {
-	o = o.withDefaults()
+	o = o.withDefaults(s)
 	t := time.NewTicker(o.Every)
 	defer t.Stop()
 	for {
@@ -82,7 +88,7 @@ func (s *PGStore) RunRetention(ctx context.Context, o RetentionOptions) {
 // most o.MaxBatches of each per database. It returns ErrNotServing, with what it deleted, when
 // the process does not hold the lock.
 func (s *PGStore) Prune(ctx context.Context, o RetentionOptions) (Pruned, error) {
-	o = o.withDefaults()
+	o = o.withDefaults(s)
 	var n Pruned
 	if err := s.serving(); err != nil {
 		return n, err

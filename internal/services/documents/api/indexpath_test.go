@@ -238,6 +238,73 @@ func TestIndexPathUnionMemory(t *testing.T) {
 	t.Logf("held at most %d bytes of %d", peak, values*perValue*size)
 }
 
+// A continued collection-group read holds to its bound only the changed documents it keeps, as
+// they come: large documents changed between its batches outside its scope, or in it without
+// matching, cost nothing against it, and it answers as the reference path at its read time;
+// matching ones past the bound fail it RESOURCE_EXHAUSTED.
+func TestIndexPathChangedBound(t *testing.T) {
+	p := newPlanEnv(t)
+	ctx := t.Context()
+	p.groupOverride(t, "c", "a")
+	big := value.String(strings.Repeat("x", 200<<10))
+	docAt := func(a int64, large bool) value.Value {
+		fs := []value.Field{{Name: "a", Value: value.Int(a)}}
+		if large {
+			fs = append(fs, value.Field{Name: "s", Value: big})
+		}
+		return value.Map(fs...)
+	}
+	var seed []core.Write
+	for i := range 8 {
+		seed = append(seed, setDoc(fmt.Sprintf("p/x/c/m%02d", i), docAt(1, false)),
+			setDoc(fmt.Sprintf("p/y/c/n%02d", i), docAt(2, true)), setDoc(fmt.Sprintf("other/o%02d", i), docAt(1, true)),
+			setDoc(fmt.Sprintf("p/z/c/k%02d", i), docAt(3, true)))
+	}
+	p.commit(t, seed...)
+	api.SetMaxChangedBytes(t, 1<<20)
+	// After the first batch, rewrite every large document: 4.8 MiB of them, beside the 1 MiB bound.
+	rewrite := func() {
+		var ws []core.Write
+		for i := range 8 {
+			ws = append(ws, setDoc(fmt.Sprintf("p/y/c/n%02d", i), docAt(2, false)), setDoc(fmt.Sprintf("other/o%02d", i), docAt(1, false)),
+				setDoc(fmt.Sprintf("p/z/c/k%02d", i), docAt(3, false)))
+		}
+		if _, err := p.env.Store.Commit(ctx, p.db, ws); err != nil {
+			t.Error(err)
+		}
+	}
+	once := func() func() {
+		done := false
+		return func() {
+			if !done {
+				done = true
+				rewrite()
+			}
+		}
+	}
+	defer api.SetIndexBatch(p.env.Service, 0, nil)
+
+	api.SetIndexBatch(p.env.Service, 1, once())
+	sq := &pb.StructuredQuery{From: from("c", true), Where: fieldFilter("a", pb.StructuredQuery_FieldFilter_EQUAL, value.Int(1))}
+	before := indexServed()
+	got, rt := p.runAt(ctx, p.env.Service, sq, nil, time.Time{})
+	if indexServed() != before+1 {
+		t.Fatal("not served by an index path")
+	}
+	if want, _ := p.runAt(ctx, p.env.Reference, sq, nil, rt); got.err != nil || len(got.docs) != 8 || !got.equal(want) {
+		t.Errorf("unmatched and unscoped changes: %v, want the reference path's %v", got, want)
+	}
+
+	// The documents of a == 3 were large at the read time and match: keeping them passes 1 MiB.
+	p.commit(t, seed...)
+	api.SetIndexBatch(p.env.Service, 1, once())
+	sq.Where = fieldFilter("a", pb.StructuredQuery_FieldFilter_EQUAL, value.Int(3))
+	got, _ = p.runAt(ctx, p.env.Service, sq, nil, time.Time{})
+	if we, ok := errors.AsType[*wire.Error](got.err); !ok || we.Code != wire.CodeResourceExhausted {
+		t.Errorf("matching changes past the bound: %v", got)
+	}
+}
+
 // A query continued in a later snapshot whose catalogue changed goes on when its plan reads the
 // same indexes (another index was created), and fails ABORTED when its index was deleted.
 func TestIndexPathCatalogChange(t *testing.T) {

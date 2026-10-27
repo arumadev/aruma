@@ -47,12 +47,12 @@ const (
 	// streams; minFetch is a stream's least. A fetch returns one document at least.
 	fetchBudget = 8 << 20
 	minFetch    = 256 << 10
-	// maxChangedBytes bounds the documents a continued read keeps of those that changed since
-	// its read time.
-	maxChangedBytes = query.DefaultMaxKeptBytes
 )
 
 var (
+	// maxChangedBytes bounds the documents a continued read keeps of those that changed since
+	// its read time, and apart the names of those it remembers (a variable for tests).
+	maxChangedBytes = query.DefaultMaxKeptBytes
 	// errChangedBound is a continued read that would keep more than maxChangedBytes of the
 	// documents that changed since its read time, as the reference path's bound fails a query.
 	errChangedBound = wire.NewError(wire.CodeResourceExhausted,
@@ -164,6 +164,8 @@ type executor struct {
 	// most; changedBytes is what the union holds of the documents that changed.
 	held, peak   int
 	changedBytes int
+	// changedNames is the bytes of the names in changed, held to maxChangedBytes as well.
+	changedNames int
 }
 
 // stream is candidates in the query's order; next returns nil past the last.
@@ -277,28 +279,31 @@ func (x *executor) resume(ctx context.Context, u *unionStream) error {
 		}
 		x.catVersion = rd.CatalogVersion()
 	}
-	docs, err := rd.ChangedSince(ctx, x.seq, x.scope)
+	// Each changed document is held to the query as it comes, and only those kept are held.
+	err = rd.ChangedSince(ctx, x.seq, x.scope, func(d core.Document) error {
+		name := x.a.db.DocumentName(d.Path)
+		if x.changed[name] {
+			return nil // changed before: its image at the read time is the first change's
+		}
+		x.changed[name] = true
+		if x.changedNames += len(name); x.changedNames > maxChangedBytes {
+			return errChangedBound
+		}
+		if !d.Exists() {
+			return nil // created since the read time
+		}
+		qd := &query.Doc{Name: name, Fields: d.Fields, CreateTime: d.CreateTime, UpdateTime: d.UpdateTime}
+		if x.q.Where != nil && !x.q.Where.Matches(qd) || !hasOrderFields(x.q, qd) {
+			return nil
+		}
+		return u.addChanged(qd)
+	})
 	if err != nil {
 		return err
 	}
 	x.seq = rd.Seq()
-	var add []*query.Doc
-	for _, d := range docs {
-		name := x.a.db.DocumentName(d.Path)
-		if x.changed[name] {
-			continue // changed before: its image at the read time is the first change's
-		}
-		x.changed[name] = true
-		if !d.Exists() {
-			continue // created since the read time
-		}
-		qd := &query.Doc{Name: name, Fields: d.Fields, CreateTime: d.CreateTime, UpdateTime: d.UpdateTime}
-		if x.q.Where != nil && !x.q.Where.Matches(qd) || !hasOrderFields(x.q, qd) {
-			continue
-		}
-		add = append(add, qd)
-	}
-	return u.addChanged(add)
+	u.sortChanged()
+	return nil
 }
 
 // hasOrderFields reports whether d has every field q orders by, as each of an index path's
@@ -620,7 +625,11 @@ func (m *mergedStream) join(ctx context.Context) (*candidate, error) {
 
 // changedStream is the documents that changed since the read time, as they were then, after
 // the last result the union returned, in the query's order.
-type changedStream struct{ docs []*query.Doc }
+type changedStream struct {
+	docs []*query.Doc
+	// unsorted is documents added and not yet in order (unionStream.sortChanged).
+	unsorted bool
+}
 
 func (c *changedStream) next(context.Context) (*query.Doc, error) {
 	if len(c.docs) == 0 {
@@ -677,28 +686,34 @@ func (u *unionStream) next(ctx context.Context) (*query.Doc, error) {
 	}
 }
 
-// addChanged adds documents that changed, at the read time, to those the union merges: those
-// after the last result it returned.
-func (u *unionStream) addChanged(docs []*query.Doc) error {
-	if len(docs) == 0 {
+// addChanged adds a document that changed, at the read time, to those the union merges, when it
+// is after the last result the union returned. The first of a snapshot's takes back the changed
+// stream's head; sortChanged orders them once the snapshot's are added.
+func (u *unionStream) addChanged(d *query.Doc) error {
+	q, i := u.x.q, len(u.streams)-1
+	if u.last != nil && q.Compare(d, u.last) <= 0 {
 		return nil
 	}
-	q, i := u.x.q, len(u.streams)-1
-	if u.started[i] && u.heads[i] != nil {
-		u.changed.docs = append(u.changed.docs, u.heads[i])
-	}
-	u.heads[i], u.started[i] = nil, false
-	for _, d := range docs {
-		if u.last != nil && q.Compare(d, u.last) <= 0 {
-			continue
+	if u.started[i] {
+		if u.heads[i] != nil {
+			u.changed.docs = append(u.changed.docs, u.heads[i])
 		}
-		u.changed.docs = append(u.changed.docs, d)
-		n := docBytes(d)
-		u.x.hold(n)
-		if u.x.changedBytes += n; u.x.changedBytes > maxChangedBytes {
-			return errChangedBound
-		}
+		u.heads[i], u.started[i] = nil, false
 	}
-	slices.SortFunc(u.changed.docs, q.Compare)
+	u.changed.docs = append(u.changed.docs, d)
+	n := docBytes(d)
+	u.x.hold(n)
+	if u.x.changedBytes += n; u.x.changedBytes > maxChangedBytes {
+		return errChangedBound
+	}
+	u.changed.unsorted = true
 	return nil
+}
+
+// sortChanged orders the changed stream after documents were added to it.
+func (u *unionStream) sortChanged() {
+	if u.changed.unsorted {
+		slices.SortFunc(u.changed.docs, u.x.q.Compare)
+		u.changed.unsorted = false
+	}
 }

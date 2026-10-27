@@ -29,6 +29,10 @@ type Options struct {
 	Transactions TxnConfig
 	// IndexLimits bounds the Admin API's index configuration; zero values are the defaults.
 	IndexLimits IndexLimits
+	// ChangelogRetention is how long changelog rows are kept: a retention pass prunes none
+	// younger, and an index read continued in a later snapshot relies on it (IndexRead). Default
+	// 1 hour; less than MinChangelogRetention is raised to it.
+	ChangelogRetention time.Duration
 }
 
 // PGStore is Store on Postgres, schema documents (ADR-024).
@@ -44,6 +48,8 @@ type PGStore struct {
 	builds chan struct{}
 	// limits bounds a database's composite indexes and field overrides.
 	limits IndexLimits
+	// changelogRetention is Options.ChangelogRetention.
+	changelogRetention time.Duration
 }
 
 var _ Store = (*PGStore)(nil)
@@ -61,6 +67,8 @@ func NewPGStore(pool *pgxpool.Pool, o Options) *PGStore {
 		cats:     cats,
 		builds:   make(chan struct{}, 1),
 		limits:   o.IndexLimits.withDefaults(),
+
+		changelogRetention: changelogRetention(o.ChangelogRetention),
 	}
 }
 
