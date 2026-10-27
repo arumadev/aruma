@@ -4,7 +4,7 @@
 #
 #   test/smoke/run.sh [web|admin-node|admin-go|admin-auth-node|admin-auth-go|tamper-libs|android|ios|flutter|flutter-ios
 #                      |admin-node-rtdb|admin-go-rtdb|admin-node-storage|admin-go-storage
-#                      |admin-go-documents|admin-node-documents|web-documents ...]
+#                      |admin-go-documents|admin-node-documents|web-documents|firebase-tools-documents ...]
 #
 # admin-auth-node and admin-auth-go run the Aruma verification libraries' suites (sdk/), which
 # start their own live server and use the official firebase-admin beside them (AC-A5, AC-A10..14,
@@ -32,6 +32,13 @@
 # with initializeFirestore({host, ssl: false}). Every connection beyond loopback is refused. Tests
 # of what the server does not serve yet are listed in test/compat/documents/expected-failures/,
 # and a listed test that passes fails the target.
+#
+# firebase-tools-documents runs firebase-tools 15.34.0 (test/acceptance/testdata/firebase-cli)
+# against a live Aruma with the Document Database (TestDocumentsWithTheFirebaseCLI, F3): deploy
+# --only firestore:indexes, firestore:indexes (the export, deployed back), a second deploy, a
+# deploy --force, and firestore:delete -r, with FIRESTORE_URL and the management origins on a
+# recording TLS front, a fake project, and every connection beyond loopback refused (the
+# netguard, and sandbox-exec on macOS); the test fails on any attempt.
 #
 # Without arguments it runs every target this machine can run. It needs the local Postgres
 # (ARUMA_TEST_DATABASE_URL), Node, Go and, per target, a JDK 17+ and the Android SDK, Xcode with an
@@ -96,6 +103,12 @@ run_admin_go_documents() {
 run_admin_node_documents() {
   log "admin-node-documents: firebase-admin Firestore, gRPC and preferRest"
   (cd "$smoke/admin-node" && npm ci --no-audit --no-fund --silent && npm run --silent test:documents)
+}
+
+run_firebase_tools_documents() {
+  log "firebase-tools-documents: firebase deploy --only firestore:indexes, firestore:indexes, firestore:delete -r"
+  (cd "$root/test/acceptance/testdata/firebase-cli" && npm ci --no-audit --no-fund --silent)
+  ARUMA_FIREBASE_CLI=1 go test -count=1 -run '^TestDocumentsWithTheFirebaseCLI$' ./test/acceptance/
 }
 
 run_web_documents() {
@@ -189,7 +202,7 @@ run_flutter_ios() {
 targets=("$@")
 if [[ ${#targets[@]} -eq 0 ]]; then
   targets=(web admin-node admin-go admin-auth-node admin-auth-go tamper-libs admin-node-rtdb admin-go-rtdb
-    admin-node-storage admin-go-storage admin-go-documents admin-node-documents web-documents)
+    admin-node-storage admin-go-storage admin-go-documents admin-node-documents web-documents firebase-tools-documents)
   command -v java >/dev/null && [[ -d "${ANDROID_HOME:-$HOME/Library/Android/sdk}" ]] && targets+=(android)
   command -v xcodebuild >/dev/null && targets+=(ios)
   command -v flutter >/dev/null && targets+=(flutter)
