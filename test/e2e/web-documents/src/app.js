@@ -9,7 +9,9 @@ import firebaseConfig from '../.generated/firebase-config.json';
 
 const transport = new URLSearchParams(location.search).get('transport') ?? 'stream';
 const app = initializeApp(firebaseConfig);
-const auth = authSdk.getAuth(app);
+// No popup/redirect resolver: getAuth() adds one, and in Safari it proactively loads Google's
+// apis.google.com/js/api.js (the iframe for OAuth redirects), which this app does not use.
+const auth = authSdk.initializeAuth(app, { persistence: authSdk.indexedDBLocalPersistence });
 const db = transport === 'long-polling'
   ? fs.initializeFirestore(app, { experimentalForceLongPolling: true })
   : fs.getFirestore(app);

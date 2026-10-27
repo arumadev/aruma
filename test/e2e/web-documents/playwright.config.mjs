@@ -8,7 +8,9 @@ if (!process.env.ARUMA_URL) {
   throw new Error('ARUMA_URL is not set: run the tests through test/e2e/web-documents/run.sh');
 }
 
-const PORT = Number(process.env.ARUMA_E2E_PAGE_PORT ?? 4190);
+// Not 4190: Firefox refuses it (a port it blocks), and the navigation fails with "interrupted by another navigation".
+const PORT = Number(process.env.ARUMA_E2E_PAGE_PORT ?? 4181);
+const HOST = process.env.ARUMA_E2E_PAGE_HOST ?? 'localhost';
 
 export default defineConfig({
   testDir: './tests',
@@ -20,7 +22,7 @@ export default defineConfig({
   // github.com for the report's diff: the suite reaches nothing off this machine.
   captureGitInfo: { commit: false, diff: false },
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
-  use: { baseURL: `http://localhost:${PORT}`, trace: 'retain-on-failure' },
+  use: { baseURL: `http://${HOST}:${PORT}`, trace: 'retain-on-failure' },
   projects: [
     {
       name: 'chromium',
@@ -34,8 +36,8 @@ export default defineConfig({
     { name: 'webkit', use: { ...devices['Desktop Safari'] } },
   ],
   webServer: {
-    command: `npx vite build --logLevel warn && npx vite preview --host localhost --port ${PORT}`,
-    url: `http://localhost:${PORT}/`,
+    command: `npx vite build --logLevel warn && npx vite preview --host ${HOST} --port ${PORT}`,
+    url: `http://${HOST}:${PORT}/`,
     reuseExistingServer: false,
     env: { ARUMA_URL: process.env.ARUMA_URL },
   },

@@ -8,7 +8,7 @@
 #   test/e2e/web-documents/run.sh [engine ...] [-- playwright test arguments]
 #
 #   engines              chromium firefox webkit (default: chromium)
-#   ARUMA_E2E_PAGE_PORT  the app's port (default 4190)
+#   ARUMA_E2E_PAGE_PORT  the app's port (default 4181)
 #   ARUMA_E2E_ADDR       Aruma's address (default 127.0.0.1:0: any free port)
 #
 # It needs the local Postgres (ARUMA_TEST_DATABASE_URL), Go and Node. Playwright's browsers go to
