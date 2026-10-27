@@ -1,0 +1,10 @@
+rules_version = '2';
+
+// Signed-in users read and write under e2e/; everything else is denied.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /e2e/{path=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
