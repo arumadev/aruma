@@ -53,16 +53,18 @@ type Request struct {
 	Method      string
 	Path        string
 	Body        any
-	ContentType string // "application/json" when empty
-	NoAuth      bool   // send no Authorization header
+	ContentType string            // "application/json" when empty
+	NoAuth      bool              // send no Authorization header
+	Header      map[string]string // further request headers, such as a browser's Origin
 }
 
 // Response is what a target answered: the HTTP status and the decoded JSON body (a string
 // holding the raw text when it is not JSON). Case is the recorded case behind a recorded answer.
 type Response struct {
-	HTTP int
-	Body any
-	Case map[string]any
+	HTTP   int
+	Body   any
+	Case   map[string]any
+	Header http.Header // the answer's headers; nil for a recorded answer
 }
 
 // Target answers the steps of a case.
@@ -122,6 +124,9 @@ func (h *HTTPTarget) Send(ctx context.Context, req Request) (Response, error) {
 	if h.Token != "" && !req.NoAuth {
 		hr.Header.Set("Authorization", "Bearer "+h.Token)
 	}
+	for k, v := range req.Header {
+		hr.Header.Set(k, v)
+	}
 	res, err := h.Client.Do(hr)
 	if err != nil {
 		return Response{}, err
@@ -131,7 +136,7 @@ func (h *HTTPTarget) Send(ctx context.Context, req Request) (Response, error) {
 	if err != nil {
 		return Response{}, err
 	}
-	out := Response{HTTP: res.StatusCode, Body: string(raw)}
+	out := Response{HTTP: res.StatusCode, Body: string(raw), Header: res.Header}
 	var v any
 	if json.Unmarshal(raw, &v) == nil {
 		out.Body = v

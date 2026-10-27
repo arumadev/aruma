@@ -11,6 +11,28 @@ import "testing"
 const colWeb = "aruma-ref-f6-web{run}"
 
 var f6Cases = []Case{
+	// MUST 22: a browser on another origin. The preflight names the headers the web SDK sends and
+	// is answered with that origin and credentials (f6-cors.json); so is the request after it.
+	{ID: "cors/data-path", Must: []int{22}, Phase: "F6", Steps: []Step{
+		Put(colWeb+"/c", map[string]any{"n": 1}),
+		{Name: "preflight", Request: Request{Method: "OPTIONS", Path: "{root}/" + colWeb + "/c", NoAuth: true, Header: map[string]string{
+			"Origin":                         "https://app.example",
+			"Access-Control-Request-Method":  "GET",
+			"Access-Control-Request-Headers": "authorization,content-type,google-cloud-resource-prefix,x-firebase-gmpid,x-goog-api-client",
+		}}, Expect: []Check{
+			HTTP(200),
+			Header("Access-Control-Allow-Origin", "https://app.example"),
+			Header("Access-Control-Allow-Credentials", "true"),
+		}},
+		{Name: "get from the origin", Request: Request{Method: "GET", Path: "{root}/" + colWeb + "/c", Header: map[string]string{
+			"Origin": "https://app.example",
+		}}, Expect: []Check{
+			HTTP(200),
+			Header("Access-Control-Allow-Origin", "https://app.example"),
+			Header("Access-Control-Allow-Credentials", "true"),
+			Equal("name", "{root}/"+colWeb+"/c"),
+		}},
+	}},
 	{ID: "webchannel/listen", Must: []int{21}, Phase: "F6", Steps: []Step{
 		Put(colWeb+"/a", map[string]any{"n": 1}),
 		{Name: "listen session", Request: Channel(ListenChannel,
