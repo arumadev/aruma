@@ -27,6 +27,8 @@ type ListenClient struct {
 	gate    atomic.Pointer[chan struct{}]
 	// End is the stream's final error once frames closes: nil when it ended OK.
 	End error
+	// Frames are the responses taken so far, in order.
+	Frames []*pb.ListenResponse
 }
 
 // OpenListen opens a Listen stream with token as its credential and header's pairs as its
@@ -120,6 +122,7 @@ func (l *ListenClient) Next(wait time.Duration) *pb.ListenResponse {
 			return nil
 		}
 		l.Checker.Received(res)
+		l.Frames = append(l.Frames, res)
 		return res
 	case <-time.After(wait):
 		return nil
@@ -168,6 +171,7 @@ func (l *ListenClient) Ended() error {
 				return l.End
 			}
 			l.Checker.Received(res)
+			l.Frames = append(l.Frames, res)
 		case <-deadline:
 			l.t.Fatal("listen: the stream did not end")
 		}
