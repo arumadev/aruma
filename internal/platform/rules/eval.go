@@ -34,9 +34,9 @@ type evaluator struct {
 	m    *meter
 	vars []binding // the path variables of the block whose condition is evaluated
 
-	count   int // expressions evaluated, across all of the evaluation's conditions
-	lookups int // lookups made by this operation, cached ones excluded
-	calls   int // functions of the file being called, one inside another
+	count   int             // expressions evaluated, across all of the evaluation's conditions
+	lookups map[string]bool // the documents this operation looked up, by encoded path; exempt ones not
+	calls   int             // functions of the file being called, one inside another
 }
 
 // frame is a call of a function of the file: its arguments and lets, each a value or an error.
