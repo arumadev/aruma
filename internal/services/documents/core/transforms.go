@@ -1,6 +1,7 @@
 package core
 
 import (
+	"hash/maphash"
 	"math"
 	"slices"
 	"time"
@@ -227,7 +228,7 @@ func appendMissing(base value.Value, found bool, add value.Value) value.Value {
 		els = base.Elements()
 	}
 	out := slices.Clip(els)
-	set := newElementSet(out, len(add.Elements()))
+	set := newElementSet(out, len(out)+len(add.Elements()), len(add.Elements()))
 	for _, e := range add.Elements() {
 		if !set.holds(e) {
 			out = append(out, e)
@@ -244,7 +245,7 @@ func removeAll(base value.Value, found bool, remove value.Value) value.Value {
 		return value.Array()
 	}
 	var out []value.Value
-	set := newElementSet(remove.Elements(), len(base.Elements()))
+	set := newElementSet(remove.Elements(), len(remove.Elements()), len(base.Elements()))
 	for _, e := range base.Elements() {
 		if !set.holds(e) {
 			out = append(out, e)
@@ -254,24 +255,30 @@ func removeAll(base value.Value, found bool, remove value.Value) value.Value {
 }
 
 // elementSet answers whether an array holds an element equivalent to a value. Past a few
-// elements it looks them up by sort key (value.Key), which equivalent values share since
-// Equivalent is Compare's order; values the key cuts at the index budget may share it without
-// being equivalent, so Equivalent decides among them. An array transform then costs the
-// elements of both arrays, not their product (F2 review M1).
+// elements it looks them up by a hash of their whole key (value.AppendWholeKey), which two
+// values share exactly when they are equivalent, so a bucket holds only equivalent elements
+// but where hashes collide, and Equivalent decides among them. An array transform then costs
+// the elements of both arrays, not their product (F2 review M1), whatever their types and
+// however long (F2 re-review N2: the index's sort key cuts long values to a shared prefix, and
+// spends its budget differently on an int32, an integer and a decimal that are equivalent).
 type elementSet struct {
-	els   []value.Value
-	byKey map[string][]value.Value
+	els    []value.Value
+	byHash map[uint64][]value.Value
+	seed   maphash.Seed
+	key    []byte // scratch for a whole key
 }
 
-// linearElements is the product of the arrays' lengths below which a scan is cheaper than
-// keys.
+// linearElements is the product of a set's size and its probes below which a scan is cheaper
+// than hashing.
 const linearElements = 64
 
-// newElementSet returns the set of els, which will be asked about probes values.
-func newElementSet(els []value.Value, probes int) *elementSet {
+// newElementSet returns the set of els, which will hold at most most elements and be asked about
+// probes values.
+func newElementSet(els []value.Value, most, probes int) *elementSet {
 	s := &elementSet{els: els}
-	if len(els)*probes > linearElements {
-		s.byKey = make(map[string][]value.Value, len(els))
+	if most*probes > linearElements {
+		s.byHash = make(map[uint64][]value.Value, len(els))
+		s.seed = maphash.MakeSeed()
 		for _, e := range els {
 			s.add(e)
 		}
@@ -279,19 +286,24 @@ func newElementSet(els []value.Value, probes int) *elementSet {
 	return s
 }
 
+func (s *elementSet) hash(v value.Value) uint64 {
+	s.key = value.AppendWholeKey(s.key[:0], v)
+	return maphash.Bytes(s.seed, s.key)
+}
+
 func (s *elementSet) add(v value.Value) {
-	if s.byKey == nil {
+	if s.byHash == nil {
 		s.els = append(s.els, v)
 		return
 	}
-	k := string(value.Key(v))
-	s.byKey[k] = append(s.byKey[k], v)
+	h := s.hash(v)
+	s.byHash[h] = append(s.byHash[h], v)
 }
 
 func (s *elementSet) holds(v value.Value) bool {
 	els := s.els
-	if s.byKey != nil {
-		els = s.byKey[string(value.Key(v))]
+	if s.byHash != nil {
+		els = s.byHash[s.hash(v)]
 	}
 	return slices.ContainsFunc(els, func(e value.Value) bool { return value.Equivalent(e, v) })
 }

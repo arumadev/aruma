@@ -303,23 +303,46 @@ func TestApplyTransformsSequential(t *testing.T) {
 	}
 }
 
-// The keyed element set answers as the scan does: equivalent numbers of any type are one, NaN
-// is NaN, and long strings that share the index's cut are told apart.
+// The hashed element set answers as the scan does: equivalent numbers of any type are one, NaN
+// is NaN, long strings that share the index's cut are told apart, and values the index's budget
+// cuts at different points are still one when equivalent (F2 re-review N2: an int32 or a
+// decimal next to a string of about 1500 bytes). The array transforms answer alike past and
+// below the scan's bound.
 func TestElementSetKeyed(t *testing.T) {
 	long := strings.Repeat("x", 2000)
+	dec, _ := value.Decimal128("1.0")
+	near := func(n value.Value, l int) value.Value {
+		return value.Map(value.Field{Name: "a", Value: n}, value.Field{Name: "b", Value: value.String(strings.Repeat("x", l))})
+	}
 	els := []value.Value{value.Int(3), negZero, value.Double(math.NaN()), value.String(long + "a"), value.Null(),
-		value.Array(value.Int(1)), value.Map(value.Field{Name: "k", Value: value.Double(1)})}
+		value.Array(value.Int(1)), value.Map(value.Field{Name: "k", Value: value.Double(1)}),
+		near(value.Int32(1), 1488), near(dec, 1480), near(value.Int(2), 1490)}
 	probes := []value.Value{value.Double(3), value.Int(0), value.Double(math.NaN()), value.String(long + "a"),
 		value.String(long + "b"), value.Null(), value.Array(value.Double(1)), value.Map(value.Field{Name: "k", Value: value.Int(1)}),
-		value.Int(4), value.Bool(false)}
-	keyed := newElementSet(els, 1000)
-	if keyed.byKey == nil {
-		t.Fatal("not keyed")
+		value.Int(4), value.Bool(false), near(value.Int(1), 1488), near(value.Int(1), 1480), near(value.Double(2), 1490),
+		near(value.Int32(2), 1490), near(value.Int(1), 1490)}
+	keyed := newElementSet(els, len(els), 1000)
+	if keyed.byHash == nil {
+		t.Fatal("not hashed")
 	}
 	for _, p := range probes {
 		want := slices.ContainsFunc(els, func(e value.Value) bool { return value.Equivalent(e, p) })
 		if got := keyed.holds(p); got != want {
 			t.Errorf("%v: got %v, want %v", p, got, want)
+		}
+	}
+	// The reviewer's cases: an element equivalent to the operand, among more than 64 pairs.
+	var filler []value.Value
+	for i := range 70 {
+		filler = append(filler, value.Int(int64(1000+i)))
+	}
+	for _, c := range [][2]value.Value{{near(value.Int32(1), 1488), near(value.Int(1), 1488)}, {near(dec, 1480), near(value.Int(1), 1480)}} {
+		stored, operand := c[0], c[1]
+		if got := removeAll(value.Array(append(slices.Clone(filler), stored)...), true, value.Array(operand)); len(got.Elements()) != len(filler) {
+			t.Errorf("arrayRemove %v from 70 others and %v: %d left, want %d", operand, stored, len(got.Elements()), len(filler))
+		}
+		if got := appendMissing(value.Array(stored), true, value.Array(append(slices.Clone(filler), operand)...)); len(got.Elements()) != len(filler)+1 {
+			t.Errorf("arrayUnion of 70 others and %v into [%v]: %d elements, want %d", operand, stored, len(got.Elements()), len(filler)+1)
 		}
 	}
 }
@@ -371,6 +394,22 @@ func TestTransformsWorstCase(t *testing.T) {
 			}
 		}
 	}, 1<<16)
+	// Distinct strings that share their first 1500 bytes, which the index's key cuts to one.
+	growth("array transforms of long strings", func(n int) {
+		prefix := strings.Repeat("y", 1500)
+		els := make([]value.Value, n)
+		for i := range els {
+			els[i] = value.String(prefix + strconv.Itoa(i))
+		}
+		big := value.Array(els...)
+		for _, base := range []value.Value{doc("a", big), value.Map()} {
+			for _, kind := range []TransformKind{TransformAppendMissing, TransformRemoveAll} {
+				if _, _, err := tr(kind, "a", big).apply(base, now); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+	}, 2500)
 }
 
 // maxRequestTransforms is api.MaxRequestTransforms, which core does not import.
