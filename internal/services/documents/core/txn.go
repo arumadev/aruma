@@ -690,13 +690,18 @@ type commitTxn struct {
 // lockCommit takes the lock manager's locks of a commit (ADR-024 §2.1 step 1) and checks what a
 // transaction read, so that no other commit changes it until this one's ends; release frees the
 // locks. Without a transaction (c nil) the commit's exclusive locks are its own, short-lived; they
-// wait for other transactions' locks like any (f0-contention s6b).
+// wait for other transactions' locks like any (f0-contention s6b). The security rules judge the
+// writes once the locks are held (authorize).
 func (s *PGStore) lockCommit(ctx context.Context, db DB, p *plan, c *commitTxn) (release func(), err error) {
 	switch {
 	case c == nil:
-		return s.lockWrites(ctx, db, p, 0, nil, nil)
+		var judge func() error
+		if authorizerOf(ctx) != nil {
+			judge = func() error { return s.authorize(ctx, db, p) }
+		}
+		return s.lockWrites(ctx, db, p, 0, nil, judge)
 	case c.tx.mode == txnPessimistic:
-		return s.lockPessimistic(ctx, p, c)
+		return s.lockPessimistic(ctx, db, p, c)
 	case c.tx.mode == txnOptimistic:
 		return s.lockOptimistic(ctx, db, p, c)
 	}

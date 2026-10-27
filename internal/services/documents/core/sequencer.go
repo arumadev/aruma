@@ -227,6 +227,10 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 		return CommitResult{}, err
 	}
 
+	if err := p.checkJudged(locked); err != nil {
+		rollback(conn)
+		return CommitResult{}, err
+	}
 	if p.verify != nil {
 		if err := p.verify(locked); err != nil {
 			rollback(conn)

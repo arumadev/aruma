@@ -29,6 +29,8 @@ type docChange struct {
 	path   Path
 	keys   docKeys
 	writes int // how many of the commit's writes name it
+	// mutates: a write of it is not a verify, so the security rules decide it (authorize.go).
+	mutates bool
 	// mask is the update mask of a masked write (changelog.update_mask when it is the only one).
 	masked bool
 	mask   []value.FieldPath
@@ -69,6 +71,12 @@ type plan struct {
 	// verify, when set, checks the documents as the first batch locked them (by stored key)
 	// before the writes apply: what a transaction read (ADR-024 §6.4).
 	verify func(locked map[string]*lockedDoc) error
+	// preview folds the writes without their preconditions: the documents the security rules
+	// judge (authorize.go), which decide before whether the document exists does.
+	preview bool
+	// judged holds the update_time (zero: absent) of each document, by stored key, as the rules
+	// judged it; nil when they did not (checkJudged).
+	judged map[string]time.Time
 }
 
 func newPlan(writes []Write) *plan {
@@ -83,6 +91,7 @@ func newPlan(writes []Write) *plan {
 			p.docs = append(p.docs, d)
 		}
 		d.writes++
+		d.mutates = d.mutates || w.Kind != WriteVerify
 		if w.Kind == WriteUpdate && w.Masked {
 			// A transformed field changes as a masked one does.
 			d.masked, d.mask = true, slices.Clip(w.Mask)
@@ -153,7 +162,8 @@ func (p *plan) apply(db DB, locked map[string]*lockedDoc, commitTime time.Time) 
 			return &Error{InvalidArgument, "Request contains an invalid argument."}
 		}
 		d := p.of[i]
-		if err := d.check(db, w.Precondition); err != nil {
+		// A preview checks no precondition: the rules decide first (authorize.go).
+		if err := d.check(db, w.Precondition); err != nil && !p.preview {
 			if failed == nil || failed.Code != NotFound && err.Code == NotFound {
 				failed = err
 			}
