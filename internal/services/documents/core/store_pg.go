@@ -72,6 +72,11 @@ func NewPGStore(pool *pgxpool.Pool, o Options) *PGStore {
 	}
 }
 
+// LargeCommits is how many commits were accepted whose index entry changes, summed over their
+// documents, pass the bound production holds one document's to: production's answer to such a
+// commit is not recorded (indexentries.go).
+func (s *PGStore) LargeCommits() int64 { return s.seq.largeCommits.Load() }
+
 func (s *PGStore) serving() error {
 	if s.instance != nil && !s.instance.Held() {
 		return ErrNotServing

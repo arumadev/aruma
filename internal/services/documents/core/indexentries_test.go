@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/arumadev/aruma/internal/services/documents/index"
 	"github.com/arumadev/aruma/internal/services/documents/value"
@@ -349,5 +350,59 @@ func TestIndexIDs(t *testing.T) {
 	if a >= 0 || a == SingleFieldIndexID("c", index.ScopeCollection, "a", index.Descending) ||
 		a == SingleFieldIndexID("c", index.ScopeCollectionGroup, "a", index.Ascending) || a == SingleFieldIndexID("d", index.ScopeCollection, "a", index.Ascending) {
 		t.Error("single-field ids are not distinct and negative")
+	}
+}
+
+// The transaction bound holds each document's entry changes, as every recorded case is one
+// document's, not a commit's sum: a 500-write batch deleting documents of 210 fields, past the
+// bound summed, is accepted, and counted.
+func TestTransactionBoundPerDocument(t *testing.T) {
+	s, _ := newStore(t, Options{})
+	// Fields of the four common kinds, as an ordinary document holds them.
+	fields := func(n, v int) value.Value {
+		fs := make([]value.Field, n)
+		for i := range fs {
+			var x value.Value
+			switch i % 4 {
+			case 0:
+				x = value.Int(int64(i + v))
+			case 1:
+				x = value.Double(float64(i+v) + 0.5)
+			case 2:
+				x = value.String("some value text")
+			default:
+				x = value.Timestamp(1700000000+int64(v), 0)
+			}
+			fs[i] = value.Field{Name: fmt.Sprintf("field_%03d", i), Value: x}
+		}
+		return value.Map(fs...)
+	}
+	name := func(i int) string { return fmt.Sprintf("users/AbCdEfGhIjKlM%05d", i) }
+	const docs, n = 500, 210
+	one := 0
+	for _, size := range entriesOf(emptyCatalog(), fieldConfigs{}, ParsePath(name(0)), fields(n, 0), true).set {
+		one += size
+	}
+	if one > maxTransactionSize/2 || 2*docs*one <= maxTransactionSize {
+		t.Fatalf("a document's delete counts %d: the batch is not one the bound summed refuses", 2*one)
+	}
+	writes := make([]Write, docs)
+	for i := range writes {
+		writes[i] = set(name(i), fields(n, 0))
+	}
+	for c := range slices.Chunk(writes, 50) {
+		mustCommit(t, s, c...)
+	}
+	before := s.LargeCommits()
+	for i := range writes {
+		writes[i] = Write{Kind: WriteDelete, Path: ParsePath(name(i))}
+	}
+	start := time.Now()
+	if _, err := s.Commit(t.Context(), testDB, writes); err != nil {
+		t.Fatalf("500 documents deleted: %v", err)
+	}
+	t.Logf("deleted %d entries of %d documents in %v", docs*2*n, docs, time.Since(start))
+	if got := s.LargeCommits() - before; got != 1 {
+		t.Errorf("%d commits counted past the bound summed, want 1", got)
 	}
 }

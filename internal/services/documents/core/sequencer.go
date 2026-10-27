@@ -3,7 +3,9 @@ package core
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -79,6 +81,9 @@ type sequencer struct {
 
 	// afterStamp, set by tests, runs between a REQUEST_TIME commit's stamp and its second batch.
 	afterStamp func()
+	// largeCommits counts the commits accepted whose entry changes, summed, pass
+	// maxTransactionSize (PGStore.LargeCommits).
+	largeCommits atomic.Int64
 }
 
 func newSequencer(pool *pgxpool.Pool, size int, notify Notifier, cats *catalogs) *sequencer {
@@ -238,7 +243,15 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 		rollback(conn)
 		return CommitResult{}, err
 	}
-	return s.stamp(ctx, conn, db, p, locked, cat, &in)
+	res, err := s.stamp(ctx, conn, db, p, locked, cat, &in)
+	if err == nil && in.index.size > maxTransactionSize {
+		// Production refuses one document's changes past the bound; whether it refuses a
+		// commit's sum is not recorded (indexentries.go), so this one is accepted and counted.
+		s.largeCommits.Add(1)
+		slog.Warn("documents: a commit's index entry changes pass the bound production holds one document to",
+			"project", db.Project, "database", db.ID, "documents", len(p.docs), "size", in.index.size, "bound", maxTransactionSize)
+	}
+	return res, err
 }
 
 // unchanged ends a commit that changes nothing: no seq, and a commit_time from the clock

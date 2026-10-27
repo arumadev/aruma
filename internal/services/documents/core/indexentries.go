@@ -87,10 +87,14 @@ func (c fieldConfigs) effective(group, path string) []index.SingleFieldIndex {
 //   - At most 40,000 entries, an array-contains entry counting two: the recorded 20,000
 //     integer fields, 19,999 subfields of a map, 19,999 distinct elements of an array. The
 //     name's entry does not count.
-//   - A commit's entries, those it inserts and twice those it deletes, at most
-//     maxTransactionSize: a new document of L 2,677 with 5,155 integer fields (10,310 entries
-//     of 7,637 bytes) is accepted, one with 5,156 refused "Transaction too big. Decrease
-//     transaction size.", and so is the 5,155-field document's delete.
+//   - A document's entry changes in a commit, those it inserts and twice those it deletes, at
+//     most maxTransactionSize: a new document of L 2,677 with 5,155 integer fields (10,310
+//     entries of 7,637 bytes) is accepted, one with 5,156 refused "Transaction too big.
+//     Decrease transaction size.", and so is the 5,155-field document's delete. Every recorded
+//     case is one document; production's bound on a commit of many is not recorded, and the
+//     sum of its documents' changes is not held to it, so that a commit production may accept
+//     is not refused (a 500-write batch deleting documents of 200 fields sums about 200 MB).
+//     A commit whose sum passes it is counted (PGStore.LargeCommits) and logged.
 //
 // Besides, a name whose size reaches 6,144 has an entry too large whatever its depth
 // (f0-errors.json name_bytes_6127).
@@ -108,8 +112,8 @@ var (
 	// name_bytes_6127; f3-index-entries.json entry_*), with google.rpc.ErrorInfo reason
 	// INDEX_ENTRY_TOO_LARGE, which the transport adds: wire.IndexEntryTooLarge.
 	ErrIndexEntryTooLarge = &Error{InvalidArgument, "Index entry is too large."}
-	// ErrTransactionTooBig is a commit whose entries pass maxTransactionSize
-	// (f3-index-entries.json total.*).
+	// ErrTransactionTooBig is a commit whose entry changes of one document pass
+	// maxTransactionSize (f3-index-entries.json total.*).
 	ErrTransactionTooBig = &Error{InvalidArgument, "Transaction too big. Decrease transaction size."}
 )
 
@@ -339,22 +343,24 @@ type indexChanges struct {
 	delKeys              [][]byte
 	insIDs               []int64
 	insKeys, insFullKeys [][]byte
+	// size is the commit's entry changes as maxTransactionSize counts a document's, summed.
+	size int
 }
 
 // indexArgs computes the index entries the changed documents of the plan delete and insert under
 // cat, and holds every document the commit leaves to production's limits. The entries before
 // are those of the current configuration and, while a field configuration is built, of the one
 // before it, whose entries a document not yet rebuilt still has: a commit leaves a document with
-// exactly the current configuration's entries (indexbuild.go). The commit's entries are held to
-// maxTransactionSize: those it inserts, and twice those it deletes.
+// exactly the current configuration's entries (indexbuild.go). Each document's entry changes
+// are held to maxTransactionSize: those it inserts, and twice those it deletes.
 func (p *plan) indexArgs(cat *catalog) (indexChanges, error) {
 	var out indexChanges
 	var dels, ins []entry
-	size := 0
 	for _, d := range p.docs {
 		if !d.changed() {
 			continue
 		}
+		size := 0
 		var after *docEntries
 		if d.exists {
 			after = entriesOf(cat, cat.fields, d.path, d.fields, true)
@@ -390,6 +396,7 @@ func (p *plan) indexArgs(cat *catalog) (indexChanges, error) {
 		if size > maxTransactionSize {
 			return indexChanges{}, ErrTransactionTooBig
 		}
+		out.size += size
 	}
 	dels = sortedEntries(dels)
 	for _, e := range dels {
