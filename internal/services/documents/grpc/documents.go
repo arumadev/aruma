@@ -20,11 +20,12 @@ type firestore struct {
 }
 
 // call is how a request arrived, for package api: its credential, its transport as the route
-// saw it, and google-cloud-resource-prefix.
+// saw it, google-cloud-resource-prefix and x-goog-request-params.
 func call(ctx context.Context, header http.Header) api.Call {
 	c := api.Call{
 		Authorization:  header.Get("Authorization"),
 		ResourcePrefix: header.Get("Google-Cloud-Resource-Prefix"),
+		RequestParams:  header.Get("X-Goog-Request-Params"),
 	}
 	if info := rpcOf(ctx); info != nil {
 		c.Transport = info.transport

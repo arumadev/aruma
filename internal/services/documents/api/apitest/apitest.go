@@ -5,6 +5,7 @@
 package apitest
 
 import (
+	"cmp"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -25,6 +26,7 @@ import (
 	acrypto "github.com/arumadev/aruma/internal/platform/crypto"
 	"github.com/arumadev/aruma/internal/services/documents/api"
 	documents "github.com/arumadev/aruma/internal/services/documents/core"
+	"github.com/arumadev/aruma/internal/services/documents/listen"
 	"github.com/arumadev/aruma/internal/store/storetest"
 	tenancy "github.com/arumadev/aruma/internal/tenancy/core"
 )
@@ -51,6 +53,10 @@ type Options struct {
 	Store func(documents.Store) documents.Store
 	// Transactions bounds the store's transactions; the zero value is production's numbers.
 	Transactions documents.TxnConfig
+	// Hub configures the Listen hub; the zero value is its defaults.
+	Hub listen.Options
+	// Notifier wraps the hub as the store tells it of commits, for tests that lose a commit.
+	Notifier func(documents.Notifier) documents.Notifier
 }
 
 // Env is a service layer on a fresh database.
@@ -58,6 +64,8 @@ type Env struct {
 	Pool    *pgxpool.Pool
 	Tenancy *tenancy.Service
 	Store   *documents.PGStore
+	// Hub is the Listen hub, told of every commit of Store.
+	Hub     *listen.Hub
 	Service *api.Service
 	// Reference is Service with the planner off: every query on the reference path.
 	Reference *api.Service
@@ -115,16 +123,24 @@ func New(t testing.TB, o Options) *Env {
 		Verifier: svc, ServiceAccountJWTs: jwts, Owners: svc, PublicURL: PublicURL,
 		LoopbackDeployment: true, DevOwnerToken: o.DevOwnerToken, Logger: log,
 	})
-	store := documents.NewPGStore(pool, documents.Options{Transactions: o.Transactions})
+	o.Hub.Log = cmp.Or(o.Hub.Log, log)
+	hub := listen.NewHub(o.Hub)
+	t.Cleanup(hub.Close)
+	var notify documents.Notifier = hub
+	if o.Notifier != nil {
+		notify = o.Notifier(hub)
+	}
+	store := documents.NewPGStore(pool, documents.Options{Transactions: o.Transactions, Notifier: notify})
+	hub.Bind(store)
 	var s documents.Store = store
 	if o.Store != nil {
 		s = o.Store(store)
 	}
 	return &Env{
-		Pool: pool, Tenancy: svc, Store: store, Owner: owner, Number: proj.Number, Key: key,
+		Pool: pool, Tenancy: svc, Store: store, Hub: hub, Owner: owner, Number: proj.Number, Key: key,
 		SAEmail: sa.Email, OwnerPAT: pat.Plaintext,
-		Service: api.New(api.Options{Store: s, Auth: resolver, Projects: svc, DevOpenRules: o.DevOpenRules, Logger: log}),
-		Reference: api.New(api.Options{Store: s, Auth: resolver, Projects: svc, DevOpenRules: o.DevOpenRules, Logger: log,
+		Service: api.New(api.Options{Store: s, Auth: resolver, Projects: svc, DevOpenRules: o.DevOpenRules, Listen: hub, Logger: log}),
+		Reference: api.New(api.Options{Store: s, Auth: resolver, Projects: svc, DevOpenRules: o.DevOpenRules, Listen: hub, Logger: log,
 			ReferenceOnly: true}),
 	}
 }

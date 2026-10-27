@@ -76,9 +76,11 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 	store := &bootStore{}
 	// Config has checked the setting: a value ParseMode refuses never reaches here.
 	enforcement, _ := index.ParseMode(cfg.Documents.IndexEnforcement)
+	// The Listen hub serves the streams from the start; Boot binds it to the store it opens.
+	hub := listen.NewHub(listen.Options{Log: logger})
 	api := docapi.New(docapi.Options{
 		Store: store, Auth: resolver, Projects: svc, DevOpenRules: cfg.Documents.DevOpenRules,
-		IndexEnforcement: enforcement, Logger: logger,
+		IndexEnforcement: enforcement, Listen: hub, Logger: logger,
 	})
 	l := cfg.Documents.Limits
 	rpcMetrics := docgrpc.NewMetrics()
@@ -97,7 +99,7 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 			Logger:  logger,
 		}),
 		REST:  docrest.New(docrest.Options{Service: api, Logger: logger}),
-		store: store, pool: pool, cfg: l, log: logger,
+		store: store, pool: pool, cfg: l, log: logger, hub: hub,
 		txns: documents.TxnConfig{
 			Key:             keys.DocumentsTransactionKey(),
 			WaitTimeout:     l.TxnWaitTimeout,
@@ -135,7 +137,6 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 		}
 	}
 	d.instance = documents.StartInstance(ctx, d.pool.Config().ConnConfig, o)
-	d.hub = listen.NewHub(listen.Options{Log: d.log})
 	store := documents.NewPGStore(d.pool, documents.Options{
 		CommitConcurrency: d.cfg.CommitConcurrency, Instance: d.instance, Transactions: d.txns,
 		IndexLimits: documents.IndexLimits{Composites: d.cfg.CompositeIndexes, FieldOverrides: d.cfg.FieldOverrides},
