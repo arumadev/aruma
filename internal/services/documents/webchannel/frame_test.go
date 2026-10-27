@@ -27,7 +27,13 @@ func TestParseForward(t *testing.T) {
 		len(f.maps) != 2 || f.maps[1].id != 6 || string(f.maps[1].data) != "[]" {
 		t.Errorf("parseForward: %v %+v", err, f)
 	}
-	for _, body := range []string{"count=x", "count=11&ofs=0", "count=1&ofs=-1&req0___data__=1", "count=1&ofs=0", "a=b"} {
+	// Sparse keys, as encodeMessageQueue writes a retried request's maps with new ones.
+	f, err = parseForward([]byte("count=2&ofs=1&req3___data__=%5B%5D&req0___data__=%7B%7D"), 10)
+	if err != nil || len(f.maps) != 2 || f.maps[0].id != 1 || f.maps[1].id != 4 || string(f.maps[1].data) != "[]" {
+		t.Errorf("parseForward sparse: %v %+v", err, f)
+	}
+	for _, body := range []string{"count=x", "count=11&ofs=0", "count=1&ofs=-1&req0___data__=1", "count=1&ofs=0", "a=b",
+		"count=2&ofs=0&req0___data__=1", "count=1&ofs=0&req0_type=_badmap", "count=1&ofs=0&req2000000___data__=1"} {
 		if _, err := parseForward([]byte(body), 10); err == nil {
 			t.Errorf("parseForward(%q) accepted", body)
 		}

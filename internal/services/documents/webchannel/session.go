@@ -18,24 +18,28 @@ import (
 // acknowledged (AID), so that a backchannel that broke is sent again from the client's last
 // array.
 type session struct {
-	h       *Handler
-	id      string // SID
-	http    string // gsessionid, sent in X-HTTP-Session-Id
-	client  netip.Addr
-	project string // the project id the handshake's database names, as sent
-	ctx     context.Context
-	cancel  context.CancelCauseFunc
-	expiry  *time.Timer
+	h      *Handler
+	id     string // SID
+	http   string // gsessionid, sent in X-HTTP-Session-Id
+	client netip.Addr
+	ctx    context.Context
+	cancel context.CancelCauseFunc
+	expiry *time.Timer
 
 	mu sync.Mutex
 	// changed is closed and replaced at every change a waiter may be waiting for.
 	changed chan struct{}
 
-	// The forward channel: the id of the last map taken, and the requests not yet read.
+	// The forward channel: the id of the last map taken, the requests not yet read, and the maps
+	// that came before one of a lower id, held until it comes (pendBytes counts them, mapCost
+	// each). forwarding is held by the forward POST reading its body and taking its maps.
 	lastMap      int
 	in           [][]byte
 	inBytes      int64
+	pending      map[int][]byte
+	pendBytes    int64
 	readDeadline time.Time
+	forwarding   chan struct{}
 
 	// The backchannel: the next array's id (the handshake's is 0), the arrays not acknowledged
 	// in id order, and the backchannel attached, if any.
@@ -45,8 +49,8 @@ type session struct {
 	writeDeadline time.Time
 	back          *backchannel
 	backed        bool // a backchannel was attached once
-	// ended is set when the stream has ended: its status, if any, is the last array.
-	ended bool
+	// ended is when the stream ended, or zero: its status, if any, is the last array.
+	ended time.Time
 	// active is when a request of the session was last seen, or its backchannel detached.
 	active  time.Time
 	removed bool
@@ -106,18 +110,37 @@ func (s *session) ackLocked(aid int) {
 }
 
 // take queues the maps of a forward channel request the session has not taken yet, in id order:
-// a retried request is not taken twice. It waits while the requests not yet read hold
-// message_bytes, for at most stall: a stream that does not read is its own to bound.
+// a retried request is not taken twice, and a map that comes before one of a lower id is held
+// until that one comes, as several forward POSTs may be in flight at once and a retried map is
+// sent again with a new one (ForwardChannelRequestPool, WireV8.encodeMessageQueue). It waits
+// while the requests not yet read, held maps included, would pass message_bytes, for at most
+// stall: a stream that does not read is its own to bound. A held map that does not fit while the
+// stream has nothing to read waits for nothing that can come but the map before it, which the
+// caller's own POST holds back: it is refused at once. After the stream ended, maps are dropped.
 func (s *session) take(maps []fmap, stall time.Duration) error {
 	deadline := time.Now().Add(stall)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for _, m := range maps {
+		if !s.ended.IsZero() {
+			return nil
+		}
 		if m.id <= s.lastMap {
 			continue
 		}
-		n := int64(len(m.data))
-		for s.inBytes > 0 && s.inBytes+n > s.h.limits.MessageBytes {
+		if _, ok := s.pending[m.id]; ok {
+			continue
+		}
+		n := mapCost(m.data)
+		next := m.id == s.lastMap+1
+		for {
+			held := s.inBytes + s.pendBytes
+			if held == 0 || held+n <= s.h.limits.MessageBytes || next && s.inBytes == 0 {
+				break
+			}
+			if !next && s.inBytes == 0 {
+				return errBusy
+			}
 			if s.ctx.Err() != nil {
 				return context.Cause(s.ctx)
 			}
@@ -128,14 +151,42 @@ func (s *session) take(maps []fmap, stall time.Duration) error {
 			s.mu.Unlock()
 			s.await(ch, deadline)
 			s.mu.Lock()
+			if !s.ended.IsZero() {
+				return nil
+			}
+		}
+		if !next {
+			if s.pending == nil {
+				s.pending = map[int][]byte{}
+			}
+			s.pending[m.id] = m.data
+			s.pendBytes += n
+			continue
 		}
 		s.in = append(s.in, m.data)
 		s.inBytes += n
 		s.lastMap = m.id
+		// The maps held after it, as far as they run on.
+		for {
+			data, ok := s.pending[s.lastMap+1]
+			if !ok {
+				break
+			}
+			delete(s.pending, s.lastMap+1)
+			c := mapCost(data)
+			s.pendBytes -= c
+			s.in = append(s.in, data)
+			s.inBytes += c
+			s.lastMap++
+		}
 		s.wakeLocked()
 	}
 	return nil
 }
+
+// mapCost is what a map counts against message_bytes: its bytes, and a little for holding it, so
+// that empty maps are not free.
+func mapCost(data []byte) int64 { return int64(len(data)) + 64 }
 
 var errBusy = errors.New("webchannel: the stream is not reading its requests")
 
@@ -150,7 +201,7 @@ func (s *session) receive() ([]byte, error) {
 			b := s.in[0]
 			s.in[0] = nil
 			s.in = s.in[1:]
-			s.inBytes -= int64(len(b))
+			s.inBytes -= mapCost(b)
 			s.wakeLocked()
 			return b, nil
 		}
@@ -216,28 +267,42 @@ func (s *session) SetWriteDeadline(t time.Time) error {
 	return nil
 }
 
-// end records the stream's end, and its status as the last arrays (closing).
+// end records the stream's end, and its status as the last arrays (closing). The requests it did
+// not read are dropped, and the session is kept only for its client to read those arrays: for
+// endLinger, which no request extends.
 func (s *session) end(status *wire.Error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.ended = true
+	s.ended = time.Now()
+	clear(s.in)
+	s.in, s.inBytes = nil, 0
+	s.pending, s.pendBytes = nil, 0
 	if status != nil && s.ctx.Err() == nil {
 		for _, p := range closing(status.RESTBody()) {
 			s.appendLocked(p)
 		}
 	}
+	s.expiry.Reset(s.h.endLinger())
 	s.wakeLocked()
 }
+
+// endLinger is how long a session is kept after its stream ended: the expiry, at most 10 seconds.
+func (h *Handler) endLinger() time.Duration { return min(h.timing.Expiry, 10*time.Second) }
 
 // checkExpiry ends a session idle for the handler's expiry: no backchannel attached and no
 // request since. The SDK keeps a backchannel open, or a long poll pending, for as long as the
 // session lives, so a session without either is one whose client went away without terminating
-// it.
+// it. A session whose stream ended goes endLinger after the end, backchannel or not.
 func (s *session) checkExpiry() {
 	s.mu.Lock()
-	idle := s.h.timing.Expiry - time.Since(s.active)
-	if s.back != nil {
+	var idle time.Duration
+	switch {
+	case !s.ended.IsZero():
+		idle = s.h.endLinger() - time.Since(s.ended)
+	case s.back != nil:
 		idle = s.h.timing.Expiry
+	default:
+		idle = s.h.timing.Expiry - time.Since(s.active)
 	}
 	s.mu.Unlock()
 	if idle > 0 {
@@ -245,4 +310,26 @@ func (s *session) checkExpiry() {
 		return
 	}
 	s.h.remove(s, errExpired)
+}
+
+// acquireForward waits for the session's forward POST in progress, if any, to be done: for at
+// most stall, the request's life, and the session's.
+func (s *session) acquireForward(ctx context.Context, stall time.Duration) error {
+	select {
+	case s.forwarding <- struct{}{}:
+		return nil
+	default:
+	}
+	t := time.NewTimer(stall)
+	defer t.Stop()
+	select {
+	case s.forwarding <- struct{}{}:
+		return nil
+	case <-t.C:
+		return errBusy
+	case <-ctx.Done():
+		return context.Cause(ctx)
+	case <-s.ctx.Done():
+		return context.Cause(s.ctx)
+	}
 }
