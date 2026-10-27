@@ -26,6 +26,25 @@ func (d *Doc) field(p value.FieldPath) (value.Value, bool) {
 	return d.Fields.Lookup(p)
 }
 
+// Admits reports whether d is in q's result but for the offset and the limit: it matches the
+// filter, has every field the order reads, and lies within the cursors, as Runner.Add judges a
+// candidate. A listener judges a commit's images with it (ADR-026 §2); its scope is the
+// caller's.
+func (q *Query) Admits(d *Doc) bool {
+	if q.Where != nil && !q.Where.Matches(d) {
+		return false
+	}
+	vals := make([]value.Value, len(q.Order))
+	for i, o := range q.Order {
+		v, ok := d.field(o.Path)
+		if !ok {
+			return false
+		}
+		vals[i] = v
+	}
+	return afterStart(vals, q.Order, q.Start) && beforeEnd(vals, q.Order, q.End)
+}
+
 // Matches reports whether d matches f, as production matches (values-equality.json,
 // values-bson.json, replayed in value's tests, and indexes-105.json's results):
 //
