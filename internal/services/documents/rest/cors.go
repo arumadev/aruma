@@ -6,9 +6,11 @@ import "net/http"
 // f6-cors.json, f6-webchannel-*.json). The full web SDK sends its requests with credentials
 // (webchannel_connection.ts; WebChannelBase.createXhrIo), which a browser refuses an answer of
 // "*" to, so the request's Origin is echoed with Allow-Credentials, any origin, "null" included.
-// That is safe on these paths alone: the identity is in the Authorization header, the body or
-// the API key, and no request of them reads a cookie, so credentials give a foreign page nothing
-// a script elsewhere could not send.
+// That is safe on these paths alone, and only while nothing a browser lends every page grants
+// authority: the identity is in the Authorization header, the body or the API key, and no
+// request of them reads a cookie. The one ambient authority, Bearer owner authorised by the
+// loopback peer, is refused to a request with an Origin (authn.Transport.Browser, ADR-029 §6),
+// so credentials give a foreign page nothing a script elsewhere could not send.
 //
 // A preflight is answered 200 with an empty text/html body; the headers it asks for are echoed.
 // Production refuses some it does not know (x-made-up-header, 403), from a list it does not
