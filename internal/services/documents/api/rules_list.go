@@ -65,7 +65,7 @@ func (s *Service) allowList(ctx context.Context, a admitted, lq listQuery, readT
 	if err != nil {
 		return err
 	}
-	return s.judgeList(ctx, a, rs, lq, &lookups{store: s.o.Store, db: a.db, readTime: readTime}, rules.NewBudget(), s.now())
+	return s.judgeList(ctx, a, rs, lq, &lookups{store: s.o.Store, db: a.db, readTime: readTime}, rules.NewPooledBudget(), s.now())
 }
 
 // judgeList decides lq under rs, every way of it sharing the lookups and their budget.

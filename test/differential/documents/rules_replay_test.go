@@ -31,28 +31,12 @@ import (
 // body, and the state afterwards, must be production's. The gRPC steps answer alike
 // (transportsAgree) through the same service layer, and are not replayed here.
 
-// pendingA2a are the recordings of track A2a (list queries, their constraints, Listen), which
-// this replay skips until A2a's binding is merged: a file name, or a file and a case id. A listed
-// case that runs is not compared.
+// pendingA2a are the rules recordings this REST replay does not run: a file name, or a file and
+// a case id. f5-rules-listen.json holds Listen and Write stream frames, gRPC only; its cases are
+// replayed by internal/services/documents/grpc/listen_rules_test.go (TestListenRules) and the
+// Write stream's by the transactions and streams tests.
 var pendingA2a = map[string]bool{
-	"f5-rules-queries.json":     true,
-	"f5-rules-constraints.json": true,
-	"f5-rules-listen.json":      true,
-	// The list queries of the document-operation files that production allows (the denied ones
-	// are compared already).
-	"f5-rules-methods.json split-lu.list":                 true,
-	"f5-rules-methods.json request-method.list-run-query": true,
-	"f5-rules-methods.json request-method.list-documents": true,
-	"f5-rules-methods.json request-method.count":          true,
-	"f5-rules-request.json t.path-list":                   true,
-	"f5-rules-request.json t.path-list-documents":         true,
-	"f5-rules-batches.json tx.query-allowed":              true,
-	"f5-rules-lookup-limits.json query.run-query-10":      true,
-	"f5-rules-lookup-limits.json query.list-documents-10": true,
-	"f5-rules-lookup-limits.json query.run-query-11":      true,
-	"f5-rules-lookup-limits.json query.list-documents-11": true,
-	"f5-rules-lookup-limits.json query.run-query-20":      true,
-	"f5-rules-lookup-limits.json query.list-documents-20": true,
+	"f5-rules-listen.json": true,
 }
 
 // rulesDiffers are the rules cases Aruma does not answer as production, each with the id of its
@@ -396,7 +380,9 @@ func TestReplayRulesInProcess(t *testing.T) {
 					t.Fatalf("%s step %d: %v", id, i, err)
 				}
 				txn = cmp.Or(transactionOf(res.Body), txn)
-				d := Diff(stampPrecision(Stable(s.Response.Body)), stampPrecision(Stable(Normalise(res.Body, apitest.Project, "{project}"))))
+				// The recorder left the project id in an index link (q1.where-match-order-other).
+				d := Diff(stampPrecision(Stable(Normalise(s.Response.Body, apitest.Project, "{project}"))),
+					stampPrecision(Stable(Normalise(res.Body, apitest.Project, "{project}"))))
 				if res.HTTP != s.Response.HTTP {
 					d = append([]string{fmt.Sprintf("HTTP %d, want %d", res.HTTP, s.Response.HTTP)}, d...)
 				}
