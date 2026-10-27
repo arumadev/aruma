@@ -684,7 +684,7 @@ func (r *webReplay) waitFor(id string, s *live, k int) {
 		s.mu.Unlock()
 		if !have {
 			r.cause(s.recorded[i].payload)
-			if !r.receive(s, i, 5*time.Second) {
+			if !r.receive(s, i, patience(s.recorded[i].payload)) {
 				if isGlobal(s.recorded[i].payload) || isDelete(s.recorded[i].payload) {
 					// A global snapshot on production's clock (listen-heartbeats), or the delete
 					// of a missing document the recorder deleted again during the session.
@@ -718,6 +718,22 @@ func (r *webReplay) waitFor(id string, s *live, k int) {
 			r.diffs[id+"/backchannel"] = nil
 		}
 	}
+}
+
+// maxWait is how long a message Aruma must send is waited for; a message production sent on
+// its own clock, or for a change Aruma never makes in the replay, is expected to be absent and
+// is waited for only briefly: Aruma flushes its messages to the stream as it makes them, so what
+// has not come within settle is not coming.
+const (
+	maxWait = 5 * time.Second
+	settle  = 500 * time.Millisecond
+)
+
+func patience(msg string) time.Duration {
+	if isGlobal(msg) || isDelete(msg) {
+		return settle
+	}
+	return maxWait
 }
 
 func (r *webReplay) receive(s *live, i int, wait time.Duration) bool {

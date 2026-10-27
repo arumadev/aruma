@@ -13,7 +13,7 @@
 //     Firestore REST protocol, fails the run. It never skips.
 //
 // The package is standard library only and speaks REST (the transport the Admin SDKs' preferRest
-// and the JS lite SDK use). test/differential/documents reuses its Aruma target.
+// and the JS lite SDK use), and, for MUST 21, one WebChannel session (webchannel.go). test/differential/documents reuses its Aruma target.
 package documents
 
 import (
@@ -103,6 +103,9 @@ func (h *HTTPTarget) Do(ctx context.Context, _ Step, req Request) (Response, err
 
 // Send sends one request and decodes the answer.
 func (h *HTTPTarget) Send(ctx context.Context, req Request) (Response, error) {
+	if req.Method == MethodWebChannel {
+		return h.webChannel(ctx, req)
+	}
 	var body io.Reader
 	if req.Body != nil {
 		b, err := json.Marshal(req.Body)
