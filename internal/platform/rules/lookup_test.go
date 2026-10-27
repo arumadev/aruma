@@ -195,7 +195,7 @@ func TestLookupOutage(t *testing.T) {
 }
 
 // get() of a missing document is an evaluation error, not null as the reference says
-// (production: f5-rules-lookups.json; ADR-021 F5-A2b).
+// (production: f5-rules-lookups.json read.lk-get-missing, read.lk-get-missing-or; ADR-021 F5-A2b).
 func TestGetMissingIsAnError(t *testing.T) {
 	got := evaluate(t, lookupRules(t, call("get", ident("resource"))), lookupRequest(&memDocs{}, "x/1", "x/2"))
 	if got.Statements[0].Outcome != OutcomeError || !strings.Contains(got.Statements[0].Message, "does not exist") {

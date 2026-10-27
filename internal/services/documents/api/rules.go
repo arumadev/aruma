@@ -29,7 +29,7 @@ import (
 //	delete  a write whose document does not exist after (resource the one before, or null)
 //
 // A write is judged by its document as stored before the commit (resource, the stored document
-// even for a create: f5-rules-request.json c-res-null over an existing document) and as the
+// even for a create: f5-rules-request.json rr.create-existing-res-null) and as the
 // commit's writes leave it, transforms applied (request.resource): a commit's writes of one
 // document are judged once, together. A commit, Write stream batch or transaction commit is
 // denied whole when any of its documents is. The rules decide before the preconditions: a create

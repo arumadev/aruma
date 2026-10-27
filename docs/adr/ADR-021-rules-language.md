@@ -285,7 +285,7 @@ type Decision struct {
 | متغيرات المسار في `match` المتداخلة | 20 | جدول الحدود | ترجمةً |
 | حجم نص القواعد | 256 KiB (262,144 بايت). والحد الدقيق (256,000 أم 262,144) يقيسه S0-A | جدول الحدود | ترجمةً |
 | التعابير المقيَّمة في الطلب | 1000 | جدول الحدود. وحدة العدّ (كل عقدة تُقيَّم) تُطابَق بحالات `rules_expressions` من hidane والأوراكل | تقييمًا |
-| قراءات المستندات | 10 للعملية، و20 للطلب، و2 لـ `firestore.*` من Storage | جدول الحدود ومرجع Storage | تقييمًا |
+| قراءات المستندات | **مستندات مختلفة لا استدعاءات:** 10 لقراءة مستند واحد ولكل كتابة، و20 للطلب كله. وقراءة عدة مستندات واستعلام list لهما 20 للطلب بلا حد لكل عملية. و2 لـ `firestore.*` من Storage | جدول الحدود ومرجع Storage، وحسمه الإنتاج (تعديل F5-A2b) | تقييمًا |
 
 **حدود Aruma** (حماية): لا مقابل لها في Firebase، تحمي الخادم من قواعد عدائية، وقابلة للضبط بحرية. وتُوثّق في `docs/compat` كقيود (limitation):
 
@@ -302,6 +302,7 @@ type Decision struct {
 | الـ rulesets المترجمة في الذاكرة | 128 MiB، LRU **بالوزن لا بالعدد** | وزن الـ ruleset تقدير بايتاته: النص، وبرامج أنماطه الحرفية، وسقف ذاكرة أنماطه (4 MiB). فألف ruleset كبير لا يتسع لها ما يتسع لألف صغير. البند 7 | — |
 
 - **تجاوز حد التقييم يُنهي التقييم كله برفض.** لا يصير خطأً يمتصه `||`. الوثائق تقول: «Exceeding either limit results in a permission denied error». أما المحاكي فيجعله خطأً عاديًا (hidane). وبما أن المنشور غير مقيس بعد، نختار الأشد. المفسّر يميّز نوعين من الخطأ (`evalError` يُمتص، و`abort` يُنهي)، فإن أظهر الأوراكل غير ذلك في حدود Firebase تغيّر موضع واحد. أما حدود Aruma فتُنهي دائمًا.
+  - **حُسم لقراءات المستندات (F5-A2b):** تجاوز حدها في الإنتاج خطأ تقييم عادي، يمتصه `||` (`f5-rules-lookup-limits.json`: `write.miss-exists` و`write.live-after` و`write.peer-c-alone` مسموحة، و`write.peer-b-alone` و`write.r11a` مرفوضة). فصار `evalError` في `lookup.go`، ولا يُخزَّن في الذاكرة المؤقتة. وحد التعابير (1000) وحدود Aruma باقية `abort`.
 - **استثناءان من «تُنهي برفض»:**
   - **النمط المبني وقت التقييم إن تجاوز حد التعليمات** خطأ تقييم (`evalError`)، كأي نمط غير صالح: رفض ما لم يمتصه `||`. فهو عيب في قيمة، لا في كلفة الطلب.
   - **امتلاء `Inflight`** ليس قرارًا عن القواعد بل ضغط على الخادم. فيعيد `Evaluate` الخطأ `ErrOverloaded`، وتجيب الخدمة UNAVAILABLE. لا رفض، ولا انتظار.
@@ -585,13 +586,30 @@ type Decision struct {
 
 الربط في `internal/services/documents/api/rules.go`، والحكم على الكتابات في `core/authorize.go`. ما يلي قرار أو تخمين لم يُسجَّل بعد، ويطابقه مرور الأوراكل (R):
 
-- **الطريقة:** القراءة `get`. والكتابة يُحكم عليها **لكل مستند لا لكل كتابة**: كتابات الـ commit لمستند واحد تُطوى معًا، و`resource` المستند قبل الـ commit و`request.resource` بعده (التحويلات مطبّقة). `create` إن لم يكن موجودًا قبله ووُجد بعده، و`update` إن وُجد قبله وبعده، و`delete` إن لم يوجد بعده. كتابة `verify` وحدها لا يُحكم عليها. (تخمين.)
+- **الطريقة:** القراءة `get`. والكتابة يُحكم عليها **لكل مستند لا لكل كتابة**: كتابات الـ commit لمستند واحد تُطوى معًا، و`resource` المستند قبل الـ commit و`request.resource` بعده (التحويلات مطبّقة). `create` إن لم يكن موجودًا قبله ووُجد بعده، و`update` إن وُجد قبله وبعده، و`delete` إن لم يوجد بعده. كتابة `verify` وحدها لا يُحكم عليها. (تخمين؛ صحّحه F5-A2b: الشرط المسبق يحدد الطريقة.)
 - **القواعد قبل الشروط المسبقة:** المعاينة تطوي الكتابات بلا preconditions، فإنشاء مستند موجود مرفوض بالقواعد يعيد PERMISSION_DENIED لا ALREADY_EXISTS، وقراءة مستند غائب مرفوضة لا تعيد NOT_FOUND.
 - **موضع الحكم:** بعد أن يأخذ الـ commit أقفال مدير الأقفال الحصرية على مستنداته وقبل أن يُعلَّم committing، بلا اتصال Postgres محجوز؛ فالـ `get()` يأخذ اتصالًا كأي قراءة. ويتحقق الـ sequencer أن الصفوف المقفلة هي التي حُكم عليها (`checkJudged`)، وإلا ABORTED.
 - **`request.time`** في الكتابات قيمة REQUEST_TIME نفسها (ميلي ثانية)، فيصح `request.resource.data.ts == request.time`. وفي القراءات وقت الطلب.
-- **القراءات:** `get`/`exists` على نقطة قراءة الطلب (read_time الذي أجاب به). و`getAfter`/`existsAfter` يرى مستندات الكتابات المعلّقة، وما سواها كالقراءة. `Budget` واحد لكل commit ولكل قراءة (BatchGet كله). وBatchWrite يحكم على كل كتابة وحدها بـ Budget لها، فحالة الرفض لكل كتابة.
+- **القراءات:** `get`/`exists` على نقطة قراءة الطلب (read_time الذي أجاب به). و`getAfter`/`existsAfter` يرى مستندات الكتابات المعلّقة، وما سواها كالقراءة. `Budget` واحد لكل commit ولكل قراءة (BatchGet كله). وBatchWrite يحكم على كل كتابة وحدها بـ Budget لها، فحالة الرفض لكل كتابة. (صحّحه F5-A2b: BatchWrite مرفوض للمستخدم النهائي كله.)
 - **الرفض:** الدفعة (Commit، دفعة Write stream، commit المعاملة) تُرفض كلها إن رُفض مستند. وBatchGet يُحكم عليه قطعةً قطعة (100 مستند) قبل إرسالها، فرفض في قطعة لاحقة ينهي البث بعد ما سُمح به.
 - **`resource`:** `data` بترتيب الحقول المخزّن، و`__name__` مسار من `databases/`، و`id`. والمرجع (reference) يصير مسارًا من `databases/` (تخمين).
 - **الهوية:** رمز ID يُتحقق منه في كل طلب أحادي، والمستخدم في المعاملة هو uid المتحقَّق منه (M3). رمز غير صالح UNAUTHENTICATED بنص الإنتاج لبيانات اعتماد مرفوضة، حتى مع `dev_open_rules`. والمدير و`dev_open_rules` على loopback يتجاوزان القواعد.
 - **خارج النطاق حتى مسار list/Listen:** RunQuery والتجميعات وPartitionQuery وListDocuments وListCollectionIds وListen مرفوضة للمستخدم النهائي (`requireBypass`).
 - **Storage:** `firestore.get()` يقرأ القاعدة الافتراضية لمشروع الطلب عبر `api.Lookups`، وتربطها `app` حين تكون قاعدة المستندات مفعّلة.
+
+## تعديل 2026-10-27 (F5-A2b): ما حسمه الإنتاج في عمليات المستندات
+
+إعادة تشغيل كل حالات `test/oracle/documents/corpus/f5-rules-{methods,auth,request,lookup-limits,batches,transactions}.json` على خادم في العملية (`test/differential/documents/rules_replay_test.go`، REST، مع الحالة بعدها) تطابق الإنتاج كلها: 306 حالة، وحالة مستثناة واحدة (`rules-token-issuer`)، و142 حالة list وListen تنتظر مسار A2a. والإنتاج يغلب تخمينات F5-A1:
+
+- **الطريقة تتبع الشرط المسبق:** `exists: false` إنشاء ولو كان المستند موجودًا، و`exists: true` أو `update_time` تحديث ولو كان غائبًا، وبلا شرط يحكم الوجود المخزّن (`Proposal.Asserts`). فإنشاء مستند موجود تسمح به `allow create` يعيد ALREADY_EXISTS، ولا تسمح به `allow update` وحدها (`methods` `order.create-existing-create-only` و`order.update-existing-exists-false-update-only`). وتحديث بـ `exists: true` لمستند غائب تسمح به `allow update` يعيد NOT_FOUND (`order.update-missing-precondition-update-only`). والقواعد قبل الشروط المسبقة كما كان.
+- **`resource` في الإنشاء** هو المستند المخزّن إن وُجد، لا null (`request` `rr.create-existing-res-null` و`rr.set-existing-res-null` و`rr.create-document-existing-res-null`)، وكان ذلك سلوك A1.
+- **حدود القراءات تعدّ مستندات مختلفة** (`lookup-limits`): `get` و`exists` و`getAfter` و`existsAfter` لمسار واحد مستند واحد. كل عملية تعدّ كل مستند تقرؤه على حدها ولو قرأته عملية قبلها من الطلب (`commit.r1a-r11a` و`commit.r1a-r20a` مرفوضان)، والطلب يعدّ كل مستند مرة (`commit.r1a-r2a` مسموح بعشرين، و`commit.r1a-r2a-r3a` مرفوض). قراءة مستند واحد وكل كتابة: 10 (`read.get-r11-a`، `write.r11a`). قراءة عدة مستندات: 20 للطلب بلا حد لكل مستند (`read.batch-get-r1a-r20a` مسموح، و`read.batch-get-r20a` لمستند واحد مرفوض) = `rules.NewPooledBudget`. واستعلام list: 20 (`query.run-query-20`، لمسار A2a). والذاكرة المؤقتة للطلب كله، عبر المستندات والكتابات.
+- **مستندات الـ commit نفسه مجانية:** قراءة مستند يكتبه الـ commit (`get` أو `exists` أو `...After`، في قاعدته أو قاعدة غيره) لا تُعدّ (`commit.peer-a-peer-b` في الترتيبين، `write.self-after`، `write.self-get`) = `Budget.Exempt`.
+- **التجاوز خطأ تقييم** يمتصه `||` (البند 4 أعلاه).
+- **`get()` لمستند غائب خطأ تقييم لا null:** يُرفض وحده، ويمتصه `||`. و`exists()` له `false` (`f5-rules-lookups.json` `read.lk-get-missing` و`read.lk-get-missing-or`). ويسري على `firestore.get()` في Storage بالدالة نفسها، ولم يُسجَّل في Storage.
+- **مرفوض للمستخدم النهائي مهما قالت القواعد:** BatchWrite كله، ولو سُمح بكل كتاباته (`batches` `batch-write.ok-ok`)، وبدء معاملة read-write بـ BeginTransaction أو بـ `new_transaction` على قراءة (`transactions` `begin.user` و`begin.user-readwrite` و`commit.read-then-allowed`، حيث رُفض الـ batchGet فجرى الـ commit بلا معاملة). والمعاملة read-only مسموحة (`begin.user-readonly`، `read.readonly-allowed`). PERMISSION_DENIED قبل أي فحص آخر. ونرفض OPTIMISTIC أيضًا، ولم يُسجَّل (تخمين، الأشد)؛ و`ErrOptimisticRequired` يبقى لـ `dev_open_rules` وحده. وهذا يخالف بحث R الذي قال إن `new_transaction` يعمل: التسجيل يقول غير ذلك.
+- **«معاملة بعشرين قراءة رُفضت» (`transactions` `limit.commit-g10x2`) مفسَّرة:** الـ commit كتب `l2/r1-a` و`l2/r2-a`، وقاعدة `l2` لا فرع فيها لـ `r1-`/`r2-` (فرعاها في `hw`)، وكان الـ batchGet الذي يفتح المعاملة قد رُفض، فلم تكن معاملة. فلا استثناء.
+- **التحويلات في `request.resource.data`** مطبّقة: `serverTimestamp == request.time` بدقة ميلي ثانية (قيم الإنتاج المخزنة ثلاثة أرقام كسرية، ويطابقها الـ replay)، و`increment` بالمجموع، والمصفوفات مدموجة (`request` `u-*` و`c-*`). تخمين A1 صحيح.
+- **نص الرفض** دائمًا `Missing or insufficient permissions.` (HTTP 403، gRPC 7). والـ Write stream ينتهي بالحالة 7 عند رفض كتابة (`grpc/writestream.go` يُنهي البث بخطأ `Write`)؛ وحالاته في `f5-rules-listen.json` تُعاد مع مسار A2a.
+- **`request.auth.token`** كما سجّله الإنتاج، إلا `iss`: Aruma مُصدِر رموزه (ADR-004)، فالاستثناء `rules-token-issuer` (`auth` `user.iss`).
+
