@@ -1,0 +1,101 @@
+package grpc
+
+import (
+	"context"
+	"errors"
+	"io"
+	"os"
+	"time"
+
+	"connectrpc.com/connect"
+
+	"github.com/arumadev/aruma/internal/services/documents/api"
+	"github.com/arumadev/aruma/internal/services/documents/wire"
+	pb "github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb"
+)
+
+var (
+	// errStreamIdle ends a Write stream that sent no request within stream_idle (ADR-026 §3).
+	// The client that does not need the stream does not reopen it.
+	errStreamIdle = wire.NewError(wire.CodeUnavailable, "The write stream was idle for too long. Reopen it when needed.")
+	// errFirstMessage ends a stream whose first message did not arrive within
+	// stream_first_message, before any work (ADR-026 §3).
+	errFirstMessage = wire.From(context.DeadlineExceeded)
+)
+
+// Write is the mobile SDKs' write stream (ADR-026 §6): a handshake, then one atomic batch per
+// request, answered in order. Each request is handled before the next is read, so the HTTP/2
+// window bounds a client that pipelines.
+func (f firestore) Write(ctx context.Context, conn *connect.BidiStream[pb.WriteRequest, pb.WriteResponse]) error {
+	h := f.h
+	s, err := h.openServerStream(ctx, 0)
+	if err != nil {
+		return connectError(err)
+	}
+	return s.run(func() error {
+		// A stream ended from outside (the drain) is not waiting on a read.
+		stop := context.AfterFunc(s.ctx, func() { _ = s.info.rc.SetReadDeadline(time.Now()) })
+		defer stop()
+		send := func(r *pb.WriteResponse) error { return s.send(func() error { return conn.Send(r) }) }
+
+		// The handshake, within stream_first_message (its deadline is set by ServeHTTP).
+		req, err := receiveWrite(s, conn, errFirstMessage)
+		if err != nil {
+			return endOfRequests(err)
+		}
+		ws, res, err := h.svc.OpenWriteStream(s.ctx, call(ctx, conn.RequestHeader()), req)
+		if err != nil {
+			return err
+		}
+		defer h.watchWriteStream(s, ws)()
+		s.admitted()
+		if err := send(res); err != nil {
+			return err
+		}
+		for {
+			_ = s.info.rc.SetReadDeadline(time.Now().Add(h.limits.StreamIdle))
+			req, err := receiveWrite(s, conn, errStreamIdle)
+			if err != nil {
+				return endOfRequests(err)
+			}
+			res, err := ws.Write(s.ctx, req)
+			if err != nil {
+				return err
+			}
+			if err := send(res); err != nil {
+				return err
+			}
+		}
+	})
+}
+
+// watchWriteStream is where the shared track of stream admission (A3) joins a Write stream once
+// it is admitted: its count per project, and its token's expiry and revocation, which end the
+// stream through s. It returns what to call when the stream ends.
+func (h *Handler) watchWriteStream(*serverStream, *api.WriteStream) (release func()) {
+	return func() {}
+}
+
+// receiveWrite reads the next request; a read that ran into its deadline is timeout.
+func receiveWrite(s *serverStream, conn *connect.BidiStream[pb.WriteRequest, pb.WriteResponse], timeout error) (*pb.WriteRequest, error) {
+	req, err := conn.Receive()
+	switch {
+	case err == nil:
+		return req, nil
+	case s.ctx.Err() != nil:
+		return nil, err // ended from outside: finish gives its status
+	case errors.Is(err, io.EOF):
+		return nil, io.EOF
+	case errors.Is(err, os.ErrDeadlineExceeded), connect.CodeOf(err) == connect.CodeDeadlineExceeded:
+		return nil, timeout
+	}
+	return nil, err
+}
+
+// endOfRequests: a client that closed its side ends the stream normally.
+func endOfRequests(err error) error {
+	if errors.Is(err, io.EOF) {
+		return nil
+	}
+	return err
+}
