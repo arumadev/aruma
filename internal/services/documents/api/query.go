@@ -21,12 +21,11 @@ import (
 // composite-index rule under the database's enforcement (index.Check), and a query that needs an
 // index fails with production's error and console link; explain_options, which production
 // serves and this server does not yet, is refused after that check (f0-explain.json
-// analyze_true_missing_index). Then the reference path runs it: core reads the candidates
-// page by page in name order (core.Queries.Scan), at one read time, in the request's
-// transaction or the one it begins, and package query filters, orders and bounds them.
-//
-// The planner's index paths plug in at runQuery: a plan that serves the query exactly reads
-// index entries in place of Scan's candidates, its rows checked again by the reference matcher.
+// analyze_true_missing_index). Then an index path serves it when the planner serves it exactly
+// (query.Plan; indexpath.go): index entries and their documents read in one snapshot, each
+// candidate checked again by the reference matcher. Otherwise the reference path runs it: core
+// reads the candidates page by page in name order (core.Queries.Scan), at one read time, in the
+// request's transaction or the one it begins, and package query filters, orders and bounds them.
 
 // errAggregationDone stops an aggregation's read once nothing later can change its result.
 var errAggregationDone = errors.New("aggregation complete")
@@ -257,12 +256,16 @@ func (s *Service) enforce(a admitted, shape index.QueryShape, cat *index.Catalog
 	return nil
 }
 
-// runQuery runs q's reference path at ro: core's candidates, page by page in name order from
+// runQuery runs q at ro: from an index when the planner serves it (runIndexed), else on the
+// reference path: core's candidates, page by page in name order from
 // the query's lower bound on __name__, to a query.Runner that sends results to emit with the
 // read time and the results the offset skipped so far. unordered is an aggregation's read. It
 // returns the results the offset skipped, and the read time.
 func (s *Service) runQuery(ctx context.Context, a admitted, parent wire.Name, q *query.Query, ro core.ReadOptions, unordered bool,
 	emit func(d *query.Doc, readTime time.Time, skipped int) error) (int, time.Time, error) {
+	if skipped, readTime, ok, err := s.runIndexed(ctx, a, parent, q, ro, emit); ok || err != nil {
+		return skipped, readTime, err
+	}
 	var readTime time.Time
 	var runner *query.Runner
 	runner = query.NewRunner(q, unordered, query.Limits{}, func(d *query.Doc) error { return emit(d, readTime, runner.Skipped()) })

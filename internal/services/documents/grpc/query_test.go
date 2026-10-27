@@ -13,6 +13,7 @@ import (
 
 	"github.com/arumadev/aruma/internal/services/documents/api/apitest"
 	docgrpc "github.com/arumadev/aruma/internal/services/documents/grpc"
+	"github.com/arumadev/aruma/internal/services/documents/query"
 	"github.com/arumadev/aruma/internal/services/documents/wire"
 	pb "github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb"
 )
@@ -33,56 +34,61 @@ func TestIndexesReplay(t *testing.T) {
 			t.Fatalf("seed %s: %v", d.Path, err)
 		}
 	}
-	matched := 0
-	for _, ic := range apitest.IndexCases(t) {
+	// run sends a case on the never-written collection or the populated one.
+	run := func(ic *apitest.IndexCase, empty bool) (ids []string, aggs []json.RawMessage, err error) {
 		parent, method, _ := strings.Cut(strings.ReplaceAll(ic.Request.Path, "{project}", apitest.Project), ":")
-		for _, empty := range []bool{true, false} {
-			want := ic.Want(empty)
-			var ids []string
-			var aggs []json.RawMessage
-			var err error
-			body := []byte(ic.Body(root, empty))
-			if method == "runQuery" {
-				r := &pb.RunQueryRequest{}
-				if err := protojson.Unmarshal(body, r); err != nil {
-					t.Fatal(err)
-				}
-				r.Parent = parent
-				var s *connect.ServerStreamForClient[pb.RunQueryResponse]
-				if s, err = c.RunQuery(ctx, req(r, tok)); err == nil {
-					for s.Receive() {
-						if d := s.Msg().Document; d != nil {
-							ids = append(ids, apitest.LastSegments(d.Name))
-						}
-					}
-					err = s.Err()
-				}
-			} else {
-				r := &pb.RunAggregationQueryRequest{}
-				if err := protojson.Unmarshal(body, r); err != nil {
-					t.Fatal(err)
-				}
-				r.Parent = parent
-				var s *connect.ServerStreamForClient[pb.RunAggregationQueryResponse]
-				if s, err = c.RunAggregationQuery(ctx, req(r, tok)); err == nil {
-					for s.Receive() {
-						if res := s.Msg().Result; res != nil {
-							b, merr := wire.MarshalREST(res)
-							if merr != nil {
-								t.Fatal(merr)
-							}
-							var f struct {
-								AggregateFields json.RawMessage `json:"aggregateFields"`
-							}
-							if err := json.Unmarshal(b, &f); err != nil {
-								t.Fatal(err)
-							}
-							aggs = append(aggs, f.AggregateFields)
-						}
-					}
-					err = s.Err()
+		body := []byte(ic.Body(root, empty))
+		if method == "runQuery" {
+			r := &pb.RunQueryRequest{}
+			if err := protojson.Unmarshal(body, r); err != nil {
+				t.Fatal(err)
+			}
+			r.Parent = parent
+			s, err := c.RunQuery(ctx, req(r, tok))
+			if err != nil {
+				return nil, nil, err
+			}
+			for s.Receive() {
+				if d := s.Msg().Document; d != nil {
+					ids = append(ids, apitest.LastSegments(d.Name))
 				}
 			}
+			return ids, nil, s.Err()
+		}
+		r := &pb.RunAggregationQueryRequest{}
+		if err := protojson.Unmarshal(body, r); err != nil {
+			t.Fatal(err)
+		}
+		r.Parent = parent
+		s, err := c.RunAggregationQuery(ctx, req(r, tok))
+		if err != nil {
+			return nil, nil, err
+		}
+		for s.Receive() {
+			if res := s.Msg().Result; res != nil {
+				b, merr := wire.MarshalREST(res)
+				if merr != nil {
+					t.Fatal(merr)
+				}
+				var f struct {
+					AggregateFields json.RawMessage `json:"aggregateFields"`
+				}
+				if err := json.Unmarshal(b, &f); err != nil {
+					t.Fatal(err)
+				}
+				aggs = append(aggs, f.AggregateFields)
+			}
+		}
+		return nil, aggs, s.Err()
+	}
+	matched := 0
+	cases := apitest.IndexCases(t)
+	indexed := indexServed()
+	for i := range cases {
+		ic := &cases[i]
+		for _, empty := range []bool{true, false} {
+			want := ic.Want(empty)
+			ids, aggs, err := run(ic, empty)
 			ok := false
 			switch ce, isStatus := errors.AsType[*connect.Error](err); {
 			case want.Verdict != "ok":
@@ -107,4 +113,18 @@ func TestIndexesReplay(t *testing.T) {
 	if matched != 210 {
 		t.Errorf("%d of 210 answers as production's", matched)
 	}
+	// The automatic single-field indexes serve some of the shapes production serves.
+	if indexServed() == indexed {
+		t.Error("no recorded shape was served by an index path")
+	}
+	// With the indexes production asked for, each needs-index shape is served by one.
+	n := apitest.IndexedReplay(t, x.env, root, cases, func(ic *apitest.IndexCase) (apitest.IndexAnswer, error) {
+		ids, aggs, err := run(ic, false)
+		return apitest.IndexAnswer{IDs: ids, Aggregates: aggs}, err
+	})
+	t.Logf("%d needs-index shapes replayed with their indexes", n)
+}
+
+func indexServed() int64 {
+	return query.ServedCount(query.PathIndex) + query.ServedCount(query.PathIndexMerged) + query.ServedCount(query.PathIndexContains)
 }

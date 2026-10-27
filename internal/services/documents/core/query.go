@@ -23,6 +23,9 @@ type Queries interface {
 	Scan(ctx context.Context, db DB, r ScanRequest) (ListResult, error)
 	// IndexCatalog returns a database's declared composite indexes and field overrides.
 	IndexCatalog(ctx context.Context, db DB) (*index.Catalog, error)
+	// BeginIndexRead begins the planner's read of index entries and their documents at the
+	// latest commit, in one snapshot (indexread.go).
+	BeginIndexRead(ctx context.Context, db DB) (*IndexRead, error)
 }
 
 // ScanRequest is a page of a query's candidates.

@@ -47,9 +47,11 @@ func (m FieldMode) String() string {
 	return fmt.Sprintf("FieldMode(%d)", m)
 }
 
-// State is an index's build state. The zero value is READY, the only state that serves: Aruma
-// fills an index inside the transaction that creates it (ADR-025 §3), so the others appear only
-// in what an import or a failed build leaves.
+// State is an index's build state. The zero value is READY, the only state that serves. An index
+// is CREATING from the transaction that creates it: every commit writes its entries from then on
+// (dual write), a background build fills the documents already there in batches, and it is READY
+// after the last batch alone (ADR-024 §2.5; ADR-025 §3). NEEDS_REPAIR appears only in what an
+// import or a failed build leaves.
 type State uint8
 
 const (

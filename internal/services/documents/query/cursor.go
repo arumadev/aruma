@@ -44,11 +44,7 @@ func cursorOf(c *pb.Cursor, order []Order) (*Cursor, error) {
 // position, > 0 after it, 0 when they tie on every value the cursor has.
 func compareCursor(vals []value.Value, order []Order, c *Cursor) int {
 	for i, cv := range c.Values {
-		r := value.Compare(vals[i], cv)
-		if order[i].Desc {
-			r = -r
-		}
-		if r != 0 {
+		if r := order[i].compare(vals[i], cv); r != 0 {
 			return r
 		}
 	}
