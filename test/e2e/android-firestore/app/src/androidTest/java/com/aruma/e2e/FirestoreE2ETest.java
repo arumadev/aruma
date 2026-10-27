@@ -38,6 +38,7 @@ import com.google.firebase.firestore.WriteBatch;
 
 import dev.aruma.redirect.ArumaRedirect;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -71,7 +72,8 @@ import java.util.function.Predicate;
  * admin credential. The cache is in memory: the resume token a listener keeps across
  * disableNetwork and enableNetwork is the SDK's, not a database's.
  *
- * <p>run.sh passes the server as instrumentation arguments: arumaUrl, projectId and cliToken.
+ * <p>run.sh passes the server as instrumentation arguments: arumaUrl, projectId, cliToken, rules
+ * and ruleset (the name of the released firestore.rules ruleset).
  */
 @RunWith(AndroidJUnit4.class)
 public class FirestoreE2ETest {
@@ -80,8 +82,8 @@ public class FirestoreE2ETest {
     private static final String arumaUrl = args.getString("arumaUrl", "");
     private static final String projectId = args.getString("projectId", "");
     private static final String host = "127.0.0.1:" + arumaUrl.substring(arumaUrl.lastIndexOf(':') + 1);
-    /** The ruleset is released (firestore.rules) and not dev_open_rules: run.sh's ARUMA_E2E_RULES. */
-    private static final boolean released = "released".equals(args.getString("rules", "open"));
+    /** The ruleset is released (firestore.rules, the default) and not dev_open_rules: run.sh's ARUMA_E2E_RULES. */
+    private static final boolean released = "released".equals(args.getString("rules", "released"));
     /** Tells this run's documents apart from an earlier run's on the same server. */
     private static final String run = Long.toString(System.currentTimeMillis(), 36);
 
@@ -173,6 +175,13 @@ public class FirestoreE2ETest {
         denied.listen(d, MetadataChanges.EXCLUDE);
         denied.await("denied", 10_000, e -> e.size() == 1);
         assertEquals("error PERMISSION_DENIED", denied.last());
+        // A list query and a query listener are judged too, not only single documents.
+        Query all = db.collection("e2e");
+        assertEquals(FirebaseFirestoreException.Code.PERMISSION_DENIED, code(all.get(Source.SERVER)));
+        Recorder deniedQuery = new Recorder();
+        deniedQuery.listenQuery(all);
+        deniedQuery.await("denied query", 10_000, e -> e.size() == 1);
+        assertEquals("error PERMISSION_DENIED", deniedQuery.last());
 
         String uid = signIn();
         assertEquals(28, uid.length());
@@ -185,6 +194,42 @@ public class FirestoreE2ETest {
         JSONObject admin = new JSONObject(rest("e2e/rules-" + run));
         assertEquals("1", admin.getJSONObject("fields").getJSONObject("a").getString("integerValue"));
         cleanup.add(() -> quietly(d.delete()));
+    }
+
+    // 1c. A release published while a listener is open takes the listener away.
+
+    @Test
+    public void denyAllReleaseRemovesAnOpenListener() throws Exception {
+        assumeTrue("needs ARUMA_E2E_RULES=released", released);
+        String original = args.getString("ruleset", "");
+        assertFalse("run through run.sh (no ruleset argument)", original.isEmpty());
+        signIn();
+        otherSignIn();
+        String col = "r-" + run;
+        Query q = db.collection("e2e").document(col).collection("items");
+        DocumentReference a = otherDb.collection("e2e").document(col).collection("items").document("a");
+        Recorder r = new Recorder();
+        r.listenQuery(q);
+        r.await("empty", 10_000, e -> e.size() == 1);
+        r.clear();
+        await(a.set(map("n", 1)));
+        r.await("a enters", 10_000, e -> e.contains("[ADDED a {n=1}]"));
+        r.clear();
+        try {
+            String rules = "rules_version = '2';\nservice cloud.firestore { match /databases/{d}/documents { match /{p=**} { allow read, write: if false; } } }\n";
+            String denyAll = new JSONObject(rulesApi("POST", "rulesets", new JSONObject().put("source", new JSONObject().put("files",
+                    new JSONArray().put(new JSONObject().put("name", "firestore.rules").put("content", rules)))).toString())).getString("name");
+            publish(denyAll);
+            // The server re-judges the open listener against the new release and ends it.
+            r.await("removed", 15_000, e -> e.contains("error PERMISSION_DENIED"));
+            assertEquals("error PERMISSION_DENIED", r.last());
+            assertEquals(FirebaseFirestoreException.Code.PERMISSION_DENIED, code(a.get(Source.SERVER)));
+        } finally {
+            publish(original);
+        }
+        // The first ruleset is back: the same client reads again.
+        assertEquals(1L, await(a.get(Source.SERVER)).getLong("n").longValue());
+        cleanup.add(() -> quietly(a.delete()));
     }
 
     // 2. A document listener sees this client's own write: serverTimestamp and increment.
@@ -442,6 +487,31 @@ public class FirestoreE2ETest {
     }
 
     /** A GET on the REST API of the Document Database with the admin credential (the CLI token). */
+    /** Points the cloud.firestore release at a ruleset, as a deploy does. */
+    private static void publish(String ruleset) throws Exception {
+        rulesApi("PATCH", "releases/cloud.firestore", new JSONObject().put("release", new JSONObject()
+                .put("name", "projects/" + projectId + "/releases/cloud.firestore").put("rulesetName", ruleset)).toString());
+    }
+
+    /** The firebaserules API with the admin credential: method on projects/{project}/{path}. */
+    private static String rulesApi(String method, String path, String body) throws Exception {
+        HttpURLConnection c = (HttpURLConnection) new URL(arumaUrl + "/v1/projects/" + projectId + "/" + path).openConnection();
+        c.setRequestMethod(method);
+        c.setRequestProperty("Authorization", "Bearer " + args.getString("cliToken", ""));
+        c.setRequestProperty("Content-Type", "application/json");
+        c.setDoOutput(true);
+        try {
+            c.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
+            int status = c.getResponseCode();
+            InputStream in = status < 400 ? c.getInputStream() : c.getErrorStream();
+            String text = in == null ? "" : new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            assertEquals(text, 200, status);
+            return text;
+        } finally {
+            c.disconnect();
+        }
+    }
+
     private static String rest(String path) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(arumaUrl + "/v1/projects/" + projectId + "/databases/(default)/documents/" + path).openConnection();
         c.setRequestProperty("Authorization", "Bearer " + args.getString("cliToken", ""));

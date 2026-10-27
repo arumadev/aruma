@@ -3,7 +3,8 @@
 # firebase-auth in production mode (no emulator API), configured with the google-services.json a
 # real Aruma server generates and the server's host, as instrumented tests on an emulator or device.
 # The server runs on this machine with the Document Database and the cloud.firestore ruleset of
-# firestore.rules, released through the firebaserules API (not dev_open_rules); `adb reverse` gives
+# firestore.rules, released through the firebaserules API (not dev_open_rules), so every read, write,
+# query and listener is judged by rules; `adb reverse` gives
 # the device the same address on its own loopback.
 #
 # The network guard has two halves: the tests record every connection the process opens to
@@ -17,7 +18,7 @@
 #   ANDROID_HOME     the Android SDK (adb, and the platform Gradle compiles against)
 #   ARUMA_E2E_DEVICE_GUARD=off  skip the iptables half (it needs `adb root`, which an emulator image
 #                    without Google Play has); the in-process half still runs.
-#   ARUMA_E2E_RULES  open (default) or released, see below; ARUMA_E2E_LOG the server's log level
+#   ARUMA_E2E_RULES  released (default) or open (dev_open_rules, no rules assertions), see below; ARUMA_E2E_LOG the server's log level
 #   ARUMA_E2E_ADDR, ARUMA_E2E_DB_PREFIX  see ../server.sh
 #
 # It needs a JDK 17+, the local Postgres (ARUMA_TEST_DATABASE_URL), Go and python3. CI runs it on
@@ -62,18 +63,16 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# ARUMA_E2E_RULES=open (the default for now): documents.dev_open_rules, for clients on this
-# machine. At the time of writing the Document Database does not yet judge a list query or a
-# Listen stream under rules (an end user is refused both), so rules cannot be what lets the
-# listeners in. released: the cloud.firestore ruleset of firestore.rules through the firebaserules
-# API, as `firebase deploy --only firestore:rules` does, which adds the rules assertions.
-rules=${ARUMA_E2E_RULES:-open}
+# ARUMA_E2E_RULES=released (the default): the cloud.firestore ruleset of firestore.rules through the
+# firebaserules API, as `firebase deploy --only firestore:rules` does; every document RPC, list
+# query and Listen stream is judged by it, and the rules assertions run. open is an opt-in:
+# documents.dev_open_rules, which lets every client on this machine in and skips those assertions.
+rules=${ARUMA_E2E_RULES:-released}
 log "starting Aruma with the Document Database (rules: $rules), and generating google-services.json"
 if [[ "$rules" == open ]]; then
   start_server "$gen" -documents-open-rules -log "${ARUMA_E2E_LOG:-warn}"
 else
-  # -storage too: the firebaserules API is served only with Storage on.
-  start_server "$gen" -documents -storage -log "${ARUMA_E2E_LOG:-warn}"
+  start_server "$gen" -documents -log "${ARUMA_E2E_LOG:-warn}"
   ruleset=$(python3 -c 'import json, sys; print(json.dumps({"source": {"files": [{"name": "firestore.rules", "content": open(sys.argv[1]).read()}]}}))' "$here/firestore.rules" \
     | curl -fsS -X POST -H "Authorization: Bearer $ARUMA_CLI_TOKEN" -H "Content-Type: application/json" --data-binary @- \
       "$ARUMA_URL/v1/projects/$ARUMA_PROJECT_ID/rulesets" | python3 -c 'import json, sys; print(json.load(sys.stdin)["name"])')
@@ -132,7 +131,7 @@ logcat_pid=$!
 
 log "running the instrumented tests"
 "$adb" shell am instrument -w -e arumaUrl "$ARUMA_URL" -e projectId "$ARUMA_PROJECT_ID" \
-  -e cliToken "$ARUMA_CLI_TOKEN" -e rules "$rules" "$@" "$runner" | tr -d '\r' >"$gen/instrument.txt"
+  -e cliToken "$ARUMA_CLI_TOKEN" -e rules "$rules" -e ruleset "${ruleset:-}" "$@" "$runner" | tr -d '\r' >"$gen/instrument.txt"
 sleep 1
 grep -E '^./TestRunner: (finished|failed):' "$gen/logcat.txt" | sed 's/^.\/TestRunner: /  /' || true
 status=0
