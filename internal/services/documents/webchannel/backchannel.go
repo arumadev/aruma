@@ -149,7 +149,7 @@ func (h *Handler) backchannel(w http.ResponseWriter, r *http.Request, q url.Valu
 func (s *session) noopID(bc *backchannel) (int, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if bc.next < s.nextID {
+	if bc.replaced || bc.next < s.nextID {
 		return 0, false
 	}
 	id := s.nextID
