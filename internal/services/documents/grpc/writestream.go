@@ -33,13 +33,11 @@ func (f firestore) Write(ctx context.Context, conn *connect.BidiStream[pb.WriteR
 		return connectError(err)
 	}
 	return s.run(func() error {
-		// A stream ended from outside (the drain) is not waiting on a read.
-		stop := context.AfterFunc(s.ctx, func() { _ = s.info.rc.SetReadDeadline(time.Now()) })
-		defer stop()
+		defer s.cutReadsAtEnd()()
 		send := func(r *pb.WriteResponse) error { return s.send(func() error { return conn.Send(r) }) }
 
 		// The handshake, within stream_first_message (its deadline is set by ServeHTTP).
-		req, err := receiveWrite(s, conn, errFirstMessage)
+		req, err := receive(s, conn.Receive, errFirstMessage)
 		if err != nil {
 			return endOfRequests(err)
 		}
@@ -54,7 +52,7 @@ func (f firestore) Write(ctx context.Context, conn *connect.BidiStream[pb.WriteR
 		}
 		for {
 			_ = s.info.rc.SetReadDeadline(time.Now().Add(h.limits.StreamIdle))
-			req, err := receiveWrite(s, conn, errStreamIdle)
+			req, err := receive(s, conn.Receive, errStreamIdle)
 			if err != nil {
 				return endOfRequests(err)
 			}
@@ -76,9 +74,9 @@ func (h *Handler) watchWriteStream(*serverStream, *api.WriteStream) (release fun
 	return func() {}
 }
 
-// receiveWrite reads the next request; a read that ran into its deadline is timeout.
-func receiveWrite(s *serverStream, conn *connect.BidiStream[pb.WriteRequest, pb.WriteResponse], timeout error) (*pb.WriteRequest, error) {
-	req, err := conn.Receive()
+// receive reads a stream's next request; a read that ran into its deadline is timeout.
+func receive[T any](s *serverStream, recv func() (*T, error), timeout error) (*T, error) {
+	req, err := recv()
 	switch {
 	case err == nil:
 		return req, nil
