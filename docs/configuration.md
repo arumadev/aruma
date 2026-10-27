@@ -100,10 +100,15 @@ The limits, under `documents.limits` in the file. Each must be positive.
 |---|---|---|---|---|
 | `message_bytes` | `ARUMA_DOCUMENTS_MESSAGE_BYTES` | bytes | `17825792` (17 MiB) | One gRPC message, and one REST body: a 16 MiB document from a mobile client and its overhead. At least 1 MiB |
 | `stream_first_message` | `ARUMA_DOCUMENTS_STREAM_FIRST_MESSAGE` | duration | `10s` | How long a stream may take to deliver its first message and credential; only then are the server's 60-second timeouts lifted for it |
-| `stream_idle` | `ARUMA_DOCUMENTS_STREAM_IDLE` | duration | `5m` | How long a write stream may go without a request before it ends with `UNAVAILABLE`; the client reopens it when it needs it |
+| `stream_idle` | `ARUMA_DOCUMENTS_STREAM_IDLE` | duration | `5m` | How long a listen stream may go without a target, or a write stream without a request, before it ends with `UNAVAILABLE`; the client reopens it when it needs it |
 | `stream_write_stall` | `ARUMA_DOCUMENTS_STREAM_WRITE_STALL` | duration | `30s` | How long a streamed answer (a batch get, a query) may wait on a client that stopped reading before it is cut |
 | `server_stream_max` | `ARUMA_DOCUMENTS_SERVER_STREAM_MAX` | duration | `5m` | The longest a streamed answer may last when the client set no deadline; it then ends with `DEADLINE_EXCEEDED` |
 | `streams_per_ip` | `ARUMA_DOCUMENTS_STREAMS_PER_IP` | count | `500` | Streams open at once from one client address (through `trusted_proxies`) |
+| `streams_per_project` | `ARUMA_DOCUMENTS_STREAMS_PER_PROJECT` | count | `10000` | Listen and write streams open at once on one project's databases; one more is refused with `RESOURCE_EXHAUSTED` |
+| `stream_outbox_bytes` | `ARUMA_DOCUMENTS_STREAM_OUTBOX_BYTES` | bytes | `67108864` (64 MiB) | What may wait to be sent on one listen stream. A client that leaves it full for `stream_write_stall` stopped reading: its stream ends with `RESOURCE_EXHAUSTED`. At least `message_bytes` |
+| `targets_per_stream` | `ARUMA_DOCUMENTS_TARGETS_PER_STREAM` | count | `1000` | Targets of one listen stream; one more is removed with a `RESOURCE_EXHAUSTED` cause, and the stream stays open |
+| `snapshot_rows` | `ARUMA_DOCUMENTS_SNAPSHOT_ROWS` | count | `1000000` | Documents one listen target's read goes through (its first result, a resume, a limit window's fill); past it the target is removed with a `RESOURCE_EXHAUSTED` cause |
+| `stream_lag_events` | `ARUMA_DOCUMENTS_STREAM_LAG_EVENTS` | count | `4096` | Commits' events a listen stream may fall behind; past it its targets are reset and read again |
 | `commit_concurrency` | `ARUMA_DOCUMENTS_COMMIT_CONCURRENCY` | count | `4` | Commits of one database that run in Postgres at once; the others wait in the process |
 | `txn_wait_timeout` | `ARUMA_DOCUMENTS_TXN_WAIT_TIMEOUT` | duration | `20s` | How long a transaction, or a write outside one, waits for another transaction's lock before it is aborted with `ABORTED` "Too much contention on these documents. Please try again.", as production does |
 | `txn_max_lifetime` | `ARUMA_DOCUMENTS_TXN_MAX_LIFETIME` | duration | `270s` | A transaction ends this long after it began, and its locks are freed |
