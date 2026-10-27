@@ -3,6 +3,7 @@ package api
 import (
 	"cmp"
 	"context"
+	"errors"
 	"slices"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -39,9 +40,18 @@ func (s *Service) GetDocument(ctx context.Context, c Call, req *pb.GetDocumentRe
 	if err != nil {
 		return nil, err
 	}
-	d, _, err := s.o.Store.Get(ctx, a.db, pathOf(n), ro)
+	d, readTime, err := s.o.Store.Get(ctx, a.db, pathOf(n), ro)
+	if ce, ok := errors.AsType[*core.Error](err); ok && ce.Code == core.NotFound {
+		// The rules decide first: a missing document is NOT_FOUND only to whom may read it.
+		if err := s.allowReads(ctx, a, []core.Document{{Path: pathOf(n)}}, ro.ReadTime); err != nil {
+			return nil, err
+		}
+	}
 	if err != nil {
 		return nil, s.fail(ctx, err)
+	}
+	if err := s.allowReads(ctx, a, []core.Document{d}, readTime); err != nil {
+		return nil, err
 	}
 	return documentProto(a.db, d, mask, masked), nil
 }
@@ -124,6 +134,10 @@ func (s *Service) BatchGetDocuments(ctx context.Context, c Call, req *pb.BatchGe
 			ro.ReadTime = readTime
 		}
 		rt = timestamppb.New(readTime)
+		// Each chunk is judged whole before any of it is sent: a denial ends the request.
+		if err := s.allowReads(ctx, a, docs, readTime); err != nil {
+			return err
+		}
 		for _, d := range docs {
 			if !d.Exists() {
 				missing = append(missing, d.Path)
@@ -159,6 +173,9 @@ const batchGetChunk = 100
 func (s *Service) ListDocuments(ctx context.Context, c Call, req *pb.ListDocumentsRequest) (*pb.ListDocumentsResponse, error) {
 	a, err := s.admit(ctx, c, req, parentOf(req.GetParent()))
 	if err != nil {
+		return nil, err
+	}
+	if err := a.requireBypass(); err != nil {
 		return nil, err
 	}
 	parent, err := wire.ParseParentName(req.GetParent())
@@ -313,6 +330,10 @@ func (s *Service) CreateDocument(ctx context.Context, c Call, req *pb.CreateDocu
 	if err != nil {
 		return nil, err
 	}
+	ctx, err = s.judged(ctx, a)
+	if err != nil {
+		return nil, err
+	}
 	res, err := s.o.Store.Commit(ctx, a.db, []core.Write{{
 		Kind: core.WriteUpdate, Path: pathOf(n), Fields: fields,
 		Precondition: core.Precondition{Exists: new(false)},
@@ -347,7 +368,11 @@ func (s *Service) UpdateDocument(ctx context.Context, c Call, req *pb.UpdateDocu
 	if err != nil {
 		return nil, err
 	}
-	res, err := s.o.Store.Commit(ctx, a.db, []core.Write{w})
+	jctx, err := s.judged(ctx, a)
+	if err != nil {
+		return nil, err
+	}
+	res, err := s.o.Store.Commit(jctx, a.db, []core.Write{w})
 	if err != nil {
 		return nil, s.fail(ctx, err)
 	}
@@ -379,6 +404,10 @@ func (s *Service) DeleteDocument(ctx context.Context, c Call, req *pb.DeleteDocu
 	if err != nil {
 		return nil, err
 	}
+	ctx, err = s.judged(ctx, a)
+	if err != nil {
+		return nil, err
+	}
 	if _, err := s.o.Store.Commit(ctx, a.db, []core.Write{{Kind: core.WriteDelete, Path: pathOf(n), Precondition: pre}}); err != nil {
 		return nil, s.fail(ctx, err)
 	}
@@ -390,6 +419,9 @@ func (s *Service) DeleteDocument(ctx context.Context, c Call, req *pb.DeleteDocu
 func (s *Service) ListCollectionIds(ctx context.Context, c Call, req *pb.ListCollectionIdsRequest) (*pb.ListCollectionIdsResponse, error) {
 	a, err := s.admit(ctx, c, req, parentOf(req.GetParent()))
 	if err != nil {
+		return nil, err
+	}
+	if err := a.requireBypass(); err != nil {
 		return nil, err
 	}
 	parent, err := wire.ParseParentName(req.GetParent())

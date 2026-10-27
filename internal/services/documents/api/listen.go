@@ -96,6 +96,9 @@ func (s *Service) OpenListen(ctx context.Context, c Call, first *pb.ListenReques
 	if h := c.headerDatabase(); h != "" && h != a.wdb.Name() {
 		return nil, errListenDatabase
 	}
+	if err := a.requireBypass(); err != nil {
+		return nil, err
+	}
 	if _, err := s.o.Store.Database(ctx, a.db); err != nil {
 		return nil, s.fail(ctx, err)
 	}

@@ -49,6 +49,9 @@ func (s *Service) RunQuery(ctx context.Context, c Call, req *pb.RunQueryRequest,
 	if err != nil {
 		return err
 	}
+	if err := a.requireBypass(); err != nil {
+		return err
+	}
 	parent, err := wire.ParseParentName(req.GetParent())
 	if err != nil {
 		return err
@@ -109,6 +112,9 @@ func (s *Service) RunAggregationQuery(ctx context.Context, c Call, req *pb.RunAg
 	send func(*pb.RunAggregationQueryResponse) error) (err error) {
 	a, err := s.admit(ctx, c, req, parentOf(req.GetParent()))
 	if err != nil {
+		return err
+	}
+	if err := a.requireBypass(); err != nil {
 		return err
 	}
 	parent, err := wire.ParseParentName(req.GetParent())
@@ -176,6 +182,9 @@ func (s *Service) RunAggregationQuery(ctx context.Context, c Call, req *pb.RunAg
 func (s *Service) PartitionQuery(ctx context.Context, c Call, req *pb.PartitionQueryRequest) (*pb.PartitionQueryResponse, error) {
 	a, err := s.admit(ctx, c, req, parentOf(req.GetParent()))
 	if err != nil {
+		return nil, err
+	}
+	if err := a.requireBypass(); err != nil {
 		return nil, err
 	}
 	parent, err := wire.ParseParentName(req.GetParent())
