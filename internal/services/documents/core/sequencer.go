@@ -21,12 +21,15 @@ import (
 //  3. the first batch: BEGIN READ COMMITTED, the transaction's timeouts, the written documents'
 //     rows FOR UPDATE in name-key order, and the catalog version and last commit_time;
 //  4. in Go: a transaction's documents as it read them (plan.verify), the preconditions and the
-//     documents after the writes (plan.apply);
-//  5. the second batch, one round trip: (F3) the index entries, then the stamp, which takes the
-//     sequencer row, the documents and changelog (WriteCommit), then COMMIT. A commit with a
-//     REQUEST_TIME transform sends the stamp alone, builds its documents with the commit_time
-//     it returned (plan.apply again), then sends the rest; one that changes nothing takes no
-//     stamp, only a commit_time from the clock (sequencer.unchanged);
+//     documents after the writes (plan.apply), and the index entries they delete and insert
+//     under the database's catalog (plan.indexArgs), which the commit read before the first
+//     batch (catalogs, cached);
+//  5. the second batch, one round trip: the index entries, then the stamp, which takes the
+//     sequencer row and fails unless the catalog is still the commit's, the documents and
+//     changelog (WriteCommit), then COMMIT. A commit with a REQUEST_TIME transform sends the
+//     stamp alone, builds its documents and their entries with the commit_time it returned
+//     (plan.apply again), then sends the rest; one that changes nothing takes no stamp, only a
+//     commit_time from the clock (sequencer.unchanged);
 //  6. after COMMIT returned, and only then, the hub is told (Notifier.Committed).
 //
 // The sequencer row is held from the stamp to the end of COMMIT, so a database's commits become
@@ -69,6 +72,7 @@ type sequencer struct {
 	pool   *pgxpool.Pool
 	size   int
 	notify Notifier
+	cats   *catalogs
 
 	mu    sync.Mutex
 	gates map[dbKey]chan struct{}
@@ -77,8 +81,8 @@ type sequencer struct {
 	afterStamp func()
 }
 
-func newSequencer(pool *pgxpool.Pool, size int, notify Notifier) *sequencer {
-	return &sequencer{pool: pool, size: max(size, 1), notify: notify, gates: map[dbKey]chan struct{}{}}
+func newSequencer(pool *pgxpool.Pool, size int, notify Notifier, cats *catalogs) *sequencer {
+	return &sequencer{pool: pool, size: max(size, 1), notify: notify, cats: cats, gates: map[dbKey]chan struct{}{}}
 }
 
 func (s *sequencer) gate(db DB) chan struct{} {
@@ -108,6 +112,8 @@ func (s *sequencer) commit(ctx context.Context, db DB, p *plan) (CommitResult, e
 		if !errors.Is(err, errRetry) {
 			return res, err
 		}
+		// The catalog may be what changed: read it again.
+		s.cats.drop(db)
 		if attempt == commitAttempts {
 			return CommitResult{}, ErrContention
 		}
@@ -127,9 +133,15 @@ type stampInput struct {
 	deleteSeqs                                                  []int64
 	replaced                                                    [][]byte
 	logKeys, logNames, logBefores, logAfters, logMasks          [][]byte
+	index                                                       indexChanges
 }
 
 func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, error) {
+	// The catalog the commit's index entries are computed with; the stamp checks it is current.
+	cat, err := s.cats.get(ctx, db)
+	if err != nil {
+		return CommitResult{}, err
+	}
 	g := s.gate(db)
 	select {
 	case g <- struct{}{}:
@@ -194,6 +206,10 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 		rollback(conn)
 		return CommitResult{}, errNoDatabase
 	}
+	if !cat.found || catalog.CatalogVersion != cat.version {
+		rollback(conn)
+		return CommitResult{}, errRetry
+	}
 
 	if p.verify != nil {
 		if err := p.verify(locked); err != nil {
@@ -216,7 +232,13 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 	if len(in.logKeys) == 0 {
 		return s.unchanged(ctx, conn, db, p, locked)
 	}
-	return s.stamp(ctx, conn, db, p, locked, catalog.CatalogVersion, &in)
+	// A REQUEST_TIME commit's entries are known once it is stamped; its limits are checked
+	// here, since the time it holds changes no entry's size nor number.
+	if in.index, err = p.indexArgs(cat); err != nil {
+		rollback(conn)
+		return CommitResult{}, err
+	}
+	return s.stamp(ctx, conn, db, p, locked, cat, &in)
 }
 
 // unchanged ends a commit that changes nothing: no seq, and a commit_time from the clock
@@ -247,13 +269,17 @@ func (s *sequencer) unchanged(ctx context.Context, conn *pgx.Conn, db DB, p *pla
 // documents and COMMIT in one round trip. A plan with REQUEST_TIME sends the stamp alone, builds
 // its documents with the commit_time it returned, then sends the rest. It runs to the end
 // whatever the caller does: a cancelled request must not leave an unknown outcome.
-func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, locked map[string]*lockedDoc, catalogVersion int64, in *stampInput) (CommitResult, error) {
+func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, locked map[string]*lockedDoc, cat *catalog, in *stampInput) (CommitResult, error) {
 	ctx = context.WithoutCancel(ctx)
+	catalogVersion := cat.version
 	var seq int64
 	var commitTime time.Time
 	stamped := false
 	b := &pgx.Batch{}
-	// F3 queues the index entries' DeleteIndexEntries and InsertIndexEntries here, before the stamp.
+	if !p.serverTime {
+		// Before the stamp: their cost falls outside the sequencer row (ADR-024 §2.1).
+		queueIndexChanges(ctx, b, db, &in.index)
+	}
 	stampSQL, stampArgs := statement(func(q *queries.Queries) error {
 		_, err := q.StampCommit(ctx, queries.StampCommitParams{ProjectNumber: db.Project, DatabaseID: db.ID, CatalogVersion: catalogVersion})
 		return err
@@ -289,7 +315,13 @@ func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, l
 			rollback(conn)
 			return CommitResult{}, err
 		}
+		var err error
+		if in.index, err = p.indexArgs(cat); err != nil {
+			rollback(conn)
+			return CommitResult{}, err
+		}
 		b = &pgx.Batch{}
+		queueIndexChanges(ctx, b, db, &in.index)
 	}
 	writeSQL, writeArgs := statement(func(q *queries.Queries) error {
 		_, err := q.WriteCommit(ctx, queries.WriteCommitParams{
@@ -327,6 +359,24 @@ func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, l
 		s.notify.Unknown(db, seq)
 	}
 	return CommitResult{}, ErrUnknownOutcome
+}
+
+// queueIndexChanges queues a commit's index statements, those it has.
+func queueIndexChanges(ctx context.Context, b *pgx.Batch, db DB, c *indexChanges) {
+	if len(c.delIDs) > 0 {
+		sql, args := statement(func(q *queries.Queries) error {
+			return q.DeleteIndexEntries(ctx, queries.DeleteIndexEntriesParams{ProjectNumber: db.Project, DatabaseID: db.ID,
+				IndexIds: c.delIDs, Keys: c.delKeys})
+		})
+		b.Queue(sql, args...)
+	}
+	if len(c.insIDs) > 0 {
+		sql, args := statement(func(q *queries.Queries) error {
+			return q.InsertIndexEntries(ctx, queries.InsertIndexEntriesParams{ProjectNumber: db.Project, DatabaseID: db.ID,
+				IndexIds: c.insIDs, Keys: c.insKeys, FullKeys: c.insFullKeys})
+		})
+		b.Queue(sql, args...)
+	}
 }
 
 // rollback ends a failed commit's transaction; a closed connection has none left.

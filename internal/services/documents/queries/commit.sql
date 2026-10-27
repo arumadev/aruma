@@ -22,11 +22,15 @@ ORDER BY name_key
 FOR UPDATE;
 
 -- name: DeleteIndexEntries :exec
--- An index entry the documents' images before the commit had and their images after do not.
+-- An index entry the documents' images before the commit had and their images after do not
+-- (core/indexentries.go). Like InsertIndexEntries it runs before the stamp, under the documents'
+-- row locks, and takes no sequencer row. unnest, whose row estimate is the arrays' length, lets
+-- the planner probe the primary key per entry; generate_subscripts' estimate of 1000 rows made
+-- it hash a scan of the whole table.
 DELETE FROM documents.index_entries e
-USING generate_subscripts(@keys::bytea[], 1) AS x(i)
+USING (SELECT unnest(@index_ids::bigint[]) AS index_id, unnest(@keys::bytea[]) AS key) x
 WHERE e.project_number = @project_number AND e.database_id = @database_id
-    AND e.index_id = (@index_ids::bigint[])[x.i] AND e.key = (@keys::bytea[])[x.i];
+    AND e.index_id = x.index_id AND e.key = x.key;
 
 -- name: InsertIndexEntries :exec
 INSERT INTO documents.index_entries (project_number, database_id, index_id, key, full_key)
@@ -37,13 +41,15 @@ ON CONFLICT DO NOTHING;
 -- name: StampCommit :many
 -- The stamp: the commit's seq and commit_time, taking the sequencer row until COMMIT.
 -- clock_timestamp(), never now(): now() is the transaction's start, before the locks were waited
--- for. No row returned means the catalog changed since ReadCatalog: core rolls back and computes
--- the commit again. A commit whose documents hold its commit_time (a REQUEST_TIME transform)
--- builds them once this returned; any other queues WriteCommit behind it in the same round trip.
+-- for. A catalog changed since the commit computed its index entries fails the statement with
+-- 40001 (conflict_unless, checked again on the row it waited for), so the entries queued before
+-- it never commit: core rolls back and computes the commit again with the new catalog. A commit
+-- whose documents hold its commit_time (a REQUEST_TIME transform) builds them once this
+-- returned; any other queues WriteCommit behind it in the same round trip.
 UPDATE documents.sequencer q SET seq = q.seq + 1,
     last_ts = greatest(clock_timestamp(), q.last_ts + interval '1 microsecond')
 WHERE q.project_number = @project_number AND q.database_id = @database_id
-    AND q.catalog_version = @catalog_version
+    AND documents.conflict_unless(q.catalog_version = @catalog_version)
 RETURNING q.seq, q.last_ts;
 
 -- name: WriteCommit :many
@@ -52,7 +58,10 @@ RETURNING q.seq, q.last_ts;
 -- the changelog. Every write names the update_seq the commit read (inserts expect no row), and
 -- conflict_unless fails the statement with 40001 unless each found it (an empty array arrives as
 -- NULL, hence the coalesce). After a stamp that found the catalog changed, the version differs
--- here too: no row, and nothing written.
+-- here too: no row, and nothing written. The arrays a write joins documents on are unnested in
+-- one select list (zipped, as they have one length): unnest's row estimate is the arrays', so
+-- the planner probes the primary key per document; generate_subscripts' 1000 rows made it hash
+-- a scan of the whole table, a cost that grew with the database.
 WITH s AS (
     SELECT q.seq, q.last_ts FROM documents.sequencer q
     WHERE q.project_number = @project_number AND q.database_id = @database_id
@@ -67,11 +76,11 @@ WITH s AS (
         AND d.name_key = ANY(@replaced_keys::bytea[])
     RETURNING 1
 ), u AS (
-    UPDATE documents.documents d SET doc = (@update_docs::bytea[])[w.i], size = (@update_sizes::integer[])[w.i],
-        update_time = s.last_ts, update_seq = s.seq
-    FROM s, generate_subscripts(@update_keys::bytea[], 1) AS w(i)
+    UPDATE documents.documents d SET doc = w.doc, size = w.size, update_time = s.last_ts, update_seq = s.seq
+    FROM s, (SELECT unnest(@update_keys::bytea[]) AS name_key, unnest(@update_seqs::bigint[]) AS update_seq,
+        unnest(@update_docs::bytea[]) AS doc, unnest(@update_sizes::integer[]) AS size) w
     WHERE d.project_number = @project_number AND d.database_id = @database_id
-        AND d.name_key = (@update_keys::bytea[])[w.i] AND d.update_seq = (@update_seqs::bigint[])[w.i]
+        AND d.name_key = w.name_key AND d.update_seq = w.update_seq
     RETURNING 1
 ), i AS (
     INSERT INTO documents.documents (project_number, database_id, name_key, name, parent_hash, cg_hash,
@@ -85,9 +94,9 @@ WITH s AS (
     RETURNING 1
 ), x AS (
     DELETE FROM documents.documents d
-    USING s, generate_subscripts(@delete_keys::bytea[], 1) AS w(i)
+    USING s, (SELECT unnest(@delete_keys::bytea[]) AS name_key, unnest(@delete_seqs::bigint[]) AS update_seq) w
     WHERE d.project_number = @project_number AND d.database_id = @database_id
-        AND d.name_key = (@delete_keys::bytea[])[w.i] AND d.update_seq = (@delete_seqs::bigint[])[w.i]
+        AND d.name_key = w.name_key AND d.update_seq = w.update_seq
     RETURNING 1
 ), c AS (
     INSERT INTO documents.changelog (project_number, database_id, seq, name_key, name, commit_time,

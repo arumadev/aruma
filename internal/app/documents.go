@@ -41,7 +41,8 @@ type Documents struct {
 	log   *slog.Logger
 
 	instance *documents.Instance
-	// stopJobs ends the jobs Boot started (the retention, the transactions' sweep), and jobsDone
+	// stopJobs ends the jobs Boot started (the retention, the index builds, the transactions'
+	// sweep), and jobsDone
 	// closes when they have.
 	stopJobs context.CancelFunc
 	jobsDone chan struct{}
@@ -113,8 +114,9 @@ func (d *Documents) mount(h *server.Handlers) {
 }
 
 // Boot takes the single-instance lock, trying for up to 30 seconds (ADR-024 §7), opens the
-// store, starts the retention of versions and the changelog (ADR-024 §8), which runs while the
-// lock is held, and the transactions' sweep (ADR-024 §6.3), and gives every project its
+// store, starts the retention of versions and the changelog (ADR-024 §8) and the index build job
+// (ADR-024 §2.5), which run while the lock is held, and the transactions' sweep (ADR-024 §6.3),
+// and gives every project its
 // '(default)' database. Losing the lock drops every open transaction, before o.OnLost runs.
 // Without the lock the rest of Aruma serves and the Document Database answers UNAVAILABLE until
 // the guard takes it. It runs before the listener opens; Close stops what it started.
@@ -132,6 +134,7 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	d.instance = documents.StartInstance(ctx, d.pool.Config().ConnConfig, o)
 	store := documents.NewPGStore(d.pool, documents.Options{
 		CommitConcurrency: d.cfg.CommitConcurrency, Instance: d.instance, Transactions: d.txns,
+		IndexLimits: documents.IndexLimits{Composites: d.cfg.CompositeIndexes, FieldOverrides: d.cfg.FieldOverrides},
 	})
 	d.store.set(store)
 	var jctx context.Context
@@ -140,6 +143,7 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	var jobs sync.WaitGroup
 	jobs.Go(func() { store.RunRetention(jctx, documents.RetentionOptions{Log: d.log}) })
 	jobs.Go(func() { store.RunTransactions(jctx) })
+	jobs.Go(func() { store.RunIndexBuilds(jctx, documents.IndexBuildOptions{Log: d.log}) })
 	go func() {
 		jobs.Wait()
 		close(d.jobsDone)
