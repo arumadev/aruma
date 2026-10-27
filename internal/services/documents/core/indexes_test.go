@@ -131,12 +131,16 @@ func TestCommitIndexLimits(t *testing.T) {
 	long := ParsePath("c/" + strings.Repeat("n", 6144-16-2-1))
 	_, err := s.Commit(t.Context(), testDB, []Write{set(long.String(), value.Map())})
 	wantError(t, err, InvalidArgument, "Index entry is too large.")
-	els := make([]value.Value, 40_001)
+	// 20,000 distinct elements: 40,002 entries as production counts them (f3-index-entries.json
+	// array.n_20000).
+	els := make([]value.Value, 20_000)
 	for i := range els {
 		els[i] = value.Int(int64(i))
 	}
 	_, err = s.Commit(t.Context(), testDB, []Write{set("c/d", doc("t", value.Array(els...)))})
-	wantError(t, err, InvalidArgument, ErrTooManyIndexEntries.Message)
+	if te, ok := errors.AsType[*TooManyIndexEntriesError](err); !ok || te.DocPath() != "/c/d" {
+		t.Fatalf("20,000 elements: %v", err)
+	}
 	if _, _, err := s.Get(t.Context(), testDB, ParsePath("c/d"), ReadOptions{}); err == nil {
 		t.Error("a refused commit wrote its document")
 	}

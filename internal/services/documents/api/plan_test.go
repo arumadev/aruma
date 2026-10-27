@@ -278,21 +278,23 @@ func (g *gen) fields() value.Value {
 }
 
 // path is a document path: in collection c, or in group g under c's documents and under p/x,
-// with ids short or long, so some names pass 2,048 bytes and share long prefixes.
+// with ids short or long, so some names pass 2,048 bytes and share long prefixes. The long ids
+// keep a composite entry of two 1,500-byte strings within production's entry size
+// (core/indexentries.go): 2·D + P at most about 5,100 for a name of size D and its parent's P.
 func (g *gen) path() string {
-	id := func() string {
+	id := func(long int) string {
 		if g.r.IntN(3) == 0 {
-			return strings.Repeat("n", 1450) + fmt.Sprintf("%03d", g.r.IntN(40))
+			return strings.Repeat("n", long) + fmt.Sprintf("%03d", g.r.IntN(40))
 		}
 		return fmt.Sprintf("d%02d", g.r.IntN(40))
 	}
 	switch g.r.IntN(4) {
 	case 0:
-		return "c/" + id() + "/g/" + id()
+		return "c/" + id(900) + "/g/" + id(1137)
 	case 1:
-		return "p/x/g/" + id()
+		return "p/x/g/" + id(1137)
 	}
-	return "c/" + id()
+	return "c/" + id(900)
 }
 
 var (
