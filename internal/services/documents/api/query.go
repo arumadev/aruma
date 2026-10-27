@@ -38,8 +38,10 @@ const scanPage = 300
 const aggregationTimeout = 60 * time.Second
 
 // RunQuery runs a query and sends its results through send: one response per document, each
-// with the read time, the first with the offset's skipped_results; none matching is one response
-// with the read time alone (f0-errors.json rest.not_in_10). With new_transaction the
+// with the read time; when the offset skipped results, a response with the read time and
+// skipped_results alone before them; none sent is one response with the read time, and the
+// skipped results if any (f0-errors.json rest.not_in_10; f3-run-query.json offset.*,
+// limit.0_offset). With new_transaction the
 // transaction's id is the first response, alone (f2-transactions.json
 // read.run_query_new_transaction_*).
 func (s *Service) RunQuery(ctx context.Context, c Call, req *pb.RunQueryRequest, send func(*pb.RunQueryResponse) error) (err error) {
@@ -83,12 +85,13 @@ func (s *Service) RunQuery(ctx context.Context, c Call, req *pb.RunQueryRequest,
 	}
 	sent := false
 	skipped, readTime, err := s.runQuery(ctx, a, parent, q, ro, false, func(d *query.Doc, rt time.Time, skipped int) error {
-		res := &pb.RunQueryResponse{Document: queryDocument(d), ReadTime: timestamppb.New(rt)}
-		if !sent {
-			res.SkippedResults = int32(skipped)
-			sent = true
+		if !sent && skipped > 0 {
+			if err := send(&pb.RunQueryResponse{ReadTime: timestamppb.New(rt), SkippedResults: int32(skipped)}); err != nil {
+				return err
+			}
 		}
-		return send(res)
+		sent = true
+		return send(&pb.RunQueryResponse{Document: queryDocument(d), ReadTime: timestamppb.New(rt)})
 	})
 	if err != nil {
 		return err
@@ -113,7 +116,11 @@ func (s *Service) RunAggregationQuery(ctx context.Context, c Call, req *pb.RunAg
 		return err
 	}
 	saq := req.GetStructuredAggregationQuery()
-	q, err := query.Parse(saq.GetStructuredQuery(), parent)
+	sq, err := query.AggregationQuery(saq)
+	if err != nil {
+		return err
+	}
+	q, err := query.Parse(sq, parent)
 	if err != nil {
 		return err
 	}
@@ -176,6 +183,16 @@ func (s *Service) PartitionQuery(ctx context.Context, c Call, req *pb.PartitionQ
 		return nil, err
 	}
 	if err := query.CheckPartition(req, parent); err != nil {
+		if query.PartitionShapeError(err) {
+			// An order or a filter production does not partition by meets its index rule
+			// first: __name__ descending needs a composite index, a field a collection group
+			// index (f3-partition-query.json invalid.order_desc, order_field, filter_eq).
+			if q, perr := query.Parse(req.GetStructuredQuery(), parent); perr == nil {
+				if ierr := s.checkQuery(ctx, a, q, nil, false); ierr != nil {
+					return nil, ierr
+				}
+			}
+		}
 		return nil, err
 	}
 	if _, err := readOptions(req.GetReadTime(), nil); err != nil {

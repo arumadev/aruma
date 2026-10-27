@@ -143,3 +143,7 @@ func (e *Error) withDetails(details ...proto.Message) *Error {
 	e.Details = append(e.Details, details...)
 	return e
 }
+
+// WithDetails adds google.rpc.Status details (errdetails messages) to e, sent on both surfaces,
+// and returns it.
+func (e *Error) WithDetails(details ...proto.Message) *Error { return e.withDetails(details...) }

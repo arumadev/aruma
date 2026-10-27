@@ -1,14 +1,16 @@
 package query
 
 import (
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/arumadev/aruma/internal/services/documents/index"
 	"github.com/arumadev/aruma/internal/services/documents/value"
 	"github.com/arumadev/aruma/internal/services/documents/wire"
 )
 
-// Production's limits on a query (ADR-025 §1; OF §2b; f0-errors.json).
+// Production's limits on a query (ADR-025 §1; OF §2b; f0-errors.json; f3-query-limits.json).
 const (
 	// maxDisjuncts bounds the filter's disjunctive normal form, and the values of in and
 	// array-contains-any: 30 pass, 31 fail (or_30_same_field, or_31_*, in_30, in_31,
@@ -19,48 +21,92 @@ const (
 	// maxInequalityFields bounds the fields under a range or inequality filter (OF §2b,
 	// "Cloud Firestore limits the number of range or inequality fields to 10").
 	maxInequalityFields = 10
-	// maxQueryElements bounds a disjunct's filters, the orders and the parent's depth together
-	// (OF §2b).
+	// maxQueryElements bounds a disjunct's filters, the explicit orders and the ancestor (one
+	// when the parent is a document) together: 100 filters at the root pass, 101 fail, and 100
+	// under a document fail (filters.eq_100, eq_101, eq_100_subcollection, eq_99_subcollection).
 	maxQueryElements = 100
 )
 
-// The errors of a query's checks. Each carries production's text where it was recorded; the
-// others are provisional (wire/errors.go), the closest form known, until the recorder captures
-// production's (ADR-028 §7.6).
+// The errors of a query's checks, with production's texts (f3-query-limits.json,
+// f3-run-query.json, f0-descendants.json, f1-wire-errors.json).
 var (
-	// f0-descendants.json rest.kindless_with_field_filter, rest.kindless_order_by_field.
-	errGroupNotAtRoot = wire.InvalidArgument("collection group queries are only allowed at the root parent")
-	// f0-descendants.json rest.partition.with_filter: an order after __name__, which an
-	// inequality on another field appends when __name__ is ordered explicitly.
-	errAfterKey = wire.InvalidArgument("order by clause cannot contain more fields after the key")
-	// f1-wire-errors.json json.bad_enum_number: a direction outside the enum.
-	errUnknownDirection = wire.InvalidArgument("Unrecognized ordering.")
-
-	// Provisional texts.
-	errUnknownOperator    = wire.InvalidArgument("Unrecognized operator.")
-	errUnknownCompositeOp = wire.InvalidArgument("Unrecognized composite filter operator.")
-	errEmptyComposite     = wire.InvalidArgument("A composite filter must contain at least one filter.")
-	errEmptyFilter        = wire.InvalidArgument("A filter must set one of composite_filter, field_filter or unary_filter.")
+	errGroupNotAtRoot     = wire.InvalidArgument("collection group queries are only allowed at the root parent")
+	errAfterKey           = wire.InvalidArgument("order by clause cannot contain more fields after the key")
+	errUnknownDirection   = wire.InvalidArgument("Unrecognized ordering.")
+	errUnknownFieldOp     = wire.InvalidArgument("Unknown FieldFilter operator.")
+	errUnknownUnaryOp     = wire.InvalidArgument("Unknown UnaryFilter operator.")
+	errUnaryNoField       = wire.InvalidArgument("Unsupported UnaryFilter operand type (non-FIELD).")
+	errUnknownCompositeOp = wire.InvalidArgument("Unsupported CompositeFilter operator.")
+	errEmptyComposite     = wire.InvalidArgument("Composite filter must have at least one sub-filter.")
+	errEmptyFilter        = wire.InvalidArgument("Unknown Filter type.")
 	errNameNotReference   = wire.InvalidArgument("__key__ filter value must be a Key")
-	errNameArrayFilter    = wire.InvalidArgument("__key__ cannot be used in an array filter")
-	errTwoNotEqual        = wire.InvalidArgument("A query can have at most one 'NOT_IN' or 'NOT_EQUAL' filter.")
+	errNameReserved       = wire.InvalidArgument("the name __key__ is reserved")
+	errTwoNotEqual        = wire.InvalidArgument("Only a single 'NOT_EQUAL', 'NOT_IN', 'IS_NOT_NAN', or 'IS_NOT_NULL' filter allowed per query.")
 	errNotInWithDisjuncts = wire.InvalidArgument("'NOT_IN' cannot be used in the same query with 'IN', 'ARRAY_CONTAINS_ANY' or 'OR'.")
-	errTwoContains        = wire.InvalidArgument("A disjunction can have at most one 'ARRAY_CONTAINS' or 'ARRAY_CONTAINS_ANY' filter.")
-	errInequalityFields   = wire.InvalidArgument("A query can have range and inequality filters on at most 10 fields.")
-	errQueryElements      = wire.InvalidArgument("A query's filters, orders and parent depth together cannot exceed 100.")
-	errNoFrom             = wire.InvalidArgument("A query must select exactly one collection.")
-	errNoQuery            = wire.InvalidArgument("The request has no structured_query.")
-	errNegativeLimit      = wire.InvalidArgument("limit must be non-negative.")
-	errNegativeOffset     = wire.InvalidArgument("offset must be non-negative.")
-	errCursorValues       = wire.InvalidArgument("A cursor cannot have more values than the query has orders.")
-	errCursorName         = wire.InvalidArgument("__key__ cursor value must be a Key")
+	errTwoContains        = wire.InvalidArgument("A maximum of 1 'ARRAY_CONTAINS' filter is allowed per disjunction.")
+	errTwoFrom            = wire.InvalidArgument("StructuredQuery.from cannot have more than one collection selector.")
+	errNoQuery            = wire.InvalidArgument("only structured queries are supported")
+	errNegativeLimit      = wire.InvalidArgument("limit is negative")
+	errNegativeOffset     = wire.InvalidArgument("offset is negative")
+	errCursorValues       = wire.InvalidArgument("Cursor has too many values.")
+	errCursorName         = wire.InvalidArgument("Cursor __key__ value is not a document reference.")
 	errKindlessOrder      = wire.InvalidArgument("kind is required for all orders except __key__ ascending")
 )
 
-// errNeedsArray is an in, not-in or array-contains-any whose operand is not a non-empty array
-// (provisional).
-func errNeedsArray(op index.Operator) error {
-	return wire.InvalidArgument("'" + opNames[op] + "' requires a non-empty ArrayValue.")
+// errKindlessFilter is a kindless query's filter on a field (from.none).
+func errKindlessFilter(p value.FieldPath) error {
+	return wire.InvalidArgument("kind is required for filter: " + p.String())
+}
+
+// errOrderDuplicate is an explicit order on one field twice (order.v_twice, order.v_asc_v_desc).
+func errOrderDuplicate(p value.FieldPath) error {
+	return wire.InvalidArgument("order by clause cannot contain duplicate fields " + p.String())
+}
+
+// errReservedName is a reserved name in a field path (path.reserved, path.reserved_nested).
+func errReservedName(name string) error {
+	return wire.InvalidArgument("Invalid reserved name in field path " + name)
+}
+
+// errInequalityFields names the inequality fields of a query with more than ten. Production
+// lists them in an order of its own set (ineq.11_fields: [f8, f9, f6, f7, f4, f5, f2, f3, f0,
+// f1, f10] for f0 … f10), which no rule known here reproduces; they are listed in the request's
+// order (parity exception inequality-fields-order).
+func errInequalityFields(paths []value.FieldPath) error {
+	names := make([]string, len(paths))
+	for i, p := range paths {
+		names[i] = p.String()
+	}
+	return wire.InvalidArgument("The query contains " + strconv.Itoa(len(paths)) + " distinct inequality fields: [" +
+		strings.Join(names, ", ") + "]. A query may not have more than " + strconv.Itoa(maxInequalityFields) +
+		" distinct inequality fields.")
+}
+
+// errQueryElements is a query over maxQueryElements, with its counts (filters.eq_101,
+// eq_100_subcollection, eq_60_orders_41, orders_101).
+func errQueryElements(filters, orders int, ancestor bool) error {
+	a := "no ancestor filter"
+	if ancestor {
+		a = "one ancestor filter"
+	}
+	return wire.InvalidArgument("The query may not have more than 100 filters + sort orders + ancestor total. Currently there are " +
+		strconv.Itoa(filters) + " filters, " + strconv.Itoa(orders) + " sort orders, and " + a + ".")
+}
+
+// errOtherDatabase is a reference operand of __name__ in another database than the request's
+// (name.eq_other_project): wire's binding text.
+func errOtherDatabase(req, other wire.Database) error {
+	return wire.InvalidArgument("The request was for database '" + req.Name() +
+		"' but was attempting to access database '" + other.Name() + "'")
+}
+
+// errNeedsArray is an in, not-in or array-contains-any whose operand is not an array, or is an
+// empty one, in production's grammar (in.not_array, in.empty).
+func errNeedsArray(op index.Operator, empty bool) error {
+	if empty {
+		return wire.InvalidArgument("'" + opNames[op] + "' requires an non-empty ArrayValue.")
+	}
+	return wire.InvalidArgument("'" + opNames[op] + "' requires an ArrayValue.")
 }
 
 // errTooManyValues is f0-errors.json in_31 and not_in_11's text; array-contains-any's is
@@ -89,12 +135,13 @@ func checkOperand(p value.FieldPath, v value.Value) error {
 	return nil
 }
 
-// checkFilter checks the rules of the whole filter tree: the DNF bound, one not-in or != per
-// query, not-in with no disjunction, at most one array-contains per disjunct, at most ten
-// inequality fields, and the elements of each disjunct with the orders and the parent's depth.
-func checkFilter(f *Filter, orders, depth int) error {
+// checkFilter checks the rules of the whole filter tree: the DNF bound, one not-in, !=,
+// IS_NOT_NULL or IS_NOT_NAN per query, not-in with no disjunction, at most ten inequality
+// fields, at most one array-contains per disjunct, and the filters of each disjunct with the
+// explicit orders and the ancestor.
+func checkFilter(f *Filter, orders int, ancestor bool) error {
 	if f == nil {
-		return checkElements(0, orders, depth)
+		return checkElements(0, orders, ancestor)
 	}
 	n := disjunctCount(f)
 	if n > maxDisjuncts {
@@ -103,7 +150,7 @@ func checkFilter(f *Filter, orders, depth int) error {
 	var notEqual, disjunctive int
 	walk(f, func(l *Filter) {
 		switch l.Op {
-		case index.OpNotIn, index.OpNotEqual:
+		case index.OpNotIn, index.OpNotEqual, index.OpIsNotNull, index.OpIsNotNaN:
 			notEqual++
 		case index.OpIn, index.OpArrayContainsAny, index.OpOr:
 			disjunctive++
@@ -115,8 +162,8 @@ func checkFilter(f *Filter, orders, depth int) error {
 	if notEqual > 0 && hasOp(f, index.OpNotIn) && disjunctive > 0 {
 		return errNotInWithDisjuncts
 	}
-	if len(inequalityPaths(f)) > maxInequalityFields {
-		return errInequalityFields
+	if paths := requestInequalityPaths(f); len(paths) > maxInequalityFields {
+		return errInequalityFields(paths)
 	}
 	for _, conj := range disjuncts(f) {
 		contains := 0
@@ -128,16 +175,32 @@ func checkFilter(f *Filter, orders, depth int) error {
 		if contains > 1 {
 			return errTwoContains
 		}
-		if err := checkElements(len(conj), orders, depth); err != nil {
+		if err := checkElements(len(conj), orders, ancestor); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkElements(filters, orders, depth int) error {
-	if filters+orders+depth > maxQueryElements {
-		return errQueryElements
+// requestInequalityPaths are the inequality fields of the tree but __name__, each once, in the
+// order the request first names them.
+func requestInequalityPaths(f *Filter) []value.FieldPath {
+	var out []value.FieldPath
+	walk(f, func(l *Filter) {
+		if inequality(l.Op) && !l.Path.IsDocumentID() && !slices.ContainsFunc(out, func(p value.FieldPath) bool { return slices.Equal(p, l.Path) }) {
+			out = append(out, l.Path)
+		}
+	})
+	return out
+}
+
+func checkElements(filters, orders int, ancestor bool) error {
+	n := filters + orders
+	if ancestor {
+		n++
+	}
+	if n > maxQueryElements {
+		return errQueryElements(filters, orders, ancestor)
 	}
 	return nil
 }

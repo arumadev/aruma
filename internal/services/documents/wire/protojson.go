@@ -2,6 +2,7 @@ package wire
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/base64"
 	"encoding/json"
 	"maps"
@@ -69,6 +70,43 @@ func UnmarshalREST(body []byte, m proto.Message, pathFields ...string) error {
 		for _, f := range pathFields {
 			d.errs = append(d.errs, `Invalid JSON payload received. Unknown name "`+f+`": Root element must be a message.`)
 		}
+	}
+	return d.err()
+}
+
+// UnmarshalUnder is the front end's answer to a body it reads as a message of another binding
+// than the one sent, the binding's body field named field: as a document under "document" for
+// a query method on a collection path, which its route binds to (f3-run-query.json
+// cg.under_collection, f3-partition-query.json invalid.parent_collection: "Invalid JSON payload
+// received. Unknown name "structuredQuery" at 'document': Cannot find field."). Each member
+// that as does not hold is a line, in the order of meant's fields, the message the sender meant,
+// as an SDK sends them (the recordings keep a body's members sorted). It is nil when every
+// member is one of as's, or the body is not an object.
+func UnmarshalUnder(body []byte, field string, as, meant proto.Message) error {
+	if len(bytes.TrimSpace(body)) == 0 {
+		return nil
+	}
+	n, err := parseJSON(body)
+	if err != nil || n.kind != jsonObject {
+		return nil
+	}
+	var keys []string
+	for _, mem := range n.members {
+		if findField(as.ProtoReflect().Descriptor(), mem.key) == nil {
+			keys = append(keys, mem.key)
+		}
+	}
+	md := meant.ProtoReflect().Descriptor()
+	number := func(key string) protoreflect.FieldNumber {
+		if fd := findField(md, key); fd != nil {
+			return fd.Number()
+		}
+		return math.MaxInt32
+	}
+	slices.SortStableFunc(keys, func(a, b string) int { return cmp.Compare(number(a), number(b)) })
+	var d decoder
+	for _, k := range keys {
+		d.unknownName(k, field, "Cannot find field.")
 	}
 	return d.err()
 }
@@ -605,6 +643,13 @@ func decodeBase64(s string) ([]byte, bool) {
 	return nil, false
 }
 
+// wrappers are the google.protobuf wrapper types.
+var wrappers = map[protoreflect.FullName]bool{
+	"google.protobuf.DoubleValue": true, "google.protobuf.FloatValue": true, "google.protobuf.Int64Value": true,
+	"google.protobuf.UInt64Value": true, "google.protobuf.Int32Value": true, "google.protobuf.UInt32Value": true,
+	"google.protobuf.BoolValue": true, "google.protobuf.StringValue": true, "google.protobuf.BytesValue": true,
+}
+
 // wellKnown reads a google.protobuf type. Timestamps are read here, for production's messages;
 // the others (Duration, FieldMask, the wrappers, Struct and Value, Empty) by protojson, any
 // failure reported as an invalid value of the type.
@@ -623,6 +668,27 @@ func (d *decoder) wellKnown(m protoreflect.Message, n *jsonNode, path, jsonName 
 		}
 		m.Set(md.Fields().ByName("seconds"), protoreflect.ValueOfInt64(s))
 		m.Set(md.Fields().ByName("nanos"), protoreflect.ValueOfInt32(ns))
+		return
+	}
+	if wrappers[md.FullName()] {
+		// The front end reads a wrapper as the message it is, {"value": n}, as well as by its
+		// scalar, which it then names by the value field: limit 2147483648 is "Invalid value at
+		// 'structured_query.limit.value' (TYPE_INT32)" (f3-query-limits.json limit.over_int32,
+		// f3-run-query.json limit.wrapper_object, f3-aggregations.json count.up_to_object).
+		vfd := md.Fields().ByName("value")
+		if n.kind == jsonObject {
+			for _, mem := range n.members {
+				if fd := findField(md, mem.key); fd != nil {
+					d.member(m, fd, mem.val, path, mem.key)
+				} else {
+					d.unknownName(mem.key, path, "Cannot find field.")
+				}
+			}
+			return
+		}
+		if pv, ok := d.scalar(vfd, n, joinPath(path, "value"), jsonName, path); ok {
+			m.Set(vfd, pv)
+		}
 		return
 	}
 	var b strings.Builder

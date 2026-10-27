@@ -401,6 +401,9 @@ func (h *Handler) batchGet(w http.ResponseWriter, r *http.Request, rt route) {
 // f0-errors.json: bodyIsArray). The parent is the path: the documents root or a document.
 func (h *Handler) runQuery(w http.ResponseWriter, r *http.Request, rt route) {
 	req := &pb.RunQueryRequest{}
+	if onCollection(w, r, rt, req) {
+		return
+	}
 	if err := body(r, req, "parent"); err != nil {
 		wire.WriteREST(w, err, true)
 		return
@@ -414,6 +417,9 @@ func (h *Handler) runQuery(w http.ResponseWriter, r *http.Request, rt route) {
 // runAggregationQuery answers an array of responses, or an array holding the error.
 func (h *Handler) runAggregationQuery(w http.ResponseWriter, r *http.Request, rt route) {
 	req := &pb.RunAggregationQueryRequest{}
+	if onCollection(w, r, rt, req) {
+		return
+	}
 	if err := body(r, req, "parent"); err != nil {
 		wire.WriteREST(w, err, true)
 		return
@@ -427,6 +433,9 @@ func (h *Handler) runAggregationQuery(w http.ResponseWriter, r *http.Request, rt
 // partitionQuery answers one object, not an array (f0-descendants.json rest.partition.*).
 func (h *Handler) partitionQuery(w http.ResponseWriter, r *http.Request, rt route) {
 	req := &pb.PartitionQueryRequest{}
+	if onCollection(w, r, rt, req) {
+		return
+	}
 	if err := body(r, req, "parent"); err != nil {
 		write(w, nil, err)
 		return
@@ -434,6 +443,29 @@ func (h *Handler) partitionQuery(w http.ResponseWriter, r *http.Request, rt rout
 	req.Parent = rt.name()
 	res, err := h.svc.PartitionQuery(r.Context(), call(r), req)
 	write(w, res, err)
+}
+
+// onCollection answers a query method on a collection path as the front end does: its route
+// binds there to a method whose body is a document, so the query's members are unknown names
+// at 'document', in one object, not an array (f3-run-query.json cg.under_collection,
+// f3-query-limits.json from.parent_collection, f3-partition-query.json
+// invalid.parent_collection). It reports whether it answered; a body a document can hold is
+// left to the query method, which refuses the parent.
+func onCollection(w http.ResponseWriter, r *http.Request, rt route, meant proto.Message) bool {
+	if len(rt.rel)%2 == 0 {
+		return false
+	}
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		write(w, nil, bodyError(err))
+		return true
+	}
+	r.Body = io.NopCloser(bytes.NewReader(b))
+	if err := wire.UnmarshalUnder(b, "document", &pb.Document{}, meant); err != nil {
+		write(w, nil, err)
+		return true
+	}
+	return false
 }
 
 // stream answers a streaming method with an array of its responses, written as package api
