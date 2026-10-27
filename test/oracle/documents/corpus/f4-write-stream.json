@@ -1,0 +1,3063 @@
+{
+  "cases": [
+    {
+      "description": "Handshake, then batches: set, update with mask, delete, update_transforms of every kind, the legacy transform, an empty batch, and the stream_token of each response",
+      "frames": [
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "stream": 0,
+          "tMs": 1
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 1,
+          "stream": 0,
+          "tMs": 267
+        },
+        {
+          "action": "batch 1: set a, update b with mask (creates), delete of a missing document",
+          "dir": "action",
+          "seq": 2,
+          "stream": 0,
+          "tMs": 2101
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "keep": {
+                      "booleanValue": true
+                    },
+                    "n": {
+                      "integerValue": "1"
+                    },
+                    "s": {
+                      "stringValue": "x"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/a"
+                }
+              },
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/b"
+                },
+                "updateMask": {
+                  "fieldPaths": [
+                    "n"
+                  ]
+                }
+              },
+              {
+                "delete": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/gone"
+              }
+            ]
+          },
+          "seq": 3,
+          "stream": 0,
+          "tMs": 2101
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t1>",
+            "streamToken": "<bytes b2 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t1>"
+              },
+              {
+                "updateTime": "<ts t1>"
+              },
+              {}
+            ]
+          },
+          "seq": 4,
+          "stream": 0,
+          "tMs": 2412
+        },
+        {
+          "action": "batch 2: update with six update_transforms; the legacy transform write on b",
+          "dir": "action",
+          "seq": 5,
+          "stream": 0,
+          "tMs": 4250
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b2 len=11>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "5"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/a"
+                },
+                "updateMask": {
+                  "fieldPaths": [
+                    "n"
+                  ]
+                },
+                "updateTransforms": [
+                  {
+                    "fieldPath": "ts",
+                    "setToServerValue": "REQUEST_TIME"
+                  },
+                  {
+                    "fieldPath": "inc",
+                    "increment": {
+                      "integerValue": "2"
+                    }
+                  },
+                  {
+                    "appendMissingElements": {
+                      "values": [
+                        {
+                          "integerValue": "1"
+                        },
+                        {
+                          "integerValue": "2"
+                        }
+                      ]
+                    },
+                    "fieldPath": "union"
+                  },
+                  {
+                    "fieldPath": "remove",
+                    "removeAllFromArray": {
+                      "values": [
+                        {
+                          "integerValue": "9"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "fieldPath": "mx",
+                    "maximum": {
+                      "integerValue": "7"
+                    }
+                  },
+                  {
+                    "fieldPath": "mn",
+                    "minimum": {
+                      "integerValue": "3"
+                    }
+                  }
+                ]
+              },
+              {
+                "transform": {
+                  "document": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/b",
+                  "fieldTransforms": [
+                    {
+                      "fieldPath": "legacy",
+                      "setToServerValue": "REQUEST_TIME"
+                    },
+                    {
+                      "fieldPath": "legacyInc",
+                      "increment": {
+                        "integerValue": "1"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "seq": 6,
+          "stream": 0,
+          "tMs": 4250
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t3>",
+            "streamToken": "<bytes b3 len=11>",
+            "writeResults": [
+              {
+                "transformResults": [
+                  {
+                    "timestampValue": "<ts t2>"
+                  },
+                  {
+                    "integerValue": "2"
+                  },
+                  {
+                    "nullValue": "NULL_VALUE"
+                  },
+                  {
+                    "nullValue": "NULL_VALUE"
+                  },
+                  {
+                    "integerValue": "7"
+                  },
+                  {
+                    "integerValue": "3"
+                  }
+                ],
+                "updateTime": "<ts t3>"
+              },
+              {
+                "transformResults": [
+                  {
+                    "timestampValue": "<ts t2>"
+                  },
+                  {
+                    "integerValue": "1"
+                  }
+                ],
+                "updateTime": "<ts t3>"
+              }
+            ]
+          },
+          "seq": 7,
+          "stream": 0,
+          "tMs": 4552
+        },
+        {
+          "action": "batch 3: a transform-only update (empty fields, empty mask) on a new document",
+          "dir": "action",
+          "seq": 8,
+          "stream": 0,
+          "tMs": 6425
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b3 len=11>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {},
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/t"
+                },
+                "updateMask": {
+                  "fieldPaths": []
+                },
+                "updateTransforms": [
+                  {
+                    "fieldPath": "ts",
+                    "setToServerValue": "REQUEST_TIME"
+                  }
+                ]
+              }
+            ]
+          },
+          "seq": 9,
+          "stream": 0,
+          "tMs": 6427
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t5>",
+            "streamToken": "<bytes b4 len=11>",
+            "writeResults": [
+              {
+                "transformResults": [
+                  {
+                    "timestampValue": "<ts t4>"
+                  }
+                ],
+                "updateTime": "<ts t5>"
+              }
+            ]
+          },
+          "seq": 10,
+          "stream": 0,
+          "tMs": 6689
+        },
+        {
+          "action": "batch 4: delete a, b, t",
+          "dir": "action",
+          "seq": 11,
+          "stream": 0,
+          "tMs": 8510
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b4 len=11>",
+            "writes": [
+              {
+                "delete": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/a"
+              },
+              {
+                "delete": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/b"
+              },
+              {
+                "delete": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/t"
+              }
+            ]
+          },
+          "seq": 12,
+          "stream": 0,
+          "tMs": 8510
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t6>",
+            "streamToken": "<bytes b5 len=11>",
+            "writeResults": [
+              {},
+              {},
+              {}
+            ]
+          },
+          "seq": 13,
+          "stream": 0,
+          "tMs": 8802
+        },
+        {
+          "action": "batch 5: empty writes (after four good batches)",
+          "dir": "action",
+          "seq": 14,
+          "stream": 0,
+          "tMs": 10637
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b5 len=11>",
+            "writes": []
+          },
+          "seq": 15,
+          "stream": 0,
+          "tMs": 10637
+        },
+        {
+          "dir": "end",
+          "seq": 16,
+          "status": {
+            "code": 1,
+            "message": "The operation was cancelled.",
+            "status": "CANCELLED"
+          },
+          "stream": 0,
+          "tMs": 11177
+        }
+      ],
+      "id": "write.handshake-and-batches",
+      "labels": {
+        "bytes": {
+          "b1": {
+            "hex": "191068420281f4b5b5",
+            "length": 9
+          },
+          "b2": {
+            "hex": "1001191068420281f4b5b5",
+            "length": 11
+          },
+          "b3": {
+            "hex": "1002191068420281f4b5b5",
+            "length": 11
+          },
+          "b4": {
+            "hex": "1003191068420281f4b5b5",
+            "length": 11
+          },
+          "b5": {
+            "hex": "1004191068420281f4b5b5",
+            "length": 11
+          }
+        },
+        "streamIds": {
+          "s1": {
+            "length": 1
+          }
+        },
+        "timestamps": {
+          "t1": {
+            "offsetMicrosFromT1": 0
+          },
+          "t2": {
+            "offsetMicrosFromT1": 2103046
+          },
+          "t3": {
+            "offsetMicrosFromT1": 2135239
+          },
+          "t4": {
+            "offsetMicrosFromT1": 4264046
+          },
+          "t5": {
+            "offsetMicrosFromT1": 4283930
+          },
+          "t6": {
+            "offsetMicrosFromT1": 6397054
+          }
+        }
+      },
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": [],
+      "streams": 1,
+      "transport": "grpc"
+    },
+    {
+      "description": "An empty batch (writes: []) with the handshake token straight after the handshake, then a good batch on the same stream",
+      "frames": [
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "stream": 0,
+          "tMs": 1
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 1,
+          "stream": 0,
+          "tMs": 278
+        },
+        {
+          "action": "empty writes with the handshake token",
+          "dir": "action",
+          "seq": 2,
+          "stream": 0,
+          "tMs": 2094
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": []
+          },
+          "seq": 3,
+          "stream": 0,
+          "tMs": 2094
+        },
+        {
+          "dir": "end",
+          "seq": 4,
+          "status": {
+            "code": 1,
+            "message": "The operation was cancelled.",
+            "status": "CANCELLED"
+          },
+          "stream": 0,
+          "tMs": 2346
+        }
+      ],
+      "id": "write.empty-first",
+      "labels": {
+        "bytes": {
+          "b1": {
+            "hex": "191068420281f4b5b5",
+            "length": 9
+          }
+        },
+        "streamIds": {
+          "s1": {
+            "length": 1
+          }
+        },
+        "timestamps": {}
+      },
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": [],
+      "streams": 1,
+      "transport": "grpc"
+    },
+    {
+      "description": "Three batches sent back to back before any response, all with the handshake token; then three more each with the token of the latest response so far",
+      "frames": [
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "stream": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 1,
+          "stream": 0,
+          "tMs": 263
+        },
+        {
+          "action": "pipelined 1",
+          "dir": "action",
+          "seq": 2,
+          "stream": 0,
+          "tMs": 2091
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/p1"
+                }
+              }
+            ]
+          },
+          "seq": 3,
+          "stream": 0,
+          "tMs": 2091
+        },
+        {
+          "action": "pipelined 2",
+          "dir": "action",
+          "seq": 4,
+          "stream": 0,
+          "tMs": 2095
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/p2"
+                }
+              }
+            ]
+          },
+          "seq": 5,
+          "stream": 0,
+          "tMs": 2095
+        },
+        {
+          "action": "pipelined 3",
+          "dir": "action",
+          "seq": 6,
+          "stream": 0,
+          "tMs": 2095
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "3"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/p3"
+                }
+              }
+            ]
+          },
+          "seq": 7,
+          "stream": 0,
+          "tMs": 2095
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t1>",
+            "streamToken": "<bytes b2 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t1>"
+              }
+            ]
+          },
+          "seq": 8,
+          "stream": 0,
+          "tMs": 2391
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t2>",
+            "streamToken": "<bytes b3 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t2>"
+              }
+            ]
+          },
+          "seq": 9,
+          "stream": 0,
+          "tMs": 2399
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t3>",
+            "streamToken": "<bytes b4 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t3>"
+              }
+            ]
+          },
+          "seq": 10,
+          "stream": 0,
+          "tMs": 2419
+        },
+        {
+          "action": "sequential 4 (token of the latest response)",
+          "dir": "action",
+          "seq": 11,
+          "stream": 0,
+          "tMs": 4255
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b4 len=11>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "11"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/p1"
+                }
+              }
+            ]
+          },
+          "seq": 12,
+          "stream": 0,
+          "tMs": 4255
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t4>",
+            "streamToken": "<bytes b5 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t4>"
+              }
+            ]
+          },
+          "seq": 13,
+          "stream": 0,
+          "tMs": 4537
+        },
+        {
+          "action": "sequential 5",
+          "dir": "action",
+          "seq": 14,
+          "stream": 0,
+          "tMs": 6342
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b5 len=11>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "12"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/p2"
+                }
+              }
+            ]
+          },
+          "seq": 15,
+          "stream": 0,
+          "tMs": 6343
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t5>",
+            "streamToken": "<bytes b6 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t5>"
+              }
+            ]
+          },
+          "seq": 16,
+          "stream": 0,
+          "tMs": 6596
+        },
+        {
+          "dir": "end",
+          "seq": 17,
+          "status": {
+            "code": 0,
+            "message": "",
+            "status": "OK"
+          },
+          "stream": 0,
+          "tMs": 8623
+        }
+      ],
+      "id": "write.pipelined",
+      "labels": {
+        "bytes": {
+          "b1": {
+            "hex": "191068420281f4b5b5",
+            "length": 9
+          },
+          "b2": {
+            "hex": "1001191068420281f4b5b5",
+            "length": 11
+          },
+          "b3": {
+            "hex": "1002191068420281f4b5b5",
+            "length": 11
+          },
+          "b4": {
+            "hex": "1003191068420281f4b5b5",
+            "length": 11
+          },
+          "b5": {
+            "hex": "1004191068420281f4b5b5",
+            "length": 11
+          },
+          "b6": {
+            "hex": "1005191068420281f4b5b5",
+            "length": 11
+          }
+        },
+        "streamIds": {
+          "s1": {
+            "length": 1
+          }
+        },
+        "timestamps": {
+          "t1": {
+            "offsetMicrosFromT1": 0
+          },
+          "t2": {
+            "offsetMicrosFromT1": 26415
+          },
+          "t3": {
+            "offsetMicrosFromT1": 50562
+          },
+          "t4": {
+            "offsetMicrosFromT1": 2136839
+          },
+          "t5": {
+            "offsetMicrosFromT1": 4220539
+          }
+        }
+      },
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": [],
+      "streams": 1,
+      "transport": "grpc"
+    },
+    {
+      "description": "The first request carries writes (no handshake), and a handshake request sent a second time on a started stream",
+      "frames": [
+        {
+          "action": "first request with writes and no stream_id / stream_token",
+          "dir": "action",
+          "seq": 0,
+          "stream": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "send",
+          "kind": "write_request_no_stream",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/n1"
+                }
+              }
+            ]
+          },
+          "seq": 1,
+          "stream": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "end",
+          "seq": 2,
+          "status": {
+            "code": 3,
+            "message": "the first request in a stream cannot contain writes",
+            "status": "INVALID_ARGUMENT"
+          },
+          "stream": 0,
+          "tMs": 260
+        },
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 3,
+          "stream": 1,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 4,
+          "stream": 1,
+          "tMs": 256
+        },
+        {
+          "action": "second handshake request ({database} only) on the started stream",
+          "dir": "action",
+          "seq": 5,
+          "stream": 1,
+          "tMs": 2067
+        },
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 6,
+          "stream": 1,
+          "tMs": 2067
+        },
+        {
+          "dir": "end",
+          "seq": 7,
+          "status": {
+            "code": 3,
+            "message": "missing stream token",
+            "status": "INVALID_ARGUMENT"
+          },
+          "stream": 1,
+          "tMs": 2304
+        },
+        {
+          "action": "a batch after the second handshake, with the first token",
+          "dir": "action",
+          "seq": 8,
+          "stream": 1,
+          "tMs": 2313
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/n2"
+                }
+              }
+            ]
+          },
+          "seq": 9,
+          "stream": 1,
+          "tMs": 2313
+        }
+      ],
+      "id": "write.no-handshake",
+      "labels": {
+        "bytes": {
+          "b1": {
+            "hex": "191068420281f4b5b5",
+            "length": 9
+          }
+        },
+        "streamIds": {
+          "s1": {
+            "length": 1
+          }
+        },
+        "timestamps": {}
+      },
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": [],
+      "streams": 2,
+      "transport": "grpc"
+    },
+    {
+      "description": "A batch with current_document exists:true on a missing document, between two good batches",
+      "frames": [
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "stream": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 1,
+          "stream": 0,
+          "tMs": 265
+        },
+        {
+          "action": "good batch before the failure",
+          "dir": "action",
+          "seq": 2,
+          "stream": 0,
+          "tMs": 2073
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/ok1"
+                }
+              }
+            ]
+          },
+          "seq": 3,
+          "stream": 0,
+          "tMs": 2073
+        },
+        {
+          "action": "the failing batch",
+          "dir": "action",
+          "seq": 4,
+          "stream": 0,
+          "tMs": 2073
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "currentDocument": {
+                  "exists": true
+                },
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/missing"
+                }
+              }
+            ]
+          },
+          "seq": 5,
+          "stream": 0,
+          "tMs": 2073
+        },
+        {
+          "action": "good batch pipelined after the failure",
+          "dir": "action",
+          "seq": 6,
+          "stream": 0,
+          "tMs": 2073
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/ok2"
+                }
+              }
+            ]
+          },
+          "seq": 7,
+          "stream": 0,
+          "tMs": 2073
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t1>",
+            "streamToken": "<bytes b2 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t1>"
+              }
+            ]
+          },
+          "seq": 8,
+          "stream": 0,
+          "tMs": 2390
+        },
+        {
+          "dir": "end",
+          "seq": 9,
+          "status": {
+            "code": 5,
+            "message": "No document to update: projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/missing",
+            "status": "NOT_FOUND"
+          },
+          "stream": 0,
+          "tMs": 2410
+        }
+      ],
+      "id": "write.precondition-exists",
+      "labels": {
+        "bytes": {
+          "b1": {
+            "hex": "191068420281f4b5b5",
+            "length": 9
+          },
+          "b2": {
+            "hex": "1001191068420281f4b5b5",
+            "length": 11
+          }
+        },
+        "streamIds": {
+          "s1": {
+            "length": 1
+          }
+        },
+        "timestamps": {
+          "t1": {
+            "offsetMicrosFromT1": 0
+          }
+        }
+      },
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": [],
+      "streams": 1,
+      "transport": "grpc"
+    },
+    {
+      "description": "A batch with current_document exists:false on an existing document",
+      "frames": [
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "stream": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 1,
+          "stream": 0,
+          "tMs": 265
+        },
+        {
+          "action": "good batch before the failure",
+          "dir": "action",
+          "seq": 2,
+          "stream": 0,
+          "tMs": 2089
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/ok1"
+                }
+              }
+            ]
+          },
+          "seq": 3,
+          "stream": 0,
+          "tMs": 2089
+        },
+        {
+          "action": "the failing batch",
+          "dir": "action",
+          "seq": 4,
+          "stream": 0,
+          "tMs": 2089
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "currentDocument": {
+                  "exists": false
+                },
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/there"
+                }
+              }
+            ]
+          },
+          "seq": 5,
+          "stream": 0,
+          "tMs": 2089
+        },
+        {
+          "action": "good batch pipelined after the failure",
+          "dir": "action",
+          "seq": 6,
+          "stream": 0,
+          "tMs": 2089
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/ok2"
+                }
+              }
+            ]
+          },
+          "seq": 7,
+          "stream": 0,
+          "tMs": 2089
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t2>",
+            "streamToken": "<bytes b2 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t1>"
+              }
+            ]
+          },
+          "seq": 8,
+          "stream": 0,
+          "tMs": 2345
+        },
+        {
+          "dir": "end",
+          "seq": 9,
+          "status": {
+            "code": 6,
+            "message": "Document already exists: projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/there",
+            "status": "ALREADY_EXISTS"
+          },
+          "stream": 0,
+          "tMs": 2369
+        }
+      ],
+      "id": "write.precondition-not-exists",
+      "labels": {
+        "bytes": {
+          "b1": {
+            "hex": "191068420281f4b5b5",
+            "length": 9
+          },
+          "b2": {
+            "hex": "1001191068420281f4b5b5",
+            "length": 11
+          }
+        },
+        "streamIds": {
+          "s1": {
+            "length": 1
+          }
+        },
+        "timestamps": {
+          "t1": {
+            "offsetMicrosFromT1": 0
+          },
+          "t2": {
+            "offsetMicrosFromT1": 4722941
+          }
+        }
+      },
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": [
+        {
+          "update": {
+            "fields": {
+              "n": {
+                "integerValue": "1"
+              }
+            },
+            "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/there"
+          }
+        }
+      ],
+      "streams": 1,
+      "transport": "grpc"
+    },
+    {
+      "description": "A batch with a current_document update_time that does not match",
+      "frames": [
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "stream": 0,
+          "tMs": 1
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 1,
+          "stream": 0,
+          "tMs": 264
+        },
+        {
+          "action": "good batch before the failure",
+          "dir": "action",
+          "seq": 2,
+          "stream": 0,
+          "tMs": 2100
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/ok1"
+                }
+              }
+            ]
+          },
+          "seq": 3,
+          "stream": 0,
+          "tMs": 2100
+        },
+        {
+          "action": "the failing batch",
+          "dir": "action",
+          "seq": 4,
+          "stream": 0,
+          "tMs": 2100
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "currentDocument": {
+                  "updateTime": "<ts t1>"
+                },
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/there2"
+                }
+              }
+            ]
+          },
+          "seq": 5,
+          "stream": 0,
+          "tMs": 2100
+        },
+        {
+          "action": "good batch pipelined after the failure",
+          "dir": "action",
+          "seq": 6,
+          "stream": 0,
+          "tMs": 2100
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/ok2"
+                }
+              }
+            ]
+          },
+          "seq": 7,
+          "stream": 0,
+          "tMs": 2100
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t3>",
+            "streamToken": "<bytes b2 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t2>"
+              }
+            ]
+          },
+          "seq": 8,
+          "stream": 0,
+          "tMs": 2351
+        },
+        {
+          "dir": "end",
+          "seq": 9,
+          "status": {
+            "code": 9,
+            "message": "the stored version (1793098190174164) does not match the required base version (1000000000)",
+            "status": "FAILED_PRECONDITION"
+          },
+          "stream": 0,
+          "tMs": 2364
+        }
+      ],
+      "id": "write.precondition-update-time",
+      "labels": {
+        "bytes": {
+          "b1": {
+            "hex": "191068420281f4b5b5",
+            "length": 9
+          },
+          "b2": {
+            "hex": "1001191068420281f4b5b5",
+            "length": 11
+          }
+        },
+        "streamIds": {
+          "s1": {
+            "length": 1
+          }
+        },
+        "timestamps": {
+          "t1": {
+            "offsetMicrosFromT1": 0
+          },
+          "t2": {
+            "offsetMicrosFromT1": 1793097183580459
+          },
+          "t3": {
+            "offsetMicrosFromT1": 1793097192303813
+          }
+        }
+      },
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": [
+        {
+          "update": {
+            "fields": {
+              "n": {
+                "integerValue": "1"
+              }
+            },
+            "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/there2"
+          }
+        }
+      ],
+      "streams": 1,
+      "transport": "grpc"
+    },
+    {
+      "description": "A batch with an invalid write (a reserved field name __bad__)",
+      "frames": [
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "stream": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 1,
+          "stream": 0,
+          "tMs": 275
+        },
+        {
+          "action": "good batch before the failure",
+          "dir": "action",
+          "seq": 2,
+          "stream": 0,
+          "tMs": 2095
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/ok1"
+                }
+              }
+            ]
+          },
+          "seq": 3,
+          "stream": 0,
+          "tMs": 2095
+        },
+        {
+          "action": "the failing batch",
+          "dir": "action",
+          "seq": 4,
+          "stream": 0,
+          "tMs": 2095
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "__bad__": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/bad"
+                }
+              }
+            ]
+          },
+          "seq": 5,
+          "stream": 0,
+          "tMs": 2096
+        },
+        {
+          "action": "good batch pipelined after the failure",
+          "dir": "action",
+          "seq": 6,
+          "stream": 0,
+          "tMs": 2096
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/ok2"
+                }
+              }
+            ]
+          },
+          "seq": 7,
+          "stream": 0,
+          "tMs": 2096
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t2>",
+            "streamToken": "<bytes b2 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t1>"
+              }
+            ]
+          },
+          "seq": 8,
+          "stream": 0,
+          "tMs": 2353
+        },
+        {
+          "dir": "end",
+          "seq": 9,
+          "status": {
+            "code": 3,
+            "message": "field name __bad__ is reserved",
+            "status": "INVALID_ARGUMENT"
+          },
+          "stream": 0,
+          "tMs": 2373
+        }
+      ],
+      "id": "write.invalid-argument",
+      "labels": {
+        "bytes": {
+          "b1": {
+            "hex": "191068420281f4b5b5",
+            "length": 9
+          },
+          "b2": {
+            "hex": "1001191068420281f4b5b5",
+            "length": 11
+          }
+        },
+        "streamIds": {
+          "s1": {
+            "length": 1
+          }
+        },
+        "timestamps": {
+          "t1": {
+            "offsetMicrosFromT1": 0
+          },
+          "t2": {
+            "offsetMicrosFromT1": 12724840
+          }
+        }
+      },
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": [],
+      "streams": 1,
+      "transport": "grpc"
+    },
+    {
+      "description": "A batch whose update_transforms increment a field with a string value",
+      "frames": [
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "stream": 0,
+          "tMs": 1
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 1,
+          "stream": 0,
+          "tMs": 246
+        },
+        {
+          "action": "good batch before the failure",
+          "dir": "action",
+          "seq": 2,
+          "stream": 0,
+          "tMs": 2052
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/ok1"
+                }
+              }
+            ]
+          },
+          "seq": 3,
+          "stream": 0,
+          "tMs": 2052
+        },
+        {
+          "action": "the failing batch",
+          "dir": "action",
+          "seq": 4,
+          "stream": 0,
+          "tMs": 2052
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "g": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/str"
+                },
+                "updateMask": {
+                  "fieldPaths": [
+                    "g"
+                  ]
+                },
+                "updateTransforms": [
+                  {
+                    "fieldPath": "f",
+                    "increment": {
+                      "integerValue": "1"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "seq": 5,
+          "stream": 0,
+          "tMs": 2052
+        },
+        {
+          "action": "good batch pipelined after the failure",
+          "dir": "action",
+          "seq": 6,
+          "stream": 0,
+          "tMs": 2052
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/ok2"
+                }
+              }
+            ]
+          },
+          "seq": 7,
+          "stream": 0,
+          "tMs": 2052
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t2>",
+            "streamToken": "<bytes b2 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t1>"
+              }
+            ]
+          },
+          "seq": 8,
+          "stream": 0,
+          "tMs": 2367
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t3>",
+            "streamToken": "<bytes b3 len=11>",
+            "writeResults": [
+              {
+                "transformResults": [
+                  {
+                    "integerValue": "1"
+                  }
+                ],
+                "updateTime": "<ts t3>"
+              }
+            ]
+          },
+          "seq": 9,
+          "stream": 0,
+          "tMs": 2383
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t4>",
+            "streamToken": "<bytes b4 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t4>"
+              }
+            ]
+          },
+          "seq": 10,
+          "stream": 0,
+          "tMs": 2406
+        },
+        {
+          "dir": "end",
+          "seq": 11,
+          "status": {
+            "code": 0,
+            "message": "",
+            "status": "OK"
+          },
+          "stream": 0,
+          "tMs": 5940
+        }
+      ],
+      "id": "write.transform-on-missing",
+      "labels": {
+        "bytes": {
+          "b1": {
+            "hex": "191068420281f4b5b5",
+            "length": 9
+          },
+          "b2": {
+            "hex": "1001191068420281f4b5b5",
+            "length": 11
+          },
+          "b3": {
+            "hex": "1002191068420281f4b5b5",
+            "length": 11
+          },
+          "b4": {
+            "hex": "1003191068420281f4b5b5",
+            "length": 11
+          }
+        },
+        "streamIds": {
+          "s1": {
+            "length": 1
+          }
+        },
+        "timestamps": {
+          "t1": {
+            "offsetMicrosFromT1": 0
+          },
+          "t2": {
+            "offsetMicrosFromT1": 16723098
+          },
+          "t3": {
+            "offsetMicrosFromT1": 17581269
+          },
+          "t4": {
+            "offsetMicrosFromT1": 17608007
+          }
+        }
+      },
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": [
+        {
+          "update": {
+            "fields": {
+              "f": {
+                "stringValue": "text"
+              }
+            },
+            "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/str"
+          }
+        }
+      ],
+      "streams": 1,
+      "transport": "grpc"
+    },
+    {
+      "description": "stream_token: stale token reused, empty token, garbled token, a token with the stream_id of another stream",
+      "frames": [
+        {
+          "action": "stream 0: batch 2 reuses the handshake token (stale)",
+          "dir": "action",
+          "seq": 0,
+          "stream": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 1,
+          "stream": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 2,
+          "stream": 0,
+          "tMs": 272
+        },
+        {
+          "action": "batch 1 with the handshake token",
+          "dir": "action",
+          "seq": 3,
+          "stream": 0,
+          "tMs": 2097
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/tk1"
+                }
+              }
+            ]
+          },
+          "seq": 4,
+          "stream": 0,
+          "tMs": 2097
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t1>",
+            "streamToken": "<bytes b2 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t1>"
+              }
+            ]
+          },
+          "seq": 5,
+          "stream": 0,
+          "tMs": 2336
+        },
+        {
+          "action": "batch 2 with the stale handshake token",
+          "dir": "action",
+          "seq": 6,
+          "stream": 0,
+          "tMs": 4158
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/tk2"
+                }
+              }
+            ]
+          },
+          "seq": 7,
+          "stream": 0,
+          "tMs": 4158
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t2>",
+            "streamToken": "<bytes b3 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t2>"
+              }
+            ]
+          },
+          "seq": 8,
+          "stream": 0,
+          "tMs": 4401
+        },
+        {
+          "action": "batch 3 with the latest token",
+          "dir": "action",
+          "seq": 9,
+          "stream": 0,
+          "tMs": 6255
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b3 len=11>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "3"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/tk3"
+                }
+              }
+            ]
+          },
+          "seq": 10,
+          "stream": 0,
+          "tMs": 6255
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t3>",
+            "streamToken": "<bytes b4 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t3>"
+              }
+            ]
+          },
+          "seq": 11,
+          "stream": 0,
+          "tMs": 6523
+        },
+        {
+          "dir": "end",
+          "seq": 12,
+          "status": {
+            "code": 0,
+            "message": "",
+            "status": "OK"
+          },
+          "stream": 0,
+          "tMs": 8580
+        },
+        {
+          "action": "stream 1: batch 2 with an empty token",
+          "dir": "action",
+          "seq": 13,
+          "stream": 1,
+          "tMs": 0
+        },
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 14,
+          "stream": 1,
+          "tMs": 1
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 15,
+          "stream": 1,
+          "tMs": 266
+        },
+        {
+          "action": "batch 1 with the handshake token",
+          "dir": "action",
+          "seq": 16,
+          "stream": 1,
+          "tMs": 2107
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/tk1"
+                }
+              }
+            ]
+          },
+          "seq": 17,
+          "stream": 1,
+          "tMs": 2107
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t4>",
+            "streamToken": "<bytes b2 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t1>"
+              }
+            ]
+          },
+          "seq": 18,
+          "stream": 1,
+          "tMs": 2371
+        },
+        {
+          "action": "batch 2 with no stream_token",
+          "dir": "action",
+          "seq": 19,
+          "stream": 1,
+          "tMs": 4214
+        },
+        {
+          "dir": "send",
+          "kind": "write_request_no_stream",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/tk2"
+                }
+              }
+            ]
+          },
+          "seq": 20,
+          "stream": 1,
+          "tMs": 4214
+        },
+        {
+          "dir": "end",
+          "seq": 21,
+          "status": {
+            "code": 3,
+            "message": "missing stream token",
+            "status": "INVALID_ARGUMENT"
+          },
+          "stream": 1,
+          "tMs": 4449
+        },
+        {
+          "action": "stream 2: batch 2 with a garbled token",
+          "dir": "action",
+          "seq": 22,
+          "stream": 2,
+          "tMs": 0
+        },
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 23,
+          "stream": 2,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 24,
+          "stream": 2,
+          "tMs": 290
+        },
+        {
+          "action": "batch 1 with the handshake token",
+          "dir": "action",
+          "seq": 25,
+          "stream": 2,
+          "tMs": 2115
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/tk1"
+                }
+              }
+            ]
+          },
+          "seq": 26,
+          "stream": 2,
+          "tMs": 2115
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t5>",
+            "streamToken": "<bytes b2 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t1>"
+              }
+            ]
+          },
+          "seq": 27,
+          "stream": 2,
+          "tMs": 2364
+        },
+        {
+          "action": "batch 2 with a garbled 8-byte token",
+          "dir": "action",
+          "seq": 28,
+          "stream": 2,
+          "tMs": 4181
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b5 len=8>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/tk2"
+                }
+              }
+            ]
+          },
+          "seq": 29,
+          "stream": 2,
+          "tMs": 4182
+        },
+        {
+          "dir": "end",
+          "seq": 30,
+          "status": {
+            "code": 3,
+            "message": "invalid stream token",
+            "status": "INVALID_ARGUMENT"
+          },
+          "stream": 2,
+          "tMs": 4421
+        },
+        {
+          "action": "stream 3: batch 2 with the stream_id set and the latest token",
+          "dir": "action",
+          "seq": 31,
+          "stream": 3,
+          "tMs": 0
+        },
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 32,
+          "stream": 3,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 33,
+          "stream": 3,
+          "tMs": 287
+        },
+        {
+          "action": "batch 1 with the handshake token",
+          "dir": "action",
+          "seq": 34,
+          "stream": 3,
+          "tMs": 2101
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/tk1"
+                }
+              }
+            ]
+          },
+          "seq": 35,
+          "stream": 3,
+          "tMs": 2101
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t6>",
+            "streamToken": "<bytes b2 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t1>"
+              }
+            ]
+          },
+          "seq": 36,
+          "stream": 3,
+          "tMs": 2438
+        },
+        {
+          "action": "batch 2 with stream_id and the latest token",
+          "dir": "action",
+          "seq": 37,
+          "stream": 3,
+          "tMs": 4244
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b2 len=11>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/tk2"
+                }
+              }
+            ]
+          },
+          "seq": 38,
+          "stream": 3,
+          "tMs": 4244
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t7>",
+            "streamToken": "<bytes b3 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t2>"
+              }
+            ]
+          },
+          "seq": 39,
+          "stream": 3,
+          "tMs": 4494
+        },
+        {
+          "action": "batch 3 with the latest token",
+          "dir": "action",
+          "seq": 40,
+          "stream": 3,
+          "tMs": 6327
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b3 len=11>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "3"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/tk3"
+                }
+              }
+            ]
+          },
+          "seq": 41,
+          "stream": 3,
+          "tMs": 6328
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t8>",
+            "streamToken": "<bytes b4 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t3>"
+              }
+            ]
+          },
+          "seq": 42,
+          "stream": 3,
+          "tMs": 6598
+        },
+        {
+          "dir": "end",
+          "seq": 43,
+          "status": {
+            "code": 0,
+            "message": "",
+            "status": "OK"
+          },
+          "stream": 3,
+          "tMs": 8715
+        },
+        {
+          "action": "stream 4: batch 2 with a stream_id that is not the stream's",
+          "dir": "action",
+          "seq": 44,
+          "stream": 4,
+          "tMs": 1
+        },
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 45,
+          "stream": 4,
+          "tMs": 1
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 46,
+          "stream": 4,
+          "tMs": 266
+        },
+        {
+          "action": "batch 1 with the handshake token",
+          "dir": "action",
+          "seq": 47,
+          "stream": 4,
+          "tMs": 2073
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/tk1"
+                }
+              }
+            ]
+          },
+          "seq": 48,
+          "stream": 4,
+          "tMs": 2073
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t9>",
+            "streamToken": "<bytes b2 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t1>"
+              }
+            ]
+          },
+          "seq": 49,
+          "stream": 4,
+          "tMs": 2346
+        },
+        {
+          "action": "batch 2 with a foreign stream_id",
+          "dir": "action",
+          "seq": 50,
+          "stream": 4,
+          "tMs": 4166
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamId": "<stream_id s2 len=26>",
+            "streamToken": "<bytes b2 len=11>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/tk2"
+                }
+              }
+            ]
+          },
+          "seq": 51,
+          "stream": 4,
+          "tMs": 4166
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t10>",
+            "streamToken": "<bytes b3 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t2>"
+              }
+            ]
+          },
+          "seq": 52,
+          "stream": 4,
+          "tMs": 4431
+        },
+        {
+          "action": "batch 3 with the latest token",
+          "dir": "action",
+          "seq": 53,
+          "stream": 4,
+          "tMs": 6262
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b3 len=11>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "3"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/tk3"
+                }
+              }
+            ]
+          },
+          "seq": 54,
+          "stream": 4,
+          "tMs": 6262
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t11>",
+            "streamToken": "<bytes b4 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t3>"
+              }
+            ]
+          },
+          "seq": 55,
+          "stream": 4,
+          "tMs": 6525
+        },
+        {
+          "dir": "end",
+          "seq": 56,
+          "status": {
+            "code": 0,
+            "message": "",
+            "status": "OK"
+          },
+          "stream": 4,
+          "tMs": 8604
+        }
+      ],
+      "id": "write.token-reuse",
+      "labels": {
+        "bytes": {
+          "b1": {
+            "hex": "191068420281f4b5b5",
+            "length": 9
+          },
+          "b2": {
+            "hex": "1001191068420281f4b5b5",
+            "length": 11
+          },
+          "b3": {
+            "hex": "1002191068420281f4b5b5",
+            "length": 11
+          },
+          "b4": {
+            "hex": "1003191068420281f4b5b5",
+            "length": 11
+          },
+          "b5": {
+            "hex": "0102030405060708",
+            "length": 8
+          }
+        },
+        "streamIds": {
+          "s1": {
+            "length": 1
+          },
+          "s2": {
+            "length": 26
+          }
+        },
+        "timestamps": {
+          "t1": {
+            "offsetMicrosFromT1": 0
+          },
+          "t10": {
+            "offsetMicrosFromT1": 28215519
+          },
+          "t11": {
+            "offsetMicrosFromT1": 30217023
+          },
+          "t2": {
+            "offsetMicrosFromT1": 2056980
+          },
+          "t3": {
+            "offsetMicrosFromT1": 4184542
+          },
+          "t4": {
+            "offsetMicrosFromT1": 8219502
+          },
+          "t5": {
+            "offsetMicrosFromT1": 13038330
+          },
+          "t6": {
+            "offsetMicrosFromT1": 17217022
+          },
+          "t7": {
+            "offsetMicrosFromT1": 19215224
+          },
+          "t8": {
+            "offsetMicrosFromT1": 21215435
+          },
+          "t9": {
+            "offsetMicrosFromT1": 26217305
+          }
+        }
+      },
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": [],
+      "streams": 5,
+      "transport": "grpc"
+    },
+    {
+      "description": "A new stream resumed with stream_id and stream_token of an earlier one (the latest token, then an older one, then a garbled stream_id)",
+      "frames": [
+        {
+          "dir": "send",
+          "kind": "handshake_or_empty",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "stream": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b1 len=9>"
+          },
+          "seq": 1,
+          "stream": 0,
+          "tMs": 247
+        },
+        {
+          "action": "batch 1",
+          "dir": "action",
+          "seq": 2,
+          "stream": 0,
+          "tMs": 2075
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b1 len=9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/rs1"
+                }
+              }
+            ]
+          },
+          "seq": 3,
+          "stream": 0,
+          "tMs": 2075
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t1>",
+            "streamToken": "<bytes b2 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t1>"
+              }
+            ]
+          },
+          "seq": 4,
+          "stream": 0,
+          "tMs": 2329
+        },
+        {
+          "action": "batch 2",
+          "dir": "action",
+          "seq": 5,
+          "stream": 0,
+          "tMs": 4152
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamToken": "<bytes b2 len=11>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "n": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f4c-w/rs2"
+                }
+              }
+            ]
+          },
+          "seq": 6,
+          "stream": 0,
+          "tMs": 4152
+        },
+        {
+          "dir": "recv",
+          "kind": "write_response",
+          "msg": {
+            "commitTime": "<ts t2>",
+            "streamToken": "<bytes b3 len=11>",
+            "writeResults": [
+              {
+                "updateTime": "<ts t2>"
+              }
+            ]
+          },
+          "seq": 7,
+          "stream": 0,
+          "tMs": 4405
+        },
+        {
+          "dir": "end",
+          "seq": 8,
+          "status": {
+            "code": 0,
+            "message": "",
+            "status": "OK"
+          },
+          "stream": 0,
+          "tMs": 6505
+        },
+        {
+          "action": "stream 1: resume with stream_id and the latest token (after batch 2)",
+          "dir": "action",
+          "seq": 9,
+          "stream": 1,
+          "tMs": 5
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b3 len=11>"
+          },
+          "seq": 10,
+          "stream": 1,
+          "tMs": 7
+        },
+        {
+          "dir": "end",
+          "seq": 11,
+          "status": {
+            "code": 10,
+            "message": "resuming a stream not supported",
+            "status": "ABORTED"
+          },
+          "stream": 1,
+          "tMs": 290
+        },
+        {
+          "action": "stream 2: resume with stream_id and the token of batch 1 (one batch older)",
+          "dir": "action",
+          "seq": 12,
+          "stream": 2,
+          "tMs": 0
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamId": "<stream_id s1 len=1>",
+            "streamToken": "<bytes b2 len=11>"
+          },
+          "seq": 13,
+          "stream": 2,
+          "tMs": 1
+        },
+        {
+          "dir": "end",
+          "seq": 14,
+          "status": {
+            "code": 10,
+            "message": "resuming a stream not supported",
+            "status": "ABORTED"
+          },
+          "stream": 2,
+          "tMs": 260
+        },
+        {
+          "action": "stream 3: resume with a garbled stream_id",
+          "dir": "action",
+          "seq": 15,
+          "stream": 3,
+          "tMs": 0
+        },
+        {
+          "dir": "send",
+          "kind": "write_request",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamId": "<stream_id s2 len=26>",
+            "streamToken": "<bytes b3 len=11>"
+          },
+          "seq": 16,
+          "stream": 3,
+          "tMs": 0
+        },
+        {
+          "dir": "end",
+          "seq": 17,
+          "status": {
+            "code": 10,
+            "message": "resuming a stream not supported",
+            "status": "ABORTED"
+          },
+          "stream": 3,
+          "tMs": 248
+        }
+      ],
+      "id": "write.resume-stream",
+      "labels": {
+        "bytes": {
+          "b1": {
+            "hex": "191068420281f4b5b5",
+            "length": 9
+          },
+          "b2": {
+            "hex": "1001191068420281f4b5b5",
+            "length": 11
+          },
+          "b3": {
+            "hex": "1002191068420281f4b5b5",
+            "length": 11
+          }
+        },
+        "streamIds": {
+          "s1": {
+            "length": 1
+          },
+          "s2": {
+            "length": 26
+          }
+        },
+        "timestamps": {
+          "t1": {
+            "offsetMicrosFromT1": 0
+          },
+          "t2": {
+            "offsetMicrosFromT1": 2086634
+          }
+        }
+      },
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": [],
+      "streams": 4,
+      "transport": "grpc"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f4.mjs",
+    "notes": [
+      "Auth: the firebase CLI login (a project owner); security rules do not apply.",
+      "Every frame of a case is in order, with tMs the milliseconds since its stream opened (stream = index of the stream within the case). dir is send (client to server), recv (server to client), action (something the recorder did outside the stream, with its commit time) or end (the stream's final gRPC status).",
+      "Timestamps are replaced by labels <ts tN> numbered in time order within the case (equal values share a label); labels.timestamps gives each label's offset in microseconds from t1. Byte strings (resume tokens, stream tokens) are replaced by <bytes bN len=L> (equal contents share a label); labels.bytes holds their hex. Stream ids are <stream_id sN len=L>.",
+      "Enums are names, int64 values strings, as @grpc/proto-loader decodes them with defaults off: a field at its default value (target_change_type NO_CHANGE, nanos 0) is absent from a frame, so a missing targetChangeType means NO_CHANGE and a missing targetIds means empty."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-27T10:44:28.311Z .. 2026-10-27T10:50:50.676Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "gRPC google.firestore.v1.Firestore Listen and Write (bidirectional streams); REST commit for the writes made while a Listen stream is open",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "643ddffda22f4646d5ae994e05617b544ceee25fdee334bc49c56c826bb4c8cd",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

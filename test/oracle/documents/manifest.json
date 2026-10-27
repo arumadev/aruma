@@ -492,6 +492,51 @@
         "node": "v24.21.0"
       }
     },
+    "corpus/f4-cleanup.json": {
+      "generator": "test/oracle/documents/production/record-f4.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T10:44:28.311Z .. 2026-10-27T10:50:50.676Z",
+      "sha256": "9b66b6b795c52fe11370274212c9a064d5799659ae43cee7838776c3963a495c",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "gRPC google.firestore.v1.Firestore Listen and Write (bidirectional streams); REST commit for the writes made while a Listen stream is open",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "643ddffda22f4646d5ae994e05617b544ceee25fdee334bc49c56c826bb4c8cd",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f4-listen.json": {
+      "generator": "test/oracle/documents/production/record-f4.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T10:44:28.311Z .. 2026-10-27T10:50:50.676Z",
+      "sha256": "2812bd058808b387ac6e80e23c32bc2446919662d22d7a50c6d14fe9f185a950",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "gRPC google.firestore.v1.Firestore Listen and Write (bidirectional streams); REST commit for the writes made while a Listen stream is open",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "643ddffda22f4646d5ae994e05617b544ceee25fdee334bc49c56c826bb4c8cd",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f4-write-stream.json": {
+      "generator": "test/oracle/documents/production/record-f4.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T10:44:28.311Z .. 2026-10-27T10:50:50.676Z",
+      "sha256": "c09bec0a55a78394aa200463c69bcc737d32c7b03f75996c87c63f2bd5229608",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "gRPC google.firestore.v1.Firestore Listen and Write (bidirectional streams); REST commit for the writes made while a Listen stream is open",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "643ddffda22f4646d5ae994e05617b544ceee25fdee334bc49c56c826bb4c8cd",
+        "node": "v24.21.0"
+      }
+    },
     "corpus/indexes-105.emulator.json": {
       "generator": ".cache/briefs/research/artifacts/composite-index-probe.mjs emu (the same shapes as test/oracle/documents/production/record-indexes.mjs), converted by record-indexes.mjs --import composite-index-probe-emulator.json",
       "oracle": "emulator",
