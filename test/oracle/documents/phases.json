@@ -1,6 +1,25 @@
 {
   "schema": "aruma.documents-phases/v1",
   "note": "The phases of v0.4 (plan section 6) and which of them are closed. A parity exception may name a planned test with the phase that writes it; oracle_test.go fails once that phase is listed in closed and the entry still names the test as planned. Close a phase here in the PR that ends it.",
-  "phases": ["F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9"],
-  "closed": ["F0"]
+  "phases": [
+    "F0",
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8",
+    "F9"
+  ],
+  "closed": [
+    "F0",
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6"
+  ]
 }
