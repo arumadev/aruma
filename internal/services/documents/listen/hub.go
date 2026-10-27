@@ -353,6 +353,9 @@ func (d *database) release(c *commit) {
 func (d *database) resync(head int64, t time.Time) {
 	d.h.o.Log.Warn("documents: the changelog no longer holds commits the hub missed; its subscribers resync",
 		"project", d.db.Project, "database", d.db.ID, "from", d.next, "head", head)
+	// The subscribers are marked before the position moves: a Take in between returns the resync
+	// with the old position, which is harmless. The other order would return the head without the
+	// resync: a global snapshot missing the commits lost.
 	d.h.mu.Lock()
 	for s := range d.subs {
 		s.markResync()
