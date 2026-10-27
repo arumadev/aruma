@@ -133,6 +133,7 @@ type stampInput struct {
 	updateKeys, updateDocs                                      [][]byte
 	updateSeqs                                                  []int64
 	updateSizes                                                 []int32
+	updateExpires, insertExpires                                []time.Time
 	insertKeys, insertNames, insertParentHashes, insertCgHashes [][]byte
 	insertParents, insertDocs                                   [][]byte
 	insertCollectionIDs                                         []string
@@ -234,7 +235,7 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 		return CommitResult{}, err
 	}
 	var in stampInput
-	if err := p.stampArgs(&in); err != nil {
+	if err := p.stampArgs(&in, cat); err != nil {
 		rollback(conn)
 		return CommitResult{}, err
 	}
@@ -343,7 +344,7 @@ func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, l
 			rollback(conn)
 			return CommitResult{}, err
 		}
-		if err := p.stampArgs(in); err != nil {
+		if err := p.stampArgs(in, cat); err != nil {
 			rollback(conn)
 			return CommitResult{}, err
 		}
@@ -358,10 +359,10 @@ func (s *sequencer) stamp(ctx context.Context, conn *pgx.Conn, db DB, p *plan, l
 	writeSQL, writeArgs := statement(func(q *queries.Queries) error {
 		_, err := q.WriteCommit(ctx, queries.WriteCommitParams{
 			ProjectNumber: db.Project, DatabaseID: db.ID, CatalogVersion: catalogVersion,
-			UpdateKeys: in.updateKeys, UpdateSeqs: in.updateSeqs, UpdateDocs: in.updateDocs, UpdateSizes: in.updateSizes,
+			UpdateKeys: in.updateKeys, UpdateSeqs: in.updateSeqs, UpdateDocs: in.updateDocs, UpdateSizes: in.updateSizes, UpdateExpires: in.updateExpires,
 			InsertKeys: in.insertKeys, InsertNames: in.insertNames, InsertParentHashes: in.insertParentHashes,
 			InsertCgHashes: in.insertCgHashes, InsertParents: in.insertParents, InsertCollectionIds: in.insertCollectionIDs,
-			InsertDocs: in.insertDocs, InsertSizes: in.insertSizes,
+			InsertDocs: in.insertDocs, InsertSizes: in.insertSizes, InsertExpires: in.insertExpires,
 			DeleteKeys: in.deleteKeys, DeleteSeqs: in.deleteSeqs, ReplacedKeys: in.replaced,
 			LogKeys: in.logKeys, LogNames: in.logNames, LogBefores: in.logBefores, LogAfters: in.logAfters, LogMasks: in.logMasks,
 		})

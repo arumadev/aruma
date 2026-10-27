@@ -1221,6 +1221,34 @@ func (q *Queries) SetCompositeCursor(ctx context.Context, arg SetCompositeCursor
 	return err
 }
 
+const setExpireTimes = `-- name: SetExpireTimes :exec
+UPDATE documents.documents d SET expire_time = nullif(w.expire_time, '0001-01-01 00:00:00+00')
+FROM (SELECT unnest($3::bytea[]) AS name_key, unnest($4::timestamptz[]) AS expire_time) w
+WHERE d.project_number = $1 AND d.database_id = $2
+    AND d.name_key = ANY($3::bytea[]) AND d.name_key = w.name_key
+    AND d.expire_time IS DISTINCT FROM nullif(w.expire_time, '0001-01-01 00:00:00+00')
+`
+
+type SetExpireTimesParams struct {
+	ProjectNumber int64
+	DatabaseID    string
+	NameKeys      [][]byte
+	Expires       []time.Time
+}
+
+// A build batch's documents' expire_time under the catalog it builds with (core/ttl.go), those
+// that differ; locked FOR SHARE by the batch, as BackfillGroup's. The zero time stands for none
+// (WriteCommit).
+func (q *Queries) SetExpireTimes(ctx context.Context, arg SetExpireTimesParams) error {
+	_, err := q.db.Exec(ctx, setExpireTimes,
+		arg.ProjectNumber,
+		arg.DatabaseID,
+		arg.NameKeys,
+		arg.Expires,
+	)
+	return err
+}
+
 const setFieldCursor = `-- name: SetFieldCursor :exec
 UPDATE documents.field_overrides SET build_cursor = $1
 WHERE project_number = $2 AND database_id = $3 AND key_hash = $4

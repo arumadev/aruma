@@ -148,7 +148,7 @@ func TestPlanMasksAndResults(t *testing.T) {
 		t.Fatal(err)
 	}
 	var in stampInput
-	if err := same.stampArgs(&in); err != nil || len(in.logKeys) != 0 {
+	if err := same.stampArgs(&in, &catalog{}); err != nil || len(in.logKeys) != 0 {
 		t.Fatalf("unchanged document logged: %v %d", err, len(in.logKeys))
 	}
 	if r := same.results(commit); !r[0].UpdateTime.Equal(prev) || !r[1].UpdateTime.Equal(prev) {

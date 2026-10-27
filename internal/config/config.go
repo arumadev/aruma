@@ -178,6 +178,8 @@ func Defaults() Config {
 			MaxLocksPerTxn:      10_000,
 			CompositeIndexes:    1000,
 			FieldOverrides:      1000,
+			TTLSweepInterval:    time.Hour,
+			TTLSweepBatch:       500,
 		}},
 		Storage: Storage{
 			GCGrace: time.Minute,
@@ -282,6 +284,12 @@ type DocumentsLimits struct {
 	CompositeIndexes int `yaml:"composite_indexes"`
 	// FieldOverrides bounds a database's field overrides, its default's aside (ADR-025 §2).
 	FieldOverrides int `yaml:"field_overrides"`
+	// TTLSweepInterval is how often the TTL sweeper deletes the documents past their TTL
+	// policy's time (ADR-028 §2); production deletes them "typically within 24 hours".
+	TTLSweepInterval time.Duration `yaml:"ttl_sweep_interval"`
+	// TTLSweepBatch is the due documents the sweeper reads of a database at once; a pass reads
+	// at most 100 batches of each database, the rest waiting for the next pass.
+	TTLSweepBatch int `yaml:"ttl_sweep_batch"`
 }
 
 // Storage holds the Cloud Storage for Firebase settings (ADR-022).
@@ -560,6 +568,8 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	count("ARUMA_DOCUMENTS_MAX_LOCKS_PER_TXN", &dl.MaxLocksPerTxn)
 	count("ARUMA_DOCUMENTS_COMPOSITE_INDEXES", &dl.CompositeIndexes)
 	count("ARUMA_DOCUMENTS_FIELD_OVERRIDES", &dl.FieldOverrides)
+	duration("ARUMA_DOCUMENTS_TTL_SWEEP_INTERVAL", &dl.TTLSweepInterval)
+	count("ARUMA_DOCUMENTS_TTL_SWEEP_BATCH", &dl.TTLSweepBatch)
 	boolean("ARUMA_STORAGE_ENABLED", &c.Storage.Enabled)
 	str("ARUMA_STORAGE_DATA_DIR", &c.Storage.DataDir)
 	duration("ARUMA_STORAGE_GC_GRACE", &c.Storage.GCGrace)
@@ -762,6 +772,8 @@ func (c *Config) validateDocuments() []error {
 		{"max_locks_per_txn", int64(l.MaxLocksPerTxn)},
 		{"composite_indexes", int64(l.CompositeIndexes)},
 		{"field_overrides", int64(l.FieldOverrides)},
+		{"ttl_sweep_interval", int64(l.TTLSweepInterval)},
+		{"ttl_sweep_batch", int64(l.TTLSweepBatch)},
 	} {
 		if f.v < 1 {
 			errs = append(errs, fmt.Errorf("documents.limits.%s must be positive", f.name))

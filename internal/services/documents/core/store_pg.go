@@ -50,6 +50,8 @@ type PGStore struct {
 	limits IndexLimits
 	// changelogRetention is Options.ChangelogRetention.
 	changelogRetention time.Duration
+	// ttl counts the TTL sweeper's work (ttl.go).
+	ttl ttlStats
 }
 
 var _ Store = (*PGStore)(nil)

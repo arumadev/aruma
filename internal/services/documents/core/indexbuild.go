@@ -39,6 +39,10 @@ import (
 // change may touch are then rebuilt in batches as a composite is filled: each one's entries
 // under the old configuration that the new one lacks are deleted, the new ones inserted. The
 // last batch makes the added indexes READY (or removes a reverted override) at the next version.
+//
+// A TTL policy set or removed is built the same way (ADR-024 §1.2, §2.5), its indexes unchanged:
+// CREATING from the version that applies it, when every commit fills expire_time from it, then
+// the group's documents' expire_time set (or cleared) in batches, then ACTIVE (ttl.go).
 
 // IndexBuildOptions times the build job; the zero value is the defaults.
 type IndexBuildOptions struct {
@@ -501,12 +505,9 @@ func (s *PGStore) startFieldUpdate(ctx context.Context, db DB, opID string) erro
 			}
 			md.TtlConfigDelta = &adminpb.FieldOperationMetadata_TtlConfigDelta{ChangeType: change}
 		}
-		if sameIndexes(target, old) {
-			// Nothing to build: the new configuration and the TTL policy apply at once. TTL
-			// policies are stored, not yet enforced (ADR-028), so ACTIVE at once.
-			if u.ttlState == "CREATING" {
-				u.ttlState = "ACTIVE"
-			}
+		if sameIndexes(target, old) && !setTTL {
+			// Nothing to build: the new configuration applies at once. A TTL policy set or
+			// removed is built, its group's expire_time filled or cleared (ttl.go).
 			if err := u.write(ctx, q, db); err != nil {
 				return err
 			}
@@ -600,6 +601,7 @@ func (s *PGStore) rebuildField(ctx context.Context, db DB, keyHash []byte, o Ind
 				return s.fieldBuilt(ctx, q, db, cat, row)
 			}
 			var dels, ins []entry
+			exp := queries.SetExpireTimesParams{ProjectNumber: db.Project, DatabaseID: db.ID}
 			for _, d := range docs {
 				p, err := pathOfKey(d.Name)
 				if err != nil {
@@ -609,6 +611,7 @@ func (s *PGStore) rebuildField(ctx context.Context, db DB, keyHash []byte, o Ind
 				if err != nil {
 					return err
 				}
+				exp.NameKeys, exp.Expires = append(exp.NameKeys, d.NameKey), append(exp.Expires, cat.storedExpiry(p, fields))
 				now := entriesOf(cat, cat.fields, p, fields, false).set
 				before := entriesOf(cat, cat.prior, p, fields, false).set
 				for e := range before {
@@ -626,6 +629,9 @@ func (s *PGStore) rebuildField(ctx context.Context, db DB, keyHash []byte, o Ind
 				return err
 			}
 			if err := insertEntries(ctx, q, db, ins); err != nil {
+				return err
+			}
+			if err := q.SetExpireTimes(ctx, exp); err != nil {
 				return err
 			}
 			return q.SetFieldCursor(ctx, queries.SetFieldCursorParams{ProjectNumber: db.Project, DatabaseID: db.ID,
