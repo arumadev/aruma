@@ -242,26 +242,29 @@ WITH s AS (
         AND d.name_key = ANY($4::bytea[])
     RETURNING 1
 ), u AS (
-    UPDATE documents.documents d SET doc = w.doc, size = w.size, update_time = s.last_ts, update_seq = s.seq
+    UPDATE documents.documents d SET doc = w.doc, size = w.size, update_time = s.last_ts, update_seq = s.seq,
+        expire_time = nullif(w.expire_time, '0001-01-01 00:00:00+00')
     FROM s, (SELECT unnest($1::bytea[]) AS name_key, unnest($9::bigint[]) AS update_seq,
-        unnest($10::bytea[]) AS doc, unnest($11::integer[]) AS size) w
+        unnest($10::bytea[]) AS doc, unnest($11::integer[]) AS size,
+        unnest($12::timestamptz[]) AS expire_time) w
     WHERE d.project_number = $6 AND d.database_id = $7
         AND d.name_key = ANY($1::bytea[]) AND d.name_key = w.name_key AND d.update_seq = w.update_seq
     RETURNING 1
 ), i AS (
     INSERT INTO documents.documents (project_number, database_id, name_key, name, parent_hash, cg_hash,
-        parent, collection_id, doc, create_time, update_time, update_seq, size)
+        parent, collection_id, doc, create_time, update_time, update_seq, size, expire_time)
     SELECT $6, $7, w.name_key, w.name, w.parent_hash, w.cg_hash, w.parent,
-        w.collection_id, w.doc, s.last_ts, s.last_ts, s.seq, w.size
-    FROM s, (SELECT unnest($2::bytea[]) AS name_key, unnest($12::bytea[]) AS name,
-        unnest($13::bytea[]) AS parent_hash, unnest($14::bytea[]) AS cg_hash,
-        unnest($15::bytea[]) AS parent, unnest($16::text[]) AS collection_id,
-        unnest($17::bytea[]) AS doc, unnest($18::integer[]) AS size) w
+        w.collection_id, w.doc, s.last_ts, s.last_ts, s.seq, w.size, nullif(w.expire_time, '0001-01-01 00:00:00+00')
+    FROM s, (SELECT unnest($2::bytea[]) AS name_key, unnest($13::bytea[]) AS name,
+        unnest($14::bytea[]) AS parent_hash, unnest($15::bytea[]) AS cg_hash,
+        unnest($16::bytea[]) AS parent, unnest($17::text[]) AS collection_id,
+        unnest($18::bytea[]) AS doc, unnest($19::integer[]) AS size,
+        unnest($20::timestamptz[]) AS expire_time) w
     ON CONFLICT DO NOTHING
     RETURNING 1
 ), x AS (
     DELETE FROM documents.documents d
-    USING s, (SELECT unnest($3::bytea[]) AS name_key, unnest($19::bigint[]) AS update_seq) w
+    USING s, (SELECT unnest($3::bytea[]) AS name_key, unnest($21::bigint[]) AS update_seq) w
     WHERE d.project_number = $6 AND d.database_id = $7
         AND d.name_key = ANY($3::bytea[]) AND d.name_key = w.name_key AND d.update_seq = w.update_seq
     RETURNING 1
@@ -269,9 +272,9 @@ WITH s AS (
     INSERT INTO documents.changelog (project_number, database_id, seq, name_key, name, commit_time,
         before, after, update_mask)
     SELECT $6, $7, s.seq, w.name_key, w.name, s.last_ts, w.before, w.after, w.update_mask
-    FROM s, (SELECT unnest($5::bytea[]) AS name_key, unnest($20::bytea[]) AS name,
-        unnest($21::bytea[]) AS before, unnest($22::bytea[]) AS after,
-        unnest($23::bytea[]) AS update_mask) w
+    FROM s, (SELECT unnest($5::bytea[]) AS name_key, unnest($22::bytea[]) AS name,
+        unnest($23::bytea[]) AS before, unnest($24::bytea[]) AS after,
+        unnest($25::bytea[]) AS update_mask) w
     RETURNING 1
 )
 SELECT documents.conflict_unless(
@@ -295,6 +298,7 @@ type WriteCommitParams struct {
 	UpdateSeqs          []int64
 	UpdateDocs          [][]byte
 	UpdateSizes         []int32
+	UpdateExpires       []time.Time
 	InsertNames         [][]byte
 	InsertParentHashes  [][]byte
 	InsertCgHashes      [][]byte
@@ -302,6 +306,7 @@ type WriteCommitParams struct {
 	InsertCollectionIds []string
 	InsertDocs          [][]byte
 	InsertSizes         []int32
+	InsertExpires       []time.Time
 	DeleteSeqs          []int64
 	LogNames            [][]byte
 	LogBefores          [][]byte
@@ -320,7 +325,9 @@ type WriteCommitParams struct {
 // name_key = ANY(keys), so that the primary key finds them whatever the planner estimates: the
 // documents of a database that grew since its statistics, or of any under a generic plan, were
 // estimated at one row, and the join looped over all of them (generate_subscripts' 1000 rows
-// had made it hash a scan of the whole table).
+// had made it hash a scan of the whole table). A document's expire_time is its TTL policy's
+// (core/ttl.go); the zero time.Time, 0001-01-01 00:00:00 UTC, stands for none, as an array's
+// elements cannot be NULL here (an expiry within that first second is sent a second later).
 func (q *Queries) WriteCommit(ctx context.Context, arg WriteCommitParams) ([]bool, error) {
 	rows, err := q.db.Query(ctx, writeCommit,
 		arg.UpdateKeys,
@@ -334,6 +341,7 @@ func (q *Queries) WriteCommit(ctx context.Context, arg WriteCommitParams) ([]boo
 		arg.UpdateSeqs,
 		arg.UpdateDocs,
 		arg.UpdateSizes,
+		arg.UpdateExpires,
 		arg.InsertNames,
 		arg.InsertParentHashes,
 		arg.InsertCgHashes,
@@ -341,6 +349,7 @@ func (q *Queries) WriteCommit(ctx context.Context, arg WriteCommitParams) ([]boo
 		arg.InsertCollectionIds,
 		arg.InsertDocs,
 		arg.InsertSizes,
+		arg.InsertExpires,
 		arg.DeleteSeqs,
 		arg.LogNames,
 		arg.LogBefores,

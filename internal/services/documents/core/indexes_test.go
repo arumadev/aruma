@@ -409,7 +409,7 @@ func TestFieldOverrides(t *testing.T) {
 		fields[1].GetName() != testDB.FieldName("c", "m") {
 		t.Errorf("list: %v %v", fields, err)
 	}
-	// A TTL policy alone builds nothing.
+	// A TTL policy alone builds the group's expire_time (ttl_test.go), its indexes unchanged.
 	op, err := s.UpdateField(ctx, testDB, "c", &adminpb.Field{Name: testDB.FieldName("c", "m"), TtlConfig: &adminpb.Field_TtlConfig{}}, []string{"ttlConfig"})
 	if err != nil {
 		t.Fatal(err)
