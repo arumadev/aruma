@@ -18,6 +18,8 @@
 // an Aruma ID token to Google. It is refused instead (storageGuard below), unless the Storage
 // fallback of storage.js is installed and takes it.
 
+import { guardNode } from './nodeguard.js';
+
 /** The hosts that are rewritten. Nothing else is. */
 export const AUTH_HOSTS = Object.freeze(['identitytoolkit.googleapis.com', 'securetoken.googleapis.com']);
 
@@ -321,6 +323,7 @@ function wrapOnce(global) {
   Object.defineProperty(global, STATE, { value: state, configurable: true });
   global.fetch = state.wrapper;
   guardXHR(global);
+  if (global === globalThis) guardNode({ host: FIRESTORE_HOST, active: () => authOn(global), message: firestoreBlocked, onBlocked: () => reportBlocked(global, 'firestore') });
   return state;
 }
 
@@ -337,7 +340,8 @@ function wrapOnce(global) {
  * Either way, while it is installed, a Firebase Storage request to Google's Storage host fails
  * instead of carrying the Aruma ID token there, unless Storage is rewritten or installStorage runs.
  * Any request to Google's Firestore host fails too (SR3-10): Firestore goes to Aruma through
- * @aruma/web/firestore or the build-time rewrite, and never reaches that host.
+ * @aruma/web/firestore or the build-time rewrite, and never reaches that host. In Node (gRPC, no fetch)
+ * the connections to that host are refused instead: see nodeguard.js.
  *
  * @param {{ url?: string | URL, allowInsecure?: boolean, log?: boolean }} [options]
  */
